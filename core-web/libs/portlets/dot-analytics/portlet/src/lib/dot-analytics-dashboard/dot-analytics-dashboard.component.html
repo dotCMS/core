@@ -25,13 +25,13 @@
         </p-message>
     }
 
-    <!-- Filters Row - Gray Background -->
+    <!-- Filters Row -->
     <div class="analytics-dashboard__filters-row">
         <div class="analytics-dashboard__filters-container flex justify-between items-center">
             <dot-analytics-dashboard-filters
                 class="analytics-dashboard__filters"
                 [timeRange]="store.timeRange()"
-                (changeFilters)="refreshQueryParams($event)"
+                (changeFilters)="onTimeRangeChange($event)"
                 data-testid="analytics-filters" />
 
             <p-button
@@ -45,53 +45,31 @@
         </div>
     </div>
 
-    <!-- Dashboard Row - White Background -->
+    <!-- Dashboard Content - Tabs -->
     <div class="analytics-dashboard__dashboard-row">
-        <div class="analytics-dashboard__dashboard-container flex flex-col gap-4">
-            <!-- Metrics Section -->
-            <div class="analytics-dashboard__metrics flex gap-4 flex-wrap">
-                @for (metric of $metricsData(); track metric.name) {
-                    <dot-analytics-dashboard-metrics
-                        class="analytics-dashboard__metric-card"
-                        [name]="metric.name"
-                        [value]="metric.value || 0"
-                        [subtitle]="metric.subtitle || ''"
-                        [icon]="metric.icon || ''"
-                        [status]="metric.status"
-                        data-testid="analytics-metric-card" />
+        <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
+            <p-tablist>
+                @for (tab of tabs; track tab.id) {
+                    <p-tab [value]="tab.id">
+                        {{ tab.label | dm }}
+                    </p-tab>
                 }
-            </div>
+            </p-tablist>
 
-            <!-- Charts Section -->
-            <div class="analytics-dashboard__charts flex gap-4">
-                <!-- Line Chart -->
-                <div class="analytics-dashboard__timeline-chart">
-                    <dot-analytics-dashboard-chart
-                        [title]="'analytics.charts.pageviews-timeline.title' | dm"
-                        type="line"
-                        [chartState]="$pageViewTimeLine()"
-                        data-testid="analytics-timeline-chart" />
-                </div>
-            </div>
-
-            <!-- Table and Pie Chart Section -->
-            <div class="analytics-dashboard__bottom-section flex gap-4 items-stretch">
-                <!-- Pie Chart -->
-                <div class="analytics-dashboard__device-chart">
-                    <dot-analytics-dashboard-chart
-                        [title]="'analytics.charts.device-breakdown.title' | dm"
-                        type="pie"
-                        [chartState]="$pageViewDeviceBrowsers()"
-                        data-testid="analytics-device-chart" />
-                </div>
-
-                <!-- Table -->
-                <div class="analytics-dashboard__table">
-                    <dot-analytics-dashboard-table
-                        [tableState]="$topPagesTable()"
-                        data-testid="analytics-table" />
-                </div>
-            </div>
-        </div>
+            <p-tabpanels>
+                @for (tab of tabs; track tab.id) {
+                    <p-tabpanel [value]="tab.id">
+                        @switch (tab.id) {
+                            @case ('pageview') {
+                                <dot-analytics-dashboard-pageview-report />
+                            }
+                            @case ('conversions') {
+                                <dot-analytics-dashboard-conversions-report />
+                            }
+                        }
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
+        </p-tabs>
     </div>
 </div>

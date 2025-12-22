@@ -1,42 +1,34 @@
-import { signalMethod } from '@ngrx/signals';
-
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, ParamMap, Params, Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { TabsModule } from 'primeng/tabs';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
+    DASHBOARD_TAB_LIST,
     DotAnalyticsDashboardStore,
-    extractPageTitle,
-    extractPageViews,
-    extractSessions,
-    extractTopPageValue,
-    MetricData,
-    TIME_RANGE_OPTIONS
+    TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
-import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
-const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
-
-import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
+import DotAnalyticsDashboardConversionsReportComponent from './components/dot-analytics-dashboard-conversions-report/dot-analytics-dashboard-conversions-report.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
-import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
-import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
-import { getProperQueryParamsFromUrl } from './utils/state-from-url';
+import DotAnalyticsDashboardPageviewReportComponent from './components/dot-analytics-dashboard-pageview-report/dot-analytics-dashboard-pageview-report.component';
+
+const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-banner';
 
 @Component({
     selector: 'lib-dot-analytics-dashboard',
     imports: [
+        CommonModule,
         ButtonModule,
         MessageModule,
-        DotAnalyticsDashboardMetricsComponent,
-        DotAnalyticsDashboardChartComponent,
-        DotAnalyticsDashboardTableComponent,
+        TabsModule,
         DotAnalyticsDashboardFiltersComponent,
+        DotAnalyticsDashboardPageviewReportComponent,
+        DotAnalyticsDashboardConversionsReportComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
@@ -46,100 +38,49 @@ import { getProperQueryParamsFromUrl } from './utils/state-from-url';
 export default class DotAnalyticsDashboardComponent {
     store = inject(DotAnalyticsDashboardStore);
 
-    private readonly route = inject(ActivatedRoute);
-    private readonly router = inject(Router);
-    private readonly localStorageService = inject(DotLocalstorageService);
-
-    /** Query params */
-    $queryParams = toSignal(this.route.queryParamMap, {
-        requireSync: true
-    });
-
-    // Current site ID
-    private readonly $currentSiteId = inject(GlobalStore).currentSiteId;
+    readonly #localStorageService = inject(DotLocalstorageService);
 
     // Message banner visibility
     readonly $showMessage = signal<boolean>(
-        !this.localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
+        !this.#localStorageService.getItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY)
     );
 
-    // Metrics signals
-    protected readonly $totalPageViews = this.store.totalPageViews;
-    protected readonly $uniqueVisitors = this.store.uniqueVisitors;
-    protected readonly $topPagePerformance = this.store.topPagePerformance;
-    protected readonly $pageViewTimeLine = this.store.pageViewTimeLine;
-    protected readonly $pageViewDeviceBrowsers = this.store.pageViewDeviceBrowsers;
-    protected readonly $topPagesTable = this.store.topPagesTable;
-
-    // Computed signals for data transformations
-    protected readonly $metricsData = computed((): MetricData[] => [
-        {
-            name: 'analytics.metrics.total-pageviews',
-            value: extractPageViews(this.$totalPageViews().data),
-            subtitle: 'analytics.metrics.total-pageviews.subtitle',
-            icon: 'pi-eye',
-            status: this.$totalPageViews().status,
-            error: this.$totalPageViews().error
-        },
-        {
-            name: 'analytics.metrics.unique-visitors',
-            value: extractSessions(this.$uniqueVisitors().data),
-            subtitle: 'analytics.metrics.unique-visitors.subtitle',
-            icon: 'pi-users',
-            status: this.$uniqueVisitors().status,
-            error: this.$uniqueVisitors().error
-        },
-        {
-            name: 'analytics.metrics.top-page-performance',
-            value: extractTopPageValue(this.$topPagePerformance().data),
-            subtitle: extractPageTitle(this.$topPagePerformance().data),
-            icon: 'pi-chart-bar',
-            status: this.$topPagePerformance().status,
-            error: this.$topPagePerformance().error
-        }
-    ]);
-
-    constructor() {
-        this.#handleQueryParamsChanges(this.$queryParams);
-    }
+    // Tab configuration from constants
+    readonly tabs = DASHBOARD_TAB_LIST;
 
     /**
      * Closes the message banner and stores the preference in localStorage
      */
     onCloseMessage(): void {
         this.$showMessage.set(false);
-        this.localStorageService.setItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY, true);
+        this.#localStorageService.setItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY, true);
+    }
+
+    /**
+     * Handles tab change event from p-tabs.
+     * Updates the store and URL query param.
+     */
+    onTabChange(tabId: unknown): void {
+        const normalizedId =
+            typeof tabId === 'number' ? tabId.toString() : typeof tabId === 'string' ? tabId : null;
+        const tab = this.tabs.find(({ id }) => id === normalizedId);
+
+        if (tab) {
+            this.store.setCurrentTabAndNavigate(tab.id);
+        }
     }
 
     /**
      * Refresh dashboard data
      */
     onRefresh(): void {
-        const timeRange = this.store.timeRange();
-        const currentSiteId = this.$currentSiteId();
-
-        if (currentSiteId && timeRange) {
-            this.store.loadAllDashboardData(timeRange, currentSiteId);
-        }
+        this.store.refreshAllData();
     }
 
-    /** Handle query params changes */
-    readonly #handleQueryParamsChanges = signalMethod<ParamMap>((queryParamMap) => {
-        const queryParams = getProperQueryParamsFromUrl(queryParamMap);
-
-        if (queryParams.type === 'params') {
-            this.refreshQueryParams(queryParams.params);
-        } else {
-            this.store.setTimeRange(queryParams.timeRange ?? TIME_RANGE_OPTIONS.last7days);
-        }
-    });
-
-    refreshQueryParams(queryParams: Params): void {
-        this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: queryParams,
-            queryParamsHandling: 'replace',
-            replaceUrl: true
-        });
+    /**
+     * Updates time range when filters change
+     */
+    onTimeRangeChange(timeRange: TimeRangeInput): void {
+        this.store.updateTimeRange(timeRange);
     }
 }

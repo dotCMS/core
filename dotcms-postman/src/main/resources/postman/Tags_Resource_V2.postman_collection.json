@@ -2196,9 +2196,12 @@
 							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"Response body should contain boolean true\", function () {",
+							"pm.test(\"Response body should contain BulkResultView with successCount 1\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.entity).to.equal(true);",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity.successCount).to.equal(1);",
+							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
 							"});",
 							"",
 							"pm.test(\"Verify tag deletion via GET request\", function () {",
@@ -2255,18 +2258,17 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": ""
+					"raw": "[\n  \"{{deleteTestTagId}}\"\n]"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/{{deleteTestTagId}}",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						"{{deleteTestTagId}}"
+						"tags"
 					]
 				},
 				"description": "Deletes the tag created by the previous test."
@@ -2274,7 +2276,7 @@
 			"response": []
 		},
 		{
-			"name": "Delet a non-existing Tag",
+			"name": "Delete a non-existing Tag",
 			"event": [
 				{
 					"listen": "prerequest",
@@ -2289,14 +2291,16 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"HTTP Status code must be 404\", function () {",
-							"    pm.response.to.have.status(404);",
+							"pm.test(\"HTTP Status code must be 200 OK (bulk delete is idempotent)\", function () {",
+							"    pm.response.to.have.status(200);",
 							"});",
 							"",
-							"pm.test(\"The error message must be present\", function () {",
+							"pm.test(\"Response body should contain BulkResultView with empty results (non-existent tags are skipped silently)\", function () {",
 							"    var jsonData = pm.response.json();",
-							"    pm.expect(jsonData.message).to.not.be.undefined;",
-							"    pm.expect(jsonData.message).to.include(\"was not found\");",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity.successCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
 							"});",
 							""
 						],
@@ -2340,21 +2344,185 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": ""
+					"raw": "[\n  \"non-existent-tag-id-12345\"\n]"
 				},
 				"url": {
-					"raw": "{{serverURL}}/api/v2/tags/0",
+					"raw": "{{serverURL}}/api/v2/tags",
 					"host": [
 						"{{serverURL}}"
 					],
 					"path": [
 						"api",
 						"v2",
-						"tags",
-						"0"
+						"tags"
 					]
 				},
-				"description": "This tests the endpoint that brings back one specific App given the App-key."
+				"description": "Tests bulk delete with non-existent tag ID. The bulk delete API is idempotent - non-existent tags are skipped silently."
+			},
+			"response": []
+		},
+		{
+			"name": "Create Tags for Bulk Delete Test",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 201 Created\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Save tag IDs for bulk delete test\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    const tags = jsonData.entity;",
+							"    ",
+							"    const bulkTag1 = tags.find(t => t.label === 'bulk-delete-tag-1');",
+							"    const bulkTag2 = tags.find(t => t.label === 'bulk-delete-tag-2');",
+							"    const bulkTag3 = tags.find(t => t.label === 'bulk-delete-tag-3');",
+							"    ",
+							"    pm.expect(bulkTag1).to.not.be.undefined;",
+							"    pm.expect(bulkTag2).to.not.be.undefined;",
+							"    pm.expect(bulkTag3).to.not.be.undefined;",
+							"    ",
+							"    pm.collectionVariables.set('bulkDeleteTag1Id', bulkTag1.id);",
+							"    pm.collectionVariables.set('bulkDeleteTag2Id', bulkTag2.id);",
+							"    pm.collectionVariables.set('bulkDeleteTag3Id', bulkTag3.id);",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n   {\n      \"name\":\"bulk-delete-tag-1\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"bulk-delete-tag-2\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   },\n   {\n      \"name\":\"bulk-delete-tag-3\",\n      \"siteId\":\"{{tagsSiteId}}\",\n      \"persona\":false,\n      \"ownerId\":\"dotcms.org.1\"\n   }\n]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Creates multiple tags for bulk delete testing."
+			},
+			"response": []
+		},
+		{
+			"name": "Bulk Delete Multiple Tags",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"HTTP Status code must be 200 OK\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response body should contain BulkResultView with successCount 3\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.entity).to.be.an('object');",
+							"    pm.expect(jsonData.entity.successCount).to.equal(3);",
+							"    pm.expect(jsonData.entity.skippedCount).to.equal(0);",
+							"    pm.expect(jsonData.entity.fails).to.be.an('array').that.is.empty;",
+							"});",
+							"",
+							"pm.test(\"Verify all tags are deleted via GET requests\", function () {",
+							"    const tagIds = [",
+							"        pm.collectionVariables.get('bulkDeleteTag1Id'),",
+							"        pm.collectionVariables.get('bulkDeleteTag2Id'),",
+							"        pm.collectionVariables.get('bulkDeleteTag3Id')",
+							"    ];",
+							"    ",
+							"    tagIds.forEach(function(tagId, index) {",
+							"        pm.sendRequest({",
+							"            url: pm.environment.get('serverURL') + '/api/v2/tags/' + tagId,",
+							"            method: 'GET',",
+							"            header: {",
+							"                'Authorization': 'Basic ' + btoa('admin@dotCMS.com:admin')",
+							"            }",
+							"        }, function (err, response) {",
+							"            pm.expect(response.code).to.eql(404, 'Tag ' + (index + 1) + ' should be deleted');",
+							"        });",
+							"    });",
+							"});",
+							""
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotCMS.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n  \"{{bulkDeleteTag1Id}}\",\n  \"{{bulkDeleteTag2Id}}\",\n  \"{{bulkDeleteTag3Id}}\"\n]"
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v2/tags",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v2",
+						"tags"
+					]
+				},
+				"description": "Tests bulk deletion of multiple tags using the new JSON body format."
 			},
 			"response": []
 		},

@@ -176,7 +176,7 @@ export const styleEditorField = {
      *
      * @param config - Radio field configuration (without the 'type' property)
      * @param config.label - The label displayed for this radio group
-     * @param config.options - Array of options. Can be strings or objects with label, value, and optional imageURL, width, height
+     * @param config.options - Array of options. Can be strings or objects with label, value, and optional imageURL
      * @param config.defaultValue - Optional default selected value (must match one of the option values)
      * @param config.columns - Optional number of columns (1 or 2). Defaults to 1 (single column)
      * @returns A complete radio field definition with type 'radio'
@@ -199,15 +199,11 @@ export const styleEditorField = {
      *       label: 'Left',
      *       value: 'left',
      *       imageURL: 'https://example.com/layout-left.png',
-     *       width: 80,
-     *       height: 50
      *     },
      *     {
      *       label: 'Right',
      *       value: 'right',
      *       imageURL: 'https://example.com/layout-right.png',
-     *       width: 80,
-     *       height: 50
      *     },
      *     { label: 'Center', value: 'center' },
      *     { label: 'Overlap', value: 'overlap' }
