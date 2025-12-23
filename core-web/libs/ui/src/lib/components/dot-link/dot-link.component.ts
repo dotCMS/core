@@ -5,8 +5,7 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 @Component({
     selector: 'dot-link',
     imports: [DotMessagePipe],
-    templateUrl: './dot-link.component.html',
-    styleUrls: ['./dot-link.component.css']
+    templateUrl: './dot-link.component.html'
 })
 export class DotLinkComponent {
     label = input<string>();
