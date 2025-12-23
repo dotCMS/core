@@ -3,29 +3,17 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { Site } from '@dotcms/dotcms-js';
-import { DotCMSContentlet, SiteEntity } from '@dotcms/dotcms-models';
+import { ContentByFolderParams, DotCMSContentlet, SiteEntity } from '@dotcms/dotcms-models';
 
 export interface SiteParams {
     archived: boolean;
     live: boolean;
     system: boolean;
 }
-export interface ContentByFolderParams {
-    hostFolderId: string;
-    showLinks?: boolean;
-    showDotAssets?: boolean;
-    showArchived?: boolean;
-    sortByDesc?: boolean;
-    showPages?: boolean;
-    showFiles?: boolean;
-    showFolders?: boolean;
-    showWorking?: boolean;
-    extensions?: string[];
-    mimeTypes?: string[];
-}
+
 export const BASE_SITE_URL = '/api/v1/site';
 export const DEFAULT_PER_PAGE = 10;
 export const DEFAULT_PAGE = 1;
@@ -56,7 +44,7 @@ export class DotSiteService {
     getSites(filter = '*', perPage?: number, page?: number): Observable<Site[]> {
         return this.#http
             .get<{ entity: Site[] }>(this.getSiteURL(filter, perPage, page))
-            .pipe(pluck('entity'));
+            .pipe(map((response) => response.entity));
     }
 
     private getSiteURL(filter: string, perPage?: number, page?: number): string {
@@ -81,7 +69,7 @@ export class DotSiteService {
     getCurrentSite(): Observable<SiteEntity> {
         return this.#http
             .get<{ entity: SiteEntity }>(`${BASE_SITE_URL}/currentSite`)
-            .pipe(pluck('entity'));
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -93,6 +81,6 @@ export class DotSiteService {
     getContentByFolder(params: ContentByFolderParams) {
         return this.#http
             .post<{ entity: { list: DotCMSContentlet[] } }>('/api/v1/browser', params)
-            .pipe(pluck('entity', 'list'));
+            .pipe(map((response) => response.entity.list));
     }
 }

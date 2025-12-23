@@ -1,9 +1,11 @@
+import { signalMethod } from '@ngrx/signals';
+
 import {
     ChangeDetectionStrategy,
     Component,
-    effect,
     inject,
     OnInit,
+    signal,
     viewChild
 } from '@angular/core';
 
@@ -11,17 +13,17 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotContentletService } from '@dotcms/data-access';
+import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
-import { DotBrowserSelectorStore } from './store/browser.store';
+import {
+    DotBrowserSelectorStore,
+    BrowserSelectorState,
+    SYSTEM_HOST_ID
+} from './store/browser.store';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-
-type DialogData = {
-    mimeTypes: string[];
-};
-
 @Component({
     selector: 'dot-select-existing-file',
     imports: [DotSideBarComponent, DotDataViewComponent, ButtonModule, DotMessagePipe],
@@ -67,23 +69,37 @@ export class DotBrowserSelectorComponent implements OnInit {
      * A readonly property that injects the `DynamicDialogConfig` service.
      * This service is used to get the dialog data.
      */
-    readonly #dialogConfig = inject(DynamicDialogConfig<DialogData>);
+    readonly #dialogConfig = inject(DynamicDialogConfig<ContentByFolderParams>);
+
+    /**
+     * Signal representing the folder parameters.
+     * This is used to store the folder parameters.
+     */
+    $folderParams = signal<ContentByFolderParams>({
+        hostFolderId: SYSTEM_HOST_ID,
+        mimeTypes: []
+    });
 
     constructor() {
-        effect(() => {
-            const folders = this.store.folders();
-
-            if (folders.nodeExpaned) {
-                this.$sideBarRef().detectChanges();
-            }
-        });
+        this.loadContent(this.$folderParams);
+        this.sideBarRefresh(this.store.folders);
     }
 
     ngOnInit() {
-        const data = this.#dialogConfig?.data as DialogData;
-        const mimeTypes = data?.mimeTypes ?? [];
-        this.store.setMimeTypes(mimeTypes);
-        this.store.loadContent();
+        const params = this.#dialogConfig?.data as ContentByFolderParams;
+        this.$folderParams.update((prev) => ({ ...prev, ...params }));
+    }
+
+    onNodeSelect(event: TreeNodeSelectItem): void {
+        const hostFolderId = event?.node?.data?.id;
+        if (!hostFolderId) {
+            throw new Error('Host folder ID is required');
+        }
+
+        this.$folderParams.update((prev) => ({
+            ...prev,
+            hostFolderId
+        }));
     }
 
     /**
@@ -109,4 +125,26 @@ export class DotBrowserSelectorComponent implements OnInit {
                 this.#dialogRef.close(content);
             });
     }
+
+    /**
+     * Loads the content for the given folder parameters.
+     *
+     * @param {ContentByFolderParams} params - The folder parameters.
+     * @returns {void}
+     */
+    readonly loadContent = signalMethod<ContentByFolderParams>((params) => {
+        this.store.loadContent(params);
+    });
+
+    /**
+     * Refreshes the sidebar when the node is expanded.
+     *
+     * @param {BrowserSelectorState['folders']} folders - The folders state.
+     * @returns {void}
+     */
+    readonly sideBarRefresh = signalMethod<BrowserSelectorState['folders']>((folders) => {
+        if (folders.nodeExpaned) {
+            this.$sideBarRef().detectChanges();
+        }
+    });
 }

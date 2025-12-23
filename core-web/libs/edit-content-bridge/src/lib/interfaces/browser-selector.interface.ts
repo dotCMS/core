@@ -1,3 +1,5 @@
+import { ContentByFolderParams } from '@dotcms/dotcms-models';
+
 /**
  * Result returned when content is selected from the browser selector.
  * This is a unified result that can represent pages, files, or other content types.
@@ -52,29 +54,12 @@ export interface BrowserSelectorOptions {
      * The title/header of the dialog.
      * @default 'Select Content'
      */
-    header?: string;
+    header: string;
 
     /**
-     * Array of MIME types to filter the content.
-     * Use 'application/dotpage' for pages, 'image/*' for images, etc.
-     * @example ['application/dotpage'] - Only show pages
-     * @example ['image/png', 'image/jpeg'] - Only show PNG and JPEG images
-     * @example ['image'] - Show all images
-     * @default [] - Show all content types
+     * The parameters for the browser selector.
      */
-    mimeTypes?: string[];
-
-    /**
-     * Whether to include dotAssets in the browser.
-     * @default true
-     */
-    includeDotAssets?: boolean;
-
-    /**
-     * Whether to include folders in the browser.
-     * @default true
-     */
-    includeFolders?: boolean;
+    params: ContentByFolderParams;
 
     /**
      * Callback function executed when the browser selector is closed.

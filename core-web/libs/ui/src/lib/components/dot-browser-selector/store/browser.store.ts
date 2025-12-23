@@ -12,18 +12,18 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { exhaustMap, switchMap, tap, filter, map } from 'rxjs/operators';
+import { exhaustMap, switchMap, tap } from 'rxjs/operators';
 
 import { DotBrowsingService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    ContentByFolderParams,
     DotCMSContentlet,
     TreeNodeItem,
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
 
 export const PEER_PAGE_LIMIT = 1000;
-
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
 export interface Content {
@@ -48,7 +48,6 @@ export interface BrowserSelectorState {
     selectedContent: DotCMSContentlet | null;
     searchQuery: string;
     viewMode: 'list' | 'grid';
-    mimeTypes: string[];
 }
 
 const initialState: BrowserSelectorState = {
@@ -64,8 +63,7 @@ const initialState: BrowserSelectorState = {
     },
     selectedContent: null,
     searchQuery: '',
-    viewMode: 'list',
-    mimeTypes: []
+    viewMode: 'list'
 };
 
 export const DotBrowserSelectorStore = signalStore(
@@ -78,66 +76,40 @@ export const DotBrowserSelectorStore = signalStore(
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
-            setMimeTypes: (mimeTypes: string[]) => {
-                patchState(store, {
-                    mimeTypes
-                });
-            },
             setSelectedContent: (selectedContent: DotCMSContentlet) => {
                 patchState(store, {
                     selectedContent
                 });
             },
-            loadContent: rxMethod<TreeNodeSelectItem | void>(
+            loadContent: rxMethod<ContentByFolderParams>(
                 pipe(
                     tap(() =>
                         patchState(store, {
                             content: { ...store.content(), status: ComponentStatus.LOADING }
                         })
                     ),
-                    map((event) => (event ? event?.node?.data?.id : SYSTEM_HOST_ID)),
-                    filter((identifier) => {
-                        const hasIdentifier = !!identifier;
-
-                        if (!hasIdentifier) {
-                            patchState(store, {
-                                content: {
-                                    data: [],
-                                    status: ComponentStatus.ERROR,
-                                    error: 'dot.file.field.dialog.select.existing.file.table.error.id'
-                                }
-                            });
-                        }
-
-                        return hasIdentifier;
-                    }),
-                    switchMap((identifier) => {
-                        return dotBrowsingService
-                            .getContentByFolder({
-                                folderId: identifier,
-                                mimeTypes: store.mimeTypes()
+                    switchMap((params) => {
+                        return dotBrowsingService.getContentByFolder(params).pipe(
+                            tapResponse({
+                                next: (data) => {
+                                    patchState(store, {
+                                        content: {
+                                            data,
+                                            status: ComponentStatus.LOADED,
+                                            error: null
+                                        }
+                                    });
+                                },
+                                error: () =>
+                                    patchState(store, {
+                                        content: {
+                                            data: [],
+                                            status: ComponentStatus.ERROR,
+                                            error: 'dot.file.field.dialog.select.existing.file.table.error.content'
+                                        }
+                                    })
                             })
-                            .pipe(
-                                tapResponse({
-                                    next: (data) => {
-                                        patchState(store, {
-                                            content: {
-                                                data,
-                                                status: ComponentStatus.LOADED,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: () =>
-                                        patchState(store, {
-                                            content: {
-                                                data: [],
-                                                status: ComponentStatus.ERROR,
-                                                error: 'dot.file.field.dialog.select.existing.file.table.error.content'
-                                            }
-                                        })
-                                })
-                            );
+                        );
                     })
                 )
             ),

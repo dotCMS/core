@@ -21,7 +21,8 @@ import {
     PaginationParams,
     CustomTreeNode,
     DotFolder,
-    TreeNodeItem
+    TreeNodeItem,
+    ContentByFolderParams
 } from '@dotcms/dotcms-models';
 
 import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
@@ -174,8 +175,8 @@ export class DotEditContentService {
      * @return {*}
      * @memberof DotEditContentService
      */
-    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
-        return this.#dotBrowsingService.getContentByFolder({ folderId, mimeTypes });
+    getContentByFolder(params: ContentByFolderParams) {
+        return this.#dotBrowsingService.getContentByFolder(params);
     }
 
     /**

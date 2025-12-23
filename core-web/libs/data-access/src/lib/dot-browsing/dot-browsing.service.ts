@@ -5,7 +5,13 @@ import { Injectable, inject } from '@angular/core';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotFolder, TreeNodeItem, DotCMSAPIResponse, CustomTreeNode } from '@dotcms/dotcms-models';
+import {
+    DotFolder,
+    TreeNodeItem,
+    DotCMSAPIResponse,
+    CustomTreeNode,
+    ContentByFolderParams
+} from '@dotcms/dotcms-models';
 
 import { DotSiteService } from '../dot-site/dot-site.service';
 
@@ -179,24 +185,12 @@ export class DotBrowsingService {
     /**
      * Get content by folder
      *
-     * @param {{ folderId: string; mimeTypes?: string[] }} { folderId, mimeTypes }
+     * @param {Object} options - The parameters for fetching content by folder
+     * @param {string} options.folderId - The folder ID
      * @return {*}
      * @memberof DotEditContentService
      */
-    getContentByFolder({ folderId, mimeTypes }: { folderId: string; mimeTypes?: string[] }) {
-        const params = {
-            hostFolderId: folderId,
-            showLinks: false,
-            showDotAssets: true,
-            showPages: false,
-            showFiles: true,
-            showFolders: false,
-            showWorking: true,
-            showArchived: false,
-            sortByDesc: true,
-            mimeTypes: mimeTypes || []
-        };
-
+    getContentByFolder(params: ContentByFolderParams) {
         return this.#siteService.getContentByFolder(params);
     }
 

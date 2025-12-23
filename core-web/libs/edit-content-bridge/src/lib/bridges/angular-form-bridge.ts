@@ -268,7 +268,7 @@ export class AngularFormBridge implements FormBridge {
      */
     openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController {
         const header = options.header ?? 'Select Content';
-        const mimeTypes = options.mimeTypes ?? [];
+        console.log('openBrowserModal', options.params);
 
         this.zone.run(() => {
             this.#dialogRef = this.dialogService.open(DotBrowserSelectorComponent, {
@@ -283,7 +283,7 @@ export class AngularFormBridge implements FormBridge {
                 width: '90%',
                 style: { 'max-width': '1040px' },
                 data: {
-                    mimeTypes
+                    ...options.params
                 }
             });
 

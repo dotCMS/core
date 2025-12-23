@@ -427,7 +427,15 @@ export class DotFileFieldComponent
             width: '90%',
             style: { 'max-width': '1040px' },
             data: {
-                mimeTypes
+                mimeTypes,
+                showLinks: false,
+                showDotAssets: true,
+                showPages: false,
+                showFiles: true,
+                showFolders: false,
+                showWorking: true,
+                showArchived: false,
+                sortByDesc: true
             }
         });
 
