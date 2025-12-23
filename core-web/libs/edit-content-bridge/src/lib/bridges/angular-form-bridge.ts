@@ -248,13 +248,30 @@ export class AngularFormBridge implements FormBridge {
      * Uses PrimeNG DialogService to open the DotBrowserSelectorComponent.
      *
      * @param options - Configuration options for the browser selector.
+     * @param options.header - The title/header of the dialog. Defaults to 'Select Content' if not provided.
+     * @param options.params - The parameters for the browser selector (ContentByFolderParams).
+     * @param options.params.hostFolderId - The ID of the host folder to browse (required).
+     * @param options.params.mimeTypes - Optional array of MIME types to filter by.
+     * @param options.params.showPages - Optional flag to show pages.
+     * @param options.params.showFiles - Optional flag to show files.
+     * @param options.params.showFolders - Optional flag to show folders.
+     * @param options.params.showLinks - Optional flag to show links.
+     * @param options.params.showDotAssets - Optional flag to show dotCMS assets.
+     * @param options.params.showArchived - Optional flag to show archived content.
+     * @param options.params.showWorking - Optional flag to show working content.
+     * @param options.params.sortByDesc - Optional flag to sort in descending order.
+     * @param options.params.extensions - Optional array of file extensions to filter by.
+     * @param options.onClose - Callback function executed when the browser selector is closed.
      * @returns A controller object to manage the dialog.
      *
      * @example
      * // Select a page
      * bridge.openBrowserModal({
      *   header: 'Select a Page',
-     *   mimeTypes: ['application/dotpage'],
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     mimeTypes: ['application/dotpage']
+     *   },
      *   onClose: (result) => console.log(result)
      * });
      *
@@ -262,13 +279,29 @@ export class AngularFormBridge implements FormBridge {
      * // Select an image
      * bridge.openBrowserModal({
      *   header: 'Select an Image',
-     *   mimeTypes: ['image'],
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     mimeTypes: ['image']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select any file with additional filters
+     * bridge.openBrowserModal({
+     *   header: 'Select a File',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     showFiles: true,
+     *     showPages: false,
+     *     showFolders: false,
+     *     extensions: ['.jpg', '.png', '.gif']
+     *   },
      *   onClose: (result) => console.log(result)
      * });
      */
     openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController {
         const header = options.header ?? 'Select Content';
-        console.log('openBrowserModal', options.params);
 
         this.zone.run(() => {
             this.#dialogRef = this.dialogService.open(DotBrowserSelectorComponent, {

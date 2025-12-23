@@ -7,7 +7,13 @@ import {
 } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotFolder, DotCMSAPIResponse, SiteEntity, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotFolder,
+    DotCMSAPIResponse,
+    SiteEntity,
+    DotCMSContentlet,
+    ContentByFolderParams
+} from '@dotcms/dotcms-models';
 import { createFakeSite, createFakeFolder, createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotBrowsingService } from './dot-browsing.service';
@@ -532,45 +538,52 @@ describe('DotBrowsingService', () => {
     });
 
     describe('getContentByFolder', () => {
-        it('should call siteService with correct params when only folderId is provided', () => {
+        it('should pass params directly to siteService', () => {
             const mockContent: DotCMSContentlet[] = [];
+            const params: ContentByFolderParams = {
+                hostFolderId: '123'
+            };
             dotSiteService.getContentByFolder.mockReturnValue(of(mockContent));
 
-            spectator.service.getContentByFolder({ folderId: '123' });
+            spectator.service.getContentByFolder(params);
 
-            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith({
-                hostFolderId: '123',
-                showLinks: false,
-                showDotAssets: true,
-                showPages: false,
-                showFiles: true,
-                showFolders: false,
-                showWorking: true,
-                showArchived: false,
-                sortByDesc: true,
-                mimeTypes: []
-            });
+            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith(params);
         });
 
-        it('should call siteService with mimeTypes when provided', () => {
+        it('should pass params with mimeTypes to siteService', () => {
             const mockContent: DotCMSContentlet[] = [];
             const mimeTypes = ['image/jpeg', 'image/png'];
+            const params: ContentByFolderParams = {
+                hostFolderId: '123',
+                mimeTypes
+            };
             dotSiteService.getContentByFolder.mockReturnValue(of(mockContent));
 
-            spectator.service.getContentByFolder({ folderId: '123', mimeTypes });
+            spectator.service.getContentByFolder(params);
 
-            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith({
+            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith(params);
+        });
+
+        it('should pass params with all options to siteService', () => {
+            const mockContent: DotCMSContentlet[] = [];
+            const params: ContentByFolderParams = {
                 hostFolderId: '123',
-                showLinks: false,
-                showDotAssets: true,
-                showPages: false,
-                showFiles: true,
-                showFolders: false,
-                showWorking: true,
-                showArchived: false,
-                sortByDesc: true,
-                mimeTypes
-            });
+                showLinks: true,
+                showDotAssets: false,
+                showPages: true,
+                showFiles: false,
+                showFolders: true,
+                showWorking: false,
+                showArchived: true,
+                sortByDesc: false,
+                mimeTypes: ['image/jpeg'],
+                extensions: ['.jpg', '.png']
+            };
+            dotSiteService.getContentByFolder.mockReturnValue(of(mockContent));
+
+            spectator.service.getContentByFolder(params);
+
+            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith(params);
         });
 
         it('should return content from siteService', (done) => {
@@ -581,9 +594,12 @@ describe('DotBrowsingService', () => {
                     identifier: 'content-1'
                 })
             ];
+            const params: ContentByFolderParams = {
+                hostFolderId: '123'
+            };
             dotSiteService.getContentByFolder.mockReturnValue(of(mockContent));
 
-            spectator.service.getContentByFolder({ folderId: '123' }).subscribe((result) => {
+            spectator.service.getContentByFolder(params).subscribe((result) => {
                 expect(result).toEqual(mockContent);
                 done();
             });
@@ -591,9 +607,12 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from getContentByFolder', (done) => {
             const error = new Error('Failed to fetch content');
+            const params: ContentByFolderParams = {
+                hostFolderId: '123'
+            };
             dotSiteService.getContentByFolder.mockReturnValue(throwError(error));
 
-            spectator.service.getContentByFolder({ folderId: '123' }).subscribe({
+            spectator.service.getContentByFolder(params).subscribe({
                 next: () => {
                     fail('should have thrown an error');
                 },
@@ -606,15 +625,15 @@ describe('DotBrowsingService', () => {
 
         it('should handle empty mimeTypes array', () => {
             const mockContent: DotCMSContentlet[] = [];
+            const params: ContentByFolderParams = {
+                hostFolderId: '123',
+                mimeTypes: []
+            };
             dotSiteService.getContentByFolder.mockReturnValue(of(mockContent));
 
-            spectator.service.getContentByFolder({ folderId: '123', mimeTypes: [] });
+            spectator.service.getContentByFolder(params);
 
-            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    mimeTypes: []
-                })
-            );
+            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith(params);
         });
     });
 });

@@ -15,6 +15,7 @@ import { delay } from 'rxjs/operators';
 import { DotBrowsingService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    ContentByFolderParams,
     TreeNodeItem,
     TreeNodeSelectItem,
     DotFolder
@@ -179,7 +180,6 @@ describe('DotBrowserSelectorStore', () => {
             expect(store.selectedContent()).toBeNull();
             expect(store.searchQuery()).toBe('');
             expect(store.viewMode()).toBe('list');
-            expect(store.mimeTypes()).toEqual([]);
         });
     });
 
@@ -225,20 +225,6 @@ describe('DotBrowserSelectorStore', () => {
                 content: { data: [], status: ComponentStatus.ERROR, error: 'Error message' }
             });
             expect(store.contentIsLoading()).toBe(false);
-        });
-    });
-
-    describe('Method: setMimeTypes', () => {
-        it('should set mime types', () => {
-            const mimeTypes = ['image/jpeg', 'image/png'];
-            store.setMimeTypes(mimeTypes);
-            expect(store.mimeTypes()).toEqual(mimeTypes);
-        });
-
-        it('should update mime types', () => {
-            store.setMimeTypes(['image/jpeg']);
-            store.setMimeTypes(['image/png', 'application/pdf']);
-            expect(store.mimeTypes()).toEqual(['image/png', 'application/pdf']);
         });
     });
 
@@ -320,12 +306,12 @@ describe('DotBrowserSelectorStore', () => {
                 of(mockContentlets).pipe(delay(1))
             );
 
-            const mockItem: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: TREE_SELECT_MOCK[0]
+            const params: ContentByFolderParams = {
+                hostFolderId: 'demo.dotcms.com',
+                mimeTypes: []
             };
 
-            store.loadContent(mockItem);
+            store.loadContent(params);
             expect(store.content().status).toBe(ComponentStatus.LOADING);
 
             tick(50);
@@ -334,7 +320,7 @@ describe('DotBrowserSelectorStore', () => {
             expect(store.content().data).toEqual(mockContentlets);
             expect(store.content().error).toBeNull();
             expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith({
-                folderId: 'demo.dotcms.com',
+                hostFolderId: 'demo.dotcms.com',
                 mimeTypes: []
             });
         }));
@@ -351,25 +337,30 @@ describe('DotBrowserSelectorStore', () => {
                 of(mockContentlets).pipe(delay(1))
             );
 
-            const mockItem: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: TREE_SELECT_MOCK[0]
+            const params: ContentByFolderParams = {
+                hostFolderId: 'demo.dotcms.com',
+                mimeTypes: []
             };
 
-            store.loadContent(mockItem);
+            store.loadContent(params);
             // During loading, the data should still be preserved from previous state
             expect(store.content().status).toBe(ComponentStatus.LOADING);
             tick(50);
         }));
 
-        it('should load content using SYSTEM_HOST_ID when no node is provided', fakeAsync(() => {
+        it('should load content using SYSTEM_HOST_ID when provided', fakeAsync(() => {
             const mockContentlets = [createFakeContentlet()];
             // Use timer to make the observable async so we can verify LOADING state
             dotBrowsingService.getContentByFolder.mockReturnValue(
                 of(mockContentlets).pipe(delay(1))
             );
 
-            store.loadContent();
+            const params: ContentByFolderParams = {
+                hostFolderId: SYSTEM_HOST_ID,
+                mimeTypes: []
+            };
+
+            store.loadContent(params);
             // Verify LOADING state before the observable completes
             expect(store.content().status).toBe(ComponentStatus.LOADING);
 
@@ -378,75 +369,28 @@ describe('DotBrowserSelectorStore', () => {
             expect(store.content().status).toBe(ComponentStatus.LOADED);
             expect(store.content().data).toEqual(mockContentlets);
             expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith({
-                folderId: SYSTEM_HOST_ID,
+                hostFolderId: SYSTEM_HOST_ID,
                 mimeTypes: []
             });
         }));
 
         it('should use mimeTypes filter when loading content', fakeAsync(() => {
             const mimeTypes = ['image/jpeg', 'image/png'];
-            store.setMimeTypes(mimeTypes);
-
             const mockContentlets = [createFakeContentlet()];
             dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
 
-            const mockItem: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: TREE_SELECT_MOCK[0]
+            const params: ContentByFolderParams = {
+                hostFolderId: 'demo.dotcms.com',
+                mimeTypes
             };
 
-            store.loadContent(mockItem);
+            store.loadContent(params);
             tick(50);
 
             expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith({
-                folderId: 'demo.dotcms.com',
+                hostFolderId: 'demo.dotcms.com',
                 mimeTypes
             });
-        }));
-
-        it('should set error when node has no id', fakeAsync(() => {
-            // Clear previous mock calls to ensure this test only checks its own behavior
-            jest.clearAllMocks();
-
-            const mockItem: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    ...TREE_SELECT_MOCK[0],
-                    data: {
-                        ...TREE_SELECT_MOCK[0].data,
-                        id: ''
-                    }
-                }
-            };
-
-            store.loadContent(mockItem);
-            tick(50);
-
-            expect(store.content().status).toBe(ComponentStatus.ERROR);
-            expect(store.content().error).toBe(
-                'dot.file.field.dialog.select.existing.file.table.error.id'
-            );
-            expect(store.content().data).toEqual([]);
-            expect(dotBrowsingService.getContentByFolder).not.toHaveBeenCalled();
-        }));
-
-        it('should set error when node data is missing', fakeAsync(() => {
-            const mockItem: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    ...TREE_SELECT_MOCK[0],
-                    data: null as unknown as TreeNodeItem['data']
-                }
-            };
-
-            store.loadContent(mockItem);
-            tick(50);
-
-            expect(store.content().status).toBe(ComponentStatus.ERROR);
-            expect(store.content().error).toBe(
-                'dot.file.field.dialog.select.existing.file.table.error.id'
-            );
-            expect(store.content().data).toEqual([]);
         }));
 
         it('should handle service error when loading content', fakeAsync(() => {
@@ -454,12 +398,12 @@ describe('DotBrowserSelectorStore', () => {
                 throwError(() => new Error('Service error'))
             );
 
-            const mockItem: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: TREE_SELECT_MOCK[0]
+            const params: ContentByFolderParams = {
+                hostFolderId: 'demo.dotcms.com',
+                mimeTypes: []
             };
 
-            store.loadContent(mockItem);
+            store.loadContent(params);
             tick(50);
 
             expect(store.content().status).toBe(ComponentStatus.ERROR);

@@ -467,7 +467,10 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select a Page',
-                mimeTypes: ['application/dotpage'],
+                params: {
+                    hostFolderId: 'test-folder-id',
+                    mimeTypes: ['application/dotpage']
+                },
                 onClose
             });
 
@@ -485,6 +488,7 @@ describe('AngularFormBridge', () => {
                     width: '90%',
                     style: { 'max-width': '1040px' },
                     data: {
+                        hostFolderId: 'test-folder-id',
                         mimeTypes: ['application/dotpage']
                     }
                 })
@@ -494,7 +498,11 @@ describe('AngularFormBridge', () => {
         it('should use default header if not provided', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
-                mimeTypes: ['image'],
+                header: undefined as any,
+                params: {
+                    hostFolderId: 'test-folder-id',
+                    mimeTypes: ['image']
+                },
                 onClose
             });
 
@@ -506,19 +514,24 @@ describe('AngularFormBridge', () => {
             );
         });
 
-        it('should use default mimeTypes if not provided', () => {
+        it('should pass params to dialog data', () => {
             const onClose = jest.fn();
+            const params = {
+                hostFolderId: 'test-folder-id',
+                mimeTypes: ['image/jpeg', 'image/png'],
+                showPages: true,
+                showFiles: false
+            };
             bridge.openBrowserModal({
                 header: 'Select Content',
+                params,
                 onClose
             });
 
             expect(mockDialogService.open).toHaveBeenCalledWith(
                 expect.any(Function),
                 expect.objectContaining({
-                    data: {
-                        mimeTypes: []
-                    }
+                    data: params
                 })
             );
         });
@@ -527,7 +540,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -562,7 +577,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -577,7 +594,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -605,7 +624,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -631,7 +652,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -656,7 +679,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             const controller = bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -672,7 +697,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
@@ -685,7 +712,9 @@ describe('AngularFormBridge', () => {
             const onClose = jest.fn();
             bridge.openBrowserModal({
                 header: 'Select Content',
-                mimeTypes: [],
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
                 onClose
             });
 
