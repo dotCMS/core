@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -7,8 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Immutable view representing a role's permission assignments on an asset.
@@ -68,7 +69,7 @@ public interface AbstractRolePermissionView {
      * Gets the individual permission levels assigned to this role on the asset.
      * These are permissions that apply directly to this asset.
      *
-     * @return List of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
+     * @return Set of permission types (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
      */
     @JsonProperty("individual")
     @Schema(
@@ -76,23 +77,23 @@ public interface AbstractRolePermissionView {
         example = "[\"READ\", \"WRITE\", \"PUBLISH\"]",
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    List<String> individual();
+    Set<PermissionAPI.Type> individual();
 
     /**
      * Gets the inheritable permissions grouped by scope.
      * Only present for parent permissionables (hosts, folders).
      * Map keys are permission scopes (HOST, FOLDER, CONTENT, TEMPLATE, etc.)
-     * and values are lists of permission level names.
+     * and values are sets of permission types.
      *
-     * @return Map of scope to permission levels, or null if not a parent permissionable
+     * @return Map of scope to permission types, or null if not a parent permissionable
      */
     @JsonProperty("inheritable")
     @Schema(
         description = "Inheritable permissions by scope (only for parent permissionables). " +
                      "Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), " +
-                     "values are permission level names",
+                     "values are permission types",
         example = "{\"FOLDER\": [\"READ\", \"WRITE\"], \"CONTENT\": [\"READ\"]}"
     )
     @Nullable
-    Map<String, List<String>> inheritable();
+    Map<PermissionAPI.Scope, Set<PermissionAPI.Type>> inheritable();
 }

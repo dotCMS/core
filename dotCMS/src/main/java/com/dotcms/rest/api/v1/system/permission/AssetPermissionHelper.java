@@ -9,32 +9,25 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -194,15 +187,15 @@ public class AssetPermissionHelper {
             Logger.debug(this, () -> "No parent permissionable found for asset");
         }
 
-        return new AssetMetadata(
-            asset.getPermissionId(),
-            getAssetType(asset),
-            isInheriting ? "INHERITED" : "INDIVIDUAL",
-            asset.isParentPermissionable(),
-            canEditPermissions,
-            canEdit,
-            parentAssetId
-        );
+        return AssetMetadata.builder()
+            .assetId(asset.getPermissionId())
+            .assetType(getAssetTypeAsScope(asset))
+            .inheritanceMode(isInheriting ? InheritanceMode.INHERITED : InheritanceMode.INDIVIDUAL)
+            .isParentPermissionable(asset.isParentPermissionable())
+            .canEditPermissions(canEditPermissions)
+            .canEdit(canEdit)
+            .parentAssetId(parentAssetId)
+            .build();
     }
 
     /**
@@ -253,11 +246,11 @@ public class AssetPermissionHelper {
                     .filter(p -> !p.isIndividualPermission())
                     .collect(Collectors.toList());
 
-                // Build individual permissions array
-                final List<String> individual = convertPermissionsToStringArray(individualPermissions);
+                // Build individual permissions set
+                final Set<PermissionAPI.Type> individual = convertPermissionsToTypeSet(individualPermissions);
 
                 // Build inheritable permissions map (only for parent permissionables)
-                final Map<String, List<String>> inheritable;
+                final Map<PermissionAPI.Scope, Set<PermissionAPI.Type>> inheritable;
                 if (isParentPermissionable && !inheritablePermissions.isEmpty()) {
                     inheritable = buildInheritablePermissionMap(inheritablePermissions);
                 } else {
@@ -284,52 +277,15 @@ public class AssetPermissionHelper {
     }
 
     /**
-     * Asset metadata holder for constructing the response view.
-     */
-    public static class AssetMetadata {
-        private final String assetId;
-        private final String assetType;
-        private final String inheritanceMode;
-        private final boolean isParentPermissionable;
-        private final boolean canEditPermissions;
-        private final boolean canEdit;
-        private final String parentAssetId;
-
-        public AssetMetadata(final String assetId,
-                            final String assetType,
-                            final String inheritanceMode,
-                            final boolean isParentPermissionable,
-                            final boolean canEditPermissions,
-                            final boolean canEdit,
-                            final String parentAssetId) {
-            this.assetId = assetId;
-            this.assetType = assetType;
-            this.inheritanceMode = inheritanceMode;
-            this.isParentPermissionable = isParentPermissionable;
-            this.canEditPermissions = canEditPermissions;
-            this.canEdit = canEdit;
-            this.parentAssetId = parentAssetId;
-        }
-
-        public String assetId() { return assetId; }
-        public String assetType() { return assetType; }
-        public String inheritanceMode() { return inheritanceMode; }
-        public boolean isParentPermissionable() { return isParentPermissionable; }
-        public boolean canEditPermissions() { return canEditPermissions; }
-        public boolean canEdit() { return canEdit; }
-        public String parentAssetId() { return parentAssetId; }
-    }
-
-    /**
-     * Converts a list of permissions to an array of permission level strings.
-     * Handles bit-packed permissions correctly.
+     * Converts a list of permissions to a set of permission types.
+     * Handles bit-packed permissions correctly using EnumSet for efficiency.
      *
      * @param permissions List of permissions with same scope
-     * @return List of permission level strings (e.g., ["READ", "WRITE"])
+     * @return Set of permission types
      */
-    private List<String> convertPermissionsToStringArray(final List<Permission> permissions) {
+    private Set<PermissionAPI.Type> convertPermissionsToTypeSet(final List<Permission> permissions) {
         if (permissions == null || permissions.isEmpty()) {
-            return new ArrayList<>();
+            return EnumSet.noneOf(PermissionAPI.Type.class);
         }
 
         // Combine all permission bits
@@ -338,115 +294,93 @@ public class AssetPermissionHelper {
             combinedBits |= permission.getPermission();
         }
 
-        return convertBitsToPermissionNames(combinedBits);
+        return convertBitsToPermissionTypes(combinedBits);
     }
 
     /**
      * Builds inheritable permission map grouped by scope.
      *
      * @param inheritablePermissions List of inheritable permissions
-     * @return Map of scope to permission level arrays
+     * @return Map of scope to permission types
      */
-    private Map<String, List<String>> buildInheritablePermissionMap(
+    private Map<PermissionAPI.Scope, Set<PermissionAPI.Type>> buildInheritablePermissionMap(
             final List<Permission> inheritablePermissions) {
 
         if (inheritablePermissions == null || inheritablePermissions.isEmpty()) {
-            return new HashMap<>();
+            return new LinkedHashMap<>();
         }
 
         return inheritablePermissions.stream()
             .collect(Collectors.groupingBy(
-                p -> getModernPermissionType(p.getType()),
+                p -> getScopeFromPermissionType(p.getType()),
+                LinkedHashMap::new,
                 Collectors.collectingAndThen(
                     Collectors.toList(),
-                    this::convertPermissionsToStringArray
+                    this::convertPermissionsToTypeSet
                 )
             ));
     }
 
     /**
-     * Converts permission bits to permission level names.
-     * Avoids duplicate aliases (e.g., USE=READ, EDIT=WRITE).
+     * Converts permission bits to permission types.
+     * Uses canonical types only (excludes aliases USE and EDIT).
      *
      * @param permissionBits Bit-packed permission value
-     * @return List of permission level strings
+     * @return Set of permission types
      */
-    private List<String> convertBitsToPermissionNames(final int permissionBits) {
-        final List<String> permissions = new ArrayList<>();
+    private Set<PermissionAPI.Type> convertBitsToPermissionTypes(final int permissionBits) {
+        final EnumSet<PermissionAPI.Type> permissions = EnumSet.noneOf(PermissionAPI.Type.class);
 
         if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
-            permissions.add("READ");
+            permissions.add(PermissionAPI.Type.READ);
         }
         if ((permissionBits & PermissionAPI.PERMISSION_WRITE) > 0) {
-            permissions.add("WRITE");
+            permissions.add(PermissionAPI.Type.WRITE);
         }
         if ((permissionBits & PermissionAPI.PERMISSION_PUBLISH) > 0) {
-            permissions.add("PUBLISH");
+            permissions.add(PermissionAPI.Type.PUBLISH);
         }
         if ((permissionBits & PermissionAPI.PERMISSION_EDIT_PERMISSIONS) > 0) {
-            permissions.add("EDIT_PERMISSIONS");
+            permissions.add(PermissionAPI.Type.EDIT_PERMISSIONS);
         }
         if ((permissionBits & PermissionAPI.PERMISSION_CAN_ADD_CHILDREN) > 0) {
-            permissions.add("CAN_ADD_CHILDREN");
+            permissions.add(PermissionAPI.Type.CAN_ADD_CHILDREN);
         }
 
         return permissions;
     }
 
     /**
-     * Maps internal permission type class names to modern API type constants.
-     */
-    private static final Map<String, String> PERMISSION_TYPE_MAPPINGS = Map.ofEntries(
-        Map.entry(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE.toUpperCase(), "INDIVIDUAL"),
-        Map.entry(IHTMLPage.class.getCanonicalName().toUpperCase(), "PAGE"),
-        Map.entry(Container.class.getCanonicalName().toUpperCase(), "CONTAINER"),
-        Map.entry(Folder.class.getCanonicalName().toUpperCase(), "FOLDER"),
-        Map.entry(Link.class.getCanonicalName().toUpperCase(), "LINK"),
-        Map.entry(Template.class.getCanonicalName().toUpperCase(), "TEMPLATE"),
-        Map.entry(TemplateLayout.class.getCanonicalName().toUpperCase(), "TEMPLATE_LAYOUT"),
-        Map.entry(Structure.class.getCanonicalName().toUpperCase(), "CONTENT_TYPE"),
-        Map.entry(Contentlet.class.getCanonicalName().toUpperCase(), "CONTENT"),
-        Map.entry(Category.class.getCanonicalName().toUpperCase(), "CATEGORY"),
-        Map.entry(Rule.class.getCanonicalName().toUpperCase(), "RULE"),
-        Map.entry(Host.class.getCanonicalName().toUpperCase(), "HOST")
-    );
-
-    /**
-     * Gets the modern API type name for a permission type.
+     * Gets the scope enum from a permission type string (class canonical name).
      *
-     * @param permissionType Internal permission type (class name or scope)
-     * @return Modern API type constant
+     * @param permissionType Internal permission type (class name or "individual")
+     * @return PermissionAPI.Scope enum value
      */
-    private String getModernPermissionType(final String permissionType) {
+    private PermissionAPI.Scope getScopeFromPermissionType(final String permissionType) {
         if (!UtilMethods.isSet(permissionType)) {
-            return StringPool.BLANK;
+            return PermissionAPI.Scope.INDIVIDUAL;
         }
 
-        final String mappedType = PERMISSION_TYPE_MAPPINGS.get(permissionType.toUpperCase());
-        if (mappedType != null) {
-            return mappedType;
+        final PermissionAPI.Scope scope = PermissionAPI.Scope.fromPermissionType(permissionType);
+        if (scope != null) {
+            return scope;
         }
 
         Logger.debug(this, () -> String.format("Unknown permission type: %s", permissionType));
-        return permissionType.toUpperCase();
+        return PermissionAPI.Scope.INDIVIDUAL;
     }
 
     /**
-     * Gets the asset type string for the response.
-     * Maps Permissionable types to API type constants (uppercase enum).
+     * Gets the asset type as a Scope enum for the response.
      *
      * @param asset The permissionable asset
-     * @return Asset type enum constant (e.g., "FOLDER", "HOST", "CONTENT")
+     * @return PermissionAPI.Scope representing the asset type
      */
-    private String getAssetType(final Permissionable asset) {
+    private PermissionAPI.Scope getAssetTypeAsScope(final Permissionable asset) {
         if (asset == null) {
-            return StringPool.BLANK;
+            return PermissionAPI.Scope.INDIVIDUAL;
         }
 
-        final String permissionType = asset.getPermissionType();
-        final String modernType = getModernPermissionType(permissionType);
-
-        // Return uppercase for asset type enum
-        return modernType;
+        return getScopeFromPermissionType(asset.getPermissionType());
     }
 }

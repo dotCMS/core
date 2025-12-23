@@ -22492,7 +22492,7 @@ components:
       properties:
         empty:
           type: boolean
-    ImmutableSetString:
+    ImmutableSetScope:
       type: array
       description: Available permission scopes (asset types) that support permissions
       example:
@@ -22508,8 +22508,49 @@ components:
       items:
         type: string
         description: Available permission scopes (asset types) that support permissions
+        enum:
+        - INDIVIDUAL
+        - HOST
+        - FOLDER
+        - CONTAINER
+        - TEMPLATE
+        - TEMPLATE_LAYOUT
+        - LINK
+        - CONTENT
+        - PAGE
+        - CONTENT_TYPE
+        - STRUCTURE
+        - CATEGORY
+        - RULE
         example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\",\"\
           PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+      properties:
+        empty:
+          type: boolean
+      uniqueItems: true
+    ImmutableSetType:
+      type: array
+      description: Available permission levels that can be assigned to users and roles
+      example:
+      - READ
+      - WRITE
+      - PUBLISH
+      - EDIT_PERMISSIONS
+      - CAN_ADD_CHILDREN
+      items:
+        type: string
+        description: Available permission levels that can be assigned to users and
+          roles
+        enum:
+        - READ
+        - USE
+        - EDIT
+        - WRITE
+        - PUBLISH
+        - EDIT_PERMISSIONS
+        - CAN_ADD_CHILDREN
+        example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
+          ]"
       properties:
         empty:
           type: boolean
@@ -23400,6 +23441,14 @@ components:
             type: string
             description: Available permission levels that can be assigned to users
               and roles
+            enum:
+            - READ
+            - USE
+            - EDIT
+            - WRITE
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
             example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
               ]"
           properties:
@@ -23422,6 +23471,20 @@ components:
           items:
             type: string
             description: Available permission scopes (asset types) that support permissions
+            enum:
+            - INDIVIDUAL
+            - HOST
+            - FOLDER
+            - CONTAINER
+            - TEMPLATE
+            - TEMPLATE_LAYOUT
+            - LINK
+            - CONTENT
+            - PAGE
+            - CONTENT_TYPE
+            - STRUCTURE
+            - CATEGORY
+            - RULE
             example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
               ,\"PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
           properties:
