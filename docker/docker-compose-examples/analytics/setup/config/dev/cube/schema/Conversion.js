@@ -76,7 +76,7 @@ cube('Conversion', {
             ((total_conversion * 100)/ (SELECT total FROM total_conversion)) as conv_rate,
             day,
             arrayMap(
-                x -> mapUpdate(x, map('conv_rate', toString((total_conversion* 100) / toInt64(x['conversions'])))),
+                x -> mapUpdate(x, map('conv_rate', toString((toInt64(x['conversions'])* 100) / total_conversion))),
                 top_attributed_content
             ) as top_attributed_content
         FROM conversion INNER JOIN top_attributed_content
