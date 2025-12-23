@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -385,6 +386,9 @@ public class AssetPermissionHelper {
      * Gets the asset type string for the response.
      * Maps Permissionable types to API type constants (uppercase enum).
      *
+     * <p>Uses the actual class name for lookup first, which correctly handles
+     * cases like Host (which extends Contentlet but should return "HOST").
+     *
      * @param asset The permissionable asset
      * @return Asset type enum constant (e.g., "FOLDER", "HOST", "CONTENT")
      */
@@ -393,11 +397,19 @@ public class AssetPermissionHelper {
             return StringPool.BLANK;
         }
 
-        final String permissionType = asset.getPermissionType();
-        final String modernType = getModernPermissionType(permissionType);
+        // First try to determine type from actual class name
+        // This correctly handles Host (extends Contentlet) returning "HOST" not "CONTENT"
+        final String className = asset.getClass().getCanonicalName();
+        final String classBasedType = PermissionConversionUtils.getModernPermissionType(className);
 
-        // Return uppercase for asset type enum
-        return modernType;
+        // If we found a mapped type (not just the uppercase class name), use it
+        if (UtilMethods.isSet(classBasedType) && !classBasedType.equalsIgnoreCase(className)) {
+            return classBasedType;
+        }
+
+        // Fall back to permission type for unmapped classes
+        final String permissionType = asset.getPermissionType();
+        return getModernPermissionType(permissionType);
     }
 
     // ========================================================================
@@ -412,14 +424,14 @@ public class AssetPermissionHelper {
      * @param form     Permission update form with role permissions
      * @param cascade  If true, triggers async cascade job (query parameter)
      * @param user     Requesting user (must be admin)
-     * @return Response map containing message, permissionCount, inheritanceBroken, and asset
+     * @return UpdateAssetPermissionsView containing message, permissionCount, inheritanceBroken, and asset
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
-    public Map<String, Object> updateAssetPermissions(final String assetId,
-                                                       final UpdateAssetPermissionsForm form,
-                                                       final boolean cascade,
-                                                       final User user)
+    public UpdateAssetPermissionsView updateAssetPermissions(final String assetId,
+                                                              final UpdateAssetPermissionsForm form,
+                                                              final boolean cascade,
+                                                              final User user)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> String.format(
@@ -634,38 +646,46 @@ public class AssetPermissionHelper {
     }
 
     /**
-     * Builds the response map for the update operation.
+     * Builds the typed response view for the update operation.
      *
      * @param asset             Updated asset
      * @param user              Requesting user
      * @param inheritanceBroken Whether inheritance was broken during this operation
      * @param permissionCount   Number of permissions saved
-     * @return Response map with message, permissionCount, inheritanceBroken, and asset
+     * @return UpdateAssetPermissionsView with message, permissionCount, inheritanceBroken, and asset
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
-    private Map<String, Object> buildUpdateResponse(final Permissionable asset,
-                                                     final User user,
-                                                     final boolean inheritanceBroken,
-                                                     final int permissionCount)
+    private UpdateAssetPermissionsView buildUpdateResponse(final Permissionable asset,
+                                                            final User user,
+                                                            final boolean inheritanceBroken,
+                                                            final int permissionCount)
             throws DotDataException, DotSecurityException {
 
-        final Map<String, Object> response = new HashMap<>();
-        response.put("message", "Permissions saved successfully");
-        response.put("permissionCount", permissionCount);
-        response.put("inheritanceBroken", inheritanceBroken);
+        // Use existing 2-param method to get asset metadata
+        final AssetMetadata metadata = getAssetMetadata(asset, user);
 
-        // Build asset object
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
-        final Map<String, Object> assetData = getAssetMetadata(asset, user, systemUser);
+        // Use existing 2-param method to get role permissions
+        final List<RolePermissionView> rolePermissions = buildRolePermissions(asset, user);
 
-        // Get updated permissions for the asset
-        final List<Permission> permissions = permissionAPI.getPermissions(asset, true);
-        final List<Map<String, Object>> rolePermissions = buildRolePermissions(permissions, asset, user);
-        assetData.put("permissions", rolePermissions);
+        // Build typed AssetPermissionsView from metadata and permissions
+        final AssetPermissionsView assetView = AssetPermissionsView.builder()
+            .assetId(metadata.assetId())
+            .assetType(metadata.assetType())
+            .inheritanceMode(metadata.inheritanceMode())
+            .isParentPermissionable(metadata.isParentPermissionable())
+            .canEditPermissions(metadata.canEditPermissions())
+            .canEdit(metadata.canEdit())
+            .parentAssetId(metadata.parentAssetId())
+            .permissions(rolePermissions)
+            .build();
 
-        response.put("asset", assetData);
-
-        return response;
+        // Return typed response view
+        return UpdateAssetPermissionsView.builder()
+            .message("Permissions saved successfully")
+            .permissionCount(permissionCount)
+            .inheritanceBroken(inheritanceBroken)
+            .asset(assetView)
+            .build();
     }
 }

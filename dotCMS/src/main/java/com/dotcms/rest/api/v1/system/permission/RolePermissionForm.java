@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 import java.util.Map;
@@ -25,10 +26,29 @@ import java.util.Map;
  * @author dotCMS
  * @since 24.01
  */
+@Schema(description = "Permission assignment for a single role on an asset")
 public class RolePermissionForm {
 
+    @JsonProperty("roleId")
+    @Schema(
+        description = "Role identifier. Can be role ID or role key.",
+        example = "abc-123-def-456",
+        requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private final String roleId;
+
+    @JsonProperty("individual")
+    @Schema(
+        description = "Individual permission levels for this asset. Valid values: READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN",
+        example = "[\"READ\", \"WRITE\", \"PUBLISH\"]"
+    )
     private final List<String> individual;
+
+    @JsonProperty("inheritable")
+    @Schema(
+        description = "Inheritable permissions by scope for child assets. Keys are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are lists of permission levels.",
+        example = "{\"FOLDER\": [\"READ\", \"CAN_ADD_CHILDREN\"], \"CONTENT\": [\"READ\", \"WRITE\"]}"
+    )
     private final Map<String, List<String>> inheritable;
 
     /**

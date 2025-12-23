@@ -837,8 +837,11 @@ public class PermissionResource {
             throw new DotSecurityException("Only admin users can update asset permissions");
         }
 
+        // Validate form before processing (follows SaveUserPermissionsForm pattern)
+        form.checkValid();
+
         // Delegate to helper for business logic
-        final java.util.Map<String, Object> result = assetPermissionHelper.updateAssetPermissions(
+        final UpdateAssetPermissionsView result = assetPermissionHelper.updateAssetPermissions(
             assetId, form, cascade, user);
 
         Logger.info(this, () -> String.format(
