@@ -215,7 +215,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 1,
+                maxContentlets: 2,
                 variantId: '1'
             };
 
@@ -265,7 +265,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1,
+                maxContentlets: 4,
                 variantId: '1'
             };
 
@@ -397,7 +397,7 @@ describe('utils functions', () => {
             });
         });
 
-        it('should add container to pageContainers but not insert when maxContentlets limit is reached - issue #31790', () => {
+        it('should add container to pageContainers and insert in specific position - issue #31790', () => {
             // Current page with no containers
             const pageContainers = [];
 
@@ -406,11 +406,10 @@ describe('utils functions', () => {
                 identifier: 'test',
                 uuid: 'test',
                 contentletsId: ['test123'],
-                maxContentlets: 1,
+                maxContentlets: 2,
                 acceptTypes: 'test',
                 variantId: '1'
             };
-
             // Contentlet to insert
             const contentlet = {
                 identifier: 'test123',
@@ -418,7 +417,6 @@ describe('utils functions', () => {
                 title: 'test',
                 contentType: 'test'
             };
-
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
@@ -431,13 +429,12 @@ describe('utils functions', () => {
             });
 
             expect(result).toEqual({
-                didInsert: false,
-                errorCode: 'CONTAINER_LIMIT_REACHED',
+                didInsert: true,
                 pageContainers: [
                     {
                         identifier: 'test',
                         uuid: 'test',
-                        contentletsId: ['test123'],
+                        contentletsId: ['test123', '000'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
                         maxContentlets: 1,
