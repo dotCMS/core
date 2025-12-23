@@ -10848,7 +10848,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityAssetPermissionsView"
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
           description: Permissions retrieved successfully
         "400":
           content:
@@ -24059,31 +24059,6 @@ components:
           items:
             type: string
     ResponseEntityApiTokenWithJwtView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityAssetPermissionsView:
       type: object
       properties:
         entity:

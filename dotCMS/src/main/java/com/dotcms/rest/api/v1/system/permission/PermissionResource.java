@@ -8,14 +8,11 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
-import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.api.v1.user.UserResourceHelper;
-import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -27,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.AssetPermissionsPaginator;
 import com.dotcms.util.pagination.UserPermissionsPaginator;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -78,6 +76,7 @@ public class PermissionResource {
     private final PermissionSaveHelper permissionSaveHelper;
     private final UserPermissionsPaginator userPermissionsPaginator;
     private final AssetPermissionHelper assetPermissionHelper;
+    private final AssetPermissionsPaginator assetPermissionsPaginator;
 
     public PermissionResource() {
         this(new WebResource(),
@@ -85,9 +84,9 @@ public class PermissionResource {
              APILocator.getUserAPI(),
              APILocator.getRoleAPI(),
              new PermissionSaveHelper(),
-             new UserPermissionsPaginator());
-             new PermissionSaveHelper(),
-             new AssetPermissionHelper());
+             new UserPermissionsPaginator(),
+             new AssetPermissionHelper(),
+             new AssetPermissionsPaginator());
     }
 
     @VisibleForTesting
@@ -97,35 +96,29 @@ public class PermissionResource {
              APILocator.getUserAPI(),
              APILocator.getRoleAPI(),
              permissionSaveHelper,
-             new UserPermissionsPaginator(permissionSaveHelper));
-             permissionSaveHelper,
-             new AssetPermissionHelper());
+             new UserPermissionsPaginator(permissionSaveHelper),
+             new AssetPermissionHelper(),
+             new AssetPermissionsPaginator());
     }
 
     @VisibleForTesting
-    public PermissionResource(final WebResource          webResource,
-                              final PermissionHelper     permissionHelper,
-                              final UserAPI              userAPI,
-                              final RoleAPI              roleAPI,
-                              final PermissionSaveHelper permissionSaveHelper,
-                              final UserPermissionsPaginator userPermissionsPaginator) {
-
-        this.webResource               = webResource;
-        this.permissionHelper          = permissionHelper;
-        this.userAPI                   = userAPI;
-        this.roleAPI                   = roleAPI;
-        this.permissionSaveHelper      = permissionSaveHelper;
-        this.userPermissionsPaginator  = userPermissionsPaginator;
     public PermissionResource(final WebResource webResource,
                               final PermissionHelper permissionHelper,
                               final UserAPI userAPI,
+                              final RoleAPI roleAPI,
                               final PermissionSaveHelper permissionSaveHelper,
-                              final AssetPermissionHelper assetPermissionHelper) {
+                              final UserPermissionsPaginator userPermissionsPaginator,
+                              final AssetPermissionHelper assetPermissionHelper,
+                              final AssetPermissionsPaginator assetPermissionsPaginator) {
+
         this.webResource = webResource;
         this.permissionHelper = permissionHelper;
         this.userAPI = userAPI;
+        this.roleAPI = roleAPI;
         this.permissionSaveHelper = permissionSaveHelper;
+        this.userPermissionsPaginator = userPermissionsPaginator;
         this.assetPermissionHelper = assetPermissionHelper;
+        this.assetPermissionsPaginator = assetPermissionsPaginator;
     }
 
     /**
@@ -631,7 +624,7 @@ public class PermissionResource {
         @ApiResponse(responseCode = "200",
                     description = "Permissions retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                                      schema = @Schema(implementation = ResponseEntityAssetPermissionsView.class))),
+                                      schema = @Schema(implementation = ResponseEntityPaginatedDataView.class))),
         @ApiResponse(responseCode = "400",
                     description = "Bad request - invalid query parameters (page < 1 or per_page not in 1-100 range)",
                     content = @Content(mediaType = "application/json")),
@@ -650,7 +643,7 @@ public class PermissionResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityAssetPermissionsView getAssetPermissions(
+    public ResponseEntityPaginatedDataView getAssetPermissions(
             final @Context HttpServletRequest request,
             final @Context HttpServletResponse response,
             @Parameter(description = "Asset identifier (inode or identifier)", required = true)
@@ -674,27 +667,13 @@ public class PermissionResource {
                 .init()
                 .getUser();
 
-        // Validate pagination parameters
-        if (page < 1) {
-            Logger.warn(this, String.format("Invalid page number: %d (must be >= 1)", page));
-            throw new IllegalArgumentException("Invalid page number: must be >= 1");
-        }
-
-        if (perPage < 1 || perPage > 100) {
-            Logger.warn(this, String.format("Invalid per_page: %d (must be between 1 and 100)", perPage));
-            throw new IllegalArgumentException("Invalid per_page: must be between 1 and 100");
-        }
-
+        // Validate input parameters
         if (!UtilMethods.isSet(assetId)) {
             Logger.warn(this, "Asset ID is required but was not provided");
             throw new IllegalArgumentException("Asset ID is required");
         }
 
-        // Verify user has READ permission on the asset
-        // This is a viewing operation, not a management operation, so any user with READ access can view permissions
-        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-
-        // First, resolve the asset to verify it exists and user has access
+        // Resolve the asset to verify it exists
         final Permissionable asset = assetPermissionHelper.resolveAsset(assetId);
         if (asset == null) {
             Logger.warn(this, String.format("Asset not found: %s", assetId));
@@ -702,6 +681,7 @@ public class PermissionResource {
         }
 
         // Check if user has READ permission on the asset
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final boolean hasReadPermission = permissionAPI.doesUserHavePermission(
             asset, PermissionAPI.PERMISSION_READ, user, false);
 
@@ -711,14 +691,42 @@ public class PermissionResource {
             throw new DotSecurityException("User does not have permission to view this asset's permissions");
         }
 
-        // User has READ permission, proceed with building the response
-        final AssetPermissionHelper.AssetPermissionResponse permissionResponse = assetPermissionHelper
-            .buildAssetPermissionResponse(assetId, page, perPage, user);
+        // Get asset metadata for the response
+        final AssetPermissionHelper.AssetMetadata metadata = assetPermissionHelper.getAssetMetadata(asset, user);
 
-        Logger.info(this, () -> String.format(
-            "Successfully retrieved permissions for asset: %s", assetId));
+        // Use PaginationUtil with paginator (same pattern as getUserPermissions)
+        final PaginationUtil paginationUtil = new PaginationUtil(assetPermissionsPaginator);
 
-        return new ResponseEntityAssetPermissionsView(permissionResponse.entity, permissionResponse.pagination);
+        final Map<String, Object> extraParams = Map.of(
+            AssetPermissionsPaginator.ASSET_PARAM, asset,
+            AssetPermissionsPaginator.REQUESTING_USER_PARAM, user
+        );
+
+        final PaginationUtilParams<RolePermissionView, AssetPermissionsView> params =
+            new PaginationUtilParams.Builder<RolePermissionView, AssetPermissionsView>()
+                .withRequest(request)
+                .withResponse(response)
+                .withUser(user)
+                .withPage(page)
+                .withPerPage(perPage)
+                .withExtraParams(extraParams)
+                .withFunction(paginatedRoles -> AssetPermissionsView.builder()
+                    .assetId(metadata.assetId())
+                    .assetType(metadata.assetType())
+                    .inheritanceMode(metadata.inheritanceMode())
+                    .isParentPermissionable(metadata.isParentPermissionable())
+                    .canEditPermissions(metadata.canEditPermissions())
+                    .canEdit(metadata.canEdit())
+                    .parentAssetId(metadata.parentAssetId())
+                    .permissions(paginatedRoles)
+                    .build())
+                .build();
+
+        Logger.debug(this, () -> String.format(
+            "Retrieving permission roles for asset %s (page %d, perPage %d)",
+            assetId, page, perPage));
+
+        return paginationUtil.getPageView(params);
     }
 
     /**
