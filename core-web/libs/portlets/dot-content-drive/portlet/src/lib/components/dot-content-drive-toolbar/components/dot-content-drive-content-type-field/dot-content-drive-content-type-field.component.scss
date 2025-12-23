@@ -1,16 +1,4 @@
-@use "../../../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../../../dotcms-scss/shared/spacing";
-
 @use "variables" as *;
-
-.footer {
-    display: flex;
-    align-items: center;
-    justify-content: start;
-    padding: spacing.$spacing-1 spacing.$spacing-2;
-    color: colors.$color-palette-gray-500;
-    gap: spacing.$spacing-3;
-}
 
 :host::ng-deep {
     .p-multiselect-panel.hide-empty-message .p-multiselect-items .p-multiselect-empty-message {

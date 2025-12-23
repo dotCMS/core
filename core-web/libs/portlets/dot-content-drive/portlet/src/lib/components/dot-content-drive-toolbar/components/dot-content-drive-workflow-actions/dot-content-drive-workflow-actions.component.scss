@@ -1,9 +1,1 @@
-@use "../../../../../../../../../dotcms-scss/shared/spacing";
-
 @use "variables" as *;
-
-:host {
-    display: flex;
-    gap: spacing.$spacing-1;
-    justify-content: end;
-}

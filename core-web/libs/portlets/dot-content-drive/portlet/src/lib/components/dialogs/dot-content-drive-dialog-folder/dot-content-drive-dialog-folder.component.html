@@ -9,8 +9,8 @@
             </p-tab>
         </p-tablist>
         <p-tabpanels>
-            <p-tabpanel [value]="0" class="folder-dialog-tab-content">
-                <div class="folder-dialog-field">
+            <p-tabpanel [value]="0" class="flex flex-col gap-4 mt-4">
+                <div class="flex flex-col gap-2 mb-4">
                     <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.title' | dm }}
                     </label>
@@ -22,8 +22,8 @@
                         [autofocus]="true" />
                 </div>
             </p-tabpanel>
-            <p-tabpanel [value]="1" class="folder-dialog-tab-content">
-                <div class="folder-dialog-field">
+            <p-tabpanel [value]="1" class="flex flex-col gap-4 mt-4">
+                <div class="flex flex-col gap-2 mb-4">
                     <label [checkIsRequiredControl]="'sortOrder'" for="sortOrder" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.sort-order' | dm }}
                     </label>
@@ -34,7 +34,7 @@
                         formControlName="sortOrder" />
                 </div>
 
-                <div class="folder-dialog-field">
+                <div class="flex flex-col gap-2 mb-4">
                     <label
                         [checkIsRequiredControl]="'allowedFileExtensions'"
                         for="allowedFileExtensions"
@@ -53,7 +53,7 @@
                     </small>
                 </div>
 
-                <div class="folder-dialog-field">
+                <div class="flex flex-col gap-2 mb-4">
                     <label
                         [checkIsRequiredControl]="'defaultFileAssetType'"
                         for="defaultFileAssetType"
@@ -73,7 +73,7 @@
                         formControlName="defaultFileAssetType" />
                 </div>
 
-                <div class="folder-dialog-field">
+                <div class="flex flex-col gap-2 mb-4">
                     <label [checkIsRequiredControl]="'name'" for="name" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.name' | dm }}
                     </label>
@@ -84,12 +84,14 @@
                         formControlName="name" />
                 </div>
 
-                <div class="folder-dialog-field">
+                <div class="flex flex-col gap-2 mb-4">
                     <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
-                    <p class="folder-dialog-path">{{ $finalPath() }}</p>
+                    <p class="bg-gray-100 h-8 rounded-md px-2 flex items-center m-0">
+                        {{ $finalPath() }}
+                    </p>
                 </div>
 
-                <div class="folder-dialog-field">
+                <div class="flex flex-col gap-2 mb-4">
                     <label
                         [checkIsRequiredControl]="'showOnMenu'"
                         for="showOnMenu"
@@ -106,7 +108,7 @@
     </p-tabs>
 </div>
 
-<div class="folder-dialog-footer">
+<div class="flex justify-end gap-4 mt-4 px-6">
     <button
         pButton
         type="button"

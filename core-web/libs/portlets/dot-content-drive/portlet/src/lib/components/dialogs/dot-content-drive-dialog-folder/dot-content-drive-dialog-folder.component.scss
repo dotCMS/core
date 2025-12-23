@@ -1,6 +1,4 @@
-@use "../../../../../../../../dotcms-scss/shared/colors";
 @use "../../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../../dotcms-scss/shared/spacing";
 
 @use "variables" as *;
 
@@ -24,7 +22,7 @@
             display: none;
             transition: max-height common.$content-drive-animation-speed
                 common.$content-drive-animation-ease;
-            padding: 0 spacing.$spacing-4;
+            padding: 0 1.5rem;
         }
 
         .p-tabview-panel[aria-hidden="false"] {
@@ -41,36 +39,4 @@
             margin: 0;
         }
     }
-}
-
-.folder-dialog-tab-content {
-    display: flex;
-    flex-direction: column;
-    gap: spacing.$spacing-3;
-    margin-top: spacing.$spacing-3;
-}
-
-.folder-dialog-path {
-    background-color: colors.$color-palette-gray-100;
-    height: spacing.$spacing-5;
-    border-radius: 0.375rem; //6px
-    padding: 0 spacing.$spacing-1;
-    display: flex;
-    align-items: center;
-    margin: 0;
-}
-
-.folder-dialog-field {
-    display: flex;
-    flex-direction: column;
-    gap: spacing.$spacing-1;
-    margin-bottom: spacing.$spacing-3;
-}
-
-.folder-dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: spacing.$spacing-3;
-    margin-top: spacing.$spacing-3;
-    padding: 0 spacing.$spacing-4;
 }

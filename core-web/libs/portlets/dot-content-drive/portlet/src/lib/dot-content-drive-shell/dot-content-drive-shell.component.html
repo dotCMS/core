@@ -31,7 +31,9 @@
 <dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
 
 <div
-    class="tree-selector center-content"
+    class="tree-selector flex flex-col justify-center items-center text-xl font-semibold overflow-hidden transition-all duration-300 ease-in-out w-0 border-r border-gray-300"
+    [class.invisible]="!$treeExpanded()"
+    [class.visible]="$treeExpanded()"
     [class.expanded]="$treeExpanded()"
     data-testid="tree-selector">
     <dot-content-drive-sidebar
@@ -80,7 +82,7 @@
 }
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
-<div class="detail-view center-content"></div>
+<div class="detail-view flex flex-col justify-center items-center text-xl font-semibold"></div>
 <p-dialog
     [visible]="!!$dialog()"
     [header]="$dialog()?.header"

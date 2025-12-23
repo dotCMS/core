@@ -66,6 +66,8 @@
     grid-area: toolbar-group-top;
 
     grid-template-columns: repeat(2, minmax(4.5rem, 14rem)) 1fr;
+    gap: spacing.$spacing-1;
+
     .search-input {
         grid-column: 1 / 3;
     }
@@ -82,9 +84,5 @@
     grid-template-columns: repeat(3, minmax(4.5rem, 14rem)) 1fr;
     width: 100%;
     grid-area: toolbar-group-bottom;
-}
-
-.p-toolbar-group-top,
-.p-toolbar-group-bottom {
     gap: spacing.$spacing-1;
 }

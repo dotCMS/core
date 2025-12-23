@@ -16,7 +16,8 @@
     [showClear]="false"
     [scrollHeight]="MULTISELECT_SCROLL_HEIGHT"
     data-testid="content-type-field"
-    styleClass="p-multiselect-sm">
+    size="small"
+    class="w-full">
     <ng-template pTemplate="item" let-item>
         <div class="flex items-center gap-2 w-full">
             {{ item.name }}
@@ -24,7 +25,7 @@
     </ng-template>
     <ng-template pTemplate="footer">
         @if (fechingItems()) {
-            <div class="footer">
+            <div class="flex items-center justify-start py-2 px-3 text-[var(--gray-500)] gap-4">
                 <i class="pi pi-spin pi-spinner"></i>
                 <span>{{ 'content.drive.contenttype.search.state.label' | dm }}</span>
             </div>
