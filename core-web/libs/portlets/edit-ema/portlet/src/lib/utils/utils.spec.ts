@@ -339,6 +339,7 @@ describe('utils functions', () => {
 
             expect(result).toEqual({
                 didInsert: false,
+                errorCode: 'DUPLICATE_CONTENT',
                 pageContainers: [
                     {
                         identifier: 'test',
@@ -437,7 +438,7 @@ describe('utils functions', () => {
                         contentletsId: ['test123', '000'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
+                        maxContentlets: 2,
                         variantId: '1'
                     }
                 ]
