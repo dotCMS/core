@@ -79,7 +79,13 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
+import {
+    CONTAINER_INSERT_ERROR,
+    EDITOR_STATE,
+    NG_CUSTOM_EVENTS,
+    PALETTE_CLASSES,
+    UVE_STATUS
+} from '../shared/enums';
 import {
     ActionPayload,
     ClientData,
@@ -648,7 +654,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
 
             if (!didInsert) {
-                if (errorCode === 'CONTAINER_LIMIT_REACHED') {
+                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
                     this.handleContainerLimitReached(payload.container.maxContentlets);
                 } else {
                     this.handleDuplicatedContentlet();
@@ -675,7 +681,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
 
             if (!didInsert) {
-                if (errorCode === 'CONTAINER_LIMIT_REACHED') {
+                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
                     this.handleContainerLimitReached(payload.container.maxContentlets);
                 } else {
                     this.handleDuplicatedContentlet();
@@ -784,7 +790,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 });
 
                 if (!didInsert) {
-                    if (errorCode === 'CONTAINER_LIMIT_REACHED') {
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
                         this.handleContainerLimitReached(actionPayload.container.maxContentlets);
                     } else {
                         this.handleDuplicatedContentlet();
@@ -826,7 +832,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 });
 
                 if (!didInsert) {
-                    if (errorCode === 'CONTAINER_LIMIT_REACHED') {
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
                         this.handleContainerLimitReached(actionPayload.container.maxContentlets);
                     } else {
                         this.handleDuplicatedContentlet();
@@ -864,10 +870,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         take(1)
                     )
                     .subscribe((response) => {
-                        const { pageContainers, didInsert, errorCode } = insertContentletInContainer(response);
+                        const { pageContainers, didInsert, errorCode } =
+                            insertContentletInContainer(response);
 
                         if (!didInsert) {
-                            if (errorCode === 'CONTAINER_LIMIT_REACHED') {
+                            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
                                 this.handleContainerLimitReached(response.container.maxContentlets);
                             } else {
                                 this.handleDuplicatedContentlet();
@@ -1175,7 +1182,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.messageService.add({
             severity: 'warn',
             summary: this.dotMessageService.get(MESSAGE_KEY.CONTAINER_LIMIT.TITLE),
-            detail: this.dotMessageService.get(MESSAGE_KEY.CONTAINER_LIMIT.MESSAGE, maxContentlets.toString()),
+            detail: this.dotMessageService.get(
+                MESSAGE_KEY.CONTAINER_LIMIT.MESSAGE,
+                maxContentlets.toString()
+            ),
             life: 3000
         });
 

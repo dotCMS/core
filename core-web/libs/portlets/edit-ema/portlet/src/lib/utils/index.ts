@@ -23,7 +23,7 @@ import {
     DEFAULT_PERSONA,
     PERSONA_KEY
 } from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -56,20 +56,20 @@ export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
- *   errorCode?: 'CONTAINER_LIMIT_REACHED' | 'DUPLICATE_CONTENT';
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 export function insertContentletInContainer(action: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
-    errorCode?: 'CONTAINER_LIMIT_REACHED' | 'DUPLICATE_CONTENT';
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
 
     let didInsert = false;
-    let errorCode: 'CONTAINER_LIMIT_REACHED' | 'DUPLICATE_CONTENT' | undefined;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
@@ -92,7 +92,7 @@ export function insertContentletInContainer(action: ActionPayload): {
         if (areContainersEquals(pageContainer, container)) {
             // Check if content already exists (duplicate)
             if (pageContainer.contentletsId.includes(newContentletId)) {
-                errorCode = 'DUPLICATE_CONTENT';
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
                 return pageContainer;
             }
 
@@ -100,7 +100,7 @@ export function insertContentletInContainer(action: ActionPayload): {
             const maxContentlets = container.maxContentlets;
             if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
                 // Container is at or over its limit, don't add
-                errorCode = 'CONTAINER_LIMIT_REACHED';
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
                 return pageContainer;
             }
 
@@ -202,16 +202,16 @@ export function areContainersEquals(
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
- *   errorCode?: 'CONTAINER_LIMIT_REACHED' | 'DUPLICATE_CONTENT';
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 function insertPositionedContentletInContainer(payload: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
-    errorCode?: 'CONTAINER_LIMIT_REACHED' | 'DUPLICATE_CONTENT';
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     let didInsert = false;
-    let errorCode: 'CONTAINER_LIMIT_REACHED' | 'DUPLICATE_CONTENT' | undefined;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
@@ -235,7 +235,7 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
         if (areContainersEquals(pageContainer, container)) {
             // Check if content already exists (duplicate)
             if (pageContainer.contentletsId.includes(newContentletId)) {
-                errorCode = 'DUPLICATE_CONTENT';
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
                 return pageContainer;
             }
 
@@ -243,7 +243,7 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
             const maxContentlets = container.maxContentlets;
             if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
                 // Container is at or over its limit, don't add
-                errorCode = 'CONTAINER_LIMIT_REACHED';
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
                 return pageContainer;
             }
 

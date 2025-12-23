@@ -471,7 +471,12 @@ describe('utils functions', () => {
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
-                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
                 pageId: 'test',
                 language_id: 'test',
                 newContentletId: 'contentlet1',
@@ -506,7 +511,12 @@ describe('utils functions', () => {
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
-                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
                 pageId: 'test',
                 language_id: 'test',
                 newContentletId: 'contentlet2',
@@ -542,7 +552,12 @@ describe('utils functions', () => {
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
-                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
                 pageId: 'test',
                 language_id: 'test',
                 newContentletId: 'contentlet2',
@@ -577,7 +592,12 @@ describe('utils functions', () => {
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
-                contentlet: { identifier: 'contentlet1', inode: 'inode1', title: 'test', contentType: 'test' },
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
                 pageId: 'test',
                 language_id: 'test',
                 newContentletId: 'contentlet3',
