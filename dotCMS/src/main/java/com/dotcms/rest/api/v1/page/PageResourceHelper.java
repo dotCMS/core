@@ -249,7 +249,7 @@ public class PageResourceHelper implements Serializable {
             stylePropertiesMap.forEach((contentletId, styleProps) -> {
                 if (!contentIds.contains(contentletId)) {
                     errors.add(new ContentletStylingErrorEntity(
-                            "INVALID_CONTENTLET",
+                            "INVALID_CONTENTLET_REFERENCE",
                             "Could not define Style Properties for non-existing contentlet",
                             contentletId,
                             containerId,
