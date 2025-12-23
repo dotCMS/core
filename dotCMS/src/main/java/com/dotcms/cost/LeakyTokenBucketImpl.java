@@ -103,12 +103,13 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
         // we could throw an OutOfTokensException runtime exception here and
         // catch it higher up in the endpoints to deliver a custom error, killing the current request
         // otherwise, the next request will be blocked.
+        /*
 
-        if (tokensRemaining == 0 && !enabled) {
-            Logger.debug(this.getClass(),
-                    " - Token Bucket is empty.  This request would be rate limited if rate limiting was enabled.");
-
+        if (tokensRemaining == 0 && enabled) {
+            throw new OutOfTokensException();
         }
+        */
+
 
     }
 
