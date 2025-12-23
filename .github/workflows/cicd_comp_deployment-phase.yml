@@ -37,7 +37,14 @@ on:
         type: boolean
       publish-npm-sdk-libs:
         default: false
-        type: boolean        
+        type: boolean
+    outputs:
+      docker_tags:
+        description: 'Docker image tags that were built'
+        value: ${{ jobs.deployment.outputs.docker_tags }}
+      formatted_tags:
+        description: 'Formatted Docker tags for notifications'
+        value: ${{ jobs.deployment.outputs.formatted_tags }}
     secrets:
       DOCKER_USERNAME:
         required: false
@@ -67,6 +74,9 @@ jobs:
     # Use of Docker environments to enable per-deployment environment secrets
     # This allows for different secrets to be used based on the deployment environment
     environment: ${{ inputs.environment }}
+    outputs:
+      docker_tags: ${{ steps.docker_build.outputs.tags }}
+      formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
     steps:
       # Checkout the repository
       - uses: actions/checkout@v4
@@ -107,6 +117,21 @@ jobs:
           build_args: |
             DOTCMS_DOCKER_TAG=${{ inputs.environment }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+
+      # Format tags for Slack notifications
+      - name: Format Tags
+        id: format-tags
+        run: |
+          tags=''
+          tags_arr=( ${{ steps.docker_build.outputs.tags }} )
+
+          for tag in "${tags_arr[@]}"
+          do
+            [[ -n "${tags}" ]] && tags="${tags}, "
+            tags="${tags}\`${tag}\`"
+          done
+
+          echo "formatted_tags=${tags}" >> $GITHUB_OUTPUT
 
       # Build and push the dev Docker image (if required)
       - name: Build/Push Docker Dev Image

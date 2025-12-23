@@ -2,339 +2,363 @@ import {
     patchState,
     signalStoreFeature,
     withComputed,
+    withHooks,
     withMethods,
     withState
 } from '@ngrx/signals';
+import {
+    addEntities,
+    removeAllEntities,
+    updateAllEntities,
+    updateEntity,
+    withEntities
+} from '@ngrx/signals/entities';
 
-import { computed } from '@angular/core';
+import { computed, effect, inject } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
+import { DotLocalstorageService } from '@dotcms/data-access';
+import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { initialMenuSlice } from './menu.slice';
+import { initialMenuSlice, menuConfig, REPLACE_SECTIONS_MAP } from './menu.slice';
+
+const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
 /**
- * Custom Store Feature for managing menu state using PrimeNG MenuItem interface.
+ * Custom Store Feature for managing menu state using Entity Management.
  *
- * This feature provides state management for menu-related data including
- * menu items, expanded states, active items, and visibility. It works
- * seamlessly with PrimeNG's MenuItem structure.
+ * This feature provides state management for menu-related data using NgRx Signal Store
+ * entity management capabilities. It offers better performance and cleaner code compared
+ * to array-based state management.
  *
  * ## Features
- * - Manages menu items using PrimeNG's MenuItem interface
- * - Tracks active menu item by ID
- * - Manages expanded/collapsed submenus
- * - Provides methods for menu state manipulation
- * - Includes computed selectors for common use cases
+ * - Manages menu items as entities with HashMap for O(1) lookups
+ * - Single active item constraint (only one item can be active at a time)
+ * - Single open parent constraint (only one parent menu can be open at a time)
+ * - Manages navigation collapsed/expanded state
+ * - Provides computed selectors for grouped menus and active items
+ * - Persists navigation state to localStorage
  * - Full TypeScript support with strict typing
  *
+ * ## Constraints
+ * - Only one menu item can be active at any given time
+ * - Only one parent menu group can be open at any given time
+ * - Activating a new item automatically deactivates the previously active item
+ * - Opening a parent group automatically closes any other open parent group
  */
 export function withMenu() {
     return signalStoreFeature(
         withState(initialMenuSlice),
-        withComputed(({ menuItems, activeMenuItemId }) => ({
+        withEntities(menuConfig),
+        withComputed(({ menuItemsEntityMap, menuItemsEntities, openParentMenuId }) => {
             /**
-             * Computed signal that finds and returns the active menu item.
-             * Searches recursively through all menu items.
+             * Computed signal that returns menu items grouped by parent.
              *
-             * @returns The active MenuItem or null if not found
-             * ```
+             * @returns Array of MenuGroup objects with parent information and child items
              */
-            activeMenuItem: computed(() => {
-                const activeId = activeMenuItemId();
-                if (!activeId) return null;
+            const menuGroup = computed((): MenuGroup[] => {
+                const items = menuItemsEntities();
+                const currentOpenParentMenuId = openParentMenuId();
 
-                const findItem = (items: MenuItem[]): MenuItem | null => {
-                    for (const item of items) {
-                        if (item.id === activeId) return item;
-                        if (item.items) {
-                            const found = findItem(item.items);
-                            if (found) return found;
-                        }
-                    }
-                    return null;
-                };
+                // Group items by parentMenuId
+                const grouped = items.reduce<Record<string, MenuItemEntity[]>>((acc, item) => {
+                    const parentMenuId = item.parentMenuId;
+                    acc[parentMenuId] = acc[parentMenuId] || [];
+                    acc[parentMenuId].push(item);
+                    return acc;
+                }, {});
 
-                return findItem(menuItems());
-            }),
+                // Transform grouped object into array of MenuGroup
+                const groups = Object.entries(grouped).map(([parentMenuId, menuItems]) => {
+                    const firstItem = menuItems[0];
+                    return {
+                        id: parentMenuId,
+                        label: firstItem.parentMenuLabel,
+                        icon: firstItem.parentMenuIcon,
+                        menuItems: menuItems,
+                        isOpen: parentMenuId === currentOpenParentMenuId
+                    };
+                });
+                return groups;
+            });
 
             /**
-             * Computed signal that checks if a menu item is active.
+             * Computed signal that returns the currently active menu item.
              *
-             * @returns A function that takes a menu item ID and returns whether it's active
+             * @returns The active MenuItemEntity or null if no item is active
              */
-            isMenuItemActive: computed(() => (id: string) => activeMenuItemId() === id),
+            const activeMenuItem = computed((): MenuItemEntity | null => {
+                const items = menuItemsEntities();
+                return items.find((item) => item.active) || null;
+            });
 
             /**
-             * Computed signal that finds a menu item by ID.
+             * Computed signal that returns the entity map for direct lookups.
              *
-             * @returns A function that takes an ID and returns the MenuItem or null
+             * @returns Record of menu items keyed by ID
              */
-            findMenuItemById: computed(() => (id: string): MenuItem | null => {
-                const findItem = (items: MenuItem[]): MenuItem | null => {
-                    for (const item of items) {
-                        if (item.id === id) return item;
-                        if (item.items) {
-                            const found = findItem(item.items);
-                            if (found) return found;
-                        }
-                    }
-                    return null;
-                };
-
-                return findItem(menuItems());
-            }),
+            const entityMap = computed(() => menuItemsEntityMap());
 
             /**
-             * Computed signal that checks if a menu item is expanded.
+             * Computed signal that returns entity keys for debugging.
+             * Shows the ID (key) of each menu item entity.
              *
-             * @returns A function that takes a menu item ID and returns whether it's expanded
+             * @returns Array of entity keys (IDs)
              */
-            isMenuItemExpanded: computed(() => (id: string): boolean => {
-                const findItem = (items: MenuItem[]): boolean => {
-                    for (const item of items) {
-                        if (item.id === id) return item.expanded ?? false;
-                        if (item.items) {
-                            const result = findItem(item.items);
-                            if (item.id === id || result) return result;
-                        }
-                    }
-                    return false;
-                };
-
-                return findItem(menuItems());
-            }),
+            const entityKeys = computed(() => menuItemsEntities().map((item) => item.id));
 
             /**
-             * Computed signal that returns all visible menu items (recursively).
+             * Computed signal that returns the first menu item from the first menu group.
+             * Used for initial navigation when loading the application.
              *
-             * @returns Array of visible MenuItem objects
+             * @returns The first MenuItemEntity or null if no items exist
              */
-            visibleMenuItems: computed(() => {
-                const filterVisible = (items: MenuItem[]): MenuItem[] => {
-                    return items
-                        .filter((item) => item.visible !== false)
-                        .map((item) => ({
-                            ...item,
-                            items: item.items ? filterVisible(item.items) : undefined
-                        }));
-                };
+            const firstMenuItem = computed(() => {
+                const groups = menuGroup();
+                if (groups.length === 0) return null;
 
-                return filterVisible(menuItems());
-            }),
+                const firstGroup = groups[0];
+                return firstGroup.menuItems.length > 0 ? firstGroup.menuItems[0] : null;
+            });
 
+            const isGroupActive = computed(() => {
+                return menuGroup().some((group) => group.menuItems.some((item) => item.active));
+            });
+
+            return {
+                menuGroup,
+                activeMenuItem,
+                entityMap,
+                entityKeys,
+                firstMenuItem,
+                isGroupActive
+            };
+        }),
+
+        withMethods((store) => {
             /**
-             * Computed signal that returns the count of expanded menu items.
-             *
-             * @returns The number of expanded menu items
+             * Transforms DotMenu array into MenuItemEntity array.
+             * Flattens the hierarchical menu structure and adds menuLink property.
              */
-            expandedMenuItemsCount: computed(() => {
-                let count = 0;
-                const countExpanded = (items: MenuItem[]): void => {
-                    items.forEach((item) => {
-                        if (item.expanded) count++;
-                        if (item.items) countExpanded(item.items);
-                    });
-                };
-
-                countExpanded(menuItems());
-                return count;
-            }),
-
-            /**
-             * Computed signal that returns whether any menu items are expanded.
-             *
-             * @returns `true` if any menu items are expanded, `false` otherwise
-             */
-            hasExpandedMenuItems: computed(() => {
-                const hasExpanded = (items: MenuItem[]): boolean => {
-                    return items.some((item) => {
-                        if (item.expanded) return true;
-                        if (item.items) return hasExpanded(item.items);
-                        return false;
-                    });
-                };
-
-                return hasExpanded(menuItems());
-            }),
-
-            /**
-             * Computed signal that returns all menu items with children (parent items).
-             *
-             * @returns Array of MenuItem objects that have children
-             */
-            parentMenuItems: computed(() => {
-                const getParents = (items: MenuItem[]): MenuItem[] => {
-                    const parents: MenuItem[] = [];
-                    items.forEach((item) => {
-                        if (item.items && item.items.length > 0) {
-                            parents.push(item);
-                            parents.push(...getParents(item.items));
-                        }
-                    });
-                    return parents;
-                };
-
-                return getParents(menuItems());
-            })
-        })),
-        withMethods((store) => ({
-            /**
-             * Sets the menu items array.
-             *
-             * @param menuItems - Array of MenuItem objects
-             */
-            setMenuItems: (menuItems: MenuItem[]) => {
-                patchState(store, { menuItems });
-            },
-
-            /**
-             * Sets the active menu item ID.
-             *
-             * @param id - The ID of the menu item to set as active
-             */
-            setActiveMenuItemId: (id: string | null) => {
-                patchState(store, { activeMenuItemId: id });
-            },
-
-            /**
-             * Toggles the expanded state of a menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to toggle
-             */
-            toggleMenuItemExpanded: (id: string) => {
-                const toggleExpanded = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, expanded: !item.expanded };
-                        }
-                        if (item.items) {
-                            return { ...item, items: toggleExpanded(item.items) };
-                        }
-                        return item;
-                    });
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: toggleExpanded(state.menuItems)
-                }));
-            },
-
-            /**
-             * Expands a menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to expand
-             */
-            expandMenuItem: (id: string) => {
-                const expandItem = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, expanded: true };
-                        }
-                        if (item.items) {
-                            return { ...item, items: expandItem(item.items) };
-                        }
-                        return item;
-                    });
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: expandItem(state.menuItems)
-                }));
-            },
-
-            /**
-             * Collapses a menu item by ID.
-             * Works recursively through nested menu items.
-             *
-             * @param id - The ID of the menu item to collapse
-             */
-            collapseMenuItem: (id: string) => {
-                const collapseItem = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, expanded: false };
-                        }
-                        if (item.items) {
-                            return { ...item, items: collapseItem(item.items) };
-                        }
-                        return item;
-                    });
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: collapseItem(state.menuItems)
-                }));
-            },
-
-            /**
-             * Collapses all menu items recursively.
-             */
-            collapseAllMenuItems: () => {
-                const collapseAll = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => ({
+            const transformMenuToEntities = (menu: DotMenu[]): MenuItemEntity[] => {
+                return menu.flatMap((parent) =>
+                    parent.menuItems.map((item) => ({
                         ...item,
-                        expanded: false,
-                        items: item.items ? collapseAll(item.items) : undefined
-                    }));
-                };
-
-                patchState(store, (state) => ({
-                    menuItems: collapseAll(state.menuItems)
-                }));
-            },
+                        parentMenuId: parent.id,
+                        parentMenuLabel: parent.tabName,
+                        parentMenuIcon: parent.tabIcon,
+                        menuLink: item.angular ? item.url : `/c/${item.id}`
+                    }))
+                );
+            };
 
             /**
-             * Updates a specific menu item by ID.
-             * Works recursively through nested menu items.
+             * Loads menu items from DotMenu array.
+             * Transforms the menu structure and sets all entities.
+             * Clears and re-adds all entities to ensure reactivity works correctly.
              *
-             * @param id - The ID of the menu item to update
-             * @param updates - Partial MenuItem object with properties to update
-             *
-             * @example
-             * ```typescript
-             * store.updateMenuItem('menu-1', { disabled: true, badge: '5' });
-             * ```
+             * @param menu - Array of DotMenu objects
              */
-            updateMenuItem: (id: string, updates: Partial<MenuItem>) => {
-                const updateItem = (items: MenuItem[]): MenuItem[] => {
-                    return items.map((item) => {
-                        if (item.id === id) {
-                            return { ...item, ...updates };
-                        }
-                        if (item.items) {
-                            return { ...item, items: updateItem(item.items) };
-                        }
-                        return item;
+            const loadMenu = (menu: DotMenu[]) => {
+                const entities = transformMenuToEntities(menu);
+
+                // Clear all entities first, then add new ones
+                // This ensures all property changes are detected by signals
+                patchState(store, removeAllEntities(menuConfig), addEntities(entities, menuConfig));
+            };
+
+            /**
+             * Activates a menu item by its ID.
+             * Automatically deactivates any previously active item.
+             * Ensures only one item is active at a time.
+             *
+             * @param id - The ID of the menu item to activate
+             */
+            const activateMenuItem = (id: string) => {
+                // First, deactivate all items
+                patchState(
+                    store,
+                    updateAllEntities({ active: false }, menuConfig),
+                    updateEntity({ id, changes: { active: true } }, menuConfig)
+                );
+            };
+
+            /**
+             * Activates a menu item and opens its parent menu group.
+             * Ensures only one item is active and one parent menu group is open.
+             *
+             * @param menuItemId - The ID of the menu item to activate
+             * @param parentMenuId - The ID of the parent menu group to open
+             */
+            const activateMenuItemWithParent = (
+                menuItemId: string,
+                parentMenuId: string | null
+            ) => {
+                // Check if the menu item exists before attempting to activate it
+                const entityMap = store.entityMap();
+                if (!entityMap[menuItemId]) {
+                    return;
+                }
+
+                patchState(
+                    store,
+                    updateAllEntities({ active: false }, menuConfig),
+                    updateEntity({ id: menuItemId, changes: { active: true } }, menuConfig),
+                    { openParentMenuId: parentMenuId }
+                );
+            };
+
+            /**
+             * Toggles the open state of a parent menu group.
+             * If the specified parent menu group is already open, it closes.
+             * If another parent menu group is open, it closes and opens the specified one.
+             *
+             * @param parentMenuId - The ID of the parent menu group to toggle
+             */
+            const toggleParent = (parentMenuId: string) => {
+                const currentOpenId = store.openParentMenuId();
+                const newOpenId = currentOpenId === parentMenuId ? null : parentMenuId;
+                patchState(store, { openParentMenuId: newOpenId });
+            };
+
+            /**
+             * Closes all parent menu groups.
+             */
+            const closeAllParents = () => {
+                patchState(store, { openParentMenuId: null });
+            };
+
+            /**
+             * Toggles the navigation menu collapsed/expanded state.
+             */
+            const toggleNavigation = () => {
+                patchState(store, (state) => ({
+                    isNavigationCollapsed: !state.isNavigationCollapsed
+                }));
+            };
+
+            /**
+             * Collapses the navigation menu.
+             * Closes all parent menu groups when collapsing.
+             */
+            const collapseNavigation = () => {
+                patchState(store, {
+                    isNavigationCollapsed: true
+                });
+            };
+
+            /**
+             * Expands the navigation menu.
+             * Opens the parent menu group of the active item if there is one.
+             */
+            const expandNavigation = () => {
+                patchState(store, {
+                    isNavigationCollapsed: false
+                });
+
+                // Open the parent menu group of the active item if there is one
+                const activeItem = store.activeMenuItem();
+                if (activeItem) {
+                    patchState(store, { openParentMenuId: activeItem.parentMenuId });
+                }
+            };
+            /**
+             * Loads menu and sets active item based on current URL.
+             * Uses entity map to find the matching menu item without iterating keys.
+             *
+             * @param portletId - The ID of the menu item (portlet) to activate
+             * @param shortParentMenuId - The first 4 characters of the parent menu ID
+             */
+            const setActiveMenu = (
+                portletId: string,
+                shortParentMenuId: string,
+                bookmark?: boolean
+            ) => {
+                if (!portletId) {
+                    return;
+                }
+
+                // Check if portletId should be replaced according to REPLACE_SECTIONS_MAP
+                const resolvedPortletId = REPLACE_SECTIONS_MAP[portletId] || portletId;
+
+                // Direct lookup using the composite key
+                const entityMap = store.entityMap();
+                let compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
+                const item = entityMap[compositeKey];
+
+                // Fallback for missing shortParentMenuId cases like old bookmarks
+                if (bookmark) {
+                    const foundItem = Object.values(entityMap).find((item) => {
+                        return item.id === resolvedPortletId || item.id === portletId;
                     });
-                };
+                    if (foundItem) {
+                        compositeKey = `${foundItem.id}__${foundItem.parentMenuId?.substring(0, 4)}`;
+                        activateMenuItemWithParent(compositeKey, foundItem.parentMenuId);
+                    }
+                }
 
-                patchState(store, (state) => ({
-                    menuItems: updateItem(state.menuItems)
-                }));
-            },
+                if (item) {
+                    activateMenuItemWithParent(compositeKey, item.parentMenuId);
+                }
+            };
 
             /**
-             * Resets the menu state to initial values.
+             * Gets the page title based on the current URL.
+             * Searches through menu items to find a matching menuLink.
+             *
+             * @param url - The current URL to match against menu items
+             * @returns The label of the matching menu item, or empty string if not found
              */
-            resetMenuState: () => {
-                patchState(store, initialMenuSlice);
+            const getPageTitleByUrl = (url: string): string => {
+                const menuItems = store.menuItemsEntities();
+
+                // Find the menu item whose menuLink is contained in the URL
+                const matchingItem = menuItems.find((item) => url.indexOf(item.menuLink) >= 0);
+
+                return matchingItem?.label || '';
+            };
+            return {
+                loadMenu,
+                activateMenuItem,
+                activateMenuItemWithParent,
+                toggleParent,
+                closeAllParents,
+                toggleNavigation,
+                collapseNavigation,
+                expandNavigation,
+                setActiveMenu,
+                getPageTitleByUrl
+            };
+        }),
+
+        withHooks({
+            onInit(store) {
+                // Load navigation collapsed state from localStorage
+                const dotLocalstorageService = inject(DotLocalstorageService);
+
+                const savedMenuStatus = dotLocalstorageService.getItem<boolean>(DOTCMS_MENU_STATUS);
+                if (savedMenuStatus !== null) {
+                    patchState(store, {
+                        isNavigationCollapsed: savedMenuStatus !== false
+                    });
+                }
+
+                // Listen to localStorage changes for menu status
+                dotLocalstorageService
+                    .listen<boolean>(DOTCMS_MENU_STATUS)
+                    .subscribe((collapsed: boolean) => {
+                        if (collapsed) {
+                            store.collapseNavigation();
+                        } else {
+                            store.expandNavigation();
+                        }
+                    });
+
+                // Persist navigation collapsed state to localStorage whenever it changes
+                effect(() => {
+                    const isCollapsed = store.isNavigationCollapsed();
+                    dotLocalstorageService.setItem<boolean>(DOTCMS_MENU_STATUS, isCollapsed);
+                });
             }
-        }))
-        /**
-         * TODO: [FEATURE] Menu state persistence
-         * Add withHooks to persist menu state (expanded items, active item) to localStorage.
-         * This will restore the menu state when the user refreshes the page.
-         *
-         * Acceptance criteria:
-         * - Persist expanded menu items to localStorage on every state change
-         * - Persist active menu item ID to localStorage
-         * - Load persisted state on feature initialization
-         * - Handle edge cases (cleared storage, corrupted data)
-         *
-         * Consider creating a GitHub issue: #XXXXX for tracking if not completed in current PR.
-         * Related to: breadcrumb state persistence already implemented in breadcrumb.feature.ts
-         */
+        })
     );
 }

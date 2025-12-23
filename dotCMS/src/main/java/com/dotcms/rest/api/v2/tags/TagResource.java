@@ -10,6 +10,9 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.pagination.OrderDirection;
@@ -579,39 +582,106 @@ public class TagResource {
     }
 
     /**
-     * Deletes a Tag based on its ID.
+     * Deletes one or more tags based on their IDs.
+     * <p>For each tag, the user must have EDIT permission on all associated contentlets.
+     * Tags with no contentlet associations (orphan tags) are always allowed to be deleted.
+     * Returns a result showing which tags were successfully deleted and which failed.</p>
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagId    The ID of the Tag to delete.
+     * @param tagIds   The list of tag IDs to delete.
      *
-     * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
+     * @return A {@link ResponseEntityBulkResultView} containing success count and failures.
      */
+    @Operation(
+        summary = "Delete tags",
+        description = "Deletes one or more tags by their IDs. User must have EDIT permission on all contentlets associated with each tag."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Bulk delete result with success count and failures",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Invalid request - tagIds list is required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
-    @Path("/{tagId}")
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityBooleanView delete(@Context final HttpServletRequest request,
-                                            @Context final HttpServletResponse response,
-                                            @PathParam("tagId") final String tagId) throws DotDataException {
+    public ResponseEntityBulkResultView delete(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               @RequestBody(description = "List of tag IDs to delete", required = true,
+                                                          content = @Content(schema = @Schema(type = "array",
+                                                                                            description = "Array of tag IDs",
+                                                                                            example = "[\"tag-123\", \"tag-456\", \"tag-789\"]")))
+                                               final List<String> tagIds) {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is deleting tags by ID '%s'",user.getUserId(), tagId));
-        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
-        if (null == tag) {
 
-            final String errorMessage = Try.of(() -> LanguageUtil
-                    .get(user.getLocale(), "tag.id.not.found", tagId))
-                    .getOrElse(String.format("Tag with id %s wasn't found.",
-                            tagId)); //fallback message
-            Logger.error(TagResource.class, errorMessage);
-            throw new DoesNotExistException(errorMessage);
+        if (tagIds == null || tagIds.isEmpty()) {
+            throw new BadRequestException("Tag IDs list is required and cannot be empty");
         }
 
-        tagAPI.deleteTag(tag);
-        return new ResponseEntityBooleanView(true);
+        Logger.debug(TagResource.class, () -> String.format(
+            "User '%s' is deleting %d tag(s): %s",
+            user.getUserId(), tagIds.size(), tagIds
+        ));
+
+        // Phase 1: Check permissions for all tags
+        final List<String> tagsToDelete = new ArrayList<>();
+        final List<FailedResultView> failedToDelete = new ArrayList<>();
+
+        for (final String tagId : tagIds) {
+            try {
+                // Check if tag exists - skip silently if not (idempotent behavior)
+                final Tag tag = tagAPI.getTagByTagId(tagId);
+                if (tag == null || !UtilMethods.isSet(tag.getTagId())) {
+                    // Tag doesn't exist - desired end state already achieved, skip silently
+                    continue;
+                }
+
+                // Check permission without deleting
+                if (!tagAPI.canDeleteTag(user, tagId)) {
+                    failedToDelete.add(new FailedResultView(tagId,
+                            String.format("User lacks permission to delete tag '%s'", tagId)));
+                } else {
+                    tagsToDelete.add(tagId);
+                }
+
+            } catch (final Exception e) {
+                Logger.debug(TagResource.class, e.getMessage(), e);
+                failedToDelete.add(new FailedResultView(tagId, e.getMessage()));
+            }
+        }
+
+        // Phase 2: Bulk delete all permitted tags in a single operation
+        if (!tagsToDelete.isEmpty()) {
+            try {
+                tagAPI.deleteTags(tagsToDelete.toArray(new String[0]));
+            } catch (final DotDataException e) {
+                Logger.error(TagResource.class, "Error during bulk tag deletion: " + e.getMessage(), e);
+                // Move all tags from toDelete to failed
+                for (final String tagId : tagsToDelete) {
+                    failedToDelete.add(new FailedResultView(tagId, "Bulk delete failed: " + e.getMessage()));
+                }
+                tagsToDelete.clear();
+            }
+        }
+
+        Logger.debug(TagResource.class, () -> String.format(
+            "Bulk delete tags completed: %d deleted, %d failed",
+            tagsToDelete.size(), failedToDelete.size()
+        ));
+
+        return new ResponseEntityBulkResultView(
+                new BulkResultView((long) tagsToDelete.size(), 0L, failedToDelete));
     }
 
     /**

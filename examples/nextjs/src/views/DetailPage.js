@@ -12,7 +12,7 @@ import {
 
 import { useIsEditMode } from "@/hooks/isEditMode";
 import Footer from "@/components/footer/Footer";
-import Header from "@/components/Header";
+import Header from "@/components/header/Header";
 
 export function DetailPage({ pageContent }) {
     const [blockEditorClasses, setBlockEditorClasses] = useState(
@@ -78,22 +78,41 @@ export function DetailPage({ pageContent }) {
 
 const customRenderers = {
     Activity: (props) => {
-        const { title, description } = props.attrs?.data || {};
+        const { title, description, contentType } =
+            props.node.attrs?.data || {};
 
         return (
-            <div>
-                <h1>{title}</h1>
-                <p>{description}</p>
+            <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="line-clamp-2">{description}</p>
+                <p className="text-sm text-cyan-700">{contentType}</p>
             </div>
         );
     },
     Product: (props) => {
-        const { title, description } = props.attrs?.data || {};
+        const { title, description, contentType } =
+            props.node.attrs?.data || {};
 
         return (
-            <div>
-                <h1>{title}</h1>
-                <div dangerouslySetInnerHTML={{ __html: description }} />
+            <div className="p-6 mb-4 overflow-hidden rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <div
+                    className="line-clamp-2"
+                    dangerouslySetInnerHTML={{ __html: description }}
+                />
+                <p className="text-sm text-blue-500">{contentType}</p>
+            </div>
+        );
+    },
+    Destination: (props) => {
+        const { title, shortDescription, contentType } =
+            props.node.attrs?.data || {};
+
+        return (
+            <div className="p-6 mb-4 rounded-2xl bg-white shadow-lg">
+                <h2 className="text-2xl font-bold">{title}</h2>
+                <p className="line-clamp-2">{shortDescription}</p>
+                <p className="text-sm text-indigo-700">{contentType}</p>
             </div>
         );
     },
