@@ -12,12 +12,20 @@
 		selectLinkButton.addEventListener('click', () => {
 			DotCustomFieldApi.openBrowserModal({
 				header: 'Select a Page',
-				mimeTypes: [''],
+				params: {
+					showLinks: true,
+					showDotAssets: false,
+					showPages: true,
+					showFiles: false,
+					showFolders: false,
+					showWorking: false,
+					showArchived: false,
+					sortByDesc: true,
+				},
 				onClose: (result) => {
-					console.log('result', result);
-					if (result && result.pageURI) {
-						redirectURLBox.value = result.pageURI;
-						redirectField.setValue(result.pageURI);
+					if (result && result.url) {
+						redirectURLBox.value = result.url;
+						redirectField.setValue(result.url);
 					}
 				}
 			});
