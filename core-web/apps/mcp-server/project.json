@@ -65,6 +65,13 @@
                 }
             }
         },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": ["apps/mcp-server/**/*.ts", "apps/mcp-server/**/*.tsx", "apps/mcp-server/**/*.js", "apps/mcp-server/**/*.jsx"]
+            }
+        },
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],

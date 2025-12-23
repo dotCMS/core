@@ -95,7 +95,7 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from getSites', (done) => {
             const error = new Error('Failed to fetch sites');
-            dotSiteService.getSites.mockReturnValue(throwError(() => error));
+            dotSiteService.getSites.mockReturnValue(throwError(error));
 
             spectator.service.getSitesTreePath({ filter: 'test' }).subscribe({
                 next: () => fail('should have thrown an error'),
@@ -257,17 +257,17 @@ describe('DotBrowsingService', () => {
         });
 
         it('should handle folders with only parent (no children)', (done) => {
-            const mockFolders: DotFolder[] = [
-                createFakeFolder({
-                    id: 'parent-1',
-                    hostName: 'example.com',
-                    path: '/parent',
-                    addChildrenAllowed: true
-                })
-            ];
+            const expectedParent = createFakeFolder({
+                id: 'parent-1',
+                hostName: 'example.com',
+                path: '/parent',
+                addChildrenAllowed: true
+            });
+
+            const mockFolders: DotFolder[] = [expectedParent];
 
             const mockResponse: DotCMSAPIResponse<DotFolder[]> = {
-                entity: mockFolders,
+                entity: [...mockFolders],
                 errors: [],
                 messages: [],
                 permissions: [],
@@ -275,12 +275,13 @@ describe('DotBrowsingService', () => {
             };
 
             spectator.service.getFoldersTreeNode('example.com/parent').subscribe((result) => {
-                expect(result.parent).toEqual(mockFolders[0]);
+                expect(result.parent).toEqual(expectedParent);
                 expect(result.folders).toEqual([]);
                 done();
             });
 
             const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
+            expect(req.request.body).toEqual({ path: '//example.com/parent' });
             req.flush(mockResponse);
         });
 
@@ -416,11 +417,26 @@ describe('DotBrowsingService', () => {
         it('should handle empty path segments', (done) => {
             const path = 'example.com//level1';
 
-            const folders: DotFolder[] = [
+            const rootFolders: DotFolder[] = [
                 createFakeFolder({
                     id: 'root',
                     hostName: 'example.com',
                     path: '/',
+                    addChildrenAllowed: true
+                }),
+                createFakeFolder({
+                    id: 'level1-folder',
+                    hostName: 'example.com',
+                    path: '/level1',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const level1Folders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'parent-level1',
+                    hostName: 'example.com',
+                    path: '/level1',
                     addChildrenAllowed: true
                 })
             ];
@@ -430,9 +446,22 @@ describe('DotBrowsingService', () => {
                 done();
             });
 
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            req.flush({
-                entity: folders,
+            // Expect 2 requests (one for each path segment: example.com/ and example.com/level1/)
+            const requests = spectator.controller.match(
+                (req) => req.url === FOLDER_API_ENDPOINT && req.method === HttpMethod.POST
+            );
+            expect(requests).toHaveLength(2);
+
+            // Flush responses in reverse order (as paths are reversed)
+            requests[0].flush({
+                entity: level1Folders,
+                errors: [],
+                messages: [],
+                permissions: [],
+                i18nMessagesMap: {}
+            });
+            requests[1].flush({
+                entity: rootFolders,
                 errors: [],
                 messages: [],
                 permissions: [],
@@ -490,7 +519,7 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from getCurrentSite', (done) => {
             const error = new Error('Failed to fetch current site');
-            dotSiteService.getCurrentSite.mockReturnValue(throwError(() => error));
+            dotSiteService.getCurrentSite.mockReturnValue(throwError(error));
 
             spectator.service.getCurrentSiteAsTreeNodeItem().subscribe({
                 next: () => fail('should have thrown an error'),
@@ -562,10 +591,12 @@ describe('DotBrowsingService', () => {
 
         it('should handle errors from getContentByFolder', (done) => {
             const error = new Error('Failed to fetch content');
-            dotSiteService.getContentByFolder.mockReturnValue(throwError(() => error));
+            dotSiteService.getContentByFolder.mockReturnValue(throwError(error));
 
             spectator.service.getContentByFolder({ folderId: '123' }).subscribe({
-                next: () => fail('should have thrown an error'),
+                next: () => {
+                    fail('should have thrown an error');
+                },
                 error: (err) => {
                     expect(err).toBe(error);
                     done();
