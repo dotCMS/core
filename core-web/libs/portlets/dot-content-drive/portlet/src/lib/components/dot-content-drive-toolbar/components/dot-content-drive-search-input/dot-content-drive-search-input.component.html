@@ -7,7 +7,7 @@
         placeholder="Search"
         autocomplete="off"
         [formControl]="searchControl" />
-    @if (searchControl.value) {
+    @if ($title().length) {
         <p-inputIcon
             styleClass="pi pi-times p-input-icon-right"
             data-testId="search-icon-clear"

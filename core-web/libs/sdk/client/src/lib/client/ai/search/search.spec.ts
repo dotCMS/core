@@ -384,6 +384,29 @@ describe('AISearch', () => {
             expect(result).toEqual(mockResponseData);
         });
 
+        it('should handle onfulfilled callback returning void', async () => {
+            const prompt = 'void callback test';
+            const indexName = 'default';
+            const params: DotCMSAISearchParams = {};
+            const aiSearch = new AISearch(
+                config,
+                requestOptions,
+                new FetchHttpClient(),
+                prompt,
+                indexName,
+                params
+            );
+
+            const onfulfilledCallback = jest.fn((_data) => {
+                // Callback with no return statement (returns void)
+            });
+
+            const result = await aiSearch.then(onfulfilledCallback);
+
+            expect(onfulfilledCallback).toHaveBeenCalledWith(mockResponseData);
+            expect(result).toEqual(mockResponseData);
+        });
+
         it('should handle special characters in prompt', async () => {
             const prompt = 'search: "artificial intelligence" AND machine learning';
             const indexName = 'default';
