@@ -39,7 +39,14 @@
 <div class="mx-auto" style="max-width: 50rem">
     <!-- Loading State -->
     @if (loading()) {
-        <div class="flex flex-column gap-6">
+        <div
+            class="flex flex-column gap-6"
+            role="status"
+            aria-live="polite"
+            [attr.aria-busy]="loading()">
+            <span class="visually-hidden">
+                {{ 'usage.dashboard.loading' | dm }}
+            </span>
             <!-- Site Metrics: 3 cards -->
             <div>
                 <h2>
@@ -116,7 +123,10 @@
         <p-card>
             <ng-template pTemplate="header">
                 <h3 class="flex align-items-center gap-2">
-                    <i class="pi pi-exclamation-triangle"></i>
+                    <i
+                        class="pi pi-exclamation-triangle"
+                        role="img"
+                        [attr.aria-label]="'usage.dashboard.error.title' | dm"></i>
                     <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
                 </h3>
             </ng-template>

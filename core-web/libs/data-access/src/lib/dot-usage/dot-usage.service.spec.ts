@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, HttpErrorResponse } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
@@ -73,10 +73,13 @@ describe('DotUsageService', () => {
     });
 
     it('should handle HTTP errors', (done) => {
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (error) => {
                 expect(error.status).toBe(401);
+                errorSpy.mockRestore();
                 done();
             }
         });
@@ -86,10 +89,13 @@ describe('DotUsageService', () => {
     });
 
     it('should handle server errors', (done) => {
+        const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (error) => {
                 expect(error.status).toBe(500);
+                errorSpy.mockRestore();
                 done();
             }
         });
