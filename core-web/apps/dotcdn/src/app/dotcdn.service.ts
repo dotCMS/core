@@ -1,19 +1,25 @@
 import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { mergeMap, pluck } from 'rxjs/operators';
+import { mergeMap, map } from 'rxjs/operators';
 
-import { CoreWebService, ResponseView, SiteService } from '@dotcms/dotcms-js';
+import { DotCMSResponse, SiteService } from '@dotcms/dotcms-js';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
+
+// Response type for endpoints that return bodyJsonObject
+interface DotBodyJsonResponse<T> {
+    bodyJsonObject: T;
+}
 
 @Injectable({
     providedIn: 'root'
 })
 export class DotCDNService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private siteService = inject(SiteService);
 
     /**
@@ -25,16 +31,17 @@ export class DotCDNService {
      */
     requestStats(period: string): Observable<DotCDNStats> {
         return this.siteService.getCurrentSite().pipe(
-            pluck('identifier'),
+            map((site) => site.identifier),
             mergeMap((hostId: string) => {
                 const dateTo = format(new Date(), 'yyyy-MM-dd');
                 const dateFrom = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
 
-                return this.coreWebService.requestView<DotCDNStats>({
-                    url: `/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`
-                });
-            }),
-            pluck('entity')
+                return this.http
+                    .get<
+                        DotCMSResponse<DotCDNStats>
+                    >(`/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`)
+                    .pipe(map((response) => response.entity));
+            })
         );
     }
 
@@ -42,30 +49,30 @@ export class DotCDNService {
      *  Makes a request to purge the cache
      *
      * @param {string[]} [urls=[]]
-     * @return {Observable<ResponseView<PurgeReturnData>>}
+     * @return {Observable<PurgeReturnData>}
      * @memberof DotCDNService
      */
     purgeCache(urls?: string[]): Observable<PurgeReturnData> {
         return this.siteService.getCurrentSite().pipe(
-            pluck('identifier'),
+            map((site) => site.identifier),
             mergeMap((hostId: string) => {
                 return this.purgeUrlRequest({ hostId, invalidateAll: false, urls });
             }),
-            pluck('bodyJsonObject')
+            map((response) => response.bodyJsonObject)
         );
     }
 
     /**
      *  Makes a request to purge the cache
      *
-     * @return {Observable<ResponseView<PurgeReturnData>>}
+     * @return {Observable<PurgeReturnData>}
      * @memberof DotCDNService
      */
     purgeCacheAll(): Observable<PurgeReturnData> {
         return this.siteService.getCurrentSite().pipe(
-            pluck('identifier'),
+            map((site) => site.identifier),
             mergeMap((hostId: string) => this.purgeUrlRequest({ hostId, invalidateAll: true })),
-            pluck('bodyJsonObject')
+            map((response) => response.bodyJsonObject)
         );
     }
 
@@ -73,10 +80,8 @@ export class DotCDNService {
         urls = [],
         invalidateAll,
         hostId
-    }: PurgeUrlOptions): Observable<ResponseView<PurgeReturnData>> {
-        return this.coreWebService.requestView<PurgeReturnData>({
-            url: `/api/v1/dotcdn`,
-            method: 'DELETE',
+    }: PurgeUrlOptions): Observable<DotBodyJsonResponse<PurgeReturnData>> {
+        return this.http.request<DotBodyJsonResponse<PurgeReturnData>>('DELETE', '/api/v1/dotcdn', {
             body: JSON.stringify({
                 urls,
                 invalidateAll,

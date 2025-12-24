@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { flatMap, map, pluck } from 'rxjs/operators';
+import { mergeMap, map } from 'rxjs/operators';
 
-import { CoreWebService, Site } from '@dotcms/dotcms-js';
+import { DotCMSResponse, Site } from '@dotcms/dotcms-models';
 
 import { DotFolder, DotPageSelectorItem } from '../models/dot-page-selector.models';
 
@@ -34,12 +35,17 @@ export interface DotPageAsset {
     url?: string;
 }
 
+// Response type for ES search endpoints that return contentlets
+interface DotESSearchResponse<T> {
+    contentlets: T;
+}
+
 const PAGE_BASE_TYPE_QUERY = '+basetype:5';
 const MAX_RESULTS_SIZE = 20;
 
 @Injectable()
 export class DotPageSelectorService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Get page asset by identifier
@@ -49,28 +55,24 @@ export class DotPageSelectorService {
      * @memberof DotPageSelectorService
      */
     getPageById(identifier: string): Observable<DotPageSelectorItem> {
-        return this.coreWebService
-            .requestView<DotPageAsset[]>({
-                body: this.getRequestBodyQuery(
-                    `${PAGE_BASE_TYPE_QUERY} +identifier:*${identifier}*`
-                ),
-                method: 'POST',
-                url: '/api/es/search'
-            })
+        return this.http
+            .post<
+                DotESSearchResponse<DotPageAsset[]>
+            >('/api/es/search', this.getRequestBodyQuery(`${PAGE_BASE_TYPE_QUERY} +identifier:*${identifier}*`))
             .pipe(
-                pluck('contentlets'),
-                flatMap((pages: DotPageAsset[]) => pages),
+                map((response) => response.contentlets),
+                mergeMap((pages: DotPageAsset[]) => pages),
                 map((page: DotPageAsset) => this.getPageSelectorItem(page))
             );
     }
 
     getPages(path: string): Observable<DotPageSelectorItem[]> {
-        return this.coreWebService
-            .requestView<DotPageAsset[]>({
-                url: `v1/page/search?path=${path}&onlyLiveSites=true&live=false`
-            })
+        return this.http
+            .get<
+                DotCMSResponse<DotPageAsset[]>
+            >(`/api/v1/page/search?path=${path}&onlyLiveSites=true&live=false`)
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 map((pages: DotPageAsset[]) => {
                     return pages.map((page: DotPageAsset) => this.getPageSelectorItem(page));
                 })
@@ -78,14 +80,10 @@ export class DotPageSelectorService {
     }
 
     getFolders(path: string): Observable<DotPageSelectorItem[]> {
-        return this.coreWebService
-            .requestView<DotFolder[]>({
-                url: `/api/v1/folder/byPath`,
-                body: { path: path },
-                method: 'POST'
-            })
+        return this.http
+            .post<DotCMSResponse<DotFolder[]>>('/api/v1/folder/byPath', { path: path })
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 map((folder: DotFolder[]) => {
                     return folder.map((folder: DotFolder) => this.getPageSelectorItem(folder));
                 })
@@ -96,16 +94,12 @@ export class DotPageSelectorService {
         let query = '+contenttype:Host -identifier:SYSTEM_HOST +host.hostName:';
         query += specific ? this.getSiteName(param) : `*${this.getSiteName(param)}*`;
 
-        return this.coreWebService
-            .requestView<Site[]>({
-                body: param
-                    ? this.getRequestBodyQuery(query)
-                    : this.getRequestBodyQuery(query, MAX_RESULTS_SIZE),
-                method: 'POST',
-                url: '/api/es/search'
-            })
+        return this.http
+            .post<
+                DotESSearchResponse<Site[]>
+            >('/api/es/search', param ? this.getRequestBodyQuery(query) : this.getRequestBodyQuery(query, MAX_RESULTS_SIZE))
             .pipe(
-                pluck('contentlets'),
+                map((response) => response.contentlets),
                 map((sites: Site[]) => {
                     return sites.map((site) => {
                         return { payload: site, label: `//${site.hostname}/` };

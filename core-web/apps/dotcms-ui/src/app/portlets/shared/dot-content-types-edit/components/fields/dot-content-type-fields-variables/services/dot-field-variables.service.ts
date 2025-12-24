@@ -1,18 +1,18 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSResponse, DotFieldVariable } from '@dotcms/dotcms-models';
 
 /**
  * Provide method to handle with the Field Variables
  */
 @Injectable()
 export class DotFieldVariablesService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Load Field Variables.
@@ -21,11 +21,11 @@ export class DotFieldVariablesService {
      * @memberof FieldVariablesService
      */
     load(field: DotCMSContentTypeField): Observable<DotFieldVariable[]> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<
+                DotCMSResponse<DotFieldVariable[]>
+            >(`/api/v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -37,18 +37,17 @@ export class DotFieldVariablesService {
      * @memberof DotFieldVariablesService
      */
     save(field: DotCMSContentTypeField, variable: DotFieldVariable): Observable<DotFieldVariable> {
-        return this.coreWebService
-            .requestView({
-                body: {
+        return this.http
+            .post<DotCMSResponse<DotFieldVariable>>(
+                `/api/v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`,
+                {
                     key: variable.key,
                     value: variable.value,
                     clazz: 'com.dotcms.contenttype.model.field.FieldVariable',
                     fieldId: field.id
-                },
-                method: 'POST',
-                url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables`
-            })
-            .pipe(pluck('entity'));
+                }
+            )
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -63,11 +62,10 @@ export class DotFieldVariablesService {
         field: DotCMSContentTypeField,
         variable: DotFieldVariable
     ): Observable<DotFieldVariable> {
-        return this.coreWebService
-            .requestView({
-                method: 'DELETE',
-                url: `v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables/id/${variable.id}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .delete<
+                DotCMSResponse<DotFieldVariable>
+            >(`/api/v1/contenttype/${field.contentTypeId}/fields/id/${field.id}/variables/id/${variable.id}`)
+            .pipe(map((response) => response.entity));
     }
 }

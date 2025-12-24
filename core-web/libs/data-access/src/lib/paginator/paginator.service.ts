@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { take, map } from 'rxjs/operators';
 
-import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 export enum OrderDirection {
     ASC = 1,
@@ -34,7 +35,7 @@ interface PaginatiorServiceParams {
  */
 @Injectable()
 export class PaginatorService {
-    private readonly coreWebService = inject(CoreWebService);
+    private readonly http = inject(HttpClient);
 
     public static readonly LINK_HEADER_NAME = 'Link';
     public static readonly PAGINATION_PER_PAGE_HEADER_NAME = 'X-Pagination-Per-Page';
@@ -158,39 +159,42 @@ export class PaginatorService {
      */
     // tslint:disable-next-line:cyclomatic-complexity
     public get<T>(url?: string): Observable<T> {
-        const params: Map<string, unknown> = {
+        const params: Record<string, unknown> = {
             ...this.getParams(),
             ...this.getObjectFromMap(this.extraParams)
         };
 
         const cleanURL = this.sanitizeQueryParams(url, params);
+        const requestUrl = cleanURL || this.url;
 
-        return this.coreWebService
-            .requestView({
-                params,
-                url: cleanURL || this.url
+        return this.http
+            .get<DotCMSResponse<T>>(requestUrl, {
+                params: params as Record<string, string>,
+                observe: 'response'
             })
             .pipe(
-                map((response: ResponseView<T>) => {
-                    this.setLinks(response.header(PaginatorService.LINK_HEADER_NAME));
+                map((response: HttpResponse<DotCMSResponse<T>>) => {
+                    this.setLinks(response.headers.get(PaginatorService.LINK_HEADER_NAME));
                     this.paginationPerPage = parseInt(
-                        response.header(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME),
+                        response.headers.get(PaginatorService.PAGINATION_PER_PAGE_HEADER_NAME),
                         10
                     );
                     this.currentPage = parseInt(
-                        response.header(PaginatorService.PAGINATION_CURRENT_PAGE_HEADER_NAME),
+                        response.headers.get(PaginatorService.PAGINATION_CURRENT_PAGE_HEADER_NAME),
                         10
                     );
                     this.maxLinksPage = parseInt(
-                        response.header(PaginatorService.PAGINATION_MAX_LINK_PAGES_HEADER_NAME),
+                        response.headers.get(
+                            PaginatorService.PAGINATION_MAX_LINK_PAGES_HEADER_NAME
+                        ),
                         10
                     );
                     this.totalRecords = parseInt(
-                        response.header(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME),
+                        response.headers.get(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME),
                         10
                     );
 
-                    return response.entity;
+                    return response.body.entity;
                 }),
                 take(1)
             );
@@ -325,11 +329,11 @@ export class PaginatorService {
      * Use to remove repeated query params in the url
      * @private
      * @param {string} [url='']
-     * @param {Map<string, unknown>} params
+     * @param {Record<string, unknown>} params
      * @return {*}  {string}
      * @memberof PaginatorService
      */
-    private sanitizeQueryParams(url = '', params: Map<string, unknown>): string {
+    private sanitizeQueryParams(url = '', params: Record<string, unknown>): string {
         const urlArr = url?.split('?');
         const baseUrl = urlArr[0];
         const queryParams = urlArr[1];

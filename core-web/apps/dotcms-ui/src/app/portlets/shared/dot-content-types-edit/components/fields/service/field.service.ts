@@ -1,11 +1,15 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSResponse
+} from '@dotcms/dotcms-models';
 
 import { FIELD_ICONS } from '../content-types-fields-list/content-types-fields-icon-map';
 import { FieldType } from '../models';
@@ -15,7 +19,7 @@ import { FieldType } from '../models';
  */
 @Injectable()
 export class FieldService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Get the field types
@@ -24,11 +28,9 @@ export class FieldService {
      * @memberof FieldService
      */
     loadFieldTypes(): Observable<FieldType[]> {
-        return this.coreWebService
-            .requestView({
-                url: 'v1/fieldTypes'
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<FieldType[]>>('/api/v1/fieldTypes')
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -42,15 +44,11 @@ export class FieldService {
         contentTypeId: string,
         fields: DotCMSContentTypeLayoutRow[]
     ): Observable<DotCMSContentTypeLayoutRow[]> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    layout: fields
-                },
-                method: 'PUT',
-                url: `v3/contenttype/${contentTypeId}/fields/move`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .put<
+                DotCMSResponse<DotCMSContentTypeLayoutRow[]>
+            >(`/api/v3/contenttype/${contentTypeId}/fields/move`, { layout: fields })
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -65,15 +63,15 @@ export class FieldService {
         contentTypeId: string,
         fields: DotCMSContentTypeField[]
     ): Observable<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }> {
-        return this.coreWebService
-            .requestView({
+        return this.http
+            .request<
+                DotCMSResponse<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>
+            >('DELETE', `/api/v3/contenttype/${contentTypeId}/fields`, {
                 body: {
                     fieldsID: fields.map((field: DotCMSContentTypeField) => field.id)
-                },
-                method: 'DELETE',
-                url: `v3/contenttype/${contentTypeId}/fields`
+                }
             })
-            .pipe(pluck('entity'));
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -99,14 +97,10 @@ export class FieldService {
         contentTypeId: string,
         field: DotCMSContentTypeField
     ): Observable<DotCMSContentTypeLayoutRow[]> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    field: field
-                },
-                method: 'PUT',
-                url: `v3/contenttype/${contentTypeId}/fields/${field.id}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .put<
+                DotCMSResponse<DotCMSContentTypeLayoutRow[]>
+            >(`/api/v3/contenttype/${contentTypeId}/fields/${field.id}`, { field: field })
+            .pipe(map((response) => response.entity));
     }
 }

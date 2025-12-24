@@ -1,31 +1,27 @@
 import { Observable } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService, ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotAccountService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Updates user data
      *
      * @param {DotAccountUser} user
-     * @returns {Observable<ResponseView>}
+     * @returns {Observable<DotCMSResponse<unknown>>}
      * @memberof DotAccountService
      */
-    updateUser(user: DotAccountUser): Observable<ResponseView> {
-        return this.coreWebService.requestView({
-            body: user,
-            method: 'PUT',
-            url: 'v1/users/current'
-        });
+    updateUser(user: DotAccountUser): Observable<DotCMSResponse<unknown>> {
+        return this.http.put<DotCMSResponse<unknown>>('/api/v1/users/current', user);
     }
 
     /**
@@ -35,14 +31,11 @@ export class DotAccountService {
      * @memberof DotAccountService
      */
     addStarterPage(): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: '/api/v1/toolgroups/gettingstarted/_addtouser'
-            })
+        return this.http
+            .put<DotCMSResponse<string>>('/api/v1/toolgroups/gettingstarted/_addtouser', {})
             .pipe(
                 take(1),
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
@@ -59,14 +52,11 @@ export class DotAccountService {
      * @memberof DotAccountService
      */
     removeStarterPage(): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: '/api/v1/toolgroups/gettingstarted/_removefromuser'
-            })
+        return this.http
+            .put<DotCMSResponse<string>>('/api/v1/toolgroups/gettingstarted/_removefromuser', {})
             .pipe(
                 take(1),
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),

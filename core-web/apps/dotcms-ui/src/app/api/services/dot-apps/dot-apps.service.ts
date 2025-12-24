@@ -1,21 +1,21 @@
 import { Observable } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotApp,
     DotAppsExportConfiguration,
     DotAppsImportConfiguration,
-    DotAppsSaveData
+    DotAppsSaveData,
+    DotCMSResponse
 } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
 
-const appsUrl = `v1/apps`;
+const appsUrl = '/api/v1/apps';
 
 /**
  * Provide util methods to get apps in the system.
@@ -24,7 +24,7 @@ const appsUrl = `v1/apps`;
  */
 @Injectable()
 export class DotAppsService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
@@ -36,19 +36,15 @@ export class DotAppsService {
     get(filter?: string): Observable<DotApp[] | null> {
         const url = filter ? `${appsUrl}?filter=${filter}` : appsUrl;
 
-        return this.coreWebService
-            .requestView<DotApp[]>({
-                url
+        return this.http.get<DotCMSResponse<DotApp[]>>(url).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => null)
+                );
             })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
-                })
-            );
+        );
     }
 
     /**
@@ -58,19 +54,15 @@ export class DotAppsService {
      * @memberof DotAppsService
      */
     getConfigurationList(appKey: string): Observable<DotApp | null> {
-        return this.coreWebService
-            .requestView({
-                url: `${appsUrl}/${appKey}`
+        return this.http.get<DotCMSResponse<DotApp>>(`${appsUrl}/${appKey}`).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => null)
+                );
             })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
-                })
-            );
+        );
     }
 
     /**
@@ -81,19 +73,15 @@ export class DotAppsService {
      * @memberof DotAppsService
      */
     getConfiguration(appKey: string, id: string): Observable<DotApp | null> {
-        return this.coreWebService
-            .requestView({
-                url: `${appsUrl}/${appKey}/${id}`
+        return this.http.get<DotCMSResponse<DotApp>>(`${appsUrl}/${appKey}/${id}`).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => null)
+                );
             })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
-                })
-            );
+        );
     }
 
     /**
@@ -109,16 +97,12 @@ export class DotAppsService {
         id: string,
         params: DotAppsSaveData
     ): Observable<string | null> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    ...params
-                },
-                method: 'POST',
-                url: `${appsUrl}/${appKey}/${id}`
+        return this.http
+            .post<DotCMSResponse<string>>(`${appsUrl}/${appKey}/${id}`, {
+                ...params
             })
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),
@@ -137,7 +121,7 @@ export class DotAppsService {
     exportConfiguration(conf: DotAppsExportConfiguration): Promise<string | null> {
         let fileName = '';
 
-        return fetch(`/api/${appsUrl}/export`, {
+        return fetch(`${appsUrl}/export`, {
             method: 'POST',
             cache: 'no-cache',
             headers: {
@@ -179,22 +163,15 @@ export class DotAppsService {
         formData.append('json', JSON.stringify(conf.json));
         formData.append('file', conf.file);
 
-        return this.coreWebService
-            .requestView<string>({
-                url: `/api/${appsUrl}/import`,
-                body: formData,
-                headers: { 'Content-Type': 'multipart/form-data' },
-                method: 'POST'
+        return this.http.post<DotCMSResponse<string>>(`${appsUrl}/import`, formData).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map((err) => err.status.toString())
+                );
             })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map((err) => err.status.toString())
-                    );
-                })
-            );
+        );
     }
 
     /**
@@ -205,20 +182,15 @@ export class DotAppsService {
      * @memberof DotAppsService
      */
     deleteConfiguration(appKey: string, hostId: string): Observable<string | null> {
-        return this.coreWebService
-            .requestView({
-                method: 'DELETE',
-                url: `${appsUrl}/${appKey}/${hostId}`
+        return this.http.delete<DotCMSResponse<string>>(`${appsUrl}/${appKey}/${hostId}`).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => null)
+                );
             })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
-                })
-            );
+        );
     }
 
     /**
@@ -228,19 +200,14 @@ export class DotAppsService {
      * @memberof DotAppsService
      */
     deleteAllConfigurations(appKey: string): Observable<string | null> {
-        return this.coreWebService
-            .requestView({
-                method: 'DELETE',
-                url: `${appsUrl}/${appKey}`
+        return this.http.delete<DotCMSResponse<string>>(`${appsUrl}/${appKey}`).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => null)
+                );
             })
-            .pipe(
-                pluck('entity'),
-                catchError((error: HttpErrorResponse) => {
-                    return this.httpErrorManagerService.handle(error).pipe(
-                        take(1),
-                        map(() => null)
-                    );
-                })
-            );
+        );
     }
 }

@@ -3,11 +3,10 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
+import { DotActionBulkResult, DotCMSResponse, DotTemplate } from '@dotcms/dotcms-models';
 
 export const TEMPLATE_API_URL = '/api/v1/templates/';
 
@@ -18,9 +17,8 @@ export const TEMPLATE_API_URL = '/api/v1/templates/';
  */
 @Injectable()
 export class DotTemplatesService {
-    private coreWebService = inject(CoreWebService);
-    private httpErrorManagerService = inject(DotHttpErrorManagerService);
     private http = inject(HttpClient);
+    private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
      * Return a list of templates.
@@ -28,7 +26,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     get(): Observable<DotTemplate[]> {
-        return this.request<DotTemplate[]>({ url: TEMPLATE_API_URL });
+        return this.request<DotTemplate[]>('GET', TEMPLATE_API_URL);
     }
 
     /**
@@ -42,9 +40,7 @@ export class DotTemplatesService {
     getById(id: string, version = 'working'): Observable<DotTemplate> {
         const url = `${TEMPLATE_API_URL}${id}/${version}`;
 
-        return this.request<DotTemplate>({
-            url
-        });
+        return this.request<DotTemplate>('GET', url);
     }
 
     /**
@@ -57,9 +53,7 @@ export class DotTemplatesService {
     getFiltered(filter: string): Observable<DotTemplate[]> {
         const url = `${TEMPLATE_API_URL}?filter=${filter}`;
 
-        return this.request<DotTemplate[]>({
-            url
-        });
+        return this.request<DotTemplate[]>('GET', url);
     }
 
     /**
@@ -70,11 +64,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     create(values: DotTemplate): Observable<DotTemplate> {
-        return this.request<DotTemplate>({
-            method: 'POST',
-            url: TEMPLATE_API_URL,
-            body: values
-        });
+        return this.request<DotTemplate>('POST', TEMPLATE_API_URL, values);
     }
 
     /**
@@ -83,11 +73,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     update(values: DotTemplate): Observable<DotTemplate> {
-        return this.request<DotTemplate>({
-            method: 'PUT',
-            url: TEMPLATE_API_URL,
-            body: values
-        });
+        return this.request<DotTemplate>('PUT', TEMPLATE_API_URL, values);
     }
 
     /**
@@ -98,10 +84,10 @@ export class DotTemplatesService {
      */
     saveAndPublish(values: DotTemplate): Observable<DotTemplate> {
         return this.http
-            .put<DotTemplate>(`${TEMPLATE_API_URL}_savepublish`, {
+            .put<DotCMSResponse<DotTemplate>>(`${TEMPLATE_API_URL}_savepublish`, {
                 ...values
             })
-            .pipe(pluck('entity'));
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -111,11 +97,7 @@ export class DotTemplatesService {
      * @memberof DotTemplatesService
      */
     delete(identifiers: string[]): Observable<DotActionBulkResult> {
-        return this.request<DotActionBulkResult>({
-            method: 'DELETE',
-            url: TEMPLATE_API_URL,
-            body: identifiers
-        });
+        return this.request<DotActionBulkResult>('DELETE', TEMPLATE_API_URL, identifiers);
     }
 
     /**
@@ -127,11 +109,7 @@ export class DotTemplatesService {
     unArchive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_unarchive`;
 
-        return this.request<DotActionBulkResult>({
-            method: 'PUT',
-            url,
-            body: identifiers
-        });
+        return this.request<DotActionBulkResult>('PUT', url, identifiers);
     }
 
     /**
@@ -143,11 +121,7 @@ export class DotTemplatesService {
     archive(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_archive`;
 
-        return this.request<DotActionBulkResult>({
-            method: 'PUT',
-            url,
-            body: identifiers
-        });
+        return this.request<DotActionBulkResult>('PUT', url, identifiers);
     }
 
     /**
@@ -159,11 +133,7 @@ export class DotTemplatesService {
     unPublish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_unpublish`;
 
-        return this.request<DotActionBulkResult>({
-            method: 'PUT',
-            url,
-            body: identifiers
-        });
+        return this.request<DotActionBulkResult>('PUT', url, identifiers);
     }
 
     /**
@@ -175,11 +145,7 @@ export class DotTemplatesService {
     publish(identifiers: string[]): Observable<DotActionBulkResult> {
         const url = `${TEMPLATE_API_URL}_publish`;
 
-        return this.request<DotActionBulkResult>({
-            method: 'PUT',
-            url,
-            body: identifiers
-        });
+        return this.request<DotActionBulkResult>('PUT', url, identifiers);
     }
 
     /**
@@ -191,14 +157,31 @@ export class DotTemplatesService {
     copy(identifier: string): Observable<DotTemplate> {
         const url = `${TEMPLATE_API_URL}${identifier}/_copy`;
 
-        return this.request<DotTemplate>({ method: 'PUT', url });
+        return this.request<DotTemplate>('PUT', url);
     }
 
-    private request<T>(options: DotRequestOptionsArgs): Observable<T> {
-        const response$ = this.coreWebService.requestView<T>(options);
+    private request<T>(method: string, url: string, body?: unknown): Observable<T> {
+        let response$: Observable<DotCMSResponse<T>>;
+
+        switch (method) {
+            case 'GET':
+                response$ = this.http.get<DotCMSResponse<T>>(url);
+                break;
+            case 'POST':
+                response$ = this.http.post<DotCMSResponse<T>>(url, body);
+                break;
+            case 'PUT':
+                response$ = this.http.put<DotCMSResponse<T>>(url, body || {});
+                break;
+            case 'DELETE':
+                response$ = this.http.request<DotCMSResponse<T>>('DELETE', url, { body });
+                break;
+            default:
+                response$ = this.http.get<DotCMSResponse<T>>(url);
+        }
 
         return response$.pipe(
-            pluck('entity'),
+            map((response) => response.entity),
             catchError((error: HttpErrorResponse) => {
                 return this.httpErrorManagerService.handle(error).pipe(
                     take(1),

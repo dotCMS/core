@@ -1,11 +1,16 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotDevice } from '@dotcms/dotcms-models';
+
+// Response type for content search endpoints that return contentlets
+interface DotContentSearchResponse<T> {
+    contentlets: T;
+}
 
 /**
  * Provide util methods to get the Devices & dimensions.
@@ -14,7 +19,7 @@ import { DotDevice } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotDevicesService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Return available devices.
@@ -22,17 +27,17 @@ export class DotDevicesService {
      * @memberof DotDevicesService
      */
     get(): Observable<DotDevice[]> {
-        return this.coreWebService
-            .requestView({
-                url: [
-                    'api',
-                    'content',
-                    'respectFrontendRoles/false',
-                    'render/false',
-                    'query/+contentType:previewDevice +live:true +deleted:false +working:true',
-                    'limit/40/orderby/title'
-                ].join('/')
-            })
-            .pipe(pluck('contentlets'));
+        const url = [
+            '/api',
+            'content',
+            'respectFrontendRoles/false',
+            'render/false',
+            'query/+contentType:previewDevice +live:true +deleted:false +working:true',
+            'limit/40/orderby/title'
+        ].join('/');
+
+        return this.http
+            .get<DotContentSearchResponse<DotDevice[]>>(url)
+            .pipe(map((response) => response.contentlets));
     }
 }
