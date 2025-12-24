@@ -3,11 +3,10 @@ import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+
+import { DotUsageService, UsageSummary } from '@dotcms/data-access';
 
 import { DotUsageShellComponent } from './dot-usage-shell.component';
-
-import { DotUsageService, UsageSummary } from '../services/dot-usage.service';
 
 describe('DotUsageShellComponent', () => {
     let spectator: Spectator<DotUsageShellComponent>;
@@ -48,13 +47,9 @@ describe('DotUsageShellComponent', () => {
     };
 
     const mockService = {
-        summary: signal<UsageSummary | null>(null),
-        loading: signal<boolean>(false),
-        error: signal<string | null>(null),
-        errorStatus: signal<number | null>(null),
         getSummary: jest.fn().mockReturnValue(of(mockSummary)),
         refresh: jest.fn().mockReturnValue(of(mockSummary)),
-        reset: jest.fn()
+        getErrorMessage: jest.fn().mockReturnValue('usage.dashboard.error.generic')
     };
 
     const createComponent = createComponentFactory({
@@ -77,9 +72,9 @@ describe('DotUsageShellComponent', () => {
     });
 
     it('should display loading state', () => {
-        // Mock loading state
-        usageService.loading.set(true);
-        usageService.summary.set(null);
+        // Set component loading state
+        spectator.component.loading.set(true);
+        spectator.component.summary.set(null);
 
         spectator.detectChanges();
 
@@ -88,8 +83,8 @@ describe('DotUsageShellComponent', () => {
 
     it('should display error state', () => {
         const errorMessage = 'Failed to load data';
-        usageService.loading.set(false);
-        usageService.error.set(errorMessage);
+        spectator.component.loading.set(false);
+        spectator.component.error.set(errorMessage);
 
         spectator.detectChanges();
 
@@ -97,9 +92,9 @@ describe('DotUsageShellComponent', () => {
     });
 
     it('should display data when loaded', () => {
-        usageService.loading.set(false);
-        usageService.summary.set(mockSummary);
-        usageService.error.set(null);
+        spectator.component.loading.set(false);
+        spectator.component.summary.set(mockSummary);
+        spectator.component.error.set(null);
 
         spectator.detectChanges();
 
@@ -119,8 +114,8 @@ describe('DotUsageShellComponent', () => {
     });
 
     it('should handle retry button click', () => {
-        usageService.loading.set(false);
-        usageService.error.set('Some error');
+        spectator.component.loading.set(false);
+        spectator.component.error.set('Some error');
         spectator.detectChanges();
 
         const retryButton = spectator.query('[data-testid="retry-button"]');
@@ -131,7 +126,8 @@ describe('DotUsageShellComponent', () => {
 
         spectator.dispatchFakeEvent(retryButton, 'onClick');
 
-        expect(usageService.reset).toHaveBeenCalled();
+        expect(spectator.component.summary()).toBeNull();
+        expect(spectator.component.error()).toBeNull();
         expect(usageService.getSummary).toHaveBeenCalled();
     });
 
@@ -143,16 +139,23 @@ describe('DotUsageShellComponent', () => {
 
     it('should handle service errors gracefully', () => {
         const errorSpy = jest.spyOn(console, 'error').mockImplementation();
-        usageService.getSummary = jest.fn().mockReturnValue(throwError('Network error'));
+        const httpError: { status: number; statusText: string } = {
+            status: 500,
+            statusText: 'Internal Server Error'
+        };
+        usageService.getSummary = jest.fn().mockReturnValue(throwError(() => httpError));
+        usageService.getErrorMessage = jest.fn().mockReturnValue('usage.dashboard.error.serverError');
 
         spectator.component.loadData();
 
-        expect(errorSpy).toHaveBeenCalledWith('Failed to load usage data:', 'Network error');
+        expect(errorSpy).toHaveBeenCalledWith('Failed to load usage data:', httpError);
+        expect(spectator.component.error()).toBe('usage.dashboard.error.serverError');
+        expect(spectator.component.loading()).toBe(false);
         errorSpy.mockRestore();
     });
 
     it('should show correct metric values', () => {
-        usageService.summary.set(mockSummary);
+        spectator.component.summary.set(mockSummary);
         spectator.detectChanges();
 
         const totalSitesCard = spectator.query('[data-testid="site-COUNT_OF_SITES-card"]');

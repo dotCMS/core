@@ -7,9 +7,8 @@ import { MessagesModule } from 'primeng/messages';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotUsageService, MetricData, UsageSummary } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-
-import { DotUsageService, MetricData } from '../services/dot-usage.service';
 
 @Component({
     selector: 'lib-dot-usage-shell',
@@ -29,26 +28,36 @@ import { DotUsageService, MetricData } from '../services/dot-usage.service';
 export class DotUsageShellComponent implements OnInit {
     private readonly usageService = inject(DotUsageService);
 
-    // Reactive state from service
-    readonly summary = this.usageService.summary;
-    readonly loading = this.usageService.loading;
-    readonly error = this.usageService.error;
-    readonly errorStatus = this.usageService.errorStatus;
+    // UI state managed by component
+    readonly summary = signal<UsageSummary | null>(null);
+    readonly loading = signal<boolean>(false);
+    readonly error = signal<string | null>(null);
+    readonly errorStatus = signal<number | null>(null);
 
     // Computed values for display
     readonly hasData = computed(() => this.summary() !== null);
     readonly lastUpdated = signal<Date | null>(null);
+
     ngOnInit(): void {
         this.loadData();
     }
 
     loadData(): void {
+        this.loading.set(true);
+        this.error.set(null);
+        this.errorStatus.set(null);
+
         this.usageService.getSummary().subscribe({
-            next: () => {
-                // Data is automatically updated via signals
+            next: (summary) => {
+                this.summary.set(summary);
+                this.loading.set(false);
                 this.lastUpdated.set(new Date());
             },
             error: (error) => {
+                const errorMessage = this.usageService.getErrorMessage(error);
+                this.error.set(errorMessage);
+                this.errorStatus.set(error.status || null);
+                this.loading.set(false);
                 console.error('Failed to load usage data:', error);
             }
         });
@@ -59,7 +68,9 @@ export class DotUsageShellComponent implements OnInit {
     }
 
     onRetry(): void {
-        this.usageService.reset();
+        this.summary.set(null);
+        this.error.set(null);
+        this.errorStatus.set(null);
         this.loadData();
     }
 

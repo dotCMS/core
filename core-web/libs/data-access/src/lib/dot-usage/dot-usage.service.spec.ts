@@ -64,9 +64,6 @@ describe('DotUsageService', () => {
 
         service.getSummary().subscribe((summary) => {
             expect(summary).toEqual(mockSummary);
-            expect(service.summary()).toEqual(mockSummary);
-            expect(service.loading()).toBe(false);
-            expect(service.error()).toBeNull();
             done();
         });
 
@@ -78,10 +75,8 @@ describe('DotUsageService', () => {
     it('should handle HTTP errors', (done) => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
-            error: (_error) => {
-                expect(service.error()).toBe('usage.dashboard.error.unauthorized');
-                expect(service.loading()).toBe(false);
-                expect(service.summary()).toBeNull();
+            error: (error) => {
+                expect(error.status).toBe(401);
                 done();
             }
         });
@@ -93,9 +88,8 @@ describe('DotUsageService', () => {
     it('should handle server errors', (done) => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
-            error: (_error) => {
-                expect(service.error()).toBe('usage.dashboard.error.serverError');
-                expect(service.loading()).toBe(false);
+            error: (error) => {
+                expect(error.status).toBe(500);
                 done();
             }
         });
@@ -104,101 +98,57 @@ describe('DotUsageService', () => {
         req.flush('Internal Server Error', { status: 500, statusText: 'Internal Server Error' });
     });
 
-    it('should handle forbidden errors', (done) => {
-        service.getSummary().subscribe({
-            next: () => fail('Should have failed'),
-            error: (_error) => {
-                expect(service.error()).toBe('usage.dashboard.error.forbidden');
-                expect(service.loading()).toBe(false);
-                done();
-            }
-        });
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+    it('should get error message for 401', () => {
+        const error = { status: 401 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.unauthorized');
     });
 
-    it('should handle network timeout errors', (done) => {
-        service.getSummary().subscribe({
-            next: () => fail('Should have failed'),
-            error: (_error) => {
-                expect(service.error()).toBe('usage.dashboard.error.timeout');
-                expect(service.loading()).toBe(false);
-                done();
-            }
-        });
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush('Request Timeout', { status: 408, statusText: 'Request Timeout' });
+    it('should get error message for 403', () => {
+        const error = { status: 403 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.forbidden');
     });
 
-    it('should handle unknown errors', (done) => {
-        service.getSummary().subscribe({
-            next: () => fail('Should have failed'),
-            error: (_error) => {
-                expect(service.error()).toBe('usage.dashboard.error.generic');
-                expect(service.loading()).toBe(false);
-                done();
-            }
-        });
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.error(new ProgressEvent('error'));
+    it('should get error message for 404', () => {
+        const error = { status: 404 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.notFound');
     });
 
-    it('should handle custom error messages', (done) => {
-        const customErrorMessage = 'Custom service error message';
-
-        service.getSummary().subscribe({
-            next: () => fail('Should have failed'),
-            error: (_error) => {
-                expect(service.error()).toBe(customErrorMessage);
-                expect(service.loading()).toBe(false);
-                done();
-            }
-        });
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush({ message: customErrorMessage }, { status: 400, statusText: 'Bad Request' });
+    it('should get error message for 408', () => {
+        const error = { status: 408 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.timeout');
     });
 
-    it('should maintain loading state during request', () => {
-        expect(service.loading()).toBe(false);
-
-        service.getSummary().subscribe();
-        expect(service.loading()).toBe(true);
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush({ entity: mockSummary });
-
-        expect(service.loading()).toBe(false);
+    it('should get error message for 500', () => {
+        const error = { status: 500 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.serverError');
     });
 
-    it('should clear error state when making new request', () => {
-        // Set initial error state
-        service.error.set('Previous error');
-        expect(service.error()).toBe('Previous error');
-
-        service.getSummary().subscribe();
-
-        expect(service.error()).toBeNull();
-
-        const req = httpMock.expectOne('/api/v1/usage/summary');
-        req.flush({ entity: mockSummary });
+    it('should get error message for 502', () => {
+        const error = { status: 502 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.badGateway');
     });
 
-    it('should reset state', () => {
-        // Set some state first
-        service.summary.set(mockSummary);
-        service.loading.set(true);
-        service.error.set('Some error');
+    it('should get error message for 503', () => {
+        const error = { status: 503 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.serviceUnavailable');
+    });
 
-        // Reset
-        service.reset();
+    it('should get error message for unknown status', () => {
+        const error = { status: 418 } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.requestFailed');
+    });
 
-        expect(service.summary()).toBeNull();
-        expect(service.loading()).toBe(false);
-        expect(service.error()).toBeNull();
+    it('should get error message from error.error.message', () => {
+        const error = {
+            error: { message: 'Custom error message' },
+            status: 400
+        } as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('Custom error message');
+    });
+
+    it('should get generic error message when no status', () => {
+        const error = {} as HttpErrorResponse;
+        expect(service.getErrorMessage(error)).toBe('usage.dashboard.error.generic');
     });
 
     it('should refresh data', (done) => {
@@ -245,3 +195,4 @@ describe('DotUsageService', () => {
         req.flush({ entity: invalidResponse });
     });
 });
+
