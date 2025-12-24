@@ -8,31 +8,35 @@ describe('DotUsageService', () => {
     let httpMock: HttpTestingController;
 
     const mockSummary: UsageSummary = {
-        contentMetrics: {
-            totalContent: 1500,
-            contentTypes: 25,
-            recentlyEdited: 230,
-            contentTypesWithWorkflows: 18,
-            lastContentEdited: '2024-01-15'
-        },
-        siteMetrics: {
-            totalSites: 5,
-            activeSites: 4,
-            templates: 12,
-            siteAliases: 8
-        },
-        userMetrics: {
-            activeUsers: 45,
-            totalUsers: 60,
-            recentLogins: 12,
-            lastLogin: '2024-01-15T10:30:00Z'
-        },
-        systemMetrics: {
-            languages: 3,
-            workflowSchemes: 2,
-            workflowSteps: 14,
-            liveContainers: 9,
-            builderTemplates: 6
+        metrics: {
+            content: {
+                COUNT_CONTENT: {
+                    name: 'COUNT_CONTENT',
+                    value: 1500,
+                    displayLabel: 'usage.metric.COUNT_CONTENT'
+                }
+            },
+            site: {
+                COUNT_OF_SITES: {
+                    name: 'COUNT_OF_SITES',
+                    value: 5,
+                    displayLabel: 'usage.metric.COUNT_OF_SITES'
+                }
+            },
+            user: {
+                COUNT_OF_USERS: {
+                    name: 'COUNT_OF_USERS',
+                    value: 60,
+                    displayLabel: 'usage.metric.COUNT_OF_USERS'
+                }
+            },
+            system: {
+                COUNT_LANGUAGES: {
+                    name: 'COUNT_LANGUAGES',
+                    value: 3,
+                    displayLabel: 'usage.metric.COUNT_LANGUAGES'
+                }
+            }
         },
         lastUpdated: '2024-01-15T15:30:00Z'
     };
@@ -75,7 +79,7 @@ describe('DotUsageService', () => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
-                expect(service.error()).toBe('You are not authorized to view this data.');
+                expect(service.error()).toBe('usage.dashboard.error.unauthorized');
                 expect(service.loading()).toBe(false);
                 expect(service.summary()).toBeNull();
                 done();
@@ -90,7 +94,7 @@ describe('DotUsageService', () => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
-                expect(service.error()).toBe('Server error occurred. Please try again later.');
+                expect(service.error()).toBe('usage.dashboard.error.serverError');
                 expect(service.loading()).toBe(false);
                 done();
             }
@@ -104,7 +108,7 @@ describe('DotUsageService', () => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
-                expect(service.error()).toBe('You do not have permission to access usage data.');
+                expect(service.error()).toBe('usage.dashboard.error.forbidden');
                 expect(service.loading()).toBe(false);
                 done();
             }
@@ -118,7 +122,7 @@ describe('DotUsageService', () => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
-                expect(service.error()).toBe('Request timed out. Please try again.');
+                expect(service.error()).toBe('usage.dashboard.error.timeout');
                 expect(service.loading()).toBe(false);
                 done();
             }
@@ -132,9 +136,7 @@ describe('DotUsageService', () => {
         service.getSummary().subscribe({
             next: () => fail('Should have failed'),
             error: (_error) => {
-                expect(service.error()).toBe(
-                    'Failed to load usage data. Please check your connection and try again.'
-                );
+                expect(service.error()).toBe('usage.dashboard.error.generic');
                 expect(service.loading()).toBe(false);
                 done();
             }

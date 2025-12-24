@@ -13,31 +13,35 @@ describe('DotUsageShellComponent', () => {
     let usageService: DotUsageService;
 
     const mockSummary: UsageSummary = {
-        contentMetrics: {
-            totalContent: 1500,
-            contentTypes: 25,
-            recentlyEdited: 230,
-            contentTypesWithWorkflows: 18,
-            lastContentEdited: '2024-01-15'
-        },
-        siteMetrics: {
-            totalSites: 5,
-            activeSites: 4,
-            templates: 12,
-            siteAliases: 8
-        },
-        userMetrics: {
-            activeUsers: 45,
-            totalUsers: 60,
-            recentLogins: 12,
-            lastLogin: '2024-01-15T10:30:00Z'
-        },
-        systemMetrics: {
-            languages: 3,
-            workflowSchemes: 2,
-            workflowSteps: 14,
-            liveContainers: 9,
-            builderTemplates: 6
+        metrics: {
+            content: {
+                COUNT_CONTENT: {
+                    name: 'COUNT_CONTENT',
+                    value: 1500,
+                    displayLabel: 'usage.metric.COUNT_CONTENT'
+                }
+            },
+            site: {
+                COUNT_OF_SITES: {
+                    name: 'COUNT_OF_SITES',
+                    value: 5,
+                    displayLabel: 'usage.metric.COUNT_OF_SITES'
+                }
+            },
+            user: {
+                COUNT_OF_USERS: {
+                    name: 'COUNT_OF_USERS',
+                    value: 60,
+                    displayLabel: 'usage.metric.COUNT_OF_USERS'
+                }
+            },
+            system: {
+                COUNT_LANGUAGES: {
+                    name: 'COUNT_LANGUAGES',
+                    value: 3,
+                    displayLabel: 'usage.metric.COUNT_LANGUAGES'
+                }
+            }
         },
         lastUpdated: '2024-01-15T15:30:00Z'
     };
@@ -46,6 +50,7 @@ describe('DotUsageShellComponent', () => {
         summary: signal<UsageSummary | null>(null),
         loading: signal<boolean>(false),
         error: signal<string | null>(null),
+        errorStatus: signal<number | null>(null),
         getSummary: jest.fn().mockReturnValue(of(mockSummary)),
         refresh: jest.fn().mockReturnValue(of(mockSummary)),
         reset: jest.fn()
@@ -78,7 +83,6 @@ describe('DotUsageShellComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query('.usage-skeleton')).toBeTruthy();
         expect(spectator.query('p-skeleton')).toBeTruthy();
     });
 
@@ -89,8 +93,6 @@ describe('DotUsageShellComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query('.usage-error')).toBeTruthy();
-        expect(spectator.query('p-messages')).toBeTruthy();
         expect(spectator.query('[data-testid="retry-button"]')).toBeTruthy();
     });
 
@@ -101,15 +103,18 @@ describe('DotUsageShellComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query('.usage-content')).toBeTruthy();
-        expect(spectator.query('[data-testid="total-sites-card"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="total-content-card"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="total-users-card"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="languages-card"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="site-COUNT_OF_SITES-card"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="content-COUNT_CONTENT-card"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="user-COUNT_OF_USERS-card"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="system-COUNT_LANGUAGES-card"]')).toBeTruthy();
     });
 
     it('should handle refresh button click', () => {
-        spectator.click('[data-testid="refresh-button"]');
+        jest.clearAllMocks();
+        const refreshButton = spectator.query('[data-testid="refresh-button"]');
+        expect(refreshButton).toBeTruthy();
+
+        spectator.dispatchFakeEvent(refreshButton, 'onClick');
         expect(usageService.getSummary).toHaveBeenCalled();
     });
 
@@ -124,7 +129,7 @@ describe('DotUsageShellComponent', () => {
         // Reset the mocks to clear previous calls
         jest.clearAllMocks();
 
-        spectator.click('[data-testid="retry-button"]');
+        spectator.dispatchFakeEvent(retryButton, 'onClick');
 
         expect(usageService.reset).toHaveBeenCalled();
         expect(usageService.getSummary).toHaveBeenCalled();
@@ -150,10 +155,10 @@ describe('DotUsageShellComponent', () => {
         usageService.summary.set(mockSummary);
         spectator.detectChanges();
 
-        const totalSitesCard = spectator.query('[data-testid="total-sites-card"]');
+        const totalSitesCard = spectator.query('[data-testid="site-COUNT_OF_SITES-card"]');
         expect(totalSitesCard?.textContent).toContain('5');
 
-        const totalContentCard = spectator.query('[data-testid="total-content-card"]');
+        const totalContentCard = spectator.query('[data-testid="content-COUNT_CONTENT-card"]');
         expect(totalContentCard?.textContent).toContain('1.5K');
     });
 });
