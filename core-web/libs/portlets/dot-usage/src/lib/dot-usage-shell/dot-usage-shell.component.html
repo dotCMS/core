@@ -1,3 +1,18 @@
+<p-messages severity="info" data-testid="analytics-message">
+    <ng-template pTemplate="content">
+        <div class="flex align-items-center justify-content-between gap-2 w-full">
+            <div class="flex align-items-center gap-2">
+                <i class="pi pi-info-circle"></i>
+                <span data-testid="message-content">
+                    {{ 'analytics.feature.state' | dm }}
+                    <b>{{ 'development' | dm }}</b>
+                </span>
+            </div>
+
+        </div>
+    </ng-template>
+</p-messages>
+
 <p-toolbar>
     <div class="p-toolbar-group-start">
         @if (lastUpdated()) {
