@@ -5,7 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { MessagesModule } from 'primeng/messages';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TooltipModule } from 'primeng/tooltip';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -19,8 +19,8 @@ import { DotUsageService, MetricData } from '../services/dot-usage.service';
         CardModule,
         MessagesModule,
         SkeletonModule,
-        TooltipModule,
-        DotMessagePipe
+        DotMessagePipe,
+        ToolbarModule
     ],
     templateUrl: './dot-usage-shell.component.html',
     styleUrl: './dot-usage-shell.component.scss',
