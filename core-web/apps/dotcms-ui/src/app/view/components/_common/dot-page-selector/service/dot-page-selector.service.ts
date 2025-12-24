@@ -5,7 +5,8 @@ import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, map } from 'rxjs/operators';
 
-import { DotCMSResponse, Site } from '@dotcms/dotcms-models';
+import { Site } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotFolder, DotPageSelectorItem } from '../models/dot-page-selector.models';
 

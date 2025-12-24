@@ -2,12 +2,12 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { ApiRoot, UserModel, LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
+import { ApiRoot, UserModel, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotCurrentUser } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { AddToBundleService } from './add-to-bundle.service';
 
@@ -20,9 +20,9 @@ describe('AddToBundleService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 ApiRoot,
                 UserModel,
                 LoggerService,
@@ -66,7 +66,7 @@ describe('AddToBundleService', () => {
             done();
         });
 
-        const req = httpMock.expectOne('api/bundle/getunsendbundles/userid/1234');
+        const req = httpMock.expectOne('/api/bundle/getunsendbundles/userid/1234');
         expect(req.request.method).toBe('GET');
         req.flush(mockResponse);
     });

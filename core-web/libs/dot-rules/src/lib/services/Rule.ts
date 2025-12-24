@@ -379,7 +379,10 @@ export class RuleService {
         return this.http
             .post<{
                 id: string;
-            }>(`/api/v1/sites/${siteId}${this._rulesEndpointUrl}`, RuleService.fromClientRuleTransformFn(body))
+            }>(
+                `/api/v1/sites/${siteId}${this._rulesEndpointUrl}`,
+                RuleService.fromClientRuleTransformFn(body)
+            )
             .pipe(
                 map((result) => {
                     body.key = result['id'];
