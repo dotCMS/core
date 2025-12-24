@@ -1,5 +1,13 @@
 <p-toolbar>
-    <div class="p-toolbar-group-end w-full flex justify-content-end">
+    <div class="p-toolbar-group-start">
+        @if (lastUpdated()) {
+            <span class="text-color-secondary">
+                {{ 'usage.dashboard.lastUpdated' | dm }}:
+                {{ lastUpdated()! | date: 'short' }}
+            </span>
+        }
+    </div>
+    <div class="p-toolbar-group-end">
         <p-button
             icon="pi pi-refresh"
             [label]="'analytics.dashboard.refresh.button' | dm"

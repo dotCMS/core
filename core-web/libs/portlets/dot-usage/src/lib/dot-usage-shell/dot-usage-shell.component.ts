@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, computed, signal } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -37,6 +37,7 @@ export class DotUsageShellComponent implements OnInit {
 
     // Computed values for display
     readonly hasData = computed(() => this.summary() !== null);
+    readonly lastUpdated = signal<Date | null>(null);
     ngOnInit(): void {
         this.loadData();
     }
@@ -45,6 +46,7 @@ export class DotUsageShellComponent implements OnInit {
         this.usageService.getSummary().subscribe({
             next: () => {
                 // Data is automatically updated via signals
+                this.lastUpdated.set(new Date());
             },
             error: (error) => {
                 console.error('Failed to load usage data:', error);
