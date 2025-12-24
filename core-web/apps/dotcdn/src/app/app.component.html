@@ -8,7 +8,7 @@
                         [(ngModel)]="selectedPeriod.value"
                         [options]="periodValues"
                         optionLabel="label"
-                        optionValue="value"></p-dropdown>
+                        optionValue="value" />
                     @if (VM.cdnDomain) {
                         <div class="dot-cdn__tab-domain">
                             <small>Root CDN Domain</small>
@@ -21,14 +21,11 @@
                         <div class="dot-cdn__col">
                             <span class="dot-cdn__stats-label">{{ stats.label }}</span>
                             @if (VM.isChartLoading) {
-                                <p-skeleton
-                                    styleClass="skeleton"
-                                    width="10rem"
-                                    height="1.5rem"></p-skeleton>
+                                <p-skeleton styleClass="skeleton" width="10rem" height="1.5rem" />
                             } @else {
                                 <h3 class="dot-cdn__stats-value">{{ stats.value }}</h3>
                             }
-                            <dot-icon [name]="stats.icon" size="32"></dot-icon>
+                            <dot-icon [name]="stats.icon" size="32" />
                         </div>
                     }
                 </div>
@@ -37,7 +34,7 @@
                         <dot-spinner
                             [size]="'4rem'"
                             [borderSize]="'3px'"
-                            [ngStyle]="{ height: chartHeight }"></dot-spinner>
+                            [ngStyle]="{ height: chartHeight }" />
                     } @else {
                         <h3 class="dot-cdn__tab-content-label">Bandwidth Served</h3>
                         <p-chart
@@ -46,7 +43,7 @@
                             [options]="options['bandwidthUsedChart']"
                             #chart
                             type="line"
-                            width="100%"></p-chart>
+                            width="100%" />
                     }
                 </div>
                 <div class="dot-cdn__chart">
@@ -54,7 +51,7 @@
                         <dot-spinner
                             [size]="'4rem'"
                             [borderSize]="'3px'"
-                            [ngStyle]="{ height: chartHeight }"></dot-spinner>
+                            [ngStyle]="{ height: chartHeight }" />
                     } @else {
                         <h3 class="dot-cdn__tab-content-label">Requests Served</h3>
                         <p-chart
@@ -63,7 +60,7 @@
                             [options]="options['requestsServedChart']"
                             #chart
                             type="line"
-                            width="100%"></p-chart>
+                            width="100%" />
                     }
                 </div>
             </div>
