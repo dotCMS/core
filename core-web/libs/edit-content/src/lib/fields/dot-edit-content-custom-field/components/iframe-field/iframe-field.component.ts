@@ -169,7 +169,7 @@ export class IframeFieldComponent implements OnDestroy {
      */
     #zone = inject(NgZone);
     /**
-     * A readonly private field that holds an instance of the DialogService.
+     * A private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
      * It is used to manage dialog interactions within the component.
      */

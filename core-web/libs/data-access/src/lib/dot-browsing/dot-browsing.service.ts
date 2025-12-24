@@ -199,7 +199,7 @@ export class DotBrowsingService {
      * Create all paths based in a Path
      *
      * @param {string} path - the path
-     * @return {string[]} - An arrray with all posibles pats
+     * @return {string[]} - An array with all posibles paths
      *
      * @usageNotes
      *
