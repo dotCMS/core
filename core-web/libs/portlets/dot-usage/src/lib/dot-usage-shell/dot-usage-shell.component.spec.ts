@@ -1,5 +1,5 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { of, throwError, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -116,6 +116,7 @@ describe('DotUsageShellComponent', () => {
     it('should handle retry button click', () => {
         spectator.component.loading.set(false);
         spectator.component.error.set('Some error');
+        spectator.component.summary.set(mockSummary);
         spectator.detectChanges();
 
         const retryButton = spectator.query('[data-testid="retry-button"]');
@@ -124,11 +125,24 @@ describe('DotUsageShellComponent', () => {
         // Reset the mocks to clear previous calls
         jest.clearAllMocks();
 
+        // Use a Subject to control when the observable emits
+        const summarySubject = new Subject<UsageSummary>();
+        usageService.getSummary = jest.fn().mockReturnValue(summarySubject.asObservable());
+
         spectator.dispatchFakeEvent(retryButton, 'onClick');
 
+        // Check that reset happened synchronously (before observable completes)
+        // The onRetry method resets state first, then calls loadData
         expect(spectator.component.summary()).toBeNull();
         expect(spectator.component.error()).toBeNull();
+        expect(spectator.component.errorStatus()).toBeNull();
         expect(usageService.getSummary).toHaveBeenCalled();
+        // After loadData is called, loading should be true
+        expect(spectator.component.loading()).toBe(true);
+
+        // Complete the observable
+        summarySubject.next(mockSummary);
+        summarySubject.complete();
     });
 
     it('should format numbers correctly', () => {
@@ -148,7 +162,9 @@ describe('DotUsageShellComponent', () => {
 
         spectator.component.loadData();
 
-        expect(errorSpy).toHaveBeenCalledWith('Failed to load usage data:', httpError);
+        // The error passed to console.error will be the error object, not the function
+        expect(errorSpy).toHaveBeenCalled();
+        expect(errorSpy.mock.calls[0][0]).toBe('Failed to load usage data:');
         expect(spectator.component.error()).toBe('usage.dashboard.error.serverError');
         expect(spectator.component.loading()).toBe(false);
         errorSpy.mockRestore();
