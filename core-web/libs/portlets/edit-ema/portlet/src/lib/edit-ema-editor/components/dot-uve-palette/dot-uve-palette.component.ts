@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, input, Output } from '@angular/core';
 
+import { TreeNode } from 'primeng/api';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
+import { TreeModule } from 'primeng/tree';
 
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -10,6 +12,7 @@ import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/do
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
 
+import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
 /**
@@ -25,7 +28,8 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
         TabViewModule,
         DotUvePaletteListComponent,
         TooltipModule,
-        DotUveStyleEditorFormComponent
+        DotUveStyleEditorFormComponent,
+        TreeModule
     ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
@@ -67,8 +71,58 @@ export class DotUvePaletteComponent {
      */
     @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
 
+    protected readonly uveStore = inject(UVEStore);
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
+
+    /**
+     * Computed signal that transforms the page layout structure into TreeNode format
+     * for the PrimeNG Tree component. Structure: rows > columns > containers
+     */
+    readonly $layoutTree = computed<TreeNode[]>(() => {
+        const pageResponse = this.uveStore.pageAPIResponse();
+
+        if (!pageResponse?.layout?.body?.rows) {
+            return [];
+        }
+
+        const rows = pageResponse.layout.body.rows;
+        const containers = pageResponse.containers || {};
+
+        const treeNodes: TreeNode[] = rows.map((row, rowIndex) => {
+            const columnNodes: TreeNode[] = (row.columns || []).map((column, columnIndex) => {
+                const containerNodes: TreeNode[] = (column.containers || []).map((container, containerIndex) => {
+                    const containerData = containers[container.identifier];
+                    const containerLabel = containerData?.container?.friendlyName ||
+                                           containerData?.container?.title ||
+                                           container.identifier ||
+                                           `Container ${containerIndex + 1}`;
+
+                    return {
+                        key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}`,
+                        label: containerLabel,
+                        data: container
+                    };
+                });
+
+                return {
+                    key: `row-${rowIndex}-column-${columnIndex}`,
+                    label: `Column ${columnIndex + 1}`,
+                    expanded: containerNodes.length > 0,
+                    children: containerNodes.length > 0 ? containerNodes : undefined
+                };
+            });
+
+            return {
+                key: `row-${rowIndex}`,
+                label: `Row ${rowIndex + 1}`,
+                expanded: columnNodes.length > 0,
+                children: columnNodes.length > 0 ? columnNodes : undefined
+            };
+        });
+
+        return treeNodes;
+    });
 
     /**
      * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.

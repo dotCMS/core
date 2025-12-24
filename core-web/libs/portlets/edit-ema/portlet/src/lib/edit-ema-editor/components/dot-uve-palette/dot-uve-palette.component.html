@@ -40,6 +40,26 @@
                 [pagePath]="$pagePath()" />
         }
     </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <div class="tab-header" pTooltip="Layers" tooltipPosition="bottom">
+                <i class="pi pi-th"></i>
+            </div>
+        </ng-template>
+        @if ($activeTab() === 3) {
+            <div class="w-full h-full p-3">
+                @if ($layoutTree().length > 0) {
+                    <p-tree [value]="$layoutTree()" class="w-full" />
+                } @else {
+                    <div class="flex flex-column justify-content-center align-items-center gap-2 p-3">
+                        <span class="text-sm">Tree nodes: {{ $layoutTree().length }}</span>
+                        <span class="text-sm">Page response: {{ uveStore.pageAPIResponse() ? 'available' : 'null' }}</span>
+                        <span class="text-sm">Has rows: {{ uveStore.pageAPIResponse()?.layout?.body?.rows?.length ?? 0 }}</span>
+                    </div>
+                }
+            </div>
+        }
+    </p-tabPanel>
     @if ($showStyleEditorTab()) {
         <p-tabPanel>
             <ng-template pTemplate="header">
