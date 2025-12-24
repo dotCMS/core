@@ -98,7 +98,7 @@
                     [email]="$item().modUserName"
                     shape="circle"
                     styleClass="dot-history-timeline-item__avatar"
-                    data-testid="user-avatar"></p-avatar>
+                    data-testid="user-avatar" />
                 <span class="dot-history-timeline-item__user-name" data-testid="history-user">
                     {{ $item().modUserName }}
                 </span>
@@ -112,12 +112,8 @@
                     icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
                     (click)="versionMenu.toggle($event); $event.stopPropagation()"
-                    data-testid="version-menu-button"></p-button>
-                <p-menu
-                    #versionMenu
-                    [appendTo]="'body'"
-                    [model]="$menuItems()"
-                    [popup]="true"></p-menu>
+                    data-testid="version-menu-button" />
+                <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
             </div>
         }
     </div>

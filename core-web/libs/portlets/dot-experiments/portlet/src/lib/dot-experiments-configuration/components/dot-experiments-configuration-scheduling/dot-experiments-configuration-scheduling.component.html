@@ -6,7 +6,7 @@
                     [ngClass]="{ isDone: !!vm.scheduling?.endDate || !!vm.scheduling?.startDate }"
                     [size]="16"
                     data-testId="schedule-step-done"
-                    name="check_circle"></dot-icon>
+                    name="check_circle" />
                 {{ 'experiments.configure.scheduling.name' | dm }}
             </h2>
         </ng-template>
@@ -64,4 +64,4 @@
     </p-card>
 }
 
-<ng-container dotDynamic></ng-container>
+<ng-container dotDynamic />

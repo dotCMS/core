@@ -2,7 +2,7 @@
     <p-selectButton
         [(ngModel)]="selected"
         [options]="selectOptions"
-        class="textarea-content__select-field"></p-selectButton>
+        class="textarea-content__select-field" />
 }
 @if (selected === 'plain') {
     <textarea
@@ -20,5 +20,5 @@
         [(ngModel)]="value"
         [ngStyle]="styles"
         [options]="editorOptions"
-        class="textarea-content__code-field"></ngx-monaco-editor>
+        class="textarea-content__code-field" />
 }

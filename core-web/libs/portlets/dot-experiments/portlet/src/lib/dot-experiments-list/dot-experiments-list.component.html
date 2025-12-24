@@ -21,10 +21,7 @@
                 (goToContainer)="goToContainerAction($event)"
                 [experimentGroupedByStatus]="vm.experimentsFiltered" />
         } @else {
-            <ng-container
-                [ngTemplateOutlet]="
-                    vm.isLoading ? loadingExperiments : noExperiments
-                "></ng-container>
+            <ng-container [ngTemplateOutlet]="vm.isLoading ? loadingExperiments : noExperiments" />
         }
     </div>
     @if (vm.addToBundleContentId) {
@@ -45,5 +42,5 @@
     <dot-experiments-list-skeleton />
 </ng-template>
 
-<ng-template dotDynamic></ng-template>
-<p-confirmDialog [key]="confirmDialogKey" [style]="{ width: '30vw' }"></p-confirmDialog>
+<ng-template dotDynamic />
+<p-confirmDialog [key]="confirmDialogKey" [style]="{ width: '30vw' }" />

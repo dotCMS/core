@@ -23,13 +23,13 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
                         [options]="typeDropdown?.options"
                         flex
                         class="cw-type-dropdown"
-                        placeholder="{{ actionTypePlaceholder }}"></cw-input-dropdown>
+                        placeholder="{{ actionTypePlaceholder }}" />
                 </div>
                 <cw-serverside-condition
                     (parameterValueChange)="onParameterValueChange($event)"
                     [componentInstance]="action"
                     flex="75"
-                    class="cw-condition-component"></cw-serverside-condition>
+                    class="cw-condition-component" />
                 <div class="cw-btn-group cw-delete-btn">
                     <div class="ui basic icon buttons">
                         <button

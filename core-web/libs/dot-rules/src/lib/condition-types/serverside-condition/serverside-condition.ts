@@ -43,7 +43,7 @@ import { Verify } from '../../services/validation/Verify';
                             [placeholder]="input.placeholder | async"
                             [options]="input.options"
                             flex
-                            class="cw-input"></cw-input-dropdown>
+                            class="cw-input" />
                     }
                     @if (input.type === 'restDropdown') {
                         <div
@@ -69,7 +69,7 @@ import { Verify } from '../../services/validation/Verify';
                                 optionUrl="{{ input.optionUrl }}"
                                 optionValueField="{{ input.optionValueField }}"
                                 optionLabelField="{{ input.optionLabelField }}"
-                                #rdInput="ngForm"></cw-input-rest-dropdown>
+                                #rdInput="ngForm" />
                             @if (
                                 rdInput.touched &&
                                 !rdInput.valid &&
@@ -118,7 +118,7 @@ import { Verify } from '../../services/validation/Verify';
                             flex
                             layout-fill
                             class="cw-input"
-                            #gInput="ngForm"></cw-input-date>
+                            #gInput="ngForm" />
                     }
                 }
             </div>

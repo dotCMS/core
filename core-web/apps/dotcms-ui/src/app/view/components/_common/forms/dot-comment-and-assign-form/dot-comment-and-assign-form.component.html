@@ -13,7 +13,7 @@
                     [style]="{ width: '100%' }"
                     id="dotRoles"
                     formControlName="assign"
-                    appendTo="body"></p-dropdown>
+                    appendTo="body" />
             </div>
         }
         @if (data['commentable']) {
@@ -30,10 +30,7 @@
         @if (data['moveable']) {
             <div class="field">
                 <label dotFieldRequired for="move">{{ 'Move' | dm }}</label>
-                <dot-page-selector
-                    [folderSearch]="true"
-                    id="move"
-                    formControlName="pathToMove"></dot-page-selector>
+                <dot-page-selector [folderSearch]="true" id="move" formControlName="pathToMove" />
             </div>
         }
     </form>

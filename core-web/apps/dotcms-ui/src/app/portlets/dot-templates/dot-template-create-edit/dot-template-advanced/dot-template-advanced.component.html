@@ -1,12 +1,12 @@
 <dot-portlet-base>
     @if (actions) {
         <dot-portlet-toolbar [actions]="actions">
-            <dot-global-message right></dot-global-message>
+            <dot-global-message right />
         </dot-portlet-toolbar>
     }
 
     <form [formGroup]="form">
-        <dot-container-selector (swap)="containerChange($event)"></dot-container-selector>
+        <dot-container-selector (swap)="containerChange($event)" />
         <dot-textarea-content
             (monacoInit)="initEditor($event)"
             [show]="['code']"
@@ -14,6 +14,6 @@
             #value
             height="100%"
             formControlName="body"
-            language="html"></dot-textarea-content>
+            language="html" />
     </form>
 </dot-portlet-base>

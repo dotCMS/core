@@ -1,5 +1,5 @@
 @if (isHaveOptions()) {
-    <p-menu [model]="model" #menu appendTo="body" popup="popup"></p-menu>
+    <p-menu [model]="model" #menu appendTo="body" popup="popup" />
 }
 
 <p-button
@@ -7,7 +7,7 @@
     [disabled]="disabled"
     [icon]="icon"
     data-testid="dot-action-button"
-    styleClass="p-button-rounded"></p-button>
+    styleClass="p-button-rounded" />
 
 @if (label) {
     <p [class.action-button__label--disabled]="disabled" class="action-button__label">

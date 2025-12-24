@@ -41,7 +41,7 @@ import { isEmpty } from '@dotcms/utils';
                 #inputDropdown
                 ng-valid
                 class="ui fluid ng-valid"
-                appendTo="body"></p-dropdown>
+                appendTo="body" />
         }
         @if (maxSelections > 1) {
             <dot-autocomplete-tags
@@ -49,7 +49,7 @@ import { isEmpty } from '@dotcms/utils';
                 [inputId]="name"
                 [value]="modelValue"
                 [options]="dropdownOptions | async"
-                [placeholder]="placeholder"></dot-autocomplete-tags>
+                [placeholder]="placeholder" />
         }
     `,
     standalone: false

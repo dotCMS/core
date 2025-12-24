@@ -2,13 +2,11 @@
     <dot-form-selector
         (pick)="onFormSelected($event)"
         (shutdown)="editForm = false"
-        [show]="editForm"></dot-form-selector>
-    <dot-add-contentlet (custom)="onCustomEvent($event)"></dot-add-contentlet>
-    <dot-create-contentlet
-        (custom)="onCustomEvent($event)"
-        (shutdown)="handleCloseAction()"></dot-create-contentlet>
-    <dot-edit-contentlet (custom)="onCustomEvent($event)"></dot-edit-contentlet>
-    <dot-reorder-menu (shutdown)="onCloseReorderDialog()" [url]="reorderMenuUrl"></dot-reorder-menu>
+        [show]="editForm" />
+    <dot-add-contentlet (custom)="onCustomEvent($event)" />
+    <dot-create-contentlet (custom)="onCustomEvent($event)" (shutdown)="handleCloseAction()" />
+    <dot-edit-contentlet (custom)="onCustomEvent($event)" />
+    <dot-reorder-menu (shutdown)="onCloseReorderDialog()" [url]="reorderMenuUrl" />
     <ng-template #enabledComponent>
         <dot-edit-page-toolbar-seo
             (actionFired)="reload($event)"
@@ -19,7 +17,7 @@
             [pageState]="pageState"
             [runningExperiment]="pageState.state.runningExperiment"
             [variant]="variantData | async"
-            class="dot-edit__toolbar"></dot-edit-page-toolbar-seo>
+            class="dot-edit__toolbar" />
     </ng-template>
     <ng-template #disabledComponent>
         <dot-edit-page-toolbar
@@ -31,26 +29,26 @@
             [pageState]="pageState"
             [runningExperiment]="pageState.state.runningExperiment"
             [variant]="variantData | async"
-            class="dot-edit__toolbar"></dot-edit-page-toolbar>
+            class="dot-edit__toolbar" />
     </ng-template>
     <ng-container
         *dotShowHideFeature="featureFlagSeo; alternate: disabledComponent"
-        [ngTemplateOutlet]="enabledComponent"></ng-container>
+        [ngTemplateOutlet]="enabledComponent" />
     <div
         [class.dot-edit-content__preview]="!isEditMode"
         class="dot-edit-content__wrapper"
         data-testId="edit-content-wrapper">
-        <dot-loading-indicator fullscreen="true"></dot-loading-indicator>
+        <dot-loading-indicator fullscreen="true" />
         @if (pageState.seoMedia) {
             <dot-results-seo-tool
                 [device]="pageState.viewAs.device"
                 [hostName]="pageState.page.hostName"
                 [seoMedia]="pageState.seoMedia"
                 [seoOGTagsResults]="seoOGTagsResults"
-                [seoOGTags]="seoOGTags"></dot-results-seo-tool>
+                [seoOGTags]="seoOGTags" />
         } @else {
             @if (pageState.viewAs.device) {
-                <dot-select-seo-tool [device]="pageState.viewAs.device"></dot-select-seo-tool>
+                <dot-select-seo-tool [device]="pageState.viewAs.device" />
             }
             <div
                 [class.dot-edit__page-wrapper--deviced]="pageState.viewAs.device"
@@ -67,13 +65,12 @@
                         }"
                         class="dot-edit__iframe-wrapper">
                         @if (showOverlay) {
-                            <dot-overlay-mask
-                                (click)="iframeOverlayService.hide()"></dot-overlay-mask>
+                            <dot-overlay-mask (click)="iframeOverlayService.hide()" />
                         }
                         @if (showWhatsChanged) {
                             <dot-whats-changed
                                 [languageId]="pageState.viewAs.language.id"
-                                [pageId]="pageState.page.identifier"></dot-whats-changed>
+                                [pageId]="pageState.page.identifier" />
                         }
                         @if (showIframe) {
                             <iframe
@@ -98,16 +95,14 @@
                 [class.collapsed]="paletteCollapsed"
                 [class.editMode]="isEditMode"
                 class="dot-edit-content__palette">
-                <dot-palette
-                    [allowedContent]="allowedContent"
-                    [languageId]="pageLanguageId"></dot-palette>
+                <dot-palette [allowedContent]="allowedContent" [languageId]="pageLanguageId" />
                 <div
                     (click)="paletteCollapsed = !paletteCollapsed"
                     class="dot-edit-content__palette-visibility"
                     data-testId="palette-visibility">
                     <dot-icon
                         [name]="paletteCollapsed ? 'chevron_left' : 'chevron_right'"
-                        size="22"></dot-icon>
+                        size="22" />
                 </div>
             </div>
         }

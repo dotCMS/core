@@ -18,11 +18,9 @@
                             placeholder="{{
                                 'experiments.goal.reach_page.form.conditions.parameter.placeholder'
                                     | dm
-                            }}"></p-dropdown>
+                            }}" />
                         <dot-field-validation-message
-                            [field]="
-                                getConditionsFormArrayItemByIndex(i).controls['parameter']
-                            "></dot-field-validation-message>
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']" />
                     </div>
                     <div class="field flex-none flex flex-column w-15rem">
                         <label dotFieldRequired for="operator">
@@ -37,11 +35,9 @@
                             placeholder="{{
                                 'experiments.goal.reach_page.form.conditions.operator.placeholder'
                                     | dm
-                            }}"></p-dropdown>
+                            }}" />
                         <dot-field-validation-message
-                            [field]="
-                                getConditionsFormArrayItemByIndex(i).controls['operator']
-                            "></dot-field-validation-message>
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['operator']" />
                     </div>
                     <div class="field flex-grow-1 flex flex-column">
                         <label dotFieldRequired for="value">
@@ -60,9 +56,7 @@
                             required
                             type="text" />
                         <dot-field-validation-message
-                            [field]="
-                                getConditionsFormArrayItemByIndex(i).controls['value']
-                            "></dot-field-validation-message>
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['value']" />
                     </div>
                 </div>
             </ng-container>

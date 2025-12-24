@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
         <div class="p-toolbar-group-start">
-            <ng-content select="[toolbar-left]"></ng-content>
+            <ng-content select="[toolbar-left]" />
         </div>
         <div class="p-toolbar-group-end">
             <dotcms-add-widget
@@ -23,8 +23,8 @@
             <dotcms-template-builder-actions
                 (selectTheme)="openThemeSelectorDynamicDialog()"
                 [layoutProperties]="vm.layoutProperties"
-                data-testId="template-builder-actions"></dotcms-template-builder-actions>
-            <ng-content select="[toolbar-actions-right]"></ng-content>
+                data-testId="template-builder-actions" />
+            <ng-content select="[toolbar-actions-right]" />
         </div>
     </p-toolbar>
     <div
@@ -95,7 +95,7 @@
                                         [containerMap]="vm.containerMap"
                                         [items]="box.containers"
                                         [width]="box.w"
-                                        class="grid-stack-item-content"></dotcms-template-builder-box>
+                                        class="grid-stack-item-content" />
                                 </div>
                             }
                         </div>
