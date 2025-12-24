@@ -1,7 +1,8 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 
 import { DotUsageShellComponent } from './dot-usage-shell.component';
@@ -58,8 +59,7 @@ describe('DotUsageShellComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUsageShellComponent,
-        imports: [HttpClientTestingModule],
-        providers: [{ provide: DotUsageService, useValue: mockService }]
+        providers: [provideHttpClient(), provideHttpClientTesting(), { provide: DotUsageService, useValue: mockService }]
     });
 
     beforeEach(() => {

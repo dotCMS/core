@@ -1,4 +1,5 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotUsageService, UsageApiResponse, UsageSummary } from './dot-usage.service';
@@ -43,8 +44,7 @@ describe('DotUsageService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [DotUsageService]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotUsageService]
         });
 
         service = TestBed.inject(DotUsageService);
