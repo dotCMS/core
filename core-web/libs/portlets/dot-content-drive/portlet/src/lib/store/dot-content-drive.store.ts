@@ -173,7 +173,7 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
 
                 // Avoid fetching content for SYSTEM_HOST sites
-                if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                if (currentSite?.identifier == SYSTEM_HOST.identifier) {
                     return;
                 }
 

@@ -7,5 +7,5 @@
 </div>
 <div [class.disabled]="disabled" class="text">
     <span [innerHTML]="uiMessage.message | dm: uiMessage.args" data-testId="ui-message-span"></span>
-    <ng-content></ng-content>
+    <ng-content />
 </div>

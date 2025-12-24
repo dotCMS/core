@@ -18,12 +18,10 @@
                 appendTo="body"
                 editable="true"
                 formControlName="addBundle"
-                optionLabel="name"></p-dropdown>
+                optionLabel="name" />
             <dot-field-validation-message
                 [field]="form.get('addBundle')"
-                message="{{
-                    'contenttypes.content.add_to_bundle.errormsg' | dm
-                }}"></dot-field-validation-message>
+                message="{{ 'contenttypes.content.add_to_bundle.errormsg' | dm }}" />
         </div>
     </form>
 </dot-dialog>
