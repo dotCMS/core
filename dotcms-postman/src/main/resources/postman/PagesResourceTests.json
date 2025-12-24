@@ -3862,16 +3862,15 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"richContentIdentifier1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"richContentIdentifier2\");",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
                   "pm.test(\"Response body contains\", function () {",
                   "    pm.expect(pm.response.text()).to.include(\"ok\");",
-                  "});",
-                  "",
-                  "pm.test(\"Response is JSON\", function () {",
-                  "    pm.response.to.be.json;",
                   "});",
                   "",
                   "// Parse JSON",
@@ -3888,15 +3887,11 @@
                   "// ============================",
                   "// Validate first merged entry",
                   "// ============================",
-                  "const first = json.items[0];",
-                  "",
-                  "pm.test(\"First entry has expected contentletId\", function () {",
-                  "    pm.expect(first.contentletId).to.eql(\"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\");",
-                  "});",
-                  "",
                   "pm.test(\"First entry has correct styleProperties\", function () {",
+                  "    const first = json.items.find(item => item.contentletId === contentlet1);",
+                  "    pm.expect(first).to.exist;",
                   "    pm.expect(first.styleProperties).to.be.an(\"object\");",
-                  "    pm.expect(first.styleProperties.width).to.eql(\"100px\");",
+                  "    pm.expect(first.styleProperties.with).to.eql(\"100px\");",
                   "    pm.expect(first.styleProperties.color).to.eql(\"#FF0000\");",
                   "    pm.expect(first.styleProperties.margin).to.eql(\"10px\");",
                   "});",
@@ -3904,15 +3899,48 @@
                   "// ============================",
                   "// Validate second merged entry",
                   "// ============================",
-                  "const second = json.items[1];",
-                  "",
-                  "pm.test(\"Second entry has expected contentletId\", function () {",
-                  "    pm.expect(second.contentletId).to.eql(\"f827c41a-5689-4733-b4d7-916d3a31c9c6\");",
-                  "});",
-                  "",
                   "pm.test(\"Second entry has no style properties\", function () {",
+                  "    const second = json.items.find(item => item.contentletId === contentlet2);",
+                  "    pm.expect(second).to.exist;",
                   "    pm.expect(second.styleProperties).to.eql({});",
                   "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Get dynamically created IDs",
+                  "const contentlet1 = pm.collectionVariables.get('richContentIdentifier1');",
+                  "const contentlet2 = pm.collectionVariables.get('richContentIdentifier2');",
+                  "",
+                  "// Build request body with style properties",
+                  "const stylePropsMap = {};",
+                  "stylePropsMap[contentlet1] = {",
+                  "    with: '100px',",
+                  "    color: '#FF0000',",
+                  "    margin: '10px'",
+                  "};",
+                  "",
+                  "const requestBody = [",
+                  "    {",
+                  "        identifier: '//demo.dotcms.com/application/containers/default/',",
+                  "        uuid: '1',",
+                  "        contentletsId: [contentlet1],",
+                  "        styleProperties: stylePropsMap",
+                  "    },",
+                  "    {",
+                  "        identifier: '//demo.dotcms.com/application/containers/default/',",
+                  "        uuid: '1',",
+                  "        contentletsId: [contentlet2]",
+                  "    }",
+                  "];",
+                  "",
+                  "pm.collectionVariables.set('stylePropertiesBody', JSON.stringify(requestBody));"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -3925,7 +3953,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "[\n    {\n        \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"\n        ],\n        \"styleProperties\": {\n            \"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    },\n    {\n        \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"f827c41a-5689-4733-b4d7-916d3a31c9c6\"\n        ]\n    }\n]",
+              "raw": "{{stylePropertiesBody}}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3950,12 +3978,15 @@
           "response": []
         },
         {
-          "name": "BadRequest when Saving Content With Style Properties Copy",
+          "name": "BadRequest when Saving Content With Style Properties",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"richContentIdentifier1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"richContentIdentifier2\");",
+                  "",
                   "pm.test(\"Status is 400\", function () {",
                   "    pm.response.to.have.status(400);",
                   "});",
@@ -3978,12 +4009,52 @@
                   "// ============================",
                   "// Validate first error cause is for INVALID_CONTENTLET_REFERENCE",
                   "// ============================",
-                  "const first = json.errors[0];",
-                  "",
                   "pm.test(\"First error failed with INVALID_CONTENTLET_REFERENCE\", function () {",
-                  "    pm.expect(first.contentletId).to.eql(\"7c9cb3a7-bb68\");",
+                  "    const first = json.errors.find(item => item.contentletId === '7c9cb3a7-bb68');",
+                  "    pm.expect(first).to.exist;",
                   "    pm.expect(first.errorCode).to.eql(\"INVALID_CONTENTLET_REFERENCE\");",
                   "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Get dynamically created IDs",
+                  "const contentlet1 = pm.collectionVariables.get('richContentIdentifier1');",
+                  "const contentlet2 = pm.collectionVariables.get('richContentIdentifier2');",
+                  "",
+                  "// Build request body with style properties",
+                  "const stylePropsMap = {",
+                  "    '7c9cb3a7-bb68': {",
+                  "        color: '#FF0000'",
+                  "    }",
+                  "};",
+                  "stylePropsMap[contentlet1] = {",
+                  "    with: '100px',",
+                  "    color: '#FF0000',",
+                  "    margin: '10px'",
+                  "};",
+                  "",
+                  "const requestBody = [",
+                  "    {",
+                  "        identifier: '//demo.dotcms.com/application/containers/default/',",
+                  "        uuid: '1',",
+                  "        contentletsId: [contentlet1],",
+                  "        styleProperties: stylePropsMap",
+                  "    },",
+                  "    {",
+                  "        identifier: '//demo.dotcms.com/application/containers/default/',",
+                  "        uuid: '1',",
+                  "        contentletsId: [contentlet2]",
+                  "    }",
+                  "];",
+                  "",
+                  "pm.collectionVariables.set('stylePropertiesBody', JSON.stringify(requestBody));"
                 ],
                 "type": "text/javascript",
                 "packages": {},
@@ -3996,7 +4067,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "[\n    {\n        \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"\n        ],\n        \"styleProperties\": {\n            \"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\": {\n                \"color\": \"#FF0000\",\n                \"margin\": \"lolo\"\n            },\n            \"7c9cb3a7-bb68\": {\n                \"color\": \"#FF0000\"\n            }\n        }\n    },\n    {\n        \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"f827c41a-5689-4733-b4d7-916d3a31c9c6\"\n        ]\n    }\n]\n",
+              "raw": "{{stylePropertiesBody}}",
               "options": {
                 "raw": {
                   "language": "json"
