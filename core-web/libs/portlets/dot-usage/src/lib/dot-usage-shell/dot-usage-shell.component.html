@@ -20,7 +20,7 @@
             <!-- Site Metrics: 3 cards -->
             <div>
                 <h2>
-                    <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
+                    <p-skeleton width="10rem" height="23px"></p-skeleton>
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2, 3]; track i) {
@@ -31,7 +31,7 @@
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
-                                <p>
+                                <p class="m-0">
                                     <p-skeleton width="80%" height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
@@ -54,7 +54,7 @@
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
-                                <p>
+                                <p class="m-0">
                                     <p-skeleton width="80%" height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
@@ -77,7 +77,7 @@
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
-                                <p>
+                                <p class="m-0">
                                     <p-skeleton width="80%" height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
@@ -100,7 +100,9 @@
             <ng-template pTemplate="body">
                 <p class="m-0 mb-3">
                     @if (error() === 'usage.dashboard.error.requestFailed' && errorStatus()) {
-                        {{ 'usage.dashboard.error.requestFailed' | dm: [errorStatus()!.toString()] }}
+                        {{
+                            'usage.dashboard.error.requestFailed' | dm: [errorStatus()!.toString()]
+                        }}
                     } @else {
                         {{ error() | dm }}
                     }
@@ -139,7 +141,8 @@
                                             </h3>
                                         </ng-template>
                                         <ng-template pTemplate="body">
-                                            <p class="metric-value"
+                                            <p
+                                                class="metric-value"
                                                 [class.metric-value--text]="
                                                     isStringValue(metricData.value)
                                                 ">

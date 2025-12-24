@@ -13,6 +13,10 @@
     }
 }
 
+p-skeleton {
+    display: block;
+}
+
 p-toolbar {
     display: block;
     margin-bottom: $spacing-4;
@@ -35,6 +39,7 @@ h3 {
     font-weight: $font-weight-regular-bold;
     letter-spacing: 0.05em;
     margin: 0;
+    line-height: 1rem;
 }
 
 // Metric value text
