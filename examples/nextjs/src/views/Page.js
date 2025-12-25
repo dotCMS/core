@@ -6,6 +6,41 @@ import { pageComponents } from "@/components/content-types";
 import Footer from "@/components/footer/Footer";
 import Header from "@/components/header/Header";
 
+import { useEffect } from 'react';
+
+export function IframeHeightBridge() {
+  useEffect(() => {
+    const send = () => {
+      const height = Math.max(
+        document.body?.scrollHeight ?? 0,
+        document.documentElement?.scrollHeight ?? 0
+      );
+
+      window.parent.postMessage(
+        { name: 'dotcms:iframeHeight', payload: { height } },
+        '*'
+      );
+    };
+
+    send();
+
+    const ro = new ResizeObserver(send);
+    ro.observe(document.documentElement);
+    if (document.body) ro.observe(document.body);
+
+    window.addEventListener('load', send);
+    window.addEventListener('resize', send);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('load', send);
+      window.removeEventListener('resize', send);
+    };
+  }, []);
+
+  return null;
+}
+
 export function Page({ pageContent }) {
     const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
     const navigation = content.navigation;
@@ -25,6 +60,7 @@ export function Page({ pageContent }) {
             </main>
 
             {pageAsset?.layout.footer && <Footer {...content} />}
+            <IframeHeightBridge />
         </div>
     );
 }

@@ -266,9 +266,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     ngOnInit(): void {
         this.handleDragEvents();
 
-        fromEvent(this.window, 'message')
+        fromEvent<MessageEvent>(this.window, 'message')
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ data }: MessageEvent) => this.handlePostMessage(data));
+            .subscribe((event) => this.#handleWindowMessage(event));
     }
 
     ngAfterViewInit(): void {
@@ -1146,6 +1146,73 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         actionToExecute?.(payload);
     }
 
+    #handleWindowMessage(event: MessageEvent): void {
+        // 1) Cross-origin iframe height bridge (e.g. Next.js at localhost:3000)
+        // Expected shape:
+        //   { name: 'dotcms:iframeHeight', payload: { height: number } }
+        // or { type: 'dotcms:iframeHeight', height: number }
+        if (this.#maybeHandleIframeHeightMessage(event)) {
+            return;
+        }
+
+        // 2) UVE messages
+        const data = event.data;
+        if (this.#isUvePostMessage(data)) {
+            this.handlePostMessage(data);
+        }
+    }
+
+    #isUvePostMessage(data: unknown): data is PostMessage {
+        return (
+            !!data &&
+            typeof data === 'object' &&
+            'action' in data &&
+            // payload can be any shape depending on action
+            true
+        );
+    }
+
+    #maybeHandleIframeHeightMessage(event: MessageEvent): boolean {
+        const iframeEl = this.iframe?.nativeElement;
+        if (!iframeEl?.contentWindow) {
+            return false;
+        }
+
+        // Only accept messages from the current iframe window.
+        if (event.source !== iframeEl.contentWindow) {
+            return false;
+        }
+
+        const data = event.data as unknown;
+        if (!data || typeof data !== 'object') {
+            return false;
+        }
+
+        const record = data as Record<string, unknown>;
+        const isNamed =
+            record['name'] === 'dotcms:iframeHeight' && typeof record['payload'] === 'object';
+        const isTyped = record['type'] === 'dotcms:iframeHeight';
+
+        let height: number | null = null;
+        if (isNamed) {
+            const payload = record['payload'] as Record<string, unknown>;
+            height = typeof payload['height'] === 'number' ? payload['height'] : null;
+        } else if (isTyped) {
+            height = typeof record['height'] === 'number' ? (record['height'] as number) : null;
+        }
+
+        if (!height || !Number.isFinite(height) || height <= 0) {
+            return false;
+        }
+
+        // Apply height so iframe never scrolls; also update our layout sizing for zoom/scroll.
+        iframeEl.style.height = `${Math.ceil(height)}px`;
+        this.$iframeDocHeight.set(Math.ceil(height));
+        this.#clampScrollWithinBounds();
+
+        return true;
+    }
+
     /**
      * Notify the user to reload the iframe
      *
@@ -1627,8 +1694,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // Clean previous observers (reloads, navigation, etc.)
         this.#teardownIframeAutoHeight();
 
-        const doc = iframeEl.contentDocument;
-        const win = iframeEl.contentWindow;
+        let doc: Document | null = null;
+        let win: Window | null = null;
+        try {
+            doc = iframeEl.contentDocument;
+            win = iframeEl.contentWindow;
+        } catch {
+            // Cross-origin; height must be provided via postMessage.
+            return;
+        }
 
         if (!doc || !win) {
             return;

@@ -9,16 +9,17 @@ import {
 
 export const getDotCMSPage = cache(async (path) => {
     try {
-        const pageData = await dotCMSClient.page.get(path, {
-            graphql: {
-                content: {
-                    blogs: blogQuery,
-                    destinations: destinationQuery,
-                    navigation: navigationQuery,
-                },
-                fragments: [fragmentNav],
-            },
-        });
+        // const pageData = await dotCMSClient.page.get(path, {
+        //     graphql: {
+        //         content: {
+        //             blogs: blogQuery,
+        //             destinations: destinationQuery,
+        //             navigation: navigationQuery,
+        //         },
+        //         fragments: [fragmentNav],
+        //     },
+        // });
+        const pageData = await dotCMSClient.page.get(path);
         return pageData;
     } catch (e) {
         console.error("ERROR FETCHING PAGE: ", e.message);
