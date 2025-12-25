@@ -104,7 +104,7 @@ export function withEditor() {
 
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
-                $styleSchema: computed<unknown>(() => {
+                $styleSchema: computed<StyleEditorFormSchema | undefined>(() => {
                     const contentlet = store.activeContentlet();
                     const styleSchemas = store.styleSchemas();
                     const contentSchema = styleSchemas.find(

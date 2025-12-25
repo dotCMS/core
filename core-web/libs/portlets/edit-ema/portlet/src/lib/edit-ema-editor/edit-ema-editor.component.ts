@@ -273,7 +273,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     ngAfterViewInit(): void {
         this.#setupContentletAreaReset();
-        this.#setupZoomAndPan();
+        this.#setupZoomInteractions();
     }
 
     /**
@@ -1761,7 +1761,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             .subscribe(() => updateHeight());
     }
 
-    #setupZoomAndPan(): void {
+    #setupZoomInteractions(): void {
         const zoomContainer = this.zoomContainer?.nativeElement;
         const editorContent = this.editorContent?.nativeElement;
 
