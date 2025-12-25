@@ -14,7 +14,9 @@
                         [value]="option.value"
                         class="radio-image-input" />
                     <label [for]="$field().id + '-' + option.value" class="radio-image-label">
-                        <img [src]="option.imageURL" [alt]="option.label" class="radio-image" />
+                        <div class="radio-image-container">
+                            <img [src]="option.imageURL" [alt]="option.label" class="radio-image" />
+                        </div>
                         <span class="radio-image-text">{{ option.label }}</span>
                     </label>
                 </div>
