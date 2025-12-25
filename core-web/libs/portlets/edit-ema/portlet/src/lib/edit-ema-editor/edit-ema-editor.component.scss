@@ -54,33 +54,113 @@ dot-results-seo-tool {
 }
 
 .editor-content {
-    padding: $spacing-4 $spacing-3;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    padding: $spacing-4 0;
     gap: $spacing-1;
     overflow: auto;
+    position: relative;
+    height: 100%;
+    min-height: 0;
 
     grid-column: 2 / -1;
 }
 
+.canvas-viewport {
+    position: relative;
+    width: 100%;
+    min-height: 100%;
+    // IMPORTANT:
+    // Do NOT use flex + justify-content:center here.
+    // When the canvas is wider than the scroll container, centering can introduce a negative left offset
+    // that becomes unreachable because scrollLeft cannot be negative (canvas appears "cut" on the left).
+    display: block;
+}
+
+.canvas-row {
+    display: flex;
+    align-items: flex-start;
+    width: fit-content;
+    margin: 0 auto; // center when it fits; when it overflows, scroll controls visibility
+}
+
+.canvas-gutter {
+    flex: 0 0 $spacing-3;
+    width: $spacing-3;
+}
+
+.zoom-controls {
+    position: absolute;
+    top: $spacing-3;
+    right: $spacing-3;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: $spacing-1;
+    padding: $spacing-2;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid $color-palette-gray-200;
+    border-radius: $border-radius-lg;
+    backdrop-filter: blur(6px);
+}
+
+.zoom-controls__btn {
+    appearance: none;
+    border: 1px solid $color-palette-gray-300;
+    background: $white;
+    color: $color-palette-gray-900;
+    border-radius: $border-radius-md;
+    padding: 0 $spacing-2;
+    height: 2rem;
+    font-weight: $font-weight-medium-bold;
+    cursor: pointer;
+
+    &:hover {
+        background: $color-palette-gray-100;
+    }
+}
+
+.zoom-controls__btn--reset {
+    padding: 0 $spacing-3;
+}
+
+.zoom-controls__label {
+    min-width: 3.5rem;
+    text-align: center;
+    font-weight: $font-weight-bold;
+    color: $color-palette-bluegray-700;
+}
+
 .editor-content-preview {
-    padding: $spacing-4;
+    padding: $spacing-4 0;
+}
+
+.canvas-outer {
+    position: relative;
+    display: block;
+    user-select: none;
+    margin: 0 auto;
+}
+
+.canvas-inner {
+    position: relative;
 }
 
 .iframe-wrapper {
     position: relative;
     overflow: hidden;
-    flex-grow: 1;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
-    height: 100%;
-    width: 100%;
-    transition: all 0.3s ease-in-out;
+    width: 1520px !important;
+    min-width: 1520px;
+    height: auto;
+    transition: border 0.3s ease-in-out;
 
     iframe {
         border: none;
+        display: block;
+        width: 100%;
+        // Height is controlled from TS to match the iframe document height (no iframe scrolling).
+        height: auto;
+        min-height: 1px;
     }
 
     dot-uve-lock-overlay {

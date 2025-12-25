@@ -128,7 +128,7 @@ import {
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
-        DotUvePaletteComponent
+        DotUvePaletteComponent,
     ],
     providers: [
         DotCopyContentModalService,
@@ -143,6 +143,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
     @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
+    @ViewChild('zoomContainer') zoomContainer!: ElementRef<HTMLDivElement>;
+    @ViewChild('editorContent') editorContent!: ElementRef<HTMLDivElement>;
 
     protected readonly uveStore = inject(UVEStore);
     private readonly dotMessageService = inject(DotMessageService);
@@ -164,6 +166,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     #iframeResizeObserver: ResizeObserver | null = null;
 
+    // Zoom and pan state
+    readonly $zoomLevel = signal<number>(1);
+    readonly $isZoomMode = signal<boolean>(false); // Ctrl/Cmd pressed
+    #zoomModeResetTimeout: ReturnType<typeof setTimeout> | null = null;
+    #gestureStartZoom = 1;
+    readonly $iframeDocHeight = signal<number>(0);
+    #didSetInitialScroll = false;
+    #iframeContentResizeObserver: ResizeObserver | null = null;
+    #iframeMutationObserver: MutationObserver | null = null;
+
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
     readonly $editorProps = this.uveStore.$editorProps;
@@ -183,6 +195,26 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $paletteClass = computed(() => {
         return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
+    });
+
+    readonly $canvasOuterStyles = computed(() => {
+        const zoom = this.$zoomLevel();
+        const height = this.$iframeDocHeight() || 800;
+        return {
+            width: `${1520 * zoom}px`,
+            height: `${height * zoom}px`
+        };
+    });
+
+    readonly $canvasInnerStyles = computed(() => {
+        const zoom = this.$zoomLevel();
+        const height = this.$iframeDocHeight() || 800;
+        return {
+            width: `1520px`,
+            height: `${height}px`,
+            transform: `scale(${zoom})`,
+            transformOrigin: 'top left'
+        };
     });
 
     get contentWindow(): Window | null {
@@ -228,6 +260,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             { name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS },
             this.host
         );
+
     });
 
     ngOnInit(): void {
@@ -240,6 +273,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     ngAfterViewInit(): void {
         this.#setupContentletAreaReset();
+        this.#setupZoomAndPan();
     }
 
     /**
@@ -483,6 +517,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         this.#insertPageContent();
         this.#setSeoData();
+        this.#setupIframeAutoHeight();
 
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
@@ -575,6 +610,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     ngOnDestroy(): void {
         this.#iframeResizeObserver?.disconnect();
         this.#iframeResizeObserver = null;
+        this.#teardownIframeAutoHeight();
         if (this.uveStore.isTraditionalPage()) {
             this.uveStore.setIsClientReady(true);
         }
@@ -1572,8 +1608,284 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.resetContentletArea();
     }
 
+    #teardownIframeAutoHeight(): void {
+        this.#iframeContentResizeObserver?.disconnect();
+        this.#iframeContentResizeObserver = null;
+        this.#iframeMutationObserver?.disconnect();
+        this.#iframeMutationObserver = null;
+    }
+
+    #setupIframeAutoHeight(): void {
+        // Traditional pages are written into the iframe via doc.write(), so they are same-origin
+        // and we can measure scrollHeight safely.
+        const iframeEl = this.iframe?.nativeElement;
+
+        if (!iframeEl) {
+            return;
+        }
+
+        // Clean previous observers (reloads, navigation, etc.)
+        this.#teardownIframeAutoHeight();
+
+        const doc = iframeEl.contentDocument;
+        const win = iframeEl.contentWindow;
+
+        if (!doc || !win) {
+            return;
+        }
+
+        const updateHeight = () => {
+            const body = doc.body;
+            const root = doc.documentElement;
+
+            if (!body || !root) {
+                return;
+            }
+
+            // Take the max between body/root to handle different doc modes.
+            const height = Math.max(body.scrollHeight, root.scrollHeight);
+
+            // Set explicit px height so the iframe itself never scrolls.
+            iframeEl.style.height = `${height}px`;
+            this.$iframeDocHeight.set(height);
+            this.#clampScrollWithinBounds();
+
+            // First time we know the real dimensions, start at top-left so header is visible.
+            if (!this.#didSetInitialScroll) {
+                this.#didSetInitialScroll = true;
+                this.#scrollToTopLeft();
+            }
+        };
+
+        // Initial sizing after layout settles.
+        requestAnimationFrame(() => {
+            updateHeight();
+            requestAnimationFrame(updateHeight);
+        });
+
+        // Keep height synced as the iframe content changes.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.#iframeContentResizeObserver = new ResizeObserver(() => updateHeight());
+            // Observe both body and root (some layouts expand root, some body).
+            this.#iframeContentResizeObserver.observe(doc.body);
+            this.#iframeContentResizeObserver.observe(doc.documentElement);
+        }
+
+        if (typeof MutationObserver !== 'undefined') {
+            this.#iframeMutationObserver = new MutationObserver(() => updateHeight());
+            this.#iframeMutationObserver.observe(doc.documentElement, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true
+            });
+        }
+
+        // Fonts/images can load async and change height.
+        fromEvent(win, 'load')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => updateHeight());
+    }
+
+    #setupZoomAndPan(): void {
+        const zoomContainer = this.zoomContainer?.nativeElement;
+        const editorContent = this.editorContent?.nativeElement;
+
+        if (!zoomContainer || !editorContent) {
+            return;
+        }
+
+        type GestureLikeEvent = Event & {
+            scale?: number;
+            clientX: number;
+            clientY: number;
+            preventDefault: () => void;
+        };
+
+        // Track zoom modifier keys (optional, to indicate "zoom mode" + support Safari gestures).
+        fromEvent<KeyboardEvent>(this.window, 'keydown')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((event) => {
+                if (event.key === 'Control' || event.code.startsWith('Control')) {
+                    this.$isZoomMode.set(true);
+                }
+                if (event.key === 'Meta' || event.code.startsWith('Meta')) {
+                    this.$isZoomMode.set(true);
+                }
+            });
+
+        fromEvent<KeyboardEvent>(this.window, 'keyup')
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((event) => {
+                if (event.key === 'Control' || event.code.startsWith('Control')) {
+                    this.$isZoomMode.set(false);
+                }
+                if (event.key === 'Meta' || event.code.startsWith('Meta')) {
+                    this.$isZoomMode.set(false);
+                }
+            });
+
+        const applyZoomFromWheel = (event: WheelEvent) => {
+            // Trackpad pinch zoom (and Ctrl/Cmd+wheel) sets ctrlKey/metaKey.
+            if (!event.ctrlKey && !event.metaKey) {
+                return;
+            }
+
+            // Only hijack zoom if the pointer is inside the editor content region.
+            const rect = editorContent.getBoundingClientRect();
+            const insideEditor =
+                event.clientX >= rect.left &&
+                event.clientX <= rect.right &&
+                event.clientY >= rect.top &&
+                event.clientY <= rect.bottom;
+
+            if (!insideEditor) {
+                return;
+            }
+
+            // Critical: stops the browser from zooming the whole viewport.
+            event.preventDefault();
+
+            this.$isZoomMode.set(true);
+            if (this.#zoomModeResetTimeout) {
+                clearTimeout(this.#zoomModeResetTimeout);
+            }
+            this.#zoomModeResetTimeout = setTimeout(() => this.$isZoomMode.set(false), 150);
+
+            const delta = event.deltaY > 0 ? -0.1 : 0.1;
+            const newZoom = Math.max(0.1, Math.min(3, this.$zoomLevel() + delta));
+            this.$zoomLevel.set(newZoom);
+            this.#clampScrollWithinBounds();
+        };
+
+        // Zoom with mouse wheel on the canvas container
+        fromEvent<WheelEvent>(zoomContainer, 'wheel', { passive: false })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(applyZoomFromWheel);
+
+        // Zoom with mouse wheel on the whole editor content area
+        fromEvent<WheelEvent>(editorContent, 'wheel', { passive: false })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(applyZoomFromWheel);
+
+        // Trackpad pinch can still trigger browser zoom if the event originates from the iframe.
+        // Capture wheel at window-level and preventDefault when pointer is inside editor.
+        fromEvent<WheelEvent>(this.window, 'wheel', { passive: false, capture: true } as AddEventListenerOptions)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(applyZoomFromWheel);
+
+        // Safari trackpad pinch uses non-standard GestureEvents (best-effort support).
+        fromEvent<GestureLikeEvent>(
+            this.window,
+            'gesturestart',
+            { passive: false, capture: true } as AddEventListenerOptions
+        )
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((event) => {
+                const rect = editorContent.getBoundingClientRect();
+                const insideEditor =
+                    event.clientX >= rect.left &&
+                    event.clientX <= rect.right &&
+                    event.clientY >= rect.top &&
+                    event.clientY <= rect.bottom;
+
+                if (!insideEditor) {
+                    return;
+                }
+
+                event.preventDefault();
+                this.$isZoomMode.set(true);
+                this.#gestureStartZoom = this.$zoomLevel();
+            });
+
+        fromEvent<GestureLikeEvent>(
+            this.window,
+            'gesturechange',
+            { passive: false, capture: true } as AddEventListenerOptions
+        )
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((event) => {
+                const rect = editorContent.getBoundingClientRect();
+                const insideEditor =
+                    event.clientX >= rect.left &&
+                    event.clientX <= rect.right &&
+                    event.clientY >= rect.top &&
+                    event.clientY <= rect.bottom;
+
+                if (!insideEditor) {
+                    return;
+                }
+
+                event.preventDefault();
+                const scale = typeof event.scale === 'number' ? event.scale : 1;
+                const newZoom = Math.max(0.1, Math.min(3, this.#gestureStartZoom * scale));
+                this.$zoomLevel.set(newZoom);
+            });
+
+        fromEvent<GestureLikeEvent>(
+            this.window,
+            'gestureend',
+            { passive: false, capture: true } as AddEventListenerOptions
+        )
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((event) => {
+                event.preventDefault();
+                this.$isZoomMode.set(false);
+            });
+
+        // No panning: scrolling on editorContent is the navigation mechanism.
+    }
+
     protected handleSelectContent(contentlet: ContentletPayload): void {
         this.uveStore.setActiveContentlet(contentlet);
+    }
+
+    zoomIn(): void {
+        this.$zoomLevel.set(Math.max(0.1, Math.min(3, this.$zoomLevel() + 0.1)));
+        this.#clampScrollWithinBounds();
+    }
+
+    zoomOut(): void {
+        this.$zoomLevel.set(Math.max(0.1, Math.min(3, this.$zoomLevel() - 0.1)));
+        this.#clampScrollWithinBounds();
+    }
+
+    resetView(): void {
+        this.$zoomLevel.set(1);
+        this.#scrollToTopLeft();
+    }
+
+    zoomLabel(): string {
+        return `${Math.round(this.$zoomLevel() * 100)}%`;
+    }
+
+    #scrollToTopLeft(): void {
+        const el = this.editorContent?.nativeElement;
+        if (!el) {
+            return;
+        }
+
+        // Let layout apply widths/heights first.
+        requestAnimationFrame(() => {
+            el.scrollLeft = 0;
+            el.scrollTop = 0;
+        });
+    }
+
+    #clampScrollWithinBounds(): void {
+        const el = this.editorContent?.nativeElement;
+        if (!el) {
+            return;
+        }
+
+        requestAnimationFrame(() => {
+            // Use real scroll bounds so gutters/padding inside the content are included.
+            const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+            const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
+
+            el.scrollLeft = Math.min(Math.max(0, el.scrollLeft), maxLeft);
+            el.scrollTop = Math.min(Math.max(0, el.scrollTop), maxTop);
+        });
     }
 
     /**
