@@ -10,6 +10,8 @@ import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
@@ -146,12 +148,15 @@ public class PageResourceHelper implements Serializable {
      *                         {@link PageContainerForm.ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
      * @throws DotDataException An error occurred when interacting with the data source.
+     * @param variantName      The variant name
+     * @return The list of saved Contentlets with the containerId, contentletId, uuid and styleProperties.
+     * @throws BadRequestException if style validation fails
      */
     @WrapInTransaction
-    public void saveContent(final String pageId,
+    public List<ContentletStylingView> saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
-
             final Language language, String variantName) throws DotDataException {
+
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
 
         for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
@@ -161,6 +166,10 @@ public class PageResourceHelper implements Serializable {
                     Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
             final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
+
+            // Validate style properties during the saving process
+            stylePropertiesValidation(stylePropertiesMap, contentIds,
+                    containerEntry.getContainerId(), containerEntry.getContainerUUID());
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
@@ -212,6 +221,73 @@ public class PageResourceHelper implements Serializable {
                     multiTreesMap.get(personalization), Optional.of(language.getId()),
                     variantName);
         }
+
+        // MultiTrees as a flattened list
+        final List<MultiTree> savedMultiTrees = multiTreesMap.values().stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        // Response with container, contentlet and styleProperties
+        return buildSaveContentResponse(savedMultiTrees);
+    }
+
+    /**
+     * Validates the style properties during the saving process.
+     * @param stylePropertiesMap The map of style properties.
+     * @param contentIds The list of contentlet ids.
+     * @param containerId The id of the container.
+     * @param containerUUID The uuid of the container.
+     * @throws BadRequestException if the style properties are invalid.
+     */
+    private void stylePropertiesValidation(
+            Map<String, Map<String, Object>> stylePropertiesMap,
+            List<String> contentIds, String containerId, String containerUUID
+    ) {
+        if (!stylePropertiesMap.isEmpty()) {
+            final List<ErrorEntity> errors = new ArrayList<>();
+
+            stylePropertiesMap.forEach((contentletId, styleProps) -> {
+                if (!contentIds.contains(contentletId)) {
+                    errors.add(new ContentletStylingErrorEntity(
+                            "INVALID_CONTENTLET_REFERENCE",
+                            "Could not define Style Properties for non-existing contentlet",
+                            contentletId,
+                            containerId,
+                            containerUUID
+                    ));
+                }
+            });
+
+            if (!errors.isEmpty()) {
+                throw new BadRequestException(null, new ResponseEntityView<>(errors),
+                        "Invalid Style Properties configuration");
+            }
+        }
+    }
+
+    /**
+     * Returns a list of saved Contentlets and Style Properites.
+     * @param savedMultiTrees The list of saved MultiTrees.
+     * @return A list of the saved Contentlets with the containerId, uuid, contentletId and
+     * styleProperties.
+     */
+    private List<ContentletStylingView> buildSaveContentResponse(List<MultiTree> savedMultiTrees) {
+        return savedMultiTrees.stream()
+                .map(multiTree -> {
+                    ContentletStylingView.Builder builder = ContentletStylingView.builder()
+                            .containerId(multiTree.getContainer())
+                            .contentletId(multiTree.getContentlet())
+                            .uuid(multiTree.getRelationType());
+
+                    // Add Style properties if present
+                    final Map<String, Object> styleProperties = multiTree.getStyleProperties();
+                    if (styleProperties != null && !styleProperties.isEmpty()) {
+                        builder.putAllStyleProperties(styleProperties);
+                    }
+
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
     }
 
     public void saveMultiTree(final String containerId,
