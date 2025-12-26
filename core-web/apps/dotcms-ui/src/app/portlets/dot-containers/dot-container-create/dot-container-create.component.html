@@ -1,16 +1,16 @@
 <dot-portlet-base [boxed]="false">
     <p-tabs class="h-full flex flex-col" [(value)]="activeTab">
         <p-tablist class="shrink-0">
-            <p-tab class="flex-1 text-center" [value]="0">
+            <p-tab [value]="0">
                 {{ 'message.containers.tab.properties' | dm }}
             </p-tab>
             @if (containerId) {
-                <p-tab class="flex-1 text-center" [value]="1">
+                <p-tab [value]="1">
                     {{ 'message.containers.tab.permissions' | dm }}
                 </p-tab>
             }
             @if (containerId) {
-                <p-tab class="flex-1 text-center" [value]="2">
+                <p-tab [value]="2">
                     {{ 'message.containers.tab.history' | dm }}
                 </p-tab>
             }
