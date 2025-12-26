@@ -92,7 +92,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -194,7 +195,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 13
                 })
             });
         });
@@ -217,7 +219,8 @@ describe('CollectionBuilder', () => {
                     render: true,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -254,7 +257,8 @@ describe('CollectionBuilder', () => {
                     sort: 'name asc,force desc,midichlorians desc',
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -277,7 +281,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 2
+                    depth: 2,
+                    languageId: 1
                 })
             });
         });
@@ -300,7 +305,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 20,
                     offset: 40,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -329,7 +335,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -436,7 +443,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -459,7 +467,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -543,7 +552,8 @@ describe('CollectionBuilder', () => {
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
                     offset: 40,
-                    depth: 2
+                    depth: 2,
+                    languageId: 13
                 })
             });
 
@@ -578,7 +588,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -608,7 +619,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -636,7 +648,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -668,7 +681,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -698,7 +712,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
