@@ -154,7 +154,7 @@ export class DotUvePaletteComponent {
 
             return {
                 key: `row-${rowIndex}`,
-                label: `Row ${rowIndex + 1}`,
+                label: row.styleClass, // TODO: we need a propper label for the row
                 selectable: true,
                 draggable: true,
                 droppable: false,

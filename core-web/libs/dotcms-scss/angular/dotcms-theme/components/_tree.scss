@@ -10,16 +10,16 @@
     .p-tree-container {
         .p-treenode {
             padding: 0;
-            margin: 0;
+            margin: 2px 0;
             outline: 0;
 
             .p-treenode-content {
                 border-radius: $border-radius-xs;
                 transition: none;
-                padding: $spacing-0 $spacing-1;
+                padding: 0 $spacing-0;
 
                 .p-tree-toggler {
-                    margin-right: $spacing-1;
+                    margin-right: $spacing-0;
                     width: $spacing-5;
                     height: $spacing-5;
                     color: $black;
