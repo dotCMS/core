@@ -32,7 +32,7 @@ dot-content-drive-toolbar {
     grid-area: toolbar;
 }
 
-p-messages {
+.message-banner {
     grid-area: messages;
 }
 
@@ -45,6 +45,7 @@ p-messages {
         visibility: visible;
     }
 }
+
 
 dot-content-drive-dropzone {
     grid-area: list;

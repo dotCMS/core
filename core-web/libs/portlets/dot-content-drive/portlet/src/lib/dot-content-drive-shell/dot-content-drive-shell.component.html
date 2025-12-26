@@ -1,6 +1,6 @@
-@if ($showMessage()) {
-    <p-message severity="info" data-testid="message">
-        <ng-template pTemplate="content">
+<div class="message-banner w-full">
+    @if ($showMessage()) {
+        <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
             <div class="flex items-center justify-between gap-2 w-full">
                 <div class="flex items-center gap-2">
                     <i class="pi pi-info-circle"></i>
@@ -17,16 +17,18 @@
                         {{ 'content-drive.feature.learn-more' | dm }}
                     </a>
                     <p-button
-                        styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
                         type="button"
                         icon="pi pi-times"
                         data-testid="close-message"
                         (click)="onCloseMessage()"></p-button>
                 </div>
             </div>
-        </ng-template>
-    </p-message>
-}
+        </p-message>
+    }
+</div>
 
 <dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
 

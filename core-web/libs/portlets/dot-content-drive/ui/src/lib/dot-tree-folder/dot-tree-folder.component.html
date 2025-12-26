@@ -19,6 +19,7 @@
             <span
                 data-testid="tree-node-label"
                 [attr.data-json-node]="node.data | json"
+                class="font-normal text-lg"
                 [class.active]="$activeDropNode()?.id === node?.data.id">
                 {{ node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | folderName) }}
             </span>

@@ -16,6 +16,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    
     }
 
     .p-treenode-content:has(span.active) {
@@ -58,7 +59,7 @@
                 display: none;
             }
 
-            .p-tree-container > p-treenode:first-child {
+            .p-tree-root-children > p-treenode:first-of-type {
                 .toggler-first {
                     display: block;
                 }

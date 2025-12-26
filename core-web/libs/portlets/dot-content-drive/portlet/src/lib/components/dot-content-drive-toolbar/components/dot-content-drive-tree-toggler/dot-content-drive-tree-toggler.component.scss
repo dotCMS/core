@@ -1,9 +1,0 @@
-@use "../../../../../../../../../dotcms-scss/shared/colors";
-
-@use "variables" as *;
-
-:host {
-    svg.p-button-icon.pi {
-        color: colors.$color-palette-gray-800;
-    }
-}

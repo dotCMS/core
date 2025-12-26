@@ -1,15 +1,25 @@
 <div [formGroup]="folderForm">
-    <p-tabs value="0">
-        <p-tablist>
-            <p-tab [value]="0">
+    <p-tabs [value]="0">
+        <p-tablist class="w-full">
+            <p-tab [value]="0" class="flex-1 justify-center text-center">
                 {{ 'content-drive.dialog.folder.general.header' | dm }}
             </p-tab>
-            <p-tab [value]="1">
+            <p-tab [value]="1" class="flex-1 justify-center text-center">
                 {{ 'content-drive.dialog.folder.advanced.header' | dm }}
             </p-tab>
         </p-tablist>
         <p-tabpanels>
             <p-tabpanel [value]="0" class="flex flex-col gap-4 mt-4">
+                <div class="flex flex-col gap-2 mb-4">
+                    <label [checkIsRequiredControl]="'name'" for="name" dotFieldRequired>
+                        {{ 'content-drive.dialog.folder.field.name' | dm }}
+                    </label>
+                    <input
+                    pInputText
+                    id="name"
+                    aria-describedby="name-help"
+                    formControlName="name" />
+                </div>
                 <div class="flex flex-col gap-2 mb-4">
                     <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
                         {{ 'content-drive.dialog.folder.field.title' | dm }}
@@ -20,6 +30,13 @@
                         aria-describedby="title-help"
                         formControlName="title"
                         [autofocus]="true" />
+                </div>
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
+                    <p class="bg-gray-100 h-8 rounded-md px-2 flex items-center m-0">
+                        {{ $finalPath() }}
+                    </p>
                 </div>
             </p-tabpanel>
             <p-tabpanel [value]="1" class="flex flex-col gap-4 mt-4">
@@ -71,24 +88,6 @@
                             'content-drive.dialog.folder.field.default-file-asset-type.help' | dm
                         "
                         formControlName="defaultFileAssetType" />
-                </div>
-
-                <div class="flex flex-col gap-2 mb-4">
-                    <label [checkIsRequiredControl]="'name'" for="name" dotFieldRequired>
-                        {{ 'content-drive.dialog.folder.field.name' | dm }}
-                    </label>
-                    <input
-                        pInputText
-                        id="name"
-                        aria-describedby="name-help"
-                        formControlName="name" />
-                </div>
-
-                <div class="flex flex-col gap-2 mb-4">
-                    <span>{{ 'content-drive.dialog.folder.field.path' | dm }}</span>
-                    <p class="bg-gray-100 h-8 rounded-md px-2 flex items-center m-0">
-                        {{ $finalPath() }}
-                    </p>
                 </div>
 
                 <div class="flex flex-col gap-2 mb-4">
