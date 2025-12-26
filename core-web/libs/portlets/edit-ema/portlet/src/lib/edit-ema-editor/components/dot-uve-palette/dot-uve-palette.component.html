@@ -52,7 +52,11 @@
                     <p-tree
                         [value]="$layoutTree()"
                         [selectionMode]="'single'"
+                        [draggableNodes]="true"
+                        [droppableNodes]="true"
+                        [validateDrop]="true"
                         (onNodeSelect)="handleNodeSelect($event)"
+                        (onNodeDrop)="handleNodeDrop($event)"
                         class="w-full block h-full overflow-y-auto" />
                 } @else {
                     <div class="flex flex-column justify-content-center align-items-center gap-2 p-3">
