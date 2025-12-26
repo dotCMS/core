@@ -1,19 +1,18 @@
+import { fromEvent } from 'rxjs';
+
 import { Injectable, inject, DestroyRef, ElementRef } from '@angular/core';
-import { fromEvent, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
 import { filter } from 'rxjs/operators';
-import { WINDOW, isEqual } from '@dotcms/utils';
+
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { EDITOR_STATE } from '../../shared/enums';
+import { WINDOW } from '@dotcms/utils';
+
+
 import { IFRAME_SCROLL_ZONE } from '../../shared/consts';
-import { PostMessage } from '../../shared/models';
+import { EDITOR_STATE } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
 import { TEMPORAL_DRAG_ITEM, getDragItemData } from '../../utils';
-import {
-    ClientContentletArea,
-    Container,
-    EmaDragItem
-} from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
 export interface DragDropHandlers {
     onDrop: (event: DragEvent) => void;
