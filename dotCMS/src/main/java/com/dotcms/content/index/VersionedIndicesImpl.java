@@ -3,6 +3,7 @@ package com.dotcms.content.index;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import javax.annotation.Nullable;
 import org.immutables.value.Value;
 
 import java.util.Optional;
@@ -46,8 +47,13 @@ public abstract class VersionedIndicesImpl implements VersionedIndices {
 
     /**
      * The version associated with these indices
+     * Default value is OPENSEARCH_3X
      */
-    public abstract Optional<String> version();
+    @Nullable
+    @Value.Default
+    public String version() {
+        return OPENSEARCH_3X;
+    }
 
     /**
      * Gets the index name for a specific IndexType
@@ -81,21 +87,6 @@ public abstract class VersionedIndicesImpl implements VersionedIndices {
      */
     public static Builder builder(VersionedIndicesImpl from) {
         return ImmutableVersionedIndicesImpl.builder().from(from);
-    }
-
-    /**
-     * Creates an instance from individual index values with a version
-     */
-    public static VersionedIndicesImpl fromIndexValues(String live, String working, String reindexLive,
-                                                        String reindexWorking, String siteSearch, String version) {
-        return builder()
-                .live(live)
-                .working(working)
-                .reindexLive(reindexLive)
-                .reindexWorking(reindexWorking)
-                .siteSearch(siteSearch)
-                .version(version)
-                .build();
     }
 
     /**

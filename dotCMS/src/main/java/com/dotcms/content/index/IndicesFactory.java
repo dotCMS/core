@@ -6,6 +6,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import java.util.Objects;
+import java.util.Optional;
 import javax.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ public class IndicesFactory {
     private static final String COUNT_INDICES_BY_VERSION_SQL =
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
 
-    public VersionedIndices loadIndices(String version) throws DotDataException {
+    public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
         if (!UtilMethods.isSet(version)) {
             throw new DotDataException("Version cannot be null or empty");
         }
@@ -63,7 +64,7 @@ public class IndicesFactory {
         }
     }
 
-    public VersionedIndices loadLatestIndices() throws DotDataException {
+    public Optional<VersionedIndices> loadLatestIndices() throws DotDataException {
         try {
             final DotConnect dotConnect = new DotConnect();
             dotConnect.setSQL(LOAD_LATEST_INDICES_SQL);
@@ -97,7 +98,7 @@ public class IndicesFactory {
      * @return VersionedIndicesInfo containing legacy indices without version information
      * @throws DotDataException if there's an error loading the legacy indices
      */
-    public VersionedIndices loadNonVersionedIndices() throws DotDataException {
+    public Optional<VersionedIndices> loadNonVersionedIndices() throws DotDataException {
         Logger.debug(this, "Loading legacy non-versioned indices (index_version IS NULL)");
 
         try {
@@ -115,7 +116,7 @@ public class IndicesFactory {
 
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
         // STRICT VERSION REQUIREMENT - indices without version are rejected
-        final String version = indicesInfo.version().orElse(null);
+        final String version = indicesInfo.version();
         if (!UtilMethods.isSet(version)) {
             throw new DotDataException("Version is REQUIRED. This API only handles versioned indices. Indices without version are not supported.");
         }
@@ -223,13 +224,14 @@ public class IndicesFactory {
      * Expects results to have columns: index_name, index_type, index_version
      * STRICT: Only processes results that have a valid version
      */
-    private VersionedIndices buildModernIndicesFromResults(List<Map<String, Object>> results) throws DotDataException {
+    private Optional<VersionedIndices> buildModernIndicesFromResults(List<Map<String, Object>> results) throws DotDataException {
         if (results.isEmpty()) {
-            return VersionedIndicesImpl.builder().build();
+            return Optional.empty();
         }
 
         final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
         String version = null;
+        boolean foundValidIndex = false;
 
         for (Map<String, Object> row : results) {
             final String indexName = (String) row.get("index_name");
@@ -256,6 +258,8 @@ public class IndicesFactory {
                 Logger.warn(this, "Found mixed versions in result set: " + version + " vs " + indexVersion);
             }
 
+            foundValidIndex = true;
+
             switch (indexType.toLowerCase()) {
                 case "live":
                     builder.live(indexName);
@@ -278,7 +282,12 @@ public class IndicesFactory {
             }
         }
 
-        return builder.build();
+        // Return empty if no valid indices were found
+        if (!foundValidIndex) {
+            return Optional.empty();
+        }
+
+        return Optional.of(builder.build());
     }
 
     /**
@@ -296,8 +305,8 @@ public class IndicesFactory {
 
         final List<VersionedIndices> indicesList = new ArrayList<>();
         for (Map.Entry<String, List<Map<String, Object>>> entry : versionGroups.entrySet()) {
-            final VersionedIndices indicesInfo = buildModernIndicesFromResults(entry.getValue());
-            indicesList.add(indicesInfo);
+            final Optional<VersionedIndices> indicesInfoOpt = buildModernIndicesFromResults(entry.getValue());
+            indicesInfoOpt.ifPresent(indicesList::add);
         }
 
         return indicesList;
@@ -319,7 +328,7 @@ public class IndicesFactory {
      * Inserts indices from ModernIndicesInfo into the database.
      */
     private void insertIndicesForModernIndicesInfo(VersionedIndices indicesInfo) throws DotDataException {
-        final String version = indicesInfo.version().orElse(null);
+        final String version = indicesInfo.version();
         if (!UtilMethods.isSet(version)) {
             throw new DotDataException("Version is required for inserting indices");
         }
@@ -358,16 +367,18 @@ public class IndicesFactory {
      * Expects results to have columns: index_name, index_type (no index_version)
      *
      * @param results Database query results for non-versioned indices
-     * @return VersionedIndicesInfo containing legacy indices without version
+     * @return Optional containing VersionedIndicesInfo with legacy indices, empty if none found
      */
-    private VersionedIndices buildNonVersionedIndicesInfo(List<Map<String, Object>> results) {
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
-        // Note: No version is set for legacy indices
-
+    private Optional<VersionedIndices> buildNonVersionedIndicesInfo(List<Map<String, Object>> results) {
         if (results.isEmpty()) {
             Logger.debug(this, "No legacy non-versioned indices found");
-            return builder.build();
+            return Optional.empty();
         }
+
+        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder()
+                .version(null); // null for legacy indices
+
+        boolean foundValidIndex = false;
 
         for (Map<String, Object> row : results) {
             final String indexName = (String) row.get("index_name");
@@ -377,6 +388,8 @@ public class IndicesFactory {
                 Logger.debug(this, "Skipping incomplete legacy index entry: name=" + indexName + ", type=" + indexType);
                 continue;
             }
+
+            foundValidIndex = true;
 
             // Map to appropriate index type in builder
             switch (indexType.toLowerCase()) {
@@ -403,8 +416,12 @@ public class IndicesFactory {
             Logger.debug(this, "Found legacy non-versioned index: " + indexType + " -> " + indexName);
         }
 
+        if (!foundValidIndex) {
+            return Optional.empty();
+        }
+
         final VersionedIndices result = builder.build();
         Logger.info(this, "Loaded legacy non-versioned indices: " + result.toString());
-        return result;
+        return Optional.of(result);
     }
 }

@@ -2200,7 +2200,7 @@ alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) ref
 
 ALTER TABLE tag ALTER COLUMN user_id TYPE text;
 
--- ****** Indicies Data Storage *******
+-- ****** Indices Data Storage *******
 create table indicies (
   index_name varchar(100) primary key,
   index_type varchar(16) not null,

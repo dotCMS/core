@@ -3,6 +3,7 @@ package com.dotcms.content.index;
 import com.dotmarketing.exception.DotDataException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Modern API to store and retrieve information about search engine indices with MANDATORY version support.
@@ -26,10 +27,10 @@ public interface VersionedIndicesAPI {
      * Only returns indices that have the specified version (ignores legacy null-version indices).
      *
      * @param version the version to load indices for (must not be null or empty)
-     * @return ModernIndicesInfo instance with version information, or empty if not found
+     * @return Optional containing ModernIndicesInfo instance if found, empty Optional if not found
      * @throws DotDataException if there's an error loading the indices or if version is null/empty
      */
-    VersionedIndices loadIndices(String version) throws DotDataException;
+    Optional<VersionedIndices> loadIndices(String version) throws DotDataException;
 
     /**
      * Returns all ModernIndicesInfo instances for all versions stored in the system.
@@ -89,10 +90,19 @@ public interface VersionedIndicesAPI {
      * NOTE: This method is provided for migration/compatibility purposes only.
      * The main API focuses on versioned indices, but this allows access to legacy data.
      *
-     * @return VersionedIndicesInfo containing legacy indices without version information
+     * @return Optional containing VersionedIndices with legacy indices if found, empty Optional if no legacy indices exist
      * @throws DotDataException if there's an error loading the legacy indices
      */
-    VersionedIndices loadNonVersionedIndices() throws DotDataException;
+    Optional<VersionedIndices> loadNonVersionedIndices() throws DotDataException;
+
+    /**
+     * Loads the default versioned indices using the OPENSEARCH_3X version.
+     * This is a convenience method that loads indices for the default OpenSearch 3.X version.
+     *
+     * @return Optional containing VersionedIndices for the default OPENSEARCH_3X version if found, empty Optional if not found
+     * @throws DotDataException if there's an error loading the default indices
+     */
+    Optional<VersionedIndices> loadDefaultVersionedIndices() throws DotDataException;
 
     /**
      * Clears all cached indices data.

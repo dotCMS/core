@@ -593,6 +593,7 @@ public class TaskLocatorUtil {
         .add(Task250828CreateCustomAttributeTable.class)
         .add(Task251029RemoveContentTypesLegacyPortletFromLayouts.class)
         .add(Task251103AddStylePropertiesColumnInMultiTree.class)
+        .add(Task251212AddVersionColumnIndicesTable.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

@@ -42,14 +42,14 @@ public interface VersionedIndices {
     /**
      * The version associated with these indices
      */
-    Optional<String> version();
+    String version();
 
     /**
      * null versioned indices are considered legacy
      */
     default boolean isLegacy(){
-        final Optional<String> version = version();
-        return version.isEmpty() || StringUtil.isEmpty(version.get());
+        final String version = version();
+        return StringUtil.isEmpty(version);
     }
 
     /**

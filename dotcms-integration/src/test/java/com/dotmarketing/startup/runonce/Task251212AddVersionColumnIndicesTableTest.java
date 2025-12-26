@@ -1,5 +1,6 @@
 package com.dotmarketing.startup.runonce;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -10,6 +11,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -23,9 +26,11 @@ public class Task251212AddVersionColumnIndicesTableTest {
 
     private void dropColumn(final DotConnect dotConnect) {
         try {
-            final String dropConstraintSQL = "ALTER TABLE indicies DROP CONSTRAINT IF EXISTS uq_index_type_version";
-            dotConnect.executeStatement(dropConstraintSQL);
+            // Drop the new constraint first
+            final String dropNewConstraintSQL = "ALTER TABLE indicies DROP CONSTRAINT IF EXISTS uq_index_type_version";
+            dotConnect.executeStatement(dropNewConstraintSQL);
 
+            // Drop the column
             final String dropColumnSQL = "ALTER TABLE indicies DROP COLUMN IF EXISTS index_version";
             dotConnect.executeStatement(dropColumnSQL);
         } catch (Exception e) {
@@ -141,5 +146,43 @@ public class Task251212AddVersionColumnIndicesTableTest {
 
         // Test 3: forceRun should still return false
         assertFalse("forceRun() should still return false after running upgrade again", task.forceRun());
+    }
+
+    /**
+     * Test scenario: Task should be idempotent - running multiple times shouldn't cause errors
+     * Expected: Multiple executions should not cause constraint conflicts
+     */
+    @Test
+    public void test_UpgradeTask_IdempotentExecution_ShouldNotCauseErrors() throws DotDataException, SQLException {
+        final DotConnect dotConnect = new DotConnect();
+        Logger.debug(this, "Testing task idempotency");
+
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+
+        final Task251212AddVersionColumnIndicesTable task = new Task251212AddVersionColumnIndicesTable();
+
+        // Ensure we start clean
+        dropColumn(dotConnect);
+        addOldConstraintBack(dotConnect);
+
+        // Execute the task multiple times
+        task.executeUpgrade();
+        task.executeUpgrade(); // Should not throw exception
+        task.executeUpgrade(); // Should not throw exception
+
+        // Verify column still exists and constraint is properly set
+        assertTrue("Column should exist after multiple executions", columnExists());
+        assertFalse("forceRun should return false after multiple executions", task.forceRun());
+
+        // Verify the constraint exists exactly once
+        dotConnect.setSQL("SELECT COUNT(*) as count FROM information_schema.table_constraints " +
+                         "WHERE table_name = 'indicies' AND constraint_name = 'uq_index_type_version'");
+        List<Map<String, Object>> results = dotConnect.loadObjectResults();
+        assertEquals("Should have exactly one constraint", 1,
+            Integer.parseInt(results.get(0).get("count").toString()));
     }
 }

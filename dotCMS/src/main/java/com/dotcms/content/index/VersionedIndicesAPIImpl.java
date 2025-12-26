@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of IndicesAPI that uses IndicesFactory by composition.
@@ -35,22 +36,20 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     }
 
     @Override
-    public VersionedIndices loadIndices(String version) throws DotDataException {
+    public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
         Logger.debug(this, "Loading indices for version: " + version);
 
         // Try cache first
         VersionedIndices cached = cache.get(version);
         if (cached != null) {
-            return cached;
+            return Optional.of(cached);
         }
 
         // Load from database
-        VersionedIndices loaded = indicesFactory.loadIndices(version);
+        Optional<VersionedIndices> loaded = indicesFactory.loadIndices(version);
 
-        // Cache the result if it has data
-        if (loaded.version().isPresent()) {
-            cache.put(loaded);
-        }
+        // Cache the result if present
+        loaded.ifPresent(cache::put);
 
         return loaded;
     }
@@ -76,7 +75,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
     @Override
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
-        Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version().orElse("no-version"));
+        Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
 
         // Save to database
         indicesFactory.saveIndices(indicesInfo);
@@ -139,22 +138,28 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     }
 
     @Override
-    public VersionedIndices loadNonVersionedIndices() throws DotDataException {
+    public Optional<VersionedIndices> loadNonVersionedIndices() throws DotDataException {
         Logger.debug(this, "Loading legacy non-versioned indices (migration/compatibility purpose)");
 
         // Try cache first
         VersionedIndices cached = cache.getLegacyIndices();
         if (cached != null) {
-            return cached;
+            return Optional.of(cached);
         }
 
         // Load from database
-        VersionedIndices loaded = indicesFactory.loadNonVersionedIndices();
+        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices();
 
-        // Cache the result
-        cache.putLegacyIndices(loaded);
+        // Cache the result if present
+        loaded.ifPresent(cache::putLegacyIndices);
 
         return loaded;
+    }
+
+    @Override
+    public Optional<VersionedIndices> loadDefaultVersionedIndices() throws DotDataException {
+        Logger.debug(this, "Loading default versioned indices for version: " + VersionedIndices.OPENSEARCH_3X);
+        return loadIndices(VersionedIndices.OPENSEARCH_3X);
     }
 
     /**
@@ -199,11 +204,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
 
         public void put(VersionedIndices indicesInfo) {
-            if (indicesInfo == null || !indicesInfo.version().isPresent()) {
+            if (indicesInfo == null || !UtilMethods.isSet(indicesInfo.version())) {
                 return;
             }
 
-            String version = indicesInfo.version().get();
+            String version = indicesInfo.version();
             try {
                 String key = VERSION_KEY_PREFIX + version;
                 cacheAdmin.put(key, indicesInfo, primaryGroup);
