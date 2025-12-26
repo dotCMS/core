@@ -1,8 +1,11 @@
-import { Injectable, ElementRef, inject, signal, WritableSignal } from '@angular/core';
 import { fromEvent, Observable } from 'rxjs';
+
+import { Injectable, ElementRef, inject, signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
 import { WINDOW } from '@dotcms/utils';
-import { DestroyRef } from '@angular/core';
+
+
 import { PostMessage } from '../../shared/models';
 import { DotUveZoomService } from '../dot-uve-zoom/dot-uve-zoom.service';
 
@@ -47,7 +50,7 @@ export class DotUveBridgeService {
         }
     }
 
-    sendMessageToIframe(message: unknown, host: string = '*'): void {
+    sendMessageToIframe(message: unknown, host = '*'): void {
         this.iframeElement?.contentWindow?.postMessage(message, host);
     }
 
