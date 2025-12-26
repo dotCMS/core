@@ -14,7 +14,6 @@ import { computed, inject } from '@angular/core';
 
 import { exhaustMap, switchMap, tap } from 'rxjs/operators';
 
-import { DotBrowsingService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
@@ -22,6 +21,7 @@ import {
     TreeNodeItem,
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 1000;
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';

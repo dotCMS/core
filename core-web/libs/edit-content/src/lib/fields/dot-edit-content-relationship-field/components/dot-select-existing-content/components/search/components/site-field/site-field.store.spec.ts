@@ -8,8 +8,8 @@ import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
-import { DotBrowsingService } from '@dotcms/data-access';
 import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 import { PEER_PAGE_LIMIT, SiteFieldStore } from './site-field.store';
 

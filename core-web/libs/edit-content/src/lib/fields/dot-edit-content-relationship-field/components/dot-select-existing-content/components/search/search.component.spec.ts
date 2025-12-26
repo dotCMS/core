@@ -17,9 +17,9 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputTextModule } from 'primeng/inputtext';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { DotLanguagesService, DotMessageService, DotBrowsingService } from '@dotcms/data-access';
+import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { TreeNodeItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';

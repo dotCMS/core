@@ -6,8 +6,8 @@ import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { DotBrowsingService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet, mockMatchMedia } from '@dotcms/utils-testing';
 
 import { DotHostFolderFieldComponent } from './components/host-folder-field/host-folder-field.component';

@@ -6,9 +6,9 @@ import { ReactiveFormsModule } from '@angular/forms';
 
 import { TreeSelectModule } from 'primeng/treeselect';
 
-import { DotMessageService, DotBrowsingService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
+import { DotMessagePipe, DotTruncatePathPipe, DotBrowsingService } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SiteFieldComponent } from './site-field.component';

@@ -4,7 +4,7 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotBrowsingService } from '@dotcms/data-access';
+import { DotBrowsingService } from '@dotcms/ui';
 
 import { SYSTEM_HOST_NAME, HostFolderFiledStore } from './host-folder-field.store';
 

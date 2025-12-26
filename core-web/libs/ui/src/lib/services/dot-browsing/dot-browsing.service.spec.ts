@@ -1,15 +1,14 @@
 import {
-    createHttpFactory,
-    HttpMethod,
+    createServiceFactory,
     mockProvider,
-    SpectatorHttp,
+    SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { DotSiteService, DotFolderService } from '@dotcms/data-access';
 import {
     DotFolder,
-    DotCMSAPIResponse,
     SiteEntity,
     DotCMSContentlet,
     ContentByFolderParams
@@ -18,22 +17,20 @@ import { createFakeSite, createFakeFolder, createFakeContentlet } from '@dotcms/
 
 import { DotBrowsingService } from './dot-browsing.service';
 
-import { DotSiteService } from '../dot-site/dot-site.service';
-
-const FOLDER_API_ENDPOINT = '/api/v1/folder/byPath';
-
 describe('DotBrowsingService', () => {
-    let spectator: SpectatorHttp<DotBrowsingService>;
+    let spectator: SpectatorService<DotBrowsingService>;
     let dotSiteService: SpyObject<DotSiteService>;
+    let dotFolderService: SpyObject<DotFolderService>;
 
-    const createHttp = createHttpFactory({
+    const createService = createServiceFactory({
         service: DotBrowsingService,
-        providers: [mockProvider(DotSiteService)]
+        providers: [mockProvider(DotSiteService), mockProvider(DotFolderService)]
     });
 
     beforeEach(() => {
-        spectator = createHttp();
+        spectator = createService();
         dotSiteService = spectator.inject(DotSiteService);
+        dotFolderService = spectator.inject(DotFolderService);
     });
 
     describe('getSitesTreePath', () => {
@@ -114,7 +111,7 @@ describe('DotBrowsingService', () => {
     });
 
     describe('getFolders', () => {
-        it('should fetch folders by path', (done) => {
+        it('should fetch folders by path using folderService', (done) => {
             const mockFolders: DotFolder[] = [
                 createFakeFolder({
                     id: 'folder-1',
@@ -130,53 +127,36 @@ describe('DotBrowsingService', () => {
                 })
             ];
 
-            const mockResponse: DotCMSAPIResponse<DotFolder[]> = {
-                entity: mockFolders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            };
+            dotFolderService.getFolders.mockReturnValue(of(mockFolders));
 
             spectator.service.getFolders('/example.com/folder1').subscribe((result) => {
                 expect(result).toEqual(mockFolders);
+                expect(dotFolderService.getFolders).toHaveBeenCalledWith('/example.com/folder1');
                 done();
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            expect(req.request.body).toEqual({ path: '/example.com/folder1' });
-            req.flush(mockResponse);
         });
 
         it('should return empty array when no folders are found', (done) => {
-            const mockResponse: DotCMSAPIResponse<DotFolder[]> = {
-                entity: [],
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            };
+            dotFolderService.getFolders.mockReturnValue(of([]));
 
             spectator.service.getFolders('/example.com').subscribe((result) => {
                 expect(result).toEqual([]);
+                expect(dotFolderService.getFolders).toHaveBeenCalledWith('/example.com');
                 done();
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            req.flush(mockResponse);
         });
 
-        it('should handle HTTP errors', (done) => {
+        it('should handle errors from folderService', (done) => {
+            const error = new Error('Failed to fetch folders');
+            dotFolderService.getFolders.mockReturnValue(throwError(error));
+
             spectator.service.getFolders('/example.com').subscribe({
                 next: () => fail('should have thrown an error'),
-                error: (error) => {
-                    expect(error.status).toBe(500);
+                error: (err) => {
+                    expect(err).toBe(error);
                     done();
                 }
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            req.flush(null, { status: 500, statusText: 'Internal Server Error' });
         });
     });
 
@@ -203,13 +183,7 @@ describe('DotBrowsingService', () => {
                 })
             ];
 
-            const mockResponse: DotCMSAPIResponse<DotFolder[]> = {
-                entity: mockFolders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            };
+            dotFolderService.getFolders.mockReturnValue(of(mockFolders));
 
             spectator.service.getFoldersTreeNode('example.com/parent').subscribe((result) => {
                 expect(result.parent).toEqual({
@@ -232,22 +206,13 @@ describe('DotBrowsingService', () => {
                     collapsedIcon: 'pi pi-folder',
                     leaf: false
                 });
+                expect(dotFolderService.getFolders).toHaveBeenCalledWith('//example.com/parent');
                 done();
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            expect(req.request.body).toEqual({ path: '//example.com/parent' });
-            req.flush(mockResponse);
         });
 
         it('should filter out empty folder arrays', (done) => {
-            const mockResponse: DotCMSAPIResponse<DotFolder[]> = {
-                entity: [],
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            };
+            dotFolderService.getFolders.mockReturnValue(of([]));
 
             spectator.service.getFoldersTreeNode('example.com').subscribe({
                 next: () => fail('should not emit when folders array is empty'),
@@ -257,9 +222,6 @@ describe('DotBrowsingService', () => {
                     done();
                 }
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            req.flush(mockResponse);
         });
 
         it('should handle folders with only parent (no children)', (done) => {
@@ -272,36 +234,27 @@ describe('DotBrowsingService', () => {
 
             const mockFolders: DotFolder[] = [expectedParent];
 
-            const mockResponse: DotCMSAPIResponse<DotFolder[]> = {
-                entity: [...mockFolders],
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            };
+            dotFolderService.getFolders.mockReturnValue(of([...mockFolders]));
 
             spectator.service.getFoldersTreeNode('example.com/parent').subscribe((result) => {
                 expect(result.parent).toEqual(expectedParent);
                 expect(result.folders).toEqual([]);
+                expect(dotFolderService.getFolders).toHaveBeenCalledWith('//example.com/parent');
                 done();
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            expect(req.request.body).toEqual({ path: '//example.com/parent' });
-            req.flush(mockResponse);
         });
 
-        it('should handle HTTP errors', (done) => {
+        it('should handle errors from folderService', (done) => {
+            const error = new Error('Failed to fetch folders');
+            dotFolderService.getFolders.mockReturnValue(throwError(error));
+
             spectator.service.getFoldersTreeNode('example.com').subscribe({
                 next: () => fail('should have thrown an error'),
-                error: (error) => {
-                    expect(error.status).toBe(404);
+                error: (err) => {
+                    expect(err).toBe(error);
                     done();
                 }
             });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            req.flush(null, { status: 404, statusText: 'Not Found' });
         });
     });
 
@@ -333,7 +286,7 @@ describe('DotBrowsingService', () => {
                     addChildrenAllowed: true
                 }),
                 createFakeFolder({
-                    id: 'level2-folder',
+                    id: 'parent-level2',
                     hostName: 'example.com',
                     path: '/level1/level2',
                     addChildrenAllowed: true
@@ -348,47 +301,32 @@ describe('DotBrowsingService', () => {
                     addChildrenAllowed: true
                 }),
                 createFakeFolder({
-                    id: 'level1-folder',
+                    id: 'parent-level1',
                     hostName: 'example.com',
                     path: '/level1',
                     addChildrenAllowed: true
                 })
             ];
 
+            // Mock responses for each path in reverse order (as paths are reversed in the service)
+            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
+                if (requestedPath === '//example.com/level1/level2/') {
+                    return of(level2Folders);
+                } else if (requestedPath === '//example.com/level1/') {
+                    return of(level1Folders);
+                } else if (requestedPath === '//example.com/') {
+                    return of(rootFolders);
+                }
+
+                return of([]);
+            });
+
             spectator.service.buildTreeByPaths(path).subscribe((result) => {
                 expect(result).toBeDefined();
                 expect(result.tree).toBeDefined();
                 expect(result.tree?.folders).toBeDefined();
+                expect(dotFolderService.getFolders).toHaveBeenCalledTimes(3);
                 done();
-            });
-
-            // Expect 3 requests (one for each path segment)
-            const requests = spectator.controller.match(
-                (req) => req.url === FOLDER_API_ENDPOINT && req.method === HttpMethod.POST
-            );
-            expect(requests).toHaveLength(3);
-
-            // Flush responses in reverse order (as paths are reversed)
-            requests[0].flush({
-                entity: level2Folders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            });
-            requests[1].flush({
-                entity: level1Folders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            });
-            requests[2].flush({
-                entity: rootFolders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
             });
         });
 
@@ -404,19 +342,13 @@ describe('DotBrowsingService', () => {
                 })
             ];
 
+            dotFolderService.getFolders.mockReturnValue(of(rootFolders));
+
             spectator.service.buildTreeByPaths(path).subscribe((result) => {
                 expect(result).toBeDefined();
                 expect(result.tree).toBeDefined();
+                expect(dotFolderService.getFolders).toHaveBeenCalledWith('//example.com/');
                 done();
-            });
-
-            const req = spectator.expectOne(FOLDER_API_ENDPOINT, HttpMethod.POST);
-            req.flush({
-                entity: rootFolders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
             });
         });
 
@@ -431,7 +363,7 @@ describe('DotBrowsingService', () => {
                     addChildrenAllowed: true
                 }),
                 createFakeFolder({
-                    id: 'level1-folder',
+                    id: 'parent-level1',
                     hostName: 'example.com',
                     path: '/level1',
                     addChildrenAllowed: true
@@ -447,51 +379,36 @@ describe('DotBrowsingService', () => {
                 })
             ];
 
+            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
+                if (requestedPath === '//example.com/level1/') {
+                    return of(level1Folders);
+                } else if (requestedPath === '//example.com/') {
+                    return of(rootFolders);
+                }
+
+                return of([]);
+            });
+
             spectator.service.buildTreeByPaths(path).subscribe((result) => {
                 expect(result).toBeDefined();
+                expect(dotFolderService.getFolders).toHaveBeenCalledTimes(2);
                 done();
-            });
-
-            // Expect 2 requests (one for each path segment: example.com/ and example.com/level1/)
-            const requests = spectator.controller.match(
-                (req) => req.url === FOLDER_API_ENDPOINT && req.method === HttpMethod.POST
-            );
-            expect(requests).toHaveLength(2);
-
-            // Flush responses in reverse order (as paths are reversed)
-            requests[0].flush({
-                entity: level1Folders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
-            });
-            requests[1].flush({
-                entity: rootFolders,
-                errors: [],
-                messages: [],
-                permissions: [],
-                i18nMessagesMap: {}
             });
         });
 
         it('should handle errors when building tree', (done) => {
             const path = 'example.com/level1';
+            const error = new Error('Failed to fetch folders');
+
+            dotFolderService.getFolders.mockReturnValue(throwError(error));
 
             spectator.service.buildTreeByPaths(path).subscribe({
                 next: () => fail('should have thrown an error'),
-                error: (error) => {
-                    expect(error).toBeDefined();
+                error: (err) => {
+                    expect(err).toBe(error);
                     done();
                 }
             });
-
-            const requests = spectator.controller.match(
-                (req) => req.url === FOLDER_API_ENDPOINT && req.method === HttpMethod.POST
-            );
-            if (requests.length > 0) {
-                requests[0].flush(null, { status: 500, statusText: 'Internal Server Error' });
-            }
         });
     });
 

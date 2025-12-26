@@ -8,7 +8,6 @@ import { map, pluck } from 'rxjs/operators';
 import {
     DotContentTypeService,
     DotWorkflowActionsFireService,
-    DotBrowsingService,
     DotTagsService,
     DotContentletService
 } from '@dotcms/data-access';
@@ -22,8 +21,10 @@ import {
     CustomTreeNode,
     DotFolder,
     TreeNodeItem,
-    ContentByFolderParams
+    ContentByFolderParams,
+    DotCMSAPIResponse
 } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
 
@@ -198,8 +199,10 @@ export class DotEditContentService {
      */
     createActivity(identifier: string, comment: string): Observable<Activity> {
         return this.#http
-            .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
-            .pipe(pluck('entity'));
+            .post<
+                DotCMSAPIResponse<Activity>
+            >(`/api/v1/workflow/${identifier}/comments`, { comment })
+            .pipe(map((response) => response.entity));
     }
 
     /**

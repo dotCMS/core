@@ -12,7 +12,6 @@ import { fakeAsync, tick } from '@angular/core/testing';
 
 import { delay } from 'rxjs/operators';
 
-import { DotBrowsingService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
@@ -20,6 +19,7 @@ import {
     TreeNodeSelectItem,
     DotFolder
 } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet, createFakeEvent } from '@dotcms/utils-testing';
 
 import { DotBrowserSelectorStore, SYSTEM_HOST_ID } from './browser.store';

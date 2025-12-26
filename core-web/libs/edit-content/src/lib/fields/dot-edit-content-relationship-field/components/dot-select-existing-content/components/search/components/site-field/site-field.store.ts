@@ -7,8 +7,8 @@ import { computed, inject } from '@angular/core';
 
 import { tap, exhaustMap, switchMap } from 'rxjs/operators';
 
-import { DotBrowsingService } from '@dotcms/data-access';
 import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 
 /** Maximum number of items to fetch per page */
 export const PEER_PAGE_LIMIT = 7000;

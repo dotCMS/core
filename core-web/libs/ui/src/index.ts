@@ -51,6 +51,7 @@ export * from './lib/dot-site-selector/dot-site-selector.directive';
 // Services
 export * from './lib/services/clipboard/ClipboardUtil';
 export * from './lib/services/dot-copy-content-modal/dot-copy-content-modal.service';
+export * from './lib/services/dot-browsing/dot-browsing.service';
 // Pipes
 export * from './lib/dot-contentlet-status/dot-contentlet-status.pipe';
 export * from './lib/dot-message/dot-message.pipe';

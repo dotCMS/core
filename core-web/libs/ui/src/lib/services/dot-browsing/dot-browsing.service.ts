@@ -1,19 +1,16 @@
 import { Observable, forkJoin } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { filter, map } from 'rxjs/operators';
 
+import { DotSiteService, DotFolderService } from '@dotcms/data-access';
 import {
     DotFolder,
     TreeNodeItem,
-    DotCMSAPIResponse,
     CustomTreeNode,
     ContentByFolderParams
 } from '@dotcms/dotcms-models';
-
-import { DotSiteService } from '../dot-site/dot-site.service';
 
 /**
  * Provide util methods to get Tags available in the system.
@@ -24,9 +21,8 @@ import { DotSiteService } from '../dot-site/dot-site.service';
     providedIn: 'root'
 })
 export class DotBrowsingService {
-    readonly #http = inject(HttpClient);
     readonly #siteService = inject(DotSiteService);
-
+    readonly #folderService = inject(DotFolderService);
     /**
      * Retrieves and transforms site data into TreeNode format for the site/folder field.
      * Optionally filters out the System Host based on the isRequired parameter.
@@ -72,9 +68,7 @@ export class DotBrowsingService {
      * @memberof DotEditContentService
      */
     getFolders(path: string): Observable<DotFolder[]> {
-        return this.#http
-            .post<DotCMSAPIResponse<DotFolder[]>>('/api/v1/folder/byPath', { path })
-            .pipe(map((response) => response.entity));
+        return this.#folderService.getFolders(path);
     }
 
     /**

@@ -7,12 +7,9 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import {
-    DotContentTypeService,
-    DotBrowsingService,
-    DotWorkflowActionsFireService
-} from '@dotcms/data-access';
+import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotContentletDepths } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentService } from './dot-edit-content.service';
