@@ -128,7 +128,78 @@ export interface StyleEditorRadioOptionObject extends StyleEditorOptionObject {
  * };
  * ```
  */
-export type StyleEditorOption = string | StyleEditorOptionObject;
+export type StyleEditorOption = StyleEditorOptionObject;
+
+/**
+ * Helper type that extracts the union of all option values from an array of options.
+ *
+ * This type extracts the `value` property from each option object and creates
+ * a union type of all possible values. This enables type-safe `defaultValue`
+ * that can only be one of the option values when used with `as const`.
+ *
+ * **Note:** For full type safety and autocomplete, use `as const` when defining options:
+ * ```typescript
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ * ```
+ *
+ * @typeParam T - Array of option objects (should be `as const` for best results)
+ *
+ * @example
+ * ```typescript
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ *
+ * type OptionValues = StyleEditorOptionValues<typeof options>;
+ * // Result: 'one' | 'two'
+ * ```
+ */
+export type StyleEditorOptionValues<T extends readonly StyleEditorOption[]> = T[number] extends {
+    value: infer V;
+}
+    ? V
+    : never;
+
+/**
+ * Helper type that extracts the union of all radio option values from an array of radio options.
+ *
+ * Similar to `StyleEditorOptionValues`, but handles radio options which can be
+ * strings or objects. Extracts the `value` property from option objects, or uses
+ * the string itself if the option is a string.
+ *
+ * **Note:** For full type safety and autocomplete, use `as const` when defining options:
+ * ```typescript
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ * ```
+ *
+ * @typeParam T - Array of radio option objects or strings (should be `as const` for best results)
+ *
+ * @example
+ * ```typescript
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ *
+ * type RadioOptionValues = StyleEditorRadioOptionValues<typeof options>;
+ * // Result: 'one' | 'two'
+ * ```
+ */
+export type StyleEditorRadioOptionValues<T extends readonly StyleEditorRadioOption[]> =
+    T[number] extends infer U
+        ? U extends string
+            ? U
+            : U extends { value: infer V }
+              ? V
+              : never
+        : never;
 
 /**
  * Option type for radio fields with visual support.
@@ -152,10 +223,40 @@ export type StyleEditorOption = string | StyleEditorOptionObject;
 export type StyleEditorRadioOption = string | StyleEditorRadioOptionObject;
 
 /**
+ * Checkbox option object with label, key identifier, and default boolean value.
+ *
+ * Unlike dropdown and radio options where `value` represents the actual value,
+ * checkbox options use `key` as the identifier and `value` as the default checked state (boolean).
+ * This distinction makes it clear that the boolean is the actual value, not just an identifier.
+ *
+ * @property label - Display label shown to users
+ * @property key - Unique identifier/key used in the defaultValue object
+ * @property value - Default checked state (true or false)
+ *
+ * @example
+ * ```typescript
+ * const checkboxOption: StyleEditorCheckboxOption = {
+ *   label: 'Underline',
+ *   key: 'underline',
+ *   value: true
+ * };
+ * ```
+ */
+export interface StyleEditorCheckboxOption {
+    /** Display label shown to users */
+    label: string;
+    /** Unique identifier/key used in the defaultValue object */
+    key: string;
+    /** Default checked state (true = checked by default, false = unchecked by default) */
+    value: boolean;
+}
+
+/**
  * Default value type for checkbox group fields.
  *
- * A record mapping option values to their boolean checked state.
- * Keys should match the option values, values indicate whether the option is checked.
+ * A record mapping option keys to their boolean checked state.
+ * This is derived automatically from checkbox options during normalization.
+ * Keys match the `key` property from checkbox options, values indicate whether the option is checked.
  *
  * @example
  * ```typescript
@@ -258,10 +359,22 @@ export type StyleEditorInputField =
  * Options can be provided as simple strings or as objects with
  * separate label and value properties for more flexibility.
  *
+ * **Type Safety Tip:** For autocomplete on `defaultValue`, use `as const` when defining options:
+ * ```typescript
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ *
+ * styleEditorField.dropdown({
+ *   options,
+ *   defaultValue: 'one' // ✓ Autocomplete works! TypeScript knows 'one' | 'two'
+ * })
+ * ```
+ *
  * @property type - Must be 'dropdown'
  * @property options - Array of selectable options. Can be strings or objects with label/value
  * @property defaultValue - Optional default selected value (must match one of the option values)
- * @property placeholder - Optional placeholder text shown when no value is selected
  *
  * @example
  * ```typescript
@@ -269,8 +382,7 @@ export type StyleEditorInputField =
  *   type: 'dropdown',
  *   label: 'Font Family',
  *   options: ['Arial', 'Helvetica', { label: 'Times New Roman', value: 'times' }],
- *   defaultValue: 'Arial',
- *   placeholder: 'Select a font'
+ *   defaultValue: 'Arial'
  * };
  * ```
  */
@@ -281,8 +393,6 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
     options: StyleEditorOption[];
     /** Optional default selected value (must match one of the option values) */
     defaultValue?: string;
-    /** Optional placeholder text shown when no value is selected */
-    placeholder?: string;
 }
 
 /**
@@ -297,6 +407,35 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
  * - `columns: 1` (default): Single column list layout
  * - `columns: 2`: Two-column grid layout, ideal for visual options with images
  *
+ * **Type Safety Tip:** For autocomplete on `defaultValue`, use `as const` when defining options:
+ * ```typescript
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ *
+ * styleEditorField.radio({
+ *   id: 'my-field',
+ *   label: 'Select option',
+ *   options,
+ *   defaultValue: 'one' // ✓ Autocomplete works! TypeScript knows 'one' | 'two'
+ *   // defaultValue: 'three' // ✗ TypeScript error: not assignable
+ * })
+ * ```
+ *
+ * Without `as const`, the function still works but won't provide autocomplete:
+ * ```typescript
+ * styleEditorField.radio({
+ *   id: 'my-field',
+ *   label: 'Select option',
+ *   options: [
+ *     { label: 'The one', value: 'one' },
+ *     { label: 'The two', value: 'two' }
+ *   ],
+ *   defaultValue: 'one' // Works, but no autocomplete
+ * })
+ * ```
+ *
  * @property type - Must be 'radio'
  * @property options - Array of selectable options. Can be strings or objects with label, value, and optional image properties
  * @property defaultValue - Optional default selected value (must match one of the option values)
@@ -304,17 +443,33 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
  *
  * @example
  * ```typescript
- * // Single column layout (default)
+ * // With type safety - use 'as const' for autocomplete
+ * const options = [
+ *   { label: 'The one', value: 'one' },
+ *   { label: 'The two', value: 'two' }
+ * ] as const;
+ *
  * const radioField: StyleEditorRadioField = {
  *   type: 'radio',
+ *   id: 'my-field',
+ *   label: 'Select option',
+ *   options,
+ *   defaultValue: 'one' // ✓ Autocomplete works!
+ * };
+ *
+ * // Single column layout (default)
+ * const alignmentField: StyleEditorRadioField = {
+ *   type: 'radio',
+ *   id: 'alignment',
  *   label: 'Alignment',
  *   options: ['Left', 'Center', 'Right'],
- *   defaultValue: 'left'
+ *   defaultValue: 'Left'
  * };
  *
  * // Two-column grid layout with images
  * const layoutField: StyleEditorRadioField = {
  *   type: 'radio',
+ *   id: 'layout',
  *   label: 'Layout',
  *   columns: 2,
  *   options: [
@@ -358,41 +513,42 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
  * Checkbox group field definition for multiple-value selection.
  *
  * Allows users to select multiple options simultaneously. Each option
- * can be independently checked or unchecked. The defaultValue is a
- * record mapping option values to their boolean checked state.
+ * can be independently checked or unchecked. The default checked state
+ * is defined directly in each option's `value` property (boolean).
+ *
+ * **Key Differences from Other Field Types:**
+ * - Uses `key` instead of `value` for the identifier (to avoid confusion)
+ * - Uses `value` for the default boolean checked state (the actual value)
+ * - No separate `defaultValue` property - defaults are embedded in options
  *
  * @property type - Must be 'checkboxGroup'
- * @property options - Array of selectable options. Can be strings or objects with label/value
- * @property defaultValue - Optional default checked state as a record mapping option values to boolean
+ * @property options - Array of checkbox options with label, key, and value (boolean)
  *
  * @example
  * ```typescript
  * const checkboxField: StyleEditorCheckboxGroupField = {
  *   type: 'checkboxGroup',
+ *   id: 'text-decoration',
  *   label: 'Text Decoration',
  *   options: [
- *     { label: 'Underline', value: 'underline' },
- *     { label: 'Overline', value: 'overline' },
- *     { label: 'Line Through', value: 'line-through' }
- *   ],
- *   defaultValue: {
- *     'underline': true,
- *     'overline': false,
- *     'line-through': false
- *   }
+ *     { label: 'Underline', key: 'underline', value: true },
+ *     { label: 'Overline', key: 'overline', value: false },
+ *     { label: 'Line Through', key: 'line-through', value: false }
+ *   ]
+ *   // No defaultValue needed - it's derived from options during normalization
  * };
  * ```
  */
 export interface StyleEditorCheckboxGroupField extends StyleEditorBaseField {
     /** Discriminator: must be 'checkboxGroup' */
     type: 'checkboxGroup';
-    /** Array of selectable options. Can be strings or objects with label and value properties */
-    options: StyleEditorOption[];
     /**
-     * Optional default checked state as a record mapping option values to boolean.
-     * Keys should match the option values, values indicate whether the option is checked.
+     * Array of checkbox options. Each option contains:
+     * - `label`: Display text shown to users
+     * - `key`: Unique identifier used in the normalized defaultValue object
+     * - `value`: Default checked state (true = checked, false = unchecked)
      */
-    defaultValue?: StyleEditorCheckboxDefaultValue;
+    options: StyleEditorCheckboxOption[];
 }
 
 /**
@@ -415,10 +571,18 @@ export interface StyleEditorCheckboxGroupField extends StyleEditorBaseField {
  * @example
  * ```typescript
  * const fields: StyleEditorField[] = [
- *   { type: 'input', label: 'Font Size', inputType: 'number', defaultValue: 16 },
- *   { type: 'dropdown', label: 'Font Family', options: ['Arial', 'Helvetica'] },
- *   { type: 'radio', label: 'Theme', options: ['Light', 'Dark'] },
- *   { type: 'checkboxGroup', label: 'Styles', options: ['Bold', 'Italic'] }
+ *   { type: 'input', id: 'font-size', label: 'Font Size', inputType: 'number', defaultValue: 16 },
+ *   { type: 'dropdown', id: 'font-family', label: 'Font Family', options: ['Arial', 'Helvetica'] },
+ *   { type: 'radio', id: 'theme', label: 'Theme', options: ['Light', 'Dark'] },
+ *   {
+ *     type: 'checkboxGroup',
+ *     id: 'styles',
+ *     label: 'Styles',
+ *     options: [
+ *       { label: 'Bold', key: 'bold', value: true },
+ *       { label: 'Italic', key: 'italic', value: false }
+ *     ]
+ *   }
  * ];
  *
  * // TypeScript can narrow the type based on the discriminator
@@ -534,9 +698,9 @@ export interface StyleEditorForm {
  *
  * **Note:** All properties are optional since different field types use different subsets:
  * - Input fields use: `inputType`, `placeholder`, `defaultValue`
- * - Dropdown fields use: `options`, `placeholder`, `defaultValue`
+ * - Dropdown fields use: `options`, `defaultValue`
  * - Radio fields use: `options`, `columns`, `defaultValue`
- * - Checkbox fields use: `options`, `defaultValue`
+ * - Checkbox fields use: `options`, `defaultValue` (derived from option values during normalization)
  */
 export interface StyleEditorFieldSchemaConfig {
     /** Optional input type for input fields ('text' or 'number') */

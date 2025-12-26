@@ -1,8 +1,8 @@
 <div class="form-field">
     <label class="field-label">{{ $field().label }}</label>
-    <div class="checkbox-group" [formGroupName]="$field().id">
+    <div class="checkbox-group flex flex-column" [formGroupName]="$field().id">
         @for (option of $options(); track option.value) {
-            <div class="checkbox-item">
+            <div class="flex items-center">
                 <p-checkbox
                     [formControlName]="option.value"
                     [binary]="true"

@@ -1,12 +1,5 @@
 @use "variables" as *;
 
 .checkbox-group {
-    display: flex;
-    flex-direction: column;
     gap: $spacing-2;
-}
-
-.checkbox-item {
-    display: flex;
-    align-items: center;
 }
