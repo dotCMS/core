@@ -77,7 +77,7 @@ export class DotUvePaletteComponent {
 
     /**
      * Computed signal that transforms the page layout structure into TreeNode format
-     * for the PrimeNG Tree component. Structure: rows > columns > containers
+     * for the PrimeNG Tree component. Structure: rows > columns > containers > contentlets
      */
     readonly $layoutTree = computed<TreeNode[]>(() => {
         const pageResponse = this.uveStore.pageAPIResponse();
@@ -100,13 +100,26 @@ export class DotUvePaletteComponent {
                                            container.identifier ||
                                            `Container ${containerIndex + 1}`;
 
+                    // Get contentlets for this container using uuid from layout
+                    const contentletUuid = `uuid-${container.uuid}`;
+                    const contentlets = containerData?.contentlets?.[contentletUuid] || [];
+
+                    const contentletNodes: TreeNode[] = contentlets.map((contentlet, contentletIndex) => {
+                        return {
+                            key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}-contentlet-${contentletIndex}`,
+                            label: contentlet.title || `Contentlet ${contentletIndex + 1}`,
+                            data: contentlet
+                        };
+                    });
+
                     return {
                         key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}`,
                         label: containerLabel,
                         data: {
                             ...container,
                             containerInfo: containerInfo
-                        }
+                        },
+                        children: contentletNodes.length > 0 ? contentletNodes : undefined
                     };
                 });
 
