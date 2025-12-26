@@ -37,6 +37,78 @@ import { Orientation } from '../store/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
 
+/**
+ * Builds a `<base>` href from a page URI.
+ *
+ * Example:
+ * - pageURI: `/about-us/index`
+ * - origin: `https://example.com`
+ * => `https://example.com/about-us/`
+ */
+export function getBaseHrefFromPageURI(pageURI: string, origin: string): string {
+    const parsedUrl = new URL(pageURI, origin);
+    const pathnameParts = parsedUrl.pathname.split('/');
+
+    // Remove last segment (page name) to keep the directory as base
+    if (pathnameParts.length > 1) {
+        pathnameParts.pop();
+    }
+
+    const basePath = pathnameParts.join('/') || '/';
+    const normalizedBasePath = basePath.endsWith('/') ? basePath : basePath + '/';
+
+    return parsedUrl.origin + normalizedBasePath;
+}
+
+/**
+ * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
+ *
+ * If a `<base>` tag already exists, this is a no-op.
+ */
+export type InjectBaseTagData = {
+    html: string;
+    url: string | undefined | null;
+    origin: string;
+};
+
+/**
+ * Injects a `<base>` tag into the HTML if it is missing.
+ *
+ * @param {InjectBaseTagData} data - The data to inject the base tag into.
+ * @return {string} The HTML with the base tag injected.
+ */
+export function injectBaseTag({ html, url, origin }: InjectBaseTagData): string {
+    if (!html || /<base\b/i.test(html) || !url || !origin) {
+        return html;
+    }
+
+    const baseHref = getBaseHrefFromPageURI(url, origin);
+    const baseTag = `<base href="${baseHref}">`;
+
+    // Prefer placing `<base>` inside an existing `<head>`
+    if (html.includes('</head>')) {
+        return html.replace('</head>', baseTag + '</head>');
+    }
+
+    const headOpenMatch = html.match(/<head[^>]*>/i)?.[0];
+    if (headOpenMatch) {
+        return html.replace(headOpenMatch, headOpenMatch + baseTag);
+    }
+
+    // Fallbacks for advanced templates (may not include head/body tags)
+    const htmlOpenMatch = html.match(/<html[^>]*>/i)?.[0];
+    if (htmlOpenMatch) {
+        return html.replace(htmlOpenMatch, htmlOpenMatch + `<head>${baseTag}</head>`);
+    }
+
+    const bodyOpenMatch = html.match(/<body[^>]*>/i)?.[0];
+    if (bodyOpenMatch) {
+        return html.replace(bodyOpenMatch, `<head>${baseTag}</head>` + bodyOpenMatch);
+    }
+
+    return `<head>${baseTag}</head>` + html;
+}
+
 const REORDER_MENU_BASE_URL =
     'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
 

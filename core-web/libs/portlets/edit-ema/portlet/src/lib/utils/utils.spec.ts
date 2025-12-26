@@ -9,6 +9,8 @@ import {
     getPersonalization,
     getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
+    getBaseHrefFromPageURI,
+    injectBaseTag,
     computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
@@ -43,6 +45,58 @@ describe('utils functions', () => {
     describe('SDK Editor Script Source', () => {
         it('should return the correct script source', () => {
             expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/ext/uve/dot-uve.js');
+        });
+    });
+
+    describe('base tag helpers', () => {
+        it('should build base href from pageURI', () => {
+            expect(getBaseHrefFromPageURI('/golf-outing-fundraiser', 'https://example.com')).toBe(
+                'https://example.com/'
+            );
+            expect(
+                getBaseHrefFromPageURI('/dotAdmin/golf-outing-fundraiser', 'https://example.com')
+            ).toBe('https://example.com/dotAdmin/');
+            expect(
+                getBaseHrefFromPageURI(
+                    'https://example.com/news/article-1',
+                    'https://irrelevant.com'
+                )
+            ).toBe('https://example.com/news/');
+        });
+
+        it('should inject base tag when missing and head exists', () => {
+            const html = '<html><head><title>x</title></head><body><a href="a">a</a></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+        });
+
+        it('should not inject base tag when base already exists', () => {
+            const html =
+                '<html><head><base href="https://example.com/"><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            // still only one base tag
+            expect(out.match(/<base\b/gi)?.length).toBe(1);
+        });
+
+        it('should be a no-op when pageURI is missing', () => {
+            const html = '<html><head><title>x</title></head><body></body></html>';
+            expect(
+                injectBaseTag({
+                    html,
+                    url: undefined,
+                    origin: 'https://example.com'
+                })
+            ).toBe(html);
         });
     });
 
