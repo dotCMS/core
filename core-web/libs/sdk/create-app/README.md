@@ -53,7 +53,7 @@ npx create-dotcms-app <project-name>
 Or install cli globally
 
 ```sh
-npm install -g @dotcms/create-app
+npm install -g @dotcms/sdk-create-app
 ```
 
 ## Usage
