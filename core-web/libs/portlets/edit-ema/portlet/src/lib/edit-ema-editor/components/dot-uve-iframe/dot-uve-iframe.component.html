@@ -1,0 +1,13 @@
+<iframe
+    (load)="onIframeLoad()"
+    [src]="src | safeUrl"
+    [title]="title"
+    [ngStyle]="{
+        pointerEvents: pointerEvents,
+        opacity: opacity
+    }"
+    sandbox="allow-scripts allow-same-origin allow-forms"
+    #iframe
+    data-testId="iframe"
+    width="100%"></iframe>
+

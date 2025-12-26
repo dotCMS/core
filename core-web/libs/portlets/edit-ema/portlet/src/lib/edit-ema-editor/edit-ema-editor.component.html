@@ -34,35 +34,7 @@
     [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
     data-testId="editor-content">
     <div class="canvas-viewport">
-        <div class="zoom-controls" data-testId="zoom-controls">
-            <button
-                type="button"
-                class="zoom-controls__btn"
-                (click)="zoomOut()"
-                aria-label="Zoom out"
-                data-testId="zoom-out">
-                −
-            </button>
-            <div class="zoom-controls__label" data-testId="zoom-level">
-                {{ zoomLabel() }}
-            </div>
-            <button
-                type="button"
-                class="zoom-controls__btn"
-                (click)="zoomIn()"
-                aria-label="Zoom in"
-                data-testId="zoom-in">
-                +
-            </button>
-            <button
-                type="button"
-                class="zoom-controls__btn zoom-controls__btn--reset"
-                (click)="resetView()"
-                aria-label="Reset zoom and position"
-                data-testId="zoom-reset">
-                Reset
-            </button>
-        </div>
+        <dot-uve-zoom-controls />
         <div class="canvas-row">
             <div class="canvas-gutter" aria-hidden="true"></div>
             <div class="canvas-outer" #zoomContainer [ngStyle]="$canvasOuterStyles()">
@@ -75,18 +47,18 @@
                         @if (uveStore.status() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
                         }
-                        <iframe
+                        <dot-uve-iframe
                             (load)="onIframePageLoad()"
-                            [src]="uveStore.$iframeURL() | safeUrl"
+                            (iframeDocHeightChange)="onIframeDocHeightChange($event)"
+                            (internalNav)="handleInternalNavFromIframe($event)"
+                            (inlineEditing)="handleInlineEditingFromIframe($event)"
+                            [src]="$iframeSrc()"
                             [title]="host"
-                            [ngStyle]="{
-                                pointerEvents: $editorProps().iframe.pointerEvents,
-                                opacity: $editorProps().iframe.opacity
-                            }"
-                            sandbox="allow-scripts allow-same-origin allow-forms"
+                            [pointerEvents]="$iframePointerEvents()"
+                            [opacity]="$iframeOpacity()"
                             #iframe
-                            data-testId="iframe"
-                            width="100%"></iframe>
+                            data-testId="iframe">
+                        </dot-uve-iframe>
 
                         @if ($editorProps().progressBar) {
                             <p-progressBar

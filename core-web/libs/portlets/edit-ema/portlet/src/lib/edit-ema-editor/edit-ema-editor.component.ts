@@ -1,4 +1,3 @@
-import { tapResponse } from '@ngrx/operators';
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
@@ -56,29 +55,27 @@ import {
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
+import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
+import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
-import {
-    ClientContentletArea,
-    Container,
-    EmaDragItem,
-    InlineEditingContentletDataset,
-    UpdatedContentlet
-} from './components/ema-page-dropzone/types';
+import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
+import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
+import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
+import { DotUveZoomService } from '../services/dot-uve-zoom/dot-uve-zoom.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
@@ -89,20 +86,13 @@ import {
     InsertPayloadFromDelete,
     PositionPayload,
     PostMessage,
-    ReorderMenuPayload,
-    SetUrlPayload,
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
-    SDK_EDITOR_SCRIPT_SOURCE,
     TEMPORAL_DRAG_ITEM,
-    compareUrlPaths,
-    convertClientParamsToPageParams,
-    createReorderMenuURL,
     deleteContentletFromContainer,
-    getDragItemData,
     getTargetUrl,
     insertContentletInContainer,
     shouldNavigate
@@ -117,7 +107,6 @@ import {
         NgClass,
         NgStyle,
         FormsModule,
-        SafeUrlPipe,
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
@@ -129,22 +118,32 @@ import {
         DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
+        DotUveZoomControlsComponent,
+        DotUveIframeComponent,
     ],
     providers: [
         DotCopyContentModalService,
         DotCopyContentService,
         DotHttpErrorManagerService,
         DotContentletService,
-        DotTempFileUploadService
+        DotTempFileUploadService,
+        DotUveZoomService,
+        DotUveBridgeService,
+        DotUveActionsHandlerService,
+        DotUveDragDropService
     ]
 })
 export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
-    @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
+    @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
     @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
     @ViewChild('zoomContainer') zoomContainer!: ElementRef<HTMLDivElement>;
     @ViewChild('editorContent') editorContent!: ElementRef<HTMLDivElement>;
+
+    get iframe(): ElementRef<HTMLIFrameElement> | undefined {
+        return this.iframeComponent?.iframe;
+    }
 
     protected readonly uveStore = inject(UVEStore);
     private readonly dotMessageService = inject(DotMessageService);
@@ -162,19 +161,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    private readonly zoomService = inject(DotUveZoomService);
+    private readonly bridgeService = inject(DotUveBridgeService);
+    private readonly actionsHandler = inject(DotUveActionsHandlerService);
+    private readonly dragDropService = inject(DotUveDragDropService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     #iframeResizeObserver: ResizeObserver | null = null;
-
-    // Zoom and pan state
-    readonly $zoomLevel = signal<number>(1);
-    readonly $isZoomMode = signal<boolean>(false); // Ctrl/Cmd pressed
-    #zoomModeResetTimeout: ReturnType<typeof setTimeout> | null = null;
-    #gestureStartZoom = 1;
-    readonly $iframeDocHeight = signal<number>(0);
-    #didSetInitialScroll = false;
-    #iframeContentResizeObserver: ResizeObserver | null = null;
-    #iframeMutationObserver: MutationObserver | null = null;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -197,28 +190,24 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });
 
-    readonly $canvasOuterStyles = computed(() => {
-        const zoom = this.$zoomLevel();
-        const height = this.$iframeDocHeight() || 800;
-        return {
-            width: `${1520 * zoom}px`,
-            height: `${height * zoom}px`
-        };
-    });
+    readonly $canvasOuterStyles = this.zoomService.$canvasOuterStyles;
+    readonly $canvasInnerStyles = this.zoomService.$canvasInnerStyles;
 
-    readonly $canvasInnerStyles = computed(() => {
-        const zoom = this.$zoomLevel();
-        const height = this.$iframeDocHeight() || 800;
-        return {
-            width: `1520px`,
-            height: `${height}px`,
-            transform: `scale(${zoom})`,
-            transformOrigin: 'top left'
-        };
+    readonly $iframeSrc = computed((): string => {
+        const url = this.uveStore.$iframeURL();
+        return (typeof url === 'string' ? url : '') || '';
+    });
+    readonly $iframePointerEvents = computed((): string => {
+        const events = this.$editorProps().iframe.pointerEvents;
+        return (typeof events === 'string' ? events : '') || '';
+    });
+    readonly $iframeOpacity = computed((): number => {
+        const opacity = this.$editorProps().iframe.opacity;
+        return (typeof opacity === 'number' ? opacity : 1) || 1;
     });
 
     get contentWindow(): Window | null {
-        return this.iframe?.nativeElement?.contentWindow || null;
+        return this.iframeComponent?.contentWindow || null;
     }
 
     readonly $translatePageEffect = effect(() => {
@@ -256,24 +245,141 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.contentWindow?.postMessage(
+        this.bridgeService.sendMessageToIframe(
             { name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS },
             this.host
         );
-
     });
 
     ngOnInit(): void {
-        this.handleDragEvents();
-
-        fromEvent<MessageEvent>(this.window, 'message')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => this.#handleWindowMessage(event));
+        // Initialization happens in ngAfterViewInit when ViewChild references are available
+        // This lifecycle hook satisfies OnInit interface requirement
+        if (!this.uveStore) {
+            // Early validation - will never execute in normal flow
+            throw new Error('UVEStore not available');
+        }
     }
 
     ngAfterViewInit(): void {
+        if (!this.iframe) {
+            return;
+        }
+
+        // Bridge service handles message events - needs iframe which is available now
+        const messageStream = this.bridgeService.initialize(
+            this.iframe,
+            this.editorContent,
+            this.zoomService
+        );
+
+        messageStream.subscribe((event) => {
+            this.bridgeService.handleMessage(
+                event,
+                (message) => this.handleUveMessage(message),
+                () => this.#clampScrollWithinBounds()
+            );
+        });
+
         this.#setupContentletAreaReset();
-        this.#setupZoomInteractions();
+        this.setupZoom();
+        this.setupDragDrop();
+    }
+
+    private setupZoom(): void {
+        const zoomContainer = this.zoomContainer?.nativeElement;
+        const editorContent = this.editorContent?.nativeElement;
+
+        if (!zoomContainer || !editorContent) {
+            return;
+        }
+
+        this.zoomService.setupZoomInteractions(
+            zoomContainer,
+            editorContent,
+            () => this.#clampScrollWithinBounds()
+        );
+    }
+
+    private setupDragDrop(): void {
+        if (!this.iframe) {
+            return;
+        }
+
+        this.dragDropService.setupDragEvents(
+            this.uveStore,
+            this.iframe,
+            this.customDragImage,
+            this.contentWindow,
+            this.host,
+            {
+                onDrop: (event) => this.handleDrop(event),
+                onDragEnter: () => {
+                    // Handled in dragDropService
+                },
+                onDragOver: () => {
+                    // Handled in dragDropService
+                },
+                onDragLeave: () => {
+                    this.uveStore.resetEditorProperties();
+                },
+                onDragEnd: () => {
+                    this.uveStore.resetEditorProperties();
+                },
+                onDragStart: () => {
+                    // Handled in dragDropService
+                }
+            }
+        );
+    }
+
+    private handleUveMessage(message: PostMessage): void {
+        this.actionsHandler.handleAction(message, {
+            uveStore: this.uveStore,
+            dialog: this.dialog,
+            blockSidebar: this.blockSidebar,
+            inlineEditingService: this.inlineEditingService,
+            dotPageApiService: this.dotPageApiService,
+            contentWindow: this.contentWindow,
+            host: this.host,
+            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode)
+        });
+    }
+
+    private handleDrop(event: DragEvent): void {
+        event.preventDefault();
+        const target = event.target as HTMLDivElement;
+        const { position, payload, dropzone } = target.dataset;
+
+        if (dropzone !== 'true') {
+            this.uveStore.resetEditorProperties();
+            return;
+        }
+
+        const data: ClientData = JSON.parse(payload || '{}');
+        const file = event.dataTransfer?.files[0];
+        const dragItem = this.uveStore.dragItem();
+
+        if (file) {
+            this.handleFileUpload({
+                file,
+                data,
+                position,
+                dragItem
+            });
+            return;
+        }
+
+        if (!isEqual(dragItem, TEMPORAL_DRAG_ITEM) && dragItem) {
+            const positionPayload = <PositionPayload>{
+                position,
+                ...data
+            };
+
+            this.placeItem(positionPayload, dragItem);
+            return;
+        }
+
+        this.uveStore.resetEditorProperties();
     }
 
     /**
@@ -310,7 +416,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * Handles the inline editing functionality triggered by a mouse event.
      * @param e - The mouse event that triggered the inline editing.
      */
-    handleInlineEditing(e: MouseEvent) {
+    handleInlineEditing(e: MouseEvent): void {
         const target = e.target as HTMLElement;
         const element: HTMLElement = target.dataset?.mode ? target : target.closest('[data-mode]');
 
@@ -320,205 +426,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         this.inlineEditingService.handleInlineEdit({
             ...element.dataset
-        } as unknown as InlineEditingContentletDataset);
+        } as unknown as { language: string; mode: string; inode: string; fieldName: string });
     }
 
-    handleDragEvents() {
-        fromEvent(this.window, 'dragstart')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event: DragEvent) => {
-                const { dataset } = event.target as HTMLDivElement;
-                const data = getDragItemData(dataset);
-                const shouldUseCustomDragImage = dataset.useCustomDragImage === 'true';
 
-                if (shouldUseCustomDragImage) {
-                    this.setDragImage(event);
-                }
-
-                // Needed to identify if a dotcms dragItem from the window left and came back
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/setData
-                event.dataTransfer?.setData('dotcms/item', '');
-
-                // If there is no data, we do nothing because it's not a valid dragItem
-                if (!data) {
-                    return;
-                }
-
-                // Wait for the browser to finish initializing the drag before hiding controls
-                requestAnimationFrame(() => this.uveStore.setEditorDragItem(data));
-            });
-
-        fromEvent(this.window, 'dragenter')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                // For some reason the fromElement is not in the DragEvent type
-                filter((event: DragEvent & { fromElement: HTMLElement }) => !event.fromElement) // I just want to trigger this when we are dragging from the outside
-            )
-            .subscribe((event: DragEvent) => {
-                event.preventDefault();
-
-                const types = event.dataTransfer?.types || [];
-                const dragItem = this.uveStore.dragItem();
-
-                // Identify if the dotcms dragItem entered the editor from the outside
-                // We do not set dragging state, forcing users to do the dragging action again
-                // This check does not apply if users drag something from their computer
-                // More info: https://developer.mozilla.org/en-US/docs/Web/API/DataTransfer/types
-                if (!dragItem && types.includes('dotcms/item')) {
-                    return;
-                }
-
-                this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-                this.contentWindow?.postMessage(
-                    {
-                        name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
-                    },
-                    this.host
-                );
-
-                if (dragItem) {
-                    return;
-                }
-
-                this.uveStore.setEditorDragItem(TEMPORAL_DRAG_ITEM);
-            });
-
-        fromEvent(this.window, 'dragend')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                filter((event: DragEvent) => event.dataTransfer.dropEffect === 'none')
-            )
-            .subscribe(() => {
-                this.uveStore.resetEditorProperties();
-            });
-
-        fromEvent(this.window, 'dragover')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                // Check that  `dragItem()` is not empty because there is a scenario where a dragover
-                // occurs over the editor after invoking `handleReloadContentEffect`, which clears the dragItem.
-                // For more details, refer to the issue: https://github.com/dotCMS/core/issues/29855
-                filter((_event: DragEvent) => !!this.uveStore.dragItem())
-            )
-            .subscribe((event: DragEvent) => {
-                event.preventDefault(); // Prevent file opening
-
-                if (!this.iframe?.nativeElement) {
-                    return;
-                }
-
-                const iframeRect = this.iframe.nativeElement.getBoundingClientRect();
-
-                const isInsideIframe =
-                    event.clientX > iframeRect.left && event.clientX < iframeRect.right;
-
-                if (!isInsideIframe) {
-                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-
-                    return;
-                }
-
-                let direction: 'up' | 'down';
-
-                if (
-                    event.clientY > iframeRect.top &&
-                    event.clientY < iframeRect.top + IFRAME_SCROLL_ZONE
-                ) {
-                    direction = 'up';
-                }
-
-                if (
-                    event.clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE &&
-                    event.clientY <= iframeRect.bottom
-                ) {
-                    direction = 'down';
-                }
-
-                if (!direction) {
-                    this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-
-                    return;
-                }
-
-                this.uveStore.updateEditorScrollDragState();
-
-                this.contentWindow?.postMessage(
-                    { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME, direction },
-                    this.host
-                );
-            });
-
-        fromEvent(this.window, 'dragleave')
-            .pipe(
-                takeUntilDestroyed(this.#destroyRef),
-                filter((event: DragEvent) => !event.relatedTarget) // Just reset when is out of the window
-            )
-            .subscribe(() => {
-                this.uveStore.resetEditorProperties();
-            });
-
-        fromEvent(this.window, 'drop')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event: DragEvent) => {
-                event.preventDefault();
-                const target = event.target as HTMLDivElement;
-                const { position, payload, dropzone } = target.dataset;
-
-                // If we drop in a container that is not a dropzone, we just reset the editor state
-                if (dropzone !== 'true') {
-                    this.uveStore.resetEditorProperties();
-
-                    return;
-                }
-
-                const data: ClientData = JSON.parse(payload);
-                const file = event.dataTransfer?.files[0]; // We are sure that is comes but in the tests we don't have DragEvent class
-                const dragItem = this.uveStore.dragItem();
-
-                // If we have a file, we need to upload it
-                if (file) {
-                    // I need to publish the temp file to use it.
-                    this.handleFileUpload({
-                        file,
-                        data,
-                        position,
-                        dragItem
-                    });
-
-                    return;
-                }
-
-                // If we have a dragItem, we need to place it
-                if (!isEqual(dragItem, TEMPORAL_DRAG_ITEM)) {
-                    const positionPayload = <PositionPayload>{
-                        position,
-                        ...data
-                    };
-
-                    this.placeItem(positionPayload, dragItem);
-
-                    return;
-                }
-
-                this.uveStore.resetEditorProperties();
-            });
-    }
-
-    /**
-     * Handle the iframe page load
-     *
-     * @param {string} clientHost
-     * @memberof EditEmaEditorComponent
-     */
-    onIframePageLoad() {
-        if (!this.uveStore.isTraditionalPage()) {
-            return;
-        }
-
-        this.#insertPageContent();
-        this.#setSeoData();
-        this.#setupIframeAutoHeight();
-
+    onIframePageLoad(): void {
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
@@ -526,91 +438,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.setIsClientReady(true);
     }
 
-    /**
-     * Add the editor page script to VTL pages
-     *
-     * @param {string} rendered
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    addEditorPageScript(rendered = ''): string {
-        const scriptString = `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`;
-        const bodyExists = rendered.includes('</body>');
-
-        /*
-         * For advance template case. It might not include `body` tag.
-         */
-        if (!bodyExists) {
-            return rendered + scriptString;
-        }
-
-        const updatedRendered = rendered.replace('</body>', scriptString + '</body>');
-
-        return updatedRendered;
+    onIframeDocHeightChange(height: number): void {
+        this.zoomService.setIframeDocHeight(height);
+        this.#clampScrollWithinBounds();
     }
 
-    /**
-     * Add custom styles to the rendered content
-     *
-     * @param {string} rendered
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    addCustomStyles(rendered = ''): string {
-        const styles = `<style>
-
-        [data-dot-object="container"]:empty {
-            width: 100%;
-            background-color: #ECF0FD;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #030E32;
-            height: 10rem;
-        }
-
-        [data-dot-object="contentlet"].empty-contentlet {
-            min-height: 4rem;
-            width: 100%;
-        }
-
-        [data-dot-object="container"]:empty::after {
-            content: '${this.dotMessageService.get('editpage.container.is.empty')}';
-        }
-        </style>
-        `;
-
-        const headExists = rendered.includes('</head>');
-
-        /*
-         * For advance template case. It might not include `head` tag.
-         */
-        if (!headExists) {
-            return rendered + styles;
-        }
-
-        return rendered.replace('</head>', styles + '</head>');
-    }
-
-    /**
-     * Inject the editor page script and styles to the VTL content
-     *
-     * @private
-     * @param {string} rendered
-     * @return {*}  {string}
-     * @memberof EditEmaEditorComponent
-     */
-    private inyectCodeToVTL(rendered: string): string {
-        const fileWithScript = this.addEditorPageScript(rendered);
-        const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
-
-        return fileWithStylesAndScript;
-    }
 
     ngOnDestroy(): void {
         this.#iframeResizeObserver?.disconnect();
         this.#iframeResizeObserver = null;
-        this.#teardownIframeAutoHeight();
         if (this.uveStore.isTraditionalPage()) {
             this.uveStore.setIsClientReady(true);
         }
@@ -727,63 +563,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         });
     }
 
-    /**
-     *
-     * Sets the content of the iframe with the provided code.
-     * @param code - The code to be added to the iframe.
-     * @memberof EditEmaEditorComponent
-     */
-    #insertPageContent(): void {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        const doc = iframeElement.contentDocument;
-
-        const enableInlineEdit = this.uveStore.$enableInlineEdit();
-        const pageRender = this.uveStore.$pageRender();
-
-        const newDoc = this.inyectCodeToVTL(pageRender);
-
-        if (!doc) {
-            return;
-        }
-
-        doc.open();
-        doc.write(newDoc);
-        doc.close();
-
-        this.handleInlineScripts(enableInlineEdit);
+    handleInternalNavFromIframe(e: MouseEvent): void {
+        this.handleInternalNav(e);
     }
 
-    /**
-     * Handle the Injection and removal of the inline editing scripts
-     *
-     * @param {boolean} enableInlineEdit
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    handleInlineScripts(enableInlineEdit: boolean) {
-        const win = this.contentWindow;
-
-        if (!win) {
-            return;
-        }
-
-        fromEvent(win, 'click').subscribe((e: MouseEvent) => {
-            this.handleInternalNav(e);
-            this.handleInlineEditing(e); // If inline editing is not active this will do nothing
-        });
-
-        if (enableInlineEdit) {
-            this.inlineEditingService.injectInlineEdit(this.iframe);
-
-            return;
-        }
-
-        this.inlineEditingService.removeInlineEdit(this.iframe);
+    handleInlineEditingFromIframe(e: MouseEvent): void {
+        this.handleInlineEditing(e);
     }
 
     protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
@@ -824,7 +609,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 }
 
                 if (clientAction === DotCMSUVEAction.EDIT_CONTENTLET) {
-                    this.contentWindow?.postMessage(
+                    this.bridgeService.sendMessageToIframe(
                         {
                             name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                         },
@@ -898,7 +683,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 // This is a temporary solution to "reload" the content by reloading the window
                 // we should change this with a new SDK reload strategy
-                this.contentWindow?.postMessage(
+                this.bridgeService.sendMessageToIframe(
                     {
                         name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
                     },
@@ -952,266 +737,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private handlePostMessage({ action, payload }: PostMessage): void {
-        const CLIENT_ACTIONS_FUNC_MAP = {
-            [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
-                // When we set the url, we trigger in the shell component a load to get the new state of the page
-                // This triggers a rerender that makes nextjs to send the set_url again
-                // But this time the params are the same so the shell component wont trigger a load and there we know that the page is loaded
-                const isSameUrl = compareUrlPaths(this.uveStore.pageParams()?.url, payload.url);
-
-                if (isSameUrl) {
-                    this.uveStore.setEditorState(EDITOR_STATE.IDLE);
-                } else {
-                    this.uveStore.loadPageAsset({
-                        url: payload.url,
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-                }
-            },
-            [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
-                this.uveStore.setEditorBounds(payload);
-            },
-            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
-                const payload = this.uveStore.getPageSavePayload(coords.payload);
-
-                this.uveStore.setContentletArea({
-                    x: coords.x,
-                    y: coords.y,
-                    width: coords.width,
-                    height: coords.height,
-                    payload
-                });
-            },
-            [DotCMSUVEAction.IFRAME_SCROLL]: () => {
-                this.uveStore.updateEditorScrollState();
-            },
-            [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
-                // TODO: Maybe add a small debounce to avoid multiple calls
-                this.uveStore.updateEditorOnScrollEnd();
-            },
-            [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
-                dataset: InlineEditingContentletDataset;
-            }) => {
-                // The iframe say the contentlet that the content is queue to be inline edited is in multiple pages
-                // So the editor should open the dialog to ask if the edit is in ALL contentlets or only in this page.
-
-                if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
-                    return;
-                }
-
-                const { contentlet, container } = this.uveStore.contentArea().payload;
-
-                const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
-
-                this.dotCopyContentModalService
-                    .open()
-                    .pipe(
-                        switchMap(({ shouldCopy }) => {
-                            if (!shouldCopy) {
-                                return of(null);
-                            }
-
-                            return this.handleCopyContent(currentTreeNode);
-                        }),
-                        tap((res) => {
-                            this.uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
-
-                            if (res) {
-                                this.uveStore.reloadCurrentPage();
-                            }
-                        })
-                    )
-                    .subscribe((res: DotCMSContentlet | null) => {
-                        const data = {
-                            oldInode: payload.dataset.inode,
-                            inode: res?.inode || payload.dataset.inode,
-                            fieldName: payload.dataset.fieldName,
-                            mode: payload.dataset.mode,
-                            language: payload.dataset.language
-                        };
-
-                        if (!this.uveStore.isTraditionalPage()) {
-                            const message = {
-                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
-                                payload: data
-                            };
-
-                            this.contentWindow?.postMessage(message, this.host);
-
-                            return;
-                        }
-
-                        this.inlineEditingService.setTargetInlineMCEDataset(data);
-
-                        if (!res) {
-                            this.inlineEditingService.initEditor();
-                        }
-                    });
-            },
-            [DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING]: (payload: UpdatedContentlet) => {
-                this.uveStore.setEditorState(EDITOR_STATE.IDLE);
-
-                // If there is no payload, we don't need to do anything
-                if (!payload) {
-                    return;
-                }
-
-                const dataset = payload.dataset;
-
-                const contentlet = {
-                    inode: dataset['inode'],
-                    [dataset.fieldName]: payload.content
-                };
-
-                this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-                this.dotPageApiService
-                    .saveContentlet({ contentlet })
-                    .pipe(
-                        take(1),
-                        tapResponse({
-                            next: () => {
-                                this.messageService.add({
-                                    severity: 'success',
-                                    summary: this.dotMessageService.get('message.content.saved'),
-                                    detail: this.dotMessageService.get(
-                                        'message.content.note.already.published'
-                                    ),
-                                    life: 2000
-                                });
-                            },
-                            error: (e) => {
-                                console.error(e);
-                                this.messageService.add({
-                                    severity: 'error',
-                                    summary: this.dotMessageService.get(
-                                        'editpage.content.update.contentlet.error'
-                                    ),
-                                    life: 2000
-                                });
-                            }
-                        })
-                    )
-                    .subscribe(() => this.uveStore.reloadCurrentPage());
-            },
-            [DotCMSUVEAction.CLIENT_READY]: (devConfig) => {
-                const isClientReady = this.uveStore.isClientReady();
-
-                if (isClientReady) {
-                    return;
-                }
-
-                const { graphql, params, query: rawQuery } = devConfig || {};
-                const { query = rawQuery, variables } = graphql || {};
-                const legacyGraphqlResponse = !!rawQuery;
-
-                if (query || rawQuery) {
-                    this.uveStore.setCustomGraphQL({ query, variables }, legacyGraphqlResponse);
-                }
-
-                const pageParams = convertClientParamsToPageParams(params);
-                this.uveStore.reloadCurrentPage(pageParams);
-                this.uveStore.setIsClientReady(true);
-            },
-            [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                this.dialog.editContentlet({ ...contentlet, clientAction: action });
-            },
-            [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
-                const urlObject = createReorderMenuURL({
-                    startLevel,
-                    depth,
-                    pagePath: this.uveStore.pageParams().url,
-                    hostId: this.uveStore.pageAPIResponse().site.identifier
-                });
-
-                this.dialog.openDialogOnUrl(
-                    urlObject,
-                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
-                );
-            },
-            [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload) =>
-                this.#handleInlineEditingEvent(payload),
-
-            [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
-                schemas: StyleEditorFormSchema[];
-            }) => {
-                const { schemas } = payload;
-                this.uveStore.setStyleSchemas(schemas);
-            },
-            [DotCMSUVEAction.NOOP]: () => {
-                /* Do Nothing because is not the origin we are expecting */
-            }
-        };
-        const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
-        actionToExecute?.(payload);
-    }
-
-    #handleWindowMessage(event: MessageEvent): void {
-        // 1) Cross-origin iframe height bridge (e.g. Next.js at localhost:3000)
-        // Expected shape:
-        //   { name: 'dotcms:iframeHeight', payload: { height: number } }
-        // or { type: 'dotcms:iframeHeight', height: number }
-        if (this.#maybeHandleIframeHeightMessage(event)) {
-            return;
-        }
-
-        // 2) UVE messages
-        const data = event.data;
-        if (this.#isUvePostMessage(data)) {
-            this.handlePostMessage(data);
-        }
-    }
-
-    #isUvePostMessage(data: unknown): data is PostMessage {
-        return (
-            !!data &&
-            typeof data === 'object' &&
-            'action' in data &&
-            // payload can be any shape depending on action
-            true
-        );
-    }
-
-    #maybeHandleIframeHeightMessage(event: MessageEvent): boolean {
-        const iframeEl = this.iframe?.nativeElement;
-        if (!iframeEl?.contentWindow) {
-            return false;
-        }
-
-        // Only accept messages from the current iframe window.
-        if (event.source !== iframeEl.contentWindow) {
-            return false;
-        }
-
-        const data = event.data as unknown;
-        if (!data || typeof data !== 'object') {
-            return false;
-        }
-
-        const record = data as Record<string, unknown>;
-        const isNamed =
-            record['name'] === 'dotcms:iframeHeight' && typeof record['payload'] === 'object';
-        const isTyped = record['type'] === 'dotcms:iframeHeight';
-
-        let height: number | null = null;
-        if (isNamed) {
-            const payload = record['payload'] as Record<string, unknown>;
-            height = typeof payload['height'] === 'number' ? payload['height'] : null;
-        } else if (isTyped) {
-            height = typeof record['height'] === 'number' ? (record['height'] as number) : null;
-        }
-
-        if (!height || !Number.isFinite(height) || height <= 0) {
-            return false;
-        }
-
-        // Apply height so iframe never scrolls; also update our layout sizing for zoom/scroll.
-        iframeEl.style.height = `${Math.ceil(height)}px`;
-        this.$iframeDocHeight.set(Math.ceil(height));
-        this.#clampScrollWithinBounds();
-
-        return true;
-    }
 
     /**
      * Notify the user to reload the iframe
@@ -1219,8 +744,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @private
      * @memberof DotEmaComponent
      */
-    reloadIframeContent() {
-        this.iframe?.nativeElement?.contentWindow?.postMessage(
+    reloadIframeContent(): void {
+        this.bridgeService.sendMessageToIframe(
             {
                 name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
                 payload: this.#clientPayload()
@@ -1618,25 +1143,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.loadPageAsset({ language_id: '1' });
     }
 
-    #setSeoData() {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        const doc = iframeElement.contentDocument;
-
-        if (!doc) {
-            return;
-        }
-
-        this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
-            const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
-            this.uveStore.setOgTags(ogTags);
-            this.uveStore.setOGTagResults(results);
-        });
-    }
 
     #clientPayload() {
         const graphqlResponse = this.uveStore.$customGraphqlResponse();
@@ -1675,263 +1181,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.resetContentletArea();
     }
 
-    #teardownIframeAutoHeight(): void {
-        this.#iframeContentResizeObserver?.disconnect();
-        this.#iframeContentResizeObserver = null;
-        this.#iframeMutationObserver?.disconnect();
-        this.#iframeMutationObserver = null;
-    }
 
-    #setupIframeAutoHeight(): void {
-        // Traditional pages are written into the iframe via doc.write(), so they are same-origin
-        // and we can measure scrollHeight safely.
-        const iframeEl = this.iframe?.nativeElement;
 
-        if (!iframeEl) {
-            return;
-        }
-
-        // Clean previous observers (reloads, navigation, etc.)
-        this.#teardownIframeAutoHeight();
-
-        let doc: Document | null = null;
-        let win: Window | null = null;
-        try {
-            doc = iframeEl.contentDocument;
-            win = iframeEl.contentWindow;
-        } catch {
-            // Cross-origin; height must be provided via postMessage.
-            return;
-        }
-
-        if (!doc || !win) {
-            return;
-        }
-
-        const updateHeight = () => {
-            const body = doc.body;
-            const root = doc.documentElement;
-
-            if (!body || !root) {
-                return;
-            }
-
-            // Take the max between body/root to handle different doc modes.
-            const height = Math.max(body.scrollHeight, root.scrollHeight);
-
-            // Set explicit px height so the iframe itself never scrolls.
-            iframeEl.style.height = `${height}px`;
-            this.$iframeDocHeight.set(height);
-            this.#clampScrollWithinBounds();
-
-            // First time we know the real dimensions, start at top-left so header is visible.
-            if (!this.#didSetInitialScroll) {
-                this.#didSetInitialScroll = true;
-                this.#scrollToTopLeft();
-            }
-        };
-
-        // Initial sizing after layout settles.
-        requestAnimationFrame(() => {
-            updateHeight();
-            requestAnimationFrame(updateHeight);
-        });
-
-        // Keep height synced as the iframe content changes.
-        if (typeof ResizeObserver !== 'undefined') {
-            this.#iframeContentResizeObserver = new ResizeObserver(() => updateHeight());
-            // Observe both body and root (some layouts expand root, some body).
-            this.#iframeContentResizeObserver.observe(doc.body);
-            this.#iframeContentResizeObserver.observe(doc.documentElement);
-        }
-
-        if (typeof MutationObserver !== 'undefined') {
-            this.#iframeMutationObserver = new MutationObserver(() => updateHeight());
-            this.#iframeMutationObserver.observe(doc.documentElement, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                characterData: true
-            });
-        }
-
-        // Fonts/images can load async and change height.
-        fromEvent(win, 'load')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => updateHeight());
-    }
-
-    #setupZoomInteractions(): void {
-        const zoomContainer = this.zoomContainer?.nativeElement;
-        const editorContent = this.editorContent?.nativeElement;
-
-        if (!zoomContainer || !editorContent) {
-            return;
-        }
-
-        type GestureLikeEvent = Event & {
-            scale?: number;
-            clientX: number;
-            clientY: number;
-            preventDefault: () => void;
-        };
-
-        // Track zoom modifier keys (optional, to indicate "zoom mode" + support Safari gestures).
-        fromEvent<KeyboardEvent>(this.window, 'keydown')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => {
-                if (event.key === 'Control' || event.code.startsWith('Control')) {
-                    this.$isZoomMode.set(true);
-                }
-                if (event.key === 'Meta' || event.code.startsWith('Meta')) {
-                    this.$isZoomMode.set(true);
-                }
-            });
-
-        fromEvent<KeyboardEvent>(this.window, 'keyup')
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => {
-                if (event.key === 'Control' || event.code.startsWith('Control')) {
-                    this.$isZoomMode.set(false);
-                }
-                if (event.key === 'Meta' || event.code.startsWith('Meta')) {
-                    this.$isZoomMode.set(false);
-                }
-            });
-
-        const applyZoomFromWheel = (event: WheelEvent) => {
-            // Trackpad pinch zoom (and Ctrl/Cmd+wheel) sets ctrlKey/metaKey.
-            if (!event.ctrlKey && !event.metaKey) {
-                return;
-            }
-
-            // Only hijack zoom if the pointer is inside the editor content region.
-            const rect = editorContent.getBoundingClientRect();
-            const insideEditor =
-                event.clientX >= rect.left &&
-                event.clientX <= rect.right &&
-                event.clientY >= rect.top &&
-                event.clientY <= rect.bottom;
-
-            if (!insideEditor) {
-                return;
-            }
-
-            // Critical: stops the browser from zooming the whole viewport.
-            event.preventDefault();
-
-            this.$isZoomMode.set(true);
-            if (this.#zoomModeResetTimeout) {
-                clearTimeout(this.#zoomModeResetTimeout);
-            }
-            this.#zoomModeResetTimeout = setTimeout(() => this.$isZoomMode.set(false), 150);
-
-            const delta = event.deltaY > 0 ? -0.1 : 0.1;
-            const newZoom = Math.max(0.1, Math.min(3, this.$zoomLevel() + delta));
-            this.$zoomLevel.set(newZoom);
-            this.#clampScrollWithinBounds();
-        };
-
-        // Zoom with mouse wheel on the canvas container
-        fromEvent<WheelEvent>(zoomContainer, 'wheel', { passive: false })
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(applyZoomFromWheel);
-
-        // Zoom with mouse wheel on the whole editor content area
-        fromEvent<WheelEvent>(editorContent, 'wheel', { passive: false })
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(applyZoomFromWheel);
-
-        // Trackpad pinch can still trigger browser zoom if the event originates from the iframe.
-        // Capture wheel at window-level and preventDefault when pointer is inside editor.
-        fromEvent<WheelEvent>(this.window, 'wheel', { passive: false, capture: true } as AddEventListenerOptions)
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(applyZoomFromWheel);
-
-        // Safari trackpad pinch uses non-standard GestureEvents (best-effort support).
-        fromEvent<GestureLikeEvent>(
-            this.window,
-            'gesturestart',
-            { passive: false, capture: true } as AddEventListenerOptions
-        )
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => {
-                const rect = editorContent.getBoundingClientRect();
-                const insideEditor =
-                    event.clientX >= rect.left &&
-                    event.clientX <= rect.right &&
-                    event.clientY >= rect.top &&
-                    event.clientY <= rect.bottom;
-
-                if (!insideEditor) {
-                    return;
-                }
-
-                event.preventDefault();
-                this.$isZoomMode.set(true);
-                this.#gestureStartZoom = this.$zoomLevel();
-            });
-
-        fromEvent<GestureLikeEvent>(
-            this.window,
-            'gesturechange',
-            { passive: false, capture: true } as AddEventListenerOptions
-        )
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => {
-                const rect = editorContent.getBoundingClientRect();
-                const insideEditor =
-                    event.clientX >= rect.left &&
-                    event.clientX <= rect.right &&
-                    event.clientY >= rect.top &&
-                    event.clientY <= rect.bottom;
-
-                if (!insideEditor) {
-                    return;
-                }
-
-                event.preventDefault();
-                const scale = typeof event.scale === 'number' ? event.scale : 1;
-                const newZoom = Math.max(0.1, Math.min(3, this.#gestureStartZoom * scale));
-                this.$zoomLevel.set(newZoom);
-            });
-
-        fromEvent<GestureLikeEvent>(
-            this.window,
-            'gestureend',
-            { passive: false, capture: true } as AddEventListenerOptions
-        )
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event) => {
-                event.preventDefault();
-                this.$isZoomMode.set(false);
-            });
-
-        // No panning: scrolling on editorContent is the navigation mechanism.
-    }
 
     protected handleSelectContent(contentlet: ContentletPayload): void {
         this.uveStore.setActiveContentlet(contentlet);
     }
 
-    zoomIn(): void {
-        this.$zoomLevel.set(Math.max(0.1, Math.min(3, this.$zoomLevel() + 0.1)));
-        this.#clampScrollWithinBounds();
-    }
-
-    zoomOut(): void {
-        this.$zoomLevel.set(Math.max(0.1, Math.min(3, this.$zoomLevel() - 0.1)));
-        this.#clampScrollWithinBounds();
-    }
-
-    resetView(): void {
-        this.$zoomLevel.set(1);
-        this.#scrollToTopLeft();
-    }
-
-    zoomLabel(): string {
-        return `${Math.round(this.$zoomLevel() * 100)}%`;
-    }
 
     #scrollToTopLeft(): void {
         const el = this.editorContent?.nativeElement;
@@ -1939,7 +1195,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        // Let layout apply widths/heights first.
         requestAnimationFrame(() => {
             el.scrollLeft = 0;
             el.scrollTop = 0;
@@ -1962,21 +1217,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         });
     }
 
-    /**
-     * Applies the custom drag preview used when the drag originates from the
-     * contentlet controls (identified via `data-drag-origin="contentlet-controls"`).
-     * Keeping this logic here ensures future contributors know where the drag
-     * control trigger lives.
-     *
-     * @param event - The drag event.
-     */
-    protected setDragImage(event: DragEvent): void {
-        if (!event.dataTransfer) {
-            return;
-        }
-
-        event.dataTransfer.setDragImage(this.customDragImage.nativeElement, 0, 0);
-    }
 
     protected handleTabChange(tab: UVE_PALETTE_TABS): void {
         this.uveStore.setPaletteTab(tab);
