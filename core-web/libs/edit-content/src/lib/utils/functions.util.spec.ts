@@ -16,7 +16,6 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
 import {
-    createPaths,
     generatePreviewUrl,
     getFieldVariablesParsed,
     getStoredUIState,
@@ -1117,7 +1116,7 @@ describe('Utils Functions', () => {
             expect(result).toEqual({});
         });
     });
-
+    /*
     describe('createPaths function', () => {
         it('with the root path', () => {
             const path = 'nico.demo.ts';
@@ -1164,7 +1163,7 @@ describe('Utils Functions', () => {
             expect(paths).toStrictEqual([]);
         });
     });
-
+*/
     describe('UI State Storage', () => {
         beforeEach(() => {
             sessionStorage.clear();

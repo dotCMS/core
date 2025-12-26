@@ -1,7 +1,13 @@
 import { NgZone } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { DotBrowserSelectorComponent } from '@dotcms/ui';
+
 import {
+    BrowserSelectorController,
+    BrowserSelectorOptions,
     FieldCallback,
     FieldSubscription,
     FormBridge,
@@ -22,10 +28,12 @@ import {
 export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
     private fieldSubscriptions: Map<string, FieldSubscription> = new Map();
+    #dialogRef: DynamicDialogRef | null = null;
 
     private constructor(
         private form: FormGroup,
-        private zone: NgZone
+        private zone: NgZone,
+        private dialogService: DialogService
     ) {}
 
     /**
@@ -34,11 +42,16 @@ export class AngularFormBridge implements FormBridge {
      *
      * @param form - The Angular FormGroup to bridge
      * @param zone - The NgZone for change detection
+     * @param dialogService - The PrimeNG DialogService for opening dialogs
      * @returns The singleton instance of AngularFormBridge
      */
-    static getInstance(form: FormGroup, zone: NgZone): AngularFormBridge {
+    static getInstance(
+        form: FormGroup,
+        zone: NgZone,
+        dialogService: DialogService
+    ): AngularFormBridge {
         if (!AngularFormBridge.instance) {
-            AngularFormBridge.instance = new AngularFormBridge(form, zone);
+            AngularFormBridge.instance = new AngularFormBridge(form, zone, dialogService);
         } else if (
             AngularFormBridge.instance.form !== form ||
             AngularFormBridge.instance.zone !== zone
@@ -162,13 +175,17 @@ export class AngularFormBridge implements FormBridge {
 
     /**
      * Cleans up all subscriptions when the bridge is destroyed.
-     * Also resets the singleton instance.
+     * Also resets the singleton instance and closes any open dialogs.
      */
     destroy(): void {
         this.fieldSubscriptions.forEach((fieldSubscription) => {
             fieldSubscription.subscription.unsubscribe();
         });
         this.fieldSubscriptions.clear();
+
+        // Close any open dialog
+        this.#dialogRef?.close();
+        this.#dialogRef = null;
 
         // Reset singleton instance if this is the current instance
         if (AngularFormBridge.instance === this) {
@@ -224,5 +241,107 @@ export class AngularFormBridge implements FormBridge {
      */
     ready(callback: (api: FormBridge) => void): void {
         callback(this);
+    }
+
+    /**
+     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     * Uses PrimeNG DialogService to open the DotBrowserSelectorComponent.
+     *
+     * @param options - Configuration options for the browser selector.
+     * @param options.header - The title/header of the dialog. Defaults to 'Select Content' if not provided.
+     * @param options.params - The parameters for the browser selector (ContentByFolderParams).
+     * @param options.params.hostFolderId - The ID of the host folder to browse (required).
+     * @param options.params.mimeTypes - Optional array of MIME types to filter by.
+     * @param options.params.showPages - Optional flag to show pages.
+     * @param options.params.showFiles - Optional flag to show files.
+     * @param options.params.showFolders - Optional flag to show folders.
+     * @param options.params.showLinks - Optional flag to show links.
+     * @param options.params.showDotAssets - Optional flag to show dotCMS assets.
+     * @param options.params.showArchived - Optional flag to show archived content.
+     * @param options.params.showWorking - Optional flag to show working content.
+     * @param options.params.sortByDesc - Optional flag to sort in descending order.
+     * @param options.params.extensions - Optional array of file extensions to filter by.
+     * @param options.onClose - Callback function executed when the browser selector is closed.
+     * @returns A controller object to manage the dialog.
+     *
+     * @example
+     * // Select a page
+     * bridge.openBrowserModal({
+     *   header: 'Select a Page',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     mimeTypes: ['application/dotpage']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select an image
+     * bridge.openBrowserModal({
+     *   header: 'Select an Image',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     mimeTypes: ['image']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     *
+     * @example
+     * // Select any file with additional filters
+     * bridge.openBrowserModal({
+     *   header: 'Select a File',
+     *   params: {
+     *     hostFolderId: 'folder-id',
+     *     showFiles: true,
+     *     showPages: false,
+     *     showFolders: false,
+     *     extensions: ['.jpg', '.png', '.gif']
+     *   },
+     *   onClose: (result) => console.log(result)
+     * });
+     */
+    openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController {
+        const header = options.header ?? 'Select Content';
+
+        this.zone.run(() => {
+            this.#dialogRef = this.dialogService.open(DotBrowserSelectorComponent, {
+                header,
+                appendTo: 'body',
+                closeOnEscape: false,
+                draggable: false,
+                keepInViewport: false,
+                maskStyleClass: 'p-dialog-mask-dynamic',
+                resizable: false,
+                modal: true,
+                width: '90%',
+                style: { 'max-width': '1040px' },
+                data: {
+                    ...options.params
+                }
+            });
+
+            this.#dialogRef.onClose.subscribe((content) => {
+                if (content) {
+                    options.onClose({
+                        identifier: content.identifier,
+                        inode: content.inode,
+                        title: content.title,
+                        name: content.name || content.fileName,
+                        url: content.url || content.urlMap || '',
+                        mimeType: content.mimeType,
+                        baseType: content.baseType,
+                        contentType: content.contentType
+                    });
+                } else {
+                    options.onClose(null);
+                }
+            });
+        });
+
+        return {
+            close: () => {
+                this.#dialogRef?.close();
+            }
+        };
     }
 }

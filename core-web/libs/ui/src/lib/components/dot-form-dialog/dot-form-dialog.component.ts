@@ -39,10 +39,10 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     saveButtonLoading: boolean;
 
     @Output()
-    save: EventEmitter<MouseEvent | KeyboardEvent> = new EventEmitter(null);
+    save: EventEmitter<MouseEvent | KeyboardEvent> = new EventEmitter();
 
     @Output()
-    cancel: EventEmitter<MouseEvent> = new EventEmitter(null);
+    cancel: EventEmitter<MouseEvent> = new EventEmitter();
 
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');

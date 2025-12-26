@@ -1,16 +1,14 @@
-import { from, Observable, of } from 'rxjs';
+import { from, Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { map, switchMap, tap } from 'rxjs/operators';
 
-import { DotUploadFileService, DotUploadService } from '@dotcms/data-access';
+import { DotContentletService, DotUploadFileService, DotUploadService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import { checkMimeType } from '@dotcms/utils';
 
 import { UploadedFile, UPLOAD_TYPE } from '../../../../models/dot-edit-content-file.model';
-import { DotEditContentService } from '../../../../services/dot-edit-content.service';
-import { getFileMetadata, getFileVersion, checkMimeType } from '../../utils';
 
 export type UploadFileProps = {
     file: File | string;
@@ -24,8 +22,7 @@ export type UploadFileProps = {
 export class DotFileFieldUploadService {
     readonly #fileService = inject(DotUploadFileService);
     readonly #tempFileService = inject(DotUploadService);
-    readonly #contentService = inject(DotEditContentService);
-    readonly #httpClient = inject(HttpClient);
+    readonly #dotContentletService = inject(DotContentletService);
 
     /**
      * Uploads a file or a string as a dotAsset contentlet.
@@ -118,9 +115,7 @@ export class DotFileFieldUploadService {
      * @returns a contentlet with the file metadata and id
      */
     uploadDotAsset(file: File | string) {
-        return this.#fileService
-            .uploadDotAsset(file)
-            .pipe(switchMap((contentlet) => this.#addContent(contentlet)));
+        return this.#fileService.uploadDotAssetWithContent(file);
     }
 
     /**
@@ -129,35 +124,6 @@ export class DotFileFieldUploadService {
      * @returns a contentlet with the content if it's a editable as text file
      */
     getContentById(identifier: string) {
-        return this.#contentService
-            .getContentById({ id: identifier })
-            .pipe(switchMap((contentlet) => this.#addContent(contentlet)));
-    }
-
-    /**
-     * Adds the content of a contentlet if it's a editable as text file.
-     * @param contentlet the contentlet to be processed
-     * @returns a contentlet with the content if it's a editable as text file, otherwise the original contentlet
-     */
-    #addContent(contentlet: DotCMSContentlet) {
-        const { editableAsText } = getFileMetadata(contentlet);
-        const contentURL = getFileVersion(contentlet);
-
-        if (editableAsText && contentURL) {
-            return this.#getContentFile(contentURL).pipe(
-                map((content) => ({ ...contentlet, content }))
-            );
-        }
-
-        return of(contentlet);
-    }
-
-    /**
-     * Downloads the content of a file by its URL.
-     * @param contentURL the URL of the file content
-     * @returns an observable of the file content
-     */
-    #getContentFile(contentURL: string) {
-        return this.#httpClient.get(contentURL, { responseType: 'text' });
+        return this.#dotContentletService.getContentletByInodeWithContent(identifier);
     }
 }

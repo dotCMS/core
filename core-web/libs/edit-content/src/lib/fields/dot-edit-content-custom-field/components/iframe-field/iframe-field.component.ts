@@ -15,6 +15,7 @@ import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angu
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -48,7 +49,8 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
         {
             provide: WINDOW,
             useValue: window
-        }
+        },
+        DialogService
     ],
     host: {
         '[class.no-label]': '!$showLabel()'
@@ -166,7 +168,12 @@ export class IframeFieldComponent implements OnDestroy {
      * The zone to run the code in.
      */
     #zone = inject(NgZone);
-
+    /**
+     * A private field that holds an instance of the DialogService.
+     * This service is injected using Angular's dependency injection mechanism.
+     * It is used to manage dialog interactions within the component.
+     */
+    readonly #dialogService = inject(DialogService);
     /**
      * The form to get the form.
      */
@@ -288,7 +295,8 @@ export class IframeFieldComponent implements OnDestroy {
         this.#formBridge = createFormBridge({
             type: 'angular',
             form,
-            zone: this.#zone
+            zone: this.#zone,
+            dialogService: this.#dialogService
         });
     }
 

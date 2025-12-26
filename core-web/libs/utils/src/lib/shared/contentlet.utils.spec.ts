@@ -1,6 +1,6 @@
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { getFileMetadata, getFileVersion, cleanMimeTypes, checkMimeType } from './index';
+import { getFileMetadata, getFileVersion, cleanMimeTypes, checkMimeType } from './contentlet.utils';
 
 import { NEW_FILE_MOCK, TEMP_FILE_MOCK } from '../../../utils/mocks';
 

@@ -28,7 +28,7 @@ export const EMPTY_FIELD: DotCMSContentTypeField = {
     clazz: null,
     defaultValue: null,
     hint: null,
-    regexCheck: null,
+    regexCheck: undefined,
     values: null
 };
 

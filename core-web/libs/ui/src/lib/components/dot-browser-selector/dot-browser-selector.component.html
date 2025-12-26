@@ -7,7 +7,7 @@
             <dot-sidebar
                 [folders]="folders.data"
                 [loading]="store.foldersIsLoading()"
-                (onNodeSelect)="store.loadContent($event)"
+                (onNodeSelect)="onNodeSelect($event)"
                 (onNodeExpand)="store.loadChildren($event)" />
         </div>
         <div class="col h-full">

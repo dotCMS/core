@@ -23,7 +23,7 @@
     filterMode="lenient"
     selectionMode="single">
     <ng-template let-node pTemplate="default">
-        <span>{{ node.label | truncatePath }}</span>
+        <span>{{ node.label | dotTruncatePath }}</span>
     </ng-template>
     <ng-template let-item pTemplate="value">
         <span>//{{ item?.label }}</span>

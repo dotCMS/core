@@ -29,13 +29,13 @@ import {
     DotMessagePipe,
     DotCopyButtonComponent
 } from '@dotcms/ui';
+import { getFileMetadata } from '@dotcms/utils';
 
 import {
     DotPreviewResourceLink,
     UploadedFile
 } from '../../../../models/dot-edit-content-file.model';
 import { CONTENT_TYPES, DEFAULT_CONTENT_TYPE } from '../../dot-edit-content-file-field.const';
-import { getFileMetadata } from '../../utils';
 
 type FileInfo = UploadedFile & {
     contentType: string;
