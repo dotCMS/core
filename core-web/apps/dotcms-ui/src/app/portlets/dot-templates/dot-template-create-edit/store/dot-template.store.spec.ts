@@ -649,7 +649,7 @@ describe('DotTemplateStore', () => {
             });
 
             it('should handle error on update template', (done) => {
-                const error = throwError(new HttpErrorResponse(mockResponseView(400)));
+                const error = throwError(() => new HttpErrorResponse(mockResponseView(400)));
                 dotTemplatesService.update = jest.fn().mockReturnValue(error);
                 service.saveTemplate({
                     body: 'string',

@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
@@ -40,13 +40,18 @@ export class DotAppsConfigurationDetailComponent implements OnInit {
     formValid = false;
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
-            this.apps = app;
-            this.formFields = this.getSecrets(app.sites[0].secrets);
-            this.dynamicVariables = this.transformSecretsToKeyValue(
-                this.getSecrets(app.sites[0].secrets, true)
-            );
-        });
+        this.route.data
+            .pipe(
+                map((x: any) => x?.data),
+                take(1)
+            )
+            .subscribe((app: DotApp) => {
+                this.apps = app;
+                this.formFields = this.getSecrets(app.sites[0].secrets);
+                this.dynamicVariables = this.transformSecretsToKeyValue(
+                    this.getSecrets(app.sites[0].secrets, true)
+                );
+            });
     }
 
     /**

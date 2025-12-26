@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
@@ -43,7 +43,10 @@ export class DotPropertiesService {
     getKeys(keys: string[]): Observable<Record<string, string>> {
         return this.http
             .get('/api/v1/configuration/config', { params: { keys: keys.join() } })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 
     /**
@@ -57,7 +60,10 @@ export class DotPropertiesService {
     getKeyAsList(key: string): Observable<string[]> {
         return this.http
             .get('/api/v1/configuration/config', { params: { keys: `list:${key}` } })
-            .pipe(take(1), pluck('entity', key));
+            .pipe(
+                take(1),
+                map((x) => (x as any)?.['entity']?.[key])
+            );
     }
 
     /**

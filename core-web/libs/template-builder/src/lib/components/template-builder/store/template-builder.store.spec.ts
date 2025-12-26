@@ -4,7 +4,7 @@ import { v4 as uuid } from 'uuid';
 
 import { TestBed } from '@angular/core/testing';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotContainer, DotContainerMap, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 import { containersMock } from '@dotcms/utils-testing';
@@ -143,7 +143,7 @@ describe('DotTemplateBuilderStore', () => {
         service = TestBed.inject(DotTemplateBuilderStore);
         rows$ = service.rows$;
         layoutProperties$ = service.layoutProperties$;
-        containerMap$ = service.vm$.pipe(pluck('containerMap'));
+        containerMap$ = service.vm$.pipe(map((x: any) => x?.containerMap));
 
         // Reset the state because is manipulated by reference
         service.setState({

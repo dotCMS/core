@@ -286,7 +286,7 @@ describe('DotDownloadBundleDialogComponent', () => {
                 beforeEach(() => {
                     (window as any).fetch = jest
                         .fn()
-                        .mockReturnValue(Promise.resolve(throwError('error')));
+                        .mockReturnValue(Promise.resolve(throwError(() => 'error')));
                 });
 
                 it('should enable buttons and display error message', fakeAsync(() => {

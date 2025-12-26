@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
@@ -42,7 +42,7 @@ export class DotTempFileUploadService {
                 method: 'POST'
             })
             .pipe(
-                pluck('tempFiles'),
+                map((x) => x?.tempFiles),
                 catchError((error: HttpErrorResponse) => this.handleError(error))
             );
     }
@@ -60,7 +60,7 @@ export class DotTempFileUploadService {
                 method: 'POST'
             })
             .pipe(
-                pluck('tempFiles'),
+                map((x) => x?.tempFiles),
                 catchError((error: HttpErrorResponse) => this.handleError(error))
             );
     }

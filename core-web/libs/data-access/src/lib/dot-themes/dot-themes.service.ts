@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
@@ -28,6 +28,6 @@ export class DotThemesService {
             .requestView({
                 url: 'v1/themes/id/' + inode
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

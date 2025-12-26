@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -33,6 +33,6 @@ export class DotDevicesService {
                     'limit/40/orderby/title'
                 ].join('/')
             })
-            .pipe(pluck('contentlets'));
+            .pipe(map((x) => x?.contentlets));
     }
 }

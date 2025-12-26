@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
@@ -23,6 +23,9 @@ export class DotPageTypesService {
             .requestView({
                 url: `/api/v1/page/types?filter=${keyword}`
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 }

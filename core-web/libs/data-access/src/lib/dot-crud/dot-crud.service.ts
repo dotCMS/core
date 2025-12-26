@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 
@@ -30,7 +30,7 @@ export class DotCrudService {
                 method: 'POST',
                 url: `${baseUrl}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -48,7 +48,7 @@ export class DotCrudService {
                 method: 'PUT',
                 url: `${baseUrl}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -65,7 +65,7 @@ export class DotCrudService {
             .requestView<T>({
                 url: `${baseUrl}/id/${id}`
             })
-            .pipe(pluck(pick));
+            .pipe(map((x) => (x as any)?.[pick]));
     }
 
     /**
@@ -82,6 +82,6 @@ export class DotCrudService {
                 method: 'DELETE',
                 url: `${baseUrl}/${id}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

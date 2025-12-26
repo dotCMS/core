@@ -21,7 +21,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Listbox, ListboxModule } from 'primeng/listbox';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged, takeUntil, pluck } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
@@ -311,7 +311,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                 offset: 0,
                 limit: 5
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 
     /**

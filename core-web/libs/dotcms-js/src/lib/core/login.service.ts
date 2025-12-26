@@ -3,7 +3,7 @@ import { Observable, of, Subject } from 'rxjs';
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
 import { DotLoginInformation, SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
 
@@ -125,7 +125,7 @@ export class LoginService {
                 url: this.urls.getAuth
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 tap((auth: Auth) => {
                     if (auth.user) {
                         this.setAuth(auth);
@@ -152,7 +152,7 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.changePassword
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -176,7 +176,7 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.serverInfo
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 
     /**
@@ -209,7 +209,7 @@ export class LoginService {
 
                     return res;
                 }),
-                pluck('entity', 'loginAs')
+                map((x) => x?.entity?.loginAs)
             );
     }
 
@@ -305,7 +305,7 @@ export class LoginService {
                 method: 'POST',
                 url: this.urls.recoverPassword
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**

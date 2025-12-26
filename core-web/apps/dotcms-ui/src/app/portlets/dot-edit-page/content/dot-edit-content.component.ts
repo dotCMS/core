@@ -11,7 +11,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter, map, pluck, switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { filter, map, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -531,7 +531,10 @@ browse from the page internal links
 
     private subscribeToNgEvents(): void {
         fromEvent(window.document, 'ng-event')
-            .pipe(pluck('detail'), takeUntil(this.destroy$))
+            .pipe(
+                map((x: any) => x?.detail),
+                takeUntil(this.destroy$)
+            )
             .subscribe((customEvent: { name: string; data: unknown }) => {
                 if (this.customEventsHandler[customEvent.name]) {
                     this.customEventsHandler[customEvent.name](customEvent.data);
@@ -596,7 +599,7 @@ browse from the page internal links
 
     private setInitalData(): void {
         const content$ = merge(
-            this.route.parent.parent.data.pipe(pluck('content')),
+            this.route.parent.parent.data.pipe(map((x) => x?.content)),
             this.dotPageStateService.state$
         ).pipe(takeUntil(this.destroy$));
 
@@ -684,7 +687,7 @@ browse from the page internal links
         const { variantName, mode } = this.route.snapshot.queryParams;
         this.variantData = this.route.parent.parent.data.pipe(
             take(1),
-            pluck('experiment'),
+            map((x: any) => x?.experiment),
             filter((experiment) => !!experiment),
             map((experiment: DotExperiment) => {
                 const variant = experiment.trafficProportion.variants.find(

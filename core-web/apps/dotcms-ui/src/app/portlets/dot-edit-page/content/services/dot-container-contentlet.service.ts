@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -38,7 +38,7 @@ export class DotContainerContentletService {
             .requestView({
                 url: url
             })
-            .pipe(pluck('entity', 'render'));
+            .pipe(map((x) => x?.entity?.render));
     }
 
     /**
@@ -57,6 +57,6 @@ export class DotContainerContentletService {
             .requestView({
                 url: `v1/containers/form/${formId}?containerId=${container.identifier}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

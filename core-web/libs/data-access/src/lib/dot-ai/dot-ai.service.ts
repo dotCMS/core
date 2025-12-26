@@ -3,7 +3,7 @@ import { Observable, of, throwError } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
     DotCMSContentlet,
@@ -61,10 +61,10 @@ export class DotAiService {
                 }),
                 catchError((error) => {
                     if (error instanceof HttpErrorResponse) {
-                        return throwError(error.statusText);
+                        return throwError(() => error.statusText);
                     }
 
-                    return throwError(error);
+                    return throwError(() => error);
                 })
             );
     }
@@ -90,7 +90,7 @@ export class DotAiService {
             )
             .pipe(
                 catchError(() =>
-                    throwError('block-editor.extension.ai-image.api-error.missing-token')
+                    throwError(() => 'block-editor.extension.ai-image.api-error.missing-token')
                 ),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
@@ -137,7 +137,7 @@ export class DotAiService {
                 }
             )
             .pipe(
-                pluck('entity', 'results'),
+                map((x) => x?.entity?.results),
                 map((contentlets: DotCMSContentlet[]) => {
                     if (contentlets.length === 0) {
                         throw new Error('contentlets is empty.');
@@ -160,7 +160,7 @@ export class DotAiService {
                 }),
                 catchError(() =>
                     throwError(
-                        'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
+                        () => 'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
             );

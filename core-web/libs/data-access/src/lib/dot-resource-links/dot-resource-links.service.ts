@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 export interface DotResourceLinks {
     configuredImageURL: string;
@@ -39,7 +39,7 @@ export class DotResourceLinksService {
      * @memberof DotResourceLinksService
      */
     private getResourceLinks(url: string): Observable<DotResourceLinks> {
-        return this.httpClient.get(url).pipe(pluck('entity'));
+        return this.httpClient.get(url).pipe(map((x) => x?.entity));
     }
 
     /**

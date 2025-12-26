@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotTag } from '@dotcms/dotcms-models';
@@ -29,7 +29,7 @@ export class DotTagsService {
                 url: `v1/tags${name ? `?name=${name}` : ''}`
             })
             .pipe(
-                pluck('bodyJsonObject'),
+                map((x) => x?.bodyJsonObject),
                 map((tags: { [key: string]: DotTag }) => {
                     return Object.entries(tags).map(([_key, value]) => value);
                 })

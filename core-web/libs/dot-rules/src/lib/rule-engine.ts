@@ -3,7 +3,7 @@ import { EMPTY, Observable, Subject } from 'rxjs';
 import { Component, EventEmitter, Input, Output, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { pluck, switchMap, take, takeUntil } from 'rxjs/operators';
+import { map, switchMap, take, takeUntil } from 'rxjs/operators';
 
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 
@@ -215,7 +215,10 @@ export class RuleEngineComponent implements OnDestroy {
         this.status = null;
 
         this.route.data
-            .pipe(takeUntil(this.destroy$), pluck('haveLicense'))
+            .pipe(
+                takeUntil(this.destroy$),
+                map((x) => x?.haveLicense)
+            )
             .subscribe((haveLicense) => {
                 if (!haveLicense) {
                     this.globalError = {

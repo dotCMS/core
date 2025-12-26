@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
@@ -62,7 +62,10 @@ export class DotCurrentUserService {
             .requestView({
                 url: permissionsUrl
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 
     /**
@@ -76,6 +79,9 @@ export class DotCurrentUserService {
             .requestView({
                 url: this.porletAccessUrl.replace('{0}', portletid)
             })
-            .pipe(take(1), pluck('entity', 'response'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity?.response)
+            );
     }
 }

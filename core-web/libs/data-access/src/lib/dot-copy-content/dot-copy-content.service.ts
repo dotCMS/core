@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, shareReplay } from 'rxjs/operators';
+import { map, shareReplay } from 'rxjs/operators';
 
 import { DotTreeNode, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -30,6 +30,9 @@ export class DotCopyContentService {
             personalization: treeNode?.personalization || DEFAULT_PERSONALIZATION
         };
 
-        return this.http.put(API_ENDPOINT, body).pipe(shareReplay(), pluck('entity'));
+        return this.http.put(API_ENDPOINT, body).pipe(
+            shareReplay(),
+            map((x) => x?.entity)
+        );
     }
 }

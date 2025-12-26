@@ -21,7 +21,7 @@ export class DotFolderService {
 
         return this.#http
             .post<{ entity: DotFolder[] }>(`/api/v1/folder/byPath`, { path: folderPath })
-            .pipe(map((response: { entity: DotFolder[] }) => response.entity));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -33,19 +33,7 @@ export class DotFolderService {
     createFolder(body: DotFolderEntity): Observable<DotFolder> {
         return this.#http
             .post<{ entity: DotFolder }>(`/api/v1/assets/folders`, body)
-            .pipe(map((response: { entity: DotFolder }) => response.entity));
-    }
-
-    /**
-     * Saves a folder in the assets system
-     *
-     * @param {DotFolderEntity} body - The folder data to save
-     * @returns {Observable<DotFolder>} Observable that emits the saved folder
-     */
-    saveFolder(body: DotFolderEntity): Observable<DotFolder> {
-        return this.#http
-            .put<{ entity: DotFolder }>(`/api/v1/assets/folders`, body)
-            .pipe(map((response: { entity: DotFolder }) => response.entity));
+            .pipe(map((x) => x?.entity));
     }
 
     /**

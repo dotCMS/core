@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 
@@ -22,6 +22,6 @@ export class DotPushPublishFiltersService {
             .requestView({
                 url: '/api/v1/pushpublish/filters/'
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

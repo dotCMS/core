@@ -4,7 +4,7 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { map, pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
 
@@ -37,7 +37,7 @@ export class DotStarterComponent implements OnInit {
 
     ngOnInit() {
         this.userData$ = this.route.data.pipe(
-            pluck('userData'),
+            map((x: any) => x?.userData),
             take(1),
             map(
                 ({

@@ -7,7 +7,7 @@ import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -59,10 +59,15 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
-            this.apps = app;
-            this.apps.sites = [];
-        });
+        this.route.data
+            .pipe(
+                map((x: any) => x?.data),
+                take(1)
+            )
+            .subscribe((app: DotApp) => {
+                this.apps = app;
+                this.apps.sites = [];
+            });
 
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))

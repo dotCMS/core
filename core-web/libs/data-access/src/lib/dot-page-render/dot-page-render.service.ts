@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { Injectable, inject } from '@angular/core';
 import { Params } from '@angular/router';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
@@ -45,7 +45,7 @@ export class DotPageRenderService {
                 method: 'POST',
                 url: `v1/page/_check-permission`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -66,7 +66,7 @@ export class DotPageRenderService {
                 url: `v1/page/render/${url?.replace(/^\//, '')}`,
                 params: { ...extraParams, ...params }
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     private getOptionalViewAsParams(

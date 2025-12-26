@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSWorkflowAction, DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -37,6 +37,6 @@ export class DotPageWorkflowsActionsService {
                 url: params.url,
                 renderMode: params.renderMode
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

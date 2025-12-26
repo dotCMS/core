@@ -3,7 +3,7 @@ import { Observable, forkJoin } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -60,7 +60,7 @@ export class DotEditContentService {
 
         return this.#http
             .get(`/api/v1/content/${id}`, { params: httpParams })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -83,7 +83,7 @@ export class DotEditContentService {
         const params = new HttpParams().set('name', name);
 
         return this.#http.get<string[]>('/api/v2/tags', { params }).pipe(
-            pluck('entity'),
+            map((x) => x?.entity),
             map((res) => Object.values(res).map((obj) => obj.label))
         );
     }
@@ -142,7 +142,9 @@ export class DotEditContentService {
      * @memberof DotEditContentService
      */
     getFolders(path: string): Observable<DotFolder[]> {
-        return this.#http.post<DotFolder>('/api/v1/folder/byPath', { path }).pipe(pluck('entity'));
+        return this.#http
+            .post<DotFolder>('/api/v1/folder/byPath', { path })
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -292,7 +294,7 @@ export class DotEditContentService {
     getActivities(identifier: string): Observable<Activity[]> {
         return this.#http
             .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -304,7 +306,7 @@ export class DotEditContentService {
     createActivity(identifier: string, comment: string): Observable<Activity> {
         return this.#http
             .post<Activity>(`/api/v1/workflow/${identifier}/comments`, { comment })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**

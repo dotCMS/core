@@ -11,7 +11,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
-import { pluck, take, takeUntil } from 'rxjs/operators';
+import { map, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -91,7 +91,10 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this.route.data
-            .pipe(pluck('dotTemplateListResolverData'), take(1))
+            .pipe(
+                map((x: any) => x?.dotTemplateListResolverData),
+                take(1)
+            )
             .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
                 this.isEnterPrise = isEnterPrise;
                 this.hasEnvironments = hasEnvironments;

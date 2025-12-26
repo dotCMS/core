@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
@@ -101,7 +101,7 @@ export class DotTemplatesService {
             .put<DotTemplate>(`${TEMPLATE_API_URL}_savepublish`, {
                 ...values
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -198,7 +198,7 @@ export class DotTemplatesService {
         const response$ = this.coreWebService.requestView<T>(options);
 
         return response$.pipe(
-            pluck('entity'),
+            map((x) => x?.entity),
             catchError((error: HttpErrorResponse) => {
                 return this.httpErrorManagerService.handle(error).pipe(
                     take(1),

@@ -4,7 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, HostBinding, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
-import { debounceTime, filter, finalize, pluck, switchMap, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, filter, finalize, map, switchMap, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -67,7 +67,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     ngOnInit() {
         this.route.parent.parent.data
             .pipe(
-                pluck('content'),
+                map((x: any) => x?.content),
                 filter((state: DotPageRenderState) => !!state),
                 take(1)
             )

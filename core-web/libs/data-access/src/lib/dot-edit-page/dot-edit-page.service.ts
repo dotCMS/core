@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
 import { DotPageContainer, DotWhatChanged } from '@dotcms/dotcms-models';
@@ -37,7 +37,7 @@ export class DotEditPageService {
             };
         }
 
-        return this.coreWebService.requestView(requestOptions).pipe(pluck('entity'));
+        return this.coreWebService.requestView(requestOptions).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -53,6 +53,6 @@ export class DotEditPageService {
             .requestView({
                 url: `v1/page/${pageId}/render/versions?langId=${languageId}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { take, pluck } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { ESContent } from '@dotcms/dotcms-models';
@@ -54,7 +54,10 @@ export class DotESContentService {
                 method: 'POST',
                 url: this._url
             })
-            .pipe(pluck('entity'), take(1));
+            .pipe(
+                map((x) => x?.entity),
+                take(1)
+            );
     }
 
     private setExtraParams(name: string, value?: string | number): void {

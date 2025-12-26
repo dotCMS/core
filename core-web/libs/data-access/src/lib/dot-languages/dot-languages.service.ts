@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import { DotAddLanguage, DotLanguage, DotLanguagesISO } from '@dotcms/dotcms-models';
@@ -46,7 +46,7 @@ export class DotLanguagesService {
             ? LANGUAGE_API_URL_WITH_VARS
             : `${LANGUAGE_API_URL_WITH_VARS}&contentInode=${contentInode}`;
 
-        return this.httpClient.get(url).pipe(pluck('entity'));
+        return this.httpClient.get(url).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -58,7 +58,7 @@ export class DotLanguagesService {
     getLanguagesUsedPage(pageIdentifier: string): Observable<DotLanguage[]> {
         return this.httpClient
             .get(`/api/v1/page/${pageIdentifier}/languages`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -68,7 +68,7 @@ export class DotLanguagesService {
      * @return {Observable<DotLanguage>} An observable of the language added.
      */
     add(language: DotAddLanguage): Observable<DotLanguage> {
-        return this.httpClient.post(LANGUAGE_API_URL, language).pipe(pluck('entity'));
+        return this.httpClient.post(LANGUAGE_API_URL, language).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -78,7 +78,7 @@ export class DotLanguagesService {
      * @return {Observable<DotLanguage>}
      */
     getById(id: number): Observable<DotLanguage> {
-        return this.httpClient.get(`${LANGUAGE_API_URL}/id/${id}`).pipe(pluck('entity'));
+        return this.httpClient.get(`${LANGUAGE_API_URL}/id/${id}`).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -88,7 +88,7 @@ export class DotLanguagesService {
      * @return {Observable<DotLanguage>}
      */
     getByISOCode(isoCode: string): Observable<DotLanguage> {
-        return this.httpClient.get(`${LANGUAGE_API_URL}/${isoCode}`).pipe(pluck('entity'));
+        return this.httpClient.get(`${LANGUAGE_API_URL}/${isoCode}`).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -102,7 +102,7 @@ export class DotLanguagesService {
 
         return this.httpClient
             .put(`${LANGUAGE_API_URL}/${id}`, { languageCode, language, countryCode, country })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -112,7 +112,7 @@ export class DotLanguagesService {
      * @return {Observable<void>}
      */
     delete(id: number): Observable<void> {
-        return this.httpClient.delete(`${LANGUAGE_API_URL}/${id}`).pipe(pluck('entity'));
+        return this.httpClient.delete(`${LANGUAGE_API_URL}/${id}`).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -124,7 +124,7 @@ export class DotLanguagesService {
     makeDefault(id: number): Observable<void> {
         return this.httpClient
             .put(`${LANGUAGE_API_URL}/${id}/_makedefault`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -133,7 +133,7 @@ export class DotLanguagesService {
      * @returns {Observable<DotLanguage>} An observable emitting the default language.
      */
     getDefault(): Observable<DotLanguage> {
-        return this.httpClient.get(`${LANGUAGE_API_URL}/_getdefault`).pipe(pluck('entity'));
+        return this.httpClient.get(`${LANGUAGE_API_URL}/_getdefault`).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -142,7 +142,7 @@ export class DotLanguagesService {
      * @returns {Observable<DotLanguagesISO>} An observable emitting the ISO language codes.
      */
     getISO(): Observable<DotLanguagesISO> {
-        return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(pluck('entity'));
+        return this.httpClient.get(`${LANGUAGE_API_URL}/iso`).pipe(map((x) => x?.entity));
     }
 
     /**
@@ -153,6 +153,6 @@ export class DotLanguagesService {
     getLanguageVariables(): Observable<Record<string, DotLanguageVariableEntry>> {
         return this.httpClient
             .get<DotCMSResponse<DotLanguageVariables>>(`${LANGUAGE_API_URL}/variables`)
-            .pipe(pluck('entity', 'variables'));
+            .pipe(map((x) => x?.entity?.variables));
     }
 }

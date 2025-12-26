@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotPersona } from '@dotcms/dotcms-models';
@@ -26,6 +26,6 @@ export class DotPersonasService {
             .requestView({
                 url: 'content/respectFrontendRoles/false/render/false/query/+contentType:persona +live:true +deleted:false +working:true'
             })
-            .pipe(pluck('contentlets'));
+            .pipe(map((x) => x?.contentlets));
     }
 }

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
@@ -39,7 +39,7 @@ export class DotWorkflowsActionsService {
             .post(`${this.BASE_URL}/schemes/actions/NEW`, {
                 schemes: workflows.map(this.getWorkFlowId)
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -55,7 +55,7 @@ export class DotWorkflowsActionsService {
 
         return this.httpClient
             .get(`${this.BASE_URL}/contentlet/${inode}/actions${renderModeQuery}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -71,7 +71,7 @@ export class DotWorkflowsActionsService {
                 DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 map((res) => res || [])
             );
     }
@@ -92,7 +92,7 @@ export class DotWorkflowsActionsService {
                 DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 map((res) => res || [])
             );
     }

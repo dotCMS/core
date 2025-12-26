@@ -8,7 +8,7 @@ import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DialogModule } from 'primeng/dialog';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 
-import { pluck, takeUntil, tap } from 'rxjs/operators';
+import { map, takeUntil, tap } from 'rxjs/operators';
 
 import {
     DotPageStateService,
@@ -73,7 +73,7 @@ export class DotEditPageMainComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.pageState$ = merge(
-            this.route.data.pipe(pluck('content')),
+            this.route.data.pipe(map((x: any) => x?.content)),
             this.dotPageStateService.state$
         ).pipe(
             takeUntil(this.destroy$),

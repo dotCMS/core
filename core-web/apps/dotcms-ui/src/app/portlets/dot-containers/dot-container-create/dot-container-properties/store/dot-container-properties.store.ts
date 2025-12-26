@@ -5,7 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -61,7 +61,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         });
         this.activatedRoute.data
             .pipe(
-                pluck('container'),
+                map((x: any) => x?.container),
                 take(1),
                 filter((containerEntity) => !!containerEntity)
             )

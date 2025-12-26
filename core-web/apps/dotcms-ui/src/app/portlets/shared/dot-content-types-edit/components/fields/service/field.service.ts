@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -28,7 +28,7 @@ export class FieldService {
             .requestView({
                 url: 'v1/fieldTypes'
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -50,7 +50,7 @@ export class FieldService {
                 method: 'PUT',
                 url: `v3/contenttype/${contentTypeId}/fields/move`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -73,7 +73,7 @@ export class FieldService {
                 method: 'DELETE',
                 url: `v3/contenttype/${contentTypeId}/fields`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -107,6 +107,6 @@ export class FieldService {
                 method: 'PUT',
                 url: `v3/contenttype/${contentTypeId}/fields/${field.id}`
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

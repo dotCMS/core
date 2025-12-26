@@ -3,7 +3,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
@@ -72,7 +72,7 @@ export class DotPageApiService {
             .get<{
                 entity: DotCMSPageAsset;
             }>(`/api/v1/page/${pageType}/${pageURL}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -126,7 +126,7 @@ export class DotPageApiService {
             .get<{
                 entity: { content: { idenfitier: string } };
             }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
-            .pipe(pluck('entity', 'content', 'identifier'));
+            .pipe(map((x) => x?.entity?.content?.identifier));
     }
 
     /**
@@ -173,7 +173,7 @@ export class DotPageApiService {
                 data: { page: DotCMSGraphQLPage };
             }>('/api/v1/graphql', { query, variables }, { headers })
             .pipe(
-                pluck('data'),
+                map((x) => x?.data),
                 map(({ page, ...content }) => {
                     const pageEntity = graphqlToPageEntity(page);
 

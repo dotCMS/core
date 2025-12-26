@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { filter, pluck } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 
@@ -38,7 +38,7 @@ export class DotCreateContentletComponent implements OnInit {
     ngOnInit() {
         this.url$ = merge(
             this.dotContentletEditorService.createUrl$,
-            this.route.data.pipe(pluck('url'))
+            this.route.data.pipe(map((x: any) => x?.url))
         ).pipe(
             filter((url: string) => {
                 return url !== undefined;

@@ -3,7 +3,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, pluck } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 @Injectable()
 export class DotActionUrlService {
@@ -25,7 +25,7 @@ export class DotActionUrlService {
                 entity: string;
             }>(`/api/v1/portlet/_actionurl/${contentTypeVariable}?language_id=${language_id}`)
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 catchError(() => {
                     return EMPTY;
                 })

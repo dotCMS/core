@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -61,7 +61,7 @@ export class DotAddToMenuService {
                 url: `${addToMenuUrl}/custom`
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 catchError((error: HttpErrorResponse) => {
                     if (error.status === 400) {
                         return of(null);
@@ -91,7 +91,7 @@ export class DotAddToMenuService {
                 url: `${addToMenuUrl}/custom/c_${portletId}/_addtolayout/${params.layoutId}`
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),

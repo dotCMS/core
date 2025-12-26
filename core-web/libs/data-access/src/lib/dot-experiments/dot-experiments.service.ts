@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, pluck } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
@@ -37,7 +37,7 @@ export class DotExperimentsService {
             .get<
                 DotCMSResponseExperiment<{ healthy: HealthStatusTypes }>
             >('/api/v1/experiments/health')
-            .pipe(pluck('entity', 'health'));
+            .pipe(map((x) => x?.entity?.health));
     }
     /**
      * Add a new experiment
@@ -50,7 +50,7 @@ export class DotExperimentsService {
     ): Observable<DotExperiment> {
         return this.http
             .post<DotCMSResponseExperiment<DotExperiment>>(API_ENDPOINT, experiment)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -62,7 +62,7 @@ export class DotExperimentsService {
     getAll(pageId: string): Observable<DotExperiment[]> {
         return this.http
             .get<DotCMSResponseExperiment<DotExperiment[]>>(`${API_ENDPOINT}?pageId=${pageId}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -77,7 +77,7 @@ export class DotExperimentsService {
             .get<
                 DotCMSResponseExperiment<DotExperiment[]>
             >(`${API_ENDPOINT}?pageId=${pageId}&status=${status}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -93,7 +93,7 @@ export class DotExperimentsService {
 
         return this.http
             .get<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
-            .pipe(pluck('entity'))
+            .pipe(map((x) => x?.entity))
             .pipe(catchError(() => of(undefined)));
     }
 
@@ -108,7 +108,7 @@ export class DotExperimentsService {
             .get<
                 DotCMSResponseExperiment<DotExperimentResults>
             >(`${API_ENDPOINT}/${experimentId}/results`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -122,7 +122,7 @@ export class DotExperimentsService {
             .put<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/${experimentId}/_archive`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -134,7 +134,7 @@ export class DotExperimentsService {
     delete(experimentId: string): Observable<string | DotExperiment> {
         return this.http
             .delete<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -148,7 +148,7 @@ export class DotExperimentsService {
             .post<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/${experimentId}/_start`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -162,7 +162,7 @@ export class DotExperimentsService {
             .post<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/${experimentId}/_end`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -176,7 +176,7 @@ export class DotExperimentsService {
             .post<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/scheduled/${experimentId}/_cancel`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -194,7 +194,7 @@ export class DotExperimentsService {
                     description: name
                 }
             )
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -214,7 +214,7 @@ export class DotExperimentsService {
             .put<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/${experimentId}/variants/${variantId}`, changes)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -230,7 +230,7 @@ export class DotExperimentsService {
             .delete<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/${experimentId}/variants/${variantId}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -245,7 +245,7 @@ export class DotExperimentsService {
             .put<
                 DotCMSResponseExperiment<DotExperiment>
             >(`/api/v1/experiments/${experimentId}/variants/${variantId}/_promote`, {})
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -260,7 +260,7 @@ export class DotExperimentsService {
             .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 goals
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -275,7 +275,7 @@ export class DotExperimentsService {
             .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 description
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -293,7 +293,7 @@ export class DotExperimentsService {
             .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 scheduling
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -311,7 +311,7 @@ export class DotExperimentsService {
             .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 trafficAllocation
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -329,7 +329,7 @@ export class DotExperimentsService {
             .patch<DotCMSResponseExperiment<DotExperiment>>(`${API_ENDPOINT}/${experimentId}`, {
                 trafficProportion
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -344,6 +344,6 @@ export class DotExperimentsService {
             .delete<
                 DotCMSResponseExperiment<DotExperiment>
             >(`${API_ENDPOINT}/${experimentId}/goals/${goalType}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSPersonalizedItem } from '@dotcms/dotcms-models';
@@ -37,7 +37,7 @@ export class DotPersonalizeService {
                     personaTag
                 }
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -59,6 +59,6 @@ export class DotPersonalizeService {
                     variantName: currentVariantName
                 }
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
 
@@ -22,7 +22,10 @@ export class DotLoginPageComponent implements OnInit {
     ngOnInit(): void {
         this.loginPageStateService
             .get()
-            .pipe(take(1), pluck('entity'))
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            )
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';

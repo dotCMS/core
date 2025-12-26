@@ -10,6 +10,7 @@ import {
 import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 
+import { lastValueFrom } from 'rxjs';
 import { take } from 'rxjs/operators';
 
 import {
@@ -124,6 +125,11 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         this.$items.set([]);
+
+        const canLockData = await lastValueFrom(
+            this.#dotContentletService.canLock(contentlet.inode)
+        );
+
         const memoizedMenuItems = this.$memoizedMenuItems();
 
         const key = isFolder(contentlet) ? contentlet.identifier : contentlet.inode;
@@ -134,35 +140,9 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
-        if (isFolder(contentlet)) {
-            const folderMenuItems = [
-                {
-                    label: this.#dotMessageService.get('content-drive.context-menu.edit-folder'),
-                    command: () => {
-                        this.#store.setDialog({
-                            type: DIALOG_TYPE.FOLDER,
-                            header: this.#dotMessageService.get(
-                                'content-drive.dialog.folder.header.edit'
-                            ),
-                            payload: contentlet
-                        });
-                    }
-                }
-            ];
-            this.$items.set(folderMenuItems);
-            this.$memoizedMenuItems.set({
-                ...this.$memoizedMenuItems(),
-                [key]: folderMenuItems
-            });
-            this.contextMenu()?.show(triggeredEvent);
-            return;
-        }
-
-        const canLockData = await this.#dotContentletService.canLock(contentlet.inode).toPromise();
-
-        const workflowActions = await this.#workflowsActionsService
-            .getByInode(contentlet.inode, DotRenderMode.LISTING)
-            .toPromise();
+        const workflowActions = await lastValueFrom(
+            this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
+        );
 
         const actionsMenu = [];
 

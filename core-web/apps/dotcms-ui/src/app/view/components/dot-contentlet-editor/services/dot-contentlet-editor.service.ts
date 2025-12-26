@@ -3,7 +3,7 @@ import { Observable, of, Subject } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, filter, map, mergeMap, pluck, take } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -156,7 +156,7 @@ export class DotContentletEditorService {
                 url: `v1/portlet/_actionurl/${contentTypeVariable}`
             })
             .pipe(
-                pluck('entity'),
+                map((x) => x?.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),

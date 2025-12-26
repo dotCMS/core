@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 
@@ -29,6 +29,9 @@ export class DotRelationshipService {
             .requestView({
                 url: 'v1/relationships/cardinalities'
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 }

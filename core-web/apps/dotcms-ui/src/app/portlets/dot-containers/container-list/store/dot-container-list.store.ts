@@ -5,7 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { pluck, switchMap, take, tap } from 'rxjs/operators';
+import { map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -79,7 +79,10 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
 
                     this.paginatorService.setExtraParams('host', identifier);
 
-                    return this.route.data.pipe(pluck('dotContainerListResolverData'), take(1));
+                    return this.route.data.pipe(
+                        map((x: any) => x?.dotContainerListResolverData),
+                        take(1)
+                    );
                 })
             )
             .subscribe(([isEnterprise, hasEnvironments]: [boolean, boolean]) => {

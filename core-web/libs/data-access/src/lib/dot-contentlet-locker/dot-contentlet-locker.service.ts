@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 
@@ -36,7 +36,7 @@ export class DotContentletLockerService {
                 method: 'PUT',
                 url: `/api/content/lock/inode/${inode}`
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 
     /**
@@ -52,6 +52,6 @@ export class DotContentletLockerService {
                 method: 'PUT',
                 url: `/api/content/unlock/inode/${inode}`
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((x) => x?.bodyJsonObject));
     }
 }
