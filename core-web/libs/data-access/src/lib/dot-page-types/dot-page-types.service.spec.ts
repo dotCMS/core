@@ -1,8 +1,8 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 import { DotPageTypesService } from './dot-page-types.service';
 
@@ -16,11 +16,7 @@ describe('DotPageTypesService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPageTypesService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPageTypesService]
         });
         service = TestBed.inject(DotPageTypesService);
         httpMock = TestBed.inject(HttpTestingController);
