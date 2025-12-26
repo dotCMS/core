@@ -161,7 +161,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
-    private readonly zoomService = inject(DotUveZoomService);
+    readonly zoomService = inject(DotUveZoomService);
     private readonly bridgeService = inject(DotUveBridgeService);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
