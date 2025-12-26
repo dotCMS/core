@@ -1274,10 +1274,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Use getBoundingClientRect() which accounts for all transforms including zoom
         const elementRect = htmlElement.getBoundingClientRect();
+        const zoomLevel = this.zoomService.$zoomLevel();
 
-        // elementRect.top gives us the element's position in viewport coordinates
-        // Use it directly as the scroll position
-        const scrollTop = elementRect.top;
+        // elementRect.top works correctly at 100% zoom (zoomLevel = 1)
+        // For other zoom levels, convert from scaled to unscaled coordinates
+        const scrollTop = elementRect.top * zoomLevel;
 
         // Scroll the editor-content smoothly
         editorContentElement.scrollTo({
