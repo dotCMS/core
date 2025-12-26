@@ -112,7 +112,8 @@ export class DotUveStyleEditorFormComponent {
         if (typeof config?.defaultValue === 'string') {
             return config.defaultValue.trim();
         }
-        return config?.options?.[0]?.value || '';
+
+        return null;
     }
 
     #getCheckboxGroupDefaultValue(
