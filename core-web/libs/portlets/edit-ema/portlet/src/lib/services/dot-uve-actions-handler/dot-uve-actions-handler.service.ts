@@ -1,49 +1,45 @@
-import { Injectable, inject } from '@angular/core';
-import { EMPTY, Observable, of } from 'rxjs';
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 import { tapResponse } from '@ngrx/operators';
+import { Observable, of } from 'rxjs';
+
+import { Injectable, inject } from '@angular/core';
+
 import { MessageService } from 'primeng/api';
+
+import { switchMap, take, tap } from 'rxjs/operators';
+
+
 import {
-    DotCopyContentService,
-    DotHttpErrorManagerService,
     DotMessageService,
-    DotContentletService
 } from '@dotcms/data-access';
-import {
-    DotCMSContentlet,
-    DotLanguage,
-    DotTreeNode
-} from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
-    DotCMSPage,
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
-import { isEqual } from '@dotcms/utils';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
-import { DotPageApiService } from '../dot-page-api.service';
-import { InlineEditService } from '../inline-edit/inline-edit.service';
-import { UVEStore } from '../../store/dot-uve.store';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../../shared/enums';
-import { PostMessage, ReorderMenuPayload, SetUrlPayload } from '../../shared/models';
+import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
 import {
     ClientContentletArea,
     Container,
     InlineEditingContentletDataset,
     UpdatedContentlet
 } from '../../edit-ema-editor/components/ema-page-dropzone/types';
+import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
+import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
+import { PostMessage, ReorderMenuPayload, SetUrlPayload } from '../../shared/models';
+import { UVEStore } from '../../store/dot-uve.store';
 import {
     compareUrlPaths,
     convertClientParamsToPageParams,
     createReorderMenuURL
 } from '../../utils';
-import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
-import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import { DotPageApiService } from '../dot-page-api.service';
+import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 export interface ActionsHandlerDependencies {
     uveStore: InstanceType<typeof UVEStore>;
@@ -61,9 +57,6 @@ export class DotUveActionsHandlerService {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
-    private readonly dotCopyContentService = inject(DotCopyContentService);
-    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private readonly dotContentletService = inject(DotContentletService);
 
     handleAction(
         { action, payload }: PostMessage,
@@ -72,7 +65,6 @@ export class DotUveActionsHandlerService {
         const {
             uveStore,
             dialog,
-            blockSidebar,
             inlineEditingService,
             dotPageApiService,
             contentWindow,
@@ -214,7 +206,14 @@ export class DotUveActionsHandlerService {
                     )
                     .subscribe(() => uveStore.reloadCurrentPage());
             },
-            [DotCMSUVEAction.CLIENT_READY]: (devConfig: any) => {
+            [DotCMSUVEAction.CLIENT_READY]: (devConfig: {
+                graphql: {
+                    query: string;
+                    variables: Record<string, unknown>;
+                };
+                params: Record<string, unknown>;
+                query: string;
+            }) => {
                 const isClientReady = uveStore.isClientReady();
 
                 if (isClientReady) {
