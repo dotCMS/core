@@ -2,14 +2,7 @@
 
 /* Regular Radio Styles */
 .radio-group {
-    display: flex;
-    flex-direction: column;
     gap: $spacing-2;
-}
-
-.radio-item {
-    display: flex;
-    align-items: center;
 }
 
 /* Radio Image Styles */
@@ -33,9 +26,6 @@
 }
 
 .radio-image-label {
-    display: flex;
-    flex-direction: column;
-    align-items: start;
     gap: $spacing-1;
     cursor: pointer;
 }
