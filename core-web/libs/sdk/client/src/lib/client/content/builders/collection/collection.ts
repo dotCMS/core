@@ -439,7 +439,8 @@ export class CollectionBuilder<T = unknown> extends BaseApiClient {
                 sort: this.sort,
                 limit: this.#limit,
                 offset: this.offset,
-                depth: this.#depth
+                depth: this.#depth,
+                languageId: this.#languageId
                 //userId: This exist but we currently don't use it
                 //allCategoriesInfo: This exist but we currently don't use it
             })
@@ -482,7 +483,10 @@ export class CollectionBuilder<T = unknown> extends BaseApiClient {
      * // Returns: "+contentType:Blog -conhost:456 +languageId:1 +live:true +conhost:123" (site ID still added)
      */
     private getFinalQuery(): string {
-        // Build base query with language and live/draft constraints
+        // Build base query with language and live/draft constraints.
+        // NOTE: languageId is intentionally sent in BOTH places:
+        // - in the Lucene query (backend requires this)
+        // - as a top-level request body field (backend also requires this)
         let baseQuery = this.currentQuery.field('languageId').equals(this.#languageId.toString());
 
         if (this.#draft) {
