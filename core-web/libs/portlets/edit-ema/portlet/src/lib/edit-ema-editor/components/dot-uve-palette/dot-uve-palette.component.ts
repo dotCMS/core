@@ -108,7 +108,6 @@ export class DotUvePaletteComponent {
                 return {
                     key: `row-${rowIndex}-column-${columnIndex}`,
                     label: `Column ${columnIndex + 1}`,
-                    expanded: containerNodes.length > 0,
                     children: containerNodes.length > 0 ? containerNodes : undefined
                 };
             });
@@ -116,7 +115,6 @@ export class DotUvePaletteComponent {
             return {
                 key: `row-${rowIndex}`,
                 label: `Row ${rowIndex + 1}`,
-                expanded: columnNodes.length > 0,
                 children: columnNodes.length > 0 ? columnNodes : undefined
             };
         });
