@@ -5,6 +5,7 @@ import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 import { TreeModule, TreeNodeDropEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
+import { DotPageLayoutService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
@@ -80,6 +81,9 @@ export class DotUvePaletteComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
+
+    protected readonly dotPageLayoutService = inject(DotPageLayoutService);
+
 
     /**
      * Computed signal that transforms the page layout structure into TreeNode format
@@ -278,9 +282,7 @@ export class DotUvePaletteComponent {
         // eslint-disable-next-line no-console
         console.log('Sorted rows after drop:', sortedRows);
 
-        // Accept the drop if validateDrop is enabled
-        if (event.accept) {
-            event.accept();
-        }
+        this.uveStore.updateRows(sortedRows);
+
     }
 }

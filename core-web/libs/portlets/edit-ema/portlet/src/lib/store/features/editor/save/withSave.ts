@@ -7,7 +7,9 @@ import { inject } from '@angular/core';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
-import { DotCMSPageAsset } from '@dotcms/types';
+import { DotPageLayoutService } from '@dotcms/data-access';
+import { DotPageRender } from '@dotcms/dotcms-models';
+import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../../shared/enums';
@@ -29,6 +31,7 @@ export function withSave() {
         withLoad(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
+            const dotPageLayoutService = inject(DotPageLayoutService);
 
             return {
                 savePage: rxMethod<PageContainer[]>(
@@ -84,6 +87,78 @@ export function withSave() {
                                     return EMPTY;
                                 })
                             );
+                        })
+                    )
+                ),
+                updateRows: rxMethod<DotPageAssetLayoutRow[]>(
+                    pipe(
+                        tap(() => {
+                            patchState(store, {
+                                status: UVE_STATUS.LOADING
+                            });
+                        }),
+                        switchMap((sortedRows) => {
+                            const pageResponse = store.pageAPIResponse();
+
+                            return dotPageLayoutService.save(pageResponse.page.identifier, {
+                                layout: {
+                                    ...pageResponse.layout,
+                                    body: {
+                                        ...pageResponse.layout.body,
+                                        rows: sortedRows.map((row) => {
+                                            return {
+                                                ...row,
+                                                columns: row.columns.map((column) => {
+                                                    return {
+                                                        leftOffset: column.leftOffset,
+                                                        styleClass: column.styleClass,
+                                                        width: column.width,
+                                                        containers: column.containers
+                                                    };
+                                                })
+                                            };
+                                        })
+                                    }
+                                },
+                                themeId: pageResponse.template.theme,
+                                title: null
+                            }).pipe(
+                                tapResponse({
+                                    next: (pageRender: DotPageRender) => {
+                                        patchState(store, {
+                                            status: UVE_STATUS.LOADED,
+                                            pageAPIResponse: {
+                                                ...pageResponse,
+                                                page: {
+                                                    ...pageResponse.page,
+                                                    rendered: pageRender.page.rendered
+                                                },
+                                                layout: {
+                                                    ...pageResponse.layout,
+                                                    body: {
+                                                        ...pageResponse.layout.body,
+                                                        rows: sortedRows
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    },
+                                    error: (e) => {
+                                        console.error(e);
+                                        patchState(store, {
+                                            status: UVE_STATUS.ERROR
+                                        });
+                                    }
+                                })
+                            );
+                        }),
+                        catchError((e) => {
+                            console.error(e);
+                            patchState(store, {
+                                status: UVE_STATUS.ERROR
+                            });
+
+                            return EMPTY;
                         })
                     )
                 )
