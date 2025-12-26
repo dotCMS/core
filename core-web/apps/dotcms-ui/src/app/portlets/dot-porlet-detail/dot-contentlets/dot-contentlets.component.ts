@@ -10,7 +10,7 @@ import { DotContentletEditorService } from '../../../view/components/dot-content
 @Component({
     selector: 'dot-contentlets',
     template:
-        '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)"></dot-edit-contentlet>',
+        '<dot-edit-contentlet (shutdown)="onCloseEditor()" (custom)="onCustomEvent($event)" />',
     imports: [DotEditContentletComponent]
 })
 export class DotContentletsComponent implements AfterViewInit {
