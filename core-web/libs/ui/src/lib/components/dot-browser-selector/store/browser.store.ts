@@ -21,7 +21,8 @@ import {
     TreeNodeItem,
     TreeNodeSelectItem
 } from '@dotcms/dotcms-models';
-import { DotBrowsingService } from '@dotcms/ui';
+
+import { DotBrowsingService } from '../../../services/dot-browsing/dot-browsing.service';
 
 export const PEER_PAGE_LIMIT = 1000;
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
