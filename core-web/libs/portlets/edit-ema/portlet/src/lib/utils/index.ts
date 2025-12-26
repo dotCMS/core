@@ -23,7 +23,7 @@ import {
     DEFAULT_PERSONA,
     PERSONA_KEY
 } from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -56,17 +56,20 @@ export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 export function insertContentletInContainer(action: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
 
     let didInsert = false;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
@@ -86,10 +89,21 @@ export function insertContentletInContainer(action: ActionPayload): {
     }
 
     const newPageContainers = pageContainers.map((pageContainer) => {
-        if (
-            areContainersEquals(pageContainer, container) &&
-            !pageContainer.contentletsId.includes(newContentletId)
-        ) {
+        if (areContainersEquals(pageContainer, container)) {
+            // Check if content already exists (duplicate)
+            if (pageContainer.contentletsId.includes(newContentletId)) {
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
+                return pageContainer;
+            }
+
+            // Validate container limit before adding
+            const maxContentlets = container.maxContentlets;
+            if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
+                // Container is at or over its limit, don't add
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+                return pageContainer;
+            }
+
             pageContainer.contentletsId.push(newContentletId);
             didInsert = true;
         }
@@ -101,7 +115,8 @@ export function insertContentletInContainer(action: ActionPayload): {
 
     return {
         pageContainers: newPageContainers,
-        didInsert
+        didInsert,
+        errorCode
     };
 }
 
@@ -187,13 +202,16 @@ export function areContainersEquals(
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 function insertPositionedContentletInContainer(payload: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     let didInsert = false;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
@@ -214,10 +232,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
     }
 
     const newPageContainers = pageContainers.map((pageContainer) => {
-        if (
-            areContainersEquals(pageContainer, container) &&
-            !pageContainer.contentletsId.includes(newContentletId)
-        ) {
+        if (areContainersEquals(pageContainer, container)) {
+            // Check if content already exists (duplicate)
+            if (pageContainer.contentletsId.includes(newContentletId)) {
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
+                return pageContainer;
+            }
+
+            // Validate container limit before adding
+            const maxContentlets = container.maxContentlets;
+            if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
+                // Container is at or over its limit, don't add
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+                return pageContainer;
+            }
+
             const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
 
             if (index !== -1) {
@@ -238,7 +267,8 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 
     return {
         pageContainers: newPageContainers,
-        didInsert
+        didInsert,
+        errorCode
     };
 }
 
