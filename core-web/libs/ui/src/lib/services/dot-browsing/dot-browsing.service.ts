@@ -18,7 +18,7 @@ import {
  * @class DotBrowsingService
  */
 @Injectable({
-    providedIn: 'root'
+    providedIn: 'root',
 })
 export class DotBrowsingService {
     readonly #siteService = inject(DotSiteService);

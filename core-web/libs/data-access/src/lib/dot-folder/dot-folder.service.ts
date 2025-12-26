@@ -6,7 +6,9 @@ import { Injectable, inject } from '@angular/core';
 import { map } from 'rxjs/operators';
 
 import { DotFolder, DotFolderEntity, DotCMSAPIResponse } from '@dotcms/dotcms-models';
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotFolderService {
     readonly #http = inject(HttpClient);
 
