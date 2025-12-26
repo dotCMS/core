@@ -93,15 +93,20 @@ export class DotUvePaletteComponent {
             const columnNodes: TreeNode[] = (row.columns || []).map((column, columnIndex) => {
                 const containerNodes: TreeNode[] = (column.containers || []).map((container, containerIndex) => {
                     const containerData = containers[container.identifier];
-                    const containerLabel = containerData?.container?.friendlyName ||
-                                           containerData?.container?.title ||
+                    const containerInfo = containerData?.container;
+                    const containerLabel = containerInfo?.name ||
+                                           containerInfo?.friendlyName ||
+                                           containerInfo?.title ||
                                            container.identifier ||
                                            `Container ${containerIndex + 1}`;
 
                     return {
                         key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}`,
                         label: containerLabel,
-                        data: container
+                        data: {
+                            ...container,
+                            containerInfo: containerInfo
+                        }
                     };
                 });
 
