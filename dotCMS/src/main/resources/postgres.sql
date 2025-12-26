@@ -2200,11 +2200,17 @@ alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) ref
 
 ALTER TABLE tag ALTER COLUMN user_id TYPE text;
 
--- ****** Indicies Data Storage *******
+-- ****** Indices Data Storage *******
 create table indicies (
   index_name varchar(100) primary key,
-  index_type varchar(16) not null unique
+  index_type varchar(16) not null,
+  index_version varchar(16) null
 );
+-- We can only have one index type per version
+ALTER TABLE indicies
+    ADD CONSTRAINT uq_index_type_version
+        UNIQUE (index_type, index_version);
+
 -- ****** Log Console Table *******
   CREATE TABLE log_mapper (
     enabled   	 numeric(1,0) NOT null,
