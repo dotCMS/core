@@ -1217,7 +1217,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         });
     }
 
-
     protected handleTabChange(tab: UVE_PALETTE_TABS): void {
         this.uveStore.setPaletteTab(tab);
     }
@@ -1237,5 +1236,54 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 this.dialog.addWidget(event.payload);
                 break;
         }
+    }
+
+    /**
+     * Handles palette node selection and scrolls the editor-content to the corresponding element.
+     *
+     * @param event Event containing selector and type of the selected node
+     */
+    protected handlePaletteNodeSelect(event: { selector: string; type: string }): void {
+        const iframeElement = this.iframe?.nativeElement;
+        const editorContentElement = this.editorContent?.nativeElement;
+
+        if (!iframeElement || !editorContentElement) {
+            return;
+        }
+
+        // Get the iframe document
+        let iframeDoc: Document | null = null;
+        try {
+            iframeDoc = iframeElement.contentDocument;
+        } catch {
+            // Cross-origin iframe, cannot access document
+            return;
+        }
+
+        if (!iframeDoc) {
+            return;
+        }
+
+        // Find the element in the iframe
+        const element = iframeDoc.querySelector(event.selector);
+        if (!element) {
+            return;
+        }
+
+        const htmlElement = element as HTMLElement;
+
+        // Use getBoundingClientRect() which accounts for all transforms including zoom
+        const elementRect = htmlElement.getBoundingClientRect();
+
+        // elementRect.top gives us the element's position in viewport coordinates
+        // Use it directly as the scroll position
+        const scrollTop = elementRect.top;
+
+        // Scroll the editor-content smoothly
+        editorContentElement.scrollTo({
+            top: Math.max(0, scrollTop),
+            left: 0,
+            behavior: 'smooth'
+        });
     }
 }

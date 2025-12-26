@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, inp
 import { TreeNode } from 'primeng/api';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
-import { TreeModule } from 'primeng/tree';
+import { TreeModule, TreeNodeSelectEvent } from 'primeng/tree';
 
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -71,6 +71,11 @@ export class DotUvePaletteComponent {
      */
     @Output() onTabChange = new EventEmitter<UVE_PALETTE_TABS>();
 
+    /**
+     * Emits when a tree node is selected to scroll to the corresponding element.
+     */
+    @Output() onNodeSelect = new EventEmitter<{ selector: string; type: string }>();
+
     protected readonly uveStore = inject(UVEStore);
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
@@ -108,16 +113,24 @@ export class DotUvePaletteComponent {
                         return {
                             key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}-contentlet-${contentletIndex}`,
                             label: contentlet.title || `Contentlet ${contentletIndex + 1}`,
-                            data: contentlet
+                            selectable: false,
+                            data: {
+                                ...contentlet,
+                                type: 'contentlet',
+                                selector: `[data-dot-identifier="${contentlet.identifier}"]`
+                            }
                         };
                     });
 
                     return {
                         key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}`,
                         label: containerLabel,
+                        selectable: false,
                         data: {
                             ...container,
-                            containerInfo: containerInfo
+                            containerInfo: containerInfo,
+                            type: 'container',
+                            selector: `[data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"]`
                         },
                         children: contentletNodes.length > 0 ? contentletNodes : undefined
                     };
@@ -126,6 +139,7 @@ export class DotUvePaletteComponent {
                 return {
                     key: `row-${rowIndex}-column-${columnIndex}`,
                     label: `Column ${columnIndex + 1}`,
+                    selectable: false,
                     children: containerNodes.length > 0 ? containerNodes : undefined
                 };
             });
@@ -133,6 +147,11 @@ export class DotUvePaletteComponent {
             return {
                 key: `row-${rowIndex}`,
                 label: `Row ${rowIndex + 1}`,
+                selectable: true,
+                data: {
+                    type: 'row',
+                    selector: `#section-${rowIndex + 1}`
+                },
                 children: columnNodes.length > 0 ? columnNodes : undefined
             };
         });
@@ -147,5 +166,29 @@ export class DotUvePaletteComponent {
      */
     protected handleTabChange(event: TabViewChangeEvent) {
         this.onTabChange.emit(event.index);
+    }
+
+    /**
+     * Handles tree node selection and emits event to scroll to the corresponding element.
+     * Only row nodes are selectable.
+     *
+     * @param event PrimeNG tree node select event
+     */
+    protected handleNodeSelect(event: TreeNodeSelectEvent): void {
+        const node = event.node;
+        if (!node?.data || node.data.type !== 'row') {
+            return;
+        }
+
+        const selector = node.data.selector;
+        if (!selector) {
+            return;
+        }
+
+        // Emit event to parent component to handle scrolling
+        this.onNodeSelect.emit({
+            selector: selector,
+            type: node.data.type
+        });
     }
 }

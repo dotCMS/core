@@ -24,6 +24,7 @@
         [showStyleEditorTab]="uveStore.$isStyleEditorEnabled()"
         [styleSchema]="uveStore.$styleSchema()"
         (onTabChange)="handleTabChange($event)"
+        (onNodeSelect)="handlePaletteNodeSelect($event)"
         data-testId="palette" />
 }
 

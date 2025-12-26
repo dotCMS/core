@@ -49,7 +49,11 @@
         @if ($activeTab() === 3) {
             <div class="w-full h-full p-3">
                 @if ($layoutTree().length > 0) {
-                    <p-tree [value]="$layoutTree()" class="w-full block h-full overflow-y-auto" />
+                    <p-tree
+                        [value]="$layoutTree()"
+                        [selectionMode]="'single'"
+                        (onNodeSelect)="handleNodeSelect($event)"
+                        class="w-full block h-full overflow-y-auto" />
                 } @else {
                     <div class="flex flex-column justify-content-center align-items-center gap-2 p-3">
                         <span class="text-sm">Tree nodes: {{ $layoutTree().length }}</span>
