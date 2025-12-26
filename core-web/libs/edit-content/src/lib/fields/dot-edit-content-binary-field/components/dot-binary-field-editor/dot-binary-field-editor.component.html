@@ -16,7 +16,7 @@
                 <dot-field-validation-message
                     [field]="form.get('name')"
                     [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
-                    data-testId="error-message"></dot-field-validation-message>
+                    data-testId="error-message" />
             </div>
         </div>
     }
@@ -28,7 +28,7 @@
             class="binary-field__code-editor"
             #editorRef
             data-testId="code-editor"
-            formControlName="content"></ngx-monaco-editor>
+            formControlName="content" />
 
         <div [ngClass]="{ 'editor-mode__helper--visible': mimeType }" class="editor-mode__helper">
             <i class="pi pi-info-circle"></i>
@@ -42,12 +42,12 @@
             aria-label="Cancel button"
             data-testId="cancel-button"
             styleClass="p-button-outlined"
-            type="button"></p-button>
+            type="button" />
 
         <p-button
             [label]="'dot.common.save' | dm"
             aria-label="Import button"
             data-testId="import-button"
-            type="submit"></p-button>
+            type="submit" />
     </div>
 </form>

@@ -100,7 +100,7 @@
 <div class="sidebar-references sidebar-card">
     <span class="sidebar-card__title">{{ 'References' | dm }}</span>
     @if (loading) {
-        <p-skeleton height="14px"></p-skeleton>
+        <p-skeleton height="14px" />
     } @else {
         <span class="sidebar-card__subtitle" data-testid="references-count">
             @if (referencesPageCount && referencesPageCount !== '0') {
