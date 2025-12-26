@@ -44,6 +44,10 @@ public class PersonalizedContentlet implements Serializable{
         return treeOrder;
     }
 
+    public Map<String, Object> getStyleProperties() {
+        return styleProperties;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
