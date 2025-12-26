@@ -3,7 +3,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpHeaders, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -18,15 +19,9 @@ import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsConfigService,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotActionMenuItem } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotListingDataTableComponent } from './dot-listing-data-table.component';
 
@@ -69,7 +64,7 @@ class EmptyMockComponent {}
 })
 class TestHostComponent {
     @Input() columns: DataTableColumn[];
-    @Input() url: '/api/data';
+    @Input() url = '/api/data';
     @Input() actionHeaderOptions: ActionHeaderOptions;
     @Input() buttonActions: ButtonAction[] = [];
     @Input() sortOrder: string;
@@ -108,7 +103,7 @@ describe('DotListingDataTableComponent', () => {
     let items;
     let enabledItems;
     let disabledItems;
-    let coreWebService: CoreWebService;
+    let httpMock: HttpTestingController;
     const favoritePagesItem = {
         field1: 'item7-value1',
         field2: 'item7-value2',
@@ -121,7 +116,8 @@ describe('DotListingDataTableComponent', () => {
     beforeEach(() => {
         const messageServiceMock = new MockDotMessageService({
             'global-search': 'Global Serach',
-            'No-Results-Found': 'No Results Found'
+            'No-Results-Found': 'No Results Found',
+            'Type-to-filter': 'Type to filter'
         });
 
         TestBed.configureTestingModule({
@@ -134,14 +130,14 @@ describe('DotListingDataTableComponent', () => {
                     { path: 'test', component: DotListingDataTableComponent }
                 ]),
                 MenuModule,
-                HttpClientTestingModule,
                 FormsModule,
                 ContextMenuModule,
                 ButtonModule,
                 TooltipModule
             ],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 LoggerService,
                 DotAlertConfirmService,
@@ -184,7 +180,7 @@ describe('DotListingDataTableComponent', () => {
                 }
             }
         ];
-        coreWebService = TestBed.inject(CoreWebService);
+        httpMock = TestBed.inject(HttpTestingController);
         comp = hostFixture.debugElement.query(By.css('dot-listing-data-table')).componentInstance;
         de = hostFixture.debugElement.query(By.css('p-table'));
         el = de.nativeElement;
@@ -255,26 +251,37 @@ describe('DotListingDataTableComponent', () => {
         items = [...enabledItems, ...disabledItems];
     });
 
-    it('should have default attributes', () => {
+    afterEach(() => {
+        httpMock.verify();
+    });
+
+    it('should have default attributes', fakeAsync(() => {
         hostFixture.detectChanges();
+        flushHttpRequest([]);
+        tick(1);
+        hostFixture.detectChanges();
+
         expect(de.componentInstance.responsiveLayout).toBe('scroll');
         expect(de.componentInstance.lazy).toBe(true);
         expect(de.componentInstance.paginator).toBe(true);
-    });
+    }));
 
-    it('should set active element the global search on load', () => {
+    it('should set active element the global search on load', fakeAsync(() => {
         const actionHeader = hostFixture.debugElement.query(By.css('dot-action-header'));
         const globalSearch = actionHeader.query(By.css('input'));
         hostFixture.detectChanges();
+        flushHttpRequest([]);
+        tick(1);
+        hostFixture.detectChanges();
 
         expect(globalSearch.nativeElement).toBe(document.activeElement);
-    });
+    }));
 
     it('renderer basic datatable component', fakeAsync(() => {
-        setRequestSpy(items);
         hostComponent.multipleSelection = true;
 
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
@@ -323,11 +330,11 @@ describe('DotListingDataTableComponent', () => {
 
             return item;
         });
-        setRequestSpy(itemsWithFormat);
         hostComponent.columns[2].format = 'date';
         hostComponent.multipleSelection = true;
 
         hostFixture.detectChanges();
+        flushHttpRequest(itemsWithFormat);
         tick(1);
         hostFixture.detectChanges();
 
@@ -370,8 +377,8 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should renderer table without checkbox', fakeAsync(() => {
-        setRequestSpy(items);
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
 
@@ -396,8 +403,8 @@ describe('DotListingDataTableComponent', () => {
             }
         ];
         hostComponent.actions = fakeActions;
-        setRequestSpy(items);
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         const rows = el.querySelectorAll('tr');
@@ -416,11 +423,11 @@ describe('DotListingDataTableComponent', () => {
                 }
             }
         ];
-        setRequestSpy(items);
 
         hostComponent.actions = fakeActions;
 
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         const actionButton = de.query(By.css('dot-action-menu-button'));
@@ -434,22 +441,24 @@ describe('DotListingDataTableComponent', () => {
 
     it('should show the loading indicator while the data is received', fakeAsync(() => {
         expect(comp.loading).toEqual(true);
-        setRequestSpy(items);
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         comp.loadCurrentPage();
+        flushHttpRequest(items);
         tick(1);
         expect(comp.loading).toEqual(false);
     }));
 
     it('should load first page of results and set pagination to 1', fakeAsync(() => {
-        setRequestSpy(items);
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         comp.dataTable.first = 3;
         comp.loadFirstPage();
+        flushHttpRequest(items);
         tick(1);
         expect(comp.dataTable.first).toBe(1);
         expect(comp.items.length).toBe(items.length);
@@ -457,9 +466,8 @@ describe('DotListingDataTableComponent', () => {
 
     it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
         jest.spyOn(comp, 'focusFirstRow');
-        setRequestSpy(items);
-        comp.loadFirstPage();
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         comp.globalSearch.nativeElement.dispatchEvent(
@@ -468,29 +476,30 @@ describe('DotListingDataTableComponent', () => {
         expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
     }));
 
-    it('should set the pagination size in the Table', () => {
-        setRequestSpy(items);
+    it('should set the pagination size in the Table', fakeAsync(() => {
         hostComponent.paginationPerPage = 5;
-        comp.loadFirstPage();
+        hostFixture.detectChanges();
+        flushHttpRequest(items);
+        tick(1);
         hostFixture.detectChanges();
 
         expect(comp.dataTable.rows).toBe(5);
-    });
+    }));
 
-    it('should set pagination extra parameters', () => {
-        setRequestSpy(items);
+    it('should set pagination extra parameters', fakeAsync(() => {
         hostComponent.paginatorExtraParams = { type: 'FORM', name: 'DotCMS' };
         hostFixture.detectChanges();
+        flushHttpRequest(items);
+        tick(1);
 
         expect(comp.paginatorService.extraParams.get('type')).toEqual('FORM');
         expect(comp.paginatorService.extraParams.get('name')).toEqual('DotCMS');
-    });
+    }));
 
     it('should emit when a row is clicked or enter', fakeAsync(() => {
-        setRequestSpy(items);
         jest.spyOn(comp.rowWasClicked, 'emit');
-        comp.loadFirstPage();
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         const firstRow: DebugElement = de.queryAll(By.css('tr'))[1];
@@ -501,12 +510,9 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should never emit when a SYSTEM TEMPLATE row is clicked or enter', fakeAsync(() => {
-        setRequestSpy(items);
         jest.spyOn(comp.rowWasClicked, 'emit');
-
-        comp.loadFirstPage();
-
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
 
@@ -518,10 +524,9 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should set pContextMenuRowDisabled correctly', fakeAsync(() => {
-        setRequestSpy(items);
         jest.spyOn(comp.rowWasClicked, 'emit');
-        comp.loadFirstPage();
         hostFixture.detectChanges();
+        flushHttpRequest(items);
         tick(1);
         hostFixture.detectChanges();
         const enabledRow = document.querySelectorAll('[data-testclass="testTableRow"]')[0];
@@ -545,10 +550,10 @@ describe('DotListingDataTableComponent', () => {
         let bodyCheckboxes: DebugElement[];
 
         beforeEach(fakeAsync(() => {
-            setRequestSpy(items);
             hostComponent.checkbox = true;
 
             hostFixture.detectChanges();
+            flushHttpRequest(items);
             tick(1);
             hostFixture.detectChanges();
             bodyCheckboxes = de.queryAll(By.css('p-tablecheckbox'));
@@ -562,8 +567,8 @@ describe('DotListingDataTableComponent', () => {
     });
 
     it('should renders the dot empty state component if items array is empty', fakeAsync(() => {
-        setRequestSpy([]);
         hostFixture.detectChanges();
+        flushHttpRequest([]);
         tick(1);
         hostFixture.detectChanges();
         const emptyState = de.query(By.css('dot-empty-state'));
@@ -571,20 +576,22 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should show no results message if filtered content is empty', fakeAsync(() => {
-        setRequestSpy([]);
         hostFixture.detectChanges();
+        flushHttpRequest([]);
         tick(1);
         comp.globalSearch.nativeElement.value = 'test';
         comp.globalSearch.nativeElement.dispatchEvent(new Event('input'));
         tick(de.componentInstance.filterDelay + 1);
+        flushHttpRequest([]); // Flush the HTTP request triggered by the filter
+        tick(1);
         hostFixture.detectChanges();
         const noResults = de.query(By.css('[data-testid="listing-datatable__empty"]'));
         expect(noResults.nativeElement.textContent.trim()).toEqual('No Results Found');
     }));
 
     it('should hide entries for system content types', fakeAsync(() => {
-        setRequestSpy([...items, favoritePagesItem]);
         hostFixture.detectChanges();
+        flushHttpRequest([...items, favoritePagesItem]);
         tick(1);
         hostFixture.detectChanges();
         const row = de.query(By.css('[data-testId="row-dotFavoritePage"]'));
@@ -592,12 +599,15 @@ describe('DotListingDataTableComponent', () => {
         expect(entriesColumn.nativeElement.textContent).toBeFalsy();
     }));
 
-    function setRequestSpy(response: any): void {
-        jest.spyOn(coreWebService, 'requestView').mockReturnValue(
-            of({
-                entity: response,
-                header: (type: any) => (type === 'Link' ? 'test;test=test' : '10')
-            }) as any
-        );
+    function flushHttpRequest(response: any): void {
+        let headers = new HttpHeaders();
+        headers = headers.set('Link', 'test;test=test');
+        headers = headers.set('X-Pagination-Current-Page', '1');
+        headers = headers.set('X-Pagination-Link-Pages', '5');
+        headers = headers.set('X-Pagination-Per-Page', '40');
+        headers = headers.set('X-Pagination-Total-Entries', '10');
+
+        const req = httpMock.expectOne(() => true);
+        req.flush({ entity: response }, { headers });
     }
 });

@@ -6,7 +6,8 @@ import { inject, Injectable } from '@angular/core';
 
 import { mergeMap, map } from 'rxjs/operators';
 
-import { DotCMSResponse, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
 

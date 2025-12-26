@@ -5,16 +5,14 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, mergeMap } from 'rxjs/operators';
 
-import { DotAjaxActionResponseView, DotBundle, DotCurrentUser } from '@dotcms/dotcms-models';
+import {
+    DotAjaxActionResponseView,
+    DotBundle,
+    DotCurrentUser,
+    DotCMSResponseJsonObject
+} from '@dotcms/dotcms-models';
 
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
-
-// Response type for endpoints that return bodyJsonObject with items
-interface DotBundleResponse {
-    bodyJsonObject: {
-        items: DotBundle[];
-    };
-}
 
 @Injectable()
 export class AddToBundleService {
@@ -34,7 +32,9 @@ export class AddToBundleService {
         return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
                 return this.http
-                    .get<DotBundleResponse>(`${this.bundleUrl}/${user.userId}`)
+                    .get<
+                        DotCMSResponseJsonObject<{ items: DotBundle[] }>
+                    >(`${this.bundleUrl}/${user.userId}`)
                     .pipe(map((response) => response.bodyJsonObject.items));
             })
         );
