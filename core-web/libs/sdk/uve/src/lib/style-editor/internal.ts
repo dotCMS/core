@@ -6,7 +6,8 @@ import {
     StyleEditorForm,
     StyleEditorSection,
     StyleEditorFieldInputType,
-    StyleEditorCheckboxDefaultValue
+    StyleEditorCheckboxDefaultValue,
+    StyleEditorCheckboxOption
 } from './types';
 
 /**
@@ -22,7 +23,8 @@ import {
  *   extracts `placeholder` and `defaultValue` into config
  * - **Radio fields**: Normalizes options (preserves image properties like `imageURL`, `width`, `height`),
  *   extracts `defaultValue` into config
- * - **Checkbox group fields**: Normalizes options and extracts `defaultValue` (as Record<string, boolean>) into config
+ * - **Checkbox group fields**: Normalizes options and derives `defaultValue` from option values
+ *   (creates Record<string, boolean> mapping option keys to their boolean values)
  *
  * @experimental This method is experimental and may be subject to change.
  *
@@ -83,7 +85,6 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
         config.options = field.options.map((opt) =>
             typeof opt === 'string' ? { label: opt, value: opt } : opt
         );
-        config.placeholder = field.type === 'dropdown' ? field.placeholder : undefined;
         config.defaultValue = field.defaultValue;
 
         // Handle radio-specific properties
@@ -93,11 +94,18 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
     }
 
     if (field.type === 'checkboxGroup') {
-        // Normalize options to consistent format
-        config.options = field.options.map((opt) =>
-            typeof opt === 'string' ? { label: opt, value: opt } : opt
-        );
-        config.defaultValue = field.defaultValue;
+        // Normalize checkbox options - convert to format expected by UVE
+        // Options already have label, key, and value (boolean)
+        config.options = field.options.map((opt: StyleEditorCheckboxOption) => ({
+            label: opt.label,
+            value: opt.key // UVE expects 'value' to be the key identifier
+        }));
+
+        // Derive defaultValue from options - map key to boolean value
+        config.defaultValue = field.options.reduce((acc, opt: StyleEditorCheckboxOption) => {
+            acc[opt.key] = opt.value;
+            return acc;
+        }, {} as StyleEditorCheckboxDefaultValue);
     }
 
     return { ...base, config };

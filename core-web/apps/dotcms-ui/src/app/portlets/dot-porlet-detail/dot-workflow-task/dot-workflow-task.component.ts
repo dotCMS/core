@@ -11,7 +11,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
     selector: 'dot-workflow-task',
     providers: [DotWorkflowTaskDetailService],
     template:
-        '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)"></dot-workflow-task-detail>',
+        '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)" />',
     imports: [DotWorkflowTaskDetailComponent]
 })
 export class DotWorkflowTaskComponent implements OnInit {
