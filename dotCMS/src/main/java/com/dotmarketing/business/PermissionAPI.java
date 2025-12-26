@@ -46,9 +46,10 @@ public interface PermissionAPI {
 	final static String[] PERMISSION_TYPES={"PERMISSION_READ","PERMISSION_WRITE","PERMISSION_PUBLISH","PERMISSION_USE","PERMISSION_CAN_ADD_CHILDREN","PERMISSION_EDIT","PERMISSION_EDIT_PERMISSIONS"};
 
 	/**
-	 * Permission type: basically READ, EDIT, PUBLISH, EDIT_PERMISSIONS, ADD CHILDREN,
+	 * Permission type: basically READ, EDIT, PUBLISH, EDIT_PERMISSIONS, ADD CHILDREN.
+	 * Part of the public REST API contract.
 	 */
-	public static enum Type {
+	public enum Type {
 
 		READ(PERMISSION_READ),USE(PERMISSION_USE),
 		EDIT(PERMISSION_EDIT),WRITE(PERMISSION_WRITE),
@@ -154,11 +155,11 @@ public interface PermissionAPI {
 	 * Permission scopes representing asset types that support permissions.
 	 * Uses REST-friendly naming convention (PAGE instead of HTMLPAGES, etc.).
 	 * Maps to the actual permission type strings stored in the database.
+	 * Part of the public REST API contract.
 	 * <p>
 	 * Based on RoleAjax.saveRolePermission() (lines 833-882) which defines all valid permission types.
-	 *
 	 */
-	enum Scope {
+	public enum Scope {
 		INDIVIDUAL(INDIVIDUAL_PERMISSION_TYPE),
 		HOST(Host.class.getCanonicalName()),
 		FOLDER(Folder.class.getCanonicalName()),
