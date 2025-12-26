@@ -73,9 +73,11 @@ import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.time.Instant;
@@ -745,6 +747,42 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("{pageId}/content")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Contentlets saved successfully",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples =  @ExampleObject(value = "{\n"
+                                    + "    \"entity\": [\n"
+                                    + "        {\n"
+                                    + "            \"containerId\": \"some-container-id\",\n"
+                                    + "            \"contentletId\": \"some-contentlet-id\",\n"
+                                    + "            \"styleProperties\": {\n"
+                                    + "                \"color\": \"#FF0000\",\n"
+                                    + "                \"margin\": \"10px\",\n"
+                                    + "                \"width\": \"100px\"\n"
+                                    + "            },\n"
+                                    + "            \"uuid\": \"some-uuid\"\n"
+                                    + "        },\n"
+                                    + "        {\n"
+                                    + "            \"containerId\": \"other-container-id\",\n"
+                                    + "            \"contentletId\": \"other-contentlet-id\",\n"
+                                    + "            \"styleProperties\": null,\n"
+                                    + "            \"uuid\": \"other-uuid\"\n"
+                                    + "        }\n"
+                                    + "    ],\n"
+                                    + "    \"errors\": [],\n"
+                                    + "    \"i18nMessagesMap\": {},\n"
+                                    + "    \"messages\": [],\n"
+                                    + "    \"pagination\": null,\n"
+                                    + "    \"permissions\": []\n"
+                                    + "}"
+                            )
+                    )
+            ),
+            @ApiResponse(responseCode = "400", description = "Bad request or data exception"),
+    })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @PathParam("pageId") final String pageId,
@@ -774,9 +812,11 @@ public class PageResource {
             final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
-            pageResourceHelper.saveContent(pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
+            // Save content and Get the saved contentlets
+            final List<ContentletStylingView> savedContent = pageResourceHelper.saveContent(
+                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
-            return Response.ok(new ResponseEntityView<>("ok")).build();
+            return Response.ok(new ResponseEntityContentletStylingView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
                     pageId);
@@ -850,7 +890,7 @@ public class PageResource {
 
             data.contentIds.addAll(containerEntry.getContentIds());
 
-            // Merge styles. Keys that appear again overwrite previous ones (last one wins)
+            // Merge styles. Duplicated keys overwrite previous ones (last one wins)
             final Map<String, Map<String, Object>> incomingStyles = Optional.ofNullable(
                     containerEntry.getStylePropertiesMap()).orElse(Collections.emptyMap());
 
