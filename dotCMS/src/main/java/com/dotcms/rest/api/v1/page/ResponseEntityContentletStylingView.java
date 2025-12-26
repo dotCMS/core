@@ -1,22 +1,19 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.rest.ResponseEntityView;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
-// Extend ResponseEntityView with String to keep "entity": "ok"
-public class ResponseEntityContentletStylingView extends ResponseEntityView<String> {
+/**
+ * Response wrapper for contentlets with its container, page and styles information.
+ */
+public class ResponseEntityContentletStylingView extends ResponseEntityView<List<ContentletStylingView>> {
 
-    private final List<ContentletStylingView> items;
-
-    public ResponseEntityContentletStylingView(List<ContentletStylingView> items) {
-        // Pass "OK" to the parent constructor so 'entity' is populated
-        super("ok");
-        this.items = items;
-    }
-
-    @JsonProperty("items")
-    public List<ContentletStylingView> getItems() {
-        return items;
+    /**
+     * Constructor for contentlets with its container, page and styles information.
+     *
+     * @param contentletStylingList The list of ContentletStylingView objects to be included in the response.
+     */
+    public ResponseEntityContentletStylingView(List<ContentletStylingView> contentletStylingList) {
+        super(contentletStylingList);
     }
 }
