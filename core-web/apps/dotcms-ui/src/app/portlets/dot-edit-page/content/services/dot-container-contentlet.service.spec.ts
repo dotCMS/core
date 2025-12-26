@@ -1,8 +1,8 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
@@ -10,7 +10,7 @@ import {
     DotPageContainer,
     DotPageContent
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock } from '@dotcms/utils-testing';
 
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 
@@ -21,9 +21,9 @@ describe('DotContainerContentletService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContainerContentletService,
                 DotSessionStorageService
             ]
@@ -33,7 +33,10 @@ describe('DotContainerContentletService', () => {
         dotSessionStorageService = TestBed.inject(DotSessionStorageService);
     });
 
-    it('should do a request for get the contentlet html code', () => {
+    it('should do a request for get the contentlet html code without variant', () => {
+        // Mock the DotSessionStorageService to return undefined (no variant)
+        jest.spyOn(dotSessionStorageService, 'getVariationId').mockReturnValue(undefined);
+
         const pageContainer: DotPageContainer = {
             identifier: '1',
             uuid: '3'
@@ -69,7 +72,7 @@ describe('DotContainerContentletService', () => {
         dotContainerContentletService
             .getContentletToContainer(pageContainer, pageContent, dotPage)
             .subscribe();
-        httpMock.expectOne(`v1/containers/content/2?containerId=1&pageInode=2&variantName=DEFAULT`);
+        httpMock.expectOne('/api/v1/containers/content/2?containerId=1&pageInode=2');
     });
 
     it('should do a request for get the form html code', () => {
@@ -94,7 +97,7 @@ describe('DotContainerContentletService', () => {
         };
 
         dotContainerContentletService.getFormToContainer(pageContainer, form.id).subscribe();
-        httpMock.expectOne(`v1/containers/form/2?containerId=1`);
+        httpMock.expectOne('/api/v1/containers/form/2?containerId=1');
     });
 
     it('should do a request for get the contentlet html code in a specific variant', () => {
@@ -136,7 +139,9 @@ describe('DotContainerContentletService', () => {
         dotContainerContentletService
             .getContentletToContainer(pageContainer, pageContent, dotPage)
             .subscribe();
-        httpMock.expectOne(`v1/containers/content/2?containerId=1&pageInode=2&variantName=Testing`);
+        httpMock.expectOne(
+            '/api/v1/containers/content/2?containerId=1&pageInode=2&variantName=Testing'
+        );
     });
 
     afterEach(() => {
