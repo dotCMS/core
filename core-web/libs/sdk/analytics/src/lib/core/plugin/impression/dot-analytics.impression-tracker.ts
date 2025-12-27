@@ -182,8 +182,8 @@ export class DotCMSImpressionTracker {
 
                 // Only observe and initialize if this is a new element
                 if (!this.elementImpressionStates.has(identifier)) {
-                    if (!element.dataset.dotAnalyticsDomIndex) {
-                        element.dataset.dotAnalyticsDomIndex = String(i);
+                    if (!element.dataset.dotDomIndex) {
+                        element.dataset.dotDomIndex = String(i);
                     }
 
                     this.observer.observe(element);
@@ -386,7 +386,7 @@ export class DotCMSImpressionTracker {
 
         // Read cached DOM index instead of expensive query
         // Falls back to -1 if not cached (should never happen in normal flow)
-        const domIndex = parseInt(element.dataset.dotAnalyticsDomIndex || '-1', 10);
+        const domIndex = parseInt(element.dataset.dotDomIndex || '-1', 10);
 
         // Build impression payload (enricher plugin adds page data automatically)
         const impressionPayload: DotCMSContentImpressionPayload = {
