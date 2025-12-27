@@ -109,7 +109,7 @@ describe('DotUsageShellComponent', () => {
         const refreshButton = spectator.query('[data-testid="refresh-button"]');
         expect(refreshButton).toBeTruthy();
 
-        spectator.dispatchFakeEvent(refreshButton, 'onClick');
+        spectator.click(refreshButton);
         expect(usageService.getSummary).toHaveBeenCalled();
     });
 
@@ -129,7 +129,7 @@ describe('DotUsageShellComponent', () => {
         const summarySubject = new Subject<UsageSummary>();
         usageService.getSummary = jest.fn().mockReturnValue(summarySubject.asObservable());
 
-        spectator.dispatchFakeEvent(retryButton, 'onClick');
+        spectator.click(retryButton);
 
         // Check that reset happened synchronously (before observable completes)
         // The onRetry method resets state first, then calls loadData
@@ -174,10 +174,10 @@ describe('DotUsageShellComponent', () => {
         spectator.component.summary.set(mockSummary);
         spectator.detectChanges();
 
-        const totalSitesCard = spectator.query('[data-testid="site-COUNT_OF_SITES-card"]');
-        expect(totalSitesCard?.textContent).toContain('5');
+        const totalSitesMetric = spectator.query('[data-testid="site-COUNT_OF_SITES-card"] .metric-value');
+        expect(totalSitesMetric?.textContent).toBe('5');
 
-        const totalContentCard = spectator.query('[data-testid="content-COUNT_CONTENT-card"]');
-        expect(totalContentCard?.textContent).toContain('1.5K');
+        const totalContentMetric = spectator.query('[data-testid="content-COUNT_CONTENT-card"] .metric-value');
+        expect(totalContentMetric?.textContent).toBe('1.5K');
     });
 });

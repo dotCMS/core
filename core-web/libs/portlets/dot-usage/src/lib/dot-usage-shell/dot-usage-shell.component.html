@@ -50,7 +50,7 @@
             <!-- Site Metrics: 3 cards -->
             <div>
                 <h2>
-                    <p-skeleton width="10rem" height="23px"></p-skeleton>
+                    <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2, 3]; track i) {
@@ -125,8 +125,7 @@
                 <h3 class="flex align-items-center gap-2">
                     <i
                         class="pi pi-exclamation-triangle"
-                        role="img"
-                        [attr.aria-label]="'usage.dashboard.error.title' | dm"></i>
+                        aria-hidden="true"></i>
                     <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
                 </h3>
             </ng-template>
