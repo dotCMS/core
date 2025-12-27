@@ -45,7 +45,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -273,7 +272,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
 
     /**
-     * Testing the {@link ContentletIndexAPI#createContentIndex(String)},
+     * Testing the {@link ContentletIndexAPI#createContentIndexLegacy(String)},
      * {@link ContentletIndexAPI#delete(String)} and {@link ContentletIndexAPI#listDotCMSIndices()}
      * methods
      *
@@ -297,12 +296,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         int oldIndices = indices.size();
 
         //Creates the working index
-        boolean result = indexAPI.createContentIndex(workingIndex);
+        boolean result = indexAPI.createContentIndexLegacy(workingIndex);
         //Validate
         assertTrue(result);
 
         //Creates the live index
-        result = indexAPI.createContentIndex(liveIndex);
+        result = indexAPI.createContentIndexLegacy(liveIndex);
         //Validate
         assertTrue(result);
 
@@ -385,13 +384,13 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
 
         //Creates the working index
-        boolean result = indexAPI.createContentIndex(workingIndex);
+        boolean result = indexAPI.createContentIndexLegacy(workingIndex);
         assertTrue(result);
         //Activate this working index
         indexAPI.activateIndex(workingIndex);
 
         //Creates the live index
-        result = indexAPI.createContentIndex(liveIndex);
+        result = indexAPI.createContentIndexLegacy(liveIndex);
         assertTrue(result);
         //Activate this live index
         indexAPI.activateIndex(liveIndex);
@@ -455,12 +454,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         String liveIndex = IndexType.LIVE.getPrefix() + "_" + timeStamp;
 
         //Creates the working index
-        boolean result = indexAPI.createContentIndex(workingIndex);
+        boolean result = indexAPI.createContentIndexLegacy(workingIndex);
         //Validate
         assertTrue(result);
 
         //Creates the live index
-        result = indexAPI.createContentIndex(liveIndex);
+        result = indexAPI.createContentIndexLegacy(liveIndex);
         //Validate
         assertTrue(result);
 
@@ -1103,9 +1102,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     @Nullable
     private static String getSiteSearchIndex() {
         String indexToHit;
-        IndiciesInfo info;
+        IndicesInfo info;
         try {
-            info = APILocator.getIndiciesAPI().loadIndicies();
+            info = APILocator.getIndiciesAPI().loadLegacyIndices();
         } catch (DotDataException ee) {
             Logger.fatal(ContentletIndexAPIImpl.class, "Can't get indicies information", ee);
             return null;
@@ -1207,9 +1206,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequest bulk = indexAPI.createBulkRequest();
+        final BulkRequest bulk = indexAPI.createBulkRequestLegacy();
         bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
-        indexAPI.appendBulkRequest(bulk, entries.values());
+        indexAPI.appendBulkRequestLegacy(bulk, entries.values());
         indexAPI.putToIndex(bulk);
 
         assertEquals(0, contentletAPI

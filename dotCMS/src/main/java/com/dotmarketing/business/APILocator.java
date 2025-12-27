@@ -32,8 +32,9 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.elasticsearch.business.IndicesAPI;
+import com.dotcms.content.elasticsearch.business.IndicesAPIImpl;
+import com.dotcms.content.opensearch.business.OpenSearchIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -707,12 +708,12 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
-	 * Creates a single instance of the {@link IndiciesAPI} class.
+	 * Creates a single instance of the {@link IndicesAPI} class.
 	 *
-	 * @return The {@link IndiciesAPI} class.
+	 * @return The {@link IndicesAPI} class.
 	 */
-	public static IndiciesAPI getIndiciesAPI() {
-	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
+	public static IndicesAPI getIndiciesAPI() {
+	    return (IndicesAPI) getInstance(APIIndex.INDICIES_API);
 	}
 
 	/**
@@ -1394,8 +1395,10 @@ enum APIIndex
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
 	JOB_QUEUE_MANAGER_API,
-   AI_VISION_API,
-	ANALYTICS_CUSTOM_ATTRIBUTE_API;
+    AI_VISION_API,
+	ANALYTICS_CUSTOM_ATTRIBUTE_API,
+    OS_INDEX_API
+    ;
 
 	Object create() {
 		switch(this) {
@@ -1432,7 +1435,7 @@ enum APIIndex
     		case WORKFLOW_API : return new WorkflowAPIImpl();
     		case CACHE_PROVIDER_API : return new CacheProviderAPIImpl();
     		case TAG_API: return new TagAPIImpl();
-    		case INDICIES_API: return new IndiciesAPIImpl();
+    		case INDICIES_API: return new IndicesAPIImpl();
     		case CONTENLET_INDEX_API: return new ContentletIndexAPIImpl();
     		case ES_INDEX_API: return new ESIndexAPI();
     		case PUBLISHER_API: return new PublisherAPIImpl();
@@ -1493,6 +1496,7 @@ enum APIIndex
          case AI_VISION_API:
             return new OpenAIVisionAPIImpl();
 			case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
+            case OS_INDEX_API: return CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

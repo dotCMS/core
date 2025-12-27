@@ -950,7 +950,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         final String indexToHit;
 
         try {
-            indexToHit = APILocator.getIndiciesAPI().loadIndicies().getWorking();
+            indexToHit = APILocator.getIndiciesAPI().loadLegacyIndices().getWorking();
         }
         catch(DotDataException ee) {
             Logger.fatal(this, "Can't get indicies information",ee);
@@ -1696,9 +1696,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
    private String inferIndexToHit(final String query)  {
        // we check the query to figure out which indexes to hit
 
-       final IndiciesInfo info;
+       final IndicesInfo info;
        try {
-           info = APILocator.getIndiciesAPI().loadIndicies();
+           info = APILocator.getIndiciesAPI().loadLegacyIndices();
        } catch (DotDataException e) {
            throw new DotRuntimeException(e);
        }

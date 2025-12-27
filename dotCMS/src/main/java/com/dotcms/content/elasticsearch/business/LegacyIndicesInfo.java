@@ -24,10 +24,10 @@ import org.apache.commons.beanutils.PropertyUtils;
  * - INDEX_TYPE_PREFIX: Prefix define for the Index's typs, also see {@link IndexType}
  * - TIME_STAMP: current time stamop when the index was created
  */
-public class IndiciesInfo implements Serializable {
+public class LegacyIndicesInfo implements IndicesInfo, Serializable {
 
     /**
-     * Build a new {@link IndiciesInfo} instance
+     * Build a new {@link LegacyIndicesInfo} instance
      */
     public static class Builder {
         private String live, working, reindexLive, reindexWorking, siteSearch;
@@ -57,12 +57,12 @@ public class IndiciesInfo implements Serializable {
             return this;
         }
 
-        public IndiciesInfo build() {
-            return new IndiciesInfo(this);
+        public LegacyIndicesInfo build() {
+            return new LegacyIndicesInfo(this);
         }
 
-        public static Builder copy(final IndiciesInfo info) {
-            final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
+        public static Builder copy(final IndicesInfo info) {
+            final LegacyIndicesInfo.Builder builder = new LegacyIndicesInfo.Builder();
             builder.setWorking(info.getWorking());
             builder.setLive(info.getLive());
             builder.setReindexWorking(info.getReindexWorking());
@@ -74,16 +74,16 @@ public class IndiciesInfo implements Serializable {
 
     public static final SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
     public static final String CLUSTER_PREFIX = "cluster_";
-    private final static String INDEX_NAME_PATTERN = CLUSTER_PREFIX + "%s.%s_%s";
+    private static final String INDEX_NAME_PATTERN = CLUSTER_PREFIX + "%s.%s_%s";
 
-    private final Map<IndexType, String> indiciesNames = new HashMap<>();
+    private final Map<IndexType, String> indicesNames = new HashMap<>();
 
-    public IndiciesInfo(final Builder builder) {
-        this.indiciesNames.put(IndexType.LIVE, builder.live);
-        this.indiciesNames.put(IndexType.WORKING, builder.working);
-        this.indiciesNames.put(IndexType.REINDEX_LIVE, builder.reindexLive);
-        this.indiciesNames.put(IndexType.REINDEX_WORKING, builder.reindexWorking);
-        this.indiciesNames.put(IndexType.SITE_SEARCH, builder.siteSearch);
+    public LegacyIndicesInfo(final Builder builder) {
+        this.indicesNames.put(IndexType.LIVE, builder.live);
+        this.indicesNames.put(IndexType.WORKING, builder.working);
+        this.indicesNames.put(IndexType.REINDEX_LIVE, builder.reindexLive);
+        this.indicesNames.put(IndexType.REINDEX_WORKING, builder.reindexWorking);
+        this.indicesNames.put(IndexType.SITE_SEARCH, builder.siteSearch);
     }
 
     /**
@@ -91,7 +91,7 @@ public class IndiciesInfo implements Serializable {
      * @return
      */
     public String getLive() {
-        return this.indiciesNames.get(IndexType.LIVE);
+        return this.indicesNames.get(IndexType.LIVE);
     }
 
     /**
@@ -99,7 +99,7 @@ public class IndiciesInfo implements Serializable {
      * @return
      */
     public String getWorking() {
-        return this.indiciesNames.get(IndexType.WORKING);
+        return this.indicesNames.get(IndexType.WORKING);
     }
 
     /**
@@ -107,7 +107,7 @@ public class IndiciesInfo implements Serializable {
      * @return
      */
     public String getReindexLive() {
-        return this.indiciesNames.get(IndexType.REINDEX_LIVE);
+        return this.indicesNames.get(IndexType.REINDEX_LIVE);
     }
 
     /**
@@ -115,7 +115,7 @@ public class IndiciesInfo implements Serializable {
      * @return
      */
     public String getReindexWorking() {
-        return this.indiciesNames.get(IndexType.REINDEX_WORKING);
+        return this.indicesNames.get(IndexType.REINDEX_WORKING);
     }
 
     /**
@@ -123,7 +123,16 @@ public class IndiciesInfo implements Serializable {
      * @return
      */
     public String getSiteSearch() {
-        return this.indiciesNames.get(IndexType.SITE_SEARCH);
+        return this.indicesNames.get(IndexType.SITE_SEARCH);
+    }
+
+    /**
+     * Legacy does not have an implicit version, so null is assumed as legacy
+     * @return
+     */
+    @Override
+    public String version() {
+        return null;
     }
 
     /**
@@ -135,7 +144,7 @@ public class IndiciesInfo implements Serializable {
     public long getIndexTimeStamp(final IndexType indexType) {
         Date startTime;
         try {
-            final String indexName = indiciesNames.get(indexType);
+            final String indexName = indicesNames.get(indexType);
             final String indexTimestamp = indexName.substring(indexName.lastIndexOf("_") + 1);
             startTime = timestampFormatter.parse(indexTimestamp);
 
@@ -150,10 +159,10 @@ public class IndiciesInfo implements Serializable {
      *
      * @param indiciesType types for what you want to create a new name
      * @return timestamp for the newly indicies, to get the newly indices name use one of the follow methods:
-     * {@link IndiciesInfo#getLive()}, {@link IndiciesInfo#getWorking()}, {@link IndiciesInfo#getReindexLive()},
-     * {@link IndiciesInfo#getReindexWorking()} {@link IndiciesInfo#getSiteSearch()}
+     * {@link LegacyIndicesInfo#getLive()}, {@link LegacyIndicesInfo#getWorking()}, {@link LegacyIndicesInfo#getReindexLive()},
+     * {@link LegacyIndicesInfo#getReindexWorking()} {@link LegacyIndicesInfo#getSiteSearch()}
      */
-    public String createNewIndiciesName(final IndexType... indiciesType) {
+    public String createNewIndicesName(final IndexType... indiciesType) {
         final String timeStamp = timestampFormatter.format(new Date());
 
         for (final IndexType indexType : indiciesType) {
@@ -163,7 +172,7 @@ public class IndiciesInfo implements Serializable {
                     indexType.getPrefix(),
                     timeStamp);
 
-            this.indiciesNames.put(indexType, indexName);
+            this.indicesNames.put(indexType, indexName);
         }
 
         return timeStamp;
@@ -202,7 +211,7 @@ public class IndiciesInfo implements Serializable {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        IndiciesInfo other = (IndiciesInfo) obj;
+        LegacyIndicesInfo other = (LegacyIndicesInfo) obj;
         if (this.getLive() == null) {
             if (other.getLive() != null)
                 return false;

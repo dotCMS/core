@@ -125,7 +125,7 @@ public class IndexAjaxAction extends AjaxAction {
 		final boolean live = map.get("live") != null;
 		final String indexName=((live) ? "live_" : "working_" ) + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
 
-		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+		APILocator.getContentletIndexAPI().createContentIndexLegacy(indexName, shards);
         ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 	}
 

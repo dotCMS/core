@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
+import static com.dotcms.content.elasticsearch.business.LegacyIndicesInfo.CLUSTER_PREFIX;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
 

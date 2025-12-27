@@ -1,6 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
+import static com.dotcms.content.elasticsearch.business.LegacyIndicesInfo.CLUSTER_PREFIX;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -86,7 +86,7 @@ public class ESIndexAPITest {
 
 
     @Test
-    public void testGetIndicesStatsWhenStatsTypeIsLongShouldPass() {
+    public void testGetIndicesLegacyStatsWhenStatsTypeIsLongShouldPass() {
 
         final Map<String, Object> jsonMap = new HashMap<>();
 
@@ -121,7 +121,7 @@ public class ESIndexAPITest {
     }
 
     @Test
-    public void testGetIndicesStatsWhenStatsTypeIsIntegerShouldPass() {
+    public void testGetIndicesLegacyStatsWhenStatsTypeIsIntegerShouldPass() {
 
         final Map<String, Object> jsonMap = new HashMap<>();
 
@@ -267,7 +267,7 @@ public class ESIndexAPITest {
     @UseDataProvider("testDeleteOldIndicesDP")
     public void testDeleteOldIndices(final int inactiveLiveWorkingSetsToKeep) throws DotIndexException, IOException, InterruptedException {
         // get live and working active indices
-        final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+        final LegacyIndicesInfo info = Try.of(()->(LegacyIndicesInfo)APILocator.getIndiciesAPI().loadLegacyIndices())
                 .getOrNull();
 
         final String liveIndex = info.getLive();
@@ -280,9 +280,9 @@ public class ESIndexAPITest {
         List<String> indicesThatShouldStay = new ArrayList<>();
 
         for(int i=0; i<6; i++) {
-            info.createNewIndiciesName(IndexType.REINDEX_WORKING, IndexType.REINDEX_LIVE);
-            contentletIndexAPI.createContentIndex(info.getReindexWorking(), 0);
-            contentletIndexAPI.createContentIndex(info.getReindexLive(), 0);
+            info.createNewIndicesName(IndexType.REINDEX_WORKING, IndexType.REINDEX_LIVE);
+            contentletIndexAPI.createContentIndexLegacy(info.getReindexWorking(), 0);
+            contentletIndexAPI.createContentIndexLegacy(info.getReindexLive(), 0);
 
             if(i>=6-inactiveLiveWorkingSetsToKeep) {
                 indicesThatShouldStay.add(esIndexAPI.removeClusterIdFromName(info.getReindexWorking()));

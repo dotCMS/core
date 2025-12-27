@@ -8,7 +8,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -409,22 +409,22 @@ public class FieldAPIImpl implements FieldAPI {
      */
     private void addESMappingForField(final Structure structure, final Field field) {
         try {
-            final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-            if (indiciesInfo != null){
-                if (UtilMethods.isSet(indiciesInfo.getLive())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getLive());
+            final IndicesInfo legacyIndicesInfo = APILocator.getIndiciesAPI().loadLegacyIndices();
+            if (legacyIndicesInfo != null){
+                if (UtilMethods.isSet(legacyIndicesInfo.getLive())) {
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, legacyIndicesInfo.getLive());
                     Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
-                                    .removeClusterIdFromName(indiciesInfo.getLive())));
+                                    .removeClusterIdFromName(legacyIndicesInfo.getLive())));
                 }
 
-                if (UtilMethods.isSet(indiciesInfo.getWorking())) {
-                    ESMappingUtilHelper.getInstance().addCustomMapping(field, indiciesInfo.getWorking());
+                if (UtilMethods.isSet(legacyIndicesInfo.getWorking())) {
+                    ESMappingUtilHelper.getInstance().addCustomMapping(field, legacyIndicesInfo.getWorking());
                     Logger.debug(this.getClass(), () -> String.format(
                             "Elasticsearch mapping set for Field: %s. Content type: %s on Index: %s",
                             field.name(), structure.getName(), APILocator.getESIndexAPI()
-                                    .removeClusterIdFromName(indiciesInfo.getWorking())));
+                                    .removeClusterIdFromName(legacyIndicesInfo.getWorking())));
                 }
             }
 
