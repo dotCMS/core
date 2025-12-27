@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
             <h2 data-testId="targeting-card-name">
@@ -23,4 +23,4 @@
             </div>
         </ng-template>
     </p-card>
-</ng-container>
+}

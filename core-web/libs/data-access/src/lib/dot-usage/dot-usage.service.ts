@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 /**
  * Metric metadata structure containing name, value, and display label.
@@ -68,15 +68,6 @@ export interface UsageErrorResponse {
     readonly statusText?: string;
 }
 
-/**
- * Service state interface for reactive state management
- */
-export interface UsageServiceState {
-    readonly summary: UsageSummary | null;
-    readonly loading: boolean;
-    readonly error: string | null;
-}
-
 @Injectable({
     providedIn: 'root'
 })
@@ -84,30 +75,13 @@ export class DotUsageService {
     #BASE_URL = '/api/v1/usage';
     #http = inject(HttpClient);
 
-    // Reactive state
-    readonly summary = signal<UsageSummary | null>(null);
-    readonly loading = signal<boolean>(false);
-    readonly error = signal<string | null>(null);
-    readonly errorStatus = signal<number | null>(null);
-
     /**
      * Fetches usage summary from the backend API
      */
     getSummary(): Observable<UsageSummary> {
-        this.loading.set(true);
-        this.error.set(null);
-
         return this.#http.get<UsageApiResponse>(`${this.#BASE_URL}/summary`).pipe(
             map((response) => response.entity),
-            tap((summary) => {
-                this.summary.set(summary);
-                this.loading.set(false);
-            }),
             catchError((error) => {
-                const errorMessage = this.getErrorMessage(error);
-                this.error.set(errorMessage);
-                this.errorStatus.set(error.status || null);
-                this.loading.set(false);
                 console.error('Failed to fetch usage summary:', error);
                 throw error;
             })
@@ -122,20 +96,10 @@ export class DotUsageService {
     }
 
     /**
-     * Resets the service state
-     */
-    reset(): void {
-        this.summary.set(null);
-        this.loading.set(false);
-        this.error.set(null);
-        this.errorStatus.set(null);
-    }
-
-    /**
      * Extracts user-friendly error message i18n key from HTTP error
      * Returns i18n keys that should be translated using the dm pipe in the component
      */
-    private getErrorMessage(error: HttpErrorResponse | UsageErrorResponse): string {
+    getErrorMessage(error: HttpErrorResponse | UsageErrorResponse): string {
         if (error.error?.message) {
             return error.error.message;
         }
@@ -165,3 +129,4 @@ export class DotUsageService {
         return 'usage.dashboard.error.generic';
     }
 }
+
