@@ -270,6 +270,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly #contentletForm = signal<FormGroup | null>(null);
     readonly $contentletForm = computed(() => this.#contentletForm());
+    readonly #isSubmitting = signal<boolean>(false);
+    readonly $isSubmitting = computed(() => this.#isSubmitting());
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -380,6 +382,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         const formControls: Record<string, AbstractControl> = {};
 
+        // Add hidden inode field
+        if (fullContentlet?.inode) {
+            formControls['inode'] = this.#fb.control(fullContentlet.inode);
+        }
+
         fields.forEach((field) => {
             let fieldValue: string | string[] | boolean = fullContentlet?.[field.variable] ?? '';
             const validators = [];
@@ -437,8 +444,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected onFormSubmit(): void {
         const form = this.$contentletForm();
         if (form) {
-            // eslint-disable-next-line no-console
-            console.log('Form values:', form.value);
+            this.#isSubmitting.set(true);
+            this.dotWorkflowActionsFireService.saveContentlet(form.value).subscribe({
+                next: () => {
+                    this.#isSubmitting.set(false);
+                    this.reloadPage();
+                },
+                error: () => {
+                    this.#isSubmitting.set(false);
+                }
+            });
         }
     }
 

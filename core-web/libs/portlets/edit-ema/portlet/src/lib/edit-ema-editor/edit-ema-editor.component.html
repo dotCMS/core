@@ -108,6 +108,9 @@
 <div class="right-sidebar">
     @if ($contentletForm() && $selectedContentlet().fields.length > 0) {
         <form [formGroup]="$contentletForm()!" (ngSubmit)="onFormSubmit()" class="p-fluid p-3">
+            @if ($selectedContentlet().contentlet?.inode) {
+                <input type="hidden" formControlName="inode" />
+            }
             @for (field of $selectedContentlet().fields; track field.variable) {
                 <div class="field">
                     <label
@@ -185,7 +188,8 @@
                 <p-button
                     type="submit"
                     label="Submit"
-                    [disabled]="!$contentletForm()?.valid"></p-button>
+                    [disabled]="!$contentletForm()?.valid || $isSubmitting()"
+                    [loading]="$isSubmitting()"></p-button>
             </div>
         </form>
     }
