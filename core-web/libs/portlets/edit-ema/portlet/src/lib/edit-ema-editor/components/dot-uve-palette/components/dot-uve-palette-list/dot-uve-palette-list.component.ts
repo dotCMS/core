@@ -100,7 +100,7 @@ const DEBOUNCE_TIME = 300;
         DotMessagePipe,
         ContextMenuModule
     ],
-    providers: [DotPaletteListStore, DotESContentService],
+    providers: [DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
     styleUrl: './dot-uve-palette-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

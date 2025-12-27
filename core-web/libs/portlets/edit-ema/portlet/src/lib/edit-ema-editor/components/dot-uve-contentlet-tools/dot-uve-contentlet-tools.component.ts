@@ -20,7 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { ActionPayload, ContentletPayload, VTLFile } from '../../../shared/models';
+import { ActionPayload, ClientData, ContentletPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
@@ -32,7 +32,10 @@ import { ContentletArea } from '../ema-page-dropzone/types';
     imports: [NgStyle, ButtonModule, MenuModule, JsonPipe, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-contentlet-tools.component.html',
     styleUrls: ['./dot-uve-contentlet-tools.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '(click)': 'handleClick()'
+    }
 })
 export class DotUveContentletToolsComponent {
     readonly #dotMessageService = inject(DotMessageService);
@@ -85,6 +88,9 @@ export class DotUveContentletToolsComponent {
         type: 'content' | 'form' | 'widget';
         payload: ActionPayload;
     }>();
+
+
+    readonly outputSelectedContentlet = output<Pick<ClientData, 'container' | 'contentlet'>>();
     /**
      * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
      */
@@ -237,5 +243,12 @@ export class DotUveContentletToolsComponent {
     protected hideMenus(): void {
         this.menu()?.hide();
         this.menuVTL()?.hide();
+    }
+
+    protected handleClick(): void {
+        this.outputSelectedContentlet.emit({
+            container: this.contentletArea()?.payload.container,
+            contentlet: this.contentletArea()?.payload.contentlet
+        });
     }
 }

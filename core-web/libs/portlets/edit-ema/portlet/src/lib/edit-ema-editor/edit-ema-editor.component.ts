@@ -20,11 +20,18 @@ import {
     DestroyRef
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, Validators } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -41,6 +48,9 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentTypeField,
+    DotCMSClazzes,
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
@@ -62,6 +72,7 @@ import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-
 import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
@@ -107,6 +118,7 @@ import {
         NgClass,
         NgStyle,
         FormsModule,
+        ReactiveFormsModule,
         DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
@@ -120,8 +132,16 @@ import {
         DotUvePaletteComponent,
         DotUveZoomControlsComponent,
         DotUveIframeComponent,
+        InputTextModule,
+        InputTextareaModule,
+        CheckboxModule,
+        DropdownModule,
+        RadioButtonModule,
+        MultiSelectModule,
+        ButtonModule
     ],
     providers: [
+        DotPaletteListStore,
         DotCopyContentModalService,
         DotCopyContentService,
         DotHttpErrorManagerService,
@@ -146,6 +166,84 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected readonly uveStore = inject(UVEStore);
+    protected readonly dotPaletteListStore = inject(DotPaletteListStore);
+
+    protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
+
+    /**
+     * Parses the values string into an array of {label, value} objects
+     * Format: "label|value\nlabel|value"
+     */
+    private parseFieldValues(values?: string): Array<{ label: string; value: string }> {
+        if (!values) {
+            return [];
+        }
+
+        return values
+            .split('\n')
+            .filter((line) => line.trim())
+            .map((line) => {
+                const [label, value] = line.split('|').map((s) => s.trim());
+                return {
+                    label: label || value || '',
+                    value: value || label || ''
+                };
+            });
+    }
+
+    /**
+     * Flattens the content type layout structure and filters for TextField fields only
+     */
+    private getTextFieldFields(
+        layout: DotCMSContentTypeLayoutRow[]
+    ): Pick<
+        DotCMSContentTypeField,
+        'name' | 'variable' | 'regexCheck' | 'dataType' | 'readOnly' | 'required' | 'clazz' | 'values'
+    >[] {
+        return layout
+            .flatMap((row) => row.columns ?? [])
+            .flatMap((column) => column.fields)
+            .filter(
+                (field) =>
+                    field.clazz === DotCMSClazzes.TEXT ||
+                    field.clazz === DotCMSClazzes.TEXTAREA ||
+                    field.clazz === DotCMSClazzes.CHECKBOX ||
+                    field.clazz === DotCMSClazzes.MULTI_SELECT ||
+                    field.clazz === DotCMSClazzes.RADIO ||
+                    field.clazz === DotCMSClazzes.SELECT
+
+            )
+            .map((field) => {
+                return {
+                    name: field.name,
+                    variable: field.variable,
+                    regexCheck: field.regexCheck,
+                    dataType: field.dataType,
+                    readOnly: field.readOnly,
+                    required: field.required,
+                    clazz: field.clazz,
+                    values: field.values
+                };
+            });
+    }
+
+    protected readonly $selectedContentlet = computed(() => {
+        const { container, contentlet } = this.uveStore.selectedContentlet() ?? {};
+
+        const contentType = this.$contenttypes().find(
+            (ct) => ct.variable === contentlet?.contentType
+        );
+
+        const fields = contentType?.layout ? this.getTextFieldFields(contentType.layout) : [];
+
+        // Parse values for each field
+        const fieldsWithOptions = fields.map((field) => ({
+            ...field,
+            options: this.parseFieldValues(field.values)
+        }));
+
+        return { container, contentlet, fields: fieldsWithOptions };
+    });
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly messageService = inject(MessageService);
@@ -167,7 +265,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dragDropService = inject(DotUveDragDropService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
+    readonly #fb = inject(FormBuilder);
     #iframeResizeObserver: ResizeObserver | null = null;
+
+    readonly #contentletForm = signal<FormGroup | null>(null);
+    readonly $contentletForm = computed(() => this.#contentletForm());
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -185,6 +287,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $isDragging = this.uveStore.$isDragging;
 
     readonly UVE_STATUS = UVE_STATUS;
+    readonly DotCMSClazzes = DotCMSClazzes;
 
     readonly $paletteClass = computed(() => {
         return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
@@ -251,6 +354,94 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         );
     });
 
+    readonly $buildContentletFormEffect = effect(() => {
+        const { fields, container, contentlet } = this.$selectedContentlet();
+        const selectedContentlet = this.uveStore.selectedContentlet();
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+
+        if (!fields || fields.length === 0 || !selectedContentlet || !pageAPIResponse) {
+            this.#contentletForm.set(null);
+            return;
+        }
+
+        // Get the full contentlet from pageAPIResponse using container identifier and uuid
+        let fullContentlet: DotCMSContentlet | undefined = contentlet as DotCMSContentlet;
+        if (container?.identifier && container?.uuid && contentlet?.identifier) {
+            const containerData = pageAPIResponse.containers?.[container.identifier];
+            const contentletUuid = `uuid-${container.uuid}`;
+            const contentlets = containerData?.contentlets?.[contentletUuid] || [];
+            const foundContentlet = contentlets.find(
+                (c) => c.identifier === contentlet.identifier
+            );
+            if (foundContentlet) {
+                fullContentlet = foundContentlet as DotCMSContentlet;
+            }
+        }
+
+        const formControls: Record<string, AbstractControl> = {};
+
+        fields.forEach((field) => {
+            let fieldValue: string | string[] | boolean = fullContentlet?.[field.variable] ?? '';
+            const validators = [];
+
+            // Handle checkbox with multiple options - value should be an array
+            if (field.clazz === DotCMSClazzes.CHECKBOX && field.options && field.options.length > 0) {
+                // Convert string value to array if needed
+                if (typeof fieldValue === 'string' && fieldValue) {
+                    fieldValue = fieldValue.split(',').map((v) => v.trim());
+                } else if (!Array.isArray(fieldValue)) {
+                    fieldValue = [];
+                }
+            }
+
+            // Handle multi-select - value should be an array
+            if (field.clazz === DotCMSClazzes.MULTI_SELECT) {
+                if (typeof fieldValue === 'string' && fieldValue) {
+                    fieldValue = fieldValue.split(',').map((v) => v.trim());
+                } else if (!Array.isArray(fieldValue)) {
+                    fieldValue = [];
+                }
+            }
+
+            if (field.required) {
+                validators.push(Validators.required);
+            }
+
+            if (field.regexCheck) {
+                try {
+                    // Validate the regex pattern before using it
+                    new RegExp(field.regexCheck);
+                    validators.push(Validators.pattern(field.regexCheck));
+                } catch (error) {
+                    // Skip invalid regex patterns
+                    console.warn(
+                        `Invalid regex pattern for field ${field.variable}: ${field.regexCheck}`,
+                        error
+                    );
+                }
+            }
+
+            formControls[field.variable] = this.#fb.control(
+                fieldValue,
+                validators.length > 0 ? validators : null
+            );
+
+            if (field.readOnly) {
+                formControls[field.variable].disable();
+            }
+        });
+
+        this.#contentletForm.set(this.#fb.group(formControls));
+    });
+
+    protected onFormSubmit(): void {
+        const form = this.$contentletForm();
+        if (form) {
+            // eslint-disable-next-line no-console
+            console.log('Form values:', form.value);
+        }
+    }
+
     ngOnInit(): void {
         // Initialization happens in ngAfterViewInit when ViewChild references are available
         // This lifecycle hook satisfies OnInit interface requirement
@@ -285,6 +476,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.setupDragDrop();
     }
 
+    handleSelectedContentlet(
+        selectedContentlet: Pick<ClientData, 'container' | 'contentlet'>
+    ): void {
+        this.uveStore.setSelectedContentlet(selectedContentlet);
+    }
+
     private setupZoom(): void {
         const zoomContainer = this.zoomContainer?.nativeElement;
         const editorContent = this.editorContent?.nativeElement;
@@ -293,10 +490,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.zoomService.setupZoomInteractions(
-            zoomContainer,
-            editorContent,
-            () => this.#clampScrollWithinBounds()
+        this.zoomService.setupZoomInteractions(zoomContainer, editorContent, () =>
+            this.#clampScrollWithinBounds()
         );
     }
 
@@ -429,7 +624,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         } as unknown as { language: string; mode: string; inode: string; fieldName: string });
     }
 
-
     onIframePageLoad(): void {
         if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
@@ -442,7 +636,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.zoomService.setIframeDocHeight(height);
         this.#clampScrollWithinBounds();
     }
-
 
     ngOnDestroy(): void {
         this.#iframeResizeObserver?.disconnect();
@@ -1143,7 +1336,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.loadPageAsset({ language_id: '1' });
     }
 
-
     #clientPayload() {
         const graphqlResponse = this.uveStore.$customGraphqlResponse();
 
@@ -1181,13 +1373,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.resetContentletArea();
     }
 
-
-
-
     protected handleSelectContent(contentlet: ContentletPayload): void {
         this.uveStore.setActiveContentlet(contentlet);
     }
-
 
     #scrollToTopLeft(): void {
         const el = this.editorContent?.nativeElement;

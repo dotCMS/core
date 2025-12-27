@@ -35,7 +35,7 @@
 
 .bounds {
     position: absolute;
-    pointer-events: none;
+    pointer-events: all;
     outline: solid 2px $color-palette-primary-500;
     background-color: transparent;
     container-type: inline-size;

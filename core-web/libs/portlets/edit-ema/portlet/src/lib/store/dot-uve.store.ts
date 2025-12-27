@@ -15,6 +15,7 @@ import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models
 
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
+import { ClientData } from '../shared/models';
 import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
 
 // Some properties can be computed
@@ -30,7 +31,8 @@ const initialState: UVEState = {
     viewParams: null,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    isClientReady: false
+    isClientReady: false,
+    selectedContentlet: undefined
 };
 
 export const UVEStore = signalStore(
@@ -57,6 +59,11 @@ export const UVEStore = signalStore(
                         ...store.viewParams(),
                         ...viewParams
                     }
+                });
+            },
+            setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'>) {
+                patchState(store, {
+                    selectedContentlet
                 });
             }
         };

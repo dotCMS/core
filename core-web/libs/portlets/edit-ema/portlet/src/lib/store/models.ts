@@ -9,7 +9,7 @@ import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
 import { UVE_STATUS } from '../shared/enums';
-import { DotPageAssetParams, NavigationBarItem } from '../shared/models';
+import { ClientData, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 
 export interface UVEState {
     languages: DotLanguage[];
@@ -24,6 +24,7 @@ export interface UVEState {
     isTraditionalPage: boolean;
     isClientReady: boolean;
     workflowActions?: DotCMSWorkflowAction[];
+    selectedContentlet?: Pick<ClientData, 'container' | 'contentlet'>;
 }
 
 export interface ShellProps {

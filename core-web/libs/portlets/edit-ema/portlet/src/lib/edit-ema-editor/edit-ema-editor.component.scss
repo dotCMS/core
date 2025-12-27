@@ -2,7 +2,7 @@
 
 :host {
     display: grid;
-    grid-template-rows: min-content 1fr;
+    grid-template-rows: min-content 1fr min-content;
     height: 100%;
 
     // Default state (no palette)
@@ -61,6 +61,13 @@ dot-results-seo-tool {
     min-height: 0;
 
     grid-column: 2 / -1;
+}
+
+.right-sidebar {
+    grid-column: 3 / -1;
+    grid-row: 2 / -1;
+    background-color: $color-palette-gray-100;
+    width: 400px;
 }
 
 .canvas-viewport {
