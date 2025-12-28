@@ -61,7 +61,7 @@ export const UVEStore = signalStore(
                     }
                 });
             },
-            setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'>) {
+            setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined) {
                 patchState(store, {
                     selectedContentlet
                 });

@@ -457,6 +457,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
     }
 
+    protected onCancel(): void {
+        this.uveStore.setSelectedContentlet(undefined);
+    }
+
     ngOnInit(): void {
         // Initialization happens in ngAfterViewInit when ViewChild references are available
         // This lifecycle hook satisfies OnInit interface requirement

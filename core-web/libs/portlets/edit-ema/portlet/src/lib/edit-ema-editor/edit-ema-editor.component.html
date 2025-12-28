@@ -107,7 +107,14 @@
 
 <div class="right-sidebar">
     @if ($contentletForm() && $selectedContentlet().fields.length > 0) {
-        <form [formGroup]="$contentletForm()!" (ngSubmit)="onFormSubmit()" class="p-fluid p-3">
+        <form
+            [formGroup]="$contentletForm()!"
+            (ngSubmit)="onFormSubmit()"
+            class="p-fluid p-3"
+            style="width: 400px;"
+            (keydown.escape)="onCancel()"
+            tabindex="0"
+        >
             @if ($selectedContentlet().contentlet?.inode) {
                 <input type="hidden" formControlName="inode" />
             }
@@ -184,7 +191,13 @@
                     }
                 </div>
             }
-            <div class="field">
+            <div class="field flex justify-content-end gap-2">
+                <p-button
+                    type="button"
+                    label="Cancel"
+                    [outlined]="true"
+                    (click)="onCancel()"
+                    [disabled]="$isSubmitting()"></p-button>
                 <p-button
                     type="submit"
                     label="Submit"
