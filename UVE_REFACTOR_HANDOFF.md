@@ -280,6 +280,12 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Update components to use store directly
   - Clean up service references
 
+- [ ] **Move `updateRows` method to proper location**
+  - Currently in [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts) but doesn't belong there
+  - **Should move to:** [`withLayout.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/layout/withLayout.ts) - already exists!
+  - Proper separation: layout operations belong in layout feature, not save feature
+  - Update all references to use the layout feature
+
 - [ ] **Comprehensive code review and cleanup**
   - Review all new services for proper error handling
   - Check for memory leaks (subscriptions, event listeners)
@@ -293,6 +299,7 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - [`edit-ema-editor.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/edit-ema-editor.component.ts) - Large refactor, likely has shortcuts
   - [`dot-uve-actions-handler.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-actions-handler/dot-uve-actions-handler.service.ts) - Complex logic, review flow
   - [`dot-row-reorder.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-palette/components/dot-row-reorder/dot-row-reorder.component.ts) - New component, review patterns
+  - [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts) - Added `updateRows` method - **May not belong here, needs review**
 
 - [ ] Fix any ESLint warnings
 - [ ] Remove `any` types where possible
