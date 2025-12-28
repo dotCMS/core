@@ -123,24 +123,22 @@ export function withSave() {
                                 themeId: pageResponse.template.theme,
                                 title: null
                             }).pipe(
+                                /**********************************************************************
+                                 * IMPORTANT: After saving the layout, we must re-fetch the page here  *
+                                 * to obtain the new rendered content WITH all `data-*` attributes.    *
+                                 * This is required because saveLayout API DOES NOT return the updated *
+                                 * rendered page HTML.                                                 *
+                                 **********************************************************************/
+                                switchMap(() => {
+                                    return dotPageApiService.get(store.pageParams()).pipe(
+                                        map((response) => response)
+                                    );
+                                }),
                                 tapResponse({
-                                    next: (pageRender: DotPageRender) => {
+                                    next: (pageRender: DotCMSPageAsset) => {
                                         patchState(store, {
                                             status: UVE_STATUS.LOADED,
-                                            pageAPIResponse: {
-                                                ...pageResponse,
-                                                page: {
-                                                    ...pageResponse.page,
-                                                    rendered: pageRender.page.rendered
-                                                },
-                                                layout: {
-                                                    ...pageResponse.layout,
-                                                    body: {
-                                                        ...pageResponse.layout.body,
-                                                        rows: sortedRows
-                                                    }
-                                                }
-                                            }
+                                            pageAPIResponse: pageRender
                                         });
                                     },
                                     error: (e) => {
