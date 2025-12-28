@@ -3,37 +3,19 @@ import { Component, DestroyRef, effect, inject, OnInit, signal, ViewChild } from
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import {
-    DotAnalyticsTrackerService,
-    DotContentletService,
-    DotESContentService,
-    DotExperimentsService,
-    DotFavoritePageService,
-    DotLanguagesService,
-    DotPageLayoutService,
-    DotPageRenderService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService,
-    DotWorkflowsActionsService
-} from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
-import { WINDOW } from '@dotcms/utils';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
 import { PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS } from '../shared/enums';
 import { DialogAction, DotPageAssetParams } from '../shared/models';
@@ -49,29 +31,6 @@ import {
 
 @Component({
     selector: 'dot-ema-shell',
-    providers: [
-        UVEStore,
-        DotPageApiService,
-        DotActionUrlService,
-        DotLanguagesService,
-        MessageService,
-        DotPageLayoutService,
-        ConfirmationService,
-        DotFavoritePageService,
-        DotESContentService,
-        DialogService,
-        DotPageRenderService,
-        DotSeoMetaTagsService,
-        DotSeoMetaTagsUtilService,
-        DotWorkflowsActionsService,
-        DotContentletService,
-        {
-            provide: WINDOW,
-            useValue: window
-        },
-        DotExperimentsService,
-        DotAnalyticsTrackerService
-    ],
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
     imports: [
@@ -137,7 +96,20 @@ export class DotEmaShellComponent implements OnInit {
         const viewParams = this.#getViewParams(params.mode);
 
         this.uveStore.patchViewParams(viewParams);
-        this.uveStore.loadPageAsset(params);
+
+        // Check if we already have page data loaded with matching params
+        // This prevents reloading when navigating between child routes (content <-> layout)
+        const currentPageParams = this.uveStore.pageParams();
+        const hasPageData = !!this.uveStore.pageAPIResponse();
+        const paramsMatch = currentPageParams &&
+            currentPageParams.url === params.url &&
+            currentPageParams.language_id === params.language_id &&
+            currentPageParams.mode === params.mode;
+
+        // Only load if we don't have data or params have changed
+        if (!hasPageData || !paramsMatch) {
+            this.uveStore.loadPageAsset(params);
+        }
 
         this.#siteService.switchSite$
             .pipe(takeUntilDestroyed(this.destroyRef))
