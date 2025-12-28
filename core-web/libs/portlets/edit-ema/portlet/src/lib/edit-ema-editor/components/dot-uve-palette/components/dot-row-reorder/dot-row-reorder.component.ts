@@ -92,8 +92,12 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                                             <div class="column-handle" cdkDragHandle>
                                                 <i class="pi pi-bars"></i>
                                             </div>
-                                            <div class="column-label">
-                                                Column {{ j + 1 }}
+                                            <div
+                                                class="column-label"
+                                                (dblclick)="openEditColumnDialog(i, j); $event.stopPropagation()"
+                                                (mousedown)="$event.stopPropagation()"
+                                                (touchstart)="$event.stopPropagation()">
+                                                {{ getColumnLabel(column, j) }}
                                             </div>
                                         </div>
                                     }
@@ -110,7 +114,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
         }
 
         <p-dialog
-            header="Edit Row"
+            [header]="editingColumn() ? 'Edit Column' : 'Edit Row'"
             [modal]="true"
             [draggable]="false"
             [resizable]="false"
@@ -291,6 +295,7 @@ export class DotRowReorderComponent {
     private readonly columnDragging = signal<boolean>(false);
     protected readonly editRowDialogOpen = signal<boolean>(false);
     private readonly editingRowIndex = signal<number | null>(null);
+    protected readonly editingColumn = signal<{ rowIndex: number; columnIndex: number } | null>(null);
 
     protected readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
 
@@ -303,6 +308,10 @@ export class DotRowReorderComponent {
         return row.styleClass || `Row ${index + 1}`;
     }
 
+    protected getColumnLabel(column: DotPageAssetLayoutColumn, index: number): string {
+        return column.styleClass || `Column ${index + 1}`;
+    }
+
     protected selectRow(index: number): void {
         this.onRowSelect.emit({
             selector: `#section-${index}`,
@@ -313,29 +322,80 @@ export class DotRowReorderComponent {
     protected openEditRowDialog(rowIndex: number): void {
         const row = this.rows()[rowIndex];
         this.editingRowIndex.set(rowIndex);
+        this.editingColumn.set(null);
         this.rowStyleClassControl.setValue(row?.styleClass ?? '');
+        this.editRowDialogOpen.set(true);
+    }
+
+    protected openEditColumnDialog(rowIndex: number, columnIndex: number): void {
+        const row = this.rows()[rowIndex];
+        const column = row?.columns?.[columnIndex];
+
+        this.editingRowIndex.set(null);
+        this.editingColumn.set({ rowIndex, columnIndex });
+        this.rowStyleClassControl.setValue(column?.styleClass ?? '');
         this.editRowDialogOpen.set(true);
     }
 
     protected closeEditRowDialog(): void {
         this.editRowDialogOpen.set(false);
         this.editingRowIndex.set(null);
+        this.editingColumn.set(null);
     }
 
     protected submitEditRow(): void {
-        const rowIndex = this.editingRowIndex();
-        if (rowIndex === null) {
-            return;
-        }
+        const nextStyleClass = this.rowStyleClassControl.value.trim();
 
         const currentRows = this.rows();
-        if (!currentRows[rowIndex]) {
+        const columnEdit = this.editingColumn();
+        const rowEditIndex = this.editingRowIndex();
+
+        if (columnEdit) {
+            const { rowIndex, columnIndex } = columnEdit;
+            const row = currentRows[rowIndex];
+            const column = row?.columns?.[columnIndex];
+
+            if (!row || !column) {
+                return;
+            }
+
+            const updatedRows = currentRows.map((r, rIdx) => {
+                if (rIdx !== rowIndex) {
+                    return r;
+                }
+
+                const updatedColumns = (r.columns ?? []).map((c, cIdx) => {
+                    return cIdx === columnIndex
+                        ? { ...c, styleClass: nextStyleClass || undefined }
+                        : c;
+                });
+
+                return { ...r, columns: updatedColumns };
+            });
+
+            // Optimistic UI update
+            const pageResponse = this.uveStore.pageAPIResponse();
+            if (pageResponse?.layout) {
+                this.uveStore.updateLayout({
+                    ...pageResponse.layout,
+                    body: {
+                        ...pageResponse.layout.body,
+                        rows: updatedRows
+                    }
+                });
+            }
+
+            this.uveStore.updateRows(updatedRows);
+            this.closeEditRowDialog();
             return;
         }
 
-        const nextStyleClass = this.rowStyleClassControl.value.trim();
+        if (rowEditIndex === null || !currentRows[rowEditIndex]) {
+            return;
+        }
+
         const updatedRows = currentRows.map((row, idx) => {
-            return idx === rowIndex ? { ...row, styleClass: nextStyleClass || undefined } : row;
+            return idx === rowEditIndex ? { ...row, styleClass: nextStyleClass || undefined } : row;
         });
 
         // Optimistic UI update (so the label changes immediately)
@@ -381,6 +441,7 @@ export class DotRowReorderComponent {
         const newRows = [...currentRows];
         moveItemInArray(newRows, event.previousIndex, event.currentIndex);
 
+        this.optimisticUpdateRows(newRows);
         this.uveStore.updateRows(newRows);
     }
 
@@ -404,6 +465,7 @@ export class DotRowReorderComponent {
             return idx === rowIndex ? { ...row, columns: updatedColumns } : row;
         });
 
+        this.optimisticUpdateRows(newRows);
         this.uveStore.updateRows(newRows);
     }
 
@@ -416,6 +478,21 @@ export class DotRowReorderComponent {
             offset += width;
 
             return next;
+        });
+    }
+
+    private optimisticUpdateRows(rows: DotPageAssetLayoutRow[]): void {
+        const pageResponse = this.uveStore.pageAPIResponse();
+        if (!pageResponse?.layout) {
+            return;
+        }
+
+        this.uveStore.updateLayout({
+            ...pageResponse.layout,
+            body: {
+                ...pageResponse.layout.body,
+                rows
+            }
         });
     }
 }
