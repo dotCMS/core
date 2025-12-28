@@ -1,44 +1,11 @@
 @use "variables" as *;
 
-.zoom-controls {
-    position: absolute;
-    top: $spacing-3;
-    right: $spacing-3;
-    z-index: 5;
+:host {
     display: flex;
     align-items: center;
-    gap: $spacing-1;
-    padding: $spacing-2;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid $color-palette-gray-200;
-    border-radius: $border-radius-lg;
-    backdrop-filter: blur(6px);
 }
 
-.zoom-controls__btn {
-    appearance: none;
-    border: 1px solid $color-palette-gray-300;
-    background: $white;
-    color: $color-palette-gray-900;
-    border-radius: $border-radius-md;
-    padding: 0 $spacing-2;
-    height: 2rem;
-    font-weight: $font-weight-medium-bold;
-    cursor: pointer;
-
-    &:hover {
-        background: $color-palette-gray-100;
-    }
-}
-
-.zoom-controls__btn--reset {
-    padding: 0 $spacing-3;
-}
-
-.zoom-controls__label {
-    min-width: 3.5rem;
+div {
+    min-width: 40px;
     text-align: center;
-    font-weight: $font-weight-bold;
-    color: $color-palette-bluegray-700;
 }
-

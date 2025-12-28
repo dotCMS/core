@@ -27,11 +27,14 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DropdownModule } from 'primeng/dropdown';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -100,7 +103,6 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { UVE_PALETTE_TABS } from '../store/features/editor/models';
 import {
     TEMPORAL_DRAG_ITEM,
     deleteContentletFromContainer,
@@ -130,7 +132,6 @@ import {
         DotUveContentletToolsComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
-        DotUveZoomControlsComponent,
         DotUveIframeComponent,
         InputTextModule,
         InputTextareaModule,
@@ -138,7 +139,11 @@ import {
         DropdownModule,
         RadioButtonModule,
         MultiSelectModule,
-        ButtonModule
+        ButtonModule,
+        ToolbarModule,
+        InputGroupModule,
+        InputGroupAddonModule,
+        DotUveZoomControlsComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -309,6 +314,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $iframeOpacity = computed((): number => {
         const opacity = this.$editorProps().iframe.opacity;
         return (typeof opacity === 'number' ? opacity : 1) || 1;
+    });
+
+    readonly $pageURL = computed((): string => {
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+        if (!pageAPIResponse?.page?.pageURI) {
+            return '';
+        }
+        const site = pageAPIResponse.site;
+        const page = pageAPIResponse.page;
+        const hostname = site?.hostname || 'mysite.com';
+        const protocol = page?.httpsRequired ? 'https' : 'http';
+        const pageURI = page.pageURI;
+        const url = pageURI.startsWith('/') ? pageURI : `/${pageURI}`;
+        return `${protocol}://${hostname}${url}`;
     });
 
     get contentWindow(): Window | null {

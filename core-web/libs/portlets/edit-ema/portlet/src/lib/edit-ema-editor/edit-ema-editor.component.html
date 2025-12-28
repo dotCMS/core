@@ -27,8 +27,22 @@
     [ngStyle]="$editorContentStyles()"
     [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
     data-testId="editor-content">
+    <p-toolbar
+        styleClass="browser-toolbar"
+        [style]="{
+            position: 'sticky',
+            top: 0,
+            left: 0,
+            zIndex: 1000
+        }">
+        <ng-template pTemplate="center">
+            <div class="browser-url-bar-container">
+                <div class="browser-url-bar">{{ $pageURL() }}</div>
+                <dot-uve-zoom-controls />
+            </div>
+        </ng-template>
+    </p-toolbar>
     <div class="canvas-viewport">
-        <dot-uve-zoom-controls />
         <div class="canvas-row">
             <div class="canvas-gutter" aria-hidden="true"></div>
             <div class="canvas-outer" #zoomContainer [ngStyle]="$canvasOuterStyles()">
@@ -104,10 +118,9 @@
             [formGroup]="$contentletForm()!"
             (ngSubmit)="onFormSubmit()"
             class="p-fluid p-3"
-            style="width: 400px;"
+            style="width: 400px"
             (keydown.escape)="onCancel()"
-            tabindex="0"
-        >
+            tabindex="0">
             @if ($selectedContentlet().contentlet?.inode) {
                 <input type="hidden" formControlName="inode" />
             }

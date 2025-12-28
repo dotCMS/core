@@ -1,12 +1,15 @@
 import { Component, inject } from '@angular/core';
 import { DotUveZoomService } from '../../../services/dot-uve-zoom/dot-uve-zoom.service';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
     selector: 'dot-uve-zoom-controls',
     standalone: true,
     templateUrl: './dot-uve-zoom-controls.component.html',
     styleUrls: ['./dot-uve-zoom-controls.component.scss'],
-    imports: []
+    imports: [
+        ButtonModule
+    ]
 })
 export class DotUveZoomControlsComponent {
     protected readonly zoomService = inject(DotUveZoomService);
