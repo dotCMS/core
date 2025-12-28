@@ -9,7 +9,7 @@ import {
     signal
 } from '@angular/core';
 
-import { DotPageAssetLayoutRow } from '@dotcms/types';
+import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '@dotcms/types';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -25,7 +25,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                 (cdkDropListDropped)="drop($event)"
                 class="row-reorder-list">
                 @for (row of rows(); track $index; let i = $index) {
-                    <div cdkDrag class="row-item">
+                    <div cdkDrag class="row-item" [cdkDragDisabled]="isColumnDragging()">
                         <div
                             class="row-header">
                             <div
@@ -63,10 +63,24 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                                 class="row-body"
                                 (mousedown)="$event.stopPropagation()"
                                 (touchstart)="$event.stopPropagation()">
-                                <div class="row-columns">
+                                <div
+                                    cdkDropList
+                                    cdkDropListLockAxis="y"
+                                    [cdkDropListData]="row.columns"
+                                    (cdkDropListDropped)="dropColumn($event, i)"
+                                    class="row-columns">
                                     @for (column of row.columns; track $index; let j = $index) {
-                                        <div class="row-column">
-                                            Column {{ j + 1 }}
+                                        <div
+                                            cdkDrag
+                                            class="row-column"
+                                            (cdkDragStarted)="setColumnDragging(true)"
+                                            (cdkDragEnded)="setColumnDragging(false)">
+                                            <div class="column-handle" cdkDragHandle>
+                                                <i class="pi pi-bars"></i>
+                                            </div>
+                                            <div class="column-label">
+                                                Column {{ j + 1 }}
+                                            </div>
                                         </div>
                                     }
                                 </div>
@@ -156,12 +170,34 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
         }
 
         .row-column {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
             font-size: 0.8125rem;
             color: var(--text-color);
             background: var(--surface-card);
             border: 1px solid var(--surface-border);
             border-radius: 4px;
             padding: 0.5rem 0.75rem;
+        }
+
+        .column-handle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color-secondary);
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .column-handle:active {
+            cursor: grabbing;
+        }
+
+        .column-label {
+            flex: 1;
+            min-width: 0;
         }
 
         .row-toggle {
@@ -200,6 +236,7 @@ export class DotRowReorderComponent {
     @Output() onRowSelect = new EventEmitter<{ selector: string; type: string }>();
 
     private readonly expandedRowIndexes = signal<Set<number>>(new Set());
+    private readonly columnDragging = signal<boolean>(false);
 
     protected rows = computed(() => {
         const response = this.uveStore.pageAPIResponse();
@@ -231,11 +268,54 @@ export class DotRowReorderComponent {
         this.expandedRowIndexes.set(next);
     }
 
+    protected isColumnDragging(): boolean {
+        return this.columnDragging();
+    }
+
+    protected setColumnDragging(isDragging: boolean): void {
+        this.columnDragging.set(isDragging);
+    }
+
     protected drop(event: CdkDragDrop<DotPageAssetLayoutRow[]>) {
         const currentRows = this.rows();
         const newRows = [...currentRows];
         moveItemInArray(newRows, event.previousIndex, event.currentIndex);
 
         this.uveStore.updateRows(newRows);
+    }
+
+    protected dropColumn(event: CdkDragDrop<DotPageAssetLayoutColumn[]>, rowIndex: number) {
+        if (event.previousContainer !== event.container) {
+            return;
+        }
+
+        const currentRows = this.rows();
+        const targetRow = currentRows[rowIndex];
+
+        if (!targetRow?.columns) {
+            return;
+        }
+
+        const newColumns = [...targetRow.columns];
+        moveItemInArray(newColumns, event.previousIndex, event.currentIndex);
+        const updatedColumns = this.recomputeLeftOffsets(newColumns);
+
+        const newRows = currentRows.map((row, idx) => {
+            return idx === rowIndex ? { ...row, columns: updatedColumns } : row;
+        });
+
+        this.uveStore.updateRows(newRows);
+    }
+
+    private recomputeLeftOffsets(columns: DotPageAssetLayoutColumn[]): DotPageAssetLayoutColumn[] {
+        let offset = 1;
+
+        return columns.map((column) => {
+            const width = Math.max(0, column.width ?? 0);
+            const next = { ...column, leftOffset: offset };
+            offset += width;
+
+            return next;
+        });
     }
 }
