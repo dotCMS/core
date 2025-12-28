@@ -1424,10 +1424,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         });
     }
 
-    protected handleTabChange(tab: UVE_PALETTE_TABS): void {
-        this.uveStore.setPaletteTab(tab);
-    }
-
     protected handleAddContent(event: {
         type: 'content' | 'form' | 'widget';
         payload: ActionPayload;

@@ -17,13 +17,6 @@
 @if (uveStore.$canEditPage()) {
     <dot-uve-palette
         [ngClass]="$paletteClass()"
-        [languageId]="uveStore.$languageId()"
-        [pagePath]="uveStore.$pageURI()"
-        [variantId]="uveStore.$variantId()"
-        [activeTab]="uveStore.palette.currentTab()"
-        [showStyleEditorTab]="uveStore.$isStyleEditorEnabled()"
-        [styleSchema]="uveStore.$styleSchema()"
-        (onTabChange)="handleTabChange($event)"
         (onNodeSelect)="handlePaletteNodeSelect($event)"
         data-testId="palette" />
 }

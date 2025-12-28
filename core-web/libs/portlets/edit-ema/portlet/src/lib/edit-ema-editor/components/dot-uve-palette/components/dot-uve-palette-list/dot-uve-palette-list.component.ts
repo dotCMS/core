@@ -35,12 +35,13 @@ import {
     DotFavoriteContentTypeService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPaletteListStore } from './store/store';
 
+import { UVEStore } from '../../../../../store/dot-uve.store';
 import {
     DotPaletteListStatus,
     DotPaletteSearchParams,
@@ -72,13 +73,12 @@ const DEBOUNCE_TIME = 300;
  * Component for displaying and managing a list of content types in the UVE palette.
  * Supports grid/list view modes, sorting, filtering, and pagination.
  *
+ * Reads page, language, and variant state directly from UVEStore.
+ * The listType input determines which category to display (content types, widgets, or favorites).
+ *
  * @example
  * ```html
- * <dot-uve-palette-list
- *   [type]="'content'"
- *   [languageId]="1"
- *   [pagePath]="'/home'"
- *   [variantId]="'1'" />
+ * <dot-uve-palette-list [type]="'content'" />
  * ```
  */
 @Component({
@@ -109,17 +109,28 @@ export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('menu') menu!: { toggle: (event: Event) => void };
     @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
+    /**
+     * The type of list to display (content types, widgets, or favorites).
+     * This is the only input prop - all other state comes from UVEStore.
+     */
     $type = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
-    $languageId = input.required<number>({ alias: 'languageId' });
-    $pagePath = input.required<string>({ alias: 'pagePath' });
-    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
 
     readonly #globalStore = inject(GlobalStore);
+    readonly #uveStore = inject(UVEStore);
     readonly #paletteListStore = inject(DotPaletteListStore);
     readonly #dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
     readonly #destroyRef = inject(DestroyRef);
+
+    /**
+     * Computed signals that read directly from the UVEStore.
+     * These replace the previous input properties.
+     * Made public for testing purposes.
+     */
+    readonly $languageId = computed(() => this.#uveStore.$languageId());
+    readonly $pagePath = computed(() => this.#uveStore.$pageURI());
+    readonly $variantId = computed(() => this.#uveStore.$variantId());
 
     readonly searchControl = new FormControl('', { nonNullable: true });
     protected readonly DotUVEPaletteListView = DotUVEPaletteListView;
