@@ -220,6 +220,19 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
             padding: 0.5rem 0.75rem;
         }
 
+        /* Column drag/sort animations (match row behavior) */
+        .row-column.cdk-drag-animating {
+            transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        .row-columns.cdk-drop-list-dragging .row-column:not(.cdk-drag-placeholder) {
+            transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        .row-column.cdk-drag-placeholder {
+            opacity: 0.4;
+        }
+
         .column-handle {
             display: inline-flex;
             align-items: center;
