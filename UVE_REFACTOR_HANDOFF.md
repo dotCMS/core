@@ -146,6 +146,18 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Test edge cases (columns with various offset values)
 - [ ] Document expected behavior for offset handling during reorder
 
+#### 2b. Palette UI Visual Grouping
+**Components:** [`dot-uve-palette.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-palette/dot-uve-palette.component.ts) and related palette components
+
+**Issue:** Card and list items in the palette are too visually separated, creating poor logical grouping.
+
+**Action Needed:**
+- [ ] Review spacing/margins between palette items
+- [ ] Improve visual grouping to show relationships
+- [ ] Consider: Group cards, list sections more clearly
+- [ ] Ensure consistent spacing throughout palette tabs
+- [ ] Test with actual content to verify readability
+
 #### 3. Headless Pages Not Supported
 **Issue:** The new content editing form and row/column reordering features don't work with headless pages.
 
@@ -177,6 +189,24 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Investigate: Is this a dev server proxy/routing issue?
 - [ ] Test rules in full dotCMS environment (port 8080)
 - [ ] Fix or document known limitation if dev-server only issue
+
+#### 6. Missing "Edit All Pages vs This Page" Dialog
+**Issue:** The new palette form to edit content doesn't ask users whether to edit content globally or just for this page.
+
+**Current Flow (Exists):** Dialog with two options:
+- **"All Pages"** - Edit the original/global content (changes appear on all pages using this content)
+- **"This Page"** - Copy the content, add copy to this page, then edit (changes only affect current page)
+
+**New Flow (Missing):** Goes directly to edit without asking, potentially editing global content unintentionally.
+
+**Impact:** Users could accidentally modify content globally when they only intended to change it on one page.
+
+**Action Needed:**
+- [ ] Add "All Pages vs This Page" dialog before opening edit form
+- [ ] Implement copy logic when "This Page" is selected
+- [ ] Handle workflow: Check if content is shared across pages → Show dialog
+- [ ] Handle workflow: If content only on current page → Skip dialog, go straight to edit
+- [ ] Reuse existing dialog UI/logic from current edit flow
 
 ---
 
@@ -240,6 +270,11 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Ship as-is or add Container/Contentlet levels?
   - Research permission layer requirements if proceeding
   - Estimate effort for container editing dialog
+- [ ] **Implement "All Pages vs This Page" dialog** (see "Known Issues to Address" section above)
+  - Add dialog before opening edit form
+  - Implement content copy logic for "This Page" option
+  - Check if content is shared across pages
+  - Reuse existing dialog from current flow
 - [ ] **Resolve inline editing vs selection conflict** (see "Design Decisions Needed" section above)
   - Decide on 2-click pattern vs alternative solutions
   - Get product/UX team approval for interaction change
@@ -255,6 +290,10 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Style the row/column reorder UI
   - Preserve column offset values when reordering
   - Test and document offset behavior
+- [ ] **Improve palette visual grouping** (see "Known Issues to Address" section above)
+  - Fix spacing/margins between items
+  - Improve visual relationships and grouping
+  - Ensure consistency across all palette tabs
 - [ ] **Handle headless pages** (see "Known Issues to Address" section above)
   - Decide on headless page support strategy
   - Implement or disable features accordingly
