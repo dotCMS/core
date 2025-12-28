@@ -8,6 +8,11 @@ import {
     Output,
     signal
 } from '@angular/core';
+import { ReactiveFormsModule, FormControl } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '@dotcms/types';
 
@@ -16,7 +21,15 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 @Component({
     selector: 'dot-row-reorder',
     standalone: true,
-    imports: [CdkDrag, CdkDragHandle, CdkDropList],
+    imports: [
+        CdkDrag,
+        CdkDragHandle,
+        CdkDropList,
+        DialogModule,
+        ReactiveFormsModule,
+        InputTextModule,
+        ButtonModule
+    ],
     template: `
         @if (rows().length > 0) {
             <div
@@ -37,6 +50,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                             <div
                                 class="row-label"
                                 (click)="selectRow(i + 1)"
+                            (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
                                 (mousedown)="$event.stopPropagation()"
                                 (touchstart)="$event.stopPropagation()">
                                 {{ getRowLabel(row, i) }}
@@ -94,6 +108,27 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
                 <span>No rows available</span>
             </div>
         }
+
+        <p-dialog
+            header="Edit Row"
+            [modal]="true"
+            [draggable]="false"
+            [resizable]="false"
+            [(visible)]="editRowDialogOpen"
+            (onHide)="closeEditRowDialog()">
+            <form class="row-edit-form" (submit)="$event.preventDefault(); submitEditRow()">
+                <label class="row-edit-label" for="row-styleClass">name</label>
+                <input
+                    id="row-styleClass"
+                    type="text"
+                    pInputText
+                    [formControl]="rowStyleClassControl" />
+
+                <div class="row-edit-actions">
+                    <button pButton type="submit" label="Submit"></button>
+                </div>
+            </form>
+        </p-dialog>
     `,
     styles: [`
         .row-reorder-list {
@@ -227,6 +262,23 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
             padding: 2rem;
             color: var(--text-color-secondary);
         }
+
+        .row-edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            min-width: 20rem;
+        }
+
+        .row-edit-label {
+            font-size: 0.875rem;
+            color: var(--text-color);
+        }
+
+        .row-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
     `],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -237,6 +289,10 @@ export class DotRowReorderComponent {
 
     private readonly expandedRowIndexes = signal<Set<number>>(new Set());
     private readonly columnDragging = signal<boolean>(false);
+    protected readonly editRowDialogOpen = signal<boolean>(false);
+    private readonly editingRowIndex = signal<number | null>(null);
+
+    protected readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
 
     protected rows = computed(() => {
         const response = this.uveStore.pageAPIResponse();
@@ -252,6 +308,50 @@ export class DotRowReorderComponent {
             selector: `#section-${index}`,
             type: 'row'
         });
+    }
+
+    protected openEditRowDialog(rowIndex: number): void {
+        const row = this.rows()[rowIndex];
+        this.editingRowIndex.set(rowIndex);
+        this.rowStyleClassControl.setValue(row?.styleClass ?? '');
+        this.editRowDialogOpen.set(true);
+    }
+
+    protected closeEditRowDialog(): void {
+        this.editRowDialogOpen.set(false);
+        this.editingRowIndex.set(null);
+    }
+
+    protected submitEditRow(): void {
+        const rowIndex = this.editingRowIndex();
+        if (rowIndex === null) {
+            return;
+        }
+
+        const currentRows = this.rows();
+        if (!currentRows[rowIndex]) {
+            return;
+        }
+
+        const nextStyleClass = this.rowStyleClassControl.value.trim();
+        const updatedRows = currentRows.map((row, idx) => {
+            return idx === rowIndex ? { ...row, styleClass: nextStyleClass || undefined } : row;
+        });
+
+        // Optimistic UI update (so the label changes immediately)
+        const pageResponse = this.uveStore.pageAPIResponse();
+        if (pageResponse?.layout) {
+            this.uveStore.updateLayout({
+                ...pageResponse.layout,
+                body: {
+                    ...pageResponse.layout.body,
+                    rows: updatedRows
+                }
+            });
+        }
+
+        this.uveStore.updateRows(updatedRows);
+        this.closeEditRowDialog();
     }
 
     protected isRowExpanded(rowIndex: number): boolean {
