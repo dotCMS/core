@@ -1,14 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, input, Output } from '@angular/core';
 
-import { TreeNode, TreeDragDropService } from 'primeng/api';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
-import { TreeModule, TreeNodeDropEvent, TreeNodeSelectEvent } from 'primeng/tree';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
+import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
@@ -30,9 +29,8 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
         DotUvePaletteListComponent,
         TooltipModule,
         DotUveStyleEditorFormComponent,
-        TreeModule
+        DotRowReorderComponent,
     ],
-    providers: [TreeDragDropService],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -86,91 +84,6 @@ export class DotUvePaletteComponent {
 
 
     /**
-     * Computed signal that transforms the page layout structure into TreeNode format
-     * for the PrimeNG Tree component. Structure: rows > columns > containers > contentlets
-     */
-    readonly $layoutTree = computed<TreeNode[]>(() => {
-        const pageResponse = this.uveStore.pageAPIResponse();
-
-        if (!pageResponse?.layout?.body?.rows) {
-            return [];
-        }
-
-        const rows = pageResponse.layout.body.rows;
-        const containers = pageResponse.containers || {};
-
-        const treeNodes: TreeNode[] = rows.map((row, rowIndex) => {
-            const columnNodes: TreeNode[] = (row.columns || []).map((column, columnIndex) => {
-                const containerNodes: TreeNode[] = (column.containers || []).map((container, containerIndex) => {
-                    const containerData = containers[container.identifier];
-                    const containerInfo = containerData?.container;
-                    const containerLabel = containerInfo?.name ||
-                                           containerInfo?.friendlyName ||
-                                           containerInfo?.title ||
-                                           container.identifier ||
-                                           `Container ${containerIndex + 1}`;
-
-                    // Get contentlets for this container using uuid from layout
-                    const contentletUuid = `uuid-${container.uuid}`;
-                    const contentlets = containerData?.contentlets?.[contentletUuid] || [];
-
-                    const contentletNodes: TreeNode[] = contentlets.map((contentlet, contentletIndex) => {
-                        return {
-                            key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}-contentlet-${contentletIndex}`,
-                            label: contentlet.title || `Contentlet ${contentletIndex + 1}`,
-                            selectable: false,
-                            draggable: false,
-                            data: {
-                                ...contentlet,
-                                type: 'contentlet',
-                                selector: `[data-dot-identifier="${contentlet.identifier}"]`
-                            }
-                        };
-                    });
-
-                    return {
-                        key: `row-${rowIndex}-column-${columnIndex}-container-${containerIndex}`,
-                        label: containerLabel,
-                        selectable: false,
-                        draggable: false,
-                        data: {
-                            ...container,
-                            containerInfo: containerInfo,
-                            type: 'container',
-                            selector: `[data-dot-identifier="${container.identifier}"][data-dot-uuid="${container.uuid}"]`
-                        },
-                        children: contentletNodes.length > 0 ? contentletNodes : undefined
-                    };
-                });
-
-                return {
-                    key: `row-${rowIndex}-column-${columnIndex}`,
-                    label: `Column ${columnIndex + 1}`,
-                    selectable: false,
-                    draggable: false,
-                    children: containerNodes.length > 0 ? containerNodes : undefined
-                };
-            });
-
-            return {
-                key: `row-${rowIndex}`,
-                label: row.styleClass, // TODO: we need a propper label for the row
-                selectable: true,
-                draggable: true,
-                droppable: false,
-                data: {
-                    type: 'row',
-                    selector: `#section-${rowIndex + 1}`,
-                    rowIndex
-                },
-                children: columnNodes.length > 0 ? columnNodes : undefined
-            };
-        });
-
-        return treeNodes;
-    });
-
-    /**
      * Called whenever the tab changes, either by user interaction or via the `activeIndex` property.
      *
      * @param event TabView change event containing the new active index.
@@ -179,110 +92,4 @@ export class DotUvePaletteComponent {
         this.onTabChange.emit(event.index);
     }
 
-    /**
-     * Handles tree node selection and emits event to scroll to the corresponding element.
-     * Only row nodes are selectable.
-     *
-     * @param event PrimeNG tree node select event
-     */
-    protected handleNodeSelect(event: TreeNodeSelectEvent): void {
-        const node = event.node;
-        if (!node?.data || node.data.type !== 'row') {
-            return;
-        }
-
-        const selector = node.data.selector;
-        if (!selector) {
-            return;
-        }
-
-        // Emit event to parent component to handle scrolling
-        this.onNodeSelect.emit({
-            selector: selector,
-            type: node.data.type
-        });
-    }
-
-    /**
-     * Handles tree node drop event to reorder rows.
-     * Only allows reordering of row nodes at the root level.
-     *
-     * @param event PrimeNG tree node drop event
-     */
-    protected handleNodeDrop(event: TreeNodeDropEvent): void {
-        const { dragNode, dropNode, index } = event;
-
-        // Only allow reordering if the dragged node is a row
-        if (!dragNode?.data || dragNode.data.type !== 'row') {
-            if (event.accept) {
-                // Reject the drop
-                return;
-            }
-            return;
-        }
-
-        // Only allow dropping at root level (dropNode is null or another row)
-        if (dropNode && dropNode.data?.type !== 'row') {
-            if (event.accept) {
-                // Reject the drop
-                return;
-            }
-            return;
-        }
-
-        const pageResponse = this.uveStore.pageAPIResponse();
-        if (!pageResponse?.layout?.body?.rows) {
-            return;
-        }
-
-        const rows = [...pageResponse.layout.body.rows];
-        const currentTreeNodes = this.$layoutTree();
-
-        // Find the drag index in the current tree
-        const dragIndex = currentTreeNodes.findIndex(node => node.key === dragNode.key);
-
-        // Determine drop index
-        let dropIndex: number;
-        if (dropNode === null || dropNode === undefined) {
-            // Dropping at root level - use the provided index
-            dropIndex = index !== undefined ? index : rows.length;
-        } else {
-            // Dropping on another row - find its index
-            const targetIndex = currentTreeNodes.findIndex(node => node.key === dropNode.key);
-            dropIndex = targetIndex >= 0 ? targetIndex : rows.length;
-        }
-
-        // Validate indices
-        if (dragIndex < 0 || dragIndex >= rows.length) {
-            return;
-        }
-        if (dropIndex < 0) {
-            dropIndex = 0;
-        }
-        if (dropIndex > rows.length) {
-            dropIndex = rows.length;
-        }
-
-        // Prevent no-op operations
-        if (dragIndex === dropIndex) {
-            if (event.accept) {
-                event.accept();
-            }
-            return;
-        }
-
-        // Calculate the new sorted rows array based on the drop operation
-        const sortedRows = [...rows];
-        const [movedRow] = sortedRows.splice(dragIndex, 1);
-        // Adjust drop index if we removed an item before it
-        const adjustedDropIndex = dragIndex < dropIndex ? dropIndex - 1 : dropIndex;
-        sortedRows.splice(adjustedDropIndex, 0, movedRow);
-
-        // Log the new sorted version
-        // eslint-disable-next-line no-console
-        console.log('Sorted rows after drop:', sortedRows);
-
-        this.uveStore.updateRows(sortedRows);
-
-    }
 }
