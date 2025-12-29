@@ -289,6 +289,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final static Lazy<Boolean> SET_DEFAULT_VALUES = Lazy.of(()-> Config.getBooleanProperty("CONTENT_API_SET_DEFAULT_VALUES", true));
 
+    /**
+     * Configuration property to control whether to skip throwing FileAssetValidationException
+     * when a file asset is missing its binary field. When set to true, a debug log message
+     * will be written instead of throwing an exception. This can be useful during migration
+     * or bulk operations where some file assets may have missing binaries that need to be
+     * handled gracefully. Default: false (throw exception)
+     */
+    public static final String SKIP_FILE_ASSET_BINARY_VALIDATION = "SKIP_FILE_ASSET_BINARY_VALIDATION";
+
+    private static final Lazy<Boolean> SKIP_FILE_ASSET_BINARY_VALIDATION_FLAG = Lazy.of(() ->
+            Config.getBooleanProperty(SKIP_FILE_ASSET_BINARY_VALIDATION, false));
 
     private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
 
@@ -6024,10 +6035,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         final String binaryNode =
                                 contentletRaw.getInode() != null ? contentletRaw.getInode()
                                         : BLANK;
-                        throw new FileAssetValidationException(
-                                "Unable to validate field: " + FileAssetAPI.BINARY_FIELD
-                                        + " identifier: " + binaryIdentifier
-                                        + " inode: " + binaryNode);
+
+                        if (SKIP_FILE_ASSET_BINARY_VALIDATION_FLAG.get()) {
+                            Logger.debug(this,
+                                    "Missing binary field " + FileAssetAPI.BINARY_FIELD
+                                            + " for identifier: " + binaryIdentifier
+                                            + ", inode: " + binaryNode);
+                        } else {
+                            throw new FileAssetValidationException(
+                                    "Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                            + " identifier: " + binaryIdentifier
+                                            + " inode: " + binaryNode);
+                        }
                     } else {
                         //We no longer use the old BinaryField to recover the file name.
                         //From now on we'll recover such value from the field "fileName" presented on the screen.

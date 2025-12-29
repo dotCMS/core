@@ -310,6 +310,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			final List<Contentlet> contentsWithRelationships =  new ArrayList<>();
 			final Map<String, ContentTypeMapping> copiedContentTypesBySourceId = new HashMap<>();
 			final Map<String, RelationshipMapping> copiedRelationshipsBySourceId = new HashMap<>();
+			final List<FailedContentInfo> failedContents = new ArrayList<>();
 			if (copyOptions.isCopyTemplatesAndContainers()) {
 				Logger.info(this, "----------------------------------------------------------------------");
 				Logger.info(this, String.format(":::: Copying Templates and Containers to new Site '%s'", destinationSite.getHostname()));
@@ -359,7 +360,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 															copiedContainersBySourceId,
 															copiedTemplatesBySourceId,
 															contentsWithRelationships,
-															copiedContentTypesBySourceId
+															copiedContentTypesBySourceId,
+															failedContents
 													)
 											);
 										}
@@ -641,7 +643,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                             this.processCopyOfContentlet(sourceContent, copyOptions,
                                     sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
                                     copiedContainersBySourceId, copiedTemplatesBySourceId,
-                                    contentsWithRelationships, copiedContentTypesBySourceId);
+                                    contentsWithRelationships, copiedContentTypesBySourceId, failedContents);
 
                             currentProgress += progressIncrement;
                             contentCount++;
@@ -717,7 +719,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                             this.processCopyOfContentlet(sourceContent, copyOptions,
                                     sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
                                     copiedContainersBySourceId, copiedTemplatesBySourceId,
-                                    contentsWithRelationships, copiedContentTypesBySourceId);
+                                    contentsWithRelationships, copiedContentTypesBySourceId, failedContents);
                             currentProgress += progressIncrement;
                             contentCount++;
                             simpleContentCount++;
@@ -763,7 +765,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                             this.processCopyOfContentlet(sourceContent, copyOptions,
                                     sourceSite, destinationSite, copiedContentsBySourceId, copiedFoldersBySourceId,
                                     copiedContainersBySourceId, copiedTemplatesBySourceId,
-                                    contentsWithRelationships, copiedContentTypesBySourceId);
+                                    contentsWithRelationships, copiedContentTypesBySourceId, failedContents);
                             currentProgress += progressIncrement;
                             contentCount++;
 
@@ -824,6 +826,35 @@ public class HostAssetsJobImpl extends ParentProxy{
 				}
 			}
 			siteCopyStatus.updateProgress(100);
+
+			// Print summary of failed contentlets
+			if (!failedContents.isEmpty()) {
+				Logger.info(this, "======================================================================");
+				Logger.info(this, String.format(":::: Site Copy Summary - %d contentlet(s) failed to copy from '%s' to '%s'",
+						failedContents.size(), sourceSite.getHostname(), destinationSite.getHostname()));
+				Logger.info(this, "----------------------------------------------------------------------");
+
+				// Group failures by content type for better readability
+				final Map<String, List<FailedContentInfo>> failuresByType = new HashMap<>();
+				for (final FailedContentInfo failure : failedContents) {
+					failuresByType.computeIfAbsent(failure.contentType, k -> new ArrayList<>()).add(failure);
+				}
+
+				// Print grouped failures
+				for (final Map.Entry<String, List<FailedContentInfo>> entry : failuresByType.entrySet()) {
+					final String contentType = entry.getKey();
+					final List<FailedContentInfo> failures = entry.getValue();
+					Logger.info(this, String.format("-> Content Type: %s (%d failures)", contentType, failures.size()));
+					for (final FailedContentInfo failure : failures) {
+						Logger.info(this, String.format("   - ID: %s, Host: %s, Reason: %s",
+								failure.sourceIdentifier, failure.host, failure.reason));
+					}
+				}
+				Logger.info(this, "======================================================================");
+			} else {
+				Logger.info(this, String.format(":::: All contentlets copied successfully from '%s' to '%s'",
+						sourceSite.getHostname(), destinationSite.getHostname()));
+			}
 
 			final String destinationSiteIdentifier = destinationSite.getIdentifier();
 			HibernateUtil.addCommitListener("Host"+destinationSiteIdentifier, ()-> triggerEvents(destinationSiteIdentifier));
@@ -1117,7 +1148,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 			final Map<String, Container> copiedContainersBySourceId,
 			final Map<String, HTMLPageAssetAPI.TemplateContainersReMap> copiedTemplatesBySourceId,
 			final List<Contentlet> contentsWithRelationships,
-		    final Map<String, ContentTypeMapping> copiedContentTypesBySourceId) {
+		    final Map<String, ContentTypeMapping> copiedContentTypesBySourceId,
+			final List<FailedContentInfo> failedContents) {
 
 		//Since certain properties are modified here we're going to use a defensive copy to avoid cache issue.
 		final Contentlet sourceCopy = new Contentlet(sourceContent);
@@ -1146,6 +1178,7 @@ public class HostAssetsJobImpl extends ParentProxy{
                 final Folder destinationFolder = copiedFoldersBySourceId.get(sourceFolder.getInode()) != null ? copiedFoldersBySourceId
                         .get(sourceFolder.getInode()).destinationFolder : null;
                 if (!copyOptions.isCopyFolders()) {
+                    Logger.debug(HostAssetsJobImpl.class, () -> String.format("Source content '%s' in a folder, skipped because folders are not included in the copy", sourceCopy.getIdentifier()));
                     return null;
                 }
 
@@ -1205,16 +1238,66 @@ public class HostAssetsJobImpl extends ParentProxy{
 
             }// Pages are a big deal.
 
-            copiedContentletsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
-			final Contentlet finalNewContent = newContent;
-			Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
-					.getIdentifier()));
+			if (newContent != null) {
+				copiedContentletsBySourceId.put(sourceCopy.getIdentifier(), new ContentMapping(sourceCopy, newContent));
+				final Contentlet finalNewContent = newContent;
+
+				// Verify the contentlet was created in the database
+				try {
+					final Contentlet dbContentlet = contentAPI.findInDb(finalNewContent.getInode()).orElse(null);
+					if (dbContentlet == null) {
+						Logger.warn(this, String.format(
+							"Copied contentlet not found in database - ID: %s, Inode: %s, Content Type: %s",
+							finalNewContent.getIdentifier(),
+							finalNewContent.getInode(),
+							finalNewContent.getContentType().variable()
+						));
+                        failedContents.add(new FailedContentInfo(
+                                sourceCopy.getIdentifier(),
+                                sourceCopy.getContentType().variable(),
+                                sourceCopy.getHost(),
+                                "Copy operation result identifier not found in the database"
+                        ));
+					}
+				} catch (final Exception e) {
+					Logger.warn(this, String.format(
+						"Failed to verify contentlet in database - ID: %s, Inode: %s, Content Type: %s",
+						finalNewContent.getIdentifier(),
+						finalNewContent.getInode(),
+						finalNewContent.getContentType().variable()
+					), e);
+				}
+
+				Logger.debug(HostAssetsJobImpl.class,()->String.format("---> Re-Mapping content: Identifier `%s` now points to `%s`.", sourceCopy.getIdentifier(), finalNewContent
+						.getIdentifier()));
+			} else {
+				final String reason = "Copy operation returned null";
+				Logger.warn(this, String.format(
+					"Failed to copy contentlet - Source ID: %s, Content Type: %s, Host: %s",
+					sourceCopy.getIdentifier(),
+					sourceCopy.getContentType().variable(),
+					sourceCopy.getHost()
+				));
+				failedContents.add(new FailedContentInfo(
+					sourceCopy.getIdentifier(),
+					sourceCopy.getContentType().variable(),
+					sourceCopy.getHost(),
+					reason
+				));
+			}
 
 			this.checkRelatedContentToCopy(sourceCopy, contentsWithRelationships, destinationSite);
         } catch (final Exception e) {
+			final String errorMessage = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
 			Logger.error(this, String.format("An error occurred when copying content '%s' from Site '%s' to Site '%s'." +
 					" The process will continue...", sourceCopy.getIdentifier(), sourceCopy.getHost(),
 					destinationSite.getHostname()), e);
+			failedContents.add(new FailedContentInfo(
+				sourceCopy.getIdentifier(),
+				sourceCopy.getContentType().variable(),
+				sourceCopy.getHost(),
+				errorMessage
+			));
 		}
         return newContent;
     }
@@ -1479,6 +1562,24 @@ public class HostAssetsJobImpl extends ParentProxy{
 			this.sourceField = sourceField;
 		}
 
+	}
+
+	/**
+	 * Tracks information about contentlets that failed to copy during the site copy operation.
+	 */
+	private static class FailedContentInfo {
+		final String sourceIdentifier;
+		final String contentType;
+		final String host;
+		final String reason;
+
+		public FailedContentInfo(final String sourceIdentifier, final String contentType,
+								 final String host, final String reason) {
+			this.sourceIdentifier = sourceIdentifier;
+			this.contentType = contentType;
+			this.host = host;
+			this.reason = reason;
+		}
 	}
 
 	/**
