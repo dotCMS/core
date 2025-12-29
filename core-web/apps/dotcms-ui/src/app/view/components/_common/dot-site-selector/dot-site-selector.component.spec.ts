@@ -3,7 +3,8 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
@@ -13,17 +14,12 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import {
     DotEventsService,
     DotMessageService,
+    DotSiteService,
     DotSystemConfigService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DotSystemConfig } from '@dotcms/dotcms-models';
-import {
-    CoreWebServiceMock,
-    MockDotMessageService,
-    mockSites,
-    SiteServiceMock
-} from '@dotcms/utils-testing';
+import { Site, SiteService } from '@dotcms/dotcms-js';
+import { MockDotMessageService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotSiteSelectorComponent } from './dot-site-selector.component';
 
@@ -50,44 +46,6 @@ const sites: Site[] = [
         type: 'host'
     }
 ];
-
-const mockSystemConfig: DotSystemConfig = {
-    logos: {
-        loginScreen: '',
-        navBar: ''
-    },
-    colors: {
-        primary: '#54428e',
-        secondary: '#3a3847',
-        background: '#BB30E1'
-    },
-    releaseInfo: {
-        buildDate: 'June 24, 2019',
-        version: '5.0.0'
-    },
-    systemTimezone: {
-        id: 'America/Costa_Rica',
-        label: 'Costa Rica',
-        offset: 360
-    },
-    languages: [],
-    license: {
-        level: 100,
-        displayServerId: '19fc0e44',
-        levelName: 'COMMUNITY EDITION',
-        isCommunity: true
-    },
-    cluster: {
-        clusterId: 'test-cluster',
-        companyKeyDigest: 'test-digest'
-    }
-};
-
-class MockDotSystemConfigService {
-    getSystemConfig(): Observable<DotSystemConfig> {
-        return observableOf(mockSystemConfig);
-    }
-}
 
 @Component({
     selector: 'dot-test-host-component',
@@ -121,15 +79,26 @@ describe('SiteSelectorComponent', () => {
                 DotSiteSelectorComponent,
                 SearchableDropdownComponent,
                 BrowserAnimationsModule,
-                HttpClientTestingModule,
                 CommonModule,
                 FormsModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: SiteService, useValue: siteServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: {
+                        getSystemConfig: () => observableOf({})
+                    }
+                },
+                {
+                    provide: DotSiteService,
+                    useValue: {
+                        getCurrentSite: () => observableOf(mockSites[0])
+                    }
+                },
                 IframeOverlayService,
                 PaginatorService,
                 DotEventsService

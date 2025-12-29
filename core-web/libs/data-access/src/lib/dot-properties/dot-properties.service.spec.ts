@@ -1,9 +1,8 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
 
@@ -17,18 +16,18 @@ const fakeResponse = {
 
 describe('DotPropertiesService', () => {
     let service: DotPropertiesService;
-    let httpMock: HttpTestingController;
+    let httpTesting: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPropertiesService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPropertiesService]
         });
         service = TestBed.inject(DotPropertiesService);
-        httpMock = TestBed.inject(HttpTestingController);
+        httpTesting = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => {
+        httpTesting.verify();
     });
 
     it('should get key', (done) => {
@@ -39,12 +38,12 @@ describe('DotPropertiesService', () => {
             expect(response).toEqual(fakeResponse.entity.key1);
             done();
         });
-        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${key}`);
+        const req = httpTesting.expectOne(`/api/v1/configuration/config?keys=${key}`);
         expect(req.request.method).toBe('GET');
         req.flush(fakeResponse);
     });
 
-    it('should get ky as a list', (done) => {
+    it('should get key as a list', (done) => {
         const key = 'list';
         expect(service).toBeTruthy();
 
@@ -52,7 +51,7 @@ describe('DotPropertiesService', () => {
             expect(response).toEqual(fakeResponse.entity.list);
             done();
         });
-        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=list:${key}`);
+        const req = httpTesting.expectOne(`/api/v1/configuration/config?keys=list:${key}`);
         expect(req.request.method).toBe('GET');
         req.flush(fakeResponse);
     });
@@ -70,7 +69,7 @@ describe('DotPropertiesService', () => {
             expect(response).toEqual(apiResponse.entity);
             done();
         });
-        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
+        const req = httpTesting.expectOne(`/api/v1/configuration/config?keys=${keys.join()}`);
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
     });
@@ -83,7 +82,7 @@ describe('DotPropertiesService', () => {
             expect(response).toEqual(true);
             done();
         });
-        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        const req = httpTesting.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
         expect(req.request.method).toBe('GET');
         req.flush(fakeResponse);
     });
@@ -107,7 +106,9 @@ describe('DotPropertiesService', () => {
             );
             done();
         });
-        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
+        const req = httpTesting.expectOne(
+            `/api/v1/configuration/config?keys=${featureFlags.join()}`
+        );
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
     });
@@ -124,12 +125,8 @@ describe('DotPropertiesService', () => {
             expect(response).toEqual(true);
             done();
         });
-        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        const req = httpTesting.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
         expect(req.request.method).toBe('GET');
         req.flush(apiResponse);
-    });
-
-    afterEach(() => {
-        httpMock.verify();
     });
 });

@@ -21,7 +21,8 @@ describe('DotSiteSelectorDirective', () => {
         directive: DotSiteSelectorDirective,
         imports: [DropdownModule, BrowserAnimationsModule],
         mocks: [DotSiteService],
-        providers: [DotEventsService]
+        providers: [DotEventsService],
+        detectChanges: false
     });
 
     beforeEach(() => {
@@ -31,6 +32,8 @@ describe('DotSiteSelectorDirective', () => {
         dotSiteService = spectator.inject(DotSiteService);
         dotEventsService = spectator.inject(DotEventsService);
         dropdown = spectator.directive['control'] as Dropdown;
+
+        dotSiteService.getSites = jest.fn().mockReturnValue(of(mockSites));
     });
 
     it('should create', () => {
@@ -39,19 +42,15 @@ describe('DotSiteSelectorDirective', () => {
     });
 
     describe('Get Sites', () => {
-        beforeEach(() => {
-            dotSiteService.getSites = jest.fn().mockReturnValue(of(mockSites));
-        });
-
-        it('should get sites list', () => {
+        it('should get sites list on init', () => {
             spectator.detectChanges();
 
-            spectator.directive.ngOnInit();
-
-            expect(dotSiteService.getSites).toHaveBeenCalled();
+            expect(dotSiteService.getSites).toHaveBeenCalledWith('', 10);
         });
 
         it('should get sites list with filter', fakeAsync(() => {
+            spectator.detectChanges();
+
             const event: DropdownFilterEvent = {
                 filter: 'demo',
                 originalEvent: new MouseEvent('click')
@@ -64,14 +63,24 @@ describe('DotSiteSelectorDirective', () => {
     });
 
     describe('Listen login-as/logout-as events', () => {
-        it('should send notification when login-as/logout-as', fakeAsync(() => {
-            dotSiteService.getSites = jest.fn().mockReturnValue(of(mockSites));
+        it('should refresh sites on login-as event', fakeAsync(() => {
             spectator.detectChanges();
+            jest.clearAllMocks();
+
             dotEventsService.notify('login-as');
             spectator.tick(0);
+
+            expect(dotSiteService.getSites).toHaveBeenCalledTimes(1);
+        }));
+
+        it('should refresh sites on logout-as event', fakeAsync(() => {
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
             dotEventsService.notify('logout-as');
             spectator.tick(0);
-            expect(dotSiteService.getSites).toHaveBeenCalledTimes(2);
+
+            expect(dotSiteService.getSites).toHaveBeenCalledTimes(1);
         }));
     });
 });

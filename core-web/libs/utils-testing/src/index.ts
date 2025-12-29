@@ -1,5 +1,4 @@
 export * from './lib/clean-up-dialog';
-export * from './lib/core-web.service.mock';
 export * from './lib/dot-auth-user.mock';
 export * from './lib/dot-containers.mock';
 export * from './lib/dot-containers.service.mock';
