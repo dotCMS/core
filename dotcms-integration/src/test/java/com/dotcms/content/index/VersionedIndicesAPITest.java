@@ -71,6 +71,18 @@ public class VersionedIndicesAPITest {
         cleanupTestData();
     }
 
+    /**
+     * Cleans up test data related to versioned and default indices within the database.
+     *
+     * This method performs several cleanup operations:
+     * - Removes all test versions of indices with a version starting with 'test_v%'.
+     * - Deletes indices where the index name starts with 'cluster_test%'.
+     * - Deletes indices associated with the default version test data, where the
+     *   index name starts with 'cluster_default%'.
+     *
+     * In case of exceptions during the cleanup process, the exception is caught
+     * and a warning is logged without interrupting the execution.
+     */
     private void cleanupTestData() {
         try {
             final DotConnect dotConnect = new DotConnect();
@@ -297,6 +309,17 @@ public class VersionedIndicesAPITest {
         }
     }
 
+    /**
+     * Inserts legacy test data consisting of non-versioned indices into the database.
+     * This method is primarily used for setting up legacy data for testing purposes.
+     * Legacy indices are inserted with the `index_version` field set to NULL.
+     *
+     * The method creates two sample legacy indices:
+     * 1. A "live" index with the format "cluster_test_legacy.live_YYYYMMDDHHMMSS".
+     * 2. A "working" index with the format "cluster_test_legacy.working_YYYYMMDDHHMMSS".
+     *
+     * In case of an error during insertion, the exception is caught and an error is logged.
+     */
     private void insertLegacyTestData() {
         try {
             final DotConnect dotConnect = new DotConnect();
@@ -317,6 +340,16 @@ public class VersionedIndicesAPITest {
         }
     }
 
+    /**
+     * Cleans up legacy test data by deleting records related to test legacy indices
+     * from the database. Specifically, it targets indices with names starting with
+     * 'cluster_test_legacy', ensuring only test-related data is removed and not all
+     * legacy indices.
+     *
+     * The method establishes a database connection, executes a SQL DELETE statement
+     * to remove matching records, and handles any exceptions that may occur during
+     * the cleanup process by logging an appropriate warning.
+     */
     private void cleanupLegacyTestData() {
         try {
             final DotConnect dotConnect = new DotConnect();
@@ -327,18 +360,29 @@ public class VersionedIndicesAPITest {
             Logger.warn(this, "Error cleaning up legacy test data", e);
         }
     }
-
-    private void ensureNoLegacyIndicesExist() {
-        try {
-            final DotConnect dotConnect = new DotConnect();
-            // Remove all legacy indices (where index_version IS NULL)
-            int deleted = dotConnect.executeUpdate("DELETE FROM indicies WHERE index_version IS NULL");
-            Logger.debug(this, "Removed " + deleted + " legacy indices to ensure clean test state");
-        } catch (Exception e) {
-            Logger.warn(this, "Error ensuring no legacy indices exist", e);
-        }
-    }
-
+    
+    /**
+     * Ensures the presence of a legacy index in the database. If a legacy index does not already
+     * exist, one is created for testing purposes. This method also handles fallback index creation
+     * in case of any failure during the primary index creation process.
+     *
+     * The method performs the following operations:
+     * 1. Checks the database for the existence of legacy indices (with `index_version` set to NULL).
+     * 2. If no legacy index is found:
+     *    - Creates a new legacy index with specific parameters for testing.
+     *    - Logs the successful creation of the legacy index.
+     * 3. If legacy indices are present:
+     *    - Logs the count of existing legacy indices found.
+     * 4. In case of exceptions during the above operations:
+     *    - Attempts to create a fallback legacy index as a substitute.
+     *    - Logs the success or failure of fallback index creation.
+     *
+     * This method is primarily intended to ensure compatibility with legacy data during
+     * tests that rely on the presence of non-versioned database indices.
+     *
+     * Exceptions are logged but not thrown, allowing the application to proceed
+     * with fallback behavior where necessary.
+     */
     private void ensureLegacyIndexExists() {
         try {
             final DotConnect dotConnect = new DotConnect();

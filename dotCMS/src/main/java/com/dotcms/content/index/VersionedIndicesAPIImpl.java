@@ -32,11 +32,19 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     private final IndicesFactory indicesFactory;
     private static final Cache cache = new Cache();
 
+    /**
+     * Constructor for CDI injection.
+     *
+     * @param indicesFactory the factory used for database operations
+     */
     @Inject
     public VersionedIndicesAPIImpl(IndicesFactory indicesFactory) {
         this.indicesFactory = indicesFactory;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
@@ -57,6 +65,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return loaded;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @CloseDBIfOpened
     @Override
     public List<VersionedIndices> loadAllIndices() throws DotDataException {
@@ -77,6 +88,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return loaded;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @WrapInTransaction
     @Override
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
@@ -92,6 +106,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         cache.invalidateAllVersionsCache();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @WrapInTransaction
     @Override
     public void removeVersion(String version) throws DotDataException {
@@ -104,6 +121,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         cache.remove(version);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @CloseDBIfOpened
     @Override
     public boolean versionExists(String version) throws DotDataException {
@@ -111,6 +131,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return indicesFactory.versionExists(version);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @CloseDBIfOpened
     @Override
     public int getIndicesCount(String version) throws DotDataException {
@@ -118,6 +141,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return indicesFactory.getIndicesCount(version);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Instant extractTimestamp(String indexName) throws DotDataException {
         Logger.debug(this, "Extracting timestamp from index name: " + indexName);
 
@@ -140,12 +166,23 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
     }
 
+    /**
+     * Retrieves all available version identifiers for indices.
+     * This method delegates to the underlying factory to get version information
+     * from the database.
+     *
+     * @return an array of strings representing available versions, empty array if none exist
+     * @throws DotDataException if there's an error accessing the data source
+     */
     @CloseDBIfOpened
     public String[] getAvailableVersions() throws DotDataException {
         Logger.debug(this, "Getting available versions");
         return indicesFactory.getAvailableVersions();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadNonVersionedIndices() throws DotDataException {
@@ -166,6 +203,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return loaded;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadDefaultVersionedIndices() throws DotDataException {
@@ -174,8 +214,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     }
 
     /**
-     * Clears all cached indices data.
-     * This should be called when indices are modified to ensure cache consistency.
+     * {@inheritDoc}
      */
     public void clearCache() {
         cache.clearCache();
@@ -196,10 +235,19 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         private static final String ALL_VERSIONS_KEY = "all_versions";
         private static final String LEGACY_KEY = "legacy_indices";
 
+        /**
+         * Constructor that initializes the cache with dotCMS cache administrator.
+         */
         public Cache() {
             this.cacheAdmin = CacheLocator.getCacheAdministrator();
         }
 
+        /**
+         * Retrieves cached indices for the specified version.
+         *
+         * @param version the version to retrieve from cache
+         * @return the cached VersionedIndices or null if not found or version is invalid
+         */
         public VersionedIndices get(String version) {
             if (!UtilMethods.isSet(version)) {
                 return null;
@@ -214,6 +262,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Stores indices information in cache using the version as key.
+         *
+         * @param indicesInfo the indices information to cache, must have a valid version
+         */
         public void put(VersionedIndices indicesInfo) {
             if (indicesInfo == null || !UtilMethods.isSet(indicesInfo.version())) {
                 return;
@@ -228,6 +281,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Retrieves all cached versions of indices.
+         *
+         * @return list of all cached VersionedIndices or null if not found
+         */
         @SuppressWarnings("unchecked")
         public List<VersionedIndices> getAllVersions() {
             try {
@@ -238,6 +296,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Stores the complete list of all indices versions in cache.
+         *
+         * @param allIndices the list of all indices to cache
+         */
         public void putAllVersions(List<VersionedIndices> allIndices) {
             if (allIndices == null) {
                 return;
@@ -250,6 +313,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Removes cached indices for the specified version and invalidates related cache.
+         *
+         * @param version the version to remove from cache
+         */
         public void remove(String version) {
             if (!UtilMethods.isSet(version)) {
                 return;
@@ -265,6 +333,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Retrieves cached legacy (non-versioned) indices.
+         *
+         * @return the cached legacy VersionedIndices or null if not found
+         */
         public VersionedIndices getLegacyIndices() {
             try {
                 return (VersionedIndices) cacheAdmin.get(LEGACY_KEY, primaryGroup);
@@ -274,6 +347,11 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Stores legacy (non-versioned) indices information in cache.
+         *
+         * @param legacyIndices the legacy indices to cache
+         */
         public void putLegacyIndices(VersionedIndices legacyIndices) {
             if (legacyIndices == null) {
                 return;
@@ -286,6 +364,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Clears all cached data by flushing the entire cache group.
+         */
         public void clearCache() {
             try {
                 cacheAdmin.flushGroup(primaryGroup);
@@ -294,6 +375,9 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             }
         }
 
+        /**
+         * Invalidates only the all-versions cache entry while preserving individual version caches.
+         */
         public void invalidateAllVersionsCache() {
             try {
                 cacheAdmin.remove(ALL_VERSIONS_KEY, primaryGroup);
