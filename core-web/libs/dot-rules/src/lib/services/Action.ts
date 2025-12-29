@@ -1,29 +1,27 @@
-import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { Observable } from 'rxjs';
+import { from as observableFrom, empty as observableEmpty, Subject, Observable } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    ApiRoot,
     UNKNOWN_RESPONSE_ERROR,
     CwError,
     SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR,
-    CLIENTS_ONLY_MESSAGES
+    CLIENTS_ONLY_MESSAGES,
+    LoggerService,
+    HttpCode
 } from '@dotcms/dotcms-js';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { HttpCode } from '@dotcms/dotcms-js';
 
 import { ActionModel } from './Rule';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 
 @Injectable()
 export class ActionService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     private _typeName = 'Action';
@@ -67,30 +65,26 @@ export class ActionService {
             path = `${path}${childPath}`;
         }
 
-        return this.coreWebService
-            .request({
-                url: path
-            })
-            .pipe(
-                catchError((err: any, _source: Observable<any>) => {
-                    if (err && err.status === HttpCode.NOT_FOUND) {
-                        this.loggerService.error(
-                            'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
-                            path
-                        );
-                    } else if (err) {
-                        this.loggerService.debug(
-                            'Could not retrieve' + this._typeName + ': Response status code: ',
-                            err.status,
-                            'error:',
-                            err,
-                            path
-                        );
-                    }
+        return this.http.get<any>(path).pipe(
+            catchError((err: HttpErrorResponse, _source: Observable<any>) => {
+                if (err && err.status === HttpCode.NOT_FOUND) {
+                    this.loggerService.error(
+                        'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
+                        path
+                    );
+                } else if (err) {
+                    this.loggerService.debug(
+                        'Could not retrieve' + this._typeName + ': Response status code: ',
+                        err.status,
+                        'error:',
+                        err,
+                        path
+                    );
+                }
 
-                    return observableEmpty();
-                })
-            );
+                return observableEmpty();
+            })
+        );
     }
 
     allAsArray(
@@ -145,20 +139,13 @@ and should provide the info needed to make the user aware of the fix.`);
         json.owningRule = ruleId;
         const path = this._getPath(ruleId);
 
-        const add = this.coreWebService
-            .request({
-                method: 'POST',
-                body: json,
-                url: path
-            })
-            .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json: any = res;
-                    model.key = json.id;
+        const add = this.http.post<any>(path, json).pipe(
+            map((res: any) => {
+                model.key = res.id;
 
-                    return model;
-                })
-            );
+                return model;
+            })
+        );
 
         return add.pipe(catchError(this._catchRequestError('add')));
     }
@@ -175,33 +162,22 @@ and should provide the info needed to make the user aware of the fix.`);
         } else {
             const json = ActionService.toJson(model);
             json.owningRule = ruleId;
-            const save = this.coreWebService
-                .request({
-                    method: 'PUT',
-                    body: json,
-                    url: this._getPath(ruleId, model.key)
+            const save = this.http.put<any>(this._getPath(ruleId, model.key), json).pipe(
+                map((_res: any) => {
+                    return model;
                 })
-                .pipe(
-                    map((_res: HttpResponse<any>) => {
-                        return model;
-                    })
-                );
+            );
 
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(ruleId, model: ActionModel): Observable<ActionModel> {
-        const remove = this.coreWebService
-            .request({
-                method: 'DELETE',
-                url: this._getPath(ruleId, model.key)
+        const remove = this.http.delete<any>(this._getPath(ruleId, model.key)).pipe(
+            map((_res: any) => {
+                return model;
             })
-            .pipe(
-                map((_res: HttpResponse<any>) => {
-                    return model;
-                })
-            );
+        );
 
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
@@ -217,11 +193,14 @@ and should provide the info needed to make the user aware of the fix.`);
 
     private _catchRequestError(
         _operation
-    ): (response: HttpResponse<any>, original: Observable<any>) => Observable<any> {
-        return (response: HttpResponse<any>): Observable<any> => {
+    ): (response: HttpErrorResponse, original: Observable<any>) => Observable<any> {
+        return (response: HttpErrorResponse): Observable<any> => {
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
-                    if (response.body && response.body.indexOf('ECONNREFUSED') >= 0) {
+                    if (
+                        response.error &&
+                        JSON.stringify(response.error).indexOf('ECONNREFUSED') >= 0
+                    ) {
                         throw new CwError(
                             NETWORK_CONNECTION_ERROR,
                             CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR]
@@ -247,7 +226,7 @@ and should provide the info needed to make the user aware of the fix.`);
                     );
 
                     this._error.next(
-                        response.body.error.replace('dotcms.api.error.forbidden: ', '')
+                        response.error?.error?.replace('dotcms.api.error.forbidden: ', '') ?? ''
                     );
 
                     throw new CwError(

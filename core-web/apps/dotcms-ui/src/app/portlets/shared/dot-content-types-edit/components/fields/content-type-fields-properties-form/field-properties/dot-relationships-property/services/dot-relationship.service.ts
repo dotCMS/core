@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
@@ -30,9 +30,6 @@ export class DotRelationshipService {
             .get<
                 DotCMSResponse<DotRelationshipCardinality[]>
             >('/api/v1/relationships/cardinalities')
-            .pipe(
-                take(1),
-                map((response) => response.entity)
-            );
+            .pipe(map((response) => response.entity));
     }
 }

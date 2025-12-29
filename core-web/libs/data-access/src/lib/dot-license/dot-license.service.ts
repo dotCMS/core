@@ -3,10 +3,15 @@ import { Observable, Subject, BehaviorSubject, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, map, take, tap } from 'rxjs/operators';
+import { map, take, tap } from 'rxjs/operators';
 
-import { ResponseView } from '@dotcms/dotcms-js';
-import { DotLicense } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotLicense } from '@dotcms/dotcms-models';
+
+interface DotLicenseConfigResponse {
+    config: {
+        license: DotLicense;
+    };
+}
 
 export interface DotUnlicensedPortletData {
     icon: string;
@@ -136,8 +141,8 @@ export class DotLicenseService {
     private getLicense(): Observable<DotLicense> {
         if (this.license) return of(this.license);
 
-        return this.http.get<ResponseView>(this.licenseURL).pipe(
-            pluck('entity', 'config', 'license'),
+        return this.http.get<DotCMSResponse<DotLicenseConfigResponse>>(this.licenseURL).pipe(
+            map((response) => response.entity.config.license),
             tap((license) => {
                 this.setLicense(license);
             })
@@ -151,8 +156,8 @@ export class DotLicenseService {
      */
     updateLicense(): void {
         this.http
-            .get<ResponseView>(this.licenseURL)
-            .pipe(pluck('entity', 'config', 'license'))
+            .get<DotCMSResponse<DotLicenseConfigResponse>>(this.licenseURL)
+            .pipe(map((response) => response.entity.config.license))
             .subscribe((license) => {
                 this.setLicense(license);
             });

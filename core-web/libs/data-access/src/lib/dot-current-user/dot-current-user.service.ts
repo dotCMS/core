@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DotCMSResponse,
@@ -56,10 +56,9 @@ export class DotCurrentUserService {
             permissionsType.join(',')
         ]);
 
-        return this.http.get<DotCMSResponse<DotPermissionsType>>(permissionsUrl).pipe(
-            take(1),
-            map((response) => response.entity)
-        );
+        return this.http
+            .get<DotCMSResponse<DotPermissionsType>>(permissionsUrl)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -73,9 +72,6 @@ export class DotCurrentUserService {
             .get<
                 DotCMSResponse<{ response: boolean }>
             >(this.porletAccessUrl.replace('{0}', portletid))
-            .pipe(
-                take(1),
-                map((response) => response.entity.response)
-            );
+            .pipe(map((response) => response.entity.response));
     }
 }

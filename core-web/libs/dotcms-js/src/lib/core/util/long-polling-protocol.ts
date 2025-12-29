@@ -1,9 +1,14 @@
-import { pluck, take } from 'rxjs/operators';
+import { HttpClient, HttpParams } from '@angular/common/http';
+
+import { map, take } from 'rxjs/operators';
 
 import { Protocol } from './protocol';
 
-import { CoreWebService } from '../core-web.service';
 import { LoggerService } from '../logger.service';
+
+interface LongPollingResponse<T> {
+    entity: T;
+}
 
 export class LongPollingProtocol extends Protocol {
     private isClosed = false;
@@ -13,7 +18,7 @@ export class LongPollingProtocol extends Protocol {
     constructor(
         private url: string,
         loggerService: LoggerService,
-        private coreWebService: CoreWebService
+        private http: HttpClient
     ) {
         super(loggerService);
     }
@@ -46,12 +51,17 @@ export class LongPollingProtocol extends Protocol {
         this.isClosed = false;
         this.loggerService.info('Starting long polling connection');
 
-        this.coreWebService
-            .requestView({
-                url: this.url,
-                params: lastCallBack ? { lastCallBack: lastCallBack } : {}
-            })
-            .pipe(pluck('entity'), take(1))
+        let params = new HttpParams();
+        if (lastCallBack) {
+            params = params.set('lastCallBack', lastCallBack.toString());
+        }
+
+        this.http
+            .get<LongPollingResponse<unknown>>(this.url, { params })
+            .pipe(
+                map((response) => response.entity),
+                take(1)
+            )
             .subscribe(
                 (data) => {
                     this.loggerService.debug('new Events', data);

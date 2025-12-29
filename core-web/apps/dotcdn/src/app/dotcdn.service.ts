@@ -7,14 +7,9 @@ import { inject, Injectable } from '@angular/core';
 import { mergeMap, map } from 'rxjs/operators';
 
 import { SiteService } from '@dotcms/dotcms-js';
-import { DotCMSResponse } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotCMSResponseJsonObject } from '@dotcms/dotcms-models';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './app.models';
-
-// Response type for endpoints that return bodyJsonObject
-interface DotBodyJsonResponse<T> {
-    bodyJsonObject: T;
-}
 
 @Injectable({
     providedIn: 'root'
@@ -81,8 +76,8 @@ export class DotCDNService {
         urls = [],
         invalidateAll,
         hostId
-    }: PurgeUrlOptions): Observable<DotBodyJsonResponse<PurgeReturnData>> {
-        return this.http.request<DotBodyJsonResponse<PurgeReturnData>>('DELETE', '/api/v1/dotcdn', {
+    }: PurgeUrlOptions): Observable<DotCMSResponseJsonObject<PurgeReturnData>> {
+        return this.http.delete<DotCMSResponseJsonObject<PurgeReturnData>>('/api/v1/dotcdn', {
             body: JSON.stringify({
                 urls,
                 invalidateAll,

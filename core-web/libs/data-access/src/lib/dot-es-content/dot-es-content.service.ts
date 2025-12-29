@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { take, map } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSResponse, ESContent } from '@dotcms/dotcms-models';
 
@@ -50,10 +50,7 @@ export class DotESContentService {
 
         return this.http
             .post<DotCMSResponse<ESContent>>(this._url, JSON.stringify(queryParams))
-            .pipe(
-                map((response) => response.entity),
-                take(1)
-            );
+            .pipe(map((response) => response.entity));
     }
 
     private setExtraParams(name: string, value?: string | number): void {

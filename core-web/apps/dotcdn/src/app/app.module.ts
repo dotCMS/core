@@ -14,7 +14,6 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabViewModule } from 'primeng/tabview';
 
 import {
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -56,7 +55,6 @@ const dotEventSocketURLFactory = () => {
         ReactiveFormsModule
     ],
     providers: [
-        CoreWebService,
         LoggerService,
         StringUtils,
         SiteService,

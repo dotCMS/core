@@ -15,7 +15,6 @@ import {
     DotGlobalMessageService,
     DotPageStateService
 } from '@dotcms/data-access';
-import { ResponseView } from '@dotcms/dotcms-js';
 import {
     DotContainer,
     DotContainerMap,
@@ -136,7 +135,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
-                (err: ResponseView) => this.handleErrorSaveTemplate(err),
+                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
                 () => this.dotRouterService.allowRouteDeactivation()
             );
     }
@@ -187,7 +186,7 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
             )
             .subscribe(
                 (updatedPage: DotPageRender) => this.handleSuccessSaveTemplate(updatedPage),
-                (err: ResponseView) => this.handleErrorSaveTemplate(err)
+                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err)
             );
     }
 
@@ -212,12 +211,12 @@ export class DotEditLayoutComponent implements OnInit, OnDestroy {
     /**
      *
      * Handle Error on Save template
-     * @param {ResponseView} err
+     * @param {HttpErrorResponse} err
      * @memberof DotEditLayoutComponent
      */
-    private handleErrorSaveTemplate(err: ResponseView) {
-        this.dotGlobalMessageService.error(err.response.statusText);
-        this.dotHttpErrorManagerService.handle(new HttpErrorResponse(err.response)).subscribe();
+    private handleErrorSaveTemplate(err: HttpErrorResponse) {
+        this.dotGlobalMessageService.error(err.statusText);
+        this.dotHttpErrorManagerService.handle(err).subscribe();
     }
 
     private getRemappedContainers(containers: {

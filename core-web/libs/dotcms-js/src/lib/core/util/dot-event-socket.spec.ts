@@ -1,63 +1,79 @@
 import { Server } from 'mock-socket';
-import { Observable, of, throwError } from 'rxjs';
+import { noop, of } from 'rxjs';
 
-import { ReflectiveInjector, Injectable } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotEventsSocket } from './dot-event-socket';
 import { DotEventMessage } from './models/dot-event-message';
 import { DotEventsSocketURL } from './models/dot-event-socket-url';
 
-import { CoreWebService } from '../core-web.service';
 import { ConfigParams, DotcmsConfigService } from '../dotcms-config.service';
 import { LoggerService } from '../logger.service';
-import { StringUtils } from '../string-utils.service';
 
-@Injectable()
-class CoreWebServiceMock extends CoreWebService {
-    constructor() {
-        super(null, null, null, null, null);
-    }
-
-    public requestView(): Observable<any> {
-        return null;
-    }
-}
-
-@Injectable()
 class DotcmsConfigMock {
-    getConfig(): Observable<ConfigParams> {
+    getConfig() {
         return of({
-            colors: {},
+            colors: {
+                primary: '#000',
+                secondary: '#fff',
+                background: '#fff'
+            },
             emailRegex: '',
-            license: {},
+            license: {
+                displayServerId: '',
+                isCommunity: false,
+                level: 0,
+                levelName: ''
+            },
+            logos: {
+                loginScreen: '',
+                navBar: ''
+            },
             menu: [],
             paginatorLinks: 1,
             paginatorRows: 2,
+            releaseInfo: {
+                buildDate: '',
+                version: ''
+            },
             websocket: {
                 websocketReconnectTime: 0,
                 disabledWebsockets: false
+            },
+            systemTimezone: {
+                id: '',
+                label: '',
+                offset: ''
             }
-        });
+        } as ConfigParams);
     }
 }
 
 describe('DotEventsSocket', () => {
-    const coreWebServiceMock = new CoreWebServiceMock();
-    const dotcmsConfig: DotcmsConfigMock = new DotcmsConfigMock();
     let dotEventsSocket: DotEventsSocket;
+    let httpTesting: HttpTestingController;
     const url = new DotEventsSocketURL('localhost/testing', false);
 
     beforeEach(() => {
-        const injector = ReflectiveInjector.resolveAndCreate([
-            { provide: CoreWebService, useValue: coreWebServiceMock },
-            { provide: DotcmsConfigService, useValue: dotcmsConfig },
-            { provide: DotEventsSocketURL, useValue: url },
-            StringUtils,
-            LoggerService,
-            DotEventsSocket
-        ]);
+        TestBed.configureTestingModule({
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: DotcmsConfigService, useClass: DotcmsConfigMock },
+                { provide: DotEventsSocketURL, useValue: url },
+                LoggerService,
+                DotEventsSocket
+            ]
+        });
 
-        dotEventsSocket = injector.get(DotEventsSocket);
+        dotEventsSocket = TestBed.inject(DotEventsSocket);
+        httpTesting = TestBed.inject(HttpTestingController);
+    });
+
+    afterEach(() => {
+        httpTesting.verify();
     });
 
     describe('WebSocket', () => {
@@ -72,7 +88,7 @@ describe('DotEventsSocket', () => {
                 done();
             });
 
-            dotEventsSocket.connect().subscribe(() => {});
+            dotEventsSocket.connect().subscribe(noop);
         });
 
         it('should catch a message', (done) => {
@@ -89,7 +105,7 @@ describe('DotEventsSocket', () => {
             dotEventsSocket.messages().subscribe((message) => {
                 expect(message).toEqual(expectedMessage);
             });
-            dotEventsSocket.connect().subscribe(() => {});
+            dotEventsSocket.connect().subscribe(noop);
         });
 
         afterEach(() => {
@@ -98,90 +114,69 @@ describe('DotEventsSocket', () => {
     });
 
     describe('LongPolling', () => {
-        const requestOpts = {
-            url: 'http://localhost/testing',
-            params: {}
-        };
+        const longPollingUrl = 'http://localhost/testing';
 
         it('should connect', (done) => {
-            spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-                dotEventsSocket.destroy();
-
-                return of({
-                    entity: {
-                        message: 'message'
-                    }
-                });
-            });
-
-            dotEventsSocket.connect().subscribe(() => {});
+            dotEventsSocket.connect().subscribe(noop);
 
             dotEventsSocket.open().subscribe(() => {
-                expect(coreWebServiceMock.requestView).toHaveBeenCalledWith(requestOpts);
+                dotEventsSocket.destroy();
                 done();
             });
+
+            const req = httpTesting.expectOne(longPollingUrl);
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: { message: 'message' } });
         });
 
         it('should catch a message', (done) => {
-            spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-                return of({
+            dotEventsSocket.connect().subscribe(noop);
+
+            dotEventsSocket.messages().subscribe((message) => {
+                dotEventsSocket.destroy();
+                expect(message).toEqual({
+                    event: 'event',
+                    payload: 'message'
+                });
+                done();
+            });
+
+            const req = httpTesting.expectOne(longPollingUrl);
+            expect(req.request.method).toBe('GET');
+            req.flush({
+                entity: {
+                    event: 'event',
+                    payload: 'message'
+                }
+            });
+        });
+
+        it('should reconnect after error', (done) => {
+            dotEventsSocket.connect().subscribe(noop);
+
+            dotEventsSocket.messages().subscribe((message) => {
+                dotEventsSocket.destroy();
+                expect(message).toEqual({
+                    event: 'event',
+                    payload: 'message'
+                });
+                done();
+            });
+
+            // First request fails
+            const firstReq = httpTesting.expectOne(longPollingUrl);
+            firstReq.error(new ProgressEvent('error'));
+
+            // After reconnect delay, the second request should succeed
+            setTimeout(() => {
+                const secondReq = httpTesting.expectOne(longPollingUrl);
+                secondReq.flush({
                     entity: {
                         event: 'event',
                         payload: 'message'
                     }
                 });
-            });
-
-            dotEventsSocket.connect().subscribe(() => {});
-
-            dotEventsSocket.messages().subscribe((message) => {
-                dotEventsSocket.destroy();
-                expect(message).toEqual({
-                    event: 'event',
-                    payload: 'message'
-                });
-                done();
-            });
-        });
-
-        it('should catch a message', (done) => {
-            let firstTime = true;
-            let countMessage = 0;
-
-            spyOn(coreWebServiceMock, 'requestView').and.callFake(() => {
-                if (firstTime) {
-                    firstTime = false;
-
-                    return throwError('ERROR');
-                } else {
-                    return of({
-                        entity: {
-                            event: 'event',
-                            payload: 'message'
-                        }
-                    });
-                }
-            });
-
-            dotEventsSocket.connect().subscribe(() => {});
-
-            dotEventsSocket.messages().subscribe((message) => {
-                dotEventsSocket.destroy();
-
-                countMessage++;
-                expect(message).toEqual({
-                    event: 'event',
-                    payload: 'message'
-                });
-
-                setTimeout(() => {
-                    if (countMessage === 1) {
-                        done();
-                    } else if (countMessage === 2) {
-                        expect(true).toBe(false, 'should be call just one');
-                    }
-                }, 10);
-            });
+            }, 1500);
         });
     });
 });

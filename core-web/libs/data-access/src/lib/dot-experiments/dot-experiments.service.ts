@@ -5,7 +5,6 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, pluck } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
     DotExperimentResults,
@@ -14,7 +13,8 @@ import {
     GoalsLevels,
     HealthStatusTypes,
     RangeOfDateAndTime,
-    TrafficProportion
+    TrafficProportion,
+    DotCMSResponse
 } from '@dotcms/dotcms-models';
 
 const API_ENDPOINT = '/api/v1/experiments';

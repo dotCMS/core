@@ -1,14 +1,11 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    SiteService,
-    SiteServiceMock
-} from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
+import { SiteServiceMock } from '@dotcms/utils-testing';
 
 import { DotCDNStats } from './app.models';
 import { DotCDNStore } from './dotcdn.component.store';
@@ -102,10 +99,10 @@ describe('DotCDNComponentStore', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotCDNStore,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: SiteService, useClass: SiteServiceMock },
                 {
                     provide: DotCDNService,

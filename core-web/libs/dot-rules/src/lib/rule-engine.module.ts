@@ -19,7 +19,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     LoggerService,
@@ -43,20 +42,20 @@ import { AreaPickerDialogComponent } from './google-map/area-picker-dialog.compo
 import { ModalDialogComponent } from './modal-dialog/dialog-component';
 import { AddToBundleDialogComponent } from './push-publish/add-to-bundle-dialog-component';
 import { AddToBundleDialogContainer } from './push-publish/add-to-bundle-dialog-container';
+import { RuleActionComponent } from './rule-action-component';
+import { RuleComponent } from './rule-component';
 import { ConditionComponent } from './rule-condition-component';
+import { ConditionGroupComponent } from './rule-condition-group-component';
+import { RuleEngineComponent } from './rule-engine';
+import { RuleEngineContainer } from './rule-engine.container';
 import { ActionService } from './services/Action';
 import { BundleService } from './services/bundle-service';
-import { ConditionGroupComponent } from './rule-condition-group-component';
 import { ConditionService } from './services/Condition';
 import { ConditionGroupService } from './services/ConditionGroup';
 import { RuleViewService } from './services/dot-view-rule-service';
 import { GoogleMapService } from './services/GoogleMapService';
 import { RuleService } from './services/Rule';
 import { I18nService } from './services/system/locale/I18n';
-import { RuleActionComponent } from './rule-action-component';
-import { RuleComponent } from './rule-component';
-import { RuleEngineComponent } from './rule-engine';
-import { RuleEngineContainer } from './rule-engine.container';
 
 @NgModule({
     imports: [
@@ -103,7 +102,6 @@ import { RuleEngineContainer } from './rule-engine.container';
     providers: [
         ApiRoot,
         BrowserUtil,
-        CoreWebService,
         DotcmsConfigService,
         DotcmsEventsService,
         LoggerService,

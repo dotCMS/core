@@ -5,11 +5,11 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, pluck } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
 import {
     DotCMSContentletWorkflowActions,
     DotCMSWorkflow,
-    DotCMSWorkflowAction
+    DotCMSWorkflowAction,
+    DotCMSResponse
 } from '@dotcms/dotcms-models';
 
 export enum DotRenderMode {

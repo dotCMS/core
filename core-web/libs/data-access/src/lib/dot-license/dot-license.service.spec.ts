@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotLicenseService } from './dot-license.service';
@@ -11,8 +12,7 @@ describe('DotLicenseService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [DotLicenseService]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotLicenseService]
         });
         dotLicenseService = TestBed.inject(DotLicenseService);
         httpMock = TestBed.inject(HttpTestingController);

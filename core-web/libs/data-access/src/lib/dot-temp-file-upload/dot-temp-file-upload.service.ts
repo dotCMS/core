@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, take } from 'rxjs/operators';
@@ -38,17 +38,27 @@ export class DotTempFileUploadService {
         const formData = new FormData();
         formData.append('file', file);
 
-        return this.http.post<DotTempFileResponse>('/api/v1/temp', formData).pipe(
+        const headers = new HttpHeaders({
+            'Content-Type': 'multipart/form-data'
+        });
+        return this.http.post<DotTempFileResponse>('/api/v1/temp', formData, { headers }).pipe(
             map((response) => response.tempFiles),
             catchError((error: HttpErrorResponse) => this.handleError(error))
         );
     }
 
     private uploadByUrl(file: string): Observable<DotCMSTempFile[] | string> {
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/json'
+        });
         return this.http
-            .post<DotTempFileResponse>('/api/v1/temp/byUrl', {
-                remoteUrl: file
-            })
+            .post<DotTempFileResponse>(
+                '/api/v1/temp/byUrl',
+                {
+                    remoteUrl: file
+                },
+                { headers }
+            )
             .pipe(
                 map((response) => response.tempFiles),
                 catchError((error: HttpErrorResponse) => this.handleError(error))

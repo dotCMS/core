@@ -1,36 +1,19 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator';
 
 import { DotSiteBrowserService } from './dot-site-browser.service';
 
 describe('DotSiteBrowserService', () => {
-    let injector: TestBed;
-    let httpMock: HttpTestingController;
-    let dotSiteBrowserService: DotSiteBrowserService;
+    let spectator: SpectatorHttp<DotSiteBrowserService>;
+    const createHttp = createHttpFactory(DotSiteBrowserService);
 
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotSiteBrowserService
-            ]
-        });
-        injector = getTestBed();
-        dotSiteBrowserService = injector.inject(DotSiteBrowserService);
-        httpMock = injector.inject(HttpTestingController);
-    });
+    beforeEach(() => (spectator = createHttp()));
 
     it('should set Site Browser Selected folder', () => {
-        dotSiteBrowserService.setSelectedFolder('/test').subscribe();
+        spectator.service.setSelectedFolder('/test').subscribe();
 
-        const req = httpMock.expectOne('/api/v1/browser/selectedfolder');
-        expect(req.request.method).toEqual('PUT');
+        const req = spectator.expectOne('/api/v1/browser/selectedfolder', HttpMethod.PUT);
         expect(req.request.body).toEqual({ path: '/test' });
 
-        req.flush({});
+        req.flush({ entity: {} });
     });
 });

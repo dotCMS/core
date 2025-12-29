@@ -64,13 +64,14 @@ export class FieldService {
         fields: DotCMSContentTypeField[]
     ): Observable<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }> {
         return this.http
-            .request<
-                DotCMSResponse<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>
-            >('DELETE', `/api/v3/contenttype/${contentTypeId}/fields`, {
-                body: {
-                    fieldsID: fields.map((field: DotCMSContentTypeField) => field.id)
+            .delete<DotCMSResponse<{ fields: DotCMSContentTypeLayoutRow[]; deletedIds: string[] }>>(
+                `/api/v3/contenttype/${contentTypeId}/fields`,
+                {
+                    body: {
+                        fieldsID: fields.map((field: DotCMSContentTypeField) => field.id)
+                    }
                 }
-            })
+            )
             .pipe(map((response) => response.entity));
     }
 

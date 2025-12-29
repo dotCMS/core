@@ -14,8 +14,7 @@ import {
     refCount
 } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenu, DotMenuItem, DotCMSResponse } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotMenuService {

@@ -1,31 +1,28 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
-
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotFavoritePageService } from './dot-favorite-page.service';
 
 import { DotESContentService, ESOrderDirection } from '../dot-es-content/dot-es-content.service';
 
 describe('DotFavoritePageService', () => {
-    let injector: TestBed;
     let dotESContentService: DotESContentService;
     let dotFavoritePageService: DotFavoritePageService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotESContentService,
                 DotFavoritePageService
             ]
         });
-        injector = getTestBed();
-        dotESContentService = injector.inject(DotESContentService);
-        dotFavoritePageService = injector.inject(DotFavoritePageService);
+        dotESContentService = TestBed.inject(DotESContentService);
+        dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         jest.spyOn(dotESContentService, 'get');
     });
 

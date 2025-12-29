@@ -1,14 +1,11 @@
-import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { Observable } from 'rxjs';
+import { from as observableFrom, empty as observableEmpty, Subject, Observable } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { HttpCode } from '@dotcms/dotcms-js';
-import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+import { ApiRoot, HttpCode, LoggerService } from '@dotcms/dotcms-js';
 
 import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
@@ -18,15 +15,16 @@ import { ServerSideTypeModel } from './ServerSideFieldModel';
 
 @Injectable()
 export class ConditionService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
+
+    private _baseUrl: string;
+
+    private _error: Subject<string> = new Subject<string>();
 
     public get error(): Observable<string> {
         return this._error.asObservable();
     }
-    private _baseUrl: string;
-
-    private _error: Subject<string> = new Subject<string>();
 
     constructor() {
         const apiRoot = inject(ApiRoot);
@@ -67,29 +65,25 @@ export class ConditionService {
     }
 
     makeRequest(childPath: string): Observable<any> {
-        return this.coreWebService
-            .request({
-                url: this._baseUrl + '/' + childPath
-            })
-            .pipe(
-                catchError((err: any, _source: Observable<any>) => {
-                    if (err && err.status === HttpCode.NOT_FOUND) {
-                        this.loggerService.info(
-                            'Could not retrieve Condition Types: URL not valid.'
-                        );
-                    } else if (err) {
-                        this.loggerService.info(
-                            'Could not retrieve Condition Types.',
-                            'response status code: ',
-                            err.status,
-                            'error:',
-                            err
-                        );
-                    }
+        const path = `${this._baseUrl}/${childPath}`;
 
-                    return observableEmpty();
-                })
-            );
+        return this.http.get<any>(path).pipe(
+            catchError((err: HttpErrorResponse, _source: Observable<any>) => {
+                if (err && err.status === HttpCode.NOT_FOUND) {
+                    this.loggerService.info('Could not retrieve Condition Types: URL not valid.');
+                } else if (err) {
+                    this.loggerService.info(
+                        'Could not retrieve Condition Types.',
+                        'response status code: ',
+                        err.status,
+                        'error:',
+                        err
+                    );
+                }
+
+                return observableEmpty();
+            })
+        );
     }
 
     listForGroup(
@@ -134,20 +128,14 @@ export class ConditionService {
 
         const json = ConditionService.toJson(model);
         json.owningGroup = groupId;
-        const add = this.coreWebService
-            .request({
-                method: 'POST',
-                body: json,
-                url: this._baseUrl + '/'
-            })
-            .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json: any = res;
-                    model.key = json.id;
 
-                    return model;
-                })
-            );
+        const add = this.http.post<any>(`${this._baseUrl}/`, json).pipe(
+            map((res: any) => {
+                model.key = res.id;
+
+                return model;
+            })
+        );
 
         return add.pipe(catchError(this._catchRequestError('add')));
     }
@@ -164,40 +152,31 @@ export class ConditionService {
         } else {
             const json = ConditionService.toJson(model);
             json.owningGroup = groupId;
-            const body = JSON.stringify(json);
-            const save = this.coreWebService
-                .request({
-                    method: 'PUT',
-                    body: body,
-                    url: this._baseUrl + '/' + model.key
+
+            const save = this.http.put<any>(`${this._baseUrl}/${model.key}`, json).pipe(
+                map((_res: any) => {
+                    return model;
                 })
-                .pipe(
-                    map((_res: HttpResponse<any>) => {
-                        return model;
-                    })
-                );
+            );
 
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(model: ConditionModel): Observable<ConditionModel> {
-        const remove = this.coreWebService
-            .request({
-                method: 'DELETE',
-                url: this._baseUrl + '/' + model.key
+        const remove = this.http.delete<any>(`${this._baseUrl}/${model.key}`).pipe(
+            map((_res: any) => {
+                return model;
             })
-            .pipe(
-                map((_res: HttpResponse<any>) => {
-                    return model;
-                })
-            );
+        );
 
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 
-    private _catchRequestError(operation): (any) => Observable<any> {
-        return (err: any) => {
+    private _catchRequestError(
+        operation: string
+    ): (response: HttpErrorResponse, original: Observable<any>) => Observable<any> {
+        return (err: HttpErrorResponse): Observable<any> => {
             if (err && err.status === HttpCode.NOT_FOUND) {
                 this.loggerService.info('Could not ' + operation + ' Condition: URL not valid.');
             } else if (err) {
@@ -210,7 +189,7 @@ export class ConditionService {
                 );
             }
 
-            this._error.next(err.json().error.replace('dotcms.api.error.forbidden: ', ''));
+            this._error.next(err.error?.error?.replace('dotcms.api.error.forbidden: ', '') ?? '');
 
             return observableEmpty();
         };

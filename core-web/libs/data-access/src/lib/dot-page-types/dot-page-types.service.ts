@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSContentType, DotCMSResponse } from '@dotcms/dotcms-models';
 
@@ -21,9 +21,6 @@ export class DotPageTypesService {
     getPages(keyword = ''): Observable<DotCMSContentType[]> {
         return this.http
             .get<DotCMSResponse<DotCMSContentType[]>>(`/api/v1/page/types?filter=${keyword}`)
-            .pipe(
-                take(1),
-                map((response) => response.entity)
-            );
+            .pipe(map((response) => response.entity));
     }
 }

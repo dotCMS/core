@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -12,8 +13,7 @@ import {
 } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -68,15 +68,12 @@ describe('DotEditLayoutComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [MockTemplateBuilderComponent],
-            imports: [
-                HttpClientTestingModule,
-                DotEditLayoutComponent,
-                DotShowHideFeatureDirective,
-                RouterTestingModule
-            ],
+            imports: [DotEditLayoutComponent, DotShowHideFeatureDirective],
             schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
             providers: [
-                RouterTestingModule,
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                provideRouter([]),
                 DotSessionStorageService,
                 DotRouterService,
                 DotEventsService,

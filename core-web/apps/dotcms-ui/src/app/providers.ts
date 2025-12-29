@@ -35,7 +35,6 @@ import {
 import {
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -121,7 +120,6 @@ const PROVIDERS: Provider[] = [
     // Infrastructure services from SharedModule.forRoot()
     ApiRoot,
     BrowserUtil,
-    CoreWebService,
     DotEventsService,
     DotNavigationService,
     DotcmsConfigService,

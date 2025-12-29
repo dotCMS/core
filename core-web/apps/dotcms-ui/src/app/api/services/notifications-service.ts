@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotCMSResponseJsonObject } from '@dotcms/dotcms-models';
 
 import { DotNotificationResponse } from '../../shared/models/notifications/notification.model';
 
@@ -14,11 +14,6 @@ interface DotNotificationServiceUrls {
     getLastNotificationsUrl: string;
     getNotificationsUrl: string;
     markAsReadNotificationsUrl: string;
-}
-
-// Response type for endpoints that return bodyJsonObject
-interface DotBodyJsonResponse<T> {
-    bodyJsonObject: T;
 }
 
 @Injectable()
@@ -39,7 +34,7 @@ export class NotificationsService {
     getLastNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.http
             .get<
-                DotBodyJsonResponse<DotCMSResponse<DotNotificationResponse>>
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
             >(this.urls.getLastNotificationsUrl)
             .pipe(map((response) => response.bodyJsonObject));
     }
@@ -47,7 +42,7 @@ export class NotificationsService {
     getAllNotifications(): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.http
             .get<
-                DotBodyJsonResponse<DotCMSResponse<DotNotificationResponse>>
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
             >(this.urls.getNotificationsUrl)
             .pipe(map((response) => response.bodyJsonObject));
     }
@@ -57,7 +52,7 @@ export class NotificationsService {
     ): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.http
             .put<
-                DotBodyJsonResponse<DotCMSResponse<DotNotificationResponse>>
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
             >(this.urls.dismissNotificationsUrl, items)
             .pipe(map((response) => response.bodyJsonObject));
     }
@@ -65,7 +60,7 @@ export class NotificationsService {
     markAllAsRead(): Observable<DotCMSResponse<DotNotificationResponse>> {
         return this.http
             .put<
-                DotBodyJsonResponse<DotCMSResponse<DotNotificationResponse>>
+                DotCMSResponseJsonObject<DotCMSResponse<DotNotificationResponse>>
             >(this.urls.markAsReadNotificationsUrl, {})
             .pipe(map((response) => response.bodyJsonObject));
     }

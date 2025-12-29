@@ -8,10 +8,12 @@ import { map } from 'rxjs/operators';
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 /**
- * Provides util listing methods
- * @export
- * @class CrudService
- */
+ /**
+  * @deprecated This service is deprecated. Use specific data-access services instead.
+  * Provides util listing methods.
+  * @export
+  * @class DotCrudService
+  */
 @Injectable()
 export class DotCrudService {
     private http = inject(HttpClient);

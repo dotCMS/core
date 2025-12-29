@@ -1,14 +1,11 @@
-import { defer as observableDefer, Observer } from 'rxjs';
-import { Observable } from 'rxjs';
+import { defer as observableDefer, Observer, Observable } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { CoreWebService, HttpCode } from '@dotcms/dotcms-js';
+import { ApiRoot, LoggerService } from '@dotcms/dotcms-js';
 
 import { Verify } from '../../validation/Verify';
 
@@ -98,7 +95,7 @@ export class TreeNode {
 
 @Injectable()
 export class I18nService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     root: TreeNode;
@@ -113,16 +110,8 @@ export class I18nService {
         this.root = new TreeNode(null, 'root');
     }
 
-    makeRequest<T>(url): Observable<HttpResponse<T>> {
-        return this.coreWebService
-            .request({
-                url: this._baseUrl + '/' + url
-            })
-            .pipe(
-                map((res: HttpResponse<T>) => {
-                    return res;
-                })
-            );
+    makeRequest<T>(url: string): Observable<T> {
+        return this.http.get<T>(`${this._baseUrl}/${url}`);
     }
 
     get(
@@ -145,8 +134,8 @@ export class I18nService {
             const promise = new Promise((resolve, _reject) => {
                 this.makeRequest(path.join('/'))
                     .pipe(
-                        catchError((err: any, _source: Observable<any>) => {
-                            if (err && err.status === HttpCode.NOT_FOUND) {
+                        catchError((err: HttpErrorResponse, _source: Observable<any>) => {
+                            if (err && err.status === HttpStatusCode.NotFound) {
                                 this.loggerService.debug("Missing Resource: '", msgKey, "'");
                             } else {
                                 this.loggerService.debug(
@@ -160,7 +149,7 @@ export class I18nService {
                                 );
                             }
 
-                            return Observable.create((obs) => {
+                            return new Observable((obs) => {
                                 obs.next(defaultValue);
                             });
                         })
@@ -175,7 +164,7 @@ export class I18nService {
         }
 
         return observableDefer(() => {
-            return Observable.create((obs: Observer<string>) => {
+            return new Observable((obs: Observer<string>) => {
                 if (cNode._loading == null) {
                     this.loggerService.debug('I18n', 'Failed: ', msgKey, '=', cNode);
                     obs.next('-I18nLoadFailed-');
