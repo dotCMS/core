@@ -1,7 +1,15 @@
 import { Subscription } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, computed, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    OnInit,
+    OnDestroy,
+    computed,
+    signal
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -61,22 +69,20 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
         this.error.set(null);
         this.errorStatus.set(null);
 
-        this.dataSubscription = this.usageService
-            .getSummary()
-            .subscribe({
-                next: (summary) => {
-                    this.summary.set(summary);
-                    this.loading.set(false);
-                    this.lastUpdated.set(new Date());
-                },
-                error: (error) => {
-                    const errorMessage = this.usageService.getErrorMessage(error);
-                    this.error.set(errorMessage);
-                    this.errorStatus.set(error.status || null);
-                    this.loading.set(false);
-                    console.error('Failed to load usage data:', error);
-                }
-            });
+        this.dataSubscription = this.usageService.getSummary().subscribe({
+            next: (summary) => {
+                this.summary.set(summary);
+                this.loading.set(false);
+                this.lastUpdated.set(new Date());
+            },
+            error: (error) => {
+                const errorMessage = this.usageService.getErrorMessage(error);
+                this.error.set(errorMessage);
+                this.errorStatus.set(error.status || null);
+                this.loading.set(false);
+                console.error('Failed to load usage data:', error);
+            }
+        });
     }
 
     onRefresh(): void {

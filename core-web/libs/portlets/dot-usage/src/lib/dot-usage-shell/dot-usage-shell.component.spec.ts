@@ -54,7 +54,11 @@ describe('DotUsageShellComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUsageShellComponent,
-        providers: [provideHttpClient(), provideHttpClientTesting(), { provide: DotUsageService, useValue: mockService }]
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            { provide: DotUsageService, useValue: mockService }
+        ]
     });
 
     beforeEach(() => {
@@ -158,7 +162,9 @@ describe('DotUsageShellComponent', () => {
             statusText: 'Internal Server Error'
         };
         usageService.getSummary = jest.fn().mockReturnValue(throwError(() => httpError));
-        usageService.getErrorMessage = jest.fn().mockReturnValue('usage.dashboard.error.serverError');
+        usageService.getErrorMessage = jest
+            .fn()
+            .mockReturnValue('usage.dashboard.error.serverError');
 
         spectator.component.loadData();
 
@@ -174,10 +180,14 @@ describe('DotUsageShellComponent', () => {
         spectator.component.summary.set(mockSummary);
         spectator.detectChanges();
 
-        const totalSitesMetric = spectator.query('[data-testid="site-COUNT_OF_SITES-card"] .metric-value');
+        const totalSitesMetric = spectator.query(
+            '[data-testid="site-COUNT_OF_SITES-card"] .metric-value'
+        );
         expect(totalSitesMetric?.textContent).toBe('5');
 
-        const totalContentMetric = spectator.query('[data-testid="content-COUNT_CONTENT-card"] .metric-value');
+        const totalContentMetric = spectator.query(
+            '[data-testid="content-COUNT_CONTENT-card"] .metric-value'
+        );
         expect(totalContentMetric?.textContent).toBe('1.5K');
     });
 });

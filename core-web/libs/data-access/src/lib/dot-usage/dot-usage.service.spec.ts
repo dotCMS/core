@@ -201,4 +201,3 @@ describe('DotUsageService', () => {
         req.flush({ entity: invalidResponse });
     });
 });
-
