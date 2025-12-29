@@ -26,7 +26,6 @@
             "@dotcms/client": ["libs/sdk/client/src/index.ts"],
             "@dotcms/client/internal": ["libs/sdk/client/src/internal.ts"],
             "@dotcms/contenttype-fields": ["libs/contenttype-fields/src/index.ts"],
-            "@dotcms/create-app": ["libs/sdk/sdk-create-app/src/index.ts"],
             "@dotcms/data-access": ["libs/data-access/src/index.ts"],
             "@dotcms/dot-layout-grid": ["libs/dot-layout-grid/src/public_api.ts"],
             "@dotcms/dot-rules": ["libs/dot-rules/src/public_api.ts"],
@@ -91,7 +90,8 @@
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
-            "@tests/*": ["apps/dotcms-ui/src/app/test/*"]
+            "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
+            "sdk-create-app": ["libs/sdk/create-app/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]
