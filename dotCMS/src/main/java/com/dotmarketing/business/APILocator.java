@@ -722,7 +722,7 @@ public class APILocator extends Locator<APIIndex> {
      * Get the modern index Manger
      * @return
      */
-    public static VersionedIndicesAPI getIndicesAPI() {
+    public static VersionedIndicesAPI getVersionedIndicesAPI() {
         return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
     }
 

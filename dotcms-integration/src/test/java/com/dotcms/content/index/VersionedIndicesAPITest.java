@@ -56,7 +56,7 @@ public class VersionedIndicesAPITest {
     public void setUp() throws SQLException {
         // Initialize CDI container to get VersionedIndicesAPI instance
         if (versionedIndicesAPI == null) {
-            versionedIndicesAPI = new VersionedIndicesAPIImpl(new IndicesFactory());
+            versionedIndicesAPI = new VersionedIndicesAPIImpl(new IndicesFactoryImpl());
         }
 
         // Clean up any test data before each test
@@ -154,8 +154,8 @@ public class VersionedIndicesAPITest {
     }
 
     /**
-     * Test scenario: Load indices for non-existent version
-     * Expected: Empty indices object returned
+     * Test scenario: Load indices for a non-existent version
+     * Expected: An empty indices object returned
      */
     @Test
     public void test_loadIndices_NonExistentVersion_ShouldReturnEmpty() throws DotDataException {
@@ -247,7 +247,7 @@ public class VersionedIndicesAPITest {
     }
 
     /**
-     * Test scenario: Extract timestamp from invalid index name
+     * Test scenario: Extract timestamp from an invalid index name
      * Expected: DotDataException should be thrown
      */
     @Test

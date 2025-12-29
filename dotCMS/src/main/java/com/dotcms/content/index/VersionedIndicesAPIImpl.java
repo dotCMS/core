@@ -1,5 +1,7 @@
 package com.dotcms.content.index;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.exception.DotDataException;
@@ -35,6 +37,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         this.indicesFactory = indicesFactory;
     }
 
+    @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
         Logger.debug(this, "Loading indices for version: " + version);
@@ -54,6 +57,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return loaded;
     }
 
+    @CloseDBIfOpened
     @Override
     public List<VersionedIndices> loadAllIndices() throws DotDataException {
         Logger.debug(this, "Loading all indices");
@@ -73,6 +77,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return loaded;
     }
 
+    @WrapInTransaction
     @Override
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
         Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
@@ -87,6 +92,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         cache.invalidateAllVersionsCache();
     }
 
+    @WrapInTransaction
     @Override
     public void removeVersion(String version) throws DotDataException {
         Logger.debug(this, "Removing version: " + version);
@@ -98,12 +104,14 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         cache.remove(version);
     }
 
+    @CloseDBIfOpened
     @Override
     public boolean versionExists(String version) throws DotDataException {
         Logger.debug(this, "Checking if version exists: " + version);
         return indicesFactory.versionExists(version);
     }
 
+    @CloseDBIfOpened
     @Override
     public int getIndicesCount(String version) throws DotDataException {
         Logger.debug(this, "Getting indices count for version: " + version);
@@ -132,11 +140,13 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
     }
 
+    @CloseDBIfOpened
     public String[] getAvailableVersions() throws DotDataException {
         Logger.debug(this, "Getting available versions");
         return indicesFactory.getAvailableVersions();
     }
 
+    @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadNonVersionedIndices() throws DotDataException {
         Logger.debug(this, "Loading legacy non-versioned indices (migration/compatibility purpose)");
@@ -156,6 +166,7 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         return loaded;
     }
 
+    @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadDefaultVersionedIndices() throws DotDataException {
         Logger.debug(this, "Loading default versioned indices for version: " + VersionedIndices.OPENSEARCH_3X);
