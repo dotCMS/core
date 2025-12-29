@@ -11,20 +11,21 @@
         [scrollable]="true"
         [@contentCodeAnimation]>
         <p-tablist>
-            <p-tab [value]="0" (click)="handleTabClick($event, 0); actionsMenu.toggle($event)">
-                @if (contentTypes.length > 0) {
-                    <i class="pi pi-plus"></i>
-                } @else {
-                    <p-skeleton borderRadius="0px" height="3.9rem" width="4rem"></p-skeleton>
-                }
-
+            <div class="flex">
+                <button
+                    pButton
+                    icon="pi pi-plus"
+                    aria-label="{{ 'message.containers.create.add_content_type' | dm }}"
+                    data-testId="add-content-type-button"
+                    (click)="handleTabClick($event, 0); actionsMenu.toggle($event)"></button>
                 <p-menu
                     [model]="menuItems"
                     [popup]="true"
                     styleClass="max-h-64 overflow-auto"
                     #actionsMenu
                     appendTo="body" />
-            </p-tab>
+            </div>
+
             @for (
                 containerContent of getcontainerStructures.controls;
                 track containerContent;

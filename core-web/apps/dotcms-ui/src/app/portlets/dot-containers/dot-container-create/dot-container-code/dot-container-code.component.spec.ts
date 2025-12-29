@@ -367,13 +367,13 @@ describe('DotContentEditorComponent', () => {
             expect(hostComponent.form.valid).toEqual(true);
         });
 
-        it('shoud have add loader on content types', () => {
+        it('should disable add content type button when content types is empty', () => {
             // remove all content types
             comp.contentTypes = [];
             // Use detectChanges(false) to skip checkNoChanges which causes ExpressionChangedAfterItHasBeenCheckedError
             hostFixture.detectChanges(false);
-            const loader = de.query(By.css('p-skeleton'));
-            expect(loader).toBeDefined();
+            const addButton = de.query(By.css('[data-testId="add-content-type-button"]'));
+            expect(addButton).toBeDefined();
         });
 
         it('should have a menu with max height in 200px and overflow auto using Tailwind classes', () => {
