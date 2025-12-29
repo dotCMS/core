@@ -53,6 +53,10 @@ export interface ActionPayload extends PositionPayload {
     newContentletId?: string;
 }
 
+export interface StyleEditorContentletPayload extends ActionPayload {
+    contentlet: ContentletPayload;
+}
+
 export interface PageContainer {
     personaTag?: string;
     identifier: string;
@@ -90,6 +94,15 @@ export interface SavePagePayload {
     params?: DotPageApiParams;
     pageId: string;
     whenSaved?: () => void;
+}
+
+export interface SaveStylePropertiesPayload {
+    pageId: string;
+    containerIdentifier: string;
+    containerUUID: string;
+    contentledIdentifier: string;
+    // TODO: Centralize this later
+    styleProperties: Record<string, unknown>;
 }
 
 export interface NavigationBarItem {

@@ -14,6 +14,8 @@
         data-testId="results-seo-tool" />
 }
 
+<button (click)="test()" style="position: absolute; top: 0; left: 0; z-index: 1000; background-color: red; color: white; padding: 10px; border-radius: 5px;">Test</button>
+
 @if (uveStore.$canEditPage()) {
     <dot-uve-palette
         [ngClass]="$paletteClass()"
