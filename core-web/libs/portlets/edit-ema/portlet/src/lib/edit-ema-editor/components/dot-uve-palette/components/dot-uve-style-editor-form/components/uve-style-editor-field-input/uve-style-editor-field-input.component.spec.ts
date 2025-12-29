@@ -154,7 +154,7 @@ describe('UveStyleEditorFieldInputComponent', () => {
             spectator.detectChanges();
 
             const input = spectator.query('input');
-            expect(input).toHaveClass('uve-input');
+            expect(input.classList.contains('uve-input')).toBe(true);
         });
     });
 
