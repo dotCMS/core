@@ -1,5 +1,5 @@
-<p-iconField iconPosition="left">
-    <p-inputIcon styleClass="pi pi-search" />
+<p-iconfield iconPosition="left">
+    <p-inputicon class="pi pi-search" />
     <input
         pInputText
         type="text"
@@ -8,9 +8,9 @@
         autocomplete="off"
         [formControl]="searchControl" />
     @if ($title().length) {
-        <p-inputIcon
-            styleClass="pi pi-times p-input-icon-right"
+        <p-inputicon
+            class="pi pi-times p-input-icon-right"
             data-testId="search-icon-clear"
             (click)="searchControl.reset()" />
     }
-</p-iconField>
+</p-iconfield>

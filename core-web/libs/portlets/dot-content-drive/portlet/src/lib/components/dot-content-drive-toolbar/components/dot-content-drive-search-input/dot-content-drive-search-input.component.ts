@@ -10,8 +10,8 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -26,7 +26,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     templateUrl: './dot-content-drive-search-input.component.html',
     styleUrl: './dot-content-drive-search-input.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [IconFieldModule, InputIconModule, InputTextModule, ReactiveFormsModule]
+    imports: [IconField, InputIcon, InputTextModule, ReactiveFormsModule]
 })
 export class DotContentDriveSearchInputComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);

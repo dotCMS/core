@@ -9,7 +9,7 @@
     [lazy]="true"
     [lazyLoadOnInit]="true"
     [scrollable]="true"
-    [styleClass]="$styleClass()"
+    [class]="$styleClass()"
     [(selection)]="selectedItems"
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
@@ -116,18 +116,24 @@
                 <td data-testId="item-status">
                     @if (!isFolder) {
                         @if (status === 'Published') {
-                            <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
+                            <p-chip
+                                class="bg-green-100! text-green-700! border-green-100! text-xs"
+                                [label]="status" />
                         } @else if (status === 'Archived') {
-                            <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
+                            <p-chip
+                                class="bg-red-100! text-red-700! border-red-100! text-xs"
+                                [label]="status" />
                         } @else {
-                            <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
+                            <p-chip
+                                class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                                [label]="status" />
                         }
                     }
                 </td>
                 <td data-testId="item-language">
                     @if (!isFolder) {
                         <p-chip
-                            styleClass="p-chip-sm p-chip-blue"
+                            class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
                             [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
                     }
                 </td>

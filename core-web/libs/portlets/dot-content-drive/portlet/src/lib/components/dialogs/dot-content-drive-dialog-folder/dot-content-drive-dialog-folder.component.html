@@ -1,10 +1,10 @@
 <div [formGroup]="folderForm">
     <p-tabs [value]="0">
-        <p-tablist class="w-full">
-            <p-tab [value]="0" class="flex-1 justify-center text-center">
+        <p-tablist>
+            <p-tab [value]="0">
                 {{ 'content-drive.dialog.folder.general.header' | dm }}
             </p-tab>
-            <p-tab [value]="1" class="flex-1 justify-center text-center">
+            <p-tab [value]="1">
                 {{ 'content-drive.dialog.folder.advanced.header' | dm }}
             </p-tab>
         </p-tablist>
@@ -15,10 +15,10 @@
                         {{ 'content-drive.dialog.folder.field.name' | dm }}
                     </label>
                     <input
-                    pInputText
-                    id="name"
-                    aria-describedby="name-help"
-                    formControlName="name" />
+                        pInputText
+                        id="name"
+                        aria-describedby="name-help"
+                        formControlName="name" />
                 </div>
                 <div class="flex flex-col gap-2 mb-4">
                     <label [checkIsRequiredControl]="'title'" for="title" dotFieldRequired>
