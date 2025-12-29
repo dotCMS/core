@@ -46,18 +46,45 @@ export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
  * => `https://example.com/about-us/`
  */
 export function getBaseHrefFromPageURI(pageURI: string, origin: string): string {
-    const parsedUrl = new URL(pageURI, origin);
-    const pathnameParts = parsedUrl.pathname.split('/');
+    try {
+        const parsedUrl = new URL(pageURI, origin);
+        const pathnameParts = parsedUrl.pathname.split('/');
 
-    // Remove last segment (page name) to keep the directory as base
-    if (pathnameParts.length > 1) {
-        pathnameParts.pop();
+        // Remove last segment (page name) to keep the directory as base
+        if (pathnameParts.length > 1) {
+            pathnameParts.pop();
+        }
+
+        const basePath = pathnameParts.join('/') || '/';
+        const normalizedBasePath = basePath.endsWith('/') ? basePath : basePath + '/';
+
+        return parsedUrl.origin + normalizedBasePath;
+    } catch {
+        // If URL parsing fails (malformed input), fall back to a safe base.
+        // `origin` is expected to be a valid origin string (e.g. window.location.origin),
+        // but we guard it anyway.
+        try {
+            return new URL(origin).origin + '/';
+        } catch {
+            return '/';
+        }
     }
+}
 
-    const basePath = pathnameParts.join('/') || '/';
-    const normalizedBasePath = basePath.endsWith('/') ? basePath : basePath + '/';
-
-    return parsedUrl.origin + normalizedBasePath;
+/**
+ * Escapes a string for safe interpolation inside a double-quoted HTML attribute value.
+ *
+ * Note: Even if a value is a valid URL, it may still contain HTML-sensitive characters
+ * (or become unsafe if the upstream normalization changes). This is a defense-in-depth
+ * helper for string-based HTML injection use-cases.
+ */
+export function escapeHtmlAttributeValue(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 
 /**
@@ -67,9 +94,19 @@ export function getBaseHrefFromPageURI(pageURI: string, origin: string): string 
  */
 export type InjectBaseTagData = {
     html: string;
-    url: string | undefined | null;
+    url: string;
     origin: string;
 };
+
+function hasRealBaseTag(html: string): boolean {
+    // Ignore <base> that appears inside HTML comments or CDATA blocks
+    // so we don't mistakenly treat it as an actual tag in the document.
+    const withoutCommentsAndCdata = html
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+    return /<base\b/i.test(withoutCommentsAndCdata);
+}
 
 /**
  * Injects a `<base>` tag into the HTML if it is missing.
@@ -78,21 +115,25 @@ export type InjectBaseTagData = {
  * @return {string} The HTML with the base tag injected.
  */
 export function injectBaseTag({ html, url, origin }: InjectBaseTagData): string {
-    if (!html || /<base\b/i.test(html) || !url || !origin) {
+    if (!html || !url || !origin || hasRealBaseTag(html)) {
         return html;
     }
 
     const baseHref = getBaseHrefFromPageURI(url, origin);
-    const baseTag = `<base href="${baseHref}">`;
+    const baseTag = `<base href="${escapeHtmlAttributeValue(baseHref)}">`;
 
-    // Prefer placing `<base>` inside an existing `<head>`
-    if (html.includes('</head>')) {
-        return html.replace('</head>', baseTag + '</head>');
-    }
-
+    // Prefer placing `<base>` inside an existing `<head>` (right after the opening tag)
+    // This avoids accidentally matching `</head>` that could appear in comments or strings.
     const headOpenMatch = html.match(/<head[^>]*>/i)?.[0];
     if (headOpenMatch) {
         return html.replace(headOpenMatch, headOpenMatch + baseTag);
+    }
+
+    // Fallback: if there is a closing head but we couldn't find an opening head tag.
+    // Use a case-insensitive match for `</head>` and only replace the first occurrence.
+    const headCloseMatch = html.match(/<\/head\s*>/i)?.[0];
+    if (headCloseMatch) {
+        return html.replace(headCloseMatch, baseTag + headCloseMatch);
     }
 
     // Fallbacks for advanced templates (may not include head/body tags)
