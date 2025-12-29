@@ -114,6 +114,7 @@ import {
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
+import * as uveUtils from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -2872,6 +2873,22 @@ describe('EditEmaEditorComponent', () => {
                                 of(MOCK_RESPONSE_VTL)
                             );
                             store.loadPageAsset({ url: 'index', clientHost: null });
+                        });
+
+                        it('should call injectBaseTag with the right data', () => {
+                            const origin = window.location.origin;
+                            const injectBaseTagSpy = jest.spyOn(uveUtils, 'injectBaseTag');
+
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            iframe.dispatchEvent(new Event('load'));
+
+                            spectator.detectChanges();
+
+                            expect(injectBaseTagSpy).toHaveBeenCalledWith({
+                                html: MOCK_RESPONSE_VTL.page.rendered,
+                                url: MOCK_RESPONSE_VTL.page.pageURI,
+                                origin
+                            });
                         });
 
                         it('should add script and styles to iframe', () => {
