@@ -3199,7 +3199,7 @@ describe('EditEmaEditorComponent', () => {
                     const mockAnchor = {
                         href,
                         getAttribute: jest.fn().mockReturnValue(href),
-                        closest: jest.fn().mockReturnValue({ getAttribute: () => href })
+                        closest: jest.fn().mockReturnValue({ href, getAttribute: () => href })
                     };
 
                     const mockEvent = {
@@ -3325,6 +3325,7 @@ describe('EditEmaEditorComponent', () => {
                         target: {
                             href: null,
                             closest: jest.fn().mockReturnValue({
+                                href: 'http://localhost:3000/fallback-page?test=123',
                                 getAttribute: jest
                                     .fn()
                                     .mockReturnValue('http://localhost:3000/fallback-page?test=123')
