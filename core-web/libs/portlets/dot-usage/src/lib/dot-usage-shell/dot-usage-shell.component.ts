@@ -1,6 +1,7 @@
+import { Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, computed, signal } from '@angular/core';
-import { Subscription } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
