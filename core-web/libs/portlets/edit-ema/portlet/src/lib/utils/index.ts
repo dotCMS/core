@@ -88,6 +88,33 @@ export function escapeHtmlAttributeValue(value: string): string {
 }
 
 /**
+ * Returns the resolved (absolute) href from a click target.
+ *
+ * - If the click happens on an `<a>`, returns `a.href`
+ * - If the click happens inside an `<a>` (e.g. `<img>` inside `<a>`), returns `closest('a').href`
+ *
+ * IMPORTANT: Uses the resolved `href` (respects `<base>`) rather than `getAttribute('href')`.
+ *
+ * This helper is intentionally tolerant of test doubles (plain objects) that expose `href` and `closest`.
+ */
+export function getHrefFromClickTarget(target: EventTarget | null): string | null {
+    const maybeTarget = target as unknown as {
+        href?: string | null;
+        closest?: (selector: string) => { href?: string | null } | null;
+    } | null;
+
+    if (!maybeTarget) {
+        return null;
+    }
+
+    if (maybeTarget.href) {
+        return maybeTarget.href;
+    }
+
+    return maybeTarget.closest?.('a')?.href ?? null;
+}
+
+/**
  * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
  *
  * If a `<base>` tag already exists, this is a no-op.
