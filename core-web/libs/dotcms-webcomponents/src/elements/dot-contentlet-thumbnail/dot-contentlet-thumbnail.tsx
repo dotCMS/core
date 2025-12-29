@@ -60,8 +60,6 @@ export class DotContentletThumbnail {
     render() {
         const backgroundImageURL =
             this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
-        const imgClass = this.backgroundImage ? 'background-image' : '';
-        const svgClass = this.isSVG ? ' svg-thumbnail' : '';
 
         return (
             <Host>
@@ -74,7 +72,7 @@ export class DotContentletThumbnail {
                     />
                 ) : this.renderImage ? (
                     <div
-                        class={`thumbnail ${imgClass}${svgClass}`}
+                        class={`thumbnail `}
                         style={{
                             'background-image': backgroundImageURL
                         }}>
