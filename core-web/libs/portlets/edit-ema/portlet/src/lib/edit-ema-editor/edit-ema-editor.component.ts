@@ -52,7 +52,6 @@ import {
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSPage,
-    DotCMSPageAsset,
     DotCMSURLContentMap,
     DotCMSUVEAction
 } from '@dotcms/types';
@@ -77,8 +76,8 @@ import {
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
+import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import {
     CONTAINER_INSERT_ERROR,

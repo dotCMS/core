@@ -1,6 +1,6 @@
-import { ActionPayload } from 'libs/portlets/edit-ema/portlet/src/lib/shared/models';
-
 import { DotCMSBasicContentlet, DotCMSPageAsset } from '@dotcms/types';
+
+import { ActionPayload } from '../../../../../../shared/models';
 
 /**
  * Type representing a GraphQL response that can be either:

@@ -1,5 +1,3 @@
-import { STYLE_EDITOR_FIELD_TYPES } from 'libs/portlets/edit-ema/portlet/src/lib/shared/consts';
-
 import { Injectable, inject } from '@angular/core';
 import { FormBuilder, FormGroup, FormControl, AbstractControl } from '@angular/forms';
 
@@ -9,6 +7,8 @@ import {
     StyleEditorFieldSchema,
     StyleEditorCheckboxDefaultValue
 } from '@dotcms/uve';
+
+import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../../shared/consts';
 
 /**
  * Service responsible for building reactive forms from style editor schemas.

@@ -27,9 +27,9 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { ActionPayload } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
-import { ActionPayload } from '../../../shared/models';
 
 const emptyParams = {} as DotPageApiParams;
 

@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe, throwError, timer } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { inject } from '@angular/core';
 
