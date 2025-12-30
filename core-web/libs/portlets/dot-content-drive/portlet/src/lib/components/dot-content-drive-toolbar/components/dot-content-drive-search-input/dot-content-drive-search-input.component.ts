@@ -24,9 +24,9 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 @Component({
     selector: 'dot-content-drive-search-input',
     templateUrl: './dot-content-drive-search-input.component.html',
-    styleUrl: './dot-content-drive-search-input.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [IconField, InputIcon, InputTextModule, ReactiveFormsModule]
+    imports: [IconField, InputIcon, InputTextModule, ReactiveFormsModule],
+    host: { class: 'w-full' }
 })
 export class DotContentDriveSearchInputComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);

@@ -31,7 +31,6 @@ import {
         { provide: WINDOW, useValue: window }
     ],
     templateUrl: './dot-content-drive-workflow-actions.component.html',
-    styleUrl: './dot-content-drive-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveWorkflowActionsComponent {
