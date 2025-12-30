@@ -527,6 +527,7 @@ public class PageRenderUtil implements Serializable {
     }
 
     /**
+     * Only applies when the FEATURE_FLAG_UVE_STYLE_EDITOR is enabled.
      * Adds style properties from the MultiTree to the contentlet's data map.
      * This ensures that contentlet styling metadata is properly scoped to its specific
      * personalization and variant context.
