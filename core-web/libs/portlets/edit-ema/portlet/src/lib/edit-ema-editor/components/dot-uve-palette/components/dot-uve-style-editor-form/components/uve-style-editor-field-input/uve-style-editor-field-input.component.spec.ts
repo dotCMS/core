@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 
 import { Component } from '@angular/core';

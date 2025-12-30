@@ -6,6 +6,8 @@ import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
+export type StyleEditorProperties = Record<string, unknown>;
+
 export interface MessagePipeOptions {
     message: string;
     args: string[];
@@ -101,8 +103,7 @@ export interface SaveStylePropertiesPayload {
     containerIdentifier: string;
     containerUUID: string;
     contentledIdentifier: string;
-    // TODO: Centralize this later
-    styleProperties: Record<string, unknown>;
+    styleProperties: StyleEditorProperties;
 }
 
 export interface NavigationBarItem {

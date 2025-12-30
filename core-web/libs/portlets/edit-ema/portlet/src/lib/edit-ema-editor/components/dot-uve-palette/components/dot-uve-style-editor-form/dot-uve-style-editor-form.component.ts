@@ -29,7 +29,7 @@ import {
     updateStylePropertiesInGraphQL
 } from './utils/style-editor-graphql.utils';
 
-import { UveIframeMessengerService } from '../../../../../services/uve-iframe-messenger.service';
+import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -67,16 +67,19 @@ export class DotUveStyleEditorFormComponent {
         const currentIndex = this.#uveStore.currentIndex();
         const previousIndex = this.$previousIndex();
 
-        // Detect rollback: index decreased (moved backwards in history)
+        // Detect rollback: index decreased AND we can undo (meaning undo() was called)
+        // This ensures we only restore on actual rollbacks, not on addHistory() operations
         if (previousIndex >= 0 && currentIndex < previousIndex) {
-            this.#restoreFormFromRollback();
+            untracked(() => {
+                this.#restoreFormFromRollback();
+            });
         }
         this.$previousIndex.set(currentIndex);
     });
 
     $reloadSchemaEffect = effect(() => {
-        // Added this untracked ONLY while we dont have the styleProperties in PageAPI response.
         // This allow to preserve the current value on the form when the schema is reloaded.
+        // TODO: Remove untracked when we have the styleProperties in PageAPI response, also ensure that the form is rebuilt correctly.
         const schema = untracked(() => this.$schema());
         if (schema) {
             this.#buildForm(schema);

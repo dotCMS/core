@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
 export interface IframeMessage {

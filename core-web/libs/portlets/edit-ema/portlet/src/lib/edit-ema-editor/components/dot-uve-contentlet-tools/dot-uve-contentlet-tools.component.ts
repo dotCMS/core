@@ -240,7 +240,6 @@ export class DotUveContentletToolsComponent {
     }
 
     setSelectedContent() {
-        console.log('context', this.contentletArea()?.payload);
         this.selectContent.emit(this.contentletArea()?.payload);
     }
 }

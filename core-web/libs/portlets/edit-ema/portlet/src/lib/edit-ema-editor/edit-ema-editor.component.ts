@@ -78,7 +78,7 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { UveIframeMessengerService } from '../services/uve-iframe-messenger.service';
+import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import {
     CONTAINER_INSERT_ERROR,
@@ -258,11 +258,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.#setupContentletAreaReset();
         // Initialize iframe messenger with the iframe window
         this.iframeMessenger.setIframeWindow(this.contentWindow);
-    }
-
-    test() {
-        const history = this.uveStore.getHistory();
-        console.log('history', history);
     }
 
     /**
