@@ -1149,69 +1149,21 @@
       "description": "### Retrieve Contentlet Styles:\n\nTest that the Contentlets have specific Styles defined when the feature flag `FEATURE_FLAG_UVE_STYLE_EDITOR` is enabled.\n\n- Turn ON `FEATURE_FLAG_UVE_STYLE_EDITOR` to allow the visualization of the Style Properties.\n    \n- Save the **same** **Contentlet** in the **same** **Container** but in **different** **Pages**\n    \n    - `Contentlet 1` in the `Styles_Container` **Container**, inside the **Page**`testPageStyles_1`\n        \n    - `Contentlet 1` in the `Styles_Container` **Container**, inside the **Page**`testPageStyles_2`\n        \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_1` **Page** have the \"color = #FF0000\" Style.\n    \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_2` **Page** have the \"width = 100px\" Style.\n    \n- Turn OFF `FEATURE_FLAG_UVE_STYLE_EDITOR`\n    \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field"
     }
   ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          "   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-          "   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-          "",
-          "// If we are unable to get the JWT we need to generate a new one",
-          "   if (!pm.environment.get('jwt')) {",
-          "       const username = pm.environment.get(\"user\");",
-          "       const password = pm.environment.get(\"password\");",
-          "       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-          "",
-          "",
-          "       const requestOptions = {",
-          "           url: apiUrl,",
-          "           method: \"POST\",",
-          "           header: {",
-          "               \"accept\": \"*/*\",",
-          "               \"content-type\": \"application/json\",",
-          "               \"Authorization\": `Basic ${basicAuth}`",
-          "           },",
-          "           body: {",
-          "               mode: \"raw\",",
-          "               raw: JSON.stringify({",
-          "                   \"expirationSeconds\": 7200,",
-          "                   \"userId\": \"dotcms.org.1\",",
-          "                   \"network\": \"0.0.0.0/0\",",
-          "                   \"claims\": {\"label\": \"postman-tests\"}",
-          "               })",
-          "           }",
-          "       };",
-          "",
-          "",
-          "       pm.sendRequest(requestOptions, function (err, response) {",
-          "           if (err) {",
-          "               console.log(err);",
-          "           } else {",
-          "               const jwt = response.json().entity.jwt;",
-          "               pm.environment.set('jwt', jwt);",
-          "               console.log(jwt);",
-          "           }",
-          "       });",
-          "   }"
-        ]
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "password",
+        "value": "admin",
+        "type": "string"
+      },
+      {
+        "key": "username",
+        "value": "admin@dotcms.com",
+        "type": "string"
       }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "requests": {},
-        "exec": [
-          ""
-        ]
-      }
-    }
-  ],
+    ]
+  },
   "variable": [
     {
       "key": "hostname",
