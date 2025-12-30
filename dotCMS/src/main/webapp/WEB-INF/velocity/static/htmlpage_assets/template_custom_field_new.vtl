@@ -196,9 +196,9 @@
     }
   </style>
   
-  <script type="application/javascript">
+  <script type="module">
     // Global Constants
-    const hostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+    const initialHostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
     const defaultTemplateName =
       '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")';
   
@@ -360,7 +360,7 @@
   
       if (hostId) {
         urlParams.set("host", hostId);
-      } // [cite: 10, 11]
+      }
   
       const url = `/api/v1/templates/?${urlParams.toString()}`;
       const response = await fetch(url);
@@ -372,7 +372,18 @@
       const data = await response.json();
   
       const templates = data.entity || [];
-      const hasMore = templates.length === perPage;
+      
+      // Calculate hasMore BEFORE adding "All Sites" to avoid affecting pagination logic
+      // Use pagination info from API response if available, otherwise fallback to length check
+      let hasMore = false;
+      if (data.pagination) {
+        const { currentPage: apiCurrentPage, perPage: apiPerPage, totalEntries } = data.pagination;
+        // Check if there are more pages available
+        hasMore = (apiCurrentPage * apiPerPage) < totalEntries;
+      } else {
+        // Fallback: check if we got a full page of results
+        hasMore = templates.length === perPage;
+      }
   
       // Check for first page and add the all site template, so it does not break the pagination
       // This matches the ALL_SITE_TEMPLATE from TemplateReadStore.js
@@ -714,7 +725,7 @@
         currentTemplateIdElement.value = templateId;
       }
   
-      let currentHostId = hostId || "";
+      let currentHostId = initialHostId || "";
       let allSiteLabel = true;
       let currentPage = 1;
       let allTemplates = [];
@@ -917,6 +928,8 @@
   
           if (hasMore) {
             moreChoicesButton.style.display = "block";
+          } else {
+            moreChoicesButton.style.display = "none";
           }
   
           // Find selected template
