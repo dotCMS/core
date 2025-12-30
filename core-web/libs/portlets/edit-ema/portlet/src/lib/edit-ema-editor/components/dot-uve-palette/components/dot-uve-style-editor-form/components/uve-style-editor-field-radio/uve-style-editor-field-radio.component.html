@@ -13,17 +13,21 @@
                         [formControlName]="$field().id"
                         [value]="option.value"
                         class="radio-image-input" />
-                    <label [for]="$field().id + '-' + option.value" class="radio-image-label">
-                        <img [src]="option.imageURL" [alt]="option.label" class="radio-image" />
+                    <label
+                        [for]="$field().id + '-' + option.value"
+                        class="radio-image-label flex flex-column items-start">
+                        <div class="radio-image-container">
+                            <img [src]="option.imageURL" [alt]="option.label" class="radio-image" />
+                        </div>
                         <span class="radio-image-text">{{ option.label }}</span>
                     </label>
                 </div>
             }
         </div>
     } @else {
-        <div class="radio-group">
+        <div class="radio-group flex flex-column">
             @for (option of $options(); track option.value) {
-                <div class="radio-item">
+                <div class="flex items-center">
                     <p-radioButton
                         [formControlName]="$field().id"
                         [value]="option.value"
