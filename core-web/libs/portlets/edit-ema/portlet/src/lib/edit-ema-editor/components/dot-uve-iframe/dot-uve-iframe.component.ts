@@ -1,4 +1,4 @@
-import { fromEvent, Subject } from 'rxjs';
+import { fromEvent } from 'rxjs';
 
 import { NgStyle } from '@angular/common';
 import {
@@ -7,7 +7,6 @@ import {
     EventEmitter,
     inject,
     Input,
-    OnDestroy,
     Output,
     ViewChild,
     signal,
@@ -15,8 +14,6 @@ import {
     effect
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
-import { debounceTime } from 'rxjs/operators';
 
 import { DotMessageService, DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
@@ -32,7 +29,7 @@ import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
     styleUrls: ['./dot-uve-iframe.component.scss'],
     imports: [NgStyle, SafeUrlPipe]
 })
-export class DotUveIframeComponent implements OnDestroy {
+export class DotUveIframeComponent {
     @ViewChild('iframe') iframe!: ElementRef<HTMLIFrameElement>;
 
     @Input() src!: string | null;
@@ -52,10 +49,6 @@ export class DotUveIframeComponent implements OnDestroy {
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly destroyRef = inject(DestroyRef);
-
-    #iframeContentResizeObserver: ResizeObserver | null = null;
-    #didSetInitialScroll = false;
-    #heightUpdate$ = new Subject<void>();
 
     readonly $iframeDocHeight = signal<number>(0);
 
@@ -87,7 +80,6 @@ export class DotUveIframeComponent implements OnDestroy {
 
         this.insertPageContent(this.$pageRender(), this.$enableInlineEdit());
         this.setSeoData();
-        this.setupIframeAutoHeight();
         this.load.emit();
     }
 
@@ -201,98 +193,5 @@ export class DotUveIframeComponent implements OnDestroy {
         });
     }
 
-    private setupIframeAutoHeight(): void {
-        const iframeEl = this.iframe?.nativeElement;
-
-        if (!iframeEl) {
-            return;
-        }
-
-        this.teardownIframeAutoHeight();
-
-        let doc: Document | null = null;
-        let win: Window | null = null;
-        try {
-            doc = iframeEl.contentDocument;
-            win = iframeEl.contentWindow;
-        } catch {
-            // Cross-origin; height must be provided via postMessage.
-            return;
-        }
-
-        if (!doc || !win) {
-            return;
-        }
-
-        const calculateHeight = (): number => {
-            const body = doc.body;
-
-            if (!body) {
-                return 0;
-            }
-
-            // Use offsetHeight for the body which is more reliable than scrollHeight.
-            // scrollHeight can include margins/padding that extend beyond actual content.
-            // We also check the last child's bottom position as a fallback.
-            const bodyRect = body.getBoundingClientRect();
-            let height = bodyRect.height;
-
-            // Check if body has children and get the bottom of the last visible element
-            const children = body.children;
-            if (children.length > 0) {
-                const lastChild = children[children.length - 1];
-                const lastChildRect = lastChild.getBoundingClientRect();
-                const lastChildBottom = lastChildRect.bottom - bodyRect.top;
-
-                // Use the larger of body height or last child's bottom position
-                height = Math.max(height, lastChildBottom);
-            }
-
-            // Ensure we have at least a minimum height
-            return Math.max(height, 100);
-        };
-
-        const applyHeight = () => {
-            const height = calculateHeight();
-
-            if (height > 0) {
-                iframeEl.style.height = `${height}px`;
-                this.$iframeDocHeight.set(height);
-                this.iframeDocHeightChange.emit(height);
-            }
-        };
-
-        // Set up debounced height updates to prevent cascading updates
-        this.#heightUpdate$
-            .pipe(debounceTime(50), takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => applyHeight());
-
-        // Initial height calculation with a small delay to let content settle
-        requestAnimationFrame(() => {
-            applyHeight();
-        });
-
-        // Use only ResizeObserver - MutationObserver is too aggressive and causes issues
-        if (typeof ResizeObserver !== 'undefined') {
-            this.#iframeContentResizeObserver = new ResizeObserver(() => {
-                this.#heightUpdate$.next();
-            });
-            this.#iframeContentResizeObserver.observe(doc.body);
-        }
-
-        // Listen for load events (images, etc.) to recalculate height
-        fromEvent(win, 'load')
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => this.#heightUpdate$.next());
-    }
-
-    private teardownIframeAutoHeight(): void {
-        this.#iframeContentResizeObserver?.disconnect();
-        this.#iframeContentResizeObserver = null;
-    }
-
-    ngOnDestroy(): void {
-        this.teardownIframeAutoHeight();
-    }
 }
 

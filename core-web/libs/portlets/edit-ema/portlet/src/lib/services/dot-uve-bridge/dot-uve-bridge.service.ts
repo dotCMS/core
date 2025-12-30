@@ -5,13 +5,196 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { WINDOW } from '@dotcms/utils';
 
-
 import { PostMessage } from '../../shared/models';
 import { DotUveZoomService } from '../dot-uve-zoom/dot-uve-zoom.service';
 
 export interface IframeHeightMessage {
     height: number;
 }
+
+/**
+ * ==================================================================================
+ * HEIGHT REPORTER - SDK IMPLEMENTATIONS
+ * ==================================================================================
+ *
+ * The UVE editor expects pages to report their height via postMessage.
+ * SDK developers should implement height reporting in their applications.
+ *
+ * Accepted message formats:
+ *   - { type: 'dotcms:iframeHeight', height: number }        (preferred)
+ *   - { name: 'dotcms:iframeHeight', payload: { height } }   (alternative)
+ *
+ * ----------------------------------------------------------------------------------
+ * VANILLA JAVASCRIPT
+ * ----------------------------------------------------------------------------------
+ *
+ * (function() {
+ *     let debounceTimer = null;
+ *     let lastHeight = 0;
+ *
+ *     function getDocumentHeight() {
+ *         const body = document.body;
+ *         if (!body) return 0;
+ *
+ *         const bodyRect = body.getBoundingClientRect();
+ *         let height = bodyRect.height;
+ *
+ *         const children = body.children;
+ *         if (children.length > 0) {
+ *             const lastChild = children[children.length - 1];
+ *             const lastRect = lastChild.getBoundingClientRect();
+ *             const lastBottom = lastRect.bottom - bodyRect.top;
+ *             height = Math.max(height, lastBottom);
+ *         }
+ *
+ *         return Math.max(Math.ceil(height), 100);
+ *     }
+ *
+ *     function reportHeight() {
+ *         const height = getDocumentHeight();
+ *         if (height !== lastHeight && height > 0) {
+ *             lastHeight = height;
+ *             window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+ *         }
+ *     }
+ *
+ *     function debouncedReportHeight() {
+ *         if (debounceTimer) clearTimeout(debounceTimer);
+ *         debounceTimer = setTimeout(reportHeight, 50);
+ *     }
+ *
+ *     if (document.readyState === 'complete') {
+ *         reportHeight();
+ *     } else {
+ *         window.addEventListener('load', reportHeight);
+ *     }
+ *
+ *     if (typeof ResizeObserver !== 'undefined') {
+ *         const observer = new ResizeObserver(debouncedReportHeight);
+ *         observer.observe(document.body);
+ *     }
+ * })();
+ *
+ * ----------------------------------------------------------------------------------
+ * REACT HOOK
+ * ----------------------------------------------------------------------------------
+ *
+ * import { useEffect, useRef } from 'react';
+ *
+ * export function useDotCMSHeightReporter() {
+ *     const lastHeightRef = useRef(0);
+ *     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+ *
+ *     useEffect(() => {
+ *         const getDocumentHeight = (): number => {
+ *             const body = document.body;
+ *             if (!body) return 0;
+ *
+ *             const bodyRect = body.getBoundingClientRect();
+ *             let height = bodyRect.height;
+ *
+ *             const children = body.children;
+ *             if (children.length > 0) {
+ *                 const lastChild = children[children.length - 1];
+ *                 const lastRect = lastChild.getBoundingClientRect();
+ *                 const lastBottom = lastRect.bottom - bodyRect.top;
+ *                 height = Math.max(height, lastBottom);
+ *             }
+ *
+ *             return Math.max(Math.ceil(height), 100);
+ *         };
+ *
+ *         const reportHeight = () => {
+ *             const height = getDocumentHeight();
+ *             if (height !== lastHeightRef.current && height > 0) {
+ *                 lastHeightRef.current = height;
+ *                 window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+ *             }
+ *         };
+ *
+ *         const debouncedReportHeight = () => {
+ *             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+ *             debounceTimerRef.current = setTimeout(reportHeight, 50);
+ *         };
+ *
+ *         reportHeight();
+ *
+ *         const observer = new ResizeObserver(debouncedReportHeight);
+ *         observer.observe(document.body);
+ *
+ *         return () => {
+ *             observer.disconnect();
+ *             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+ *         };
+ *     }, []);
+ * }
+ *
+ * // Usage: In your root layout component, call useDotCMSHeightReporter();
+ *
+ * ----------------------------------------------------------------------------------
+ * ANGULAR SERVICE
+ * ----------------------------------------------------------------------------------
+ *
+ * import { Injectable, OnDestroy, inject } from '@angular/core';
+ * import { DOCUMENT } from '@angular/common';
+ *
+ * @Injectable({ providedIn: 'root' })
+ * export class DotCMSHeightReporterService implements OnDestroy {
+ *     private readonly document = inject(DOCUMENT);
+ *     private observer: ResizeObserver | null = null;
+ *     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+ *     private lastHeight = 0;
+ *
+ *     start(): void {
+ *         this.reportHeight();
+ *
+ *         if (typeof ResizeObserver !== 'undefined') {
+ *             this.observer = new ResizeObserver(() => this.debouncedReportHeight());
+ *             this.observer.observe(this.document.body);
+ *         }
+ *     }
+ *
+ *     private getDocumentHeight(): number {
+ *         const body = this.document.body;
+ *         if (!body) return 0;
+ *
+ *         const bodyRect = body.getBoundingClientRect();
+ *         let height = bodyRect.height;
+ *
+ *         const children = body.children;
+ *         if (children.length > 0) {
+ *             const lastChild = children[children.length - 1];
+ *             const lastRect = lastChild.getBoundingClientRect();
+ *             const lastBottom = lastRect.bottom - bodyRect.top;
+ *             height = Math.max(height, lastBottom);
+ *         }
+ *
+ *         return Math.max(Math.ceil(height), 100);
+ *     }
+ *
+ *     private reportHeight(): void {
+ *         const height = this.getDocumentHeight();
+ *         if (height !== this.lastHeight && height > 0) {
+ *             this.lastHeight = height;
+ *             window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+ *         }
+ *     }
+ *
+ *     private debouncedReportHeight(): void {
+ *         if (this.debounceTimer) clearTimeout(this.debounceTimer);
+ *         this.debounceTimer = setTimeout(() => this.reportHeight(), 50);
+ *     }
+ *
+ *     ngOnDestroy(): void {
+ *         this.observer?.disconnect();
+ *         if (this.debounceTimer) clearTimeout(this.debounceTimer);
+ *     }
+ * }
+ *
+ * // Usage: In AppComponent constructor, inject and call start()
+ *
+ * ==================================================================================
+ */
 
 @Injectable()
 export class DotUveBridgeService {
