@@ -6,34 +6,6 @@
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
         <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
-        <p-button
-            (click)="op.toggle($event)"
-            [pTooltip]="'editpage.header.copy' | dm"
-            tooltipPosition="bottom"
-            icon="pi pi-copy"
-            styleClass="p-button-text p-button-sm p-button-rounded"
-            data-testId="uve-toolbar-copy-url">
-            <p-overlayPanel #op>
-                <div class="url-list">
-                    @for (url of $pageURLS(); track url.value) {
-                        <div class="url-item">
-                            <span class="url-label">{{ url.label | dm }}:</span>
-                            <div class="url-value">
-                                <a [href]="url.value" target="_blank" rel="noreferrer noopener">
-                                    {{ url.value }}
-                                </a>
-                                <p-button
-                                    icon="pi pi-copy"
-                                    styleClass="p-button-text p-button-sm p-button-rounded"
-                                    (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                    [cdkCopyToClipboard]="url.value"
-                                    data-testId="copy-url-button" />
-                            </div>
-                        </div>
-                    }
-                </div>
-            </p-overlayPanel>
-        </p-button>
         <a
             title="Page API URL"
             [pTooltip]="'uve.toolbar.page.api.url' | dm"

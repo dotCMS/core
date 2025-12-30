@@ -1,5 +1,6 @@
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
+import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -32,9 +33,11 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MultiSelectModule } from 'primeng/multiselect';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -68,7 +71,7 @@ import {
     DotCMSUVEAction
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService } from '@dotcms/ui';
+import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
@@ -105,6 +108,7 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import {
     TEMPORAL_DRAG_ITEM,
+    createFullURL,
     deleteContentletFromContainer,
     getTargetUrl,
     insertContentletInContainer,
@@ -143,7 +147,11 @@ import {
         ToolbarModule,
         InputGroupModule,
         InputGroupAddonModule,
-        DotUveZoomControlsComponent
+        DotUveZoomControlsComponent,
+        ClipboardModule,
+        OverlayPanelModule,
+        TooltipModule,
+        DotMessagePipe
     ],
     providers: [
         DotPaletteListStore,
@@ -1422,6 +1430,32 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected toggleRightSidebar(): void {
         this.$rightSidebarOpen.update((open) => !open);
+    }
+
+    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
+        const params = this.uveStore.pageParams();
+        const siteId = this.uveStore.pageAPIResponse()?.site?.identifier;
+        const host = params?.clientHost || this.window.location.origin;
+        const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
+
+        return [
+            {
+                label: 'uve.toolbar.page.live.url',
+                value: new URL(path, host).toString()
+            },
+            {
+                label: 'uve.toolbar.page.current.view.url',
+                value: createFullURL(params, siteId)
+            }
+        ];
+    });
+
+    protected triggerCopyToast(): void {
+        this.messageService.add({
+            severity: 'success',
+            summary: this.dotMessageService.get('Copied'),
+            life: 3000
+        });
     }
 
     #scrollToTopLeft(): void {

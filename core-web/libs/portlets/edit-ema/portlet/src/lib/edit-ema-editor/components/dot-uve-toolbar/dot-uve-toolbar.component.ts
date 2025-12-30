@@ -1,4 +1,3 @@
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -18,7 +17,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CalendarModule } from 'primeng/calendar';
 import { ChipModule } from 'primeng/chip';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -41,7 +39,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../../../utils';
+import { convertLocalTimeToUTC, convertUTCToLocalTime } from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -52,9 +50,6 @@ import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../
         ButtonModule,
         CalendarModule,
         ChipModule,
-        ClipboardModule,
-        ClipboardModule,
-        OverlayPanelModule,
         ToolbarModule,
         SplitButtonModule,
         DotMessagePipe,
@@ -113,24 +108,6 @@ export class DotUveToolbarComponent {
         const previewDate = publishDate ? convertUTCToLocalTime(new Date(publishDate)) : new Date();
 
         return previewDate;
-    });
-
-    readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
-        const params = this.$pageParams();
-        const siteId = this.#store.pageAPIResponse()?.site?.identifier;
-        const host = params.clientHost || window.location.origin;
-        const path = params.url?.replace(/\/index(\.html)?$/, '') || '/';
-
-        return [
-            {
-                label: 'uve.toolbar.page.live.url',
-                value: new URL(path, host).toString()
-            },
-            {
-                label: 'uve.toolbar.page.current.view.url',
-                value: createFullURL(params, siteId)
-            }
-        ];
     });
 
     readonly $pageInode = computed(() => {
@@ -194,13 +171,6 @@ export class DotUveToolbarComponent {
      *
      * @memberof DotUveToolbarComponent
      */
-    triggerCopyToast() {
-        this.#messageService.add({
-            severity: 'success',
-            summary: this.#dotMessageService.get('Copied'),
-            life: 3000
-        });
-    }
 
     /**
      * Handle the persona selection
