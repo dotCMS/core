@@ -35,9 +35,6 @@
 
 .bounds {
     position: absolute;
-    pointer-events: all;
-    outline: solid 2px $color-palette-primary-500;
-    background-color: transparent;
     container-type: inline-size;
 
     .add-button-top,
@@ -71,6 +68,27 @@
         .add-button-top {
             left: 0;
             transform: translate(0, -50%);
+        }
+    }
+
+    // Hover state: Blue background with opacity, no border, no tools, pointer-events: all
+    &.hover {
+        pointer-events: all;
+        background-color: $color-palette-primary-op-20;
+        outline: none;
+    }
+
+    // Selected state: Border, transparent background, pointer-events: none on bounds, tools visible
+    &.selected {
+        pointer-events: none;
+        outline: solid 2px $color-palette-primary-500;
+        background-color: transparent;
+
+        // Buttons and actions remain interactive
+        .add-button-top,
+        .add-button-bottom,
+        .actions {
+            pointer-events: all;
         }
     }
 }
