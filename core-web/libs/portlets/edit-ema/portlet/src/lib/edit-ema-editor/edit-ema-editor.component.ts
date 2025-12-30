@@ -261,33 +261,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     test() {
-        const activeContentlet = this.uveStore.activeContentlet();
-
-        // eslint-disable-next-line no-console
-        console.log('activeContentlet', activeContentlet);
-
-        const HARDCODED_CONTAINER_ID = '//demo.dotcms.com/application/containers/default/';
-        const graphqlResponse = this.uveStore.$customGraphqlResponse()  as {
-            grapql: {
-                query: string;
-                variables: Record<string, string>;
-            };
-            pageAsset: DotCMSPageAsset;
-            content?: Record<string, unknown>;
-        };
-    
-        //For specific container
-        const container = (graphqlResponse).pageAsset.containers[HARDCODED_CONTAINER_ID];
-
-        Object.values(container.contentlets).forEach(contentletArr => {
-            contentletArr.forEach(contentlet => {
-                if (contentlet.contentType === 'Activity') {
-                    contentlet.title = 'New Activity with Optimistic updage SPIKE'
-                }
-            });
-        });
-
-        this.iframeMessenger.sendPageData(graphqlResponse);
+        const history = this.uveStore.getHistory();
+        console.log('history', history);
     }
 
     /**

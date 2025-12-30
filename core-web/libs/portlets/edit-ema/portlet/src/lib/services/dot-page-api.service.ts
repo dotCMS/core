@@ -118,7 +118,8 @@ export class DotPageApiService {
             }
         };
 
-        return this.http.post(`/api/v1/page/${pageId}/content`, [payload])
+        return this.http
+            .post(`/api/v1/page/${pageId}/content`, [payload])
             .pipe(catchError(() => EMPTY));
     }
 

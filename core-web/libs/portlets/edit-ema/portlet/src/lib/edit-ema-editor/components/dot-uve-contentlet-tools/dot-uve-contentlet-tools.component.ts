@@ -20,7 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { ActionPayload,  VTLFile } from '../../../shared/models';
+import { ActionPayload, VTLFile } from '../../../shared/models';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
@@ -240,7 +240,7 @@ export class DotUveContentletToolsComponent {
     }
 
     setSelectedContent() {
-        console.log('context', this.contentletArea()?.payload)
-        this.selectContent.emit(this.contentletArea()?.payload)
+        console.log('context', this.contentletArea()?.payload);
+        this.selectContent.emit(this.contentletArea()?.payload);
     }
 }

@@ -1,4 +1,14 @@
-import { Component, input, inject, computed, signal, effect, DestroyRef, untracked } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import {
+    Component,
+    input,
+    inject,
+    computed,
+    signal,
+    effect,
+    DestroyRef,
+    untracked
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
@@ -37,6 +47,7 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
     templateUrl: './dot-uve-style-editor-form.component.html',
     styleUrls: ['./dot-uve-style-editor-form.component.scss'],
     imports: [
+        CommonModule,
         ReactiveFormsModule,
         AccordionModule,
         ButtonModule,
@@ -58,8 +69,34 @@ export class DotUveStyleEditorFormComponent {
 
     $sections = computed(() => this.$schema().sections);
     $form = computed(() => this.#form());
-    
+
+    // TEST ONLY: Time machine state for visual debugging
+    $timeMachineState = computed(() => ({
+        historyLength: this.#uveStore.historyLength(),
+        currentIndex: this.#uveStore.currentIndex(),
+        canUndo: this.#uveStore.canUndo(),
+        canRedo: this.#uveStore.canRedo(),
+        isAtStart: this.#uveStore.isAtStart(),
+        isAtEnd: this.#uveStore.isAtEnd(),
+        haveHistory: this.#uveStore.haveHistory()
+    }));
+
+    readonly #previousIndex = signal(-1);
+
+    readonly #rollbackDetectionEffect = effect(() => {
+        const currentIndex = this.#uveStore.currentIndex();
+        const previousIndex = this.#previousIndex();
+
+        // Detect rollback: index decreased (moved backwards in history)
+        if (previousIndex >= 0 && currentIndex < previousIndex) {
+            this.#restoreFormFromRollback();
+        }
+        this.#previousIndex.set(currentIndex);
+    });
+
     $reloadSchemaEffect = effect(() => {
+        // Added this untracked ONLY while we dont have the styleProperties in PageAPI response.
+        // This allow to preserve the current value on the form when the schema is reloaded.
         const schema = untracked(() => this.$schema());
         if (schema) {
             this.#buildForm(schema);
@@ -169,7 +206,7 @@ export class DotUveStyleEditorFormComponent {
     #getFormValues(): Record<string, unknown> | null {
         return this.#form() ? this.#form().getRawValue() : null;
     }
-    
+
     /**
      * Updates the graphqlResponse with form values.
      * Similar to the test() method logic but uses the payload to find the correct contentlet.
@@ -180,41 +217,44 @@ export class DotUveStyleEditorFormComponent {
      * @returns The updated graphql response
      */
     #updateGraphQLResponse(
-        graphqlResponse: DotCMSPageAsset | {
-            grapql?: {
-                query: string;
-                variables: Record<string, string>;
-            };
-            pageAsset: DotCMSPageAsset;
-            content?: Record<string, unknown>;
-        },
+        graphqlResponse:
+            | DotCMSPageAsset
+            | {
+                  grapql?: {
+                      query: string;
+                      variables: Record<string, string>;
+                  };
+                  pageAsset: DotCMSPageAsset;
+                  content?: Record<string, unknown>;
+              },
         payload: ActionPayload,
         formValues: Record<string, unknown>
-    ): DotCMSPageAsset | {
-        grapql?: {
-            query: string;
-            variables: Record<string, string>;
-        };
-        pageAsset: DotCMSPageAsset;
-        content?: Record<string, unknown>;
-    } {
+    ):
+        | DotCMSPageAsset
+        | {
+              grapql?: {
+                  query: string;
+                  variables: Record<string, string>;
+              };
+              pageAsset: DotCMSPageAsset;
+              content?: Record<string, unknown>;
+          } {
         // Handle both types: DotCMSPageAsset directly or wrapped in pageAsset property
-        const pageAsset = 'pageAsset' in graphqlResponse 
-            ? graphqlResponse.pageAsset 
-            : graphqlResponse;
-        
+        const pageAsset =
+            'pageAsset' in graphqlResponse ? graphqlResponse.pageAsset : graphqlResponse;
+
         const containerId = payload.container.identifier;
         const contentletId = payload.contentlet.identifier;
         const uuid = payload.container.uuid;
-        
+
         const container = pageAsset.containers[containerId];
-        
+
         if (!container) {
             console.error(`Container with id ${containerId} not found`);
             return graphqlResponse;
         }
-        
-        const contentlets = container.contentlets[`uuid-${uuid}`]
+
+        const contentlets = container.contentlets[`uuid-${uuid}`];
 
         if (!contentlets) {
             console.error(`Contentlet with uuid ${uuid} not found`);
@@ -222,13 +262,90 @@ export class DotUveStyleEditorFormComponent {
         }
 
         contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
-            
             if (contentlet?.identifier === contentletId) {
                 contentlet.style_properties = formValues;
             }
         });
-        
+
         return graphqlResponse;
+    }
+
+    /**
+     * Extracts style properties from graphqlResponse for a specific contentlet.
+     * Reverse operation of #updateGraphQLResponse - used to restore form values on rollback.
+     *
+     * @param graphqlResponse - The graphql response to extract from
+     * @param payload - The action payload containing container and contentlet info
+     * @returns The style properties object or null if not found
+     */
+    #extractStylePropertiesFromGraphQLResponse(
+        graphqlResponse:
+            | DotCMSPageAsset
+            | {
+                  grapql?: {
+                      query: string;
+                      variables: Record<string, string>;
+                  };
+                  pageAsset: DotCMSPageAsset;
+                  content?: Record<string, unknown>;
+              },
+        payload: ActionPayload
+    ): Record<string, unknown> | null {
+        // Handle both types: DotCMSPageAsset directly or wrapped in pageAsset property
+        const pageAsset =
+            'pageAsset' in graphqlResponse ? graphqlResponse.pageAsset : graphqlResponse;
+
+        const containerId = payload.container.identifier;
+        const contentletId = payload.contentlet.identifier;
+        const uuid = payload.container.uuid;
+
+        const container = pageAsset.containers[containerId];
+
+        if (!container) {
+            return null;
+        }
+
+        const contentlets = container.contentlets[`uuid-${uuid}`];
+
+        if (!contentlets) {
+            return null;
+        }
+
+        const contentlet = contentlets.find(
+            (c: DotCMSBasicContentlet) => c?.identifier === contentletId
+        );
+
+        return contentlet?.style_properties || null;
+    }
+
+    /**
+     * Restores form values from the rolled-back graphqlResponse state.
+     * TEST ONLY: Used when rollback occurs to sync form with restored state.
+     */
+    #restoreFormFromRollback(): void {
+        const form = this.#form();
+        const activeContentlet = this.#uveStore.activeContentlet();
+        const graphqlResponse = this.#uveStore.$customGraphqlResponse();
+
+        if (!form || !activeContentlet || !graphqlResponse) {
+            return;
+        }
+
+        try {
+            // Extract style properties from the rolled-back state
+            const styleProperties = this.#extractStylePropertiesFromGraphQLResponse(
+                graphqlResponse,
+                activeContentlet
+            );
+
+            if (styleProperties) {
+                // Update form values without triggering valueChanges
+                // Use patchValue with emitEvent: false to prevent triggering form changes
+                form.patchValue(styleProperties, { emitEvent: false });
+            }
+        } catch (error) {
+            console.error('Error restoring form from rollback:', error);
+        }
     }
 
     /**
@@ -249,41 +366,63 @@ export class DotUveStyleEditorFormComponent {
         );
 
         // Immediate subscription: Update iframe without debounce
-        formValueChanges$.pipe(
-            distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-        ).subscribe((formValues) => {
-            this.#updateIframeImmediately(formValues);
-        });
+        formValueChanges$
+            .pipe(
+                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+            )
+            .subscribe((formValues) => {
+                this.#updateIframeImmediately(formValues);
+            });
 
         // Debounced subscription: Save to API
-        formValueChanges$.pipe(
-            debounceTime(1000),
-            distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-        ).subscribe((formValues) => {
-            this.#saveStylePropertiesToApi(formValues);
-        });
+        formValueChanges$
+            .pipe(
+                debounceTime(3000),
+                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+            )
+            .subscribe((formValues) => {
+                this.#saveStylePropertiesToApi(formValues);
+            });
     }
 
     /**
      * Immediately updates the iframe with new form values (no debounce)
+     * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
      */
     #updateIframeImmediately(formValues: Record<string, unknown>): void {
         const activeContentlet = this.#uveStore.activeContentlet();
-        const graphqlResponse = this.#uveStore.$customGraphqlResponse();
-        
-        if (!activeContentlet || !graphqlResponse) {
+        const customGraphqlResponse = this.#uveStore.$customGraphqlResponse();
+
+        if (!activeContentlet || !customGraphqlResponse) {
             return;
         }
 
         try {
-            const updatedResponse = this.#updateGraphQLResponse(
-                graphqlResponse,
+            // Get the internal graphqlResponse (always wrapped format) for optimistic update
+            const internalGraphqlResponse = this.#uveStore.graphqlResponse();
+            if (!internalGraphqlResponse) {
+                return;
+            }
+
+            // Update the internal response (mutates the pageAsset in place)
+            // Since $customGraphqlResponse is computed from graphqlResponse(),
+            // updating the internal response will automatically reflect in the computed
+            const updatedInternalResponse = this.#updateGraphQLResponse(
+                internalGraphqlResponse,
                 activeContentlet,
                 formValues
-            );
-            
+            ) as typeof internalGraphqlResponse;
+
+            // Optimistic update: Update state WITHOUT saving to history
+            // History is only saved when we actually call the API (in #saveStylePropertiesToApi)
+            this.#uveStore.setGraphqlResponse(updatedInternalResponse);
+
             // Send updated response to iframe immediately for instant feedback
-            this.#iframeMessenger.sendPageData(updatedResponse);
+            // Get the updated custom response (computed will reflect the changes)
+            const updatedCustomResponse = this.#uveStore.$customGraphqlResponse();
+            if (updatedCustomResponse) {
+                this.#iframeMessenger.sendPageData(updatedCustomResponse);
+            }
         } catch (error) {
             console.error('Error updating iframe:', error);
         }
@@ -291,27 +430,31 @@ export class DotUveStyleEditorFormComponent {
 
     /**
      * Saves style properties to API with debounce
+     * Saves current state to history before API call, so rollback can restore to this point
      */
-    async #saveStylePropertiesToApi(formValues: Record<string, unknown>): Promise<void> {
+    #saveStylePropertiesToApi(formValues: Record<string, unknown>): void {
         const activeContentlet = this.#uveStore.activeContentlet();
-        
+
         if (!activeContentlet) {
             return;
         }
 
-        const payload = activeContentlet;
-        
-        try {
-            await this.#dotPageApiService.saveStyleProperties({
-                containerIdentifier: payload.container.identifier,
-                contentledIdentifier: payload.contentlet.identifier,
-                styleProperties: formValues,
-                pageId: payload.pageId,
-                containerUUID: payload.container.uuid
-            }).toPromise();
-        } catch (error) {
-            console.error('Error saving style properties:', error);
-            // TODO: Add error toast notification
+        // Save current state to history BEFORE making the API call
+        // This ensures that if the API call fails, we can rollback to this exact state
+        const currentGraphqlResponse = this.#uveStore.graphqlResponse();
+        if (currentGraphqlResponse) {
+            this.#uveStore.addHistory(currentGraphqlResponse);
         }
+
+        const payload = activeContentlet;
+
+        // Use the store's saveStyleEditor method which handles API call and rollback on failure
+        this.#uveStore.saveStyleEditor({
+            containerIdentifier: payload.container.identifier,
+            contentledIdentifier: payload.contentlet.identifier,
+            styleProperties: formValues,
+            pageId: payload.pageId,
+            containerUUID: payload.container.uuid
+        });
     }
 }

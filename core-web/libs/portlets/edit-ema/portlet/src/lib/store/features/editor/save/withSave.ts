@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe } from 'rxjs';
+import { EMPTY, pipe, throwError, timer } from 'rxjs';
 
 import { inject } from '@angular/core';
 
@@ -10,8 +10,9 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { DotCMSPageAsset } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
+import { UveIframeMessengerService } from '../../../../services/uve-iframe-messenger.service';
 import { UVE_STATUS } from '../../../../shared/enums';
-import { PageContainer } from '../../../../shared/models';
+import { PageContainer, SaveStylePropertiesPayload } from '../../../../shared/models';
 import { UVEState } from '../../../models';
 import { withLoad } from '../../load/withLoad';
 
@@ -29,6 +30,7 @@ export function withSave() {
         withLoad(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
+            const iframeMessenger = inject(UveIframeMessengerService);
 
             return {
                 savePage: rxMethod<PageContainer[]>(
@@ -81,6 +83,77 @@ export function withSave() {
                                         status: UVE_STATUS.ERROR
                                     });
 
+                                    return EMPTY;
+                                })
+                            );
+                        })
+                    )
+                ),
+                /**
+                 * Saves style properties optimistically with automatic rollback on failure.
+                 * The optimistic update should be done before calling this method using
+                 * setGraphqlResponseOptimistic. This method handles the API call and
+                 * rolls back the state if the save fails.
+                 *
+                 * @param payload - Style properties save payload
+                 */
+                saveStyleEditor: rxMethod<SaveStylePropertiesPayload>(
+                    pipe(
+                        switchMap((payload) => {
+                            // TEST ONLY: Random failure mechanism (30% chance of failure)
+                            const shouldFail = Math.random() < 0.5;
+
+                            const apiCall$ = dotPageApiService.saveStyleProperties(payload);
+
+                            // TEST ONLY: Inject random failure for testing rollback mechanism
+                            const testApiCall$ = shouldFail
+                                ? timer(500).pipe(
+                                      switchMap(() =>
+                                          throwError(
+                                              () =>
+                                                  new Error(
+                                                      '[TEST] Random failure triggered for testing rollback mechanism'
+                                                  )
+                                          )
+                                      )
+                                  )
+                                : apiCall$;
+
+                            return testApiCall$.pipe(
+                                tapResponse({
+                                    next: () => {
+                                        // Success - optimistic update remains, no rollback needed
+                                        // eslint-disable-next-line no-console
+                                        console.log('[TEST] Style properties saved successfully');
+                                    },
+                                    error: (error) => {
+                                        console.error('Error saving style properties:', error);
+
+                                        // Rollback the optimistic update
+                                        const rolledBack = store.rollbackGraphqlResponse();
+
+                                        if (rolledBack) {
+                                            // Update iframe with rolled back state
+                                            const rolledBackResponse =
+                                                store.$customGraphqlResponse();
+                                            if (rolledBackResponse) {
+                                                iframeMessenger.sendPageData(rolledBackResponse);
+                                            }
+                                            console.warn(
+                                                '[TEST] Rolled back optimistic style update due to save failure'
+                                            );
+                                        } else {
+                                            console.error(
+                                                'Failed to rollback optimistic update - no history available'
+                                            );
+                                        }
+
+                                        // TODO: Add error toast notification
+                                    }
+                                }),
+                                catchError((error) => {
+                                    // Additional error handling if needed
+                                    console.error('Error in saveStyleEditor:', error);
                                     return EMPTY;
                                 })
                             );
