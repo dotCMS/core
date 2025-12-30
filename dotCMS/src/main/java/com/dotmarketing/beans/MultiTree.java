@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -75,7 +76,7 @@ public class MultiTree implements Serializable {
         this.treeOrder    = Math.max(treeOrder, 0);
         this.personalization = personalization;
         this.variantId = variantId;
-        this.styleProperties = styleProperties;
+        this.styleProperties = UtilMethods.isSet(styleProperties) ? Map.copyOf(styleProperties) : Map.of();
     }
 
     /** full constructor */

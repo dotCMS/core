@@ -84,7 +84,9 @@ public class PageContainerForm {
 
                 // Parse styleProperties for each contentlet (optional field)
                 final JsonNode stylePropertiesNode = jsonElement.get(STYLE_PROPERTIES_ATTRIBUTE_NAME);
-                getStylePropertiesNode(stylePropertiesNode, containerEntry);
+                if (UtilMethods.isSet(stylePropertiesNode) && stylePropertiesNode.isObject()) {
+                    processStyleProperties(stylePropertiesNode, containerEntry);
+                }
 
                 entries.add(containerEntry);
             }
@@ -93,25 +95,24 @@ public class PageContainerForm {
         }
 
         /**
-         * Gets the style properties node from the JSON object.
+         * Processes the style properties for the container entry.
+         * It converts the JSON node to a Map<String, Object> and sets it to the container entry.
          * @param stylePropertiesNode The JSON node containing the style properties.
          * @param containerEntry The container entry to set the style properties.
          */
-        private void getStylePropertiesNode(final JsonNode stylePropertiesNode, final ContainerEntry containerEntry) {
-            if (stylePropertiesNode != null && stylePropertiesNode.isObject()) {
-                stylePropertiesNode.fields().forEachRemaining(entry -> {
-                    final String contentletId = entry.getKey();
-                    final JsonNode styleProps = entry.getValue();
-                    if (styleProps != null && styleProps.isObject()) {
-                        final Map<String, Object> propsMap = new HashMap<>();
-                        styleProps.fields().forEachRemaining(prop -> {
-                            final JsonNode propValue = prop.getValue();
-                            propsMap.put(prop.getKey(), convertJsonNodeToObject(propValue));
-                        });
-                        containerEntry.setStyleProperties(contentletId, propsMap);
-                    }
-                });
-            }
+        private void processStyleProperties(final JsonNode stylePropertiesNode, final ContainerEntry containerEntry) {
+            stylePropertiesNode.fields().forEachRemaining(entry -> {
+                final String contentletId = entry.getKey();
+                final JsonNode styleProps = entry.getValue();
+                if (styleProps != null && styleProps.isObject()) {
+                    final Map<String, Object> propsMap = new HashMap<>();
+                    styleProps.fields().forEachRemaining(prop -> {
+                        final JsonNode propValue = prop.getValue();
+                        propsMap.put(prop.getKey(), convertJsonNodeToObject(propValue));
+                    });
+                    containerEntry.setStyleProperties(contentletId, propsMap);
+                }
+            });
         }
 
         /**
