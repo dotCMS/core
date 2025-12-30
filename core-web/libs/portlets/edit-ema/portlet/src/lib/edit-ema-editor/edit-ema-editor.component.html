@@ -62,6 +62,19 @@
                 <dot-uve-zoom-controls />
             </div>
         </ng-template>
+        <ng-template pTemplate="end">
+            <button
+                pButton
+                type="button"
+                class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
+                (click)="toggleRightSidebar()"
+                data-testId="right-sidebar-toggle">
+                <i
+                    [class]="$rightSidebarOpen() ? 'pi pi-chevron-right' : 'pi pi-chevron-left'"
+                    [attr.aria-label]="$rightSidebarOpen() ? 'Hide right panel' : 'Show right panel'"
+                    data-testId="right-sidebar-toggle-icon"></i>
+            </button>
+        </ng-template>
     </p-toolbar>
     <div class="canvas-viewport">
         <div class="canvas-row">
@@ -133,7 +146,7 @@
     </div>
 </div>
 
-<div class="right-sidebar">
+<div class="right-sidebar" [ngClass]="$rightSidebarOpen() ? 'open' : 'closed'">
     @if ($contentletForm() && $selectedContentlet().fields.length > 0) {
         <form
             [formGroup]="$contentletForm()!"
@@ -232,6 +245,10 @@
                     [loading]="$isSubmitting()"></p-button>
             </div>
         </form>
+    } @else {
+        <div class="right-sidebar-empty">
+            <p class="empty-message">Select a contentlet</p>
+        </div>
     }
 </div>
 

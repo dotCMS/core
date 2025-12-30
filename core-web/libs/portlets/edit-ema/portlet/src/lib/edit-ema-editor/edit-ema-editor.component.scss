@@ -5,8 +5,8 @@
     grid-template-rows: min-content 1fr min-content;
     height: 100%;
 
-    // Default state (no palette)
-    grid-template-columns: min-content 1fr;
+    // Default state (no palette, no right sidebar)
+    grid-template-columns: min-content 1fr min-content;
 }
 
 // To generate the space for the palette toggle button
@@ -22,12 +22,14 @@ dot-uve-palette {
     grid-row: 2 / -1;
 
     &.closed {
-        width: 0;
+        width: 0 !important;
         border-left: none;
+        min-width: 0;
     }
 
     &.open {
-        width: 18.75rem;
+        width: 18.75rem !important;
+        min-width: 18.75rem;
     }
 }
 
@@ -59,13 +61,41 @@ dot-results-seo-tool {
     height: 100%;
     min-height: 0;
 
-    grid-column: 2 / -1;
+    grid-column: 2 / 3;
 }
 
 .right-sidebar {
     grid-column: 3 / -1;
     grid-row: 2 / -1;
     background-color: $color-palette-gray-100;
+    transition: all $basic-speed ease-in-out;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 1px solid $color-palette-gray-200;
+
+    &.closed {
+        width: 0;
+        border-left: none;
+    }
+
+    &.open {
+        width: 25rem; // 400px equivalent
+    }
+
+    .right-sidebar-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+
+        .empty-message {
+            color: $color-palette-gray-500;
+            font-size: 1rem;
+            margin: 0;
+        }
+    }
 }
 
 .canvas-viewport {
