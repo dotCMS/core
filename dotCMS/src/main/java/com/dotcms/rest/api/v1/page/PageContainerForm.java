@@ -84,34 +84,68 @@ public class PageContainerForm {
 
                 // Parse styleProperties for each contentlet (optional field)
                 final JsonNode stylePropertiesNode = jsonElement.get(STYLE_PROPERTIES_ATTRIBUTE_NAME);
-                if (stylePropertiesNode != null && stylePropertiesNode.isObject()) {
-                    stylePropertiesNode.fields().forEachRemaining(entry -> {
-                        final String contentletId = entry.getKey();
-                        final JsonNode styleProps = entry.getValue();
-                        if (styleProps != null && styleProps.isObject()) {
-                            final Map<String, Object> propsMap = new HashMap<>();
-                            styleProps.fields().forEachRemaining(prop -> {
-                                final JsonNode propValue = prop.getValue();
-                                // Handle different JSON value types
-                                if (propValue.isTextual()) {
-                                    propsMap.put(prop.getKey(), propValue.asText());
-                                } else if (propValue.isNumber()) {
-                                    propsMap.put(prop.getKey(), propValue.numberValue());
-                                } else if (propValue.isBoolean()) {
-                                    propsMap.put(prop.getKey(), propValue.asBoolean());
-                                } else {
-                                    propsMap.put(prop.getKey(), propValue.toString());
-                                }
-                            });
-                            containerEntry.setStyleProperties(contentletId, propsMap);
-                        }
-                    });
-                }
+                getStylePropertiesNode(stylePropertiesNode, containerEntry);
 
                 entries.add(containerEntry);
             }
 
             return new PageContainerForm(entries, jsonNode.toString());
+        }
+
+        /**
+         * Gets the style properties node from the JSON object.
+         * @param stylePropertiesNode The JSON node containing the style properties.
+         * @param containerEntry The container entry to set the style properties.
+         */
+        private void getStylePropertiesNode(final JsonNode stylePropertiesNode, final ContainerEntry containerEntry) {
+            if (stylePropertiesNode != null && stylePropertiesNode.isObject()) {
+                stylePropertiesNode.fields().forEachRemaining(entry -> {
+                    final String contentletId = entry.getKey();
+                    final JsonNode styleProps = entry.getValue();
+                    if (styleProps != null && styleProps.isObject()) {
+                        final Map<String, Object> propsMap = new HashMap<>();
+                        styleProps.fields().forEachRemaining(prop -> {
+                            final JsonNode propValue = prop.getValue();
+                            propsMap.put(prop.getKey(), convertJsonNodeToObject(propValue));
+                        });
+                        containerEntry.setStyleProperties(contentletId, propsMap);
+                    }
+                });
+            }
+        }
+
+        /**
+         * Recursively converts a JsonNode to its corresponding Java object type.
+         * Handles all JSON types: primitives, objects, arrays, and null.
+         *
+         * @param node The JsonNode to convert
+         * @return The converted Java object (String, Number, Boolean, Map, List, or null)
+         */
+        private Object convertJsonNodeToObject(final JsonNode node) {
+            if (node == null || node.isNull()) {
+                return null;
+            } else if (node.isBoolean()) {
+                return node.asBoolean();
+            } else if (node.isInt()) {
+                return node.asInt();
+            } else if (node.isLong()) {
+                return node.asLong();
+            } else if (node.isDouble() || node.isFloat()) {
+                return node.asDouble();
+            } else if (node.isArray()) {
+                final List<Object> list = new ArrayList<>();
+                node.forEach(element -> list.add(convertJsonNodeToObject(element)));
+                return list;
+            } else if (node.isObject()) {
+                final Map<String, Object> map = new HashMap<>();
+                node.fields().forEachRemaining(entry ->
+                        map.put(entry.getKey(), convertJsonNodeToObject(entry.getValue()))
+                );
+                return map;
+            } else {
+                // Fallback for any other type and String values
+                return node.asText();
+            }
         }
     }
 
