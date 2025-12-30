@@ -10,7 +10,11 @@ import {
     viewChild
 } from '@angular/core';
 
-import { TreeNodeCollapseEvent, TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
+import type {
+    TreeNodeCollapseEvent,
+    TreeNodeExpandEvent,
+    TreeNodeSelectEvent
+} from 'primeng/types/tree';
 
 import {
     ALL_FOLDER,
@@ -31,9 +35,14 @@ import { DotContentDriveTreeTogglerComponent } from '../dot-content-drive-toolba
 @Component({
     selector: 'dot-content-drive-sidebar',
     templateUrl: './dot-content-drive-sidebar.component.html',
-    styleUrl: './dot-content-drive-sidebar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent]
+    imports: [DotTreeFolderComponent, DotContentDriveTreeTogglerComponent],
+    host: { class: 'w-full h-full grid grid-rows-[min-content_1fr]' },
+    styles: `
+        :host ::ng-deep .p-tree {
+            padding: 0 0.75rem 0.75rem;
+        }
+    `
 })
 export class DotContentDriveSidebarComponent {
     readonly #store = inject(DotContentDriveStore);

@@ -1,7 +1,0 @@
-@use "variables" as *;
-
-:host::ng-deep {
-    .p-multiselect-panel.hide-empty-message .p-multiselect-items .p-multiselect-empty-message {
-        display: none;
-    }
-}

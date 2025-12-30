@@ -114,7 +114,7 @@ export function withSidebar() {
              * Updates the folders array
              */
             updateFolders: (folders: DotFolderTreeNodeItem[]) => {
-                patchState(store, { folders: [...folders] });
+                patchState(store, { folders: structuredClone(folders) });
             }
         })),
         withHooks((store) => {

@@ -2,7 +2,7 @@
     display="chip"
     optionLabel="name"
     [ngModelOptions]="{ standalone: true }"
-    [panelStyleClass]="fechingItems() ? 'hide-empty-message' : ''"
+    [pt]="{ emptyMessage: { class: fechingItems() ? 'hidden' : '' } }"
     [filter]="true"
     [options]="$state.contentTypes()"
     [(ngModel)]="$selectedContentTypes"

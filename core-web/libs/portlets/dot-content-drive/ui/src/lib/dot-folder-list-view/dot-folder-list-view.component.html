@@ -1,7 +1,7 @@
 <p-table
     #dataTable
     [value]="$items()"
-    [tableStyle]="{ width: '100%' }"
+    [tableStyle]="{ width: '100%', maxHeight: '100%' }"
     [paginator]="$showPagination()"
     [rows]="MIN_ROWS_PER_PAGE"
     [rowsPerPageOptions]="rowsPerPageOptions"
@@ -23,10 +23,7 @@
     [sortOrder]="-1"
     data-testId="table"
     scrollHeight="flex"
-    [pt]="{
-        root: { class: 'border-none rounded-none' },
-        tableContainer: { class: 'border-none rounded-none' }
-    }">
+    [pt]="$ptConfig()">
     <ng-template pTemplate="header">
         <tr data-testId="header-row">
             <th [style.width]="'3rem'">
@@ -169,11 +166,11 @@
         }
     </ng-template>
     <ng-template pTemplate="emptymessage">
-        <tr class="hover:bg-transparent!">
+        <tr class="hover:bg-transparent! h-max" >
             <td colspan="7" class="p-6 text-center h-full border-none">
                 <div class="flex flex-col items-center gap-4 max-w-[400px] mx-auto">
                     <div class="flex items-center justify-center w-20 h-20 rounded-full">
-                        <i class="pi pi-folder-open text-(--surface-500) text-6xl"></i>
+                        <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
                     </div>
                     <div class="flex flex-col">
                         <h3 class="m-0 text-lg font-medium text-center text-(--gray-800)">

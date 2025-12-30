@@ -6,12 +6,14 @@
         [loading]="loading"
         selectionMode="multiple"
         loadingMode="icon"
-        class="w-full h-full"
-        loadingMode="icon"
         [class]="treeStyleClasses()"
         [selection]="$selectedNode()"
         [scrollHeight]="'auto'"
         [metaKeySelection]="true"
+        [pt]="{
+            root: { class: 'w-full h-full border-none overflow-y-auto' },
+            nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap' }
+        }"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)">
@@ -28,14 +30,13 @@
         <ng-template pTemplate="togglericon" let-expanded>
             <span class="toggler-regular">
                 <i
-                    class="pi arrow-icon"
-                    [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                    [style]="{ fontSize: '0.875rem' }"></i>
+                    class="pi text-sm text-(--color-palette-gray-600)"
+                    [class]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
             </span>
             <span class="toggler-first">
                 <i
-                    class="pi folder-icon"
-                    [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
+                    class="pi text-(--color-palette-gray-800)"
+                    [class]="expanded ? 'pi-folder-open' : 'pi-folder'"></i>
             </span>
         </ng-template>
     </p-tree>
@@ -43,7 +44,7 @@
     <div
         class="flex flex-col items-center justify-center h-full w-full gap-6 font-normal select-none pointer-events-none">
         <div class="pulse-container relative inline-block">
-            <i class="pi pi-folder text-[64px] text-[var(--gray-400)] z-[1]"></i>
+            <i class="pi pi-folder text-[64px] text-(--gray-400) z-1"></i>
         </div>
         <span class="text-base">{{ 'content.drive.loading.folders.title' | dm }}</span>
     </div>

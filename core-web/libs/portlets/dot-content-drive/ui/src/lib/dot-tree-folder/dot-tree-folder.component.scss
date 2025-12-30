@@ -1,59 +1,13 @@
-@use "../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
-:host {
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-}
 
 :host ::ng-deep {
-    .p-treenode-label {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    
-    }
-
+    /* Active drop state - uses :has() which cannot be done with Tailwind */
     .p-treenode-content:has(span.active) {
         pointer-events: none;
-        background-color: colors.$color-palette-primary-200;
+        background-color: var(--color-palette-primary-200);
     }
 
-    .p-treenode-content .p-tree-toggler {
-        .arrow-icon {
-            color: colors.$color-palette-gray-600;
-        }
-
-        .folder-icon {
-            color: colors.$color-palette-gray-800;
-        }
-    }
-
-    .p-treenode-content.p-highlight .p-tree-toggler {
-        .folder-icon {
-            color: $text-color-highlight;
-        }
-
-        .arrow-icon {
-            color: $text-color-highlight;
-        }
-    }
-}
-
-/* Modes for toggler icon rendering */
-:host ::ng-deep {
     .p-tree {
-        width: 100%;
-        height: 100%;
-        border: none;
-        overflow-y: auto;
-
-        /* First-only mode (show folder icon on first root node only) */
+        /* First-only mode: show folder icon only on first root node */
         &.first-only {
             .toggler-first {
                 display: none;
@@ -70,7 +24,7 @@
             }
         }
 
-        /* All-folder mode (show folder icon on all root nodes) */
+        /* All-folder mode: show folder icon on all nodes */
         &.folder-all {
             .toggler-first {
                 display: block;
@@ -83,30 +37,9 @@
     }
 }
 
-.loading-container {
-    gap: spacing.$spacing-4;
-    font-weight: normal;
-    user-select: none;
-    pointer-events: none;
-
-    .loading-icon {
-        font-size: common.$icon-xxl;
-        color: colors.$color-palette-gray-400;
-        z-index: 1;
-    }
-
-    .loading-text {
-        font-size: fonts.$font-size-md;
-    }
-}
-
-.pulse-container {
-    position: relative;
-    display: inline-block;
-}
-
+/* Pulse animation for loading state - @keyframes cannot be done with Tailwind */
 .pulse-container::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 50%;
     left: 50%;
@@ -114,7 +47,7 @@
     width: 6.5rem;
     height: 6.5rem;
     border-radius: 50%;
-    background-color: colors.$color-palette-secondary-300;
+    background-color: var(--color-palette-secondary-300);
     animation: pulse 2s infinite cubic-bezier(0.66, 0, 0.34, 1);
 }
 
