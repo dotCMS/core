@@ -1,5 +1,5 @@
 {
-    "name": "sdk-create-app",
+    "name": "@dotcms/create-app",
     "version": "1.0.0",
     "type": "commonjs",
     "main": "./src/index.js",
