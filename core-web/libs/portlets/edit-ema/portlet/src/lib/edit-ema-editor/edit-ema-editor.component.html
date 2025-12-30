@@ -35,6 +35,27 @@
             left: 0,
             zIndex: 1000
         }">
+        <ng-template pTemplate="start">
+            @if (uveStore.$isEditMode()) {
+                <button
+                    pButton
+                    type="button"
+                    class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
+                    (click)="togglePalette()"
+                    data-testId="uve-toolbar-palette-toggle">
+                    <img
+                        src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                        alt="Left Panel Open"
+                        [class.hidden]="!$paletteOpen()"
+                        data-testId="palette-open-icon" />
+                    <img
+                        src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                        alt="Left Panel Close"
+                        [class.hidden]="$paletteOpen()"
+                        data-testId="palette-close-icon" />
+                </button>
+            }
+        </ng-template>
         <ng-template pTemplate="center">
             <div class="browser-url-bar-container">
                 <div class="browser-url-bar">{{ $pageURL() }}</div>

@@ -1415,6 +1415,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.setActiveContentlet(contentlet);
     }
 
+    protected togglePalette(): void {
+        this.uveStore.setPaletteOpen(!this.$paletteOpen());
+    }
+
     #scrollToTopLeft(): void {
         const el = this.editorContent?.nativeElement;
         if (!el) {
