@@ -10,36 +10,27 @@ import {
     untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-    FormBuilder,
-    FormGroup,
-    FormControl,
-    ReactiveFormsModule,
-    AbstractControl
-} from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
 import { ButtonModule } from 'primeng/button';
 
 import { debounceTime, distinctUntilChanged, share } from 'rxjs/operators';
 
-import { DotCMSBasicContentlet, DotCMSPageAsset } from '@dotcms/types';
-import {
-    StyleEditorFormSchema,
-    StyleEditorSectionSchema,
-    StyleEditorFieldSchema,
-    StyleEditorCheckboxDefaultValue
-} from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
 import { UveStyleEditorFieldDropdownComponent } from './components/uve-style-editor-field-dropdown/uve-style-editor-field-dropdown.component';
 import { UveStyleEditorFieldInputComponent } from './components/uve-style-editor-field-input/uve-style-editor-field-input.component';
 import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor-field-radio/uve-style-editor-field-radio.component';
+import { StyleEditorFormBuilderService } from './services/style-editor-form-builder.service';
+import {
+    extractStylePropertiesFromGraphQL,
+    updateStylePropertiesInGraphQL
+} from './utils/style-editor-graphql.utils';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../../../services/uve-iframe-messenger.service';
 import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
-import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
@@ -60,38 +51,27 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
 export class DotUveStyleEditorFormComponent {
     $schema = input.required<StyleEditorFormSchema>({ alias: 'schema' });
 
-    readonly #fb = inject(FormBuilder);
+    readonly #formBuilder = inject(StyleEditorFormBuilderService);
     readonly #form = signal<FormGroup | null>(null);
     readonly #uveStore = inject(UVEStore);
     readonly #iframeMessenger = inject(UveIframeMessengerService);
-    readonly #dotPageApiService = inject(DotPageApiService);
     readonly #destroyRef = inject(DestroyRef);
 
     $sections = computed(() => this.$schema().sections);
     $form = computed(() => this.#form());
 
-    // TEST ONLY: Time machine state for visual debugging
-    $timeMachineState = computed(() => ({
-        historyLength: this.#uveStore.historyLength(),
-        currentIndex: this.#uveStore.currentIndex(),
-        canUndo: this.#uveStore.canUndo(),
-        canRedo: this.#uveStore.canRedo(),
-        isAtStart: this.#uveStore.isAtStart(),
-        isAtEnd: this.#uveStore.isAtEnd(),
-        haveHistory: this.#uveStore.haveHistory()
-    }));
-
-    readonly #previousIndex = signal(-1);
+    readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
+    readonly $previousIndex = signal(-1);
 
     readonly #rollbackDetectionEffect = effect(() => {
         const currentIndex = this.#uveStore.currentIndex();
-        const previousIndex = this.#previousIndex();
+        const previousIndex = this.$previousIndex();
 
         // Detect rollback: index decreased (moved backwards in history)
         if (previousIndex >= 0 && currentIndex < previousIndex) {
             this.#restoreFormFromRollback();
         }
-        this.#previousIndex.set(currentIndex);
+        this.$previousIndex.set(currentIndex);
     });
 
     $reloadSchemaEffect = effect(() => {
@@ -104,237 +84,38 @@ export class DotUveStyleEditorFormComponent {
         }
     });
 
-    readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
-
+    /**
+     * Builds a form from the schema using the form builder service
+     */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const formControls: Record<string, AbstractControl> = {};
-
-        schema.sections.forEach((section: StyleEditorSectionSchema) => {
-            section.fields.forEach((field: StyleEditorFieldSchema) => {
-                const fieldKey = field.id;
-                const config = field.config;
-
-                switch (field.type) {
-                    case STYLE_EDITOR_FIELD_TYPES.DROPDOWN:
-                        formControls[fieldKey] = this.#fb.control(
-                            this.#getDropdownDefaultValue(config)
-                        );
-                        break;
-
-                    case STYLE_EDITOR_FIELD_TYPES.CHECKBOX_GROUP: {
-                        const options = config?.options || [];
-                        const checkboxDefaults = this.#getCheckboxGroupDefaultValue(config);
-                        const checkboxGroupControls: Record<string, FormControl> = {};
-
-                        options.forEach((option) => {
-                            checkboxGroupControls[option.value] = new FormControl(
-                                checkboxDefaults[option.value] || false
-                            );
-                        });
-
-                        formControls[fieldKey] = this.#fb.group(checkboxGroupControls);
-                        break;
-                    }
-
-                    case STYLE_EDITOR_FIELD_TYPES.RADIO:
-                        formControls[fieldKey] = this.#fb.control(
-                            this.#getRadioDefaultValue(config)
-                        );
-                        break;
-
-                    case STYLE_EDITOR_FIELD_TYPES.INPUT:
-                        formControls[fieldKey] = this.#fb.control(
-                            this.#getInputDefaultValue(config)
-                        );
-                        break;
-
-                    default:
-                        formControls[fieldKey] = this.#fb.control('');
-                        break;
-                }
-            });
-        });
-
-        this.#form.set(this.#fb.group(formControls));
-    }
-
-    #getDropdownDefaultValue(config: StyleEditorFieldSchema['config']): string {
-        if (typeof config?.defaultValue === 'string') {
-            return config.defaultValue.trim();
-        }
-
-        return null;
-    }
-
-    #getCheckboxGroupDefaultValue(
-        config: StyleEditorFieldSchema['config']
-    ): StyleEditorCheckboxDefaultValue {
-        if (this.#isCheckboxDefaultValue(config?.defaultValue)) {
-            return config.defaultValue;
-        }
-        return {};
-    }
-
-    #getRadioDefaultValue(config: StyleEditorFieldSchema['config']): string {
-        if (typeof config?.defaultValue === 'string') {
-            return config.defaultValue;
-        }
-        return config?.options?.[0]?.value || '';
-    }
-
-    #getInputDefaultValue(config: StyleEditorFieldSchema['config']): string | number {
-        if (typeof config?.defaultValue === 'string' || typeof config?.defaultValue === 'number') {
-            return config.defaultValue;
-        }
-        return '';
-    }
-
-    #isCheckboxDefaultValue(value: unknown): value is StyleEditorCheckboxDefaultValue {
-        return (
-            typeof value === 'object' &&
-            value !== null &&
-            !Array.isArray(value) &&
-            Object.values(value).every((v) => typeof v === 'boolean')
-        );
-    }
-
-    /**
-     * Gets the current form values
-     *
-     * @returns The raw form values or null if form is not available
-     */
-    #getFormValues(): Record<string, unknown> | null {
-        return this.#form() ? this.#form().getRawValue() : null;
-    }
-
-    /**
-     * Updates the graphqlResponse with form values.
-     * Similar to the test() method logic but uses the payload to find the correct contentlet.
-     *
-     * @param graphqlResponse - The current graphql response
-     * @param payload - The action payload containing container and contentlet info
-     * @param formValues - The form values to apply to the contentlet
-     * @returns The updated graphql response
-     */
-    #updateGraphQLResponse(
-        graphqlResponse:
-            | DotCMSPageAsset
-            | {
-                  grapql?: {
-                      query: string;
-                      variables: Record<string, string>;
-                  };
-                  pageAsset: DotCMSPageAsset;
-                  content?: Record<string, unknown>;
-              },
-        payload: ActionPayload,
-        formValues: Record<string, unknown>
-    ):
-        | DotCMSPageAsset
-        | {
-              grapql?: {
-                  query: string;
-                  variables: Record<string, string>;
-              };
-              pageAsset: DotCMSPageAsset;
-              content?: Record<string, unknown>;
-          } {
-        // Handle both types: DotCMSPageAsset directly or wrapped in pageAsset property
-        const pageAsset =
-            'pageAsset' in graphqlResponse ? graphqlResponse.pageAsset : graphqlResponse;
-
-        const containerId = payload.container.identifier;
-        const contentletId = payload.contentlet.identifier;
-        const uuid = payload.container.uuid;
-
-        const container = pageAsset.containers[containerId];
-
-        if (!container) {
-            console.error(`Container with id ${containerId} not found`);
-            return graphqlResponse;
-        }
-
-        const contentlets = container.contentlets[`uuid-${uuid}`];
-
-        if (!contentlets) {
-            console.error(`Contentlet with uuid ${uuid} not found`);
-            return graphqlResponse;
-        }
-
-        contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
-            if (contentlet?.identifier === contentletId) {
-                contentlet.style_properties = formValues;
-            }
-        });
-
-        return graphqlResponse;
-    }
-
-    /**
-     * Extracts style properties from graphqlResponse for a specific contentlet.
-     * Reverse operation of #updateGraphQLResponse - used to restore form values on rollback.
-     *
-     * @param graphqlResponse - The graphql response to extract from
-     * @param payload - The action payload containing container and contentlet info
-     * @returns The style properties object or null if not found
-     */
-    #extractStylePropertiesFromGraphQLResponse(
-        graphqlResponse:
-            | DotCMSPageAsset
-            | {
-                  grapql?: {
-                      query: string;
-                      variables: Record<string, string>;
-                  };
-                  pageAsset: DotCMSPageAsset;
-                  content?: Record<string, unknown>;
-              },
-        payload: ActionPayload
-    ): Record<string, unknown> | null {
-        // Handle both types: DotCMSPageAsset directly or wrapped in pageAsset property
-        const pageAsset =
-            'pageAsset' in graphqlResponse ? graphqlResponse.pageAsset : graphqlResponse;
-
-        const containerId = payload.container.identifier;
-        const contentletId = payload.contentlet.identifier;
-        const uuid = payload.container.uuid;
-
-        const container = pageAsset.containers[containerId];
-
-        if (!container) {
-            return null;
-        }
-
-        const contentlets = container.contentlets[`uuid-${uuid}`];
-
-        if (!contentlets) {
-            return null;
-        }
-
-        const contentlet = contentlets.find(
-            (c: DotCMSBasicContentlet) => c?.identifier === contentletId
-        );
-
-        return contentlet?.style_properties || null;
+        const form = this.#formBuilder.buildForm(schema);
+        this.#form.set(form);
     }
 
     /**
      * Restores form values from the rolled-back graphqlResponse state.
-     * TEST ONLY: Used when rollback occurs to sync form with restored state.
+     * Used when rollback occurs to sync form with restored state.
      */
     #restoreFormFromRollback(): void {
         const form = this.#form();
         const activeContentlet = this.#uveStore.activeContentlet();
-        const graphqlResponse = this.#uveStore.$customGraphqlResponse();
 
-        if (!form || !activeContentlet || !graphqlResponse) {
+        if (!form || !activeContentlet) {
             return;
         }
 
         try {
-            // Extract style properties from the rolled-back state
-            const styleProperties = this.#extractStylePropertiesFromGraphQLResponse(
-                graphqlResponse,
+            // Use the internal graphqlResponse signal directly (it's already been rolled back)
+            // This ensures we get the rolled-back state, not the computed wrapper
+            const rolledBackGraphqlResponse = this.#uveStore.graphqlResponse();
+
+            if (!rolledBackGraphqlResponse) {
+                return;
+            }
+
+            // Extract style properties from the rolled-back state using utility function
+            const styleProperties = extractStylePropertiesFromGraphQL(
+                rolledBackGraphqlResponse,
                 activeContentlet
             );
 
@@ -381,7 +162,7 @@ export class DotUveStyleEditorFormComponent {
                 distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
             )
             .subscribe((formValues) => {
-                this.#saveStylePropertiesToApi(formValues);
+                this.#saveStyleProperties(formValues);
             });
     }
 
@@ -407,11 +188,11 @@ export class DotUveStyleEditorFormComponent {
             // Update the internal response (mutates the pageAsset in place)
             // Since $customGraphqlResponse is computed from graphqlResponse(),
             // updating the internal response will automatically reflect in the computed
-            const updatedInternalResponse = this.#updateGraphQLResponse(
+            const updatedInternalResponse = updateStylePropertiesInGraphQL(
                 internalGraphqlResponse,
                 activeContentlet,
                 formValues
-            ) as typeof internalGraphqlResponse;
+            );
 
             // Optimistic update: Update state WITHOUT saving to history
             // History is only saved when we actually call the API (in #saveStylePropertiesToApi)
@@ -420,9 +201,10 @@ export class DotUveStyleEditorFormComponent {
             // Send updated response to iframe immediately for instant feedback
             // Get the updated custom response (computed will reflect the changes)
             const updatedCustomResponse = this.#uveStore.$customGraphqlResponse();
-            if (updatedCustomResponse) {
-                this.#iframeMessenger.sendPageData(updatedCustomResponse);
+            if (!updatedCustomResponse) {
+                return;
             }
+            this.#iframeMessenger.sendPageData(updatedCustomResponse);
         } catch (error) {
             console.error('Error updating iframe:', error);
         }
@@ -432,7 +214,7 @@ export class DotUveStyleEditorFormComponent {
      * Saves style properties to API with debounce
      * Saves current state to history before API call, so rollback can restore to this point
      */
-    #saveStylePropertiesToApi(formValues: Record<string, unknown>): void {
+    #saveStyleProperties(formValues: Record<string, unknown>): void {
         const activeContentlet = this.#uveStore.activeContentlet();
 
         if (!activeContentlet) {
@@ -446,15 +228,13 @@ export class DotUveStyleEditorFormComponent {
             this.#uveStore.addHistory(currentGraphqlResponse);
         }
 
-        const payload = activeContentlet;
-
         // Use the store's saveStyleEditor method which handles API call and rollback on failure
         this.#uveStore.saveStyleEditor({
-            containerIdentifier: payload.container.identifier,
-            contentledIdentifier: payload.contentlet.identifier,
+            containerIdentifier: activeContentlet.container.identifier,
+            contentledIdentifier: activeContentlet.contentlet.identifier,
             styleProperties: formValues,
-            pageId: payload.pageId,
-            containerUUID: payload.container.uuid
+            pageId: activeContentlet.pageId,
+            containerUUID: activeContentlet.container.uuid
         });
     }
 }
