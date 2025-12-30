@@ -69,10 +69,18 @@
                 class="p-button-text p-button-sm p-button-icon-only p-button-rounded"
                 (click)="toggleRightSidebar()"
                 data-testId="right-sidebar-toggle">
-                <i
-                    [class]="$rightSidebarOpen() ? 'pi pi-chevron-right' : 'pi pi-chevron-left'"
-                    [attr.aria-label]="$rightSidebarOpen() ? 'Hide right panel' : 'Show right panel'"
-                    data-testId="right-sidebar-toggle-icon"></i>
+                <img
+                    src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                    alt="Right Panel Open"
+                    [class.hidden]="!$rightSidebarOpen()"
+                    class="flip-horizontal"
+                    data-testId="right-sidebar-open-icon" />
+                <img
+                    src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                    alt="Right Panel Close"
+                    [class.hidden]="$rightSidebarOpen()"
+                    class="flip-horizontal"
+                    data-testId="right-sidebar-close-icon" />
             </button>
         </ng-template>
     </p-toolbar>

@@ -200,3 +200,7 @@ a:active {
     padding: $spacing-1;
     color: $color-palette-gray-700;
 }
+
+.flip-horizontal {
+    transform: scaleX(-1);
+}
