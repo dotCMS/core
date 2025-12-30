@@ -5,6 +5,12 @@
 **Status:** 🟡 Ready for Testing & Completion
 **Changes:** 44 files, +3,378 / -1,623 lines
 
+**Recent Updates:**
+- ✅ Resolved inline editing vs contentlet selection conflict with dual overlay system
+- ✅ Implemented hover/selected state management in contentlet tools
+- ✅ Relocated toolbar buttons (palette toggle, copy URL, right sidebar toggle)
+- ✅ Added right sidebar with toggle and empty state
+
 ---
 
 ## What Was Done
@@ -35,6 +41,47 @@ Extracted business logic from the monolithic `EditEmaEditor` component into spec
 ### State Management
 - [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts) - Enhanced to re-fetch page content after save
 - [`dot-uve.store.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/dot-uve.store.ts) - Improved integration with new services
+
+### UI/UX Improvements
+
+#### Contentlet Tools - Dual State Management
+**Component:** [`dot-uve-contentlet-tools.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component.ts)
+
+**Implemented:**
+- **Hover state**: Blue overlay with opacity, clickable, allows page interaction
+- **Selected state**: Border outline, transparent background, tools visible, `pointer-events: none` on bounds to allow iframe interaction
+- **Dual overlays**: Both hover and selected can be visible simultaneously
+- **Click-to-select**: Clicking hover overlay selects contentlet and shows action buttons
+- **Computed signals**: `isHoveredDifferentFromSelected`, `showHoverOverlay`, `showSelectedOverlay`, `selectedContentContext`, `isSelectedContainerEmpty`, `selectedHasVtlFiles`
+- **Signal methods**: `handleClick()` sets selection, `signalMethod()` resets selection when contentlet changes
+
+**User Benefit:** Hovering shows subtle preview without blocking interaction; clicking selects and shows tools while still allowing page interaction.
+
+#### Editor Component - Toolbar Button Relocations
+**Component:** [`edit-ema-editor.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/edit-ema-editor.component.ts)
+
+**Implemented:**
+- **Right sidebar toggle**: Added `$rightSidebarOpen` signal with width-based animation
+- **Button relocations**:
+  - Palette toggle moved from `dot-uve-toolbar` to `browser-toolbar` (start)
+  - Copy URL button moved from `dot-uve-toolbar` to `browser-url-bar-container` (left of URL bar)
+  - Right sidebar toggle added to `browser-toolbar` (end) with flipped icon
+- **Empty state**: "Select a contentlet" message when sidebar is empty
+- **Image drag prevention**: `draggable="false"` on toggle button images
+- **Grid layout**: Updated to `grid-template-columns: min-content 1fr min-content` for three-column layout
+
+**User Benefit:** More intuitive placement of controls near content area, consistent animations, clear empty states.
+
+#### Toolbar Component - Cleanup
+**Component:** [`dot-uve-toolbar.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-toolbar/dot-uve-toolbar.component.ts)
+
+**Removed:**
+- Palette toggle button and functionality
+- Copy URL button and overlay panel
+- Related imports (`ClipboardModule`, `OverlayPanelModule`)
+- `$pageURLS` computed signal and `triggerCopyToast()` method
+
+**User Benefit:** Cleaner toolbar component, functionality moved to more appropriate locations.
 
 ---
 
@@ -85,39 +132,18 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 
 **Impact:** [`dot-row-reorder.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-palette/components/dot-row-reorder/dot-row-reorder.component.ts) would need significant expansion to support deeper tree levels and permission checks.
 
-### 3. Inline Editing vs Contentlet Selection Conflict
+### 3. Inline Editing vs Contentlet Selection Conflict ✅ RESOLVED
 
 **Component:** [`dot-uve-contentlet-tools.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component.ts)
 
-**Problem:**
-- `dot-uve-contentlet-tools` previously had `pointer-events: none` to allow iframe to receive click events
-- Now it needs to receive click events to select contentlet and open edit form sidebar
-- But this blocks the iframe from receiving events, breaking inline editing (which happens in iframe code)
+**Solution Implemented:**
+- **Dual overlay system**: Separate hover (blue, clickable) and selected (border, tools visible) overlays
+- **Selected overlay**: Uses `pointer-events: none` on bounds, allowing iframe interaction while tools remain visible
+- **Click-to-select**: Clicking hover overlay selects contentlet and shows action buttons
+- **Visual feedback**: Clear distinction between hover (blue highlight) and selected (border outline) states
+- **Non-blocking interaction**: Selected state allows page interaction while maintaining tool visibility
 
-**Current Behavior:**
-- 1 click to start inline editing
-
-**Proposed Solution:**
-- **Click 1:** Click `dot-uve-contentlet-tools` → Select contentlet → Disable pointer-events again
-- **Click 2:** Click iframe content → Start inline editing
-- Changes to 2-click interaction pattern
-
-**Challenges:**
-- **UX Change:** Users now need 2 clicks instead of 1 for inline editing
-- **Visual Hints Required:** Need UI changes to indicate:
-  - When contentlet is selected (after first click)
-  - That second click is needed for inline editing
-  - Clear selection state
-- **Discoverability:** How do users learn the new pattern?
-
-**Decision Required:**
-- [ ] Implement 2-click pattern with visual selection state
-- [ ] Find alternative: keyboard modifier (Cmd/Ctrl+click for selection vs inline)?
-- [ ] Find alternative: hover state timeout before enabling pointer-events?
-- [ ] Add onboarding tooltip/guide for new interaction pattern
-- [ ] Design selection state visual (border, highlight, badge?)
-
-**Impact:** Significant UX change that affects core editing workflow. Needs product/UX team approval.
+**Result:** Users can hover to preview, click to select and access tools, and continue interacting with the page without overlay interference. Both states can be visible simultaneously for better context.
 
 ---
 
@@ -291,12 +317,11 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Implement content copy logic for "This Page" option
   - Check if content is shared across pages
   - Reuse existing dialog from current flow
-- [ ] **Resolve inline editing vs selection conflict** (see "Design Decisions Needed" section above)
-  - Decide on 2-click pattern vs alternative solutions
-  - Get product/UX team approval for interaction change
-  - Design visual selection state
-  - Implement solution in [`dot-uve-contentlet-tools`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component.ts)
-  - Add user onboarding/hints for new pattern
+- [x] **Resolve inline editing vs selection conflict** ✅ **COMPLETED**
+  - Implemented dual overlay system (hover + selected states)
+  - Selected overlay uses `pointer-events: none` to allow iframe interaction
+  - Clear visual distinction between hover and selected states
+  - Both states can be visible simultaneously
 - [ ] **Implement contentlet controls redesign** (see "Design Decisions Needed" section above)
   - Make entire contentlet draggable
   - Move code/delete/edit actions to right panel
@@ -389,7 +414,10 @@ git log origin/main..uve-experiment --oneline
 1. **Row/Column Reordering** - Drag rows, expand rows, reorder columns, edit style classes
 2. **Zoom** - Zoom in/out, test scroll position, verify drag-and-drop at different zooms
 3. **Contentlet Editing** - Open form, validate, save, cancel
-4. **General** - Ensure all existing features work, no console errors
+4. **Contentlet Hover/Selection** - Hover to see blue overlay, click to select (border + tools), verify page interaction still works when selected
+5. **Toolbar Buttons** - Test palette toggle, right sidebar toggle, copy URL button in new locations
+6. **Right Sidebar** - Toggle open/closed, verify empty state message, verify contentlet selection updates sidebar
+7. **General** - Ensure all existing features work, no console errors
 
 ---
 
