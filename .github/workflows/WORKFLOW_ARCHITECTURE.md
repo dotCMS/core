@@ -49,7 +49,7 @@ graph TB
         TTitle["🎯 Workflow Triggers"]
         T1[PR Events]
         T2[Push to Main]
-        T2b[Push to "release-*" branches]
+        T2b[Push to <i>release-*</i> branches]
         T3[Scheduled]
         T4[Manual]
         T5[Issue Events]
