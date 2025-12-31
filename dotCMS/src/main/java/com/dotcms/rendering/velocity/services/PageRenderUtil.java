@@ -321,7 +321,6 @@ public class PageRenderUtil implements Serializable {
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
                     this.addRelationships(contentlet);
-                    this.addStyles(contentlet, personalizedContentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
@@ -523,28 +522,6 @@ public class PageRenderUtil implements Serializable {
 
                 widgetPreExecute.append(field.values());
             }
-        }
-    }
-
-    /**
-     * Only applies when the FEATURE_FLAG_UVE_STYLE_EDITOR is enabled.
-     * Adds style properties from the MultiTree to the contentlet's data map.
-     * This ensures that contentlet styling metadata is properly scoped to its specific
-     * personalization and variant context.
-     *
-     * @param contentlet             The {@link Contentlet} to add style properties to
-     * @param personalizedContentlet The {@link PersonalizedContentlet} containing the style
-     *                               properties from the MultiTree relationship
-     */
-    private void addStyles(Contentlet contentlet, PersonalizedContentlet personalizedContentlet) {
-        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false)) {
-            return;
-        }
-
-        final Map<String, Object> styleProperties = personalizedContentlet.getStyleProperties();
-
-        if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
-            contentlet.getMap().put("styleProperties", styleProperties);
         }
     }
 
