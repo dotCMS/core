@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "7e70edc5-b319-4d3f-b332-0c6c17d303ff",
+    "_postman_id": "57b69e00-6c5a-4470-81fe-1d1780dcb75e",
     "name": "Define StyleProperties for Contentlets",
     "description": "## Description:\n\nThis collection validates the application of Style Properties to **Contentlets** based on their **location**.\n\nSince a Contentlet is always hosted within a **Container**, and a **Page** can have multiple Containers, you can define unique styles for the exact same Contentlet if:\n\n1. The Contentlet is placed in a different Container.\n    \n2. The Contentlet and its Container appear on a different Page.\n    \n\nInside are three sub folders:\n\n### Setup\n\nDefines the base data needed for the tests.\n\n### Defining Contentlet Styles:\n\nTest the Contentlet Style definition in the **Test Page 1**.\n\n### Retrieve Contentlet Styles:\n\nTest that the Contentlets have specific Styles defined.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
@@ -847,7 +847,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "[\n    {\n        \"identifier\": \"{{containerId}}\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"color\": \"#FF0000\"\n            }\n        }\n    }\n]",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"color\": \"#FF0000\"\n            }\n        }\n    }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -905,7 +905,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "[\n    {\n        \"identifier\": \"{{containerId}}\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\"\n            }\n        }\n    }\n]",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\"\n            }\n        }\n    }\n]",
               "options": {
                 "raw": {
                   "language": "json"
@@ -937,7 +937,6 @@
               "script": {
                 "exec": [
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
-                  "const CUSTOM_CONTAINER = pm.collectionVariables.get(\"containerId\");",
                   "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
@@ -946,9 +945,9 @@
                   "// Parse JSON",
                   "const json = pm.response.json();",
                   "",
-                  "pm.test(`Validate ${contentlet1} has correct styleProperties`, function () {",
+                  "pm.test(\"Validate Contentlet_1 in Page_1 has correct styleProperties\", function () {",
                   "    // filter by container",
-                  "    const container = json.entity.containers[CUSTOM_CONTAINER];",
+                  "    const container = json.entity.containers[\"SYSTEM_CONTAINER\"];",
                   "    pm.expect(container, \"Container not found\").to.exist;",
                   "    ",
                   "    // filter by contentlet",
@@ -991,7 +990,6 @@
               "script": {
                 "exec": [
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
-                  "const CUSTOM_CONTAINER = pm.collectionVariables.get(\"containerId\");",
                   "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
@@ -1000,9 +998,9 @@
                   "// Parse JSON",
                   "const json = pm.response.json();",
                   "",
-                  "pm.test(`Validate ${contentlet1} has correct styleProperties`, function () {",
+                  "pm.test(\"Validate Contentlet_1 in Page_2 has correct styleProperties\", function () {",
                   "    // filter by container",
-                  "    const container = json.entity.containers[CUSTOM_CONTAINER];",
+                  "    const container = json.entity.containers[\"SYSTEM_CONTAINER\"];",
                   "    pm.expect(container, \"Container not found\").to.exist;",
                   "    ",
                   "    // filter by contentlet",
@@ -1098,7 +1096,6 @@
               "script": {
                 "exec": [
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
-                  "const CUSTOM_CONTAINER = pm.collectionVariables.get(\"containerId\");",
                   "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
@@ -1109,7 +1106,7 @@
                   "",
                   "pm.test(`Validate ${contentlet1} does not have styleProperties`, function () {",
                   "    // filter by container",
-                  "    const container = json.entity.containers[CUSTOM_CONTAINER];",
+                  "    const container = json.entity.containers[\"SYSTEM_CONTAINER\"];",
                   "    pm.expect(container, \"Container not found\").to.exist;",
                   "    ",
                   "    // filter by contentlet",
@@ -1146,24 +1143,82 @@
           "response": []
         }
       ],
-      "description": "### Retrieve Contentlet Styles:\n\nTest that the Contentlets have specific Styles defined when the feature flag `FEATURE_FLAG_UVE_STYLE_EDITOR` is enabled.\n\n- Turn ON `FEATURE_FLAG_UVE_STYLE_EDITOR` to allow the visualization of the Style Properties.\n    \n- Save the **same** **Contentlet** in the **same** **Container** but in **different** **Pages**\n    \n    - `Contentlet 1` in the `Styles_Container` **Container**, inside the **Page**`testPageStyles_1`\n        \n    - `Contentlet 1` in the `Styles_Container` **Container**, inside the **Page**`testPageStyles_2`\n        \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_1` **Page** have the \"color = #FF0000\" Style.\n    \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_2` **Page** have the \"width = 100px\" Style.\n    \n- Turn OFF `FEATURE_FLAG_UVE_STYLE_EDITOR`\n    \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field"
+      "description": "### Retrieve Contentlet Styles:\n\nTest that the Contentlets have specific Styles defined when the feature flag `FEATURE_FLAG_UVE_STYLE_EDITOR` is enabled.\n\n- Turn ON `FEATURE_FLAG_UVE_STYLE_EDITOR` to allow the visualization of the Style Properties.\n    \n- Save the **same** **Contentlet** in the **same** **Container** but in **different** **Pages**\n    \n    - `Contentlet 1` in the `SYSTEM_CONTAINER` **Container**, inside the **Page**`testPageStyles_1`\n        \n    - `Contentlet 1` in the `SYSTEM_CONTAINER` **Container**, inside the **Page**`testPageStyles_2`\n        \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_1` **Page** have the \"color = #FF0000\" Style.\n    \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_2` **Page** have the \"width = 100px\" Style.\n    \n- Turn OFF `FEATURE_FLAG_UVE_STYLE_EDITOR`\n    \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field"
     }
   ],
   "auth": {
-    "type": "basic",
-    "basic": [
+    "type": "bearer",
+    "bearer": [
       {
-        "key": "password",
-        "value": "admin",
-        "type": "string"
-      },
-      {
-        "key": "username",
-        "value": "admin@dotcms.com",
+        "key": "token",
+        "value": "{{jwt}}",
         "type": "string"
       }
     ]
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+          "   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "// If we are unable to get the JWT we need to generate a new one",
+          "   if (!pm.environment.get('jwt')) {",
+          "       const username = pm.environment.get(\"user\");",
+          "       const password = pm.environment.get(\"password\");",
+          "       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "",
+          "       const requestOptions = {",
+          "           url: apiUrl,",
+          "           method: \"POST\",",
+          "           header: {",
+          "               \"accept\": \"*/*\",",
+          "               \"content-type\": \"application/json\",",
+          "               \"Authorization\": `Basic ${basicAuth}`",
+          "           },",
+          "           body: {",
+          "               mode: \"raw\",",
+          "               raw: JSON.stringify({",
+          "                   \"expirationSeconds\": 7200,",
+          "                   \"userId\": \"dotcms.org.1\",",
+          "                   \"network\": \"0.0.0.0/0\",",
+          "                   \"claims\": {\"label\": \"postman-tests\"}",
+          "               })",
+          "           }",
+          "       };",
+          "",
+          "",
+          "       pm.sendRequest(requestOptions, function (err, response) {",
+          "           if (err) {",
+          "               console.log(err);",
+          "           } else {",
+          "               const jwt = response.json().entity.jwt;",
+          "               pm.environment.set('jwt', jwt);",
+          "               console.log(jwt);",
+          "           }",
+          "       });",
+          "   }"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
   "variable": [
     {
       "key": "hostname",
