@@ -202,7 +202,8 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test'</arguments>
+                            <!-- Add detectOpenHandles and forceExit flags to identify and handle leaking resources -->
+                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test' -- --detectOpenHandles --forceExit</arguments>
                         </configuration>
                     </execution>
 

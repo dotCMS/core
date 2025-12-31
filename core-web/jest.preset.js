@@ -12,6 +12,9 @@ module.exports = {
         '!src/index.ts'
     ],
     verbose: true,
+    // Prevent worker pool exhaustion and individual test timeouts
+    testTimeout: 30000, // 30 seconds per test (default is 5s)
+    maxWorkers: '50%', // Limit worker processes to prevent exhaustion
     /* TODO: Update to latest Jest snapshotFormat
      * By default Nx has kept the older style of Jest Snapshot formats
      * to prevent breaking of any existing tests with snapshots.

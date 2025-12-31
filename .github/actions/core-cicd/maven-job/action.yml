@@ -201,6 +201,14 @@ runs:
       shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
       run: |
         set -e  # Exit on any command failure
+        # #region agent log: Add timing and resource tracking (Hypothesis F, G, H)
+        echo "::group::Pre-build system status"
+        echo "Start time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "Initial memory: $(free -m | awk 'NR==2{printf "%.2f GB used / %.2f GB total", $3/1024, $2/1024}')" || true
+        echo "Initial processes: $(ps aux | wc -l)"
+        echo "::endgroup::"
+        # #endregion
+        
         DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dprod=true"
         MAVEN_ARGS="${{ inputs.maven-args }}"
         if [[ "${{ inputs.generate-docker }}" == "true" ]]; then
@@ -221,6 +229,19 @@ runs:
           echo "Building Maven with args $FINAL_ARGS"
           ./mvnw $FINAL_ARGS --file pom.xml
         fi
+        
+        # #region agent log: Post-build system status (Hypothesis F, G, H)
+        MAVEN_EXIT_CODE=$?
+        echo "::group::Post-build system status"
+        echo "Maven exit code: $MAVEN_EXIT_CODE"
+        echo "End time: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "Final memory: $(free -m | awk 'NR==2{printf "%.2f GB used / %.2f GB total", $3/1024, $2/1024}')" || true
+        echo "Final processes: $(ps aux | wc -l)"
+        echo "Orphaned node/jest processes: $(ps aux | grep -E 'node|jest|nx' | grep -v grep | wc -l || echo 0)"
+        ps aux | grep -E 'node|jest|nx' | grep -v grep | head -20 || true
+        echo "::endgroup::"
+        exit $MAVEN_EXIT_CODE
+        # #endregion
 
     - id: persist-maven-repo
       name: Persist Maven Repo
