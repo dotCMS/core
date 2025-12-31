@@ -66,7 +66,7 @@ export interface IframeHeightMessage {
  *     if (document.readyState === "complete") {
  *         reportHeight();
  *     } else {
- *         window.addEventListener("load", reportHeight);
+ *         window.addEventListener("DOMContentLoaded", reportHeight);
  *     }
  *
  *     window.addEventListener("resize", reportHeight);
@@ -116,13 +116,13 @@ export interface IframeHeightMessage {
  *         if (document.readyState === "complete") {
  *             reportHeight();
  *         } else {
- *             window.addEventListener("load", reportHeight);
+ *             window.addEventListener("DOMContentLoaded", reportHeight);
  *         }
  *
  *         window.addEventListener("resize", reportHeight);
  *
  *         return () => {
- *             window.removeEventListener("load", reportHeight);
+ *             window.removeEventListener("DOMContentLoaded", reportHeight);
  *             window.removeEventListener("resize", reportHeight);
  *         };
  *     }, []);
@@ -148,7 +148,7 @@ export interface IframeHeightMessage {
  *         if (this.document.readyState === "complete") {
  *             this.reportHeight();
  *         } else {
- *             this.document.defaultView?.addEventListener("load", this.reportHeightBound);
+ *             this.document.defaultView?.addEventListener("DOMContentLoaded", this.reportHeightBound);
  *         }
  *
  *         this.document.defaultView?.addEventListener("resize", this.reportHeightBound);
@@ -185,7 +185,7 @@ export interface IframeHeightMessage {
  *     }
  *
  *     ngOnDestroy(): void {
- *         this.document.defaultView?.removeEventListener("load", this.reportHeightBound);
+ *         this.document.defaultView?.removeEventListener("DOMContentLoaded", this.reportHeightBound);
  *         this.document.defaultView?.removeEventListener("resize", this.reportHeightBound);
  *     }
  * }
@@ -201,17 +201,13 @@ export class DotUveBridgeService {
     private readonly destroyRef = inject(DestroyRef);
     private zoomService?: DotUveZoomService;
     private iframeElement?: HTMLIFrameElement;
-    private editorContent?: HTMLElement;
-
     private readonly $iframeDocHeight = signal<number>(0);
 
     initialize(
         iframe: ElementRef<HTMLIFrameElement>,
-        editorContent: ElementRef<HTMLElement>,
         zoomService: DotUveZoomService,
     ): Observable<MessageEvent> {
         this.iframeElement = iframe.nativeElement;
-        this.editorContent = editorContent.nativeElement;
         this.zoomService = zoomService;
 
         return fromEvent<MessageEvent>(this.window, 'message').pipe(

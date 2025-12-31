@@ -1,4 +1,4 @@
-import { EMPTY, Observable, fromEvent, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
@@ -20,7 +20,7 @@ import {
     computed,
     DestroyRef
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, Validators } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -518,7 +518,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // Bridge service handles message events - needs iframe which is available now
         const messageStream = this.bridgeService.initialize(
             this.iframe,
-            this.editorContent,
             this.zoomService
         );
 
