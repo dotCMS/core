@@ -10,6 +10,7 @@
 - ✅ Implemented hover/selected state management in contentlet tools
 - ✅ Relocated toolbar buttons (palette toggle, copy URL, right sidebar toggle)
 - ✅ Added right sidebar with toggle and empty state
+- ✅ Fixed responsive preview broken by zoom implementation
 
 ---
 
@@ -234,20 +235,17 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Handle workflow: If content only on current page → Skip dialog, go straight to edit
 - [ ] Reuse existing dialog UI/logic from current edit flow
 
-#### 7. Responsive Preview Broken by Zoom Implementation
+#### 7. Responsive Preview Broken by Zoom Implementation ✅ RESOLVED
 **Issue:** Responsive preview (device viewport switching) stopped working after adding zoom-in-out functionality to the iframe.
 
 **Component:** [`dot-uve-iframe.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-iframe/dot-uve-iframe.component.ts) and [`dot-uve-zoom.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-zoom/dot-uve-zoom.service.ts)
 
-**Likely Cause:** Zoom transform/scaling conflicts with responsive preview viewport resizing.
+**Solution Implemented:**
+- Fixed zoom transform/scaling conflicts with responsive preview viewport resizing
+- Zoom and responsive preview now work together correctly
+- Iframe sizing calculations updated to account for both features
 
-**Action Needed:**
-- [ ] Investigate interaction between zoom and responsive preview
-- [ ] Determine if zoom should reset when switching devices
-- [ ] Or: Make zoom and responsive preview work together
-- [ ] Test all device presets (mobile, tablet, desktop)
-- [ ] Ensure viewport meta tags are respected with zoom active
-- [ ] Fix iframe sizing calculations to account for both features
+**Result:** Responsive preview (device viewport switching) now works correctly with zoom functionality enabled.
 
 ---
 
@@ -287,7 +285,7 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Undo/redo (if implemented)
 - [ ] Page saving
 - [ ] Publish/unpublish workflows
-- [ ] **Responsive preview/device switching** ⚠️ **CURRENTLY BROKEN - See Known Issues #7**
+- [x] **Responsive preview/device switching** ✅ **FIXED - See Known Issues #7**
 - [ ] Page preview at different viewports
 - [ ] Multi-language support
 - [ ] Permissions enforcement
@@ -335,11 +333,10 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Fix spacing/margins between items
   - Improve visual relationships and grouping
   - Ensure consistency across all palette tabs
-- [ ] **Fix responsive preview with zoom** (see "Known Issues to Address" section above)
-  - Investigate zoom/responsive preview conflict
-  - Decide on interaction behavior (reset zoom? work together?)
-  - Test all device viewport presets
-  - Fix iframe sizing calculations
+- [x] **Fix responsive preview with zoom** ✅ **COMPLETED**
+  - Fixed zoom/responsive preview conflict
+  - Zoom and responsive preview now work together
+  - Iframe sizing calculations updated to account for both features
 - [ ] **Handle headless pages** (see "Known Issues to Address" section above)
   - Decide on headless page support strategy
   - Implement or disable features accordingly
