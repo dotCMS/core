@@ -137,10 +137,10 @@ dot-results-seo-tool {
     overflow: hidden;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
-    width: 1520px !important;
+    width: 1520px;
     min-width: 1520px;
     height: auto;
-    transition: border 0.3s ease-in-out;
+    transition: width 0.3s ease-in-out;
 
     iframe {
         border: none;

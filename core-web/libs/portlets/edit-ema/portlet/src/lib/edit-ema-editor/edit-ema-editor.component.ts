@@ -312,6 +312,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $canvasOuterStyles = this.zoomService.$canvasOuterStyles;
     readonly $canvasInnerStyles = this.zoomService.$canvasInnerStyles;
 
+    readonly $iframeWrapperStyles = computed((): Record<string, string> => {
+        const wrapper = this.$editorProps().iframe.wrapper;
+        if (!wrapper) {
+            return {};
+        }
+        return {
+            width: wrapper.width,
+            minWidth: wrapper.width,
+            maxWidth: wrapper.width
+        };
+    });
+
     readonly $iframeSrc = computed((): string => {
         const url = this.uveStore.$iframeURL();
         return (typeof url === 'string' ? url : '') || '';
@@ -518,7 +530,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             );
         });
 
-        this.#setupContentletAreaReset();
         this.setupZoom();
         this.setupDragDrop();
     }
@@ -1394,26 +1405,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             ...this.uveStore.pageAPIResponse(),
             params: this.uveStore.pageParams()
         };
-    }
-
-    #setupContentletAreaReset(): void {
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        if (typeof ResizeObserver !== 'undefined') {
-            this.#iframeResizeObserver = new ResizeObserver(() => {
-                this.#resetContentletArea();
-            });
-
-            this.#iframeResizeObserver.observe(iframeElement);
-        } else {
-            fromEvent(this.window, 'resize')
-                .pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe(() => this.#resetContentletArea());
-        }
     }
 
     #resetContentletArea(): void {

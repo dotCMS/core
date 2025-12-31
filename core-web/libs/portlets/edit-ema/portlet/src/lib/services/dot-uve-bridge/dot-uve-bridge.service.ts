@@ -28,8 +28,8 @@ export interface IframeHeightMessage {
  * VANILLA JAVASCRIPT
  * ----------------------------------------------------------------------------------
  *
- * (function() {
- *     let debounceTimer = null;
+ * // dotcms-height-reporter.js
+ * (function () {
  *     let lastHeight = 0;
  *
  *     function getDocumentHeight() {
@@ -39,6 +39,7 @@ export interface IframeHeightMessage {
  *         const bodyRect = body.getBoundingClientRect();
  *         let height = bodyRect.height;
  *
+ *         // Check last child's bottom position as fallback
  *         const children = body.children;
  *         if (children.length > 0) {
  *             const lastChild = children[children.length - 1];
@@ -54,25 +55,21 @@ export interface IframeHeightMessage {
  *         const height = getDocumentHeight();
  *         if (height !== lastHeight && height > 0) {
  *             lastHeight = height;
- *             window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+ *             window.parent.postMessage(
+ *                 { type: "dotcms:iframeHeight", height },
+ *                 "*"
+ *             );
  *         }
  *     }
  *
- *     function debouncedReportHeight() {
- *         if (debounceTimer) clearTimeout(debounceTimer);
- *         debounceTimer = setTimeout(reportHeight, 50);
- *     }
- *
- *     if (document.readyState === 'complete') {
+ *     // Initial report
+ *     if (document.readyState === "complete") {
  *         reportHeight();
  *     } else {
- *         window.addEventListener('load', reportHeight);
+ *         window.addEventListener("load", reportHeight);
  *     }
  *
- *     if (typeof ResizeObserver !== 'undefined') {
- *         const observer = new ResizeObserver(debouncedReportHeight);
- *         observer.observe(document.body);
- *     }
+ *     window.addEventListener("resize", reportHeight);
  * })();
  *
  * ----------------------------------------------------------------------------------
@@ -83,7 +80,6 @@ export interface IframeHeightMessage {
  *
  * export function useDotCMSHeightReporter() {
  *     const lastHeightRef = useRef(0);
- *     const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
  *
  *     useEffect(() => {
  *         const getDocumentHeight = (): number => {
@@ -93,6 +89,7 @@ export interface IframeHeightMessage {
  *             const bodyRect = body.getBoundingClientRect();
  *             let height = bodyRect.height;
  *
+ *             // Check last child's bottom position as fallback
  *             const children = body.children;
  *             if (children.length > 0) {
  *                 const lastChild = children[children.length - 1];
@@ -108,23 +105,25 @@ export interface IframeHeightMessage {
  *             const height = getDocumentHeight();
  *             if (height !== lastHeightRef.current && height > 0) {
  *                 lastHeightRef.current = height;
- *                 window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+ *                 window.parent.postMessage(
+ *                     { type: "dotcms:iframeHeight", height },
+ *                     "*"
+ *                 );
  *             }
  *         };
  *
- *         const debouncedReportHeight = () => {
- *             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
- *             debounceTimerRef.current = setTimeout(reportHeight, 50);
- *         };
+ *         // Initial report
+ *         if (document.readyState === "complete") {
+ *             reportHeight();
+ *         } else {
+ *             window.addEventListener("load", reportHeight);
+ *         }
  *
- *         reportHeight();
- *
- *         const observer = new ResizeObserver(debouncedReportHeight);
- *         observer.observe(document.body);
+ *         window.addEventListener("resize", reportHeight);
  *
  *         return () => {
- *             observer.disconnect();
- *             if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+ *             window.removeEventListener("load", reportHeight);
+ *             window.removeEventListener("resize", reportHeight);
  *         };
  *     }, []);
  * }
@@ -141,17 +140,18 @@ export interface IframeHeightMessage {
  * @Injectable({ providedIn: 'root' })
  * export class DotCMSHeightReporterService implements OnDestroy {
  *     private readonly document = inject(DOCUMENT);
- *     private observer: ResizeObserver | null = null;
- *     private debounceTimer: ReturnType<typeof setTimeout> | null = null;
  *     private lastHeight = 0;
+ *     private readonly reportHeightBound = this.reportHeight.bind(this);
  *
  *     start(): void {
- *         this.reportHeight();
- *
- *         if (typeof ResizeObserver !== 'undefined') {
- *             this.observer = new ResizeObserver(() => this.debouncedReportHeight());
- *             this.observer.observe(this.document.body);
+ *         // Initial report
+ *         if (this.document.readyState === "complete") {
+ *             this.reportHeight();
+ *         } else {
+ *             this.document.defaultView?.addEventListener("load", this.reportHeightBound);
  *         }
+ *
+ *         this.document.defaultView?.addEventListener("resize", this.reportHeightBound);
  *     }
  *
  *     private getDocumentHeight(): number {
@@ -161,6 +161,7 @@ export interface IframeHeightMessage {
  *         const bodyRect = body.getBoundingClientRect();
  *         let height = bodyRect.height;
  *
+ *         // Check last child's bottom position as fallback
  *         const children = body.children;
  *         if (children.length > 0) {
  *             const lastChild = children[children.length - 1];
@@ -176,18 +177,16 @@ export interface IframeHeightMessage {
  *         const height = this.getDocumentHeight();
  *         if (height !== this.lastHeight && height > 0) {
  *             this.lastHeight = height;
- *             window.parent.postMessage({ type: 'dotcms:iframeHeight', height }, '*');
+ *             this.document.defaultView?.parent?.postMessage(
+ *                 { type: "dotcms:iframeHeight", height },
+ *                 "*"
+ *             );
  *         }
  *     }
  *
- *     private debouncedReportHeight(): void {
- *         if (this.debounceTimer) clearTimeout(this.debounceTimer);
- *         this.debounceTimer = setTimeout(() => this.reportHeight(), 50);
- *     }
- *
  *     ngOnDestroy(): void {
- *         this.observer?.disconnect();
- *         if (this.debounceTimer) clearTimeout(this.debounceTimer);
+ *         this.document.defaultView?.removeEventListener("load", this.reportHeightBound);
+ *         this.document.defaultView?.removeEventListener("resize", this.reportHeightBound);
  *     }
  * }
  *

@@ -132,6 +132,7 @@
                         [ngClass]="{
                             'iframe-wrapper--device': $editorProps().iframe.wrapper
                         }"
+                        [ngStyle]="$iframeWrapperStyles()"
                         class="iframe-wrapper">
                         @if (uveStore.status() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
