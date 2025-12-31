@@ -203,7 +203,7 @@
                         <configuration>
                             <skip>${skipTests}</skip>
                             <!-- Add detectOpenHandles to identify resource leaks in tests -->
-                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test' -- --detectOpenHandles</arguments>
+                            <arguments>nx affected -t test --base=origin/main --exclude=tag:skip:test --detectOpenHandles</arguments>
                         </configuration>
                     </execution>
 
