@@ -24,7 +24,7 @@ export interface UVEState {
     isTraditionalPage: boolean;
     isClientReady: boolean;
     workflowActions?: DotCMSWorkflowAction[];
-    selectedContentlet?: Pick<ClientData, 'container' | 'contentlet'>;
+    selectedPayload?: Pick<ClientData, 'container' | 'contentlet'>;
 }
 
 export interface ShellProps {

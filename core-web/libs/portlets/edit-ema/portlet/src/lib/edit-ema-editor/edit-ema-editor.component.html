@@ -196,7 +196,7 @@
 
 @if (uveStore.$isEditMode()) {
     <div class="right-sidebar" [ngClass]="$rightSidebarOpen() ? 'open' : 'closed'">
-        @if ($contentletForm() && $selectedContentlet().fields.length > 0) {
+        @if ($contentletForm() && $selectedPayload().fields.length > 0) {
         <form
             [formGroup]="$contentletForm()!"
             (ngSubmit)="onFormSubmit()"
@@ -204,10 +204,10 @@
             style="width: 400px"
             (keydown.escape)="onCancel()"
             tabindex="0">
-            @if ($selectedContentlet().contentlet?.inode) {
+            @if ($selectedPayload().contentlet?.inode) {
                 <input type="hidden" formControlName="inode" />
             }
-            @for (field of $selectedContentlet().fields; track field.variable) {
+            @for (field of $selectedPayload().fields; track field.variable) {
                 <div class="field">
                     <label
                         [ngClass]="{ 'p-label-input-required': field.required }"

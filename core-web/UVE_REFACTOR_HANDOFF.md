@@ -11,6 +11,7 @@
 - ✅ Relocated toolbar buttons (palette toggle, copy URL, right sidebar toggle)
 - ✅ Added right sidebar with toggle and empty state
 - ✅ Fixed responsive preview broken by zoom implementation
+- ✅ Fixed missing "Edit All Pages vs This Page" dialog in contentlet form submission
 
 ---
 
@@ -471,25 +472,18 @@ a2787aa462 Enhance DotRowReorderComponent: add column drag/sort animations
 
 These issues **must** be fixed before production:
 
-#### 1. Missing "Edit All Pages vs This Page" Dialog ⚠️ **HIGH RISK**
-**Location:** [`dot-uve-actions-handler.service.ts:235-236`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-actions-handler/dot-uve-actions-handler.service.ts)
+#### 1. Missing "Edit All Pages vs This Page" Dialog ✅ **FIXED**
+**Location:** [`edit-ema-editor.component.ts:onFormSubmit`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/edit-ema-editor.component.ts)
 
-**Current Code:**
-```typescript
-[DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-    dialog.editContentlet({ ...contentlet, clientAction: action });
-}
-```
+**Problem:** Users could accidentally edit global content when they only intended to change it on one page.
 
-**Problem:** Users can accidentally edit global content when they only intended to change it on one page.
-
-**Solution:** Reuse existing logic from [`edit-ema-editor.component.ts:1028-1056`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/edit-ema-editor.component.ts) `handleEditContentlet` method:
-- Check `contentlet.onNumberOfPages`
-- If > 1, show `DotCopyContentModalService` dialog
+**Solution Implemented:** Added logic in `onFormSubmit` method to check `contentlet.onNumberOfPages`:
+- If contentlet is on only one page (`onNumberOfPages === 1`), save directly
+- If contentlet exists on multiple pages (`onNumberOfPages > 1`), show `DotCopyContentModalService` dialog
 - If user selects "This Page", copy content before editing
-- If content only on current page, skip dialog and go straight to edit
+- After copying, update the selected contentlet with the new inode and set `onNumberOfPages` to 1
 
-**Impact:** Users could accidentally modify content globally affecting all pages.
+**Status:** ✅ Fixed - The form submission now properly checks `onNumberOfPages` and shows the copy content modal when content exists on multiple pages, preventing accidental global content modifications.
 
 ---
 

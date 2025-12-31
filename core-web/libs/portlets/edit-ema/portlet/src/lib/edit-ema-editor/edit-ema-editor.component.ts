@@ -240,8 +240,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
     }
 
-    protected readonly $selectedContentlet = computed(() => {
-        const { container, contentlet } = this.uveStore.selectedContentlet() ?? {};
+    protected readonly $selectedPayload = computed(() => {
+        const { container, contentlet } = this.uveStore.selectedPayload() ?? {};
 
         const contentType = this.$contenttypes().find(
             (ct) => ct.variable === contentlet?.contentType
@@ -396,12 +396,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         );
     });
 
+
     readonly $buildContentletFormEffect = effect(() => {
-        const { fields, container, contentlet } = this.$selectedContentlet();
-        const selectedContentlet = this.uveStore.selectedContentlet();
+        const { fields, container, contentlet } = this.$selectedPayload();
+        const selectedPayload = this.uveStore.selectedPayload();
         const pageAPIResponse = this.uveStore.pageAPIResponse();
 
-        if (!fields || fields.length === 0 || !selectedContentlet || !pageAPIResponse) {
+        if (!fields || fields.length === 0 || !selectedPayload || !pageAPIResponse) {
             this.#contentletForm.set(null);
             return;
         }
@@ -482,19 +483,75 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected onFormSubmit(): void {
-        const form = this.$contentletForm();
-        if (form) {
-            this.#isSubmitting.set(true);
-            this.dotWorkflowActionsFireService.saveContentlet(form.value).subscribe({
-                next: () => {
-                    this.#isSubmitting.set(false);
-                    this.reloadPage();
-                },
-                error: () => {
-                    this.#isSubmitting.set(false);
-                }
-            });
+        const { container, contentlet } = this.$selectedPayload();
+
+        const onNumberOfPages = Number(contentlet.onNumberOfPages);
+
+        // If the contentlet is on only one page, we can save it directly
+        if (onNumberOfPages === 1) {
+            const form = this.$contentletForm();
+            if (form) {
+                this.#isSubmitting.set(true);
+                this.dotWorkflowActionsFireService.saveContentlet({
+                    ...form.value,
+                    inode: contentlet.inode
+                }).subscribe({
+                    next: () => {
+                        this.#isSubmitting.set(false);
+                        this.reloadPage();
+                    },
+                    error: () => {
+                        this.#isSubmitting.set(false);
+                    }
+                });
+            }
+
+            return;
         }
+
+        const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
+
+        this.dotCopyContentModalService
+        .open()
+        .pipe(
+            switchMap(({ shouldCopy }) => {
+                if (!shouldCopy) {
+                    return of(this.$contentletForm()?.value);
+                }
+
+                return this.handleCopyContent(currentTreeNode);
+            })
+        )
+        .subscribe((contentlet: DotCMSContentlet) => {
+            this.uveStore.setSelectedContentlet({
+                container,
+                contentlet: {
+                    identifier: contentlet.identifier,
+                    inode: contentlet.inode,
+                    title: contentlet.title,
+                    contentType: contentlet.contentType,
+                    onNumberOfPages: 1 // Because we just copied the contentlet to the same page
+                } as ContentletPayload
+            } as Pick<ClientData, 'container' | 'contentlet'>);
+
+            const form = this.$contentletForm();
+            if (form) {
+                this.#isSubmitting.set(true);
+                this.dotWorkflowActionsFireService.saveContentlet({
+                    ...form.value,
+                    inode: contentlet.inode
+                }).subscribe({
+                    next: () => {
+                        this.#isSubmitting.set(false);
+                        this.reloadPage();
+                    },
+                    error: () => {
+                        this.#isSubmitting.set(false);
+                    }
+                });
+            }
+        });
+
     }
 
     protected onCancel(): void {

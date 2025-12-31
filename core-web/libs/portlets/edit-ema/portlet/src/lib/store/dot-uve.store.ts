@@ -32,7 +32,7 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     isClientReady: false,
-    selectedContentlet: undefined
+    selectedPayload: undefined
 };
 
 export const UVEStore = signalStore(
@@ -63,7 +63,7 @@ export const UVEStore = signalStore(
             },
             setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined) {
                 patchState(store, {
-                    selectedContentlet
+                    selectedPayload: selectedContentlet
                 });
             }
         };
