@@ -108,7 +108,9 @@ import {
     createReorderMenuURL,
     deleteContentletFromContainer,
     getDragItemData,
+    getHrefFromClickTarget,
     getTargetUrl,
+    injectBaseTag,
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
@@ -266,8 +268,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const target = e.target as HTMLAnchorElement;
-        const href = target.href || target.closest('a')?.getAttribute('href');
+        const href = getHrefFromClickTarget(e.target);
         const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
@@ -573,12 +574,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * Inject the editor page script and styles to the VTL content
      *
      * @private
-     * @param {string} rendered
+     * @param {string} html
      * @return {*}  {string}
      * @memberof EditEmaEditorComponent
      */
-    private inyectCodeToVTL(rendered: string): string {
-        const fileWithScript = this.addEditorPageScript(rendered);
+    private inyectCodeToVTL(html: string): string {
+        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
+        const origin = this.window.location.origin;
+        const fileWithBase = injectBaseTag({ html, url, origin });
+        const fileWithScript = this.addEditorPageScript(fileWithBase);
         const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
 
         return fileWithStylesAndScript;
