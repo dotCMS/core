@@ -465,4 +465,229 @@ a2787aa462 Enhance DotRowReorderComponent: add column drag/sort animations
 
 ---
 
-**Last Updated:** 2025-12-28
+## Production Readiness Plan
+
+### 🔴 CRITICAL (Block Production Release)
+
+These issues **must** be fixed before production:
+
+#### 1. Missing "Edit All Pages vs This Page" Dialog ⚠️ **HIGH RISK**
+**Location:** [`dot-uve-actions-handler.service.ts:235-236`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-actions-handler/dot-uve-actions-handler.service.ts)
+
+**Current Code:**
+```typescript
+[DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
+    dialog.editContentlet({ ...contentlet, clientAction: action });
+}
+```
+
+**Problem:** Users can accidentally edit global content when they only intended to change it on one page.
+
+**Solution:** Reuse existing logic from [`edit-ema-editor.component.ts:1028-1056`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/edit-ema-editor.component.ts) `handleEditContentlet` method:
+- Check `contentlet.onNumberOfPages`
+- If > 1, show `DotCopyContentModalService` dialog
+- If user selects "This Page", copy content before editing
+- If content only on current page, skip dialog and go straight to edit
+
+**Impact:** Users could accidentally modify content globally affecting all pages.
+
+---
+
+#### 2. "Rules" Feature Not Loading
+**Issue:** Unknown if regression from refactor or dev server issue.
+
+**Action Items:**
+- [ ] Test in production build (not just dev server on port 4200)
+- [ ] Test in full dotCMS environment (port 8080)
+- [ ] Check if refactor broke rules functionality
+- [ ] Verify proxy/routing configuration
+- [ ] Fix or document known limitation
+
+**Impact:** Feature may be completely broken in production.
+
+---
+
+#### 3. Column Offset Preservation Bug
+**Location:** [`dot-row-reorder.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-palette/components/dot-row-reorder/dot-row-reorder.component.ts)
+
+**Issue:** When reordering columns, offset values are lost. Logic only calculates based on width, not preserving offset configuration.
+
+**Action Items:**
+- [ ] Review column reorder logic
+- [ ] Preserve offset values during reorder
+- [ ] Test edge cases (columns with various offset values)
+- [ ] Document expected behavior
+
+**Impact:** User configuration lost during reordering operations.
+
+---
+
+#### 4. Comprehensive Regression Testing
+**Issue:** Major refactor requires full testing before release.
+
+**Critical Test Areas:**
+- [ ] Page loading and rendering
+- [ ] Content drag-and-drop from palette
+- [ ] Inline editing (text, WYSIWYG)
+- [ ] Add/remove contentlets
+- [ ] Container operations
+- [ ] Delete contentlets
+- [ ] Page saving
+- [ ] Publish/unpublish workflows
+- [ ] Multi-language support
+- [ ] Permissions enforcement
+- [ ] SEO tools integration
+- [ ] Block editor integration
+- [ ] Form editing
+- [ ] Template changes
+- [ ] Device/persona switching
+
+**Impact:** Risk of breaking existing functionality.
+
+---
+
+### 🟠 HIGH PRIORITY (Should Fix Before Release)
+
+#### 5. Code Architecture Cleanup
+
+**5a. Consolidate Zoom Service into UVEStore**
+- **Location:** [`dot-uve-zoom.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-zoom/dot-uve-zoom.service.ts)
+- **Action:** Move logic into [`dot-uve.store.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/dot-uve.store.ts), remove service abstraction
+- **Why:** Reduces unnecessary service layer, aligns with store pattern
+
+**5b. Move `updateRows` Method**
+- **Current:** [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts)
+- **Should be:** [`withLayout.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/layout/withLayout.ts)
+- **Why:** Proper separation of concerns - layout operations don't belong in save feature
+
+---
+
+#### 6. Unit Testing (Zero Coverage Currently)
+
+**Services (3 after zoom consolidation):**
+- [ ] `DotUveActionsHandlerService` - Complex action routing logic
+- [ ] `DotUveBridgeService` - PostMessage communication
+- [ ] `DotUveDragDropService` - Drag-and-drop logic
+
+**Components:**
+- [ ] `DotUveIframeComponent` - Iframe with zoom support
+- [ ] `DotUveZoomControlsComponent` - Zoom UI controls
+- [ ] `DotRowReorderComponent` - Row/column reordering
+
+**Store:**
+- [ ] Zoom logic in UVEStore (after consolidation)
+- [ ] Update existing tests for refactored `EditEmaEditor`
+
+**Impact:** No test coverage means high risk of regressions.
+
+---
+
+#### 7. Internationalization (i18n)
+**Issue:** All new UI components have hardcoded English text.
+
+**Action Items:**
+- [ ] Add message keys to `webapp/WEB-INF/messages/Language.properties`
+- [ ] Replace all hardcoded strings in new components
+- [ ] Test with different locales
+- [ ] Verify all user-facing text is translatable
+
+**Affected Components:**
+- `DotUveZoomControlsComponent`
+- `DotRowReorderComponent`
+- `DotUveIframeComponent`
+- Right sidebar empty state
+- All new service error messages
+
+**Impact:** Product not usable in non-English locales.
+
+---
+
+### 🟡 MEDIUM PRIORITY (Polish & UX)
+
+#### 8. Code Cleanup
+**Found Issues:**
+- **Console statements:** 23 `console.*` calls found (most are `console.error` for error handling - acceptable, but some `console.warn` should be removed)
+- **TODO comments:** 3 TODOs found:
+  - `dot-uve.store.ts:39` - "TODO: remove when the unit tests are fixed"
+  - `inline-edit.service.ts:237` - Format handling TODO
+  - `dot-ema-dialog.component.ts:408` - Emit function TODO
+- **Linting:** No current linting errors ✅
+
+**Action Items:**
+- [ ] Remove `console.log`/`console.debug` statements (keep `console.error` for error handling)
+- [ ] Remove `any` types where possible
+- [ ] Clean up commented code
+- [ ] Address or remove TODO comments
+
+---
+
+#### 9. Error Handling & Loading States
+- [ ] Review all new services for proper error handling
+- [ ] Add loading states during operations
+- [ ] Ensure proper error messages to users
+- [ ] Check for memory leaks (subscriptions, event listeners)
+
+---
+
+### 🟢 LOW PRIORITY (Nice to Have)
+
+#### 10. Documentation
+- [ ] JSDoc comments for service methods
+- [ ] Component input/output documentation
+- [ ] Architecture diagram showing service relationships
+
+#### 11. Accessibility
+- [ ] Keyboard navigation for drag-and-drop
+- [ ] ARIA labels for interactive elements
+- [ ] Screen reader testing
+
+#### 12. Browser Compatibility
+- [ ] Test in Chrome, Firefox, Safari, Edge
+- [ ] Verify zoom functionality across browsers
+- [ ] Test drag-and-drop across browsers
+
+---
+
+## Implementation Priority
+
+### Phase 1: Critical Fixes (Week 1)
+1. Fix "All Pages vs This Page" dialog
+2. Investigate and fix "Rules" feature
+3. Fix column offset preservation
+4. Begin regression testing
+
+### Phase 2: Architecture & Testing (Week 2)
+1. Consolidate zoom service into store
+2. Move `updateRows` to `withLayout.ts`
+3. Write unit tests for services
+4. Write unit tests for components
+
+### Phase 3: Polish & i18n (Week 3)
+1. Add i18n support
+2. UI/UX improvements
+3. Code cleanup
+4. Error handling improvements
+
+### Phase 4: Final QA (Week 4)
+1. Complete regression testing
+2. Accessibility audit
+3. Browser compatibility testing
+4. Documentation
+
+---
+
+## Risk Assessment
+
+| Risk | Severity | Likelihood | Mitigation |
+|------|----------|------------|------------|
+| Missing dialog causes data loss | 🔴 High | Medium | Fix in Phase 1 |
+| Rules feature broken in production | 🔴 High | Unknown | Test immediately |
+| Column offset bug loses user config | 🔴 High | High | Fix in Phase 1 |
+| Regression in existing features | 🔴 High | Medium | Comprehensive testing |
+| No test coverage | 🟠 Medium | High | Add tests in Phase 2 |
+| i18n missing | 🟠 Medium | High | Add in Phase 3 |
+| Code quality issues | 🟡 Low | High | Cleanup in Phase 3 |
+
+---
+
+**Last Updated:** 2025-01-28
