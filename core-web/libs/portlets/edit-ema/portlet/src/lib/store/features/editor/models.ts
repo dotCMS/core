@@ -29,6 +29,9 @@ export interface EditorState {
         open: boolean;
         currentTab: UVE_PALETTE_TABS;
     };
+    rightSidebar: {
+        open: boolean;
+    };
 }
 
 export interface EditorToolbarState {

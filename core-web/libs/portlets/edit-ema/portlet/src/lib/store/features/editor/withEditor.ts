@@ -68,6 +68,9 @@ const initialState: EditorState = {
     palette: {
         open: true,
         currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+    },
+    rightSidebar: {
+        open: false
     }
 };
 
@@ -382,6 +385,11 @@ export function withEditor() {
                 setPaletteOpen(open: boolean) {
                     patchState(store, {
                         palette: { ...store.palette(), open }
+                    });
+                },
+                setRightSidebarOpen(open: boolean) {
+                    patchState(store, {
+                        rightSidebar: { ...store.rightSidebar(), open }
                     });
                 }
             };
