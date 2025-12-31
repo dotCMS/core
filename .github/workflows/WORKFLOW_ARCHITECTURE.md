@@ -39,232 +39,120 @@ Initialize → Build → Test → Semgrep → CLI Build → Deployment → Relea
 
 ## Architecture Diagram
 
+This simplified diagram shows the high-level architecture. See [Workflow Dependency Matrix](#workflow-dependency-matrix) for detailed phase usage by each workflow.
+
 ```mermaid
 graph LR
-    %% Entry Point Triggers
-    subgraph Triggers["🎯 Workflow Triggers"]
-        PR[Pull Request<br/>opened/synchronize]
-        MQ[Merge Queue<br/>checks_requested]
-        Push[Push to main]
-        Nightly[Schedule<br/>3:18 AM daily]
-        LTS[Push to release-*]
-        Manual[Manual Dispatch<br/>workflow_dispatch]
-        IssueOpen[Issue/PR<br/>Events]
-        Scheduled[Scheduled<br/>Events]
+    %% Triggers
+    subgraph Triggers["🎯 Triggers"]
+        T1[PR Events]
+        T2[Push to Main]
+        T3[Scheduled]
+        T4[Manual]
+        T5[Issue Events]
     end
 
     %% Main CICD Workflows
-    subgraph MainCICD["🚀 Main CICD Workflows"]
-        W1[cicd_1-pr.yml<br/>-1 PR Check]
-        W2[cicd_2-merge-queue.yml<br/>-2 Merge Queue]
-        W3[cicd_3-trunk.yml<br/>-3 Trunk Workflow]
-        W4[cicd_4-nightly.yml<br/>-4 Nightly Workflow]
-        W5[cicd_5-lts.yml<br/>LTS Auto-run Tests]
-        W6[cicd_6-release.yml<br/>-6 Release Process]
+    subgraph MainCICD["🚀 Main CICD Workflows<br/><small>All follow: Initialize → Build → Test → Deploy → Finalize</small>"]
+        W1[1-PR Check]
+        W2[2-Merge Queue]
+        W3[3-Trunk]
+        W4[4-Nightly]
+        W5[5-LTS]
+        W6[6-Release]
     end
 
-    %% Component/Phase Workflows
-    subgraph Phases["⚙️ Reusable Phase Workflows"]
-        PInit[cicd_comp_initialize-phase.yml<br/>Initialize]
-        PBuild[cicd_comp_build-phase.yml<br/>Build]
-        PTest[cicd_comp_test-phase.yml<br/>Test]
-        PSemgrep[cicd_comp_semgrep-phase.yml<br/>Semgrep]
-        PCLI[cicd_comp_cli-native-build-phase.yml<br/>CLI Native Build]
-        PDeploy[cicd_comp_deployment-phase.yml<br/>Deployment]
-        PRelPrep[cicd_comp_release-prepare-phase.yml<br/>Release Prepare]
-        PRel[cicd_comp_release-phase.yml<br/>Release]
-        PFinal[cicd_comp_finalize-phase.yml<br/>Finalize]
-        PRNotif[cicd_comp_pr-notifier.yml<br/>PR Notifier]
+    %% Reusable Phases
+    subgraph Phases["⚙️ Reusable Phase Workflows<br/><small>Called by main workflows in various combinations</small>"]
+        PhaseNote[Standard Pattern:<br/>Initialize → Build → Test<br/>→ Semgrep → CLI Build<br/>→ Deploy → Release<br/>→ Finalize → Report]
     end
 
-    %% Supporting Workflows
-    subgraph Support["📊 Supporting Workflows"]
-        Report[cicd_post-workflow-reporting.yml<br/>CICD Reports]
-        RelCLI[cicd_release-cli.yml<br/>Release CLI]
-        ManualSDK[cicd_manual-release-sdks.yml<br/>Manual Release SDKs]
+    %% Actions Layer
+    subgraph Actions["🔧 Composite Actions<br/><small>15+ actions organized by category</small>"]
+        A1[Core CICD:<br/>maven-job, setup-java,<br/>prepare-runner, cleanup-runner]
+        A2[Deployment:<br/>deploy-docker, deploy-jfrog,<br/>deploy-cli-npm, deploy-javadoc]
+        A3[Support:<br/>notify-slack, issue-fetcher,<br/>issue-labeler, sbom-generator]
     end
 
-    %% Issue Management Workflows
-    subgraph Issues["🎫 Issue Management Workflows"]
-        IOpen[issue_open-pr.yml<br/>PR Opened]
-        IMerge[issue_post-pr-merge.yml<br/>Post PR Merge]
-        ILink1[issue_comp_link-issue-to-pr.yml<br/>Link Issue to PR]
-        ILink2[issue_comp_link-pr-to-issue.yml<br/>Link PR to Issue]
-        ILabel[issue_comp_label-conditional-labeling.yml<br/>Conditional Labeling]
-        IRelLabel[issue_comp_release-labeling.yml<br/>Release Labeling]
-        IFrontend[issue_comp_frontend-notify.yml<br/>Frontend Notify]
-        IStale[issue_scheduled_stale-action.yml<br/>Stale Issues]
+    %% Config
+    subgraph Config["📋 Configuration"]
+        C1[test-matrix.yml<br/>filters.yaml]
+        C2[github-teams.json<br/>slack-mappings.json]
     end
 
-    %% Composite Actions
-    subgraph Actions["🔧 Composite Actions"]
-        subgraph CoreCICD["core-cicd/"]
-            AMaven[maven-job/<br/>Maven Build Action]
-            ASetupJava[setup-java/<br/>Java Setup]
-            APrepare[prepare-runner/<br/>Prepare Runner]
-            ACleanup[cleanup-runner/<br/>Cleanup Runner]
-            AApiLimit[api-limits-check/<br/>API Limits]
-            
-            subgraph Deploy["deployment/"]
-                ADepDocker[deploy-docker/<br/>Docker Deploy]
-                ADepJFrog[deploy-jfrog/<br/>JFrog Deploy]
-                ADepCLI[deploy-cli-npm/<br/>CLI NPM]
-                ADepJavadoc[deploy-javadoc/<br/>Javadoc]
-                ADepSDK[deploy-javascript-sdk/<br/>SDK Deploy]
-            end
-            
-            subgraph Notif["notification/"]
-                ASlack[notify-slack/<br/>Slack Notify]
-            end
-        end
-        
-        subgraph IssueAct["issues/"]
-            AFetcher[issue-fetcher/<br/>Issue Fetcher]
-            ALabeler[issue-labeler/<br/>Issue Labeler]
-        end
-        
-        subgraph Security["security/"]
-            AOrgCheck[org-membership-check/<br/>Org Member Check]
-        end
-        
-        subgraph Legacy["legacy-release/"]
-            AChangelog[changelog-report/<br/>Changelog]
-            ARC[rc-changelog/<br/>RC Changelog]
-            ASBOM[sbom-generator/<br/>SBOM Generator]
-        end
+    %% Issue Workflows
+    subgraph Issues["🎫 Issue Management"]
+        I1[PR Opened → Link Issue]
+        I2[PR Merged → Update Issue]
+        I3[Stale Issues]
     end
 
-    %% External Config
-    subgraph Config["📋 Configuration Files"]
-        TestMatrix[test-matrix.yml<br/>Test Configuration]
-        Filters[filters.yaml<br/>Path Filters]
-        Teams[data/github-teams.json<br/>Team Mappings]
-        Slack[data/slack-mappings.json<br/>Slack Mappings]
-    end
-
-    %% Trigger to Workflow connections
-    PR --> W1
-    MQ --> W2
-    Push --> W3
-    Nightly --> W4
-    LTS --> W5
-    Manual --> W6
-    Manual --> RelCLI
-    Manual --> ManualSDK
-    IssueOpen --> IOpen
-    IssueOpen --> IMerge
-    Scheduled --> IStale
-    Scheduled --> W4
-
-    %% CICD Workflow to Phase connections
-    W1 --> PInit
-    W1 --> PBuild
-    W1 --> PTest
-    W1 --> PSemgrep
-    W1 --> PFinal
-    W1 --> PRNotif
-    W1 -.triggers.-> Report
-
-    W2 --> PInit
-    W2 --> PBuild
-    W2 --> PTest
-    W2 --> PFinal
-    W2 -.triggers.-> Report
-
-    W3 --> PInit
-    W3 --> PBuild
-    W3 --> PTest
-    W3 --> PSemgrep
-    W3 --> PCLI
-    W3 --> PDeploy
-    W3 --> PFinal
-    W3 --> Report
-
-    W4 --> PInit
-    W4 --> PBuild
-    W4 --> PTest
-    W4 --> PCLI
-    W4 --> PDeploy
-    W4 --> PFinal
-    W4 --> Report
-
-    W5 --> PInit
-    W5 --> PBuild
-    W5 --> PTest
-    W5 --> PFinal
-
-    W6 --> PInit
-    W6 --> PRelPrep
-    W6 --> PBuild
-    W6 --> PDeploy
-    W6 --> PRel
-    W6 --> PFinal
-
-    %% Phase to Action connections
-    PInit --> APrepare
-    PInit --> ACleanup
-    PInit --> AApiLimit
+    %% Connections - High Level Only
+    T1 --> W1
+    T1 --> W2
+    T2 --> W3
+    T3 --> W4
+    T4 --> W6
+    T5 --> Issues
     
-    PBuild --> AMaven
-    PBuild --> ASetupJava
-    PBuild --> ACleanup
+    MainCICD -.uses.-> Phases
+    Phases -.uses.-> Actions
+    Phases -.reads.-> Config
     
-    PTest --> AMaven
-    PTest --> TestMatrix
-    
-    PSemgrep --> AMaven
-    
-    PCLI --> AMaven
-    PCLI --> ASetupJava
-    
-    PDeploy --> ADepDocker
-    PDeploy --> ADepJFrog
-    PDeploy --> ADepCLI
-    PDeploy --> ADepSDK
-    PDeploy --> ASlack
-    PDeploy --> ACleanup
-    
-    PRelPrep --> ACleanup
-    
-    PRel --> ADepJFrog
-    PRel --> ADepJavadoc
-    PRel --> ASBOM
-    PRel --> IRelLabel
-    
-    PFinal --> AApiLimit
-    
-    Report --> ASlack
+    W1 -.triggers after.-> Report[Post-Workflow<br/>Reporting]
+    W2 -.triggers after.-> Report
 
-    %% Issue workflow connections
-    IOpen --> ILink1
-    IMerge --> ILink2
-    ILink1 --> AFetcher
-    ILink1 --> ALabeler
-    ILink2 --> AFetcher
-
-    %% Config dependencies
-    PInit --> Filters
-    PTest --> TestMatrix
-    ASlack --> Slack
-    IFrontend --> Teams
+    %% Note about relationships
+    Note1[<b>Note:</b> Each main workflow calls<br/>different phase combinations.<br/>See dependency matrix below.]
 
     %% Styling
     classDef trigger fill:#e1f5ff,stroke:#01579b,stroke-width:2px
     classDef main fill:#fff3e0,stroke:#e65100,stroke-width:3px
     classDef phase fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    classDef support fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px
-    classDef issue fill:#fce4ec,stroke:#c2185b,stroke-width:2px
     classDef action fill:#e3f2fd,stroke:#1565c0,stroke-width:1px
     classDef config fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef issue fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef note fill:#f5f5f5,stroke:#666,stroke-width:1px,stroke-dasharray:5
 
-    class PR,MQ,Push,Nightly,LTS,Manual,IssueOpen,Scheduled trigger
+    class T1,T2,T3,T4,T5 trigger
     class W1,W2,W3,W4,W5,W6 main
-    class PInit,PBuild,PTest,PSemgrep,PCLI,PDeploy,PRelPrep,PRel,PFinal,PRNotif phase
-    class Report,RelCLI,ManualSDK support
-    class IOpen,IMerge,ILink1,ILink2,ILabel,IRelLabel,IFrontend,IStale issue
-    class AMaven,ASetupJava,APrepare,ACleanup,AApiLimit,ADepDocker,ADepJFrog,ADepCLI,ADepJavadoc,ADepSDK,ASlack,AFetcher,ALabeler,AOrgCheck,AChangelog,ARC,ASBOM action
-    class TestMatrix,Filters,Teams,Slack config
+    class PhaseNote phase
+    class A1,A2,A3 action
+    class C1,C2 config
+    class I1,I2,I3 issue
+    class Report,Note1 note
 ```
+
+### Architecture Layers Explained
+
+**Layer 1: Triggers** → Events that start workflows (PR, push, schedule, manual)
+
+**Layer 2: Main Workflows** → Top-level orchestrators (6 workflows)
+- Each workflow composes different phase combinations
+- Follow standard pattern: Initialize → Build → Test → Deploy → Finalize
+
+**Layer 3: Reusable Phases** → Modular workflow components (10 phases)
+- Single source of truth for each phase
+- Used by multiple main workflows
+- See [dependency matrix](#workflow-dependency-matrix) for usage
+
+**Layer 4: Composite Actions** → Atomic operations (15+ actions)
+- Low-level building blocks
+- Called by phases
+- Categories: Core CICD, Deployment, Support
+
+**Layer 5: Configuration** → Data-driven behavior
+- test-matrix.yml: Test suite definitions
+- filters.yaml: Change detection rules
+- JSON files: Team and Slack mappings
+
+### Detailed Component Reference
+
+For complete details on individual components:
+- [Reusable Workflow Phases](#reusable-workflow-phases) - All 10 phase workflows with purposes
+- [Custom Actions](#custom-actions) - All 15+ composite actions organized by category
+- [Workflow Dependency Matrix](#workflow-dependency-matrix) - Which workflows use which phases
+- [Detailed Flow Diagrams](#detailed-flow-diagrams) - Step-by-step flows for each workflow
 
 ## Workflow Configurations (Path to Main Branch)
 
