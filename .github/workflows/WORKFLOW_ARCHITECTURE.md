@@ -42,89 +42,86 @@ Initialize → Build → Test → Semgrep → CLI Build → Deployment → Relea
 This simplified diagram shows the high-level architecture. See [Workflow Dependency Matrix](#workflow-dependency-matrix) for detailed phase usage by each workflow.
 
 ```mermaid
-graph LR
-    %% Triggers
+graph TB
+    %% Triggers Layer
     subgraph Triggers[" "]
-        direction TB
-        TTitle["🎯 Triggers"]
+        direction LR
+        TTitle["🎯 Workflow Triggers"]
         T1[PR Events]
         T2[Push to Main]
         T3[Scheduled]
         T4[Manual]
         T5[Issue Events]
-        TTitle ~~~ T1
     end
 
-    %% Main CICD Workflows
+    %% Main CICD Workflows Layer
     subgraph MainCICD[" "]
-        direction TB
+        direction LR
         WTitle["🚀 Main CICD Workflows"]
-        WNote["All follow: Initialize → Build → Test → Deploy → Finalize"]
         W1[1-PR Check]
         W2[2-Merge Queue]
         W3[3-Trunk]
         W4[4-Nightly]
         W5[5-LTS]
         W6[6-Release]
-        WTitle ~~~ WNote ~~~ W1
     end
+    
+    WNote["All follow standard pattern: Initialize → Build → Test → Deploy → Finalize"]
 
-    %% Reusable Phases
+    %% Reusable Phases Layer
     subgraph Phases[" "]
-        direction TB
+        direction LR
         PTitle["⚙️ Reusable Phase Workflows"]
-        PNote1["Called by main workflows in various combinations"]
-        PhaseNote["Standard Pattern:<br/>Initialize → Build → Test<br/>→ Semgrep → CLI Build<br/>→ Deploy → Release<br/>→ Finalize → Report"]
-        PTitle ~~~ PNote1 ~~~ PhaseNote
+        PhaseList["10 Phase Workflows:<br/>Initialize • Build • Test • Semgrep • CLI Build<br/>Deploy • Release Prepare • Release • Finalize • PR Notifier"]
     end
 
     %% Actions Layer
     subgraph Actions[" "]
-        direction TB
+        direction LR
         ATitle["🔧 Composite Actions"]
-        ANote["15+ actions organized by category"]
-        A1["Core CICD:<br/>maven-job, setup-java,<br/>prepare-runner, cleanup-runner"]
-        A2["Deployment:<br/>deploy-docker, deploy-jfrog,<br/>deploy-cli-npm, deploy-javadoc"]
-        A3["Support:<br/>notify-slack, issue-fetcher,<br/>issue-labeler, sbom-generator"]
-        ATitle ~~~ ANote ~~~ A1
+        A1["Core CICD:<br/>maven-job • setup-java<br/>prepare-runner • cleanup-runner"]
+        A2["Deployment:<br/>deploy-docker • deploy-jfrog<br/>deploy-cli-npm • deploy-javadoc"]
+        A3["Support:<br/>notify-slack • issue-fetcher<br/>issue-labeler • sbom-generator"]
     end
 
-    %% Config
+    %% Configuration Layer
     subgraph Config[" "]
-        direction TB
-        CTitle["📋 Configuration"]
-        C1[test-matrix.yml<br/>filters.yaml]
-        C2[github-teams.json<br/>slack-mappings.json]
-        CTitle ~~~ C1
+        direction LR
+        CTitle["📋 Configuration Files"]
+        C1[test-matrix.yml • filters.yaml]
+        C2[github-teams.json • slack-mappings.json]
     end
 
-    %% Issue Workflows
+    %% Side: Issue Management
     subgraph Issues[" "]
         direction TB
         ITitle["🎫 Issue Management"]
         I1[PR Opened → Link Issue]
         I2[PR Merged → Update Issue]
-        I3[Stale Issues]
-        ITitle ~~~ I1
+        I3[Stale Issues Cleanup]
     end
 
-    %% Connections - High Level Only
-    T1 --> W1
-    T1 --> W2
-    T2 --> W3
-    T3 --> W4
-    T4 --> W6
-    T5 --> Issues
+    %% Vertical Flow - Main Pipeline
+    Triggers --> MainCICD
+    MainCICD --> WNote
+    WNote --> Phases
+    Phases --> Actions
+    Actions --> Config
     
-    MainCICD -.uses.-> Phases
-    Phases -.uses.-> Actions
-    Phases -.reads.-> Config
-    
+    %% Side Flows
+    T5 -.->Issues
     W1 -.triggers after.-> Report[Post-Workflow<br/>Reporting]
     W2 -.triggers after.-> Report
 
-    %% Note about relationships
-    Note1["📌 Note: Each main workflow calls<br/>different phase combinations.<br/>See dependency matrix below."]
+    %% Specific trigger connections
+    T1 -.->W1
+    T1 -.->W2
+    T2 -.->W3
+    T3 -.->W4
+    T4 -.->W6
+
+    %% Note
+    Config --> Note1["📌 See tables below for:<br/>• Which workflows use which phases<br/>• Detailed flow diagrams for each workflow<br/>• Complete action reference"]
 
     %% Styling
     classDef trigger fill:#e1f5ff,stroke:#01579b,stroke-width:2px
@@ -134,18 +131,16 @@ graph LR
     classDef config fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef issue fill:#fce4ec,stroke:#c2185b,stroke-width:2px
     classDef note fill:#f5f5f5,stroke:#666,stroke-width:1px,stroke-dasharray:5
-    classDef title fill:#ffffff,stroke:none,font-weight:bold,font-size:16px
-    classDef subtitle fill:#ffffff,stroke:none,font-size:12px,font-style:italic
+    classDef title fill:#ffffff,stroke:none,font-weight:bold,font-size:14px
 
     class T1,T2,T3,T4,T5 trigger
     class W1,W2,W3,W4,W5,W6 main
-    class PhaseNote phase
+    class PhaseList phase
     class A1,A2,A3 action
     class C1,C2 config
     class I1,I2,I3 issue
-    class Report,Note1 note
+    class Report,Note1,WNote note
     class TTitle,WTitle,PTitle,ATitle,CTitle,ITitle title
-    class WNote,PNote1,ANote subtitle
 ```
 
 ### Architecture Layers Explained
