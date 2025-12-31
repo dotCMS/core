@@ -482,75 +482,76 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.#contentletForm.set(this.#fb.group(formControls));
     });
 
+    /**
+     * Save the contentlet form with the given contentlet
+     *
+     * @private
+     * @param {DotCMSContentlet | ContentletPayload} contentlet - The contentlet to save
+     * @memberof EditEmaEditorComponent
+     */
+    private saveContentletForm(contentlet: DotCMSContentlet | ContentletPayload): void {
+        const form = this.$contentletForm();
+        if (!form) {
+            return;
+        }
+
+        this.#isSubmitting.set(true);
+        this.dotWorkflowActionsFireService.saveContentlet({
+            ...form.value,
+            inode: contentlet.inode
+        }).subscribe({
+            next: () => {
+                this.#isSubmitting.set(false);
+                this.reloadPage();
+            },
+            error: () => {
+                this.#isSubmitting.set(false);
+            }
+        });
+    }
+
     protected onFormSubmit(): void {
         const { container, contentlet } = this.$selectedPayload();
 
-        const onNumberOfPages = Number(contentlet.onNumberOfPages);
+        const onNumberOfPages = Number(contentlet.onNumberOfPages || '1');
 
         // If the contentlet is on only one page, we can save it directly
-        if (onNumberOfPages === 1) {
-            const form = this.$contentletForm();
-            if (form) {
-                this.#isSubmitting.set(true);
-                this.dotWorkflowActionsFireService.saveContentlet({
-                    ...form.value,
-                    inode: contentlet.inode
-                }).subscribe({
-                    next: () => {
-                        this.#isSubmitting.set(false);
-                        this.reloadPage();
-                    },
-                    error: () => {
-                        this.#isSubmitting.set(false);
-                    }
-                });
-            }
-
+        if (onNumberOfPages <= 1) {
+            this.saveContentletForm(contentlet);
             return;
         }
 
         const currentTreeNode = this.uveStore.getCurrentTreeNode(container, contentlet);
 
         this.dotCopyContentModalService
-        .open()
-        .pipe(
-            switchMap(({ shouldCopy }) => {
-                if (!shouldCopy) {
-                    return of(this.$contentletForm()?.value);
+            .open()
+            .pipe(
+                switchMap(({ shouldCopy }) => {
+                    if (!shouldCopy) {
+                        return of(contentlet);
+                    }
+
+                    this.dialog.showLoadingIframe(contentlet.title);
+                    return this.handleCopyContent(currentTreeNode);
+                })
+            )
+            .subscribe((resultContentlet: DotCMSContentlet) => {
+                // Only update selected contentlet if content was actually copied (new inode)
+                if (resultContentlet.inode !== contentlet.inode) {
+                    this.uveStore.setSelectedContentlet({
+                        container,
+                        contentlet: {
+                            identifier: resultContentlet.identifier,
+                            inode: resultContentlet.inode,
+                            title: resultContentlet.title,
+                            contentType: resultContentlet.contentType,
+                            onNumberOfPages: 1 // Because we just copied the contentlet to the same page
+                        } as ContentletPayload
+                    } as Pick<ClientData, 'container' | 'contentlet'>);
                 }
 
-                return this.handleCopyContent(currentTreeNode);
-            })
-        )
-        .subscribe((contentlet: DotCMSContentlet) => {
-            this.uveStore.setSelectedContentlet({
-                container,
-                contentlet: {
-                    identifier: contentlet.identifier,
-                    inode: contentlet.inode,
-                    title: contentlet.title,
-                    contentType: contentlet.contentType,
-                    onNumberOfPages: 1 // Because we just copied the contentlet to the same page
-                } as ContentletPayload
-            } as Pick<ClientData, 'container' | 'contentlet'>);
-
-            const form = this.$contentletForm();
-            if (form) {
-                this.#isSubmitting.set(true);
-                this.dotWorkflowActionsFireService.saveContentlet({
-                    ...form.value,
-                    inode: contentlet.inode
-                }).subscribe({
-                    next: () => {
-                        this.#isSubmitting.set(false);
-                        this.reloadPage();
-                    },
-                    error: () => {
-                        this.#isSubmitting.set(false);
-                    }
-                });
-            }
-        });
+                this.saveContentletForm(resultContentlet);
+            });
 
     }
 
