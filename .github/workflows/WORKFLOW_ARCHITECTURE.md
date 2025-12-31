@@ -44,47 +44,68 @@ This simplified diagram shows the high-level architecture. See [Workflow Depende
 ```mermaid
 graph LR
     %% Triggers
-    subgraph Triggers["🎯 Triggers"]
+    subgraph Triggers[" "]
+        direction TB
+        TTitle["🎯 Triggers"]
         T1[PR Events]
         T2[Push to Main]
         T3[Scheduled]
         T4[Manual]
         T5[Issue Events]
+        TTitle ~~~ T1
     end
 
     %% Main CICD Workflows
-    subgraph MainCICD["🚀 Main CICD Workflows<br/><small>All follow: Initialize → Build → Test → Deploy → Finalize</small>"]
+    subgraph MainCICD[" "]
+        direction TB
+        WTitle["🚀 Main CICD Workflows"]
+        WNote["All follow: Initialize → Build → Test → Deploy → Finalize"]
         W1[1-PR Check]
         W2[2-Merge Queue]
         W3[3-Trunk]
         W4[4-Nightly]
         W5[5-LTS]
         W6[6-Release]
+        WTitle ~~~ WNote ~~~ W1
     end
 
     %% Reusable Phases
-    subgraph Phases["⚙️ Reusable Phase Workflows<br/><small>Called by main workflows in various combinations</small>"]
-        PhaseNote[Standard Pattern:<br/>Initialize → Build → Test<br/>→ Semgrep → CLI Build<br/>→ Deploy → Release<br/>→ Finalize → Report]
+    subgraph Phases[" "]
+        direction TB
+        PTitle["⚙️ Reusable Phase Workflows"]
+        PNote1["Called by main workflows in various combinations"]
+        PhaseNote["Standard Pattern:<br/>Initialize → Build → Test<br/>→ Semgrep → CLI Build<br/>→ Deploy → Release<br/>→ Finalize → Report"]
+        PTitle ~~~ PNote1 ~~~ PhaseNote
     end
 
     %% Actions Layer
-    subgraph Actions["🔧 Composite Actions<br/><small>15+ actions organized by category</small>"]
-        A1[Core CICD:<br/>maven-job, setup-java,<br/>prepare-runner, cleanup-runner]
-        A2[Deployment:<br/>deploy-docker, deploy-jfrog,<br/>deploy-cli-npm, deploy-javadoc]
-        A3[Support:<br/>notify-slack, issue-fetcher,<br/>issue-labeler, sbom-generator]
+    subgraph Actions[" "]
+        direction TB
+        ATitle["🔧 Composite Actions"]
+        ANote["15+ actions organized by category"]
+        A1["Core CICD:<br/>maven-job, setup-java,<br/>prepare-runner, cleanup-runner"]
+        A2["Deployment:<br/>deploy-docker, deploy-jfrog,<br/>deploy-cli-npm, deploy-javadoc"]
+        A3["Support:<br/>notify-slack, issue-fetcher,<br/>issue-labeler, sbom-generator"]
+        ATitle ~~~ ANote ~~~ A1
     end
 
     %% Config
-    subgraph Config["📋 Configuration"]
+    subgraph Config[" "]
+        direction TB
+        CTitle["📋 Configuration"]
         C1[test-matrix.yml<br/>filters.yaml]
         C2[github-teams.json<br/>slack-mappings.json]
+        CTitle ~~~ C1
     end
 
     %% Issue Workflows
-    subgraph Issues["🎫 Issue Management"]
+    subgraph Issues[" "]
+        direction TB
+        ITitle["🎫 Issue Management"]
         I1[PR Opened → Link Issue]
         I2[PR Merged → Update Issue]
         I3[Stale Issues]
+        ITitle ~~~ I1
     end
 
     %% Connections - High Level Only
@@ -103,7 +124,7 @@ graph LR
     W2 -.triggers after.-> Report
 
     %% Note about relationships
-    Note1[<b>Note:</b> Each main workflow calls<br/>different phase combinations.<br/>See dependency matrix below.]
+    Note1["📌 Note: Each main workflow calls<br/>different phase combinations.<br/>See dependency matrix below."]
 
     %% Styling
     classDef trigger fill:#e1f5ff,stroke:#01579b,stroke-width:2px
@@ -113,6 +134,8 @@ graph LR
     classDef config fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef issue fill:#fce4ec,stroke:#c2185b,stroke-width:2px
     classDef note fill:#f5f5f5,stroke:#666,stroke-width:1px,stroke-dasharray:5
+    classDef title fill:#ffffff,stroke:none,font-weight:bold,font-size:16px
+    classDef subtitle fill:#ffffff,stroke:none,font-size:12px,font-style:italic
 
     class T1,T2,T3,T4,T5 trigger
     class W1,W2,W3,W4,W5,W6 main
@@ -121,6 +144,8 @@ graph LR
     class C1,C2 config
     class I1,I2,I3 issue
     class Report,Note1 note
+    class TTitle,WTitle,PTitle,ATitle,CTitle,ITitle title
+    class WNote,PNote1,ANote subtitle
 ```
 
 ### Architecture Layers Explained
