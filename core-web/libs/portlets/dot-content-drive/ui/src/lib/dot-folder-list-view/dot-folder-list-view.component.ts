@@ -45,7 +45,7 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
-    styleUrl: './dot-folder-list-view.component.scss',
+
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'w-full h-full min-h-0 block' }
 })

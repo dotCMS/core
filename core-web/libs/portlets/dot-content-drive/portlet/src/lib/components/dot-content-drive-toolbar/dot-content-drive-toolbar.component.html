@@ -1,11 +1,21 @@
-<p-toolbar class="dot-content-drive-toolbar">
-    <div class="p-toolbar-group">
+<p-toolbar class="bg-[--color-palette-gray-100] border-none border-b border-[--color-palette-gray-300] gap-1 h-full px-3 py-1 justify-start">
+    <div 
+        class="grid w-full items-center transition-all duration-300 ease-in-out gap-y-1"
+        [class.gap-x-1]="!$treeExpanded()"
+        [class.gap-x-0]="$treeExpanded()"
+        [class]="'grid-cols-[min-content_1fr] grid-rows-2'">
+        
         <dot-content-drive-tree-toggler
             data-testid="tree-toggler"
-            [class.sidebar-expanded]="$treeExpanded()" />
+            class="flex transition-all duration-300 ease-in-out row-start-1 col-start-1"
+            [class.invisible]="$treeExpanded()"
+            [class.w-0]="$treeExpanded()"
+            [class.min-w-0]="$treeExpanded()" />
 
-        <div class="p-toolbar-group-top">
-            <dot-content-drive-search-input data-testid="search-input" class="search-input" />
+        <div 
+            class="grid items-center w-full gap-1 row-start-1 col-start-2"
+            [class]="'grid-cols-[repeat(2,minmax(4.5rem,14rem))_1fr]'">
+            <dot-content-drive-search-input data-testid="search-input" class="col-span-2" />
 
             @if ($displayButton()) {
                 <p-button
@@ -13,7 +23,7 @@
                     [label]="'content-drive.add-new' | dm"
                     icon="pi pi-chevron-down"
                     iconPos="right"
-                    class="add-new-button"
+                    class="justify-self-end"
                     data-testid="add-new-button"
                     (click)="menu.toggle($event)"
                     #button />
@@ -22,11 +32,14 @@
             @if ($displayActions()) {
                 <dot-content-drive-workflow-actions
                     [@slideAnimation]
+                    class="justify-self-end"
                     data-testid="workflow-actions" />
             }
         </div>
 
-        <div class="p-toolbar-group-bottom">
+        <div 
+            class="grid w-full gap-1 row-start-2 col-start-2"
+            [class]="'grid-cols-[repeat(3,minmax(4.5rem,14rem))_1fr]'">
             <dot-content-drive-base-type-selector data-testid="base-type-selector" />
             <dot-content-drive-content-type-field data-testid="content-type-field" />
             <dot-content-drive-language-field data-testid="language-field" />

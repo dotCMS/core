@@ -7,7 +7,6 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 @Component({
     selector: 'dot-content-drive-tree-toggler',
     templateUrl: './dot-content-drive-tree-toggler.component.html',
-    styleUrl: './dot-content-drive-tree-toggler.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     hostDirectives: [ButtonDirective],
     host: {
