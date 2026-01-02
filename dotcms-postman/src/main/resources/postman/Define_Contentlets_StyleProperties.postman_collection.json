@@ -60,7 +60,6 @@
                   "    pm.expect(jsonData.errors.length).to.eql(0);",
                   "    pm.collectionVariables.set(\"pageIdentifier\", jsonData.entity.identifier);",
                   "    pm.collectionVariables.set(\"pageName\", jsonData.entity.name);",
-                  "    pm.collectionVariables.set(\"pagePath\", jsonData.entity.path);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -118,7 +117,6 @@
                   "    pm.expect(jsonData.errors.length).to.eql(0);",
                   "    pm.collectionVariables.set(\"pageIdentifier2\", jsonData.entity.identifier);",
                   "    pm.collectionVariables.set(\"pageName2\", jsonData.entity.name);",
-                  "    pm.collectionVariables.set(\"pagePath2\", jsonData.entity.path);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -938,12 +936,16 @@
                 "exec": [
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
                   "",
+                  "// wait 1 sec before execute",
+                  "setTimeout(function(){}, 1000);",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
                   "// Parse JSON",
                   "const json = pm.response.json();",
+                  "console.log(\"DEBUG RESPONSE: \" + JSON.stringify(json, null, 2));",
                   "",
                   "pm.test(\"Validate Contentlet_1 in Page_1 has correct styleProperties\", function () {",
                   "    // filter by container",
@@ -991,12 +993,16 @@
                 "exec": [
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
                   "",
+                  "// wait 1 sec before execute",
+                  "setTimeout(function(){}, 1000);",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
                   "// Parse JSON",
                   "const json = pm.response.json();",
+                  "console.log(\"DEBUG RESPONSE 2: \" + JSON.stringify(json, null, 2));",
                   "",
                   "pm.test(\"Validate Contentlet_1 in Page_2 has correct styleProperties\", function () {",
                   "    // filter by container",
@@ -1097,12 +1103,16 @@
                 "exec": [
                   "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
                   "",
+                  "// wait 1 sec before execute",
+                  "setTimeout(function(){}, 1000);",
+                  "",
                   "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
                   "// Parse JSON",
                   "const json = pm.response.json();",
+                  "console.log(\"DEBUG RESPONSE 3: \" + JSON.stringify(json, null, 2));",
                   "",
                   "pm.test(`Validate ${contentlet1} does not have styleProperties`, function () {",
                   "    // filter by container",
@@ -1233,10 +1243,6 @@
       "value": ""
     },
     {
-      "key": "pagePath",
-      "value": ""
-    },
-    {
       "key": "Contentlet_1",
       "value": ""
     },
@@ -1245,15 +1251,7 @@
       "value": ""
     },
     {
-      "key": "Contentlet_3",
-      "value": ""
-    },
-    {
       "key": "pageIdentifier2",
-      "value": ""
-    },
-    {
-      "key": "pagePath2",
       "value": ""
     },
     {
@@ -1266,10 +1264,6 @@
     },
     {
       "key": "containerId",
-      "value": ""
-    },
-    {
-      "key": "stylePropertiesBody",
       "value": ""
     },
     {
