@@ -4359,7 +4359,8 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         MultiTree retrieved = retrieveMultiTree(0);
 
-        assertEquals("Style properties should be empty", Map.of(), retrieved.getStyleProperties());
+        assertNull("NULL style properties should be persisted",
+                retrieved.getStyleProperties());
     }
 
     /**
@@ -4375,7 +4376,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         MultiTree retrieved = retrieveMultiTree(0);
 
         assertNotNull("Retrieved multiTree should not be null", retrieved);
-        assertEquals("Style properties should be empty", Map.of(), retrieved.getStyleProperties());
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
 
     /**
@@ -4392,7 +4393,7 @@ public class MultiTreeAPITest extends IntegrationTestBase {
         MultiTree retrieved = retrieveMultiTree(0);
 
         assertNotNull("Retrieved multiTree should not be null", retrieved);
-        assertEquals("Style properties should be empty", Map.of(), retrieved.getStyleProperties());
+        assertNull("Style properties should be null", retrieved.getStyleProperties());
     }
 
 }

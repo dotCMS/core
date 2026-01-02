@@ -76,7 +76,7 @@ public class MultiTree implements Serializable {
         this.treeOrder    = Math.max(treeOrder, 0);
         this.personalization = personalization;
         this.variantId = variantId;
-        this.styleProperties = UtilMethods.isSet(styleProperties) ? Map.copyOf(styleProperties) : Map.of();
+        this.styleProperties = UtilMethods.isSet(styleProperties) ? Map.copyOf(styleProperties) : null;
     }
 
     /** full constructor */
