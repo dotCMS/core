@@ -14,12 +14,12 @@ import { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TreeModule, TreeNodeExpandEvent } from 'primeng/tree';
 
-import { TruncatePathPipe } from '../../../../../../pipes/truncate-path.pipe';
-import { SYSTEM_HOST_ID } from '../../store/select-existing-file.store';
+import { DotTruncatePathPipe } from '../../../../pipes/dot-truncate-path/dot-truncate-path.pipe';
+import { SYSTEM_HOST_ID } from '../../store/browser.store';
 
 @Component({
     selector: 'dot-sidebar',
-    imports: [TreeModule, TruncatePathPipe, SkeletonModule],
+    imports: [TreeModule, DotTruncatePathPipe, SkeletonModule],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
