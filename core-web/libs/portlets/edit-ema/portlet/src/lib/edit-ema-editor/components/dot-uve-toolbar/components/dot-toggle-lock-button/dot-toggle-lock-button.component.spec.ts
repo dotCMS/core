@@ -1,7 +1,5 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { signal } from '@angular/core';
-
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -9,28 +7,15 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotToggleLockButtonComponent } from './dot-toggle-lock-button.component';
+import {
+    DotToggleLockButtonComponent,
+    ToggleLockEvent,
+    ToggleLockOptions
+} from './dot-toggle-lock-button.component';
 
-import { ToggleLockOptions, UnlockOptions } from '../../../../../shared/models';
-import { UVEStore } from '../../../../../store/dot-uve.store';
-
-describe('DotToggleLockButtonComponent', () => {
+describe('DotToggleLockButtonComponent - Presentational', () => {
     let spectator: Spectator<DotToggleLockButtonComponent>;
-    let store: Partial<InstanceType<typeof UVEStore>>;
-
-    const mockToggleLockOptions = signal<ToggleLockOptions | null>({
-        inode: 'test-inode',
-        isLocked: false,
-        lockedBy: '',
-        canLock: true,
-        isLockedByCurrentUser: false,
-        showBanner: false,
-        showOverlay: false
-    });
-
-    const mockUnlockButton = signal<UnlockOptions | null>(null);
-    const mockLockLoading = signal<boolean>(false);
-    const mockToggleLock = jest.fn();
+    let emittedEvents: ToggleLockEvent[] = [];
 
     const createComponent = createComponentFactory({
         component: DotToggleLockButtonComponent,
@@ -40,7 +25,10 @@ describe('DotToggleLockButtonComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'uve.editor.toggle.lock.button.unlocked': 'Unlock Page',
-                    'uve.editor.toggle.lock.button.locked': 'Lock Page'
+                    'uve.editor.toggle.lock.button.locked': 'Lock Page',
+                    'editpage.toolbar.page.release.lock.locked.by.user':
+                        'Page locked by {0}. Click to take over the lock.',
+                    'editpage.locked-by': 'Page locked by {0}'
                 })
             }
         ],
@@ -48,42 +36,35 @@ describe('DotToggleLockButtonComponent', () => {
     });
 
     beforeEach(() => {
-        store = {
-            $toggleLockOptions: mockToggleLockOptions,
-            $unlockButton: mockUnlockButton,
-            lockLoading: mockLockLoading,
-            toggleLock: mockToggleLock
-        };
+        emittedEvents = [];
+        spectator = createComponent();
 
-        spectator = createComponent({
-            providers: [
-                {
-                    provide: UVEStore,
-                    useValue: store
-                }
-            ]
+        // Subscribe to output events
+        spectator.component.toggleLockClick.subscribe((event) => {
+            emittedEvents.push(event);
         });
-
-        jest.clearAllMocks();
     });
 
-    describe('when feature flag is enabled (new toggle button)', () => {
-        beforeEach(() => {
-            mockToggleLockOptions.set({
-                inode: 'test-inode',
-                isLocked: false,
-                lockedBy: '',
-                canLock: true,
-                isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: false
-            });
-            mockUnlockButton.set(null);
-            spectator.detectChanges();
-        });
-
+    describe('Component Creation', () => {
         it('should create', () => {
             expect(spectator.component).toBeTruthy();
+        });
+    });
+
+    describe('when page is unlocked', () => {
+        beforeEach(() => {
+            const lockOptions: ToggleLockOptions = {
+                inode: 'test-inode',
+                isLocked: false,
+                isLockedByCurrentUser: false,
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
+            spectator.detectChanges();
         });
 
         it('should display toggle lock button', () => {
@@ -96,76 +77,43 @@ describe('DotToggleLockButtonComponent', () => {
             expect(icon).toBeTruthy();
         });
 
-        it('should display unlocked label when page is unlocked', () => {
+        it('should display unlocked label', () => {
             const label = spectator.component.$buttonLabel();
             expect(label).toBe('uve.editor.toggle.lock.button.unlocked');
         });
 
-        it('should have unlocked CSS class when page is unlocked', () => {
+        it('should have unlocked CSS class', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
             expect(button).toHaveClass('lock-button--unlocked');
             expect(button).not.toHaveClass('lock-button--locked');
         });
 
-        it('should call store.toggleLock with correct params when clicked and unlocked', () => {
+        it('should emit toggleLockClick event with correct params when clicked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
             spectator.click(button);
 
-            expect(mockToggleLock).toHaveBeenCalledWith('test-inode', false, false);
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'test-inode',
+                isLocked: false,
+                isLockedByCurrentUser: false
+            });
         });
     });
 
     describe('when page is locked by current user', () => {
         beforeEach(() => {
-            mockToggleLockOptions.set({
+            const lockOptions: ToggleLockOptions = {
                 inode: 'test-inode-locked',
                 isLocked: true,
-                lockedBy: 'current-user',
-                canLock: true,
                 isLockedByCurrentUser: true,
-                showBanner: false,
-                showOverlay: false
-            });
-            mockUnlockButton.set(null);
-            spectator.detectChanges();
-        });
-
-        it('should display lock icon when page is locked', () => {
-            const icon = spectator.query('.lock-button i.pi-lock');
-            expect(icon).toBeTruthy();
-        });
-
-        it('should display locked label when page is locked', () => {
-            const label = spectator.component.$buttonLabel();
-            expect(label).toBe('uve.editor.toggle.lock.button.locked');
-        });
-
-        it('should have locked CSS class when page is locked', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            expect(button).toHaveClass('lock-button--locked');
-            expect(button).not.toHaveClass('lock-button--unlocked');
-        });
-
-        it('should call store.toggleLock with correct params when clicked and locked', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            spectator.click(button);
-
-            expect(mockToggleLock).toHaveBeenCalledWith('test-inode-locked', true, true);
-        });
-    });
-
-    describe('when page is locked by another user', () => {
-        beforeEach(() => {
-            mockToggleLockOptions.set({
-                inode: 'test-inode-locked-other',
-                isLocked: true,
-                lockedBy: 'another-user',
                 canLock: true,
-                isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
-            });
-            mockUnlockButton.set(null);
+                loading: false,
+                disabled: false,
+                message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                args: ['Current User']
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
         });
 
@@ -174,27 +122,77 @@ describe('DotToggleLockButtonComponent', () => {
             expect(icon).toBeTruthy();
         });
 
-        it('should call store.toggleLock with isLockedByCurrentUser=false when clicked', () => {
+        it('should display locked label', () => {
+            const label = spectator.component.$buttonLabel();
+            expect(label).toBe('uve.editor.toggle.lock.button.locked');
+        });
+
+        it('should have locked CSS class', () => {
+            const button = spectator.query(byTestId('toggle-lock-button'));
+            expect(button).toHaveClass('lock-button--locked');
+            expect(button).not.toHaveClass('lock-button--unlocked');
+        });
+
+        it('should emit toggleLockClick event with correct params when clicked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
             spectator.click(button);
 
-            expect(mockToggleLock).toHaveBeenCalledWith('test-inode-locked-other', true, false);
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'test-inode-locked',
+                isLocked: true,
+                isLockedByCurrentUser: true
+            });
+        });
+    });
+
+    describe('when page is locked by another user', () => {
+        beforeEach(() => {
+            const lockOptions: ToggleLockOptions = {
+                inode: 'test-inode-locked-other',
+                isLocked: true,
+                isLockedByCurrentUser: false,
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: 'editpage.locked-by',
+                args: ['Another User']
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
+            spectator.detectChanges();
+        });
+
+        it('should display lock icon', () => {
+            const icon = spectator.query('.lock-button i.pi-lock');
+            expect(icon).toBeTruthy();
+        });
+
+        it('should emit toggleLockClick event with isLockedByCurrentUser=false when clicked', () => {
+            const button = spectator.query(byTestId('toggle-lock-button'));
+            spectator.click(button);
+
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'test-inode-locked-other',
+                isLocked: true,
+                isLockedByCurrentUser: false
+            });
         });
     });
 
     describe('when loading', () => {
         beforeEach(() => {
-            mockToggleLockOptions.set({
+            const lockOptions: ToggleLockOptions = {
                 inode: 'test-inode',
                 isLocked: false,
-                lockedBy: '',
-                canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: false
-            });
-            mockLockLoading.set(true);
-            mockUnlockButton.set(null);
+                canLock: true,
+                loading: true,
+                disabled: false,
+                message: '',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
         });
 
@@ -203,59 +201,50 @@ describe('DotToggleLockButtonComponent', () => {
             expect(button).toBeDisabled();
         });
 
-        it('should not call toggleLock when button is clicked during loading', () => {
+        it('should not emit event when button is clicked during loading', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
             spectator.click(button);
 
             // Button is disabled, so click won't trigger the handler
-            expect(mockToggleLock).not.toHaveBeenCalled();
+            expect(emittedEvents).toHaveLength(0);
         });
     });
 
-    describe('when feature flag is disabled (legacy unlock button)', () => {
+    describe('when canLock is false', () => {
         beforeEach(() => {
-            mockToggleLockOptions.set(null);
-            mockUnlockButton.set({
-                inode: 'legacy-inode',
-                disabled: false,
+            const lockOptions: ToggleLockOptions = {
+                inode: 'test-inode',
+                isLocked: false,
+                isLockedByCurrentUser: false,
+                canLock: false,
                 loading: false,
-                info: {
-                    message: 'Page locked by {0}',
-                    args: ['Another User']
-                }
-            });
+                disabled: true,
+                message: 'editpage.locked-by',
+                args: ['Some User']
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
         });
 
-        it('should display legacy unlock button', () => {
-            const button = spectator.query(byTestId('uve-toolbar-unlock-button'));
-            expect(button).toBeTruthy();
-        });
-
-        it('should not display new toggle button', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            expect(button).toBeFalsy();
-        });
-
-        it('should call unlockPage method when legacy button is clicked', () => {
-            const button = spectator.query(byTestId('uve-toolbar-unlock-button'));
-            spectator.click(button);
-
-            expect(mockToggleLock).toHaveBeenCalledWith('legacy-inode', true, false);
+        it('should not emit event when canLock is false', () => {
+            spectator.component.toggleLock();
+            expect(emittedEvents).toHaveLength(0);
         });
     });
 
     describe('computed $buttonLabel', () => {
         it('should return unlocked label when isLocked is false', () => {
-            mockToggleLockOptions.set({
+            const lockOptions: ToggleLockOptions = {
                 inode: 'test-inode',
                 isLocked: false,
-                lockedBy: '',
-                canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: false
-            });
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: '',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
             expect(spectator.component.$buttonLabel()).toBe(
@@ -264,15 +253,17 @@ describe('DotToggleLockButtonComponent', () => {
         });
 
         it('should return locked label when isLocked is true', () => {
-            mockToggleLockOptions.set({
+            const lockOptions: ToggleLockOptions = {
                 inode: 'test-inode',
                 isLocked: true,
-                lockedBy: 'user',
-                canLock: true,
                 isLockedByCurrentUser: true,
-                showBanner: false,
-                showOverlay: false
-            });
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: '',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
             expect(spectator.component.$buttonLabel()).toBe('uve.editor.toggle.lock.button.locked');
@@ -280,46 +271,112 @@ describe('DotToggleLockButtonComponent', () => {
     });
 
     describe('toggleLock method', () => {
-        it('should extract correct parameters from $toggleLockOptions and call store', () => {
-            mockToggleLockOptions.set({
+        it('should emit correct event parameters', () => {
+            const lockOptions: ToggleLockOptions = {
                 inode: 'method-test-inode',
                 isLocked: false,
-                lockedBy: '',
-                canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: false
-            });
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: '',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
             spectator.component.toggleLock();
 
-            expect(mockToggleLock).toHaveBeenCalledWith('method-test-inode', false, false);
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'method-test-inode',
+                isLocked: false,
+                isLockedByCurrentUser: false
+            });
         });
 
-        it('should handle locked state in method call', () => {
-            mockToggleLockOptions.set({
+        it('should handle locked state in event emission', () => {
+            const lockOptions: ToggleLockOptions = {
                 inode: 'locked-method-inode',
                 isLocked: true,
-                lockedBy: 'current',
-                canLock: true,
                 isLockedByCurrentUser: true,
-                showBanner: false,
-                showOverlay: false
-            });
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: '',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
             spectator.component.toggleLock();
 
-            expect(mockToggleLock).toHaveBeenCalledWith('locked-method-inode', true, true);
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'locked-method-inode',
+                isLocked: true,
+                isLockedByCurrentUser: true
+            });
         });
     });
 
     describe('unlockPage method (legacy)', () => {
-        it('should call store.toggleLock with unlock parameters', () => {
+        it('should emit event with unlock parameters', () => {
+            const lockOptions: ToggleLockOptions = {
+                inode: 'test-inode',
+                isLocked: false,
+                isLockedByCurrentUser: false,
+                canLock: true,
+                loading: false,
+                disabled: false,
+                message: '',
+                args: []
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
+            spectator.detectChanges();
+
             spectator.component.unlockPage('legacy-unlock-inode');
 
-            expect(mockToggleLock).toHaveBeenCalledWith('legacy-unlock-inode', true, false);
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'legacy-unlock-inode',
+                isLocked: true,
+                isLockedByCurrentUser: false
+            });
+        });
+    });
+
+    describe('legacy unlock button support', () => {
+        beforeEach(() => {
+            const lockOptions: ToggleLockOptions = {
+                inode: 'legacy-inode',
+                isLocked: true,
+                isLockedByCurrentUser: false,
+                canLock: false,
+                loading: false,
+                disabled: true,
+                message: 'editpage.locked-by',
+                args: ['Another User']
+            };
+            spectator.setInput('toggleLockOptions', lockOptions);
+            spectator.detectChanges();
+        });
+
+        it('should display unlock button for legacy mode', () => {
+            const button = spectator.query(byTestId('uve-toolbar-unlock-button'));
+            expect(button).toBeTruthy();
+        });
+
+        it('should emit event when legacy button is clicked', () => {
+            const button = spectator.query(byTestId('uve-toolbar-unlock-button'));
+            spectator.click(button);
+
+            expect(emittedEvents).toHaveLength(1);
+            expect(emittedEvents[0]).toEqual({
+                inode: 'legacy-inode',
+                isLocked: true,
+                isLockedByCurrentUser: false
+            });
         });
     });
 });

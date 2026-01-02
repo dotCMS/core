@@ -19,7 +19,10 @@
         @if (preview || live) {
             @if ($devices()?.length) {
                 <dot-uve-device-selector
+                    [state]="$deviceSelectorState()"
                     [devices]="$devices()"
+                    [isTraditionalPage]="isTraditionalPage()"
+                    (stateChange)="handleDeviceSelectorChange($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
         } @else {
@@ -59,7 +62,12 @@
     }
 
     <div class="p-toolbar-group-end">
-        <dot-toggle-lock-button />
+        @if ($toggleLockOptions(); as lockOptions) {
+            <dot-toggle-lock-button
+                [toggleLockOptions]="lockOptions"
+                (toggleLockClick)="handleToggleLock($event)"
+                data-testId="uve-toolbar-toggle-lock" />
+        }
 
         @if (runningExperiment) {
             <dot-ema-running-experiment
@@ -87,5 +95,8 @@
 </p-toolbar>
 
 @if ($infoDisplayProps(); as options) {
-    <dot-ema-info-display data-testId="info-display" [options]="options" />
+    <dot-ema-info-display
+        data-testId="info-display"
+        [options]="options"
+        (actionClicked)="handleInfoDisplayAction($event)" />
 }

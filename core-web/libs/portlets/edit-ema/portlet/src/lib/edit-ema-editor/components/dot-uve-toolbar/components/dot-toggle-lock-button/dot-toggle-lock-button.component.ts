@@ -1,11 +1,26 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { UVEStore } from '../../../../../store/dot-uve.store';
+export interface ToggleLockOptions {
+    inode: string;
+    isLocked: boolean;
+    isLockedByCurrentUser: boolean;
+    canLock: boolean;
+    loading: boolean;
+    disabled: boolean;
+    message: string;
+    args: string[];
+}
+
+export interface ToggleLockEvent {
+    inode: string;
+    isLocked: boolean;
+    isLockedByCurrentUser: boolean;
+}
 
 @Component({
     selector: 'dot-toggle-lock-button',
@@ -14,33 +29,47 @@ import { UVEStore } from '../../../../../store/dot-uve.store';
     imports: [ButtonModule, TooltipModule, DotMessagePipe]
 })
 export class DotToggleLockButtonComponent {
-    readonly #store = inject(UVEStore);
+    // Inputs - data down from container
+    toggleLockOptions = input.required<ToggleLockOptions>();
 
-    $unlockButton = this.#store.$unlockButton;
-    $toggleLockOptions = this.#store.$toggleLockOptions;
-    $lockLoading = this.#store.lockLoading;
+    // Outputs - events up to container
+    toggleLockClick = output<ToggleLockEvent>();
 
+    // Local computed - button label based on lock state
     $buttonLabel = computed(() => {
-        const isLocked = this.$toggleLockOptions()?.isLocked;
+        const isLocked = this.toggleLockOptions()?.isLocked;
         return isLocked
             ? 'uve.editor.toggle.lock.button.locked'
             : 'uve.editor.toggle.lock.button.unlocked';
     });
 
+    // Legacy computed for template compatibility
+    $toggleLockOptions = this.toggleLockOptions;
+    $lockLoading = computed(() => this.toggleLockOptions().loading);
+    $unlockButton = computed(() => ({
+        show: true,
+        disabled: this.toggleLockOptions().disabled,
+        message: this.toggleLockOptions().message,
+        args: this.toggleLockOptions().args
+    }));
+
     /**
      * Toggles the lock state of the current page.
-     * If the page is unlocked, it will lock it for the current user.
-     * If the page is locked by the current user, it will unlock it.
-     * If the page is locked by another user, it will attempt to take over the lock.
+     * Emits event to parent container to handle the actual toggle.
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser, canLock } = this.$toggleLockOptions();
+        const { inode, isLocked, isLockedByCurrentUser, canLock } = this.toggleLockOptions();
 
         if (!canLock) {
             return;
         }
 
-        this.#store.toggleLock(inode, isLocked, isLockedByCurrentUser);
+        // Emit event instead of directly calling store
+        this.toggleLockClick.emit({
+            inode,
+            isLocked,
+            isLockedByCurrentUser
+        });
     }
 
     /**
@@ -50,6 +79,11 @@ export class DotToggleLockButtonComponent {
      * @memberof DotToggleLockButtonComponent
      */
     unlockPage(inode: string) {
-        this.#store.toggleLock(inode, true, false);
+        // Emit event instead of directly calling store
+        this.toggleLockClick.emit({
+            inode,
+            isLocked: true,
+            isLockedByCurrentUser: false
+        });
     }
 }

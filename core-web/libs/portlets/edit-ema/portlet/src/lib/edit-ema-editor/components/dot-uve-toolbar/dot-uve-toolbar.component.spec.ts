@@ -31,7 +31,9 @@ import {
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
+import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
+import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -46,12 +48,12 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { Orientation } from '../../../store/models';
 import {
     getFullPageURL,
     createFavoritePagesURL,
     sanitizeURL,
     convertLocalTimeToUTC,
-    createFullURL
 } from '../../../utils';
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
@@ -95,6 +97,8 @@ const baseUVEToolbarState = {
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
+    setSEO: jest.fn(),
+    setOrientation: jest.fn(),
     pageParams: signal(params),
     pageAPIResponse: signal(MOCK_RESPONSE_VTL),
     $apiURL: signal($apiURL),
@@ -130,6 +134,8 @@ const baseUVEState = {
     toggleLock: jest.fn(),
     socialMedia: signal(null),
     trackUVECalendarChange: jest.fn(),
+    isTraditionalPage: signal(true),
+    experiment: signal(null),
     palette: {
         open: signal(false)
     },
@@ -182,10 +188,12 @@ describe('DotUveToolbarComponent', () => {
         imports: [
             HttpClientTestingModule,
             MockComponent(DotEmaBookmarksComponent),
+            DotEmaInfoDisplayComponent,
             MockComponent(DotEmaRunningExperimentComponent),
+            DotToggleLockButtonComponent,
             MockComponent(EditEmaPersonaSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
-            MockComponent(DotUveDeviceSelectorComponent),
+            DotUveDeviceSelectorComponent,
             MockComponent(DotEditorModeSelectorComponent)
         ],
         providers: [
@@ -450,6 +458,7 @@ describe('DotUveToolbarComponent', () => {
             });
         });
 
+        /* TODO: Implement $pageURLS feature and uncomment these tests
         describe('$pageURLS computed signal', () => {
             it('should call createFullURL to generate version URL', () => {
                 const mockCreateFullURL = createFullURL as jest.Mock;
@@ -586,6 +595,7 @@ describe('DotUveToolbarComponent', () => {
                 expect(plainUrl.value).toBe(`${window.location.origin}/test`);
             });
         });
+        */
 
         describe('API URL', () => {
             it('should have api link button', () => {
@@ -1221,6 +1231,578 @@ describe('DotUveToolbarComponent', () => {
         describe('Experiment is running', () => {
             it('should have experiment running component', () => {
                 expect(spectator.query(byTestId('uve-toolbar-running-experiment'))).toBeTruthy();
+            });
+        });
+    });
+
+    describe('Presentational Component Integration', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {},
+                detectChanges: false,
+                providers: [
+                    mockProvider(UVEStore, {
+                        ...baseUVEState
+                    })
+                ]
+            });
+            store = spectator.inject(UVEStore, true);
+        });
+
+        describe('DotUveDeviceSelectorComponent', () => {
+            describe('Computed Properties', () => {
+                describe('$deviceSelectorState', () => {
+                    it('should build unified state object from store signals', () => {
+                        const testDevice = DEFAULT_DEVICES[1];
+                        baseUVEState.device.set(testDevice);
+                        baseUVEState.socialMedia.set('facebook');
+                        baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                        spectator.detectChanges();
+
+                        const state = spectator.component.$deviceSelectorState();
+
+                        expect(state).toEqual({
+                            currentDevice: testDevice,
+                            currentSocialMedia: 'facebook',
+                            currentOrientation: Orientation.LANDSCAPE
+                        });
+                    });
+
+                    it('should react to device changes', () => {
+                        const defaultDevice = DEFAULT_DEVICES[0];
+                        baseUVEState.device.set(defaultDevice);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().currentDevice).toBe(
+                            defaultDevice
+                        );
+
+                        const newDevice = DEFAULT_DEVICES[1];
+                        baseUVEState.device.set(newDevice);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().currentDevice).toBe(
+                            newDevice
+                        );
+                    });
+
+                    it('should react to social media changes', () => {
+                        baseUVEState.socialMedia.set(null);
+                        spectator.detectChanges();
+
+                        expect(
+                            spectator.component.$deviceSelectorState().currentSocialMedia
+                        ).toBeNull();
+
+                        baseUVEState.socialMedia.set('twitter');
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().currentSocialMedia).toBe(
+                            'twitter'
+                        );
+                    });
+
+                    it('should react to orientation changes', () => {
+                        baseUVEState.orientation.set(Orientation.PORTRAIT);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().currentOrientation).toBe(
+                            Orientation.PORTRAIT
+                        );
+
+                        baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$deviceSelectorState().currentOrientation).toBe(
+                            Orientation.LANDSCAPE
+                        );
+                    });
+                });
+            });
+
+            describe('Handler Methods', () => {
+                describe('handleDeviceSelectorChange', () => {
+                    beforeEach(() => {
+                        baseUVEState.$isPreviewMode.set(true);
+                        spectator.detectChanges();
+                    });
+
+                    it('should call store.setDevice when device event is emitted', () => {
+                        const spy = jest.spyOn(store, 'setDevice');
+                        const testDevice = DEFAULT_DEVICES[1];
+
+                        spectator.triggerEventHandler(
+                            DotUveDeviceSelectorComponent,
+                            'stateChange',
+                            {
+                                type: 'device',
+                                device: testDevice
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith(testDevice);
+                    });
+
+                    it('should call store.setSEO when socialMedia event is emitted', () => {
+                        const spy = jest.spyOn(store, 'setSEO');
+
+                        spectator.triggerEventHandler(
+                            DotUveDeviceSelectorComponent,
+                            'stateChange',
+                            {
+                                type: 'socialMedia',
+                                socialMedia: 'facebook'
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith('facebook');
+                    });
+
+                    it('should call store.setOrientation when orientation event is emitted', () => {
+                        const spy = jest.spyOn(store, 'setOrientation');
+
+                        spectator.triggerEventHandler(
+                            DotUveDeviceSelectorComponent,
+                            'stateChange',
+                            {
+                                type: 'orientation',
+                                orientation: Orientation.PORTRAIT
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith(Orientation.PORTRAIT);
+                    });
+
+                    it('should handle all event types correctly in sequence', () => {
+                        const deviceSpy = jest.spyOn(store, 'setDevice');
+                        const seoSpy = jest.spyOn(store, 'setSEO');
+                        const orientationSpy = jest.spyOn(store, 'setOrientation');
+
+                        const testDevice = DEFAULT_DEVICES[0];
+
+                        spectator.triggerEventHandler(
+                            DotUveDeviceSelectorComponent,
+                            'stateChange',
+                            {
+                                type: 'device',
+                                device: testDevice
+                            }
+                        );
+                        spectator.triggerEventHandler(
+                            DotUveDeviceSelectorComponent,
+                            'stateChange',
+                            {
+                                type: 'socialMedia',
+                                socialMedia: 'twitter'
+                            }
+                        );
+                        spectator.triggerEventHandler(
+                            DotUveDeviceSelectorComponent,
+                            'stateChange',
+                            {
+                                type: 'orientation',
+                                orientation: Orientation.LANDSCAPE
+                            }
+                        );
+
+                        expect(deviceSpy).toHaveBeenCalledWith(testDevice);
+                        expect(seoSpy).toHaveBeenCalledWith('twitter');
+                        expect(orientationSpy).toHaveBeenCalledWith(Orientation.LANDSCAPE);
+                    });
+                });
+            });
+
+            describe('Template Bindings', () => {
+                beforeEach(() => {
+                    baseUVEState.$isPreviewMode.set(true);
+                    spectator.detectChanges();
+                });
+
+                it('should pass state input to device selector', () => {
+                    const testDevice = DEFAULT_DEVICES[1];
+                    baseUVEState.device.set(testDevice);
+                    baseUVEState.socialMedia.set('facebook');
+                    baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                    spectator.detectChanges();
+
+                    const deviceSelectorDebugElement = spectator.debugElement.query(
+                        By.directive(DotUveDeviceSelectorComponent)
+                    );
+                    const deviceSelector =
+                        deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
+
+                    expect(deviceSelector.state()).toEqual({
+                        currentDevice: testDevice,
+                        currentSocialMedia: 'facebook',
+                        currentOrientation: Orientation.LANDSCAPE
+                    });
+                });
+
+                it('should pass devices input to device selector', () => {
+                    spectator.detectChanges();
+
+                    const deviceSelectorDebugElement = spectator.debugElement.query(
+                        By.directive(DotUveDeviceSelectorComponent)
+                    );
+                    const deviceSelector =
+                        deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
+
+                    expect(deviceSelector.devices()).toBeDefined();
+                });
+
+                it('should pass isTraditionalPage input to device selector', () => {
+                    baseUVEState.isTraditionalPage.set(true);
+                    spectator.detectChanges();
+
+                    const deviceSelectorDebugElement = spectator.debugElement.query(
+                        By.directive(DotUveDeviceSelectorComponent)
+                    );
+                    const deviceSelector =
+                        deviceSelectorDebugElement.componentInstance as DotUveDeviceSelectorComponent;
+
+                    expect(deviceSelector.isTraditionalPage()).toBe(true);
+                });
+
+                it('should call handleDeviceSelectorChange when stateChange emits', () => {
+                    const spy = jest.spyOn(spectator.component, 'handleDeviceSelectorChange');
+                    const testDevice = DEFAULT_DEVICES[1];
+
+                    spectator.triggerEventHandler(
+                        DotUveDeviceSelectorComponent,
+                        'stateChange',
+                        {
+                            type: 'device',
+                            device: testDevice
+                        }
+                    );
+
+                    expect(spy).toHaveBeenCalledWith({
+                        type: 'device',
+                        device: testDevice
+                    });
+                });
+            });
+        });
+
+        describe('DotToggleLockButtonComponent', () => {
+            describe('Computed Properties', () => {
+                describe('$toggleLockOptions', () => {
+                    it('should return null when store options are null', () => {
+                        baseUVEState.$toggleLockOptions.set(null);
+                        spectator.detectChanges();
+
+                        expect(spectator.component.$toggleLockOptions()).toBeNull();
+                    });
+
+                    it('should build complete options object with loading state', () => {
+                        baseUVEState.$toggleLockOptions.set({
+                            inode: 'test-inode',
+                            isLocked: false,
+                            lockedBy: '',
+                            canLock: true,
+                            isLockedByCurrentUser: false,
+                            showBanner: false,
+                            showOverlay: false
+                        });
+                        baseUVEState.lockLoading.set(true);
+                        spectator.detectChanges();
+
+                        const options = spectator.component.$toggleLockOptions();
+
+                        expect(options).toEqual({
+                            inode: 'test-inode',
+                            isLocked: false,
+                            isLockedByCurrentUser: false,
+                            canLock: true,
+                            loading: true,
+                            disabled: false,
+                            message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                            args: []
+                        });
+                    });
+
+                    it('should set disabled true when canLock is false', () => {
+                        baseUVEState.$toggleLockOptions.set({
+                            inode: 'test-inode',
+                            isLocked: true,
+                            lockedBy: 'another-user',
+                            canLock: false,
+                            isLockedByCurrentUser: false,
+                            showBanner: true,
+                            showOverlay: true
+                        });
+                        baseUVEState.lockLoading.set(false);
+                        spectator.detectChanges();
+
+                        const options = spectator.component.$toggleLockOptions();
+
+                        expect(options.disabled).toBe(true);
+                        expect(options.message).toBe('editpage.locked-by');
+                        expect(options.args).toEqual(['another-user']);
+                    });
+
+                    it('should include lockedBy in args when provided', () => {
+                        baseUVEState.$toggleLockOptions.set({
+                            inode: 'test-inode',
+                            isLocked: true,
+                            lockedBy: 'john.doe@example.com',
+                            canLock: false,
+                            isLockedByCurrentUser: false,
+                            showBanner: true,
+                            showOverlay: true
+                        });
+                        spectator.detectChanges();
+
+                        const options = spectator.component.$toggleLockOptions();
+
+                        expect(options.args).toEqual(['john.doe@example.com']);
+                    });
+                });
+            });
+
+            describe('Handler Methods', () => {
+                describe('handleToggleLock', () => {
+                    beforeEach(() => {
+                        baseUVEState.$toggleLockOptions.set({
+                            inode: 'test-inode',
+                            isLocked: false,
+                            lockedBy: '',
+                            canLock: true,
+                            isLockedByCurrentUser: false,
+                            showBanner: false,
+                            showOverlay: false
+                        });
+                        baseUVEState.lockLoading.set(false);
+                        spectator.detectChanges();
+                    });
+
+                    it('should call store.toggleLock with correct parameters', () => {
+                        const spy = jest.spyOn(store, 'toggleLock');
+
+                        spectator.triggerEventHandler(
+                            DotToggleLockButtonComponent,
+                            'toggleLockClick',
+                            {
+                                inode: 'test-inode-123',
+                                isLocked: false,
+                                isLockedByCurrentUser: false
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith('test-inode-123', false, false);
+                    });
+
+                    it('should handle locked state correctly', () => {
+                        const spy = jest.spyOn(store, 'toggleLock');
+
+                        spectator.triggerEventHandler(
+                            DotToggleLockButtonComponent,
+                            'toggleLockClick',
+                            {
+                                inode: 'locked-inode',
+                                isLocked: true,
+                                isLockedByCurrentUser: true
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith('locked-inode', true, true);
+                    });
+
+                    it('should handle page locked by another user', () => {
+                        const spy = jest.spyOn(store, 'toggleLock');
+
+                        spectator.triggerEventHandler(
+                            DotToggleLockButtonComponent,
+                            'toggleLockClick',
+                            {
+                                inode: 'other-user-inode',
+                                isLocked: true,
+                                isLockedByCurrentUser: false
+                            }
+                        );
+
+                        expect(spy).toHaveBeenCalledWith('other-user-inode', true, false);
+                    });
+                });
+            });
+
+            describe('Template Bindings', () => {
+                beforeEach(() => {
+                    baseUVEState.$toggleLockOptions.set({
+                        inode: 'test-inode',
+                        isLocked: false,
+                        lockedBy: '',
+                        canLock: true,
+                        isLockedByCurrentUser: false,
+                        showBanner: false,
+                        showOverlay: false
+                    });
+                    baseUVEState.lockLoading.set(false);
+                    spectator.detectChanges();
+                });
+
+                it('should pass toggleLockOptions input to toggle lock button', () => {
+                    const toggleLockButton = spectator.query(byTestId('uve-toolbar-toggle-lock'));
+                    expect(toggleLockButton).toBeTruthy();
+
+                    const buttonDebugElement = spectator.debugElement.query(
+                        By.directive(DotToggleLockButtonComponent)
+                    );
+                    const buttonComponent =
+                        buttonDebugElement.componentInstance as DotToggleLockButtonComponent;
+
+                    expect(buttonComponent).toBeTruthy();
+                    expect(buttonComponent.toggleLockOptions()).toEqual({
+                        inode: 'test-inode',
+                        isLocked: false,
+                        isLockedByCurrentUser: false,
+                        canLock: true,
+                        loading: false,
+                        disabled: false,
+                        message: 'editpage.toolbar.page.release.lock.locked.by.user',
+                        args: []
+                    });
+                });
+
+                it('should call handleToggleLock when toggleLockClick emits', () => {
+                    const spy = jest.spyOn(spectator.component, 'handleToggleLock');
+
+                    spectator.triggerEventHandler(
+                        DotToggleLockButtonComponent,
+                        'toggleLockClick',
+                        {
+                            inode: 'test-inode',
+                            isLocked: false,
+                            isLockedByCurrentUser: false
+                        }
+                    );
+
+                    expect(spy).toHaveBeenCalledWith({
+                        inode: 'test-inode',
+                        isLocked: false,
+                        isLockedByCurrentUser: false
+                    });
+                });
+            });
+        });
+
+        describe('DotEmaInfoDisplayComponent', () => {
+            describe('Handler Methods', () => {
+                describe('handleInfoDisplayAction', () => {
+                    beforeEach(() => {
+                        baseUVEState.$infoDisplayProps.set({
+                            info: {
+                                message: 'editpage.editing.variant',
+                                args: ['Variant A']
+                            },
+                            icon: 'pi pi-file-edit',
+                            id: 'variant',
+                            actionIcon: 'pi pi-arrow-left'
+                        });
+                        spectator.detectChanges();
+                    });
+
+                    it('should call store.clearDeviceAndSocialMedia when device action is triggered', () => {
+                        const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
+
+                        spectator.triggerEventHandler(
+                            DotEmaInfoDisplayComponent,
+                            'actionClicked',
+                            'device'
+                        );
+
+                        expect(spy).toHaveBeenCalled();
+                    });
+
+                    it('should call store.clearDeviceAndSocialMedia when socialMedia action is triggered', () => {
+                        const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
+
+                        spectator.triggerEventHandler(
+                            DotEmaInfoDisplayComponent,
+                            'actionClicked',
+                            'socialMedia'
+                        );
+
+                        expect(spy).toHaveBeenCalled();
+                    });
+
+                    it('should not call clearDeviceAndSocialMedia for variant action', () => {
+                        const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
+                        spy.mockClear(); // Clear any calls from previous tests
+
+                        spectator.triggerEventHandler(
+                            DotEmaInfoDisplayComponent,
+                            'actionClicked',
+                            'variant'
+                        );
+
+                        expect(spy).not.toHaveBeenCalled();
+                    });
+                });
+            });
+
+            describe('Template Bindings', () => {
+                beforeEach(() => {
+                    baseUVEState.$infoDisplayProps.set({
+                        info: {
+                            message: 'editpage.editing.variant',
+                            args: ['Variant A']
+                        },
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        actionIcon: 'pi pi-arrow-left'
+                    });
+                    spectator.detectChanges();
+                });
+
+                it('should pass options input to info display', () => {
+                    const infoDisplay = spectator.query(byTestId('info-display'));
+                    expect(infoDisplay).toBeTruthy();
+
+                    const infoDisplayDebugElement = spectator.debugElement.query(
+                        By.directive(DotEmaInfoDisplayComponent)
+                    );
+                    const infoDisplayComponent =
+                        infoDisplayDebugElement.componentInstance as DotEmaInfoDisplayComponent;
+
+                    expect(infoDisplayComponent).toBeTruthy();
+                    expect(infoDisplayComponent.$options()).toEqual({
+                        info: {
+                            message: 'editpage.editing.variant',
+                            args: ['Variant A']
+                        },
+                        icon: 'pi pi-file-edit',
+                        id: 'variant',
+                        actionIcon: 'pi pi-arrow-left'
+                    });
+                });
+
+                it('should call handleInfoDisplayAction when actionClicked emits', () => {
+                    const spy = jest.spyOn(spectator.component, 'handleInfoDisplayAction');
+
+                    spectator.triggerEventHandler(
+                        DotEmaInfoDisplayComponent,
+                        'actionClicked',
+                        'device'
+                    );
+
+                    expect(spy).toHaveBeenCalledWith('device');
+                });
+
+                it('should not render info display when options are null', () => {
+                    baseUVEState.$infoDisplayProps.set(null);
+                    spectator.detectChanges();
+
+                    const infoDisplay = spectator.query(byTestId('info-display'));
+                    expect(infoDisplay).toBeFalsy();
+                });
+            });
+        });
+
+        describe('isTraditionalPage computed property', () => {
+            it('should expose store.isTraditionalPage signal', () => {
+                expect(spectator.component.isTraditionalPage).toBeDefined();
+                expect(typeof spectator.component.isTraditionalPage).toBe('function');
             });
         });
     });

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -32,7 +33,10 @@ import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
-import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import {
+    DotUveDeviceSelectorComponent,
+    DeviceSelectorChange
+} from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
@@ -81,6 +85,7 @@ export class DotUveToolbarComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
+    readonly #router = inject(Router);
 
     readonly $toolbar = this.#store.$uveToolbar;
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
@@ -120,6 +125,43 @@ export class DotUveToolbarComponent {
     protected defaultDevices = DEFAULT_DEVICES;
     protected $MIN_DATE = signal(this.#getMinDate());
 
+    // Computed properties for presentational children
+    readonly isTraditionalPage = this.#store.isTraditionalPage;
+
+    // Build unified device selector state
+    readonly $deviceSelectorState = computed(() => ({
+        currentDevice: this.#store.device(),
+        currentSocialMedia: this.#store.socialMedia(),
+        currentOrientation: this.#store.orientation()
+    }));
+
+    // Build complete toggle lock options for presentational component
+    readonly $toggleLockOptions = computed(() => {
+        const storeLockOptions = this.#store.$toggleLockOptions();
+
+        if (!storeLockOptions) {
+            return null;
+        }
+
+        const loading = this.#store.lockLoading();
+        const disabled = !storeLockOptions.canLock;
+        const message = storeLockOptions.canLock
+            ? 'editpage.toolbar.page.release.lock.locked.by.user'
+            : 'editpage.locked-by';
+        const args = storeLockOptions.lockedBy ? [storeLockOptions.lockedBy] : [];
+
+        return {
+            inode: storeLockOptions.inode,
+            isLocked: storeLockOptions.isLocked,
+            isLockedByCurrentUser: storeLockOptions.isLockedByCurrentUser,
+            canLock: storeLockOptions.canLock,
+            loading,
+            disabled,
+            message,
+            args
+        };
+    });
+
     /**
      * Fetch the page on a given date
      * @param {Date} publishDate
@@ -138,6 +180,67 @@ export class DotUveToolbarComponent {
 
     protected togglePalette(): void {
         this.#store.setPaletteOpen(!this.$isPaletteOpen());
+    }
+
+    /**
+     * Handle toggle lock event from presentational DotToggleLockButtonComponent
+     * @param event Lock toggle event with inode and lock states
+     */
+    handleToggleLock(event: { inode: string; isLocked: boolean; isLockedByCurrentUser: boolean }) {
+        this.#store.toggleLock(event.inode, event.isLocked, event.isLockedByCurrentUser);
+    }
+
+    /**
+     * Handle unified state change event from presentational DotUveDeviceSelectorComponent
+     * Uses discriminated union to handle different types of changes type-safely
+     * @param change Device selector state change event
+     */
+    handleDeviceSelectorChange(change: DeviceSelectorChange) {
+        switch (change.type) {
+            case 'device':
+                this.#store.setDevice(change.device);
+                break;
+            case 'socialMedia':
+                this.#store.setSEO(change.socialMedia);
+                break;
+            case 'orientation':
+                this.#store.setOrientation(change.orientation);
+                break;
+        }
+    }
+
+    /**
+     * Handle info display action event from presentational DotEmaInfoDisplayComponent
+     * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
+     */
+    handleInfoDisplayAction(optionId: string) {
+        if (optionId === 'device' || optionId === 'socialMedia') {
+            this.#store.clearDeviceAndSocialMedia();
+
+            return;
+        }
+
+        // Handle variant action - navigate to experiment configuration
+        const currentExperiment = this.#store.experiment();
+
+        if (currentExperiment) {
+            this.#router.navigate(
+                [
+                    '/edit-page/experiments/',
+                    currentExperiment.pageId,
+                    currentExperiment.id,
+                    'configuration'
+                ],
+                {
+                    queryParams: {
+                        mode: null,
+                        variantName: null,
+                        experimentId: null
+                    },
+                    queryParamsHandling: 'merge'
+                }
+            );
+        }
     }
 
     /**
