@@ -754,6 +754,180 @@
         }
       ],
       "description": "### Defining Contentlet Styles:\n\nTest the Contentlet Style definition in the `testPageStyles_1`.\n\n- Save Contentlets with Basic Styles\n    \n    - `Contentlet 1` with basic Style Properties\n        \n    - `Contentlet 2` without Styles\n        \n- Save Contentlet with Complex Styles\n    \n    - `Contentlet 1` with deep object definition Style Properties\n        \n- BadRequest trying to set Styles for a contentlet that does not exists, should fail.\n    \n- Save Styles for the same Contentlet but in different Containers, each of them does not affect the other one.\n    \n    - `Contentlet 1` saved with \"width = 100px\" style value in the `SYSTEM_CONTAINER`\n        \n    - `Contentlet 1` saved with \"color = \"#FF0000\" style in the custom Container `Styles_Container`"
+    },
+    {
+      "name": "Retrieve Contentlet Styles",
+      "item": [
+        {
+          "name": "Turn ON Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
+                  "    const entity = json.entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Content in 2nd Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test Content added to Test Page successfuly\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.errors.length).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\"\n            }\n        }\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{pageIdentifier2}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{pageIdentifier2}}",
+                "content"
+              ]
+            },
+            "description": "Adds a single content to the created page"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Styles for Contentlet1 in Page2",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "",
+                  "// wait 1 sec before execute",
+                  "setTimeout(function(){}, 1000);",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "console.log(\"DEBUG RESPONSE 2: \" + JSON.stringify(json, null, 2));",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 in Page_2 has correct styleProperties\", function () {",
+                  "    // filter by container",
+                  "    const container = json.entity.containers[\"SYSTEM_CONTAINER\"];",
+                  "    pm.expect(container, \"Container not found\").to.exist;",
+                  "    ",
+                  "    // filter by contentlet",
+                  "    const allContentlets = Object.values(container.contentlets).flat();",
+                  "    const contentlet = allContentlets.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet, \"Contentlet not found\").to.exist;",
+                  "    pm.expect(contentlet.styleProperties.width).to.eql(\"100px\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{pageName2}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{pageName2}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "### Retrieve Contentlet Styles:\n\nTest that the Contentlets have specific Styles defined when the feature flag `FEATURE_FLAG_UVE_STYLE_EDITOR` is enabled.\n\n- Turn ON `FEATURE_FLAG_UVE_STYLE_EDITOR` to allow the visualization of the Style Properties.\n    \n- Save the **same** **Contentlet** in the **same** **Container** but in **different** **Pages**\n    \n    - `Contentlet 1` in the `SYSTEM_CONTAINER` **Container**, inside the **Page**`testPageStyles_1`\n        \n    - `Contentlet 1` in the `SYSTEM_CONTAINER` **Container**, inside the **Page**`testPageStyles_2`\n        \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_1` **Page** have the \"color = #FF0000\" Style.\n    \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_2` **Page** have the \"width = 100px\" Style.\n    \n- Turn OFF `FEATURE_FLAG_UVE_STYLE_EDITOR`\n    \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field"
     }
   ],
   "auth": {
