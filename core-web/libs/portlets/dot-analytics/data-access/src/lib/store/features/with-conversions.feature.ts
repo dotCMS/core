@@ -343,13 +343,8 @@ export function withConversions() {
                         switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
                                 .fromCube('ContentAttribution')
-                                .dimensions([
-                                    'eventType',
-                                    'identifier',
-                                    'title',
-                                    'conversions',
-                                    'events'
-                                ])
+                                .dimensions(['eventType', 'identifier', 'title'])
+                                .measures(['sumConversions', 'sumEvents'])
                                 .siteId(currentSiteId)
                                 .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
@@ -403,7 +398,7 @@ export function withConversions() {
                                 }
                             })
                         ),
-                        switchMap(({ currentSiteId }) => {
+                        switchMap(({ timeRange, currentSiteId }) => {
                             const query = createCubeQuery()
                                 .fromCube('Conversion')
                                 .dimensions([
@@ -413,8 +408,7 @@ export function withConversions() {
                                     'topAttributedContent'
                                 ])
                                 .siteId(currentSiteId)
-                                // TODO: Uncomment this when the time range is implemented
-                                // .timeRange('day', toTimeRangeCubeJS(timeRange))
+                                .timeRange('day', toTimeRangeCubeJS(timeRange))
                                 .build();
 
                             return analyticsService

@@ -450,8 +450,8 @@ export const transformContentConversionsData = (
     }
 
     return data.map((item) => {
-        const events = parseInt(item['ContentAttribution.events'] || '0', 10);
-        const conversions = parseInt(item['ContentAttribution.conversions'] || '0', 10);
+        const events = parseInt(item['ContentAttribution.sumEvents'] || '0', 10);
+        const conversions = parseInt(item['ContentAttribution.sumConversions'] || '0', 10);
         const conversionRate = events > 0 ? Math.round((conversions / events) * 10000) / 100 : 0;
 
         return {
