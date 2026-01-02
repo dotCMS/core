@@ -1,7 +1,8 @@
 
 :host ::ng-deep {
     /* Active drop state - uses :has() which cannot be done with Tailwind */
-    .p-treenode-content:has(span.active) {
+    /* PrimeNG v21 changed class name from .p-treenode-content to .p-tree-node-content */
+    .p-tree-node-content:has(span.active) {
         pointer-events: none;
         background-color: var(--color-palette-primary-200);
     }
@@ -13,7 +14,8 @@
                 display: none;
             }
 
-            .p-tree-root-children > p-treenode:first-of-type {
+            /* PrimeNG v21 changed element from p-treenode to p-tree-node */
+            .p-tree-root-children > p-tree-node:first-of-type {
                 .toggler-first {
                     display: block;
                 }
