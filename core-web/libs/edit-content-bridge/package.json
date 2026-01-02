@@ -5,7 +5,9 @@
         "rxjs": "~6.6.3",
         "@angular/core": "20.3.15",
         "@angular/forms": "20.3.15",
-        "vite": "7.2.7"
+        "vite": "7.2.7",
+        "primeng": "17.18.11",
+        "@nx/vite": "21.6.9"
     },
     "type": "module",
     "main": "./index.js",

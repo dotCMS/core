@@ -86,6 +86,8 @@ export class DotDropZoneComponent {
         event.preventDefault();
 
         const { dataTransfer } = event;
+        if (!dataTransfer) return;
+
         const files = this.getFiles(dataTransfer);
         const file = files?.length === 1 ? files[0] : null;
 
@@ -145,7 +147,7 @@ export class DotDropZoneComponent {
             return true;
         }
 
-        const extension = file.name.split('.').pop().toLowerCase();
+        const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
         const mimeType = file.type.toLowerCase();
 
         const isValidType = this._accept.some(

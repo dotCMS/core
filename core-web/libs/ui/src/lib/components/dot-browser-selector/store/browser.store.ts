@@ -12,18 +12,19 @@ import { pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { exhaustMap, switchMap, tap, filter, map } from 'rxjs/operators';
-
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { exhaustMap, switchMap, tap } from 'rxjs/operators';
 
 import {
+    ComponentStatus,
+    ContentByFolderParams,
+    DotCMSContentlet,
     TreeNodeItem,
     TreeNodeSelectItem
-} from '../../../../../models/dot-edit-content-host-folder-field.interface';
-import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
+} from '@dotcms/dotcms-models';
+
+import { DotBrowsingService } from '../../../services/dot-browsing/dot-browsing.service';
 
 export const PEER_PAGE_LIMIT = 1000;
-
 export const SYSTEM_HOST_ID = 'SYSTEM_HOST';
 
 export interface Content {
@@ -34,7 +35,7 @@ export interface Content {
     lastModified: Date;
 }
 
-export interface SelectExisingFileState {
+export interface BrowserSelectorState {
     folders: {
         data: TreeNodeItem[];
         status: ComponentStatus;
@@ -48,10 +49,9 @@ export interface SelectExisingFileState {
     selectedContent: DotCMSContentlet | null;
     searchQuery: string;
     viewMode: 'list' | 'grid';
-    mimeTypes: string[];
 }
 
-const initialState: SelectExisingFileState = {
+const initialState: BrowserSelectorState = {
     folders: {
         data: [],
         status: ComponentStatus.INIT,
@@ -64,80 +64,53 @@ const initialState: SelectExisingFileState = {
     },
     selectedContent: null,
     searchQuery: '',
-    viewMode: 'list',
-    mimeTypes: []
+    viewMode: 'list'
 };
 
-export const SelectExisingFileStore = signalStore(
+export const DotBrowserSelectorStore = signalStore(
     withState(initialState),
     withComputed((state) => ({
         foldersIsLoading: computed(() => state.folders().status === ComponentStatus.LOADING),
         contentIsLoading: computed(() => state.content().status === ComponentStatus.LOADING)
     })),
     withMethods((store) => {
-        const dotEditContentService = inject(DotEditContentService);
+        const dotBrowsingService = inject(DotBrowsingService);
 
         return {
-            setMimeTypes: (mimeTypes: string[]) => {
-                patchState(store, {
-                    mimeTypes
-                });
-            },
             setSelectedContent: (selectedContent: DotCMSContentlet) => {
                 patchState(store, {
                     selectedContent
                 });
             },
-            loadContent: rxMethod<TreeNodeSelectItem | void>(
+            loadContent: rxMethod<ContentByFolderParams>(
                 pipe(
                     tap(() =>
                         patchState(store, {
                             content: { ...store.content(), status: ComponentStatus.LOADING }
                         })
                     ),
-                    map((event) => (event ? event?.node?.data?.id : SYSTEM_HOST_ID)),
-                    filter((identifier) => {
-                        const hasIdentifier = !!identifier;
-
-                        if (!hasIdentifier) {
-                            patchState(store, {
-                                content: {
-                                    data: [],
-                                    status: ComponentStatus.ERROR,
-                                    error: 'dot.file.field.dialog.select.existing.file.table.error.id'
-                                }
-                            });
-                        }
-
-                        return hasIdentifier;
-                    }),
-                    switchMap((identifier) => {
-                        return dotEditContentService
-                            .getContentByFolder({
-                                folderId: identifier,
-                                mimeTypes: store.mimeTypes()
+                    switchMap((params) => {
+                        return dotBrowsingService.getContentByFolder(params).pipe(
+                            tapResponse({
+                                next: (data) => {
+                                    patchState(store, {
+                                        content: {
+                                            data,
+                                            status: ComponentStatus.LOADED,
+                                            error: null
+                                        }
+                                    });
+                                },
+                                error: () =>
+                                    patchState(store, {
+                                        content: {
+                                            data: [],
+                                            status: ComponentStatus.ERROR,
+                                            error: 'dot.file.field.dialog.select.existing.file.table.error.content'
+                                        }
+                                    })
                             })
-                            .pipe(
-                                tapResponse({
-                                    next: (data) => {
-                                        patchState(store, {
-                                            content: {
-                                                data,
-                                                status: ComponentStatus.LOADED,
-                                                error: null
-                                            }
-                                        });
-                                    },
-                                    error: () =>
-                                        patchState(store, {
-                                            content: {
-                                                data: [],
-                                                status: ComponentStatus.ERROR,
-                                                error: 'dot.file.field.dialog.select.existing.file.table.error.content'
-                                            }
-                                        })
-                                })
-                            );
+                        );
                     })
                 )
             ),
@@ -149,7 +122,7 @@ export const SelectExisingFileStore = signalStore(
                         })
                     ),
                     switchMap(() => {
-                        return dotEditContentService
+                        return dotBrowsingService
                             .getSitesTreePath({ perPage: PEER_PAGE_LIMIT, filter: '*' })
                             .pipe(
                                 tapResponse({
@@ -184,7 +157,7 @@ export const SelectExisingFileStore = signalStore(
 
                         const fullPath = `${hostname}/${path}`;
 
-                        return dotEditContentService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
                             tapResponse({
                                 next: ({ folders: children }) => {
                                     node.loading = false;

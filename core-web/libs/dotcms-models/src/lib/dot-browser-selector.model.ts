@@ -23,10 +23,3 @@ export interface TreeNodeSelectEvent<T> {
     originalEvent: Event;
     node: TreeNode<T>;
 }
-
-export interface DotFolder {
-    id: string;
-    hostName: string;
-    path: string;
-    addChildrenAllowed: boolean;
-}

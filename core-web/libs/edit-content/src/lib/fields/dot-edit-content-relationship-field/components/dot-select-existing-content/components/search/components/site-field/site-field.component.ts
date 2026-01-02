@@ -16,11 +16,9 @@ import {
 
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
-
-import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pipe';
 
 /**
  * Component for selecting a site from a tree structure.
@@ -29,7 +27,7 @@ import { TruncatePathPipe } from '../../../../../../../../pipes/truncate-path.pi
  */
 @Component({
     selector: 'dot-site-field',
-    imports: [ReactiveFormsModule, TreeSelectModule, TruncatePathPipe, DotMessagePipe],
+    imports: [ReactiveFormsModule, TreeSelectModule, DotTruncatePathPipe, DotMessagePipe],
     providers: [
         SiteFieldStore,
         {

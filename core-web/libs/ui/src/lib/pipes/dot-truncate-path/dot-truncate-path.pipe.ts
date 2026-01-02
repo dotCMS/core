@@ -8,10 +8,10 @@ import { Pipe, PipeTransform } from '@angular/core';
  * @implements {PipeTransform}
  */
 @Pipe({
-    name: 'truncatePath',
+    name: 'dotTruncatePath',
     pure: true
 })
-export class TruncatePathPipe implements PipeTransform {
+export class DotTruncatePathPipe implements PipeTransform {
     transform(value: string): string {
         const split = value.split('/').filter((item) => item !== '');
 
