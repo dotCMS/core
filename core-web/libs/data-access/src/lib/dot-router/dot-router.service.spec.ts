@@ -40,7 +40,7 @@ class RouterMock {
         return this._events.asObservable();
     }
 
-    currentNavigation(): { finalUrl: { queryParams: { [key: string]: string } } } | null {
+    getCurrentNavigation(): { finalUrl: { queryParams: { [key: string]: string } } } | null {
         return {
             finalUrl: {
                 queryParams: {}
@@ -100,7 +100,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from Router', () => {
-        jest.spyOn(router, 'currentNavigation').mockReturnValue({
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue({
             finalUrl: {
                 queryParams: {
                     hola: 'mundo'
@@ -114,7 +114,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from ActivatedRoute', () => {
-        jest.spyOn(router, 'currentNavigation').mockReturnValue(null);
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue(null);
         expect(service.queryParams).toEqual({
             hello: 'world'
         });
