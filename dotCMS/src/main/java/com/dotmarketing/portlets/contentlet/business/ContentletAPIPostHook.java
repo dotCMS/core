@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -1839,4 +1840,16 @@ public interface ContentletAPIPostHook {
 	}
 
 	default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles, String variantName) {}
+
+	/**
+	 * Creates an ElasticSearch Scroll API query with proper permissions applied.
+	 *
+	 * @param luceneQuery The lucene query string
+	 * @param user The user executing the query
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize The size of each batch returned by the scroll
+	 * @param sortBy The sort criteria
+	 * @param returnValue The ESContentletScroll object returned by the API
+	 */
+	default void createScrollQuery(String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy, ESContentletScroll returnValue) {}
 }
