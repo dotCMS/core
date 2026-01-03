@@ -21,21 +21,15 @@ import {
     DestroyRef
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, AbstractControl, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { RadioButtonModule } from 'primeng/radiobutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -74,6 +68,7 @@ import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
+import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
@@ -134,15 +129,10 @@ import {
         DotBlockEditorSidebarComponent,
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
+        DotUveContentletQuickEditComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
         DotUveIframeComponent,
-        InputTextModule,
-        InputTextareaModule,
-        CheckboxModule,
-        DropdownModule,
-        RadioButtonModule,
-        MultiSelectModule,
         ButtonModule,
         ToolbarModule,
         InputGroupModule,
@@ -240,11 +230,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
     }
 
-    protected readonly $selectedPayload = computed(() => {
-        const { container, contentlet } = this.uveStore.selectedPayload() ?? {};
+    protected readonly $contentletEditData = computed(() => {
+        const { container, contentlet: contentletPayload } = this.uveStore.selectedPayload() ?? {};
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
 
         const contentType = this.$contenttypes().find(
-            (ct) => ct.variable === contentlet?.contentType
+            (ct) => ct.variable === contentletPayload?.contentType
         );
 
         const fields = contentType?.layout ? this.getTextFieldFields(contentType.layout) : [];
@@ -254,6 +245,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             ...field,
             options: this.parseFieldValues(field.values)
         }));
+
+        // Get the full contentlet from pageAPIResponse using container identifier and uuid
+        let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
+        if (container?.identifier && container?.uuid && contentletPayload?.identifier && pageAPIResponse) {
+            const containerData = pageAPIResponse.containers?.[container.identifier];
+            const contentletUuid = `uuid-${container.uuid}`;
+            const contentlets = containerData?.contentlets?.[contentletUuid] || [];
+            const foundContentlet = contentlets.find(
+                (c) => c.identifier === contentletPayload.identifier
+            );
+            if (foundContentlet) {
+                contentlet = foundContentlet as DotCMSContentlet;
+            }
+        }
 
         return { container, contentlet, fields: fieldsWithOptions };
     });
@@ -278,11 +283,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dragDropService = inject(DotUveDragDropService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
-    readonly #fb = inject(FormBuilder);
     #iframeResizeObserver: ResizeObserver | null = null;
 
-    readonly #contentletForm = signal<FormGroup | null>(null);
-    readonly $contentletForm = computed(() => this.#contentletForm());
     readonly #isSubmitting = signal<boolean>(false);
     readonly $isSubmitting = computed(() => this.#isSubmitting());
 
@@ -397,109 +399,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
 
-    readonly $buildContentletFormEffect = effect(() => {
-        const { fields, container, contentlet } = this.$selectedPayload();
-        const selectedPayload = this.uveStore.selectedPayload();
-        const pageAPIResponse = this.uveStore.pageAPIResponse();
-
-        if (!fields || fields.length === 0 || !selectedPayload || !pageAPIResponse) {
-            this.#contentletForm.set(null);
-            return;
-        }
-
-        // Get the full contentlet from pageAPIResponse using container identifier and uuid
-        let fullContentlet: DotCMSContentlet | undefined = contentlet as DotCMSContentlet;
-        if (container?.identifier && container?.uuid && contentlet?.identifier) {
-            const containerData = pageAPIResponse.containers?.[container.identifier];
-            const contentletUuid = `uuid-${container.uuid}`;
-            const contentlets = containerData?.contentlets?.[contentletUuid] || [];
-            const foundContentlet = contentlets.find(
-                (c) => c.identifier === contentlet.identifier
-            );
-            if (foundContentlet) {
-                fullContentlet = foundContentlet as DotCMSContentlet;
-            }
-        }
-
-        const formControls: Record<string, AbstractControl> = {};
-
-        // Add hidden inode field
-        if (fullContentlet?.inode) {
-            formControls['inode'] = this.#fb.control(fullContentlet.inode);
-        }
-
-        fields.forEach((field) => {
-            let fieldValue: string | string[] | boolean = fullContentlet?.[field.variable] ?? '';
-            const validators = [];
-
-            // Handle checkbox with multiple options - value should be an array
-            if (field.clazz === DotCMSClazzes.CHECKBOX && field.options && field.options.length > 0) {
-                // Convert string value to array if needed
-                if (typeof fieldValue === 'string' && fieldValue) {
-                    fieldValue = fieldValue.split(',').map((v) => v.trim());
-                } else if (!Array.isArray(fieldValue)) {
-                    fieldValue = [];
-                }
-            }
-
-            // Handle multi-select - value should be an array
-            if (field.clazz === DotCMSClazzes.MULTI_SELECT) {
-                if (typeof fieldValue === 'string' && fieldValue) {
-                    fieldValue = fieldValue.split(',').map((v) => v.trim());
-                } else if (!Array.isArray(fieldValue)) {
-                    fieldValue = [];
-                }
-            }
-
-            if (field.required) {
-                validators.push(Validators.required);
-            }
-
-            if (field.regexCheck) {
-                try {
-                    // Validate the regex pattern before using it
-                    new RegExp(field.regexCheck);
-                    validators.push(Validators.pattern(field.regexCheck));
-                } catch (error) {
-                    // Skip invalid regex patterns
-                    console.warn(
-                        `Invalid regex pattern for field ${field.variable}: ${field.regexCheck}`,
-                        error
-                    );
-                }
-            }
-
-            formControls[field.variable] = this.#fb.control(
-                fieldValue,
-                validators.length > 0 ? validators : null
-            );
-
-            if (field.readOnly) {
-                formControls[field.variable].disable();
-            }
-        });
-
-        this.#contentletForm.set(this.#fb.group(formControls));
-    });
-
     /**
-     * Save the contentlet form with the given contentlet
+     * Save the contentlet form with the given form data
      *
      * @private
-     * @param {DotCMSContentlet | ContentletPayload} contentlet - The contentlet to save
+     * @param {Record<string, unknown>} formData - The form data to save
      * @memberof EditEmaEditorComponent
      */
-    private saveContentletForm(contentlet: DotCMSContentlet | ContentletPayload): void {
-        const form = this.$contentletForm();
-        if (!form) {
-            return;
-        }
-
+    private saveContentletForm(formData: Record<string, unknown>): void {
         this.#isSubmitting.set(true);
-        this.dotWorkflowActionsFireService.saveContentlet({
-            ...form.value,
-            inode: contentlet.inode
-        }).subscribe({
+        this.dotWorkflowActionsFireService.saveContentlet(formData as Record<string, string>).subscribe({
             next: () => {
                 this.#isSubmitting.set(false);
                 this.reloadPage();
@@ -510,14 +419,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         });
     }
 
-    protected onFormSubmit(): void {
-        const { container, contentlet } = this.$selectedPayload();
+    protected onFormSubmit(formData: Record<string, unknown>): void {
+        const { container, contentlet } = this.$contentletEditData();
 
         const onNumberOfPages = Number(contentlet.onNumberOfPages || '1');
 
         // If the contentlet is on only one page, we can save it directly
         if (onNumberOfPages <= 1) {
-            this.saveContentletForm(contentlet);
+            this.saveContentletForm(formData);
             return;
         }
 
@@ -550,7 +459,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     } as Pick<ClientData, 'container' | 'contentlet'>);
                 }
 
-                this.saveContentletForm(resultContentlet);
+                // Update formData with the new inode if content was copied
+                const updatedFormData = {
+                    ...formData,
+                    inode: resultContentlet.inode
+                };
+                this.saveContentletForm(updatedFormData);
             });
 
     }

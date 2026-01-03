@@ -64,37 +64,16 @@ dot-results-seo-tool {
     grid-column: 2 / 3;
 }
 
-.right-sidebar {
+// Right sidebar wrapper with width transition
+.right-sidebar-wrapper {
     grid-column: 3 / -1;
     grid-row: 2 / -1;
-    background-color: $color-palette-gray-100;
-    transition: all $basic-speed ease-in-out;
-    display: flex;
-    flex-direction: column;
     overflow: hidden;
-    border-left: 1px solid $color-palette-gray-200;
-
-    &.closed {
-        width: 0;
-        border-left: none;
-    }
+    width: 0;
+    transition: width $basic-speed ease-in-out;
 
     &.open {
-        width: 25rem; // 400px equivalent
-    }
-
-    .right-sidebar-empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        width: 100%;
-
-        .empty-message {
-            color: $color-palette-gray-500;
-            font-size: 1rem;
-            margin: 0;
-        }
+        width: 25rem;
     }
 }
 

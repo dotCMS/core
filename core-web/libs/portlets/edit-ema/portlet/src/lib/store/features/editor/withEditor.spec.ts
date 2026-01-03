@@ -12,7 +12,7 @@ import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 
-import { UVE_PALETTE_TABS } from './models';
+// UVE_PALETTE_TABS removed - now managed locally in DotUvePaletteComponent
 import { withEditor } from './withEditor';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';

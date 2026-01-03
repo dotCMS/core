@@ -19,8 +19,7 @@ import {
     EditorState,
     PageData,
     PageDataContainer,
-    ReloadEditorContent,
-    UVE_PALETTE_TABS
+    ReloadEditorContent
 } from './models';
 import { withUVEToolbar } from './toolbar/withUVEToolbar';
 

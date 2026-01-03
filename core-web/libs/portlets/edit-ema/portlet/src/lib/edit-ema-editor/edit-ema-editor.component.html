@@ -195,110 +195,12 @@
 </div>
 
 @if (uveStore.$isEditMode()) {
-    <div class="right-sidebar" [ngClass]="$rightSidebarOpen() ? 'open' : 'closed'">
-        @if ($contentletForm() && $selectedPayload().fields.length > 0) {
-        <form
-            [formGroup]="$contentletForm()!"
-            (ngSubmit)="onFormSubmit()"
-            class="p-fluid p-3"
-            style="width: 400px"
-            (keydown.escape)="onCancel()"
-            tabindex="0">
-            @if ($selectedPayload().contentlet?.inode) {
-                <input type="hidden" formControlName="inode" />
-            }
-            @for (field of $selectedPayload().fields; track field.variable) {
-                <div class="field">
-                    <label
-                        [ngClass]="{ 'p-label-input-required': field.required }"
-                        [for]="field.variable">
-                        {{ field.name }}
-                    </label>
-                    @if (field.clazz === DotCMSClazzes.TEXT) {
-                        <input
-                            pInputText
-                            [id]="field.variable"
-                            [formControlName]="field.variable"
-                            [readonly]="field.readOnly" />
-                    } @else if (field.clazz === DotCMSClazzes.TEXTAREA) {
-                        <textarea
-                            [style]="{ height: '9.375rem', lineHeight: '1.5' }"
-                            pInputTextarea
-                            [id]="field.variable"
-                            [formControlName]="field.variable"
-                            [readonly]="field.readOnly"
-                            rows="4"></textarea>
-                    } @else if (field.clazz === DotCMSClazzes.CHECKBOX) {
-                        @if (field.options && field.options.length > 0) {
-                            <div class="field flex flex-column gap-2">
-                                @for (option of field.options; track option.value) {
-                                    <p-checkbox
-                                        [formControlName]="field.variable"
-                                        [value]="option.value"
-                                        [inputId]="field.variable + '-' + option.value"
-                                        [label]="option.label"
-                                        [binary]="false"></p-checkbox>
-                                }
-                            </div>
-                        } @else {
-                            <p-checkbox
-                                [formControlName]="field.variable"
-                                [inputId]="field.variable"
-                                [binary]="true"></p-checkbox>
-                        }
-                    } @else if (field.clazz === DotCMSClazzes.SELECT) {
-                        <p-dropdown
-                            [formControlName]="field.variable"
-                            [inputId]="field.variable"
-                            [options]="field.options"
-                            optionLabel="label"
-                            optionValue="value"
-                            [showClear]="true"
-                            [disabled]="field.readOnly"
-                            [placeholder]="'Select ' + field.name"></p-dropdown>
-                    } @else if (field.clazz === DotCMSClazzes.RADIO) {
-                        <div class="field flex flex-column gap-2">
-                            @for (option of field.options; track option.value) {
-                                <p-radioButton
-                                    [formControlName]="field.variable"
-                                    [value]="option.value"
-                                    [inputId]="field.variable + '-' + option.value"
-                                    [label]="option.label"
-                                    [disabled]="field.readOnly"></p-radioButton>
-                            }
-                        </div>
-                    } @else if (field.clazz === DotCMSClazzes.MULTI_SELECT) {
-                        <p-multiSelect
-                            [formControlName]="field.variable"
-                            [inputId]="field.variable"
-                            [options]="field.options"
-                            optionLabel="label"
-                            optionValue="value"
-                            [showClear]="true"
-                            [disabled]="field.readOnly"
-                            [placeholder]="'Select ' + field.name"></p-multiSelect>
-                    }
-                </div>
-            }
-            <div class="field flex justify-content-end gap-2">
-                <p-button
-                    type="button"
-                    label="Cancel"
-                    [outlined]="true"
-                    (click)="onCancel()"
-                    [disabled]="$isSubmitting()"></p-button>
-                <p-button
-                    type="submit"
-                    label="Submit"
-                    [disabled]="!$contentletForm()?.valid || $isSubmitting()"
-                    [loading]="$isSubmitting()"></p-button>
-            </div>
-        </form>
-    } @else {
-        <div class="right-sidebar-empty">
-            <p class="empty-message">Select a contentlet</p>
-        </div>
-    }
+    <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen()">
+        <dot-uve-contentlet-quick-edit
+            [data]="$contentletEditData()"
+            [loading]="$isSubmitting()"
+            (submit)="onFormSubmit($event)"
+            (cancel)="onCancel()" />
     </div>
 }
 
