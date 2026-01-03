@@ -95,7 +95,7 @@ export class DotPageApiService {
      *
      * @param {SaveStylePropertiesPayload} payload - The payload for saving style properties.
      * @param {string} payload.containerIdentifier - Identifier of the container.
-     * @param {string} payload.contentledIdentifier - Identifier of the contentlet.
+     * @param {string} payload.contentletIdentifier - Identifier of the contentlet.
      * @param {Record<string, unknown>} payload.styleProperties - Style properties to apply.
      * @param {string} payload.pageId - The page ID where styles are being saved.
      * @param {string} payload.containerUUID - UUID of the container.
