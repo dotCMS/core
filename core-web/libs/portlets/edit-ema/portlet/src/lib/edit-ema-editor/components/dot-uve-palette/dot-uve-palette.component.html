@@ -8,7 +8,11 @@
         <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
         creating triple renders and triple requests to the server. -->
         @if ($activeTab() === TABS_MAP.CONTENT_TYPES) {
-            <dot-uve-palette-list [listType]="DotUVEPaletteListTypes.CONTENT" />
+            <dot-uve-palette-list
+                [listType]="DotUVEPaletteListTypes.CONTENT"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()"
+                [variantId]="$variantId()" />
         }
     </p-tabPanel>
     <p-tabPanel>
@@ -18,7 +22,11 @@
             </div>
         </ng-template>
         @if ($activeTab() === TABS_MAP.WIDGETS) {
-            <dot-uve-palette-list [listType]="DotUVEPaletteListTypes.WIDGET" />
+            <dot-uve-palette-list
+                [listType]="DotUVEPaletteListTypes.WIDGET"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()"
+                [variantId]="$variantId()" />
         }
     </p-tabPanel>
     <p-tabPanel>
@@ -28,7 +36,11 @@
             </div>
         </ng-template>
         @if ($activeTab() === TABS_MAP.FAVORITES) {
-            <dot-uve-palette-list [listType]="DotUVEPaletteListTypes.FAVORITES" />
+            <dot-uve-palette-list
+                [listType]="DotUVEPaletteListTypes.FAVORITES"
+                [languageId]="$languageId()"
+                [pagePath]="$pagePath()"
+                [variantId]="$variantId()" />
         }
     </p-tabPanel>
     <p-tabPanel>

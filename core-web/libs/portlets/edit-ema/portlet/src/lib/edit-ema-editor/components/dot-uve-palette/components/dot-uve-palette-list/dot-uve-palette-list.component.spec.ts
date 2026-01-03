@@ -23,7 +23,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUvePaletteListComponent } from './dot-uve-palette-list.component';
 import { DotPaletteListStore } from './store/store';
 
-import { UVEStore } from '../../../../../store/dot-uve.store';
 import { DotPaletteListStatus, DotUVEPaletteListTypes, DotUVEPaletteListView } from '../../models';
 import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favorite-selector.component';
 
@@ -173,12 +172,6 @@ const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com')
 };
 
-const mockUVEStore = {
-    $pageURI: signal('/test-page'),
-    $languageId: signal(1),
-    $variantId: signal(DEFAULT_VARIANT_ID)
-};
-
 describe('DotUvePaletteListComponent', () => {
     let spectator: Spectator<DotUvePaletteListComponent>;
     let store: jest.Mocked<InstanceType<typeof DotPaletteListStore>>;
@@ -190,10 +183,6 @@ describe('DotUvePaletteListComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
-            },
-            {
-                provide: UVEStore,
-                useValue: mockUVEStore
             },
             {
                 provide: DotPageContentTypeService,
@@ -252,18 +241,21 @@ describe('DotUvePaletteListComponent', () => {
 
     beforeEach(() => {
         jest.useFakeTimers();
-        // Reset mockGlobalStore and mockUVEStore signals
+        // Reset mockGlobalStore signal
         mockGlobalStore.currentSiteId.set('demo.dotcms.com');
-        mockUVEStore.$pageURI.set('/test-page');
-        mockUVEStore.$languageId.set(1);
-        mockUVEStore.$variantId.set(DEFAULT_VARIANT_ID);
 
         spectator = createComponent({
             providers: [mockProvider(DotPaletteListStore, mockStore)],
             detectChanges: false
         });
         store = spectator.inject(DotPaletteListStore, true);
+
+        // Set required inputs - use fixture.componentRef.setInput to avoid triggering change detection
+        // Component now receives these via @Input instead of store injection
         spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
+        spectator.fixture.componentRef.setInput('languageId', 1);
+        spectator.fixture.componentRef.setInput('pagePath', '/test-page');
+        spectator.fixture.componentRef.setInput('variantId', DEFAULT_VARIANT_ID);
     });
 
     afterEach(() => {
@@ -719,8 +711,8 @@ describe('DotUvePaletteListComponent', () => {
             // Clear initial calls
             jest.clearAllMocks();
 
-            // Change languageId in UVEStore
-            mockUVEStore.$languageId.set(2);
+            // Change languageId via input (component now receives props, not store)
+            spectator.setInput('languageId', 2);
             spectator.detectChanges();
 
             expect(store.getContentTypes).toHaveBeenCalledWith(
@@ -733,15 +725,15 @@ describe('DotUvePaletteListComponent', () => {
             );
         });
 
-        it('should pass host parameter with other store changes (pagePath from UVEStore)', () => {
+        it('should pass host parameter with other store changes (pagePath via input)', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
             // Clear initial calls
             jest.clearAllMocks();
 
-            // Change pagePath in UVEStore
-            mockUVEStore.$pageURI.set('/new-page');
+            // Change pagePath via input (component now receives props, not store)
+            spectator.setInput('pagePath', '/new-page');
             spectator.detectChanges();
 
             expect(store.getContentTypes).toHaveBeenCalledWith(

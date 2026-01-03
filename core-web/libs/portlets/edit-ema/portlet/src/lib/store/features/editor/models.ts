@@ -27,7 +27,7 @@ export interface EditorState {
     contentArea?: ContentletArea;
     palette: {
         open: boolean;
-        currentTab: UVE_PALETTE_TABS;
+        // currentTab removed - now managed locally in DotUvePaletteComponent
     };
     rightSidebar: {
         open: boolean;

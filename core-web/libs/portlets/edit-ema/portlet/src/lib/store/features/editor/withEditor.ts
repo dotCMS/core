@@ -66,8 +66,8 @@ const initialState: EditorState = {
     activeContentlet: null,
     contentArea: null,
     palette: {
-        open: true,
-        currentTab: UVE_PALETTE_TABS.CONTENT_TYPES
+        open: true
+        // currentTab removed - now managed locally in DotUvePaletteComponent
     },
     rightSidebar: {
         open: false
@@ -314,8 +314,8 @@ export function withEditor() {
                     patchState(store, {
                         activeContentlet: contentlet,
                         palette: {
-                            open: true,
-                            currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
+                            open: true
+                            // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
                         }
                     });
                 },
@@ -377,14 +377,9 @@ export function withEditor() {
                 setOgTags(ogTags: SeoMetaTags) {
                     patchState(store, { ogTags });
                 },
-                setPaletteTab(tab: UVE_PALETTE_TABS) {
-                    patchState(store, {
-                        palette: { open: true, currentTab: tab }
-                    });
-                },
                 setPaletteOpen(open: boolean) {
                     patchState(store, {
-                        palette: { ...store.palette(), open }
+                        palette: { open }
                     });
                 },
                 setRightSidebarOpen(open: boolean) {

@@ -737,7 +737,7 @@ describe('withEditor', () => {
                 expect(store.activeContentlet()).toEqual(mockContentlet);
             });
 
-            it('should open palette and set current tab to STYLE_EDITOR', () => {
+            it('should open palette when contentlet is set', () => {
                 const mockContentlet = {
                     identifier: 'test-contentlet-id',
                     inode: 'test-inode',
@@ -748,12 +748,12 @@ describe('withEditor', () => {
                 store.setActiveContentlet(mockContentlet);
 
                 expect(store.palette()).toEqual({
-                    open: true,
-                    currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
+                    open: true
+                    // currentTab removed - now managed locally in DotUvePaletteComponent
                 });
             });
 
-            it('should switch to STYLE_EDITOR tab even if palette was on different tab', () => {
+            it('should set activeContentlet and open palette', () => {
                 const mockContentlet = {
                     identifier: 'test-contentlet-id',
                     inode: 'test-inode',
@@ -761,16 +761,11 @@ describe('withEditor', () => {
                     contentType: 'testType'
                 };
 
-                // Set palette to a different tab first
-                store.setPaletteTab(UVE_PALETTE_TABS.CONTENT_TYPES);
-                expect(store.palette().currentTab).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
-
-                // Now set active contentlet
                 store.setActiveContentlet(mockContentlet);
 
-                // Should switch to STYLE_EDITOR
-                expect(store.palette().currentTab).toBe(UVE_PALETTE_TABS.STYLE_EDITOR);
+                expect(store.activeContentlet()).toEqual(mockContentlet);
                 expect(store.palette().open).toBe(true);
+                // Tab switching to STYLE_EDITOR now handled by DotUvePaletteComponent via effect
             });
         });
 
