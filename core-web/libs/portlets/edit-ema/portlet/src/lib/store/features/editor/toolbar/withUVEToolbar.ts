@@ -52,6 +52,11 @@ export function withUVEToolbar() {
         withState<EditorToolbarState>(initialState),
         withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => ({
+            /**
+             * @deprecated Phase 2.3: Moved to DotUveToolbarComponent as local computed properties
+             * ($bookmarksUrl, $currentLanguage, $runningExperiment)
+             * This will be removed in Phase 2.4
+             */
             $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();
                 const url = params?.url;

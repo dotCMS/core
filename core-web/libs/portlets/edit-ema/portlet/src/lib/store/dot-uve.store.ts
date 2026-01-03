@@ -98,6 +98,11 @@ export const UVEStore = signalStore(
                         currentLanguage
                     };
                 }),
+                /**
+                 * @deprecated Phase 2.1: Moved to DotEmaShellComponent as local computed properties
+                 * ($menuItems, $seoParams, $errorDisplay, $canRead)
+                 * This will be removed in Phase 2.4
+                 */
                 $shellProps: computed<ShellProps>(() => {
                     const response = pageAPIResponse();
 

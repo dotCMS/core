@@ -1,6 +1,6 @@
 @let ogTagsResults = ogTagsResults$;
-@let showSEOTool = $editorProps().seoResults && ogTagsResults;
-@let dropzone = $editorProps().dropzone;
+@let showSEOTool = $seoResults() && ogTagsResults;
+@let dropzone = $dropzone();
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
@@ -8,8 +8,8 @@
 
 @if (showSEOTool) {
     <dot-results-seo-tool
-        [seoMedia]="$editorProps().seoResults.socialMedia"
-        [seoOGTags]="$editorProps().seoResults.ogTags"
+        [seoMedia]="$seoResults().socialMedia"
+        [seoOGTags]="$seoResults().ogTags"
         [seoOGTagsResults]="ogTagsResults"
         data-testId="results-seo-tool" />
 }
@@ -130,7 +130,7 @@
                 <div class="canvas-inner" [ngStyle]="$canvasInnerStyles()">
                     <div
                         [ngClass]="{
-                            'iframe-wrapper--device': $editorProps().iframe.wrapper
+                            'iframe-wrapper--device': $iframeProps().wrapper
                         }"
                         [ngStyle]="$iframeWrapperStyles()"
                         class="iframe-wrapper">
@@ -149,7 +149,7 @@
                             #iframe
                             data-testId="iframe"></dot-uve-iframe>
 
-                        @if ($editorProps().progressBar) {
+                        @if ($progressBar()) {
                             <p-progressBar
                                 [ngStyle]="{
                                     position: 'absolute',
@@ -204,7 +204,7 @@
     </div>
 }
 
-@if ($editorProps().showDialogs) {
+@if ($showDialogs()) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
         (reloadFromDialog)="reloadPage()"
@@ -220,7 +220,7 @@
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog" />
 
-@if ($editorProps().showBlockEditorSidebar) {
+@if ($showBlockEditorSidebar()) {
     <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }
 

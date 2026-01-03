@@ -1041,6 +1041,151 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
+    describe('Phase 2.1: Local View Models', () => {
+        describe('$menuItems computed property', () => {
+            it('should build menu items with correct structure', () => {
+                const menuItems = spectator.component['$menuItems']();
+
+                expect(menuItems).toHaveLength(6);
+                expect(menuItems[0]).toEqual({
+                    icon: 'pi-file',
+                    label: 'editema.editor.navbar.content',
+                    href: 'content',
+                    id: 'content'
+                });
+            });
+
+            it('should disable layout when page cannot be edited', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                const menuItems = spectator.component['$menuItems']();
+                const layoutItem = menuItems.find((item) => item.id === 'layout');
+
+                expect(layoutItem.isDisabled).toBe(true);
+            });
+
+            it('should disable layout for non-enterprise license', () => {
+                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+                spectator.detectChanges();
+
+                const menuItems = spectator.component['$menuItems']();
+                const layoutItem = menuItems.find((item) => item.id === 'layout');
+
+                expect(layoutItem.isDisabled).toBe(true);
+            });
+
+            it('should show tooltip for advanced templates', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        template: {
+                            ...MOCK_RESPONSE_HEADLESS.template,
+                            drawed: false
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                const menuItems = spectator.component['$menuItems']();
+                const layoutItem = menuItems.find((item) => item.id === 'layout');
+
+                expect(layoutItem.tooltip).toBe(
+                    'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+                );
+            });
+        });
+
+        describe('$seoParams computed property', () => {
+            it('should build SEO params with correct structure', () => {
+                const seoParams = spectator.component['$seoParams']();
+
+                expect(seoParams).toEqual({
+                    siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
+                    languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
+                    currentUrl: expect.stringContaining('/'),
+                    requestHostName: expect.any(String)
+                });
+            });
+
+            it('should sanitize and format page URI correctly', () => {
+                const seoParams = spectator.component['$seoParams']();
+                const currentUrl = seoParams.currentUrl;
+
+                expect(currentUrl).toMatch(/^\//);
+            });
+        });
+
+        describe('$errorDisplay computed property', () => {
+            it('should return null when no error code', () => {
+                const errorDisplay = spectator.component['$errorDisplay']();
+
+                expect(errorDisplay).toBeNull();
+            });
+
+            it('should return error payload when error code exists', () => {
+                spectator.component['uveStore'].setUveStatus = jest.fn();
+                // Simulate an error by directly patching the store
+                const store = spectator.component['uveStore'];
+                (store as any).errorCode = jest.fn().mockReturnValue(401);
+
+                spectator.detectChanges();
+
+                const errorDisplay = spectator.component['$errorDisplay']();
+
+                expect(errorDisplay).not.toBeNull();
+                expect(errorDisplay?.code).toBe(401);
+            });
+        });
+
+        describe('$canRead computed property', () => {
+            it('should return true when page can be read', () => {
+                const canRead = spectator.component['$canRead']();
+
+                expect(canRead).toBe(true);
+            });
+
+            it('should return false when page cannot be read', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canRead: false
+                        }
+                    })
+                );
+                spectator.detectChanges();
+
+                const canRead = spectator.component['$canRead']();
+
+                expect(canRead).toBe(false);
+            });
+
+            it('should return false when page is undefined', () => {
+                jest.spyOn(dotPageApiService, 'get').mockReturnValue(
+                    of({
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: undefined
+                    })
+                );
+                spectator.detectChanges();
+
+                const canRead = spectator.component['$canRead']();
+
+                expect(canRead).toBe(false);
+            });
+        });
+    });
+
     afterEach(() => {
         // Restoring the snapshot to the default
         overrideRouteSnashot(

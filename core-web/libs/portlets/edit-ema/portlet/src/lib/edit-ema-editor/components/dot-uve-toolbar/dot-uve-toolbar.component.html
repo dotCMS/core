@@ -1,11 +1,11 @@
 @let preview = $isPreviewMode();
 @let live = $isLiveMode();
-@let runningExperiment = $toolbar().runningExperiment;
+@let runningExperiment = $runningExperiment();
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
         <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
-        <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
+        <dot-ema-bookmarks [url]="$bookmarksUrl()" />
         <a
             title="Page API URL"
             [pTooltip]="'uve.toolbar.page.api.url' | dm"
@@ -77,7 +77,7 @@
         <dot-edit-ema-language-selector
             #languageSelector
             (selected)="onLanguageSelected($event)"
-            [language]="$toolbar().currentLanguage"
+            [language]="$currentLanguage()"
             data-testId="uve-toolbar-language-selector" />
 
         <dot-edit-ema-persona-selector

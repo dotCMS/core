@@ -24,7 +24,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { map } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DotLanguage, DotDeviceListItem, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -43,7 +43,11 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { convertLocalTimeToUTC, convertUTCToLocalTime } from '../../../utils';
+import {
+    convertLocalTimeToUTC,
+    convertUTCToLocalTime,
+    createFavoritePagesURL
+} from '../../../utils';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -87,7 +91,29 @@ export class DotUveToolbarComponent {
     readonly #deviceService = inject(DotDevicesService);
     readonly #router = inject(Router);
 
-    readonly $toolbar = this.#store.$uveToolbar;
+    // Component builds its own toolbar props locally (Phase 2.3: Move view models from store to components)
+    protected readonly $bookmarksUrl = computed<string>(() => {
+        const params = this.#store.pageParams();
+        const pageAPIResponse = this.#store.pageAPIResponse();
+
+        return createFavoritePagesURL({
+            languageId: Number(params?.language_id),
+            pageURI: params?.url,
+            siteId: pageAPIResponse?.site?.identifier
+        });
+    });
+
+    protected readonly $currentLanguage = computed(() => {
+        return this.#store.pageAPIResponse()?.viewAs.language;
+    });
+
+    protected readonly $runningExperiment = computed(() => {
+        const experiment = this.#store.experiment?.();
+        const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
+
+        return isExperimentRunning ? experiment : null;
+    });
+
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $isEditMode = this.#store.$isEditMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
@@ -385,7 +411,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector().listbox.writeValue(this.$toolbar().currentLanguage);
+                this.$languageSelector().listbox.writeValue(this.$currentLanguage());
             }
         });
     }

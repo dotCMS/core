@@ -59,7 +59,8 @@ import {
     DotCMSInlineEditingType,
     DotCMSPage,
     DotCMSURLContentMap,
-    DotCMSUVEAction
+    DotCMSUVEAction,
+    UVE_MODE
 } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
@@ -103,7 +104,9 @@ import {
     TEMPORAL_DRAG_ITEM,
     createFullURL,
     deleteContentletFromContainer,
+    getEditorStates,
     getTargetUrl,
+    getWrapperMeasures,
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
@@ -231,7 +234,83 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-    readonly $editorProps = this.uveStore.$editorProps;
+
+    // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
+    protected readonly $showDialogs = computed<boolean>(() => {
+        const canEditPage = this.uveStore.$canEditPage();
+        const isEditState = this.uveStore.isEditState();
+        return canEditPage && isEditState;
+    });
+
+    protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
+        const canEditPage = this.uveStore.$canEditPage();
+        const isEditState = this.uveStore.isEditState();
+        const isEnterprise = this.uveStore.isEnterprise();
+        return canEditPage && isEditState && isEnterprise;
+    });
+
+    protected readonly $iframeProps = computed(() => {
+        // Use it to create dependencies to the pageAPIResponse
+        this.uveStore.pageAPIResponse();
+        const params = this.uveStore.pageParams();
+        const isTraditionalPage = this.uveStore.isTraditionalPage();
+        const isClientReady = this.uveStore.isClientReady();
+        const state = this.uveStore.state();
+        const device = this.uveStore.device();
+
+        const isEditMode = params?.mode === UVE_MODE.EDIT;
+        const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
+        const isLoading = !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
+        const { dragIsActive } = getEditorStates(state);
+        const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
+        const wrapper = getWrapperMeasures(device, this.uveStore.orientation());
+
+        return {
+            opacity: iframeOpacity,
+            pointerEvents: dragIsActive ? 'none' : 'auto',
+            wrapper: device ? wrapper : null
+        };
+    });
+
+    protected readonly $progressBar = computed<boolean>(() => {
+        this.uveStore.pageAPIResponse();
+        const params = this.uveStore.pageParams();
+        const isTraditionalPage = this.uveStore.isTraditionalPage();
+        const isClientReady = this.uveStore.isClientReady();
+
+        const isEditMode = params?.mode === UVE_MODE.EDIT;
+        const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
+        return !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
+    });
+
+    protected readonly $dropzone = computed(() => {
+        const canEditPage = this.uveStore.$canEditPage();
+        const state = this.uveStore.state();
+        const bounds = this.uveStore.bounds();
+        const dragItem = this.uveStore.dragItem();
+
+        const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
+
+        return showDropzone
+            ? {
+                  bounds,
+                  dragItem
+              }
+            : null;
+    });
+
+    protected readonly $seoResults = computed(() => {
+        const socialMedia = this.uveStore.socialMedia();
+        const ogTags = this.uveStore.ogTags();
+        const shouldShowSeoResults = socialMedia && ogTags;
+
+        return shouldShowSeoResults
+            ? {
+                  ogTags,
+                  socialMedia
+              }
+            : null;
+    });
 
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
@@ -256,7 +335,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $canvasInnerStyles = this.zoomService.$canvasInnerStyles;
 
     readonly $iframeWrapperStyles = computed((): Record<string, string> => {
-        const wrapper = this.$editorProps().iframe.wrapper;
+        const wrapper = this.$iframeProps().wrapper;
         if (!wrapper) {
             return {};
         }
@@ -272,11 +351,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return (typeof url === 'string' ? url : '') || '';
     });
     readonly $iframePointerEvents = computed((): string => {
-        const events = this.$editorProps().iframe.pointerEvents;
+        const events = this.$iframeProps().pointerEvents;
         return (typeof events === 'string' ? events : '') || '';
     });
     readonly $iframeOpacity = computed((): number => {
-        const opacity = this.$editorProps().iframe.opacity;
+        const opacity = this.$iframeProps().opacity;
         return (typeof opacity === 'number' ? opacity : 1) || 1;
     });
 

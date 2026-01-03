@@ -154,6 +154,11 @@ export function withEditor() {
                 $editorIsInDraggingState: computed<boolean>(
                     () => store.state() === EDITOR_STATE.DRAGGING
                 ),
+                /**
+                 * @deprecated Phase 2.2: Moved to EditEmaEditorComponent as local computed properties
+                 * ($showDialogs, $showBlockEditorSidebar, $iframeProps, $progressBar, $dropzone, $seoResults)
+                 * This will be removed in Phase 2.4
+                 */
                 $editorProps: computed<EditorProps>(() => {
                     // Use it to create depdencies to the pageAPIResponse
                     // I did a refactor but need more testing before removing this dependency
