@@ -139,6 +139,97 @@ export class DotUveContentletQuickEditComponent {
   - Presentational component changes are isolated
 - **Easier refactoring**: Components can be converted between patterns as needs evolve
 
+## State Management Architecture
+
+### UVEStore State Structure
+
+The UVEStore uses a **nested state structure** to clearly separate concerns:
+
+```typescript
+interface UVEState {
+    // ============ DOMAIN STATE (Source of Truth) ============
+    languages: DotLanguage[];
+    isEnterprise: boolean;
+    currentUser?: CurrentUser;
+    experiment?: DotExperiment;
+    pageAPIResponse?: DotCMSPageAsset;
+
+    // ============ UI STATE (Transient) ============
+    // Nested editor state
+    editor: {
+        // Functional editor state
+        dragItem: EmaDragItem | null;
+        bounds: Container[];
+        state: EDITOR_STATE;
+        activeContentlet: ContentletPayload | null;
+        contentArea: ContentletArea | null;
+
+        // UI panel preferences (user-configurable)
+        panels: {
+            palette: { open: boolean };
+            rightSidebar: { open: boolean };
+        };
+
+        // Editor-specific data
+        ogTags: any | null;
+        styleSchemas: StyleEditorFormSchema[];
+    };
+
+    // Nested toolbar state
+    toolbar: {
+        device: DotDeviceListItem | null;
+        orientation: Orientation | null;
+        socialMedia: string | null;
+        isEditState: boolean;
+        isPreviewModeActive: boolean;
+        ogTagsResults: SeoMetaTagsResult[] | null;
+    };
+}
+```
+
+### Accessing Nested State in Components
+
+**Container components** access nested state directly:
+
+```typescript
+// Access editor functional state
+const dragItem = this.uveStore.editor().dragItem;
+const editorState = this.uveStore.editor().state;
+
+// Access panel preferences
+const isPaletteOpen = this.uveStore.editor().panels.palette.open;
+const isSidebarOpen = this.uveStore.editor().panels.rightSidebar.open;
+
+// Access toolbar state
+const device = this.uveStore.toolbar().device;
+const socialMedia = this.uveStore.toolbar().socialMedia;
+```
+
+**Updating nested state** requires spreading the parent object:
+
+```typescript
+// Update panel state
+setPaletteOpen(open: boolean) {
+    const editor = store.editor();
+    patchState(store, {
+        editor: {
+            ...editor,
+            panels: {
+                ...editor.panels,
+                palette: { open }
+            }
+        }
+    });
+}
+```
+
+### Benefits of Nested State
+
+- **Clear Grouping**: Related state is grouped together (editor.panels groups all panel preferences)
+- **Easier to Reason About**: The structure mirrors the UI hierarchy
+- **Better Type Safety**: TypeScript can catch errors at deeper levels
+- **Reduced Prop Drilling**: Components get logical state chunks instead of individual properties
+
 ## Running Tests
 
 Run unit tests for this portlet:

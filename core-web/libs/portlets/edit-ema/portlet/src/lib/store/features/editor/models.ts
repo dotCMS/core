@@ -1,7 +1,5 @@
 import {
     DotDeviceListItem,
-    DotExperiment,
-    DotLanguage,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
@@ -59,56 +57,6 @@ export interface PageData {
 
 export interface ReloadEditorContent {
     isTraditionalPage: boolean;
-}
-
-export interface EditorProps {
-    seoResults?: {
-        ogTags: SeoMetaTags;
-        socialMedia: string;
-    };
-    iframe: {
-        wrapper?: {
-            width: string;
-            height: string;
-        };
-        pointerEvents: string;
-        opacity: string;
-    };
-    dropzone?: {
-        bounds: Container[];
-        dragItem: EmaDragItem;
-    };
-    showDialogs: boolean;
-    progressBar: boolean;
-    showBlockEditorSidebar: boolean;
-}
-
-/**
- * This is used for model the props of
- * the New UVE Toolbar with Preview Mode and Future Time Machine
- *
- * @export
- * @interface UVEToolbarProps
- */
-export interface UVEToolbarProps {
-    editor: {
-        bookmarksUrl: string;
-        apiUrl: string;
-    };
-    preview?: {
-        deviceSelector: {
-            apiLink: string;
-            hideSocialMedia: boolean;
-        };
-    };
-    runningExperiment?: DotExperiment;
-    currentLanguage: DotLanguage;
-    workflowActionsInode?: string;
-    unlockButton?: {
-        inode: string;
-        loading: boolean;
-    };
-    showInfoDisplay?: boolean;
 }
 
 export interface PersonaSelectorProps {

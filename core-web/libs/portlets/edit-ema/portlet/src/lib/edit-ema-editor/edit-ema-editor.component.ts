@@ -324,10 +324,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.toolbar().ogTagsResults));
 
     get $paletteOpen() {
-        return this.uveStore.editor().palette.open;
+        return this.uveStore.editor().panels.palette.open;
     }
     get $rightSidebarOpen() {
-        return this.uveStore.editor().rightSidebar.open;
+        return this.uveStore.editor().panels.rightSidebar.open;
     }
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly $showContentletControls = this.uveStore.$showContentletControls;

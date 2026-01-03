@@ -127,7 +127,7 @@ export class DotUveToolbarComponent {
     }
     readonly $urlContentMap = this.#store.$urlContentMap;
     get $isPaletteOpen() {
-        return this.#store.editor().palette.open;
+        return this.#store.editor().panels.palette.open;
     }
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(

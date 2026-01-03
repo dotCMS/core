@@ -4,11 +4,9 @@ import {
     DotDeviceListItem,
     DotExperiment,
     DotLanguage,
-    DotPageToolUrlParams,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
-import { InfoPage } from '@dotcms/ui';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
@@ -17,7 +15,7 @@ import {
     EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { UVE_STATUS, EDITOR_STATE } from '../shared/enums';
-import { ClientData, ContentletPayload, DotPageAssetParams, NavigationBarItem } from '../shared/models';
+import { ClientData, ContentletPayload, DotPageAssetParams } from '../shared/models';
 
 /**
  * Phase 3.1: UI State Interfaces
@@ -38,12 +36,14 @@ export interface EditorUIState {
     activeContentlet: ContentletPayload | null;
     contentArea: ContentletArea | null;
 
-    // UI panels
-    palette: {
-        open: boolean;
-    };
-    rightSidebar: {
-        open: boolean;
+    // UI panel preferences (user-configurable)
+    panels: {
+        palette: {
+            open: boolean;
+        };
+        rightSidebar: {
+            open: boolean;
+        };
     };
 
     // Editor-specific data
@@ -144,21 +144,6 @@ export interface NormalizedViewAsState {
     personaId: string | null;
     personaKeyTag: string | null;
     variantId: string | null;
-}
-
-/**
- * @deprecated Phase 2.1: Moved to DotEmaShellComponent as local computed properties
- * ($menuItems, $seoParams, $errorDisplay, $canRead)
- * Will be removed in Phase 3.3
- */
-export interface ShellProps {
-    canRead: boolean;
-    error: {
-        code: number;
-        pageInfo: InfoPage;
-    };
-    items: NavigationBarItem[];
-    seoParams: DotPageToolUrlParams;
 }
 
 export interface TranslateProps {

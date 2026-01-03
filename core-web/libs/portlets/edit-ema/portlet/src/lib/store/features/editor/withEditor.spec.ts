@@ -649,13 +649,13 @@ describe('withEditor', () => {
             it('should toggle the palette', () => {
                 store.setPaletteOpen(true);
 
-                expect(store.palette().open).toBe(true);
+                expect(store.editor().panels.palette.open).toBe(true);
             });
 
             it('should toggle the palette', () => {
                 store.setPaletteOpen(false);
 
-                expect(store.palette().open).toBe(false);
+                expect(store.editor().panels.palette.open).toBe(false);
             });
         });
 
@@ -764,7 +764,7 @@ describe('withEditor', () => {
                 store.setActiveContentlet(mockContentlet);
 
                 expect(store.activeContentlet()).toEqual(mockContentlet);
-                expect(store.palette().open).toBe(true);
+                expect(store.editor().panels.palette.open).toBe(true);
                 // Tab switching to STYLE_EDITOR now handled by DotUvePaletteComponent via effect
             });
         });

@@ -9,12 +9,10 @@ import {
 import { computed, inject, untracked } from '@angular/core';
 
 import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
-    EditorProps,
     PageData,
     PageDataContainer,
     ReloadEditorContent
@@ -27,7 +25,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -38,9 +36,7 @@ import {
     mapContainerStructureToArrayOfContainers,
     getPersonalization,
     areContainersEquals,
-    getEditorStates,
     sanitizeURL,
-    getWrapperMeasures,
     getFullPageURL
 } from '../../../utils';
 import { UVEState } from '../../models';
@@ -138,71 +134,6 @@ export function withEditor() {
                 }),
                 $editorIsInDraggingState: computed<boolean>(() => {
                     return store.editor().state === EDITOR_STATE.DRAGGING;
-                }),
-                /**
-                 * @deprecated Phase 2.2: Moved to EditEmaEditorComponent as local computed properties
-                 * ($showDialogs, $showBlockEditorSidebar, $iframeProps, $progressBar, $dropzone, $seoResults)
-                 * This will be removed in Phase 3.3
-                 */
-                $editorProps: computed<EditorProps>(() => {
-                    // Use it to create depdencies to the pageAPIResponse
-                    // I did a refactor but need more testing before removing this dependency
-                    store.pageAPIResponse();
-                    const toolbar = store.toolbar();
-                    const editor = store.editor();
-                    const socialMedia = toolbar.socialMedia;
-                    const ogTags = editor.ogTags;
-                    const device = toolbar.device;
-                    const canEditPage = store.$canEditPage();
-                    const isEnterprise = store.isEnterprise();
-                    const editorState = editor.state;
-                    const params = store.pageParams();
-                    const isTraditionalPage = store.isTraditionalPage();
-                    const isClientReady = store.isClientReady();
-                    const bounds = editor.bounds;
-                    const dragItem = editor.dragItem;
-                    const isEditState = toolbar.isEditState;
-
-                    const isEditMode = params?.mode === UVE_MODE.EDIT;
-
-                    const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
-                    const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
-
-                    const { dragIsActive } = getEditorStates(editorState);
-
-                    const showDialogs = canEditPage && isEditState;
-                    const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
-
-                    const showDropzone = canEditPage && editorState === EDITOR_STATE.DRAGGING;
-
-                    const shouldShowSeoResults = socialMedia && ogTags;
-
-                    const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-
-                    const wrapper = getWrapperMeasures(device, toolbar.orientation);
-
-                    return {
-                        showDialogs,
-                        showBlockEditorSidebar,
-                        iframe: {
-                            opacity: iframeOpacity,
-                            pointerEvents: dragIsActive ? 'none' : 'auto',
-                            wrapper: device ? wrapper : null
-                        },
-                        progressBar: isLoading,
-                        dropzone: showDropzone
-                            ? {
-                                  bounds,
-                                  dragItem
-                              }
-                            : null,
-                        seoResults: shouldShowSeoResults
-                            ? {
-                                  ogTags,
-                                  socialMedia
-                              }
-                            : null
-                    };
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     /*
@@ -355,9 +286,12 @@ export function withEditor() {
                         editor: {
                             ...editor,
                             activeContentlet: contentlet,
-                            palette: {
-                                open: true
-                                // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
+                            panels: {
+                                ...editor.panels,
+                                palette: {
+                                    open: true
+                                    // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
+                                }
                             }
                         }
                     });
@@ -435,7 +369,10 @@ export function withEditor() {
                     patchState(store, {
                         editor: {
                             ...editor,
-                            palette: { open }
+                            panels: {
+                                ...editor.panels,
+                                palette: { open }
+                            }
                         }
                     });
                 },
@@ -444,7 +381,10 @@ export function withEditor() {
                     patchState(store, {
                         editor: {
                             ...editor,
-                            rightSidebar: { ...editor.rightSidebar, open }
+                            panels: {
+                                ...editor.panels,
+                                rightSidebar: { open }
+                            }
                         }
                     });
                 }

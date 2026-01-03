@@ -11,13 +11,12 @@ import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
-import { DotUveViewParams, ShellProps, TranslateProps, UVEState, Orientation } from './models';
+import { DotUveViewParams, TranslateProps, UVEState, Orientation } from './models';
 
-import { DEFAULT_DEVICE } from '../shared/consts';
-import { UVE_FEATURE_FLAGS } from '../shared/consts';
+import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import { ClientData } from '../shared/models';
-import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
+import { normalizeQueryParams } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
@@ -41,11 +40,13 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
-        palette: {
-            open: true
-        },
-        rightSidebar: {
-            open: false
+        panels: {
+            palette: {
+                open: true
+            },
+            rightSidebar: {
+                open: false
+            }
         },
         ogTags: null,
         styleSchemas: []
@@ -105,9 +106,6 @@ export const UVEStore = signalStore(
             pageParams,
             viewParams,
             languages,
-            errorCode: error,
-            status,
-            isEnterprise
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
@@ -121,89 +119,6 @@ export const UVEStore = signalStore(
                     return {
                         page: response?.page,
                         currentLanguage
-                    };
-                }),
-                /**
-                 * @deprecated Phase 2.1: Moved to DotEmaShellComponent as local computed properties
-                 * ($menuItems, $seoParams, $errorDisplay, $canRead)
-                 * This will be removed in Phase 2.4
-                 */
-                $shellProps: computed<ShellProps>(() => {
-                    const response = pageAPIResponse();
-
-                    const url = sanitizeURL(response?.page.pageURI);
-                    const currentUrl = url.startsWith('/') ? url : '/' + url;
-
-                    const requestHostName = getRequestHostName(pageParams());
-
-                    const page = response?.page;
-                    const templateDrawed = response?.template.drawed;
-
-                    const isLayoutDisabled = !page?.canEdit || !templateDrawed;
-                    const errorCode = error();
-
-                    const errorPayload = getErrorPayload(errorCode);
-                    const isLoading = status() === UVE_STATUS.LOADING;
-                    const isEnterpriseLicense = isEnterprise();
-
-                    const canSeeRulesExists = page && 'canSeeRules' in page;
-
-                    return {
-                        canRead: page?.canRead,
-                        error: errorPayload,
-                        seoParams: {
-                            siteId: response?.site?.identifier,
-                            languageId: response?.viewAs.language.id,
-                            currentUrl,
-                            requestHostName
-                        },
-                        items: [
-                            {
-                                icon: 'pi-file',
-                                label: 'editema.editor.navbar.content',
-                                href: 'content',
-                                id: 'content'
-                            },
-                            {
-                                icon: 'pi-table',
-                                label: 'editema.editor.navbar.layout',
-                                href: 'layout',
-                                id: 'layout',
-                                isDisabled: isLayoutDisabled || !isEnterpriseLicense,
-                                tooltip: templateDrawed
-                                    ? null
-                                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                            },
-                            {
-                                icon: 'pi-sliders-h',
-                                label: 'editema.editor.navbar.rules',
-                                id: 'rules',
-                                href: `rules/${page?.identifier}`,
-                                isDisabled:
-                                    // Check if the page has the canSeeRules property, GraphQL query does suppport this property
-                                    (canSeeRulesExists && !page.canSeeRules) ||
-                                    !page?.canEdit ||
-                                    !isEnterpriseLicense
-                            },
-                            {
-                                iconURL: 'experiments',
-                                label: 'editema.editor.navbar.experiments',
-                                href: `experiments/${page?.identifier}`,
-                                id: 'experiments',
-                                isDisabled: !page?.canEdit || !isEnterpriseLicense
-                            },
-                            {
-                                icon: 'pi-th-large',
-                                label: 'editema.editor.navbar.page-tools',
-                                id: 'page-tools'
-                            },
-                            {
-                                icon: 'pi-ellipsis-v',
-                                label: 'editema.editor.navbar.properties',
-                                id: 'properties',
-                                isDisabled: isLoading
-                            }
-                        ]
                     };
                 }),
                 $friendlyParams: computed(() => {

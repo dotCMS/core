@@ -2,29 +2,27 @@ import {
     signalStoreFeature,
     withMethods,
     withComputed,
-    withState,
     type,
     patchState
 } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
-import { DotDevice, DotExperimentStatus, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import { DEFAULT_DEVICE, DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../../shared/consts';
+import { DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
 import {
     computeIsPageLocked,
-    createFavoritePagesURL,
     getFullPageURL,
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
 import { Orientation, UVEState } from '../../../models';
 import { withFlags } from '../../flags/withFlags';
-import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
+import { PersonaSelectorProps } from '../models';
 
 /**
  * Phase 3.2: Refactored to work with nested toolbar state
@@ -37,68 +35,6 @@ export function withUVEToolbar() {
         },
         withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => ({
-            /**
-             * @deprecated Phase 2.3: Moved to DotUveToolbarComponent as local computed properties
-             * ($bookmarksUrl, $currentLanguage, $runningExperiment)
-             * This will be removed in Phase 3.3
-             */
-            $uveToolbar: computed<UVEToolbarProps>(() => {
-                const params = store.pageParams();
-                const url = params?.url;
-
-                const experiment = store.experiment?.();
-                const pageAPIResponse = store.pageAPIResponse();
-                const pageAPIQueryParams = getFullPageURL({ url, params });
-
-                const pageAPI = `/api/v1/page/${
-                    store.isTraditionalPage() ? 'render' : 'json'
-                }/${pageAPIQueryParams}`;
-
-                const bookmarksUrl = createFavoritePagesURL({
-                    languageId: Number(params?.language_id),
-                    pageURI: url,
-                    siteId: pageAPIResponse?.site?.identifier
-                });
-
-                const isPageLocked = computeIsPageLocked(
-                    pageAPIResponse?.page,
-                    store.currentUser(),
-                    store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
-                );
-                const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
-                const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
-
-                const unlockButton = {
-                    inode: pageAPIResponse?.page.inode,
-                    loading: store.status() === UVE_STATUS.LOADING
-                };
-
-                const clientHost = `${params?.clientHost ?? window.location.origin}`;
-
-                const isPreview = params?.mode === UVE_MODE.PREVIEW;
-                const prevewItem = isPreview
-                    ? {
-                          deviceSelector: {
-                              apiLink: `${clientHost}${pageAPI}`,
-                              hideSocialMedia: !store.isTraditionalPage()
-                          }
-                      }
-                    : null;
-
-                return {
-                    editor: {
-                        bookmarksUrl,
-                        apiUrl: pageAPI
-                    },
-                    preview: prevewItem,
-                    currentLanguage: pageAPIResponse?.viewAs.language,
-                    urlContentMap: store.toolbar().isEditState
-                        ? (pageAPIResponse?.urlContentMap ?? null)
-                        : null,
-                    runningExperiment: isExperimentRunning ? experiment : null,
-                    unlockButton: shouldShowUnlock ? unlockButton : null
-                };
-            }),
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
                 return store.pageAPIResponse()?.urlContentMap;
             }),
