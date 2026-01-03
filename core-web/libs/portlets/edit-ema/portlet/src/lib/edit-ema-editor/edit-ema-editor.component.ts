@@ -48,10 +48,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentTypeField,
     DotCMSClazzes,
-    DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
     SeoMetaTags
@@ -79,6 +76,7 @@ import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-too
 import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem } from './components/ema-page-dropzone/types';
+import { parseFieldValues, getQuickEditFields } from './utils';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -173,63 +171,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
 
-    /**
-     * Parses the values string into an array of {label, value} objects
-     * Format: "label|value\nlabel|value"
-     */
-    private parseFieldValues(values?: string): Array<{ label: string; value: string }> {
-        if (!values) {
-            return [];
-        }
-
-        return values
-            .split('\n')
-            .filter((line) => line.trim())
-            .map((line) => {
-                const [label, value] = line.split('|').map((s) => s.trim());
-                return {
-                    label: label || value || '',
-                    value: value || label || ''
-                };
-            });
-    }
-
-    /**
-     * Flattens the content type layout structure and filters for TextField fields only
-     */
-    private getTextFieldFields(
-        layout: DotCMSContentTypeLayoutRow[]
-    ): Pick<
-        DotCMSContentTypeField,
-        'name' | 'variable' | 'regexCheck' | 'dataType' | 'readOnly' | 'required' | 'clazz' | 'values'
-    >[] {
-        return layout
-            .flatMap((row) => row.columns ?? [])
-            .flatMap((column) => column.fields)
-            .filter(
-                (field) =>
-                    field.clazz === DotCMSClazzes.TEXT ||
-                    field.clazz === DotCMSClazzes.TEXTAREA ||
-                    field.clazz === DotCMSClazzes.CHECKBOX ||
-                    field.clazz === DotCMSClazzes.MULTI_SELECT ||
-                    field.clazz === DotCMSClazzes.RADIO ||
-                    field.clazz === DotCMSClazzes.SELECT
-
-            )
-            .map((field) => {
-                return {
-                    name: field.name,
-                    variable: field.variable,
-                    regexCheck: field.regexCheck,
-                    dataType: field.dataType,
-                    readOnly: field.readOnly,
-                    required: field.required,
-                    clazz: field.clazz,
-                    values: field.values
-                };
-            });
-    }
-
     protected readonly $contentletEditData = computed(() => {
         const { container, contentlet: contentletPayload } = this.uveStore.selectedPayload() ?? {};
         const pageAPIResponse = this.uveStore.pageAPIResponse();
@@ -238,12 +179,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             (ct) => ct.variable === contentletPayload?.contentType
         );
 
-        const fields = contentType?.layout ? this.getTextFieldFields(contentType.layout) : [];
+        const fields = contentType?.layout ? getQuickEditFields(contentType.layout) : [];
 
         // Parse values for each field
         const fieldsWithOptions = fields.map((field) => ({
             ...field,
-            options: this.parseFieldValues(field.values)
+            options: parseFieldValues(field.values)
         }));
 
         // Get the full contentlet from pageAPIResponse using container identifier and uuid

@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
@@ -8,21 +8,24 @@ import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import { SiteService } from '@dotcms/dotcms-js';
+import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
-import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
+import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { PERSONA_KEY } from '../shared/consts';
-import { NG_CUSTOM_EVENTS } from '../shared/enums';
-import { DialogAction, DotPageAssetParams } from '../shared/models';
+import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { DialogAction, DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
+    getErrorPayload,
+    getRequestHostName,
     getTargetUrl,
     normalizeQueryParams,
     sanitizeURL,
@@ -57,10 +60,97 @@ export class DotEmaShellComponent implements OnInit {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
-    protected readonly $shellProps = this.uveStore.$shellProps;
     protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
 
     protected readonly $showBanner = signal<boolean>(true);
+
+    // Component builds its own menu items (Phase 2.1: Move view models from store to components)
+    protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+        const page = pageAPIResponse?.page;
+        const template = pageAPIResponse?.template;
+        const isLoading = this.uveStore.status() === UVE_STATUS.LOADING;
+        const isEnterpriseLicense = this.uveStore.isEnterprise();
+        const templateDrawed = template?.drawed;
+        const isLayoutDisabled = !page?.canEdit || !templateDrawed;
+        const canSeeRulesExists = page && 'canSeeRules' in page;
+
+        return [
+            {
+                icon: 'pi-file',
+                label: 'editema.editor.navbar.content',
+                href: 'content',
+                id: 'content'
+            },
+            {
+                icon: 'pi-table',
+                label: 'editema.editor.navbar.layout',
+                href: 'layout',
+                id: 'layout',
+                isDisabled: isLayoutDisabled || !isEnterpriseLicense,
+                tooltip: templateDrawed
+                    ? null
+                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
+            },
+            {
+                icon: 'pi-sliders-h',
+                label: 'editema.editor.navbar.rules',
+                id: 'rules',
+                href: `rules/${page?.identifier}`,
+                isDisabled:
+                    (canSeeRulesExists && !page.canSeeRules) ||
+                    !page?.canEdit ||
+                    !isEnterpriseLicense
+            },
+            {
+                iconURL: 'experiments',
+                label: 'editema.editor.navbar.experiments',
+                href: `experiments/${page?.identifier}`,
+                id: 'experiments',
+                isDisabled: !page?.canEdit || !isEnterpriseLicense
+            },
+            {
+                icon: 'pi-th-large',
+                label: 'editema.editor.navbar.page-tools',
+                id: 'page-tools'
+            },
+            {
+                icon: 'pi-ellipsis-v',
+                label: 'editema.editor.navbar.properties',
+                id: 'properties',
+                isDisabled: isLoading
+            }
+        ];
+    });
+
+    // Component builds SEO params locally
+    protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+        const url = sanitizeURL(pageAPIResponse?.page.pageURI);
+        const currentUrl = url.startsWith('/') ? url : '/' + url;
+        const requestHostName = getRequestHostName(this.uveStore.pageParams());
+
+        return {
+            siteId: pageAPIResponse?.site?.identifier,
+            languageId: pageAPIResponse?.viewAs.language.id,
+            currentUrl,
+            requestHostName
+        };
+    });
+
+    // Component builds error display locally
+    protected readonly $errorDisplay = computed<{ code: number; pageInfo: InfoPage } | null>(() => {
+        const errorCode = this.uveStore.errorCode();
+        if (!errorCode) return null;
+
+        return getErrorPayload(errorCode);
+    });
+
+    // Component determines read permissions locally
+    protected readonly $canRead = computed<boolean>(() => {
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+        return pageAPIResponse?.page?.canRead ?? false;
+    });
 
     /**
      * Handle the update of the page params

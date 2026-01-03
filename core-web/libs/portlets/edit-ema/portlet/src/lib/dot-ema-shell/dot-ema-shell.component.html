@@ -1,4 +1,4 @@
-@if ($shellProps()?.canRead) {
+@if ($canRead()) {
     @if ($toggleLockOptions()?.showBanner && $showBanner()) {
         <p-messages severity="warning" data-testid="message">
             <ng-template pTemplate="content">
@@ -38,18 +38,18 @@
 
     <router-outlet></router-outlet>
     <dot-edit-ema-navigation-bar
-        [items]="$shellProps().items"
+        [items]="$menuItems()"
         (action)="handleItemAction($event)"
         data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
     <p-toast position="top-center" data-testId="ema-toast"></p-toast>
     <dot-page-tools-seo
-        [currentPageUrlParams]="$shellProps().seoParams"
+        [currentPageUrlParams]="$seoParams()"
         #pageTools></dot-page-tools-seo>
 } @else {
-    @if ($shellProps().error?.code === 401) {
+    @if ($errorDisplay()?.code === 401) {
         <dot-not-license />
-    } @else if ($shellProps()?.error?.pageInfo) {
-        <dot-info-page [info]="$shellProps().error.pageInfo" />
+    } @else if ($errorDisplay()?.pageInfo) {
+        <dot-info-page [info]="$errorDisplay().pageInfo" />
     }
 }
 
