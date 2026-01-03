@@ -1,18 +1,18 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import static com.liferay.util.StringPool.COMMA;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -24,23 +24,17 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import java.util.Objects;
-import java.util.Set;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.liferay.util.StringPool.COMMA;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * This Integration Test verifies that the {@link ContentTypesPaginator} class performs as expected.
@@ -207,10 +201,10 @@ public class ContentTypesPaginatorTest {
      */
     @Test
     public void whenTheIndicesAreDeactivateShouldReturnNAInEntries() throws DotDataException, IOException {
-        final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
+        final IndicesInfo legacyIndicesInfo = APILocator.getIndiciesAPI().loadLegacyIndices();
 
-        final String live = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getLive());
-        final String working = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getWorking());
+        final String live = APILocator.getESIndexAPI().removeClusterIdFromName(legacyIndicesInfo.getLive());
+        final String working = APILocator.getESIndexAPI().removeClusterIdFromName(legacyIndicesInfo.getWorking());
         try {
             if (live != null) {
                 APILocator.getContentletIndexAPI().deactivateIndex(live);

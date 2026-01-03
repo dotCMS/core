@@ -1,7 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexHelper.SNAPSHOT_PREFIX;
-import static com.dotcms.content.elasticsearch.business.IndiciesInfo.CLUSTER_PREFIX;
+import static com.dotcms.content.elasticsearch.business.LegacyIndicesInfo.CLUSTER_PREFIX;
 import static com.dotcms.util.DotPreconditions.checkArgument;
 
 import com.dotcms.cluster.ClusterUtils;
@@ -26,12 +26,10 @@ import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.file.Files;
@@ -47,15 +45,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -84,8 +78,6 @@ import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -458,7 +450,7 @@ public class ESIndexAPI {
 	}
 
 	private void removeActiveLiveAndWorkingFromList(List<String> indices) {
-		final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
+		final IndicesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadLegacyIndices())
 				.getOrNull();
 
 		if(info!=null) {
@@ -909,7 +901,7 @@ public class ESIndexAPI {
 
     /**
      * Given an alias or index name that might contain a cluster id prefix
-     * (format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
+     * (format: <b>{@link LegacyIndicesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>),
      * this method will return the name without the prefix. In case of name is null, an empty string
      * will be returned
      * @param name Index name or alias with the cluster id prefix
@@ -1008,7 +1000,7 @@ public class ESIndexAPI {
 	
     /**
      * Given an alias or index name, this method will return the full name including the cluster id,
-     * using this format: <b>{@link IndiciesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>
+     * using this format: <b>{@link LegacyIndicesInfo#CLUSTER_PREFIX CLUSTER_PREFIX}_{id}.{name}</b>
      * @param name Index name or alias
      * @return Index name or alias with the cluster id prefix
      */

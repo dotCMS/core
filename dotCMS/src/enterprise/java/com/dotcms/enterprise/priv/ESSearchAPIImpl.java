@@ -9,9 +9,11 @@
 
 package com.dotcms.enterprise.priv;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -29,6 +31,10 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.RequestOptions;
@@ -36,13 +42,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 /**
  * Implementation class for the {@link ESSeachAPI}.
@@ -200,9 +199,9 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			throws DotSecurityException, DotDataException {
 
         String indexToHit;
-        IndiciesInfo info;
+        IndicesInfo info;
         try {
-            info = APILocator.getIndiciesAPI().loadIndicies();
+            info = APILocator.getIndiciesAPI().loadLegacyIndices();
 			if (live) {
                 indexToHit = info.getLive();
 			} else {

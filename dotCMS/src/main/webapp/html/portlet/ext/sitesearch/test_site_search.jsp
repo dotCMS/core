@@ -1,5 +1,4 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
-<%@page import="com.dotcms.content.elasticsearch.business.IndiciesInfo"%>
 <%@page import="com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
@@ -9,13 +8,14 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="org.elasticsearch.cluster.health.ClusterIndexHealth"%>
 <%@ page import="com.dotcms.content.elasticsearch.business.IndexStats" %>
+<%@ page import="com.dotcms.content.elasticsearch.business.IndicesInfo" %>
 <%@ include file="/html/common/init.jsp"%>
 <%
 
 List<Structure> structs = StructureFactory.getStructures();
 SiteSearchAPI ssapi = APILocator.getSiteSearchAPI();
 ESIndexAPI esapi = APILocator.getESIndexAPI();
-IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
+IndicesInfo info=APILocator.getIndiciesAPI().loadLegacyIndices();
 
 
 
@@ -108,7 +108,7 @@ dojo.connect(dijit.byId("testQuery"), 'onkeypress', function (evt) {
 				
 				<select id="testIndex" name="testIndex" dojoType="dijit.form.FilteringSelect" style="width:250px;">
 					<%for(String x : indices){ %>
-						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadIndicies().getSiteSearch())) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
+						<option value="<%=x%>" <%=(x.equals(testIndex)) ? "selected='true'": ""%>><%=alias.get(x) == null ? x:alias.get(x)%> <%=(x.equals(APILocator.getIndiciesAPI().loadLegacyIndices().getSiteSearch())) ? "(" +LanguageUtil.get(pageContext, "Default") +") " : ""  %></option>
 					<%} %>
 				</select>
 				

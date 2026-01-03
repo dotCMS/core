@@ -1,27 +1,25 @@
 package com.dotcms.content.elasticsearch.util;
 
+import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndicesInfo;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
 
-import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import io.vavr.control.Try;
-
 public class ESReindexationProcessStatus implements Serializable {
     private static final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();
 
-    public synchronized static boolean inFullReindexation() throws DotDataException {
+    public static synchronized boolean inFullReindexation() throws DotDataException {
         return indexAPI.isInFullReindex();
     }
 
     @CloseDBIfOpened
-    public synchronized static int getContentCountToIndex() throws DotDataException {
+    public static synchronized int getContentCountToIndex() throws DotDataException {
 
         DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as cc from contentlet_version_info");
@@ -43,7 +41,7 @@ public class ESReindexationProcessStatus implements Serializable {
 
     @CloseDBIfOpened
     public static String currentIndexPath() throws DotDataException {
-        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndicesInfo info = APILocator.getIndiciesAPI().loadLegacyIndices();
         final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
         return "[" + esIndexAPI.removeClusterIdFromName(info.getWorking()) + "," + esIndexAPI
                 .removeClusterIdFromName(info.getLive()) + "]";
@@ -51,7 +49,7 @@ public class ESReindexationProcessStatus implements Serializable {
 
     @CloseDBIfOpened
     public static String getNewIndexPath() throws DotDataException {
-        final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+        final IndicesInfo info = APILocator.getIndiciesAPI().loadLegacyIndices();
         final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
         return "[" + esIndexAPI.removeClusterIdFromName(info.getReindexWorking()) + ","
                 + esIndexAPI.removeClusterIdFromName(info.getReindexLive()) + "]";

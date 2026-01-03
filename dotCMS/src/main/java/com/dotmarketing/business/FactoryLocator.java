@@ -8,7 +8,7 @@ import com.dotcms.business.SystemTableFactoryImpl;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cluster.business.ServerFactory;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
-import com.dotcms.content.elasticsearch.business.IndiciesFactory;
+import com.dotcms.content.elasticsearch.business.IndicesFactory;
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.contenttype.business.ContentTypeFactoryImpl;
 import com.dotcms.contenttype.business.FieldFactory;
@@ -16,7 +16,6 @@ import com.dotcms.contenttype.business.FieldFactoryImpl;
 import com.dotcms.contenttype.business.RelationshipFactory;
 import com.dotcms.contenttype.business.RelationshipFactoryImpl;
 import com.dotcms.cube.CubeJSClientFactory;
-import com.dotcms.cube.CubeJSClientFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
@@ -186,8 +185,8 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     public static WorkFlowFactory getWorkFlowFactory(){
     	return (WorkFlowFactory) getInstance(FactoryIndex.WORKFLOWS_FACTORY);
     }
-    public static IndiciesFactory getIndiciesFactory(){
-        return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
+    public static IndicesFactory getIndiciesFactory(){
+        return (IndicesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
     }
 
     public static LinkCheckerFactory getLinkCheckerFactory() {
@@ -410,7 +409,7 @@ enum FactoryIndex
             case VERSIONABLE_FACTORY : return new VersionableFactoryImpl();
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
-            case INDICIES_FACTORY: return new IndiciesFactory();
+            case INDICIES_FACTORY: return new IndicesFactory();
             case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
             case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();

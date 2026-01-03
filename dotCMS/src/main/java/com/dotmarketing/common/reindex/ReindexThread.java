@@ -239,10 +239,10 @@ public class ReindexThread {
                     if (bulkProcessor == null || rebuildBulkIndexer.get()) {
                         closeBulkProcessor(bulkProcessor);
                         bulkProcessorListener = new BulkProcessorListener();
-                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+                        bulkProcessor = indexAPI.createBulkProcessorLegacy(bulkProcessorListener);
                     }
                     bulkProcessorListener.workingRecords.putAll(workingRecords);
-                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
+                    indexAPI.appendToBulkProcessorLegacy(bulkProcessor, workingRecords.values());
                     contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
                     // otherwise, reindex normally
 

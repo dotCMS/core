@@ -34,7 +34,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.elasticsearch.business.IndicesAPI;
 import com.dotcms.content.elasticsearch.business.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -110,7 +110,7 @@ public class ESIndexResource {
 
 	@VisibleForTesting
 	ESIndexResource(ESIndexAPI indexAPI, ESIndexHelper indexHelper,
-			WebResource webResource, LayoutAPI layoutAPI, IndiciesAPI indiciesAPI) {
+			WebResource webResource, LayoutAPI layoutAPI, IndicesAPI indicesAPI) {
 		this.indexAPI = indexAPI;
 		this.indexHelper = indexHelper;
         this.idxApi = APILocator.getContentletIndexAPI();
@@ -276,7 +276,7 @@ public class ESIndexResource {
                 indexName=ContentletIndexAPIImpl.timestampFormatter.format(new Date());
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
-            APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
+            APILocator.getContentletIndexAPI().createContentIndexLegacy(indexName, shards);
             ESMappingUtilHelper.getInstance().addCustomMapping(indexName);
 
             return Response.ok(indexName).build();

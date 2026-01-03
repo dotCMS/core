@@ -4,14 +4,14 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Logger;
 
-public class IndiciesCacheImpl implements IndiciesCache {
+public class IndicesCacheImpl implements IndicesCache {
     
     protected final DotCacheAdministrator cache;
     
-    protected final String primaryGroup = "IndiciesCache";
+    protected final String primaryGroup = "IndicesCache";
     protected final String[] groupNames = {primaryGroup};
 
-    public IndiciesCacheImpl() {
+    public IndicesCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
     }
     
@@ -27,10 +27,10 @@ public class IndiciesCacheImpl implements IndiciesCache {
         cache.flushGroup(primaryGroup);
     }
     
-    public IndiciesInfo get() {
-        IndiciesInfo info=null;
+    public LegacyIndicesInfo get() {
+        LegacyIndicesInfo info=null;
         try {
-            info=(IndiciesInfo)cache.get(primaryGroup+"info", primaryGroup);
+            info=(LegacyIndicesInfo)cache.get(primaryGroup+"info", primaryGroup);
         }
         catch(Exception ex) {
             Logger.warn(this, "can't get cache entry",ex);
@@ -38,7 +38,7 @@ public class IndiciesCacheImpl implements IndiciesCache {
         return info;
     }
     
-    public void put(IndiciesInfo info) {
+    public void put(LegacyIndicesInfo info) {
         cache.put(primaryGroup+"info", info, primaryGroup);
     }
 }
