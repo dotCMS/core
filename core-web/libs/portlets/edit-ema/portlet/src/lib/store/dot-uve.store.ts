@@ -11,10 +11,11 @@ import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
-import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
+import { DotUveViewParams, ShellProps, TranslateProps, UVEState, Orientation } from './models';
 
+import { DEFAULT_DEVICE } from '../shared/consts';
 import { UVE_FEATURE_FLAGS } from '../shared/consts';
-import { UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import { ClientData } from '../shared/models';
 import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
 
@@ -32,7 +33,31 @@ const initialState: UVEState = {
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
     isClientReady: false,
-    selectedPayload: undefined
+    selectedPayload: undefined,
+    // Phase 3.2: Nested UI state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        palette: {
+            open: true
+        },
+        rightSidebar: {
+            open: false
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    toolbar: {
+        device: DEFAULT_DEVICE,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const UVEStore = signalStore(

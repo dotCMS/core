@@ -27,35 +27,20 @@ import { withFlags } from '../../flags/withFlags';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
 /**
- * The initial state for the editor toolbar.
- *
- * @property {EditorToolbarState} initialState - The initial state object for the editor toolbar.
- * @property {string | null} initialState.device - The current device being used, or null if not set.
- * @property {string | null} initialState.socialMedia - The current social media platform being used, or null if not set.
- * @property {boolean} initialState.isEditState - Flag indicating whether the editor is in edit mode.
- * @property {boolean} initialState.isPreviewModeActive - Flag indicating whether the preview mode is active.
+ * Phase 3.2: Refactored to work with nested toolbar state
+ * Toolbar state is now nested under store.toolbar()
  */
-const initialState: EditorToolbarState = {
-    device: DEFAULT_DEVICE,
-    socialMedia: null,
-    isEditState: true,
-    isPreviewModeActive: false,
-    orientation: Orientation.LANDSCAPE,
-    ogTagsResults: null
-};
-
 export function withUVEToolbar() {
     return signalStoreFeature(
         {
             state: type<UVEState>()
         },
-        withState<EditorToolbarState>(initialState),
         withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => ({
             /**
              * @deprecated Phase 2.3: Moved to DotUveToolbarComponent as local computed properties
              * ($bookmarksUrl, $currentLanguage, $runningExperiment)
-             * This will be removed in Phase 2.4
+             * This will be removed in Phase 3.3
              */
             $uveToolbar: computed<UVEToolbarProps>(() => {
                 const params = store.pageParams();
@@ -107,7 +92,7 @@ export function withUVEToolbar() {
                     },
                     preview: prevewItem,
                     currentLanguage: pageAPIResponse?.viewAs.language,
-                    urlContentMap: store.isEditState()
+                    urlContentMap: store.toolbar().isEditState
                         ? (pageAPIResponse?.urlContentMap ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
@@ -245,25 +230,33 @@ export function withUVEToolbar() {
         })),
         withMethods((store) => ({
             setDevice: (device: DotDevice, orientation?: Orientation) => {
+                const toolbar = store.toolbar();
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
 
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
                 patchState(store, {
-                    device,
+                    toolbar: {
+                        ...toolbar,
+                        device,
+                        socialMedia: null,
+                        isEditState: false,
+                        orientation: newOrientation
+                    },
                     viewParams: {
                         ...store.viewParams(),
                         device: device.inode,
                         orientation: newOrientation,
                         seo: null
-                    },
-                    socialMedia: null,
-                    isEditState: false,
-                    orientation: newOrientation
+                    }
                 });
             },
             setOrientation: (orientation: Orientation) => {
+                const toolbar = store.toolbar();
                 patchState(store, {
-                    orientation,
+                    toolbar: {
+                        ...toolbar,
+                        orientation
+                    },
                     viewParams: {
                         ...store.viewParams(),
                         orientation
@@ -271,25 +264,33 @@ export function withUVEToolbar() {
                 });
             },
             setSEO: (socialMedia: string | null) => {
+                const toolbar = store.toolbar();
                 patchState(store, {
-                    device: null,
-                    orientation: null,
-                    socialMedia,
+                    toolbar: {
+                        ...toolbar,
+                        device: null,
+                        orientation: null,
+                        socialMedia,
+                        isEditState: false
+                    },
                     viewParams: {
                         ...store.viewParams(),
                         device: null,
                         orientation: null,
                         seo: socialMedia
-                    },
-                    isEditState: false
+                    }
                 });
             },
             clearDeviceAndSocialMedia: () => {
+                const toolbar = store.toolbar();
                 patchState(store, {
-                    device: null,
-                    socialMedia: null,
-                    isEditState: true,
-                    orientation: null,
+                    toolbar: {
+                        ...toolbar,
+                        device: null,
+                        socialMedia: null,
+                        isEditState: true,
+                        orientation: null
+                    },
                     viewParams: {
                         ...store.viewParams(),
                         device: null,
@@ -299,7 +300,13 @@ export function withUVEToolbar() {
                 });
             },
             setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
-                patchState(store, { ogTagsResults });
+                const toolbar = store.toolbar();
+                patchState(store, {
+                    toolbar: {
+                        ...toolbar,
+                        ogTagsResults
+                    }
+                });
             }
         }))
     );

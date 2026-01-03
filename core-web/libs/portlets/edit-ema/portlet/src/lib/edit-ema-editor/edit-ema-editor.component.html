@@ -46,13 +46,13 @@
                     <img
                         src="./assets/edit-uve-toolbar/left_panel_open.svg"
                         alt="Left Panel Open"
-                        [class.hidden]="!$paletteOpen()"
+                        [class.hidden]="!$paletteOpen"
                         draggable="false"
                         data-testId="palette-open-icon" />
                     <img
                         src="./assets/edit-uve-toolbar/left_panel_close.svg"
                         alt="Left Panel Close"
-                        [class.hidden]="$paletteOpen()"
+                        [class.hidden]="$paletteOpen"
                         draggable="false"
                         data-testId="palette-close-icon" />
                 </button>
@@ -108,14 +108,14 @@
                     <img
                         src="./assets/edit-uve-toolbar/left_panel_open.svg"
                         alt="Right Panel Open"
-                        [class.hidden]="!$rightSidebarOpen()"
+                        [class.hidden]="!$rightSidebarOpen"
                         class="flip-horizontal"
                         draggable="false"
                         data-testId="right-sidebar-open-icon" />
                     <img
                         src="./assets/edit-uve-toolbar/left_panel_close.svg"
                         alt="Right Panel Close"
-                        [class.hidden]="$rightSidebarOpen()"
+                        [class.hidden]="$rightSidebarOpen"
                         class="flip-horizontal"
                         draggable="false"
                         data-testId="right-sidebar-close-icon" />
@@ -169,7 +169,7 @@
                                 (deleteContent)="deleteContent($event)"
                                 (addContent)="handleAddContent($event)"
                                 (selectContent)="handleSelectContent($event)"
-                                [contentletArea]="$contentArea()"
+                                [contentletArea]="$contentArea"
                                 [isEnterprise]="uveStore.isEnterprise()"
                                 [allowContentDelete]="$allowContentDelete()"
                                 [showStyleEditorOption]="uveStore.$isStyleEditorEnabled()"
@@ -195,7 +195,7 @@
 </div>
 
 @if (uveStore.$isEditMode()) {
-    <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen()">
+    <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen">
         <dot-uve-contentlet-quick-edit
             [data]="$contentletEditData()"
             [loading]="$isSubmitting()"

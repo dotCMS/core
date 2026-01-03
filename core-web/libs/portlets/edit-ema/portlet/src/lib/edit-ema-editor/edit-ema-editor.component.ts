@@ -49,6 +49,7 @@ import {
 import {
     DotCMSContentlet,
     DotCMSClazzes,
+    DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
     SeoMetaTags
@@ -238,13 +239,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
     protected readonly $showDialogs = computed<boolean>(() => {
         const canEditPage = this.uveStore.$canEditPage();
-        const isEditState = this.uveStore.isEditState();
+        const isEditState = this.uveStore.toolbar().isEditState;
         return canEditPage && isEditState;
     });
 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.$canEditPage();
-        const isEditState = this.uveStore.isEditState();
+        const isEditState = this.uveStore.toolbar().isEditState;
         const isEnterprise = this.uveStore.isEnterprise();
         return canEditPage && isEditState && isEnterprise;
     });
@@ -255,15 +256,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const params = this.uveStore.pageParams();
         const isTraditionalPage = this.uveStore.isTraditionalPage();
         const isClientReady = this.uveStore.isClientReady();
-        const state = this.uveStore.state();
-        const device = this.uveStore.device();
+        const editor = this.uveStore.editor();
+        const toolbar = this.uveStore.toolbar();
+        const state = editor.state;
+        const device = toolbar.device;
 
         const isEditMode = params?.mode === UVE_MODE.EDIT;
         const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
         const isLoading = !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
         const { dragIsActive } = getEditorStates(state);
         const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-        const wrapper = getWrapperMeasures(device, this.uveStore.orientation());
+        const wrapper = getWrapperMeasures(device, toolbar.orientation);
 
         return {
             opacity: iframeOpacity,
@@ -285,9 +288,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $dropzone = computed(() => {
         const canEditPage = this.uveStore.$canEditPage();
-        const state = this.uveStore.state();
-        const bounds = this.uveStore.bounds();
-        const dragItem = this.uveStore.dragItem();
+        const editor = this.uveStore.editor();
+        const state = editor.state;
+        const bounds = editor.bounds;
+        const dragItem = editor.dragItem;
 
         const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
 
@@ -300,8 +304,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $seoResults = computed(() => {
-        const socialMedia = this.uveStore.socialMedia();
-        const ogTags = this.uveStore.ogTags();
+        const toolbar = this.uveStore.toolbar();
+        const editor = this.uveStore.editor();
+        const socialMedia = toolbar.socialMedia;
+        const ogTags = editor.ogTags;
         const shouldShowSeoResults = socialMedia && ogTags;
 
         return shouldShowSeoResults
@@ -314,13 +320,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
     readonly $editorContentStyles = this.uveStore.$editorContentStyles;
-    readonly ogTagsResults$ = toObservable(this.uveStore.ogTagsResults);
+    // toObservable requires a Signal, so computed() is necessary here
+    readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.toolbar().ogTagsResults));
 
-    readonly $paletteOpen = this.uveStore.palette.open;
-    readonly $rightSidebarOpen = this.uveStore.rightSidebar.open;
+    get $paletteOpen() {
+        return this.uveStore.editor().palette.open;
+    }
+    get $rightSidebarOpen() {
+        return this.uveStore.editor().rightSidebar.open;
+    }
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly $showContentletControls = this.uveStore.$showContentletControls;
-    readonly $contentArea = this.uveStore.contentArea;
+    get $contentArea() {
+        return this.uveStore.editor().contentArea;
+    }
     readonly $allowContentDelete = this.uveStore.$allowContentDelete;
     readonly $isDragging = this.uveStore.$isDragging;
 
@@ -328,7 +341,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly DotCMSClazzes = DotCMSClazzes;
 
     readonly $paletteClass = computed(() => {
-        return this.$paletteOpen() ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
+        return this.$paletteOpen ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });
 
     readonly $canvasOuterStyles = this.zoomService.$canvasOuterStyles;
@@ -601,7 +614,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         const data: ClientData = JSON.parse(payload || '{}');
         const file = event.dataTransfer?.files[0];
-        const dragItem = this.uveStore.dragItem();
+        const dragItem = this.uveStore.editor().dragItem;
 
         if (file) {
             this.handleFileUpload({
@@ -635,7 +648,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     handleInternalNav(e: MouseEvent) {
         const target = e.target as HTMLAnchorElement;
         const href = target.href || target.closest('a')?.getAttribute('href');
-        const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
+        const isInlineEditing = this.uveStore.editor().state === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
         if (!href || isInlineEditing) {
@@ -674,7 +687,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframePageLoad(): void {
-        if (this.uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
+        if (this.uveStore.editor().state === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
 
@@ -1407,11 +1420,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected togglePalette(): void {
-        this.uveStore.setPaletteOpen(!this.$paletteOpen());
+        this.uveStore.setPaletteOpen(!this.$paletteOpen);
     }
 
     protected toggleRightSidebar(): void {
-        this.uveStore.setRightSidebarOpen(!this.$rightSidebarOpen());
+        this.uveStore.setRightSidebarOpen(!this.$rightSidebarOpen);
     }
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {

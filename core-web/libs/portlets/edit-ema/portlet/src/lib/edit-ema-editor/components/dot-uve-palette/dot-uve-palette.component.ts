@@ -76,7 +76,7 @@ export class DotUvePaletteComponent {
         // Effect: When activeContentlet changes, switch to STYLE_EDITOR tab
         // This maintains cross-component coordination without storing tab state globally
         effect(() => {
-            const activeContentlet = this.uveStore.activeContentlet();
+            const activeContentlet = this.uveStore.editor().activeContentlet;
             if (activeContentlet) {
                 patchState(this.#localState, { currentTab: UVE_PALETTE_TABS.STYLE_EDITOR });
             }

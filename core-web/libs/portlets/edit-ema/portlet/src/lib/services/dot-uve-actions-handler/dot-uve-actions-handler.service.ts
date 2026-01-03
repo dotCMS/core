@@ -111,11 +111,11 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
-                if (uveStore.state() === EDITOR_STATE.INLINE_EDITING) {
+                if (uveStore.editor().state === EDITOR_STATE.INLINE_EDITING) {
                     return;
                 }
 
-                const { contentlet, container } = uveStore.contentArea().payload;
+                const { contentlet, container } = uveStore.editor().contentArea.payload;
                 const currentTreeNode = uveStore.getCurrentTreeNode(container, contentlet);
 
                 this.dotCopyContentModalService

@@ -4,7 +4,6 @@ import {
     type,
     withComputed,
     withMethods,
-    withState
 } from '@ngrx/signals';
 
 import { computed, inject, untracked } from '@angular/core';
@@ -16,7 +15,6 @@ import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
     EditorProps,
-    EditorState,
     PageData,
     PageDataContainer,
     ReloadEditorContent
@@ -56,25 +54,9 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
     return iframeURL.toString();
 };
 
-const initialState: EditorState = {
-    bounds: [],
-    state: EDITOR_STATE.IDLE,
-    dragItem: null,
-    ogTags: null,
-    styleSchemas: [],
-    activeContentlet: null,
-    contentArea: null,
-    palette: {
-        open: true
-        // currentTab removed - now managed locally in DotUvePaletteComponent
-    },
-    rightSidebar: {
-        open: false
-    }
-};
-
 /**
- * Add computed and methods to handle the Editor UI
+ * Phase 3.2: Add computed and methods to handle the Editor UI
+ * Editor state is now nested under store.editor()
  *
  * @export
  * @return {*}
@@ -85,7 +67,6 @@ export function withEditor() {
             state: type<UVEState>(),
             props: type<PageContextComputed>()
         },
-        withState<EditorState>(initialState),
         withUVEToolbar(),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
@@ -100,27 +81,31 @@ export function withEditor() {
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
                 $showContentletControls: computed<boolean>(() => {
-                    const contentletPosition = store.contentArea();
+                    const editor = store.editor();
+                    const contentletPosition = editor.contentArea;
                     const canEditPage = store.$canEditPage();
-                    const isIdle = store.state() === EDITOR_STATE.IDLE;
+                    const isIdle = editor.state === EDITOR_STATE.IDLE;
 
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema | undefined>(() => {
-                    const contentlet = store.activeContentlet();
-                    const styleSchemas = store.styleSchemas();
+                    const editor = store.editor();
+                    const contentlet = editor.activeContentlet;
+                    const styleSchemas = editor.styleSchemas;
                     const contentSchema = styleSchemas.find(
                         (schema) => schema.contentType === contentlet?.contentType
                     );
                     return contentSchema;
                 }),
-                $isDragging: computed<boolean>(
-                    () =>
-                        store.state() === EDITOR_STATE.DRAGGING ||
-                        store.state() === EDITOR_STATE.SCROLL_DRAG
-                ),
+                $isDragging: computed<boolean>(() => {
+                    const editorState = store.editor().state;
+                    return (
+                        editorState === EDITOR_STATE.DRAGGING ||
+                        editorState === EDITOR_STATE.SCROLL_DRAG
+                    );
+                }),
                 $areaContentType: computed<string>(() => {
-                    return store.contentArea()?.payload?.contentlet?.contentType ?? '';
+                    return store.editor().contentArea?.payload?.contentlet?.contentType ?? '';
                 }),
                 $pageData: computed<PageData>(() => {
                     const pageAPIResponse = store.pageAPIResponse();
@@ -142,57 +127,59 @@ export function withEditor() {
                         code: store.pageAPIResponse()?.page?.rendered,
                         isTraditionalPage: store.isTraditionalPage(),
                         enableInlineEdit:
-                            store.isEditState() && untracked(() => store.isEnterprise())
+                            store.toolbar().isEditState && untracked(() => store.isEnterprise())
                     };
                 }),
                 $pageRender: computed<string>(() => {
                     return store.pageAPIResponse()?.page?.rendered;
                 }),
                 $enableInlineEdit: computed<boolean>(() => {
-                    return store.isEditState() && untracked(() => store.isEnterprise());
+                    return store.toolbar().isEditState && untracked(() => store.isEnterprise());
                 }),
-                $editorIsInDraggingState: computed<boolean>(
-                    () => store.state() === EDITOR_STATE.DRAGGING
-                ),
+                $editorIsInDraggingState: computed<boolean>(() => {
+                    return store.editor().state === EDITOR_STATE.DRAGGING;
+                }),
                 /**
                  * @deprecated Phase 2.2: Moved to EditEmaEditorComponent as local computed properties
                  * ($showDialogs, $showBlockEditorSidebar, $iframeProps, $progressBar, $dropzone, $seoResults)
-                 * This will be removed in Phase 2.4
+                 * This will be removed in Phase 3.3
                  */
                 $editorProps: computed<EditorProps>(() => {
                     // Use it to create depdencies to the pageAPIResponse
                     // I did a refactor but need more testing before removing this dependency
                     store.pageAPIResponse();
-                    const socialMedia = store.socialMedia();
-                    const ogTags = store.ogTags();
-                    const device = store.device();
+                    const toolbar = store.toolbar();
+                    const editor = store.editor();
+                    const socialMedia = toolbar.socialMedia;
+                    const ogTags = editor.ogTags;
+                    const device = toolbar.device;
                     const canEditPage = store.$canEditPage();
                     const isEnterprise = store.isEnterprise();
-                    const state = store.state();
+                    const editorState = editor.state;
                     const params = store.pageParams();
                     const isTraditionalPage = store.isTraditionalPage();
                     const isClientReady = store.isClientReady();
-                    const bounds = store.bounds();
-                    const dragItem = store.dragItem();
-                    const isEditState = store.isEditState();
+                    const bounds = editor.bounds;
+                    const dragItem = editor.dragItem;
+                    const isEditState = toolbar.isEditState;
 
                     const isEditMode = params?.mode === UVE_MODE.EDIT;
 
                     const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
                     const isLoading = !isPageReady || store.status() === UVE_STATUS.LOADING;
 
-                    const { dragIsActive } = getEditorStates(state);
+                    const { dragIsActive } = getEditorStates(editorState);
 
                     const showDialogs = canEditPage && isEditState;
                     const showBlockEditorSidebar = canEditPage && isEditState && isEnterprise;
 
-                    const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
+                    const showDropzone = canEditPage && editorState === EDITOR_STATE.DRAGGING;
 
                     const shouldShowSeoResults = socialMedia && ogTags;
 
                     const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
 
-                    const wrapper = getWrapperMeasures(device, store.orientation());
+                    const wrapper = getWrapperMeasures(device, toolbar.orientation);
 
                     return {
                         showDialogs,
@@ -245,7 +232,7 @@ export function withEditor() {
                     });
                 }),
                 $editorContentStyles: computed<Record<string, string>>(() => {
-                    const socialMedia = store.socialMedia();
+                    const socialMedia = store.toolbar().socialMedia;
 
                     return {
                         display: socialMedia ? 'none' : 'block'
@@ -261,42 +248,87 @@ export function withEditor() {
                     });
                 },
                 updateEditorScrollState() {
+                    const editor = store.editor();
                     patchState(store, {
-                        bounds: [],
-                        contentArea: null,
-                        state: store.dragItem() ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
+                        editor: {
+                            ...editor,
+                            bounds: [],
+                            contentArea: null,
+                            state: editor.dragItem ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
+                        }
                     });
                 },
                 updateEditorOnScrollEnd() {
+                    const editor = store.editor();
                     patchState(store, {
-                        state: store.dragItem() ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
+                        editor: {
+                            ...editor,
+                            state: editor.dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
+                        }
                     });
                 },
                 updateEditorScrollDragState() {
-                    patchState(store, { state: EDITOR_STATE.SCROLL_DRAG, bounds: [] });
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            state: EDITOR_STATE.SCROLL_DRAG,
+                            bounds: []
+                        }
+                    });
                 },
                 setEditorState(state: EDITOR_STATE) {
-                    patchState(store, { state: state });
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            state
+                        }
+                    });
                 },
                 setEditorDragItem(dragItem: EmaDragItem) {
-                    patchState(store, { dragItem, state: EDITOR_STATE.DRAGGING });
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            dragItem,
+                            state: EDITOR_STATE.DRAGGING
+                        }
+                    });
                 },
                 setEditorBounds(bounds: Container[]) {
-                    patchState(store, { bounds });
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            bounds
+                        }
+                    });
                 },
                 setStyleSchemas(styleSchemas: StyleEditorFormSchema[]) {
-                    patchState(store, { styleSchemas });
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            styleSchemas
+                        }
+                    });
                 },
                 resetEditorProperties() {
+                    const editor = store.editor();
                     patchState(store, {
-                        dragItem: null,
-                        contentArea: null,
-                        bounds: [],
-                        state: EDITOR_STATE.IDLE
+                        editor: {
+                            ...editor,
+                            dragItem: null,
+                            contentArea: null,
+                            bounds: [],
+                            state: EDITOR_STATE.IDLE
+                        }
                     });
                 },
                 setContentletArea(contentArea: ContentletArea) {
-                    const currentArea = store.contentArea();
+                    const editor = store.editor();
+                    const currentArea = editor.contentArea;
                     const isSameX = currentArea?.x === contentArea?.x;
                     const isSameY = currentArea?.y === contentArea?.y;
 
@@ -310,23 +342,34 @@ export function withEditor() {
                         return;
                     }
                     patchState(store, {
-                        contentArea,
-                        state: EDITOR_STATE.IDLE
+                        editor: {
+                            ...editor,
+                            contentArea,
+                            state: EDITOR_STATE.IDLE
+                        }
                     });
                 },
                 setActiveContentlet(contentlet: ContentletPayload) {
+                    const editor = store.editor();
                     patchState(store, {
-                        activeContentlet: contentlet,
-                        palette: {
-                            open: true
-                            // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
+                        editor: {
+                            ...editor,
+                            activeContentlet: contentlet,
+                            palette: {
+                                open: true
+                                // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
+                            }
                         }
                     });
                 },
                 resetContentletArea() {
+                    const editor = store.editor();
                     patchState(store, {
-                        contentArea: null,
-                        state: EDITOR_STATE.IDLE
+                        editor: {
+                            ...editor,
+                            contentArea: null,
+                            state: EDITOR_STATE.IDLE
+                        }
                     });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
@@ -379,16 +422,30 @@ export function withEditor() {
                     };
                 },
                 setOgTags(ogTags: SeoMetaTags) {
-                    patchState(store, { ogTags });
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            ogTags
+                        }
+                    });
                 },
                 setPaletteOpen(open: boolean) {
+                    const editor = store.editor();
                     patchState(store, {
-                        palette: { open }
+                        editor: {
+                            ...editor,
+                            palette: { open }
+                        }
                     });
                 },
                 setRightSidebarOpen(open: boolean) {
+                    const editor = store.editor();
                     patchState(store, {
-                        rightSidebar: { ...store.rightSidebar(), open }
+                        editor: {
+                            ...editor,
+                            rightSidebar: { ...editor.rightSidebar, open }
+                        }
                     });
                 }
             };

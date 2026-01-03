@@ -67,7 +67,7 @@ export class DotUveDragDropService {
                 event.preventDefault();
 
                 const types = event.dataTransfer?.types || [];
-                const dragItem = uveStore.dragItem();
+                const dragItem = uveStore.editor().dragItem;
 
                 if (!dragItem && types.includes('dotcms/item')) {
                     return;
@@ -103,7 +103,7 @@ export class DotUveDragDropService {
         fromEvent(this.window, 'dragover')
             .pipe(
                 takeUntilDestroyed(this.destroyRef),
-                filter(() => !!uveStore.dragItem())
+                filter(() => !!uveStore.editor().dragItem)
             )
             .subscribe((event: DragEvent) => {
                 event.preventDefault();

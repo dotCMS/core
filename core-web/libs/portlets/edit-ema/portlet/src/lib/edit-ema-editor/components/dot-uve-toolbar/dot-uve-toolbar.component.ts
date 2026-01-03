@@ -122,9 +122,13 @@ export class DotUveToolbarComponent {
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
-    readonly $socialMedia = this.#store.socialMedia;
+    get $socialMedia() {
+        return this.#store.toolbar().socialMedia;
+    }
     readonly $urlContentMap = this.#store.$urlContentMap;
-    readonly $isPaletteOpen = this.#store.palette.open;
+    get $isPaletteOpen() {
+        return this.#store.editor().palette.open;
+    }
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -155,11 +159,14 @@ export class DotUveToolbarComponent {
     readonly isTraditionalPage = this.#store.isTraditionalPage;
 
     // Build unified device selector state
-    readonly $deviceSelectorState = computed(() => ({
-        currentDevice: this.#store.device(),
-        currentSocialMedia: this.#store.socialMedia(),
-        currentOrientation: this.#store.orientation()
-    }));
+    readonly $deviceSelectorState = computed(() => {
+        const toolbar = this.#store.toolbar();
+        return {
+            currentDevice: toolbar.device,
+            currentSocialMedia: toolbar.socialMedia,
+            currentOrientation: toolbar.orientation
+        };
+    });
 
     // Build complete toggle lock options for presentational component
     readonly $toggleLockOptions = computed(() => {
@@ -205,7 +212,7 @@ export class DotUveToolbarComponent {
     }
 
     protected togglePalette(): void {
-        this.#store.setPaletteOpen(!this.$isPaletteOpen());
+        this.#store.setPaletteOpen(!this.$isPaletteOpen);
     }
 
     /**
