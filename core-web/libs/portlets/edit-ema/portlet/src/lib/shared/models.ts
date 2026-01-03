@@ -109,8 +109,8 @@ export interface SaveStylePropertiesPayload {
     pageId: string;
     containerIdentifier: string;
     containerUUID: string;
-    contentletIdentifier: string;
     styleProperties: StyleEditorProperties;
+    contentletIdentifier: string;
 }
 
 export interface NavigationBarItem {
