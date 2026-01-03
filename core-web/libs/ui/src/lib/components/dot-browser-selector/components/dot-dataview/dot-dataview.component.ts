@@ -17,7 +17,8 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
 
 @Component({
     selector: 'dot-dataview',
