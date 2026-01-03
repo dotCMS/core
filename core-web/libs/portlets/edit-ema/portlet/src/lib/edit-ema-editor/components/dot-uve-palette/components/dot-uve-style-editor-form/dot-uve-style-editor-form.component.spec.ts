@@ -6,9 +6,10 @@ import { signal } from '@angular/core';
 import { FormGroup } from '@angular/forms';
 
 import { Accordion, AccordionModule } from 'primeng/accordion';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
@@ -87,10 +88,11 @@ describe('DotUveStyleEditorFormComponent', () => {
         component: DotUveStyleEditorFormComponent,
         imports: [AccordionModule, ButtonModule],
         providers: [
-            // mockProvider(UVEStore),
             mockProvider(DotWorkflowsActionsService),
             mockProvider(DotPageApiService),
             mockProvider(HttpClient),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
             {
                 provide: UVEStore,
                 useValue: {

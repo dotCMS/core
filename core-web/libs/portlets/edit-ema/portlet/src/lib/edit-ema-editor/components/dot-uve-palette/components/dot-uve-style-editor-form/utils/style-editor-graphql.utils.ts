@@ -10,7 +10,7 @@ import { ActionPayload } from '../../../../../../shared/models';
 export type GraphQLResponse =
     | DotCMSPageAsset
     | {
-          grapql?: {
+          graphql?: {
               query: string;
               variables: Record<string, string>;
           };

@@ -104,7 +104,7 @@ export class DotPageApiService {
      */
     saveStyleProperties({
         containerIdentifier,
-        contentledIdentifier,
+        contentletIdentifier,
         styleProperties,
         pageId,
         containerUUID
@@ -112,9 +112,9 @@ export class DotPageApiService {
         const payload = {
             identifier: containerIdentifier,
             uuid: containerUUID,
-            contentletsId: [contentledIdentifier],
+            contentletsId: [contentletIdentifier],
             styleProperties: {
-                [contentledIdentifier]: styleProperties
+                [contentletIdentifier]: styleProperties
             }
         };
 

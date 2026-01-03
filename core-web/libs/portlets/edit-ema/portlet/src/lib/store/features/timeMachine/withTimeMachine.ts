@@ -43,64 +43,89 @@ const safeClone: StructuredCloneFunc =
         : <T>(v: T) => JSON.parse(JSON.stringify(v));
 
 /**
- * Internal state added by withOtherTimeMachine
+ * Represents the state of the time machine history feature.
+ *
+ * @template T - The type of state snapshots being managed.
+ * @property {T[]} history - An array of state snapshots representing the history stack.
+ * @property {number} pointer - The current index within the history array (0-based).
  */
-interface OtherTimeMachineState<T> {
+interface TimeMachineState<T> {
     history: T[];
     pointer: number;
 }
 
 /**
- * Methods added by withOtherTimeMachine
+ * Interface defining methods for managing undo/redo history in a time machine pattern.
+ *
+ * @template T The type of the state being stored in the time machine.
  */
 export interface TimeMachineMethods<T> {
     /**
-     * Add a new state snapshot to history
-     * If pointer is not at the end, discards future states (rebase)
+     * Add a new state snapshot to the history.
+     * If the pointer is not at the end, discards future states ("rebase").
+     *
+     * @param {T} state - The state snapshot to add to history.
+     * @returns {void}
      */
     addHistory(state: T): void;
 
     /**
-     * Navigate to a specific index in history
-     * @param index - The index to navigate to (0-based)
-     * @returns The state at that index, or null if invalid
+     * Navigate directly to a specific index in the history.
+     *
+     * @param {number} index - The index to navigate to (0-based).
+     * @returns {(T | null)} The state at that index, or null if invalid.
      */
     goTo(index: number): T | null;
 
     /**
-     * Move back one step in history
-     * @returns The previous state, or null if at the beginning or only one history item
+     * Move back one step in the history (undo).
+     *
+     * @returns {(T | null)} The previous state, or null if at the beginning or only one history item.
      */
     undo(): T | null;
 
     /**
-     * Move forward one step in history
-     * @returns The next state, or null if at the end
+     * Move forward one step in the history (redo).
+     *
+     * @returns {(T | null)} The next state, or null if at the end.
      */
     redo(): T | null;
 
     /**
-     * Get state at a specific index without navigating
-     * @param index - The index to get state from
-     * @returns The state at that index, or null if invalid
+     * Retrieve the state at a specific index without navigating.
+     *
+     * @param {number} index - The index to get the state from.
+     * @returns {(T | null)} The state at that index, or null if invalid.
      */
     getStateAt(index: number): T | null;
 
     /**
-     * Clear all history and reset pointer
+     * Clear all history and reset the pointer.
+     *
+     * @returns {void}
      */
     clearHistory(): void;
 
     /**
-     * Get the full history array (read-only)
+     * Get the full history array (read-only).
+     *
+     * @returns {readonly T[]} The history array.
      */
     getHistory(): readonly T[];
 }
 
 /**
- * Computed properties added by withOtherTimeMachine
+ * Represents the computed properties added by withTimeMachine.
+ *
+ * @template T - The type of state snapshots being managed.
+ * @property {Signal<boolean>} haveHistory - Whether there is any history.
+ * @property {Signal<boolean>} canUndo - Whether undo is possible.
+ * @property {Signal<boolean>} canRedo - Whether redo is possible.
+ * @property {Signal<T | undefined>} current - The current state at the pointer position.
+ * @property {Signal<number>} currentIndex - The current pointer index.
+ * @property {Signal<number>} historyLength - The total number of states in history.
  */
-export interface OtherTimeMachineComputed<T> {
+export interface TimeMachineComputed<T> {
     /**
      * Whether there is any history
      */
@@ -177,7 +202,7 @@ export interface TimeMachineOptions {
  * ```typescript
  * export const myStore = signalStore(
  *   withState({ count: 0 }),
- *   withOtherTimeMachine<{ count: number }>({ maxHistory: 50 }),
+ *   withTimeMachine<{ count: number }>({ maxHistory: 50 }),
  *   withMethods(store => ({
  *     increment() {
  *       patchState(store, { count: store.count() + 1 });
@@ -193,7 +218,7 @@ export function withTimeMachine<T>(options?: TimeMachineOptions) {
     const shouldDeepClone = options?.deepClone !== false; // default true
 
     return signalStoreFeature(
-        withState<OtherTimeMachineState<T>>({
+        withState<TimeMachineState<T>>({
             history: [],
             pointer: -1
         }),

@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe } from 'rxjs';
+import { EMPTY, pipe, throwError } from 'rxjs';
 
 import { inject } from '@angular/core';
 
@@ -91,53 +91,50 @@ export function withSave() {
                 ),
                 /**
                  * Saves style properties optimistically with automatic rollback on failure.
-                 * The optimistic update should be done before calling this method using
-                 * setGraphqlResponseOptimistic. This method handles the API call and
-                 * rolls back the state if the save fails.
+                 * Returns an observable that can be subscribed to for handling success/error.
+                 * The optimistic update should be done before calling this method.
+                 * This method handles the API call and rolls back the state if the save fails.
                  *
                  * @param payload - Style properties save payload
+                 * @returns Observable that emits on success or error
                  */
-                saveStyleEditor: rxMethod<SaveStylePropertiesPayload>(
-                    pipe(
-                        switchMap((payload) => {
-                            return dotPageApiService.saveStyleProperties(payload).pipe(
-                                tapResponse({
-                                    next: () => {
-                                        // Success - optimistic update remains, no rollback needed
-                                    },
-                                    error: (error) => {
-                                        console.error('Error saving style properties:', error);
+                saveStyleEditor: (payload: SaveStylePropertiesPayload) => {
+                    return dotPageApiService.saveStyleProperties(payload).pipe(
+                        tapResponse({
+                            next: () => {
+                                // Success - optimistic update remains, no rollback needed
+                            },
+                            error: (error) => {
+                                console.error('Error saving style properties:', error);
 
-                                        // Rollback the optimistic update
-                                        const rolledBack = store.rollbackGraphqlResponse();
+                                // Rollback the optimistic update
+                                const rolledBack = store.rollbackGraphqlResponse();
 
-                                        if (!rolledBack) {
-                                            console.error(
-                                                'Failed to rollback optimistic update - no history available'
-                                            );
+                                if (!rolledBack) {
+                                    console.error(
+                                        'Failed to rollback optimistic update - no history available'
+                                    );
 
-                                            return;
-                                        }
+                                    return;
+                                }
 
-                                        // Update iframe with rolled back state
-                                        const rolledBackResponse = store.$customGraphqlResponse();
-                                        if (rolledBackResponse) {
-                                            iframeMessenger.sendPageData(rolledBackResponse);
-                                        }
-                                        console.warn(
-                                            '[TEST] Rolled back optimistic style update due to save failure'
-                                        );
-                                    }
-                                }),
-                                catchError((error) => {
-                                    // Additional error handling if needed
-                                    console.error('Error in saveStyleEditor:', error);
-                                    return EMPTY;
-                                })
-                            );
+                                // Update iframe with rolled back state
+                                const rolledBackResponse = store.$customGraphqlResponse();
+                                if (rolledBackResponse) {
+                                    iframeMessenger.sendPageData(rolledBackResponse);
+                                }
+                                console.warn(
+                                    'Rolled back optimistic style update due to save failure'
+                                );
+                            }
+                        }),
+                        catchError((error) => {
+                            // Re-throw error so component can handle it (show toast, etc.)
+                            // Rollback is already handled in tapResponse error callback
+                            return throwError(() => error);
                         })
-                    )
-                )
+                    );
+                }
             };
         })
     );

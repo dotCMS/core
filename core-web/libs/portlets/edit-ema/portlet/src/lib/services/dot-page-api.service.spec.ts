@@ -216,7 +216,7 @@ describe('DotPageApiService', () => {
                 pageId: 'test-page-123',
                 containerIdentifier: 'container-id-456',
                 containerUUID: 'container-uuid-789',
-                contentledIdentifier: 'contentlet-id-abc',
+                contentletIdentifier: 'contentlet-id-abc',
                 styleProperties: {
                     'font-size': '16px',
                     color: '#000000'

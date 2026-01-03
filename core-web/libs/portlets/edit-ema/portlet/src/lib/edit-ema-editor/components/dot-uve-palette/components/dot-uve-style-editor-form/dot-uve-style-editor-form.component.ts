@@ -13,10 +13,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounceTime, distinctUntilChanged, share } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, share, tap } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
@@ -30,7 +32,7 @@ import {
 } from './utils/style-editor-graphql.utils';
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
-import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 @Component({
@@ -56,6 +58,8 @@ export class DotUveStyleEditorFormComponent {
     readonly #uveStore = inject(UVEStore);
     readonly #iframeMessenger = inject(UveIframeMessengerService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #messageService = inject(MessageService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     $sections = computed(() => this.$schema().sections);
     $form = computed(() => this.#form());
@@ -149,24 +153,15 @@ export class DotUveStyleEditorFormComponent {
             takeUntilDestroyed(this.#destroyRef)
         );
 
-        // Immediate subscription: Update iframe without debounce
         formValueChanges$
             .pipe(
-                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
+                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+                tap((formValues) => this.#updateIframeImmediately(formValues)),
+                debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
             )
-            .subscribe((formValues) => {
-                this.#updateIframeImmediately(formValues);
-            });
-
-        // Debounced subscription: Save to API
-        formValueChanges$
-            .pipe(
-                debounceTime(3000),
-                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr))
-            )
-            .subscribe((formValues) => {
-                this.#saveStyleProperties(formValues);
-            });
+            .subscribe((formValues: Record<string, unknown>) =>
+                this.#saveStyleProperties(formValues)
+            );
     }
 
     /**
@@ -175,14 +170,13 @@ export class DotUveStyleEditorFormComponent {
      */
     #updateIframeImmediately(formValues: Record<string, unknown>): void {
         const activeContentlet = this.#uveStore.activeContentlet();
-        const customGraphqlResponse = this.#uveStore.$customGraphqlResponse();
 
-        if (!activeContentlet || !customGraphqlResponse) {
+        if (!activeContentlet) {
             return;
         }
 
         try {
-            // Get the internal graphqlResponse (always wrapped format) for optimistic update
+            // Get the internal graphqlResponse for optimistic update
             const internalGraphqlResponse = this.#uveStore.graphqlResponse();
             if (!internalGraphqlResponse) {
                 return;
@@ -232,12 +226,39 @@ export class DotUveStyleEditorFormComponent {
         }
 
         // Use the store's saveStyleEditor method which handles API call and rollback on failure
-        this.#uveStore.saveStyleEditor({
-            containerIdentifier: activeContentlet.container.identifier,
-            contentledIdentifier: activeContentlet.contentlet.identifier,
-            styleProperties: formValues,
-            pageId: activeContentlet.pageId,
-            containerUUID: activeContentlet.container.uuid
-        });
+        // Subscribe to handle success/error and show toast notifications
+        this.#uveStore
+            .saveStyleEditor({
+                containerIdentifier: activeContentlet.container.identifier,
+                contentletIdentifier: activeContentlet.contentlet.identifier,
+                styleProperties: formValues,
+                pageId: activeContentlet.pageId,
+                containerUUID: activeContentlet.container.uuid
+            })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: () => {
+                    // Success toast - style properties saved successfully
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('message.content.saved'),
+                        detail: this.#dotMessageService.get(
+                            'message.content.note.already.published'
+                        ),
+                        life: 2000
+                    });
+                },
+                error: (error) => {
+                    // Error toast - rollback already handled in store
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'editpage.content.update.contentlet.error'
+                        ),
+                        detail: error?.message || '',
+                        life: 2000
+                    });
+                }
+            });
     }
 }
