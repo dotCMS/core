@@ -319,7 +319,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     readonly $isPreviewMode = this.uveStore.$isPreviewMode;
-    readonly $editorContentStyles = this.uveStore.$editorContentStyles;
+
+    // Phase 4.3: Component-level computed (was in withEditor with cross-feature dependency)
+    readonly $editorContentStyles = computed<Record<string, string>>(() => {
+        const socialMedia = this.uveStore.toolbar().socialMedia;
+        return {
+            display: socialMedia ? 'none' : 'block'
+        };
+    });
+
     // toObservable requires a Signal, so computed() is necessary here
     readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.toolbar().ogTagsResults));
 

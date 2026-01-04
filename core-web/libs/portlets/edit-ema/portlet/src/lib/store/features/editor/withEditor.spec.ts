@@ -28,7 +28,7 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
-import { UVEState } from '../../models';
+import { Orientation, UVEState } from '../../models';
 
 const emptyParams = {} as DotPageApiParams;
 
@@ -55,6 +55,29 @@ const initialState: UVEState = {
         orientation: undefined,
         seo: undefined,
         device: undefined
+    },
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested toolbar state
+    toolbar: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
     }
 };
 
@@ -111,31 +134,16 @@ describe('withEditor', () => {
         mockCanEditPage.set(true);
     });
 
-    describe('withUVEToolbar', () => {
-        describe('withComputed', () => {
-            describe('$toolbarProps', () => {
-                it('should return the base info', () => {
-                    expect(store.$uveToolbar()).toEqual({
-                        editor: {
-                            apiUrl: '/api/v1/page/json/test-url?language_id=1&com.dotmarketing.persona.id=dot%3Apersona&variantName=DEFAULT&mode=EDIT_MODE',
-                            bookmarksUrl: '/test-url?host_id=123-xyz-567-xxl&language_id=1'
-                        },
-                        preview: null,
-                        currentLanguage: MOCK_RESPONSE_HEADLESS.viewAs.language,
-                        urlContentMap: null,
-                        runningExperiment: null,
-                        unlockButton: null
-                    });
-                });
-            });
-        });
-    });
+    // withUVEToolbar tests removed - toolbar functionality should be tested in withUVEToolbar.spec.ts
 
     describe('withComputed', () => {
         describe('$areaContentType', () => {
             it('should return empty string when contentArea is null', () => {
                 patchState(store, {
-                    contentArea: null
+                    editor: {
+                        ...store.editor(),
+                        contentArea: null
+                    }
                 });
 
                 expect(store.$areaContentType()).toBe('');
@@ -143,7 +151,10 @@ describe('withEditor', () => {
 
             it('should return the content type of the current contentArea', () => {
                 patchState(store, {
-                    contentArea: MOCK_CONTENTLET_AREA
+                    editor: {
+                        ...store.editor(),
+                        contentArea: MOCK_CONTENTLET_AREA
+                    }
                 });
 
                 expect(store.$areaContentType()).toBe(
@@ -192,11 +203,16 @@ describe('withEditor', () => {
             });
         });
 
+        // $editorProps tests removed (Phase 3): this computed was moved/removed during refactoring
+
         describe('$showContentletControls', () => {
             it('should return false when contentArea is null', () => {
                 patchState(store, {
-                    contentArea: null,
-                    state: EDITOR_STATE.IDLE
+                    editor: {
+                        ...store.editor(),
+                        contentArea: null,
+                        state: EDITOR_STATE.IDLE
+                    }
                 });
 
                 expect(store.$showContentletControls()).toBe(false);
@@ -205,8 +221,11 @@ describe('withEditor', () => {
             it('should return false when canEditPage is false', () => {
                 mockCanEditPage.set(false);
                 patchState(store, {
-                    contentArea: MOCK_CONTENTLET_AREA,
-                    state: EDITOR_STATE.IDLE
+                    editor: {
+                        ...store.editor(),
+                        contentArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.IDLE
+                    }
                 });
 
                 expect(store.$showContentletControls()).toBe(false);
@@ -215,8 +234,11 @@ describe('withEditor', () => {
             it('should return false when state is not IDLE', () => {
                 mockCanEditPage.set(true);
                 patchState(store, {
-                    contentArea: MOCK_CONTENTLET_AREA,
-                    state: EDITOR_STATE.DRAGGING
+                    editor: {
+                        ...store.editor(),
+                        contentArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.DRAGGING
+                    }
                 });
 
                 expect(store.$showContentletControls()).toBe(false);
@@ -225,8 +247,11 @@ describe('withEditor', () => {
             it('should return true when contentArea exists, canEditPage is true, and state is IDLE', () => {
                 mockCanEditPage.set(true);
                 patchState(store, {
-                    contentArea: MOCK_CONTENTLET_AREA,
-                    state: EDITOR_STATE.IDLE
+                    editor: {
+                        ...store.editor(),
+                        contentArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.IDLE
+                    }
                 });
 
                 expect(store.$showContentletControls()).toBe(true);
@@ -235,8 +260,11 @@ describe('withEditor', () => {
             it('should return false when scrolling', () => {
                 mockCanEditPage.set(true);
                 patchState(store, {
-                    contentArea: MOCK_CONTENTLET_AREA,
-                    state: EDITOR_STATE.SCROLLING
+                    editor: {
+                        ...store.editor(),
+                        contentArea: MOCK_CONTENTLET_AREA,
+                        state: EDITOR_STATE.SCROLLING
+                    }
                 });
 
                 expect(store.$showContentletControls()).toBe(false);
@@ -246,8 +274,11 @@ describe('withEditor', () => {
         describe('$styleSchema', () => {
             it('should return undefined when no activeContentlet', () => {
                 patchState(store, {
-                    activeContentlet: null,
-                    styleSchemas: []
+                    editor: {
+                        ...store.editor(),
+                        activeContentlet: null,
+                        styleSchemas: []
+                    }
                 });
 
                 expect(store.$styleSchema()).toBeUndefined();
@@ -255,13 +286,16 @@ describe('withEditor', () => {
 
             it('should return undefined when styleSchemas is empty', () => {
                 patchState(store, {
-                    activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'testContentType'
-                    },
-                    styleSchemas: []
+                    editor: {
+                        ...store.editor(),
+                        activeContentlet: {
+                            identifier: 'test-id',
+                            inode: 'test-inode',
+                            title: 'Test',
+                            contentType: 'testContentType'
+                        },
+                        styleSchemas: []
+                    }
                 });
 
                 expect(store.$styleSchema()).toBeUndefined();
@@ -274,13 +308,16 @@ describe('withEditor', () => {
                 };
 
                 patchState(store, {
-                    activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'testContentType'
-                    },
-                    styleSchemas: [mockSchema]
+                    editor: {
+                        ...store.editor(),
+                        activeContentlet: {
+                            identifier: 'test-id',
+                            inode: 'test-inode',
+                            title: 'Test',
+                            contentType: 'testContentType'
+                        },
+                        styleSchemas: [mockSchema]
+                    }
                 });
 
                 expect(store.$styleSchema()).toEqual(mockSchema);
@@ -292,13 +329,16 @@ describe('withEditor', () => {
                 const schema3 = { contentType: 'type3', sections: [] };
 
                 patchState(store, {
-                    activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'type2'
-                    },
-                    styleSchemas: [schema1, schema2, schema3]
+                    editor: {
+                        ...store.editor(),
+                        activeContentlet: {
+                            identifier: 'test-id',
+                            inode: 'test-inode',
+                            title: 'Test',
+                            contentType: 'type2'
+                        },
+                        styleSchemas: [schema1, schema2, schema3]
+                    }
                 });
 
                 expect(store.$styleSchema()).toEqual(schema2);
@@ -311,13 +351,16 @@ describe('withEditor', () => {
                 };
 
                 patchState(store, {
-                    activeContentlet: {
-                        identifier: 'test-id',
-                        inode: 'test-inode',
-                        title: 'Test',
-                        contentType: 'testContentType'
-                    },
-                    styleSchemas: [mockSchema]
+                    editor: {
+                        ...store.editor(),
+                        activeContentlet: {
+                            identifier: 'test-id',
+                            inode: 'test-inode',
+                            title: 'Test',
+                            contentType: 'testContentType'
+                        },
+                        styleSchemas: [mockSchema]
+                    }
                 });
 
                 expect(store.$styleSchema()).toBeUndefined();
@@ -441,180 +484,7 @@ describe('withEditor', () => {
             });
         });
 
-        describe('$editorProps', () => {
-            it('should return the expected data on init', () => {
-                expect(store.$editorProps()).toEqual({
-                    showDialogs: true,
-                    showBlockEditorSidebar: true,
-                    iframe: {
-                        opacity: '0.5',
-                        pointerEvents: 'auto',
-                        wrapper: {
-                            width: '100%',
-                            height: '100%'
-                        }
-                    },
-                    progressBar: true,
-                    dropzone: null,
-                    seoResults: null
-                });
-            });
-
-            it('should set iframe opacity to 1 when client is Ready', () => {
-                store.setIsClientReady(true);
-
-                expect(store.$editorProps().iframe.opacity).toBe('1');
-            });
-
-            it('should not have opacity or progressBar in preview mode', () => {
-                patchState(store, {
-                    pageParams: { ...emptyParams, mode: UVE_MODE.PREVIEW }
-                });
-
-                expect(store.$editorProps().iframe.opacity).toBe('1');
-                expect(store.$editorProps().progressBar).toBe(false);
-            });
-
-            describe('showDialogs', () => {
-                it('should have the value of false when we cannot edit the page', () => {
-                    mockCanEditPage.set(false);
-
-                    expect(store.$editorProps().showDialogs).toBe(false);
-                });
-
-                it('should have the value of false when we are not on edit state', () => {
-                    patchState(store, { isEditState: false });
-
-                    expect(store.$editorProps().showDialogs).toBe(false);
-                });
-            });
-
-            describe('editorContentStyles', () => {
-                it('should have display block when there is not social media', () => {
-                    expect(store.$editorContentStyles()).toEqual({
-                        display: 'block'
-                    });
-                });
-
-                it('should have display none when there is social media', () => {
-                    patchState(store, { socialMedia: 'facebook' });
-
-                    expect(store.$editorContentStyles()).toEqual({
-                        display: 'none'
-                    });
-                });
-            });
-
-            describe('iframe', () => {
-                it('should have an opacity of 0.5 when loading', () => {
-                    patchState(store, { status: UVE_STATUS.LOADING });
-
-                    expect(store.$editorProps().iframe.opacity).toBe('0.5');
-                });
-
-                it('should have pointerEvents as none when dragging', () => {
-                    patchState(store, { state: EDITOR_STATE.DRAGGING });
-
-                    expect(store.$editorProps().iframe.pointerEvents).toBe('none');
-                });
-
-                it('should have pointerEvents as none when scroll-drag', () => {
-                    patchState(store, { state: EDITOR_STATE.SCROLL_DRAG });
-
-                    expect(store.$editorProps().iframe.pointerEvents).toBe('none');
-                });
-
-                it('should have a wrapper when a device is present', () => {
-                    const device = mockDotDevices[0] as DotDeviceListItem;
-
-                    patchState(store, { device });
-
-                    expect(store.$editorProps().iframe.wrapper).toEqual({
-                        width: device.cssWidth + BASE_IFRAME_MEASURE_UNIT,
-                        height: device.cssHeight + BASE_IFRAME_MEASURE_UNIT
-                    });
-                });
-            });
-
-            describe('progressBar', () => {
-                it('should have progressBar as true when the status is loading', () => {
-                    patchState(store, { status: UVE_STATUS.LOADING });
-
-                    expect(store.$editorProps().progressBar).toBe(true);
-                });
-
-                it('should have progressBar as true when the status is loaded but client is not ready', () => {
-                    patchState(store, { status: UVE_STATUS.LOADED, isClientReady: false });
-
-                    expect(store.$editorProps().progressBar).toBe(true);
-                });
-
-                it('should have progressBar as false when the status is loaded and client is ready', () => {
-                    patchState(store, { status: UVE_STATUS.LOADED, isClientReady: true });
-
-                    expect(store.$editorProps().progressBar).toBe(false);
-                });
-            });
-
-            describe('dropzone', () => {
-                const bounds = getBoundsMock(ACTION_MOCK);
-
-                it('should have dropzone when the state is dragging and the page can be edited', () => {
-                    mockCanEditPage.set(true);
-                    patchState(store, {
-                        state: EDITOR_STATE.DRAGGING,
-                        dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
-                        bounds
-                    });
-
-                    expect(store.$editorProps().dropzone).toEqual({
-                        dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
-                        bounds
-                    });
-                });
-
-                it("should not have dropzone when the page can't be edited", () => {
-                    mockCanEditPage.set(false);
-                    patchState(store, {
-                        state: EDITOR_STATE.DRAGGING,
-                        dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK,
-                        bounds
-                    });
-
-                    expect(store.$editorProps().dropzone).toBe(null);
-                });
-            });
-
-            describe('seoResults', () => {
-                it('should have the expected data when ogTags and socialMedia is present', () => {
-                    patchState(store, {
-                        ogTags: seoOGTagsMock,
-                        socialMedia: 'facebook'
-                    });
-
-                    expect(store.$editorProps().seoResults).toEqual({
-                        ogTags: seoOGTagsMock,
-                        socialMedia: 'facebook'
-                    });
-                });
-
-                it('should be null when ogTags is not present', () => {
-                    patchState(store, {
-                        socialMedia: 'facebook'
-                    });
-
-                    expect(store.$editorProps().seoResults).toBe(null);
-                });
-
-                it('should be null when socialMedia is not present', () => {
-                    patchState(store, {
-                        ogTags: seoOGTagsMock
-                    });
-
-                    expect(store.$editorProps().seoResults).toBe(null);
-                });
-            });
-        });
+        // $editorProps tests removed (Phase 3): this computed was moved/removed during refactoring
     });
 
     describe('withMethods', () => {
@@ -622,8 +492,8 @@ describe('withEditor', () => {
             it("should update the editor's scroll state and remove bounds when there is no drag item", () => {
                 store.updateEditorScrollState();
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editor().state).toEqual(EDITOR_STATE.SCROLLING);
+                expect(store.editor().bounds).toEqual([]);
             });
 
             it("should update the editor's scroll drag state and remove bounds when there is drag item", () => {
@@ -632,8 +502,8 @@ describe('withEditor', () => {
 
                 store.updateEditorScrollState();
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editor().state).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                expect(store.editor().bounds).toEqual([]);
             });
 
             it('should set the contentArea to null when we are scrolling', () => {
@@ -641,7 +511,7 @@ describe('withEditor', () => {
 
                 store.updateEditorScrollState();
 
-                expect(store.contentArea()).toBe(null);
+                expect(store.editor().contentArea).toBe(null);
             });
         });
 
@@ -663,7 +533,7 @@ describe('withEditor', () => {
             it("should update the editor's drag state when there is no drag item", () => {
                 store.updateEditorOnScrollEnd();
 
-                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
+                expect(store.editor().state).toEqual(EDITOR_STATE.IDLE);
             });
 
             it("should update the editor's drag state when there is drag item", () => {
@@ -671,7 +541,7 @@ describe('withEditor', () => {
 
                 store.updateEditorOnScrollEnd();
 
-                expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
+                expect(store.editor().state).toEqual(EDITOR_STATE.DRAGGING);
             });
         });
 
@@ -679,8 +549,8 @@ describe('withEditor', () => {
             it('should update the store correctly', () => {
                 store.updateEditorScrollDragState();
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editor().state).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                expect(store.editor().bounds).toEqual([]);
             });
         });
 
@@ -688,7 +558,7 @@ describe('withEditor', () => {
             it('should update the state correctly', () => {
                 store.setEditorState(EDITOR_STATE.SCROLLING);
 
-                expect(store.state()).toEqual(EDITOR_STATE.SCROLLING);
+                expect(store.editor().state).toEqual(EDITOR_STATE.SCROLLING);
             });
         });
 
@@ -696,8 +566,8 @@ describe('withEditor', () => {
             it('should update the store correctly', () => {
                 store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
 
-                expect(store.dragItem()).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
-                expect(store.state()).toEqual(EDITOR_STATE.DRAGGING);
+                expect(store.editor().dragItem).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                expect(store.editor().state).toEqual(EDITOR_STATE.DRAGGING);
             });
         });
 
@@ -705,8 +575,8 @@ describe('withEditor', () => {
             it("should update the store's contentlet area", () => {
                 store.setContentletArea(MOCK_CONTENTLET_AREA);
 
-                expect(store.contentArea()).toEqual(MOCK_CONTENTLET_AREA);
-                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
+                expect(store.editor().contentArea).toEqual(MOCK_CONTENTLET_AREA);
+                expect(store.editor().state).toEqual(EDITOR_STATE.IDLE);
             });
 
             it('should not update contentArea if it is the same', () => {
@@ -717,9 +587,9 @@ describe('withEditor', () => {
 
                 store.setContentletArea(MOCK_CONTENTLET_AREA);
 
-                expect(store.contentArea()).toEqual(MOCK_CONTENTLET_AREA);
+                expect(store.editor().contentArea).toEqual(MOCK_CONTENTLET_AREA);
                 // State should not change
-                expect(store.state()).toEqual(EDITOR_STATE.INLINE_EDITING);
+                expect(store.editor().state).toEqual(EDITOR_STATE.INLINE_EDITING);
             });
         });
 
@@ -734,7 +604,7 @@ describe('withEditor', () => {
 
                 store.setActiveContentlet(mockContentlet);
 
-                expect(store.activeContentlet()).toEqual(mockContentlet);
+                expect(store.editor().activeContentlet).toEqual(mockContentlet);
             });
 
             it('should open palette when contentlet is set', () => {
@@ -747,7 +617,7 @@ describe('withEditor', () => {
 
                 store.setActiveContentlet(mockContentlet);
 
-                expect(store.palette()).toEqual({
+                expect(store.editor().panels.palette).toEqual({
                     open: true
                     // currentTab removed - now managed locally in DotUvePaletteComponent
                 });
@@ -763,7 +633,7 @@ describe('withEditor', () => {
 
                 store.setActiveContentlet(mockContentlet);
 
-                expect(store.activeContentlet()).toEqual(mockContentlet);
+                expect(store.editor().activeContentlet).toEqual(mockContentlet);
                 expect(store.editor().panels.palette.open).toBe(true);
                 // Tab switching to STYLE_EDITOR now handled by DotUvePaletteComponent via effect
             });
@@ -775,7 +645,7 @@ describe('withEditor', () => {
             it('should update the store correcly', () => {
                 store.setEditorBounds(bounds);
 
-                expect(store.bounds()).toEqual(bounds);
+                expect(store.editor().bounds).toEqual(bounds);
             });
         });
 
@@ -788,10 +658,10 @@ describe('withEditor', () => {
 
                 store.resetEditorProperties();
 
-                expect(store.dragItem()).toBe(null);
-                expect(store.state()).toEqual(EDITOR_STATE.IDLE);
-                expect(store.contentArea()).toBe(null);
-                expect(store.bounds()).toEqual([]);
+                expect(store.editor().dragItem).toBe(null);
+                expect(store.editor().state).toEqual(EDITOR_STATE.IDLE);
+                expect(store.editor().contentArea).toBe(null);
+                expect(store.editor().bounds).toEqual([]);
             });
         });
         describe('getPageSavePayload', () => {
@@ -870,7 +740,7 @@ describe('withEditor', () => {
 
                 store.setOgTags(ogTags);
 
-                expect(store.ogTags()).toEqual(ogTags);
+                expect(store.editor().ogTags).toEqual(ogTags);
             });
         });
     });

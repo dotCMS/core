@@ -37,12 +37,8 @@ export function withLayout() {
                     },
                     pageId: response?.page.identifier
                 };
-            }),
-            $canEditLayout: computed<boolean>(() => {
-                const { page, template } = pageAPIResponse() ?? {};
-
-                return page?.canEdit || template?.drawed;
             })
+            // $canEditLayout moved to withPageContext (Phase 4.2 - shared permission)
         })),
         withMethods((store) => {
             return {

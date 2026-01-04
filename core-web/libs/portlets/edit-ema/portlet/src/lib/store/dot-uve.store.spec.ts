@@ -179,6 +179,74 @@ describe('UVEStore', () => {
             });
         });
 
+        describe('$currentLanguage', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+            it('should return the current language object', () => {
+                expect(store.$currentLanguage()).toEqual(MOCK_RESPONSE_HEADLESS.viewAs.language);
+            });
+
+            it('should return undefined when viewAs is not available', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        viewAs: undefined
+                    }
+                });
+                expect(store.$currentLanguage()).toBeUndefined();
+            });
+        });
+
+        describe('$canEditLayout', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when page canEdit is true', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true
+                        }
+                    }
+                });
+                expect(store.$canEditLayout()).toBe(true);
+            });
+
+            it('should return true when template is drawed', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false
+                        },
+                        template: {
+                            ...MOCK_RESPONSE_HEADLESS.template,
+                            drawed: true
+                        }
+                    }
+                });
+                expect(store.$canEditLayout()).toBe(true);
+            });
+
+            it('should return false when both page canEdit and template drawed are false', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false
+                        },
+                        template: {
+                            ...MOCK_RESPONSE_HEADLESS.template,
+                            drawed: false
+                        }
+                    }
+                });
+                expect(store.$canEditLayout()).toBe(false);
+            });
+        });
+
         describe('$shellProps', () => {
             describe('Headless Page', () => {
                 beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));

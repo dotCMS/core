@@ -5,6 +5,7 @@ import {
     createRoutingFactory,
     mockProvider
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -549,6 +550,40 @@ describe('EditEmaEditorComponent', () => {
                 spectator.detectChanges();
 
                 expect(errorComponent).toBeDefined();
+            });
+        });
+
+        describe('Computed Properties', () => {
+            describe('$editorContentStyles', () => {
+                it('should return display block when socialMedia is null', () => {
+                    patchState(store, {
+                        toolbar: {
+                            ...store.toolbar(),
+                            socialMedia: null
+                        }
+                    });
+
+                    spectator.detectChanges();
+
+                    expect(spectator.component.$editorContentStyles()).toEqual({
+                        display: 'block'
+                    });
+                });
+
+                it('should return display none when socialMedia is set', () => {
+                    patchState(store, {
+                        toolbar: {
+                            ...store.toolbar(),
+                            socialMedia: 'facebook'
+                        }
+                    });
+
+                    spectator.detectChanges();
+
+                    expect(spectator.component.$editorContentStyles()).toEqual({
+                        display: 'none'
+                    });
+                });
             });
         });
 

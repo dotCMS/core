@@ -18,11 +18,13 @@ export interface PageContextComputed {
     $isStyleEditorEnabled: Signal<boolean>;
     $hasAccessToEditMode: Signal<boolean>;
     $languageId: Signal<number>;
+    $currentLanguage: Signal<any>;
     $isPreviewMode: Signal<boolean>;
     $isLiveMode: Signal<boolean>;
     $pageURI: Signal<string>;
     $variantId: Signal<string>;
     $canEditPage: Signal<boolean>;
+    $canEditLayout: Signal<boolean>;
 }
 
 /**
@@ -78,9 +80,15 @@ export function withPageContext() {
                     $isStyleEditorEnabled,
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
+                    $currentLanguage: computed(() => viewAs()?.language),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
                     $variantId: computed(() => pageParams()?.variantId ?? ''),
-                    $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
+                    $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode()),
+                    $canEditLayout: computed(() => {
+                        const pageData = page();
+                        const responseData = pageAPIResponse();
+                        return pageData?.canEdit || responseData?.template?.drawed;
+                    })
                 } satisfies PageContextComputed;
             }
         )

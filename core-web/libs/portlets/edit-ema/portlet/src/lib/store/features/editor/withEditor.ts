@@ -161,14 +161,8 @@ export function withEditor() {
                         params,
                         dotCMSHost
                     });
-                }),
-                $editorContentStyles: computed<Record<string, string>>(() => {
-                    const socialMedia = store.toolbar().socialMedia;
-
-                    return {
-                        display: socialMedia ? 'none' : 'block'
-                    };
                 })
+                // $editorContentStyles removed - moved to component level (Phase 4.3: cross-feature dependency)
             };
         }),
         withMethods((store) => {
