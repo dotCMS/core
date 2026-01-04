@@ -44,7 +44,7 @@ export function withSave() {
                         switchMap((pageContainers) => {
                             const payload = {
                                 pageContainers,
-                                pageId: store.pageAPIResponse().page.identifier,
+                                pageId: store.page().identifier,
                                 params: store.pageParams()
                             };
 
@@ -63,10 +63,18 @@ export function withSave() {
 
                                     return pageRequest.pipe(
                                         tapResponse({
-                                            next: (pageAPIResponse: DotCMSPageAsset) => {
+                                            next: (pageAsset: DotCMSPageAsset) => {
                                                 patchState(store, {
                                                     status: UVE_STATUS.LOADED,
-                                                    pageAPIResponse: pageAPIResponse
+                                                    page: pageAsset?.page,
+                                                    site: pageAsset?.site,
+                                                    viewAs: pageAsset?.viewAs,
+                                                    template: pageAsset?.template,
+                                                    layout: pageAsset?.layout,
+                                                    urlContentMap: pageAsset?.urlContentMap,
+                                                    containers: pageAsset?.containers,
+                                                    vanityUrl: pageAsset?.vanityUrl,
+                                                    numberContents: pageAsset?.numberContents
                                                 });
                                             },
                                             error: (e) => {
@@ -98,13 +106,15 @@ export function withSave() {
                             });
                         }),
                         switchMap((sortedRows) => {
-                            const pageResponse = store.pageAPIResponse();
+                            const page = store.page();
+                            const layoutData = store.layout();
+                            const template = store.template();
 
-                            return dotPageLayoutService.save(pageResponse.page.identifier, {
+                            return dotPageLayoutService.save(page.identifier, {
                                 layout: {
-                                    ...pageResponse.layout,
+                                    ...layoutData,
                                     body: {
-                                        ...pageResponse.layout.body,
+                                        ...layoutData.body,
                                         rows: sortedRows.map((row) => {
                                             return {
                                                 ...row,
@@ -120,7 +130,7 @@ export function withSave() {
                                         })
                                     }
                                 },
-                                themeId: pageResponse.template.theme,
+                                themeId: template?.theme,
                                 title: null
                             }).pipe(
                                 /**********************************************************************
@@ -138,7 +148,15 @@ export function withSave() {
                                     next: (pageRender: DotCMSPageAsset) => {
                                         patchState(store, {
                                             status: UVE_STATUS.LOADED,
-                                            pageAPIResponse: pageRender
+                                            page: pageRender?.page,
+                                            site: pageRender?.site,
+                                            viewAs: pageRender?.viewAs,
+                                            template: pageRender?.template,
+                                            layout: pageRender?.layout,
+                                            urlContentMap: pageRender?.urlContentMap,
+                                            containers: pageRender?.containers,
+                                            vanityUrl: pageRender?.vanityUrl,
+                                            numberContents: pageRender?.numberContents
                                         });
                                     },
                                     error: (e) => {

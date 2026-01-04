@@ -103,7 +103,7 @@ export function withLock() {
 
                     // If page is locked but NOT by current user, show confirmation
                     if (isLocked && !isLockedByCurrentUser) {
-                        const lockedBy = store.pageAPIResponse().page.lockedByName;
+                        const lockedBy = store.page().lockedByName;
 
                         confirmationService.confirm({
                             header: dotMessageService.get('uve.editor.unlock.confirm.header'),

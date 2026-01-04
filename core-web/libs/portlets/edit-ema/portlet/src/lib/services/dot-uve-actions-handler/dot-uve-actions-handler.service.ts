@@ -240,7 +240,7 @@ export class DotUveActionsHandlerService {
                     startLevel,
                     depth,
                     pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.pageAPIResponse().site.identifier
+                    hostId: uveStore.site().identifier
                 });
 
                 dialog.openDialogOnUrl(

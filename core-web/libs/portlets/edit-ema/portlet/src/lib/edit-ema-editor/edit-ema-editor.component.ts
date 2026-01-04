@@ -17,8 +17,7 @@ import {
     inject,
     signal,
     untracked,
-    computed,
-    DestroyRef
+    computed
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -41,8 +40,6 @@ import {
     DotCopyContentService,
     DotHttpErrorManagerService,
     DotMessageService,
-    DotSeoMetaTagsService,
-    DotSeoMetaTagsUtilService,
     DotTempFileUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
@@ -177,7 +174,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $contentletEditData = computed(() => {
         const { container, contentlet: contentletPayload } = this.uveStore.selectedPayload() ?? {};
-        const pageAPIResponse = this.uveStore.pageAPIResponse();
+        // Removed pageAPIResponse - use normalized accessors
 
         const contentType = this.$contenttypes().find(
             (ct) => ct.variable === contentletPayload?.contentType
@@ -191,10 +188,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             options: parseFieldValues(field.values)
         }));
 
-        // Get the full contentlet from pageAPIResponse using container identifier and uuid
+        // Get the full contentlet from containers using container identifier and uuid
         let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
-        if (container?.identifier && container?.uuid && contentletPayload?.identifier && pageAPIResponse) {
-            const containerData = pageAPIResponse.containers?.[container.identifier];
+        const containers = this.uveStore.containers();
+        if (container?.identifier && container?.uuid && contentletPayload?.identifier && containers) {
+            const containerData = containers[container.identifier];
             const contentletUuid = `uuid-${container.uuid}`;
             const contentlets = containerData?.contentlets?.[contentletUuid] || [];
             const foundContentlet = contentlets.find(
@@ -215,8 +213,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
-    private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
-    private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly dotContentletService = inject(DotContentletService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -226,7 +222,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly bridgeService = inject(DotUveBridgeService);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
-    readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     #iframeResizeObserver: ResizeObserver | null = null;
 
@@ -252,7 +247,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $iframeProps = computed(() => {
         // Use it to create dependencies to the pageAPIResponse
-        this.uveStore.pageAPIResponse();
         const params = this.uveStore.pageParams();
         const isTraditionalPage = this.uveStore.isTraditionalPage();
         const isClientReady = this.uveStore.isClientReady();
@@ -276,7 +270,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $progressBar = computed<boolean>(() => {
-        this.uveStore.pageAPIResponse();
         const params = this.uveStore.pageParams();
         const isTraditionalPage = this.uveStore.isTraditionalPage();
         const isClientReady = this.uveStore.isClientReady();
@@ -381,12 +374,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     readonly $pageURL = computed((): string => {
-        const pageAPIResponse = this.uveStore.pageAPIResponse();
-        if (!pageAPIResponse?.page?.pageURI) {
+        // Removed pageAPIResponse - use normalized accessors
+        if (!this.uveStore.page()?.pageURI) {
             return '';
         }
-        const site = pageAPIResponse.site;
-        const page = pageAPIResponse.page;
+        const site = this.uveStore.site();
+        const page = this.uveStore.page();
         const hostname = site?.hostname || 'mysite.com';
         const protocol = page?.httpsRequired ? 'https' : 'http';
         const pageURI = page.pageURI;
@@ -974,7 +967,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
                 const targetUrl = getTargetUrl(
                     url.pathname,
-                    this.uveStore.pageAPIResponse().urlContentMap
+                    this.uveStore.urlContentMap()
                 );
                 const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
 
@@ -1414,7 +1407,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         return {
-            ...this.uveStore.pageAPIResponse(),
+            // Removed pageAPIResponse spread
             params: this.uveStore.pageParams()
         };
     }
@@ -1437,7 +1430,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
         const params = this.uveStore.pageParams();
-        const siteId = this.uveStore.pageAPIResponse()?.site?.identifier;
+        const siteId = this.uveStore.site()?.identifier;
         const host = params?.clientHost || this.window.location.origin;
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
 

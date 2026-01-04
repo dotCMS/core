@@ -66,12 +66,12 @@ export function withEditor() {
         withUVEToolbar(),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
-            const pageEntity = store.pageAPIResponse;
 
             return {
                 $allowContentDelete: computed<boolean>(() => {
-                    const numberContents = pageEntity()?.numberContents;
-                    const persona = pageEntity()?.viewAs?.persona;
+                    const numberContents = store.numberContents();
+                    const viewAs = store.viewAs();
+                    const persona = viewAs?.persona;
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
                     return numberContents > 1 || !persona || isDefaultPersona;
@@ -104,30 +104,32 @@ export function withEditor() {
                     return store.editor().contentArea?.payload?.contentlet?.contentType ?? '';
                 }),
                 $pageData: computed<PageData>(() => {
-                    const pageAPIResponse = store.pageAPIResponse();
+                    const page = store.page();
+                    const viewAs = store.viewAs();
+                    const containersData = store.containers();
 
                     const containers: PageDataContainer[] =
-                        mapContainerStructureToArrayOfContainers(pageAPIResponse.containers);
-                    const personalization = getPersonalization(pageAPIResponse.viewAs?.persona);
+                        mapContainerStructureToArrayOfContainers(containersData);
+                    const personalization = getPersonalization(viewAs?.persona);
 
                     return {
                         containers,
                         personalization,
-                        id: pageAPIResponse.page.identifier,
-                        languageId: pageAPIResponse.viewAs.language.id,
-                        personaTag: pageAPIResponse.viewAs.persona?.keyTag
+                        id: page.identifier,
+                        languageId: viewAs.language.id,
+                        personaTag: viewAs.persona?.keyTag
                     };
                 }),
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
-                        code: store.pageAPIResponse()?.page?.rendered,
+                        code: store.page()?.rendered,
                         isTraditionalPage: store.isTraditionalPage(),
                         enableInlineEdit:
                             store.toolbar().isEditState && untracked(() => store.isEnterprise())
                     };
                 }),
                 $pageRender: computed<string>(() => {
-                    return store.pageAPIResponse()?.page?.rendered;
+                    return store.page()?.rendered;
                 }),
                 $enableInlineEdit: computed<boolean>(() => {
                     return store.toolbar().isEditState && untracked(() => store.isEnterprise());
@@ -137,12 +139,12 @@ export function withEditor() {
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     /*
-                        Here we need to import pageAPIResponse() to create the computed dependency and have it updated every time a response is received from the PageAPI.
+                        Here we need to trigger recomputation when page data changes.
                         This should change in future UVE improvements.
                         More info: https://github.com/dotCMS/core/issues/31475 and https://github.com/dotCMS/core/issues/32139
                      */
-                    const pageAPIResponse = store.pageAPIResponse();
-                    const vanityURL = pageAPIResponse?.vanityUrl?.url;
+                    const vanityUrlData = store.vanityUrl();
+                    const vanityURL = vanityUrlData?.url;
                     const isTraditionalPage = untracked(() => store.isTraditionalPage());
                     const params = untracked(() => store.pageParams());
 

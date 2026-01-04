@@ -151,7 +151,15 @@ export function withLoad() {
                                             const isTraditionalPage = !pageParams.clientHost;
 
                                             patchState(store, {
-                                                pageAPIResponse: pageAsset,
+                                                page: pageAsset?.page,
+                                                site: pageAsset?.site,
+                                                viewAs: pageAsset?.viewAs,
+                                                template: pageAsset?.template,
+                                                layout: pageAsset?.layout,
+                                                urlContentMap: pageAsset?.urlContentMap,
+                                                containers: pageAsset?.containers,
+                                                vanityUrl: pageAsset?.vanityUrl,
+                                                numberContents: pageAsset?.numberContents,
                                                 isEnterprise,
                                                 currentUser,
                                                 experiment,
@@ -194,13 +202,23 @@ export function withLoad() {
                                   );
 
                             return pageRequest.pipe(
-                                tap((pageAPIResponse) => {
-                                    patchState(store, { pageAPIResponse });
-                                    store.getWorkflowActions(pageAPIResponse.page.inode);
+                                tap((pageAsset) => {
+                                    patchState(store, {
+                                        page: pageAsset?.page,
+                                        site: pageAsset?.site,
+                                        viewAs: pageAsset?.viewAs,
+                                        template: pageAsset?.template,
+                                        layout: pageAsset?.layout,
+                                        urlContentMap: pageAsset?.urlContentMap,
+                                        containers: pageAsset?.containers,
+                                        vanityUrl: pageAsset?.vanityUrl,
+                                        numberContents: pageAsset?.numberContents
+                                    });
+                                    store.getWorkflowActions(pageAsset.page.inode);
                                 }),
-                                switchMap((pageAPIResponse) => {
+                                switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(
-                                        pageAPIResponse.page.identifier
+                                        pageAsset.page.identifier
                                     );
                                 }),
                                 tap((languages) => {

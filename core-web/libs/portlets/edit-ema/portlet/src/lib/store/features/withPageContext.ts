@@ -12,6 +12,10 @@ import { computeIsPageLocked } from '../../utils';
 import { UVEState } from '../models';
 
 export interface PageContextComputed {
+    // Note: page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl
+    // are now direct state properties (Signal<any>) available on the store, not computed
+
+    // Computed properties
     $isEditMode: Signal<boolean>;
     $isPageLocked: Signal<boolean>;
     $isLockFeatureEnabled: Signal<boolean>;
@@ -42,15 +46,18 @@ export function withPageContext() {
         withFlags(UVE_FEATURE_FLAGS),
         withComputed(
             ({
-                pageAPIResponse,
+                page,
+                viewAs,
+                template,
                 pageParams,
                 flags,
                 experiment,
                 currentUser,
                 isTraditionalPage
             }) => {
-                const page = computed(() => pageAPIResponse()?.page);
-                const viewAs = computed(() => pageAPIResponse()?.viewAs);
+                // Note: page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl
+                // are now direct state properties, passed through as-is
+
                 const $isPreviewMode = computed(() => pageParams()?.mode === UVE_MODE.PREVIEW);
                 const $isLiveMode = computed(() => pageParams()?.mode === UVE_MODE.LIVE);
                 const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
@@ -72,6 +79,11 @@ export function withPageContext() {
                 });
 
                 return {
+                    // State properties (passed through as-is - already in state)
+                    // page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl
+                    // are available directly from store state, no need to re-export
+
+                    // Existing computed properties
                     $isLiveMode,
                     $isEditMode,
                     $isPreviewMode,
@@ -86,8 +98,8 @@ export function withPageContext() {
                     $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode()),
                     $canEditLayout: computed(() => {
                         const pageData = page();
-                        const responseData = pageAPIResponse();
-                        return pageData?.canEdit || responseData?.template?.drawed;
+                        const templateData = template();
+                        return pageData?.canEdit || templateData?.drawed;
                     })
                 } satisfies PageContextComputed;
             }

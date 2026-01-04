@@ -313,8 +313,8 @@ export class DotRowReorderComponent {
     protected readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
 
     protected rows = computed(() => {
-        const response = this.uveStore.pageAPIResponse();
-        return response?.layout?.body?.rows ?? [];
+        const layout = this.uveStore.layout();
+        return layout?.body?.rows ?? [];
     });
 
     protected getRowLabel(row: DotPageAssetLayoutRow, index: number): string {
@@ -387,12 +387,12 @@ export class DotRowReorderComponent {
             });
 
             // Optimistic UI update
-            const pageResponse = this.uveStore.pageAPIResponse();
-            if (pageResponse?.layout) {
+            // Removed pageAPIResponse - use normalized accessors
+            if (this.uveStore.layout()) {
                 this.uveStore.updateLayout({
-                    ...pageResponse.layout,
+                    ...this.uveStore.layout(),
                     body: {
-                        ...pageResponse.layout.body,
+                        ...this.uveStore.layout().body,
                         rows: updatedRows
                     }
                 });
@@ -412,12 +412,12 @@ export class DotRowReorderComponent {
         });
 
         // Optimistic UI update (so the label changes immediately)
-        const pageResponse = this.uveStore.pageAPIResponse();
-        if (pageResponse?.layout) {
+        // Removed pageAPIResponse - use normalized accessors
+        if (this.uveStore.layout()) {
             this.uveStore.updateLayout({
-                ...pageResponse.layout,
+                ...this.uveStore.layout(),
                 body: {
-                    ...pageResponse.layout.body,
+                    ...this.uveStore.layout().body,
                     rows: updatedRows
                 }
             });
@@ -495,15 +495,15 @@ export class DotRowReorderComponent {
     }
 
     private optimisticUpdateRows(rows: DotPageAssetLayoutRow[]): void {
-        const pageResponse = this.uveStore.pageAPIResponse();
-        if (!pageResponse?.layout) {
+        // Removed pageAPIResponse - use normalized accessors
+        if (!this.uveStore.layout()) {
             return;
         }
 
         this.uveStore.updateLayout({
-            ...pageResponse.layout,
+            ...this.uveStore.layout(),
             body: {
-                ...pageResponse.layout.body,
+                ...this.uveStore.layout().body,
                 rows
             }
         });

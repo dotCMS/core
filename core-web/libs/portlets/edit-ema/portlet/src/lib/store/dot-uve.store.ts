@@ -23,7 +23,6 @@ import { normalizeQueryParams } from '../utils';
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null,
     currentUser: null,
     experiment: null,
     errorCode: null,
@@ -33,6 +32,16 @@ const initialState: UVEState = {
     isTraditionalPage: true,
     isClientReady: false,
     selectedPayload: undefined,
+    // Normalized page response properties
+    page: null,
+    site: null,
+    viewAs: null,
+    template: null,
+    layout: null,
+    urlContentMap: null,
+    containers: null,
+    vanityUrl: null,
+    numberContents: null,
     // Phase 3.2: Nested UI state
     editor: {
         dragItem: null,
@@ -76,7 +85,15 @@ export const UVEStore = signalStore(
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
-                    pageAPIResponse
+                    page: pageAPIResponse?.page,
+                    site: pageAPIResponse?.site,
+                    viewAs: pageAPIResponse?.viewAs,
+                    template: pageAPIResponse?.template,
+                    layout: pageAPIResponse?.layout,
+                    urlContentMap: pageAPIResponse?.urlContentMap,
+                    containers: pageAPIResponse?.containers,
+                    vanityUrl: pageAPIResponse?.vanityUrl,
+                    numberContents: pageAPIResponse?.numberContents
                 });
             },
             patchViewParams(viewParams: Partial<DotUveViewParams>) {
@@ -102,22 +119,24 @@ export const UVEStore = signalStore(
     withLock(),
     withComputed(
         ({
-            pageAPIResponse,
+            page,
+            viewAs,
             pageParams,
             viewParams,
             languages,
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
-                    const response = pageAPIResponse();
-                    const languageId = response?.viewAs.language?.id;
+                    const pageData = page();
+                    const viewAsData = viewAs();
+                    const languageId = viewAsData?.language?.id;
                     const translatedLanguages = untracked(() => languages());
                     const currentLanguage = translatedLanguages.find(
                         (lang) => lang.id === languageId
                     );
 
                     return {
-                        page: response?.page,
+                        page: pageData,
                         currentLanguage
                     };
                 }),

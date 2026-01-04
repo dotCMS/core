@@ -6,7 +6,16 @@ import {
     DotLanguage,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
+import {
+    DotCMSPage,
+    DotCMSSite,
+    DotCMSViewAs,
+    DotCMSTemplate,
+    DotCMSLayout,
+    DotCMSURLContentMap,
+    DotCMSPageAssetContainers,
+    DotCMSVanityUrl
+} from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import {
@@ -78,6 +87,20 @@ export interface UVEState {
     pageParams?: DotPageAssetParams;
     workflowActions?: DotCMSWorkflowAction[];
 
+    // Normalized page response (Phase 1: Flattened structure)
+    // Required properties (null during loading/error, populated when loaded)
+    page: DotCMSPage | null;
+    site: DotCMSSite | null;
+    template: DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null;
+    layout: DotCMSLayout | null;
+    containers: DotCMSPageAssetContainers | null;
+
+    // Optional properties (from API - may not be present even when loaded)
+    viewAs?: DotCMSViewAs;
+    vanityUrl?: DotCMSVanityUrl;
+    urlContentMap?: DotCMSURLContentMap;
+    numberContents?: number;
+
     // Status
     status: UVE_STATUS;
     errorCode?: number;
@@ -92,14 +115,6 @@ export interface UVEState {
     isTraditionalPage: boolean;
     isClientReady: boolean;
     selectedPayload?: Pick<ClientData, 'container' | 'contentlet'>;
-
-    // ============ DEPRECATED ============
-    /**
-     * @deprecated Use normalized accessors: page(), site(), viewAs()
-     * Raw backend response should not be accessed directly
-     * Will be removed after Phase 3 completion
-     */
-    pageAPIResponse?: DotCMSPageAsset;
 }
 
 /**
