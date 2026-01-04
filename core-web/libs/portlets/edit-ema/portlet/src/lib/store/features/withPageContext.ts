@@ -266,7 +266,7 @@ export function withPageContext() {
                 });
 
                 const $enableInlineEdit = computed(() => {
-                    return toolbar().isEditState && isEnterprise();
+                    return view().isEditState && isEnterprise();
                 });
 
                 return {

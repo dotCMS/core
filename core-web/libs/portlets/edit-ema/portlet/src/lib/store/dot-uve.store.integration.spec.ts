@@ -238,7 +238,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
         describe('toolbar state', () => {
             it('should have nested toolbar state', () => {
-                const toolbar = store.toolbar();
+                const toolbar = store.view();
 
                 expect(toolbar).toBeDefined();
                 expect(toolbar.device).toBeDefined();
@@ -250,7 +250,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             });
 
             it('should initialize toolbar with default values', () => {
-                const toolbar = store.toolbar();
+                const toolbar = store.view();
 
                 expect(toolbar.device).toBeDefined();
                 expect(toolbar.orientation).toBe(Orientation.LANDSCAPE);
@@ -263,7 +263,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
                 // Update toolbar
                 store.setOrientation(Orientation.PORTRAIT);
 
-                expect(store.toolbar().orientation).toBe(Orientation.PORTRAIT);
+                expect(store.view().orientation).toBe(Orientation.PORTRAIT);
 
                 // Editor state should be unaffected
                 expect(store.editor().panels.palette.open).toBe(true);
@@ -396,7 +396,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
         });
 
         it('should not affect unrelated state when updating editor', () => {
-            const toolbarBefore = store.toolbar();
+            const toolbarBefore = store.view();
             const statusBefore = store.status();
             const languagesBefore = store.languages();
 
@@ -404,7 +404,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             store.setPaletteOpen(false);
 
             // Unrelated state should be unchanged
-            expect(store.toolbar()).toBe(toolbarBefore);
+            expect(store.view()).toBe(toolbarBefore);
             expect(store.status()).toBe(statusBefore);
             expect(store.languages()).toBe(languagesBefore);
         });

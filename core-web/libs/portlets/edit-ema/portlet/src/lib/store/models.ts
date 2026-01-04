@@ -80,10 +80,11 @@ export interface EditorUIState {
 }
 
 /**
- * Toolbar UI State (transient)
- * Manages toolbar-specific preview/device state
+ * View State (transient)
+ * Manages editor view modes (edit vs preview) and preview configuration.
+ * Controls how the user views the page: edit mode, device preview, or SEO preview.
  */
-export interface ToolbarUIState {
+export interface ViewState {
     device: DotDeviceListItem | null;
     orientation: Orientation | null;
     socialMedia: string | null;
@@ -152,13 +153,13 @@ export interface UVEState {
     editor: EditorUIState;
 
     /**
-     * Toolbar UI state - preview modes and device selection
-     * Includes device state, orientation, and view parameters
+     * View state - editor view modes (edit vs preview) and preview configuration
+     * Includes device state, orientation, SEO preview, and view parameters
      */
-    toolbar: ToolbarUIState;
+    view: ViewState;
 
     // Note: isClientReady removed from UVEState (only in ClientConfigState via withClient)
-    // Note: viewParams moved to toolbar.viewParams
+    // Note: viewParams moved to view.viewParams
     // Note: selectedPayload renamed to editor.selectedContentlet
 }
 

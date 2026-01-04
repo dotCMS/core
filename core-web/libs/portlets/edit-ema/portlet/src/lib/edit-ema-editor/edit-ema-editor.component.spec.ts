@@ -562,7 +562,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should return display block when socialMedia is null', () => {
                     patchState(store, {
                         toolbar: {
-                            ...store.toolbar(),
+                            ...store.view(),
                             socialMedia: null
                         }
                     });
@@ -577,7 +577,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should return display none when socialMedia is set', () => {
                     patchState(store, {
                         toolbar: {
-                            ...store.toolbar(),
+                            ...store.view(),
                             socialMedia: 'facebook'
                         }
                     });

@@ -124,7 +124,7 @@ export class DotUveToolbarComponent {
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
     get $socialMedia() {
-        return this.#store.toolbar().socialMedia;
+        return this.#store.view().socialMedia;
     }
     readonly $urlContentMap = this.#store.$urlContentMap;
     get $isPaletteOpen() {
@@ -161,7 +161,7 @@ export class DotUveToolbarComponent {
 
     // Build unified device selector state
     readonly $deviceSelectorState = computed(() => {
-        const toolbar = this.#store.toolbar();
+        const toolbar = this.#store.view();
         return {
             currentDevice: toolbar.device,
             currentSocialMedia: toolbar.socialMedia,

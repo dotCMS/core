@@ -23,18 +23,26 @@ import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
 
 /**
- * Dependencies interface for withToolbar
- * These are methods/computeds from other features that withToolbar needs
+ * Dependencies interface for withView
+ * These are methods/computeds from other features that withView needs
  */
-export interface WithToolbarDeps {
+export interface WithViewDeps {
     $isPageLocked: () => boolean;
 }
 
 /**
- * Phase 3.2: Refactored to work with nested toolbar state
- * Toolbar state is now nested under store.toolbar()
+ * Manages editor view modes (edit vs preview) and preview configuration.
+ *
+ * Responsibilities:
+ * - Device preview mode (setDevice, setOrientation)
+ * - SEO/social media preview mode (setSEO)
+ * - Edit vs preview state toggle (isEditState)
+ * - Lock UI props for toolbar display
+ * - View parameters synchronization
+ *
+ * View state is nested under store.view()
  */
-export function withToolbar(deps: WithToolbarDeps) {
+export function withView(deps: WithViewDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -165,19 +173,19 @@ export function withToolbar(deps: WithToolbarDeps) {
         })),
         withMethods((store) => ({
             setDevice: (device: DotDevice, orientation?: Orientation) => {
-                const toolbar = store.toolbar();
+                const view = store.view();
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
 
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
                 patchState(store, {
-                    toolbar: {
-                        ...toolbar,
+                    view: {
+                        ...view,
                         device,
                         socialMedia: null,
                         isEditState: false,
                         orientation: newOrientation,
                         viewParams: {
-                            ...(toolbar.viewParams || {}),
+                            ...(view.viewParams || {}),
                             device: device.inode,
                             orientation: newOrientation,
                             seo: null
@@ -186,29 +194,29 @@ export function withToolbar(deps: WithToolbarDeps) {
                 });
             },
             setOrientation: (orientation: Orientation) => {
-                const toolbar = store.toolbar();
+                const view = store.view();
                 patchState(store, {
-                    toolbar: {
-                        ...toolbar,
+                    view: {
+                        ...view,
                         orientation,
-                        viewParams: toolbar.viewParams ? {
-                            ...toolbar.viewParams,
+                        viewParams: view.viewParams ? {
+                            ...view.viewParams,
                             orientation
-                        } : toolbar.viewParams
+                        } : view.viewParams
                     }
                 });
             },
             setSEO: (socialMedia: string | null) => {
-                const toolbar = store.toolbar();
+                const view = store.view();
                 patchState(store, {
-                    toolbar: {
-                        ...toolbar,
+                    view: {
+                        ...view,
                         device: null,
                         orientation: null,
                         socialMedia,
                         isEditState: false,
                         viewParams: {
-                            ...(toolbar.viewParams || {}),
+                            ...(view.viewParams || {}),
                             device: null,
                             orientation: null,
                             seo: socialMedia
@@ -217,16 +225,16 @@ export function withToolbar(deps: WithToolbarDeps) {
                 });
             },
             clearDeviceAndSocialMedia: () => {
-                const toolbar = store.toolbar();
+                const view = store.view();
                 patchState(store, {
-                    toolbar: {
-                        ...toolbar,
+                    view: {
+                        ...view,
                         device: null,
                         socialMedia: null,
                         isEditState: true,
                         orientation: null,
                         viewParams: {
-                            ...(toolbar.viewParams || {}),
+                            ...(view.viewParams || {}),
                             device: null,
                             orientation: null,
                             seo: null
@@ -235,10 +243,10 @@ export function withToolbar(deps: WithToolbarDeps) {
                 });
             },
             setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
-                const toolbar = store.toolbar();
+                const view = store.view();
                 patchState(store, {
-                    toolbar: {
-                        ...toolbar,
+                    view: {
+                        ...view,
                         ogTagsResults
                     }
                 });

@@ -6,7 +6,7 @@ import { DotCMSPageAsset } from '@dotcms/types';
 
 import { withClient } from './features/client/withClient';
 import { withSave } from './features/editor/save/withSave';
-import { withToolbar } from './features/editor/toolbar/withToolbar';
+import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
@@ -63,7 +63,7 @@ const initialState: UVEState = {
         ogTags: null,
         styleSchemas: []
     },
-    toolbar: {
+    view: {
         device: DEFAULT_DEVICE,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,
@@ -133,9 +133,9 @@ export const UVEStore = signalStore(
 
     // ---- UI Features ----
     withLayout(),                     // Layout state
-    withFeature((store) => withToolbar({
+    withFeature((store) => withView({
         $isPageLocked: () => store.$isPageLocked()
-    })),                              // Toolbar state (depends on flags, pageContext)
+    })),                              // View state - manages view modes (edit vs preview)
     withEditor(),                     // Editor state (uses shared PageContextComputed contract)
 
     // ---- Actions ----
@@ -152,7 +152,7 @@ export const UVEStore = signalStore(
             page,
             viewAs,
             pageParams,
-            toolbar,
+            view,
             languages,
         }) => {
             return {
@@ -173,7 +173,7 @@ export const UVEStore = signalStore(
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(pageParams() ?? {}),
-                        ...(toolbar().viewParams ?? {})
+                        ...(view().viewParams ?? {})
                     };
 
                     return normalizeQueryParams(params);

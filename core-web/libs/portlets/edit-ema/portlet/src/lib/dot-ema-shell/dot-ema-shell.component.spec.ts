@@ -464,7 +464,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(store.toolbar().viewParams).toEqual({});
+            expect(store.view().viewParams).toEqual({});
         });
 
         it('should patch viewParams with empty params on init', () => {
@@ -480,7 +480,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(store.toolbar().viewParams).toEqual({
+            expect(store.view().viewParams).toEqual({
                 orientation: undefined,
                 seo: undefined,
                 device: undefined
@@ -502,7 +502,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(store.toolbar().viewParams).toEqual({
+            expect(store.view().viewParams).toEqual({
                 orientation: 'landscape',
                 seo: undefined,
                 device: 'mobile'
@@ -524,7 +524,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(store.toolbar().viewParams).toEqual({
+            expect(store.view().viewParams).toEqual({
                 orientation: 'landscape',
                 seo: undefined,
                 device: 'mobile'

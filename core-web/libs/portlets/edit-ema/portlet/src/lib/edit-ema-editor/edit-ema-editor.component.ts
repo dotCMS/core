@@ -235,13 +235,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
     protected readonly $showDialogs = computed<boolean>(() => {
         const canEditPage = this.uveStore.$canEditPageContent();
-        const isEditState = this.uveStore.toolbar().isEditState;
+        const isEditState = this.uveStore.view().isEditState;
         return canEditPage && isEditState;
     });
 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.$canEditPageContent();
-        const isEditState = this.uveStore.toolbar().isEditState;
+        const isEditState = this.uveStore.view().isEditState;
         const isEnterprise = this.uveStore.isEnterprise();
         return canEditPage && isEditState && isEnterprise;
     });
@@ -252,7 +252,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
         const editor = this.uveStore.editor();
-        const toolbar = this.uveStore.toolbar();
+        const toolbar = this.uveStore.view();
         const state = editor.state;
         const device = toolbar.device;
 
@@ -298,7 +298,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $seoResults = computed(() => {
-        const toolbar = this.uveStore.toolbar();
+        const toolbar = this.uveStore.view();
         const editor = this.uveStore.editor();
         const socialMedia = toolbar.socialMedia;
         const ogTags = editor.ogTags;
@@ -316,14 +316,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     // Phase 4.3: Component-level computed (was in withEditor with cross-feature dependency)
     readonly $editorContentStyles = computed<Record<string, string>>(() => {
-        const socialMedia = this.uveStore.toolbar().socialMedia;
+        const socialMedia = this.uveStore.view().socialMedia;
         return {
             display: socialMedia ? 'none' : 'block'
         };
     });
 
     // toObservable requires a Signal, so computed() is necessary here
-    readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.toolbar().ogTagsResults));
+    readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.view().ogTagsResults));
 
     get $paletteOpen() {
         return this.uveStore.editor().panels.palette.open;
