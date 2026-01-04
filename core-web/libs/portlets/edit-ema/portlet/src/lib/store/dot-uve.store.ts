@@ -136,10 +136,7 @@ export const UVEStore = signalStore(
     withFeature((store) => withToolbar({
         $isPageLocked: () => store.$isPageLocked()
     })),                              // Toolbar state (depends on flags, pageContext)
-    withFeature((store) => withEditor({
-        $isEditState: () => store.toolbar().isEditState,
-        isEnterprise: () => store.isEnterprise()
-    })),                              // Editor state (depends on pageContext, toolbar)
+    withEditor(),                     // Editor state (uses shared PageContextComputed contract)
 
     // ---- Actions ----
     withFeature((store) => withSave({

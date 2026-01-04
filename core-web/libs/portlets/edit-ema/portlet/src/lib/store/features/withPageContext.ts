@@ -164,6 +164,19 @@ export interface PageContextComputed {
      * @public Shared API - safe for all features to access
      */
     $variantId: Signal<string>;
+
+    /**
+     * Whether inline editing is enabled for the current page.
+     *
+     * Requires:
+     * - Editor is in edit state (not device/SEO preview)
+     * - Enterprise license is active
+     *
+     * Used by editor components to enable/disable inline editing features.
+     *
+     * @public Shared API - safe for all features to access
+     */
+    $enableInlineEdit: Signal<boolean>;
 }
 
 /**
@@ -187,7 +200,9 @@ export function withPageContext() {
                 flags,
                 experiment,
                 currentUser,
-                pageType
+                pageType,
+                toolbar,
+                isEnterprise
             }) => {
                 // Note: page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl
                 // are now direct state properties, passed through as-is
@@ -250,6 +265,10 @@ export function withPageContext() {
                     return $styleEditorFeatureEnabled() && $hasPermissionToEditStyles() && $mode() === UVE_MODE.EDIT;
                 });
 
+                const $enableInlineEdit = computed(() => {
+                    return toolbar().isEditState && isEnterprise();
+                });
+
                 return {
                     // ============ Mode State ============
                     $mode,
@@ -263,6 +282,7 @@ export function withPageContext() {
                     $canEditPageContent,
                     $canEditLayout,
                     $canEditStyles,
+                    $enableInlineEdit,
 
                     // ============ Other Computed Properties ============
                     $languageId: computed(() => viewAs()?.language?.id || 1),

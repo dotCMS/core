@@ -1,22 +1,20 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withComputed, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
-import { computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
-import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
 
 // UVE_PALETTE_TABS removed - now managed locally in DotUvePaletteComponent
 import { withEditor } from './withEditor';
 
+
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
-import { BASE_IFRAME_MEASURE_UNIT, PERSONA_KEY } from '../../../shared/consts';
+import { PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
@@ -29,12 +27,15 @@ import {
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { Orientation, PageType, UVEState } from '../../models';
+import { withFlags } from '../flags/withFlags';
+import { withPageContext } from '../withPageContext';
 
 const emptyParams = {} as DotPageApiParams;
 
 const initialState: UVEState = {
     isEnterprise: true,
     languages: [],
+    flags: {},
     // Normalized page response
     page: MOCK_RESPONSE_HEADLESS.page,
     site: MOCK_RESPONSE_HEADLESS.site,
@@ -86,20 +87,12 @@ const initialState: UVEState = {
     }
 };
 
-const mockCanEditPage = signal(true);
-
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withComputed(() => {
-        return {
-            $canEditPage: computed(() => mockCanEditPage())
-        };
-    }),
-    withEditor({
-        $isEditState: () => true,  // Mock: editor is in edit state by default
-        isEnterprise: () => true   // Mock: enterprise license enabled by default
-    })
+    withFlags([]),               // Provides flags state (empty array for tests)
+    withPageContext(),           // Provides all PageContextComputed properties including $enableInlineEdit
+    withEditor()
 );
 
 describe('withEditor', () => {
@@ -139,7 +132,6 @@ describe('withEditor', () => {
         spectator = createService();
         store = spectator.service;
         patchState(store, initialState);
-        mockCanEditPage.set(true);
     });
 
     // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
@@ -227,8 +219,11 @@ describe('withEditor', () => {
             });
 
             it('should return false when canEditPage is false', () => {
-                mockCanEditPage.set(false);
                 patchState(store, {
+                    page: {
+                        ...store.page(),
+                        canEdit: false  // Set canEdit to false to make $canEditPageContent false
+                    },
                     editor: {
                         ...store.editor(),
                         contentArea: MOCK_CONTENTLET_AREA,
@@ -240,7 +235,6 @@ describe('withEditor', () => {
             });
 
             it('should return false when state is not IDLE', () => {
-                mockCanEditPage.set(true);
                 patchState(store, {
                     editor: {
                         ...store.editor(),
@@ -253,7 +247,6 @@ describe('withEditor', () => {
             });
 
             it('should return true when contentArea exists, canEditPage is true, and state is IDLE', () => {
-                mockCanEditPage.set(true);
                 patchState(store, {
                     editor: {
                         ...store.editor(),
@@ -266,7 +259,6 @@ describe('withEditor', () => {
             });
 
             it('should return false when scrolling', () => {
-                mockCanEditPage.set(true);
                 patchState(store, {
                     editor: {
                         ...store.editor(),
