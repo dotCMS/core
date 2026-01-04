@@ -1,8 +1,9 @@
 import { expect, describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState, withComputed, withFeature } from '@ngrx/signals';
 import { of } from 'rxjs';
 
+import { computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -78,9 +79,19 @@ const initialState: UVEState = {
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withView({
-        $isPageLocked: () => false  // Mock: page is not locked by default
-    })
+    // Add mock $isPageLocked computed that reacts to page state (must come before withView)
+    withComputed((store) => ({
+        $isPageLocked: computed(() => {
+            const page = store.page();
+            const currentUser = store.currentUser();
+            const isLockedByOther = page?.locked && page?.lockedBy !== currentUser?.userId;
+            return isLockedByOther || false;
+        })
+    })),
+    // Use withFeature to access store and pass reactive dependency
+    withFeature((store) => withView({
+        $isPageLocked: () => store.$isPageLocked()  // Call the computed above
+    }))
 );
 
 describe('withView', () => {
@@ -439,13 +450,17 @@ describe('withView', () => {
 
         describe('setOrientation', () => {
             it('should set the orientation and the view params', () => {
+                // First set a device so viewParams is not null
+                store.setDevice(mockDotDevices[0]);
+
+                // Now change orientation
                 store.setOrientation(Orientation.PORTRAIT);
                 expect(store.view().orientation).toBe(Orientation.PORTRAIT);
 
                 expect(store.view().viewParams).toEqual({
                     device: store.view().viewParams.device,
                     orientation: Orientation.PORTRAIT,
-                    seo: undefined
+                    seo: null
                 });
             });
 

@@ -94,42 +94,85 @@ const baseUVEToolbarState = {
     showInfoDisplay: shouldShowInfoDisplay
 };
 
+// Mutable signals for test control (computed properties that tests need to mutate)
+const showWorkflowsActionsSignal = signal(true);
+const toggleLockOptionsSignal = signal(null);
+const infoDisplayPropsSignal = signal(undefined);
+const urlContentMapSignal = signal(undefined);
+const unlockButtonSignal = signal(null);
+
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
     setSEO: jest.fn(),
     setOrientation: jest.fn(),
     pageParams: signal(params),
-    pageAPIResponse: signal(MOCK_RESPONSE_VTL),
-    $apiURL: signal($apiURL),
+    page: signal(MOCK_RESPONSE_VTL.page),
+    site: signal(MOCK_RESPONSE_VTL.site),
+    viewAs: signal(MOCK_RESPONSE_VTL.viewAs),
+    template: signal(MOCK_RESPONSE_VTL.template),
+    layout: signal(MOCK_RESPONSE_VTL.layout),
+    containers: signal(MOCK_RESPONSE_VTL.containers),
+    // Computed properties (most are functions, some are mutable signals for test control)
+    $apiURL: () => $apiURL,
+    $mode: () => 'EDIT_MODE',  // Default mode value (pageParams doesn't have mode property)
+    $currentLanguage: () => ({
+        id: 1,
+        language: 'English',
+        languageCode: 'en',
+        countryCode: 'US',
+        country: 'United States',
+        translated: true
+    }),
+    $showWorkflowsActions: showWorkflowsActionsSignal,  // Mutable for tests
+    $personaSelector: () => ({
+        pageId: pageAPIResponse?.page.identifier,
+        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
+    }),
+    $infoDisplayProps: infoDisplayPropsSignal,  // Mutable for tests
+    $urlContentMap: urlContentMapSignal,  // Mutable for tests
+    $unlockButton: unlockButtonSignal,  // Mutable for tests
+    $toggleLockOptions: toggleLockOptionsSignal,  // Mutable for tests
     reloadCurrentPage: jest.fn(),
     loadPageAsset: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
-    $personaSelector: signal({
-        pageId: pageAPIResponse?.page.identifier,
-        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
-    }),
-    $infoDisplayProps: signal(undefined),
     viewParams: signal({
         seo: undefined,
         device: undefined,
         orientation: undefined
     }),
-    $urlContentMap: signal(undefined),
     languages: signal([
-        { id: 1, translated: true },
-        { id: 2, translated: false },
-        { id: 3, translated: true }
+        {
+            id: 1,
+            language: 'English',
+            languageCode: 'en',
+            countryCode: 'US',
+            country: 'United States',
+            translated: true
+        },
+        {
+            id: 2,
+            language: 'Spanish',
+            languageCode: 'es',
+            countryCode: 'ES',
+            country: 'Spain',
+            translated: false
+        },
+        {
+            id: 3,
+            language: 'French',
+            languageCode: 'fr',
+            countryCode: 'FR',
+            country: 'France',
+            translated: true
+        }
     ]),
-    $showWorkflowsActions: signal(true),
     patchViewParams: jest.fn(),
     orientation: signal(''),
     clearDeviceAndSocialMedia: jest.fn(),
     device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
-    $unlockButton: signal(null),
-    $toggleLockOptions: signal(null),
     lockLoading: signal(false),
     toggleLock: jest.fn(),
     socialMedia: signal(null),

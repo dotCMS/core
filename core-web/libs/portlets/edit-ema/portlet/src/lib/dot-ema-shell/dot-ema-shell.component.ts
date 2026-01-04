@@ -186,11 +186,11 @@ export class DotEmaShellComponent implements OnInit {
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.mode);
 
-        // Initialize toolbar viewParams from query parameters
-        const toolbar = this.uveStore.view();
+        // Initialize view viewParams from query parameters
+        const view = this.uveStore.view();
         patchState(this.uveStore, {
-            toolbar: {
-                ...toolbar,
+            view: {
+                ...view,
                 viewParams
             }
         });

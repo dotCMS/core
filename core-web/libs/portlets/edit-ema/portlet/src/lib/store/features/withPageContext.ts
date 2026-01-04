@@ -201,7 +201,7 @@ export function withPageContext() {
                 experiment,
                 currentUser,
                 pageType,
-                toolbar,
+                view,
                 isEnterprise
             }) => {
                 // Note: page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl

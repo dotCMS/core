@@ -340,7 +340,12 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
             // Use patchState to set the page response, current user, and enterprise flag
             patchState(store, {
-                pageAPIResponse: pageResponse as any,
+                page: pageResponse.page,
+                site: pageResponse.site,
+                viewAs: pageResponse.viewAs,
+                template: pageResponse.template,
+                layout: pageResponse.layout,
+                containers: pageResponse.containers,
                 currentUser: { ...CurrentUserDataMock, loginAs: false },
                 isEnterprise: true
             });

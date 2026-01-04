@@ -47,8 +47,8 @@ const initialState: UVEState = {
         ogTags: null,
         styleSchemas: []
     },
-    // Phase 3: Nested toolbar state
-    toolbar: {
+    // Phase 3: Nested view state
+    view: {
         device: null,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,

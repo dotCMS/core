@@ -10,21 +10,29 @@ import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
-import { Orientation, UVEState } from '../../models';
+import { Orientation, PageType, UVEState } from '../../models';
 
 const emptyParams = {} as DotPageApiParams;
 
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
+    // Normalized page response properties
+    page: MOCK_RESPONSE_HEADLESS.page,
+    site: MOCK_RESPONSE_HEADLESS.site,
+    template: MOCK_RESPONSE_HEADLESS.template,
+    layout: MOCK_RESPONSE_HEADLESS.layout,
+    containers: MOCK_RESPONSE_HEADLESS.containers,
+    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
+    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
+    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
+    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams: emptyParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false,
+    pageType: PageType.TRADITIONAL,
     // Phase 3: Nested editor state
     editor: {
         dragItem: null,
@@ -32,6 +40,7 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
+        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }
@@ -39,11 +48,12 @@ const initialState: UVEState = {
         ogTags: null,
         styleSchemas: []
     },
-    // Phase 3: Nested toolbar state
-    toolbar: {
+    // Phase 3: Nested view state
+    view: {
         device: null,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,
+        viewParams: null,
         isEditState: true,
         isPreviewModeActive: false,
         ogTagsResults: null
@@ -93,7 +103,7 @@ describe('withLayout', () => {
 
             store.updateLayout(layout);
 
-            expect(store.pageAPIResponse().layout).toEqual(layout);
+            expect(store.layout()).toEqual(layout);
         });
     });
 });

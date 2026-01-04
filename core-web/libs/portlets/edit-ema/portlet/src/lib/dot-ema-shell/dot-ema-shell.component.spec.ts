@@ -975,7 +975,9 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
                 const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
-                jest.spyOn(store, 'pageAPIResponse').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP);
+                // Spy on normalized properties instead of pageAPIResponse
+                jest.spyOn(store, 'page').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP.page);
+                jest.spyOn(store, 'urlContentMap').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP.urlContentMap);
                 store.loadPageAsset({
                     url: '/test-url',
                     language_id: '1',

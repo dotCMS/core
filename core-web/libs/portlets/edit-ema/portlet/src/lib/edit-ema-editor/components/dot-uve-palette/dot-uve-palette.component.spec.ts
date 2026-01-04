@@ -1,7 +1,7 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent, ngMocks } from 'ng-mocks';
 
-import { DebugElement, signal } from '@angular/core';
+import { computed, DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { TabView } from 'primeng/tabview';
@@ -43,12 +43,33 @@ const mockUVEStore = {
     $languageId: signal(1),
     $variantId: signal('DEFAULT'),
     $isStyleEditorEnabled: signal(false),
+    $canEditStyles: () => false,  // Computed property used by component
     $styleSchema: signal(undefined),
     // Phase 3: editor() method returns editor state with activeContentlet
-    editor: signal({
-        activeContentlet: mockActiveContentlet()
-    }),
-    pageAPIResponse: signal(null) // Added for child DotRowReorderComponent
+    // Must be a computed function to reflect changes when mockActiveContentlet changes
+    editor: computed(() => ({
+        activeContentlet: mockActiveContentlet(),
+        dragItem: null,
+        bounds: [],
+        state: 'IDLE',
+        contentArea: null,
+        selectedContentlet: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    })),
+    // Expose activeContentlet for test control
+    activeContentlet: mockActiveContentlet,
+    // Normalized page response properties (replacing pageAPIResponse)
+    page: signal(null),
+    site: signal(null),
+    viewAs: signal(null),
+    template: signal(null),
+    layout: signal(null),
+    containers: signal(null)
 };
 
 describe('DotUvePaletteComponent', () => {
@@ -71,8 +92,8 @@ describe('DotUvePaletteComponent', () => {
         mockUVEStore.$isStyleEditorEnabled.set(false);
         mockUVEStore.$styleSchema.set(undefined);
         // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
+        // editor is now a computed that reflects mockActiveContentlet automatically
         mockActiveContentlet.set(null);
-        mockUVEStore.editor.set({ activeContentlet: null });
 
         spectator = createComponent({
             providers: [mockProvider(UVEStore, mockUVEStore)]
