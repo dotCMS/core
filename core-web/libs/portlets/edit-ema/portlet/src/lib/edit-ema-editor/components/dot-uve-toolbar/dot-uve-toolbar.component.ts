@@ -43,6 +43,7 @@ import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-s
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
     convertUTCToLocalTime,
@@ -156,7 +157,7 @@ export class DotUveToolbarComponent {
     protected $MIN_DATE = signal(this.#getMinDate());
 
     // Computed properties for presentational children
-    readonly isTraditionalPage = this.#store.isTraditionalPage;
+    readonly isTraditionalPage = computed(() => this.#store.pageType() === PageType.TRADITIONAL);
 
     // Build unified device selector state
     readonly $deviceSelectorState = computed(() => {

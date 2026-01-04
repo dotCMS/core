@@ -9,7 +9,7 @@ import { withFlags } from './flags/withFlags';
 
 import { UVE_FEATURE_FLAGS } from '../../shared/consts';
 import { computeIsPageLocked } from '../../utils';
-import { UVEState } from '../models';
+import { PageType, UVEState } from '../models';
 
 export interface PageContextComputed {
     // Note: page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl
@@ -53,7 +53,7 @@ export function withPageContext() {
                 flags,
                 experiment,
                 currentUser,
-                isTraditionalPage
+                pageType
             }) => {
                 // Note: page, site, viewAs, template, layout, urlContentMap, containers, vanityUrl
                 // are now direct state properties, passed through as-is
@@ -63,7 +63,7 @@ export function withPageContext() {
                 const $isEditMode = computed(() => pageParams()?.mode === UVE_MODE.EDIT);
                 const $isLockFeatureEnabled = computed(() => flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
                 const $isStyleEditorEnabled = computed(() => {
-                    const isHeadless = !isTraditionalPage();
+                    const isHeadless = pageType() === PageType.HEADLESS;
                     return flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
                 });
                 const $isPageLocked = computed(() => {

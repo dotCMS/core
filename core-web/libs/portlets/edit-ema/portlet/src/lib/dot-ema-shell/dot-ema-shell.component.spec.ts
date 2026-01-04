@@ -452,7 +452,6 @@ describe('DotEmaShellComponent', () => {
         });
 
         it('should patch viewParams with empty object when the mode is edit', () => {
-            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
             const params = {
                 ...INITIAL_PAGE_PARAMS,
                 mode: UVE_MODE.EDIT
@@ -465,12 +464,10 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(patchViewParamsSpy).toHaveBeenCalledWith({});
+            expect(store.toolbar().viewParams).toEqual({});
         });
 
         it('should patch viewParams with empty params on init', () => {
-            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
-
             const params = {
                 ...INITIAL_PAGE_PARAMS,
                 mode: UVE_MODE.PREVIEW
@@ -483,7 +480,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+            expect(store.toolbar().viewParams).toEqual({
                 orientation: undefined,
                 seo: undefined,
                 device: undefined
@@ -491,8 +488,6 @@ describe('DotEmaShellComponent', () => {
         });
 
         it('should patch viewParams with the correct params on init', () => {
-            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
-
             const withViewParams = {
                 device: 'mobile',
                 orientation: 'landscape',
@@ -507,7 +502,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+            expect(store.toolbar().viewParams).toEqual({
                 orientation: 'landscape',
                 seo: undefined,
                 device: 'mobile'
@@ -515,8 +510,6 @@ describe('DotEmaShellComponent', () => {
         });
 
         it('should patch viewParams with the correct params on init with live mode', () => {
-            const patchViewParamsSpy = jest.spyOn(store, 'patchViewParams');
-
             const withViewParams = {
                 device: 'mobile',
                 orientation: 'landscape',
@@ -531,7 +524,7 @@ describe('DotEmaShellComponent', () => {
 
             spectator.detectChanges();
 
-            expect(patchViewParamsSpy).toHaveBeenCalledWith({
+            expect(store.toolbar().viewParams).toEqual({
                 orientation: 'landscape',
                 seo: undefined,
                 device: 'mobile'

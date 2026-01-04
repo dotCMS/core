@@ -98,6 +98,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     createFullURL,
@@ -173,7 +174,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
 
     protected readonly $contentletEditData = computed(() => {
-        const { container, contentlet: contentletPayload } = this.uveStore.selectedPayload() ?? {};
+        const { container, contentlet: contentletPayload } = this.uveStore.editor().selectedContentlet ?? {};
         // Removed pageAPIResponse - use normalized accessors
 
         const contentType = this.$contenttypes().find(
@@ -248,7 +249,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $iframeProps = computed(() => {
         // Use it to create dependencies to the pageAPIResponse
         const params = this.uveStore.pageParams();
-        const isTraditionalPage = this.uveStore.isTraditionalPage();
+        const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
         const editor = this.uveStore.editor();
         const toolbar = this.uveStore.toolbar();
@@ -256,7 +257,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const device = toolbar.device;
 
         const isEditMode = params?.mode === UVE_MODE.EDIT;
-        const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
+        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
         const isLoading = !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
         const { dragIsActive } = getEditorStates(state);
         const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
@@ -271,11 +272,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $progressBar = computed<boolean>(() => {
         const params = this.uveStore.pageParams();
-        const isTraditionalPage = this.uveStore.isTraditionalPage();
+        const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
 
         const isEditMode = params?.mode === UVE_MODE.EDIT;
-        const isPageReady = isTraditionalPage || isClientReady || !isEditMode;
+        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
         return !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
     });
 
@@ -404,7 +405,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
          * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
          * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
          */
-        const { isTraditionalPage } = this.uveStore.$reloadEditorContent();
+        const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
 
         untracked(() => {
@@ -412,7 +413,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             this.dialog?.resetActionPayload();
         });
 
-        if (isTraditionalPage || !isClientReady) {
+        if (pageType === PageType.TRADITIONAL || !isClientReady) {
             return;
         }
 
@@ -703,7 +704,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     ngOnDestroy(): void {
         this.#iframeResizeObserver?.disconnect();
         this.#iframeResizeObserver = null;
-        if (this.uveStore.isTraditionalPage()) {
+        if (this.uveStore.pageType() === PageType.TRADITIONAL) {
             this.uveStore.setIsClientReady(true);
         }
     }

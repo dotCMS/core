@@ -11,7 +11,7 @@ import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
-import { DotUveViewParams, TranslateProps, UVEState, Orientation } from './models';
+import { TranslateProps, UVEState, Orientation, PageType } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
@@ -27,11 +27,8 @@ const initialState: UVEState = {
     experiment: null,
     errorCode: null,
     pageParams: null,
-    viewParams: null,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false,
-    selectedPayload: undefined,
+    pageType: PageType.TRADITIONAL,
     // Normalized page response properties
     page: null,
     site: null,
@@ -49,6 +46,7 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
+        selectedContentlet: null,
         panels: {
             palette: {
                 open: true
@@ -64,6 +62,7 @@ const initialState: UVEState = {
         device: DEFAULT_DEVICE,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,
+        viewParams: null,
         isEditState: true,
         isPreviewModeActive: false,
         ogTagsResults: null
@@ -96,17 +95,14 @@ export const UVEStore = signalStore(
                     numberContents: pageAPIResponse?.numberContents
                 });
             },
-            patchViewParams(viewParams: Partial<DotUveViewParams>) {
-                patchState(store, {
-                    viewParams: {
-                        ...store.viewParams(),
-                        ...viewParams
-                    }
-                });
-            },
             setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined) {
+                const editor = store.editor();
+
                 patchState(store, {
-                    selectedPayload: selectedContentlet
+                    editor: {
+                        ...editor,
+                        selectedContentlet: selectedContentlet ?? null
+                    }
                 });
             }
         };
@@ -122,7 +118,7 @@ export const UVEStore = signalStore(
             page,
             viewAs,
             pageParams,
-            viewParams,
+            toolbar,
             languages,
         }) => {
             return {
@@ -143,7 +139,7 @@ export const UVEStore = signalStore(
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(pageParams() ?? {}),
-                        ...(viewParams() ?? {})
+                        ...(toolbar().viewParams ?? {})
                     };
 
                     return normalizeQueryParams(params);

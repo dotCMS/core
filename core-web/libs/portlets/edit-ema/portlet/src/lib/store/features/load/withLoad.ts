@@ -16,7 +16,7 @@ import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
 import { isForwardOrPage } from '../../../utils';
-import { UVEState } from '../../models';
+import { PageType, UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 import { withWorkflow } from '../workflow/withWorkflow';
 
@@ -77,7 +77,6 @@ export function withLoad() {
                             store.resetClientConfiguration();
                             patchState(store, {
                                 status: UVE_STATUS.LOADING,
-                                isClientReady: false,
                                 pageParams
                             });
                         }),
@@ -148,8 +147,6 @@ export function withLoad() {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            const isTraditionalPage = !pageParams.clientHost;
-
                                             patchState(store, {
                                                 page: pageAsset?.page,
                                                 site: pageAsset?.site,
@@ -164,8 +161,9 @@ export function withLoad() {
                                                 currentUser,
                                                 experiment,
                                                 languages,
-                                                isClientReady: isTraditionalPage,
-                                                isTraditionalPage,
+                                                pageType: pageParams.clientHost
+                                                    ? PageType.HEADLESS
+                                                    : PageType.TRADITIONAL,
                                                 status: UVE_STATUS.LOADED
                                             });
                                         })

@@ -48,9 +48,13 @@ export class DotToggleLockButtonComponent {
     $lockLoading = computed(() => this.toggleLockOptions().loading);
     $unlockButton = computed(() => ({
         show: true,
+        inode: this.toggleLockOptions().inode,
         disabled: this.toggleLockOptions().disabled,
-        message: this.toggleLockOptions().message,
-        args: this.toggleLockOptions().args
+        loading: this.toggleLockOptions().loading,
+        info: {
+            message: this.toggleLockOptions().message,
+            args: this.toggleLockOptions().args
+        }
     }));
 
     /**

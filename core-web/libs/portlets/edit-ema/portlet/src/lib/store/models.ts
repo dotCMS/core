@@ -27,6 +27,17 @@ import { UVE_STATUS, EDITOR_STATE } from '../shared/enums';
 import { ClientData, ContentletPayload, DotPageAssetParams } from '../shared/models';
 
 /**
+ * Page type classification enum
+ * Provides semantic clarity over boolean flag
+ */
+export enum PageType {
+    /** Self-hosted by dotCMS - traditional server-side rendering */
+    TRADITIONAL = 'traditional',
+    /** Headless/client-hosted - external application using APIs */
+    HEADLESS = 'headless'
+}
+
+/**
  * Phase 3.1: UI State Interfaces
  * Clearly separate transient UI state from persistent domain state
  */
@@ -44,6 +55,12 @@ export interface EditorUIState {
     // Contentlet management
     activeContentlet: ContentletPayload | null;
     contentArea: ContentletArea | null;
+
+    /**
+     * Currently selected contentlet for quick-edit sidebar
+     * MOVED FROM TOP-LEVEL: selectedPayload → selectedContentlet
+     */
+    selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | null;
 
     // UI panel preferences (user-configurable)
     panels: {
@@ -68,6 +85,14 @@ export interface ToolbarUIState {
     device: DotDeviceListItem | null;
     orientation: Orientation | null;
     socialMedia: string | null;
+
+    /**
+     * MOVED FROM TOP-LEVEL: viewParams
+     * View parameters for device/SEO preview modes
+     * Synchronized with device/orientation/socialMedia state
+     */
+    viewParams: DotUveViewParams | null;
+
     isEditState: boolean;
     isPreviewModeActive: boolean;
     ogTagsResults: SeoMetaTagsResult[] | null;
@@ -105,16 +130,33 @@ export interface UVEState {
     status: UVE_STATUS;
     errorCode?: number;
 
+    /**
+     * Page type classification - replaces isTraditionalPage boolean
+     * - TRADITIONAL: Self-hosted by dotCMS (iframe src = '', traditional HTML)
+     * - HEADLESS: External client-hosted (iframe src = clientHost, uses APIs)
+     *
+     * Set at page load based on presence of clientHost parameter
+     * @readonly Conceptually immutable after initial load
+     */
+    pageType: PageType;
+
     // ============ UI STATE (Transient) ============
     // Phase 3.2: Nested UI state for better organization
+    /**
+     * Editor UI state - transient user interactions
+     * Includes drag/drop state, selected contentlet, panel preferences
+     */
     editor: EditorUIState;
+
+    /**
+     * Toolbar UI state - preview modes and device selection
+     * Includes device state, orientation, and view parameters
+     */
     toolbar: ToolbarUIState;
 
-    // Other UI state
-    viewParams?: DotUveViewParams;
-    isTraditionalPage: boolean;
-    isClientReady: boolean;
-    selectedPayload?: Pick<ClientData, 'container' | 'contentlet'>;
+    // Note: isClientReady removed from UVEState (only in ClientConfigState via withClient)
+    // Note: viewParams moved to toolbar.viewParams
+    // Note: selectedPayload renamed to editor.selectedContentlet
 }
 
 /**

@@ -13,7 +13,7 @@ import {
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
 import { ContentletPayload } from '../../../shared/models';
-import { Orientation } from '../../models';
+import { Orientation, PageType } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
@@ -56,7 +56,7 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
-    isTraditionalPage: boolean;
+    pageType: PageType;
 }
 
 export interface PersonaSelectorProps {

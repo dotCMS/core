@@ -1,3 +1,5 @@
+import { patchState } from '@ngrx/signals';
+
 import { Location } from '@angular/common';
 import { Component, computed, DestroyRef, effect, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -184,7 +186,14 @@ export class DotEmaShellComponent implements OnInit {
         const params = this.#getPageParams();
         const viewParams = this.#getViewParams(params.mode);
 
-        this.uveStore.patchViewParams(viewParams);
+        // Initialize toolbar viewParams from query parameters
+        const toolbar = this.uveStore.toolbar();
+        patchState(this.uveStore, {
+            toolbar: {
+                ...toolbar,
+                viewParams
+            }
+        });
 
         // Check if we already have page data loaded with matching params
         // This prevents reloading when navigating between child routes (content <-> layout)

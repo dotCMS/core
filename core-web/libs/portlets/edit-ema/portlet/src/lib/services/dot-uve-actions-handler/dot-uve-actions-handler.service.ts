@@ -33,6 +33,7 @@ import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { PostMessage, ReorderMenuPayload, SetUrlPayload } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
+import { PageType } from '../../store/models';
 import {
     compareUrlPaths,
     convertClientParamsToPageParams,
@@ -145,7 +146,7 @@ export class DotUveActionsHandlerService {
                             language: payload.dataset.language
                         };
 
-                        if (!uveStore.isTraditionalPage()) {
+                        if (uveStore.pageType() === PageType.HEADLESS) {
                             const message = {
                                 name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
                                 payload: data

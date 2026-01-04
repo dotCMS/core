@@ -28,14 +28,23 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
-import { Orientation, UVEState } from '../../models';
+import { Orientation, PageType, UVEState } from '../../models';
 
 const emptyParams = {} as DotPageApiParams;
 
 const initialState: UVEState = {
     isEnterprise: true,
     languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
+    // Normalized page response
+    page: MOCK_RESPONSE_HEADLESS.page,
+    site: MOCK_RESPONSE_HEADLESS.site,
+    template: MOCK_RESPONSE_HEADLESS.template,
+    layout: MOCK_RESPONSE_HEADLESS.layout,
+    containers: MOCK_RESPONSE_HEADLESS.containers,
+    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
+    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
+    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
+    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
     currentUser: null,
     experiment: null,
     errorCode: null,
@@ -49,20 +58,15 @@ const initialState: UVEState = {
         mode: UVE_MODE.EDIT
     },
     status: UVE_STATUS.LOADED,
-    isTraditionalPage: false,
-    isClientReady: false,
-    viewParams: {
-        orientation: undefined,
-        seo: undefined,
-        device: undefined
-    },
-    // Phase 3: Nested editor state
+    pageType: PageType.HEADLESS,
+    // Phase 3.2: Nested editor state
     editor: {
         dragItem: null,
         bounds: [],
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
+        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }
@@ -70,11 +74,12 @@ const initialState: UVEState = {
         ogTags: null,
         styleSchemas: []
     },
-    // Phase 3: Nested toolbar state
+    // Phase 3.2: Nested toolbar state
     toolbar: {
         device: null,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,
+        viewParams: null,
         isEditState: true,
         isPreviewModeActive: false,
         ogTagsResults: null
@@ -180,24 +185,24 @@ describe('withEditor', () => {
         describe('$reloadEditorContent', () => {
             it('should return the expected data for Headless', () => {
                 patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
-                    isTraditionalPage: false
+                    page: MOCK_RESPONSE_HEADLESS.page,
+                    pageType: PageType.HEADLESS
                 });
 
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_HEADLESS.page.rendered,
-                    isTraditionalPage: false,
+                    pageType: PageType.HEADLESS,
                     enableInlineEdit: true
                 });
             });
             it('should return the expected data for VTL', () => {
                 patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true
+                    page: MOCK_RESPONSE_VTL.page,
+                    pageType: PageType.TRADITIONAL
                 });
                 expect(store.$reloadEditorContent()).toEqual({
                     code: MOCK_RESPONSE_VTL.page.rendered,
-                    isTraditionalPage: true,
+                    pageType: PageType.TRADITIONAL,
                     enableInlineEdit: true
                 });
             });
@@ -389,19 +394,19 @@ describe('withEditor', () => {
 
             // There is an issue with Signal Store when you try to spy on a signal called from a computed property
             // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
-            describe.skip('pageAPIResponse dependency', () => {
-                it('should call pageAPIResponse when it is a headless page', () => {
-                    const spy = jest.spyOn(store, 'pageAPIResponse');
-                    patchState(store, { isTraditionalPage: false });
+            describe.skip('page dependency', () => {
+                it('should call page when it is a headless page', () => {
+                    const spy = jest.spyOn(store, 'page');
+                    patchState(store, { pageType: PageType.HEADLESS });
                     store.$iframeURL();
 
                     expect(spy).toHaveBeenCalled();
                 });
 
-                it('should call pageAPIResponse when it is a traditional page', () => {
-                    const spy = jest.spyOn(store, 'pageAPIResponse');
+                it('should call page when it is a traditional page', () => {
+                    const spy = jest.spyOn(store, 'page');
 
-                    patchState(store, { isTraditionalPage: true });
+                    patchState(store, { pageType: PageType.TRADITIONAL });
 
                     store.$iframeURL();
 
@@ -411,8 +416,8 @@ describe('withEditor', () => {
 
             it('should be an instance of String in src when the page is traditional', () => {
                 patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true
+                    page: MOCK_RESPONSE_VTL.page,
+                    pageType: PageType.TRADITIONAL
                 });
 
                 expect(store.$iframeURL()).toBeInstanceOf(String);
@@ -420,8 +425,8 @@ describe('withEditor', () => {
 
             it('should be an empty string in src when the page is traditional', () => {
                 patchState(store, {
-                    pageAPIResponse: MOCK_RESPONSE_VTL,
-                    isTraditionalPage: true
+                    page: MOCK_RESPONSE_VTL.page,
+                    pageType: PageType.TRADITIONAL
                 });
 
                 expect(store.$iframeURL().toString()).toBe('');
@@ -429,12 +434,9 @@ describe('withEditor', () => {
 
             it('should contain the right url when the page is a vanity url  ', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        vanityUrl: {
-                            ...MOCK_RESPONSE_HEADLESS.vanityUrl,
-                            url: 'first'
-                        }
+                    vanityUrl: {
+                        ...MOCK_RESPONSE_HEADLESS.vanityUrl,
+                        url: 'first'
                     },
                     pageParams: {
                         language_id: '1',
@@ -451,9 +453,6 @@ describe('withEditor', () => {
 
             it('should set the right iframe url when the clientHost is present', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS
-                    },
                     pageParams: {
                         ...emptyParams,
                         url: 'test-url',
@@ -468,9 +467,6 @@ describe('withEditor', () => {
 
             it('should set the right iframe url when the clientHost is present with a aditional path', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS
-                    },
                     pageParams: {
                         ...emptyParams,
                         url: 'test-url',

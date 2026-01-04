@@ -39,7 +39,7 @@ import {
     sanitizeURL,
     getFullPageURL
 } from '../../../utils';
-import { UVEState } from '../../models';
+import { PageType, UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
@@ -123,7 +123,7 @@ export function withEditor() {
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
                         code: store.page()?.rendered,
-                        isTraditionalPage: store.isTraditionalPage(),
+                        pageType: store.pageType(),
                         enableInlineEdit:
                             store.toolbar().isEditState && untracked(() => store.isEnterprise())
                     };
@@ -145,10 +145,10 @@ export function withEditor() {
                      */
                     const vanityUrlData = store.vanityUrl();
                     const vanityURL = vanityUrlData?.url;
-                    const isTraditionalPage = untracked(() => store.isTraditionalPage());
+                    const pageType = untracked(() => store.pageType());
                     const params = untracked(() => store.pageParams());
 
-                    if (isTraditionalPage) {
+                    if (pageType === PageType.TRADITIONAL) {
                         // Force iframe reload on every page load to avoid caching issues and window dirty state
                         // We need a new reference to avoid the iframe to be cached
                         // More reference: https://github.com/dotCMS/core/issues/30981
@@ -169,11 +169,6 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
-                setIsClientReady(value: boolean) {
-                    patchState(store, {
-                        isClientReady: value
-                    });
-                },
                 updateEditorScrollState() {
                     const editor = store.editor();
                     patchState(store, {

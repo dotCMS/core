@@ -20,7 +20,7 @@ import {
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
-import { Orientation, UVEState } from '../../../models';
+import { Orientation, PageType, UVEState } from '../../../models';
 import { withFlags } from '../../flags/withFlags';
 import { PersonaSelectorProps } from '../models';
 
@@ -115,8 +115,8 @@ export function withUVEToolbar() {
                 const params = store.pageParams();
                 const pageURL = getFullPageURL({ url: params.url, params });
 
-                const pageType = store.isTraditionalPage() ? 'render' : 'json';
-                const pageAPI = `/api/v1/page/${pageType}/${pageURL}`;
+                const apiPageType = store.pageType() === PageType.TRADITIONAL ? 'render' : 'json';
+                const pageAPI = `/api/v1/page/${apiPageType}/${pageURL}`;
 
                 return pageAPI;
             }),
@@ -175,13 +175,13 @@ export function withUVEToolbar() {
                         device,
                         socialMedia: null,
                         isEditState: false,
-                        orientation: newOrientation
-                    },
-                    viewParams: {
-                        ...store.viewParams(),
-                        device: device.inode,
                         orientation: newOrientation,
-                        seo: null
+                        viewParams: {
+                            ...(toolbar.viewParams || {}),
+                            device: device.inode,
+                            orientation: newOrientation,
+                            seo: null
+                        }
                     }
                 });
             },
@@ -190,11 +190,11 @@ export function withUVEToolbar() {
                 patchState(store, {
                     toolbar: {
                         ...toolbar,
-                        orientation
-                    },
-                    viewParams: {
-                        ...store.viewParams(),
-                        orientation
+                        orientation,
+                        viewParams: toolbar.viewParams ? {
+                            ...toolbar.viewParams,
+                            orientation
+                        } : toolbar.viewParams
                     }
                 });
             },
@@ -206,13 +206,13 @@ export function withUVEToolbar() {
                         device: null,
                         orientation: null,
                         socialMedia,
-                        isEditState: false
-                    },
-                    viewParams: {
-                        ...store.viewParams(),
-                        device: null,
-                        orientation: null,
-                        seo: socialMedia
+                        isEditState: false,
+                        viewParams: {
+                            ...(toolbar.viewParams || {}),
+                            device: null,
+                            orientation: null,
+                            seo: socialMedia
+                        }
                     }
                 });
             },
@@ -224,13 +224,13 @@ export function withUVEToolbar() {
                         device: null,
                         socialMedia: null,
                         isEditState: true,
-                        orientation: null
-                    },
-                    viewParams: {
-                        ...store.viewParams(),
-                        device: null,
                         orientation: null,
-                        seo: null
+                        viewParams: {
+                            ...(toolbar.viewParams || {}),
+                            device: null,
+                            orientation: null,
+                            seo: null
+                        }
                     }
                 });
             },

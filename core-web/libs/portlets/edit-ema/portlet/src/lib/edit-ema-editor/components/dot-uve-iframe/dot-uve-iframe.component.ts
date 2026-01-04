@@ -20,6 +20,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { PageType } from '../../../store/models';
 import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils';
 
 @Component({
@@ -55,7 +56,7 @@ export class DotUveIframeComponent {
     readonly $pageRender = this.uveStore.$pageRender;
     readonly $enableInlineEdit = this.uveStore.$enableInlineEdit;
     readonly $isTraditionalPageEffect = effect(() => {
-        const isTraditional = this.uveStore.isTraditionalPage();
+        const isTraditional = this.uveStore.pageType() === PageType.TRADITIONAL;
         const pageRender = this.$pageRender();
         const enableInlineEdit = this.$enableInlineEdit();
 
@@ -73,7 +74,7 @@ export class DotUveIframeComponent {
     }
 
     onIframeLoad(): void {
-        if (!this.uveStore.isTraditionalPage()) {
+        if (this.uveStore.pageType() === PageType.HEADLESS) {
             this.load.emit();
             return;
         }
