@@ -1,9 +1,9 @@
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -11,6 +11,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DotCMSPageAsset } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -19,18 +20,42 @@ import { isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 
 /**
- * Add load and reload method to the store
- *
- * Dependencies: Expects withClient and withWorkflow to be composed before this feature
- * - resetClientConfiguration() from withClient
- * - getWorkflowActions() from withWorkflow
- * - graphql state and $graphqlWithParams computed from withClient
- * - setGraphqlResponse() from withClient
+ * Interface defining the methods provided by withLoad
+ * Use this as props type in dependent features
  *
  * @export
+ * @interface WithLoadMethods
+ */
+export interface WithLoadMethods {
+    // Methods
+    updatePageParams: (params: Partial<DotPageAssetParams>) => void;
+    loadPageAsset: RxMethod<Partial<DotPageAssetParams>>;
+    reloadCurrentPage: RxMethod<Partial<DotPageAssetParams> | void>;
+}
+
+/**
+ * Dependencies interface for withLoad
+ * These are methods/computeds from other features that withLoad needs
+ */
+export interface WithLoadDeps {
+    resetClientConfiguration: () => void;
+    getWorkflowActions: (inode: string) => void;
+    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
+    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+}
+
+/**
+ * Add load and reload method to the store
+ *
+ * Dependencies: Requires methods from withClient and withWorkflow
+ * Pass these via the deps parameter when wrapping with withFeature
+ *
+ * @export
+ * @param deps - Dependencies from other features (provided by withFeature wrapper)
  * @return {*}
  */
-export function withLoad() {
+export function withLoad(deps: WithLoadDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -76,8 +101,7 @@ export function withLoad() {
                             };
                         }),
                         tap((pageParams) => {
-                            // @ts-expect-error - resetClientConfiguration provided by withClient (composed before withLoad)
-                            store.resetClientConfiguration();
+                            deps.resetClientConfiguration();
                             patchState(store, {
                                 status: UVE_STATUS.LOADING,
                                 pageParams
@@ -113,8 +137,7 @@ export function withLoad() {
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
                                 tap(({ pageAsset }) => {
-                                    // @ts-expect-error - getWorkflowActions provided by withWorkflow (composed before withLoad)
-                                    store.getWorkflowActions(pageAsset?.page?.inode);
+                                    deps.getWorkflowActions(pageAsset?.page?.inode);
                                 }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;
@@ -196,13 +219,10 @@ export function withLoad() {
                             }
                         }),
                         switchMap(() => {
-                            // @ts-expect-error - graphql, $graphqlWithParams, setGraphqlResponse provided by withClient (composed before withLoad)
-                            const pageRequest = !store.graphql()
+                            const pageRequest = !deps.graphqlRequest()
                                 ? dotPageApiService.get(store.pageParams())
-                                : // @ts-expect-error - see above
-                                  dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
-                                      // @ts-expect-error - see above
-                                      tap((response) => store.setGraphqlResponse(response)),
+                                : dotPageApiService.getGraphQLPage(deps.$graphqlWithParams()).pipe(
+                                      tap((response) => deps.setGraphqlResponse(response)),
                                       map((response) => response.pageAsset)
                                   );
 
@@ -219,8 +239,7 @@ export function withLoad() {
                                         vanityUrl: pageAsset?.vanityUrl,
                                         numberContents: pageAsset?.numberContents
                                     });
-                                    // @ts-expect-error - getWorkflowActions provided by withWorkflow (composed before withLoad)
-                                    store.getWorkflowActions(pageAsset.page.inode);
+                                    deps.getWorkflowActions(pageAsset.page.inode);
                                 }),
                                 switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(

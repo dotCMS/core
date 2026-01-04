@@ -10,7 +10,7 @@ import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models'
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
-import { withUVEToolbar } from './withUVEToolbar';
+import { withToolbar } from './withToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
@@ -76,7 +76,7 @@ const initialState: UVEState = {
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withUVEToolbar()
+    withToolbar()
 );
 
 describe('withEditor', () => {

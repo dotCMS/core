@@ -27,7 +27,7 @@ import { PersonaSelectorProps } from '../models';
  * Phase 3.2: Refactored to work with nested toolbar state
  * Toolbar state is now nested under store.toolbar()
  */
-export function withUVEToolbar() {
+export function withToolbar() {
     return signalStoreFeature(
         {
             state: type<UVEState>()

@@ -139,7 +139,7 @@ describe('withEditor', () => {
         mockCanEditPage.set(true);
     });
 
-    // withUVEToolbar tests removed - toolbar functionality should be tested in withUVEToolbar.spec.ts
+    // Toolbar tests removed - toolbar functionality should be tested in withToolbar.spec.ts
 
     describe('withComputed', () => {
         describe('$areaContentType', () => {

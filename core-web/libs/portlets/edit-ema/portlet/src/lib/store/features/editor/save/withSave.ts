@@ -3,7 +3,7 @@ import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { inject, Signal } from '@angular/core';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
@@ -17,17 +17,26 @@ import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
 
 /**
+ * Dependencies interface for withSave
+ * These are methods/computeds from other features that withSave needs
+ */
+export interface WithSaveDeps {
+    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
+    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+}
+
+/**
  * Add methods to save the page
  *
- * Dependencies: Expects withClient to be composed before this feature
- * - graphql state from withClient
- * - $graphqlWithParams computed from withClient
- * - setGraphqlResponse() from withClient
+ * Dependencies: Requires methods from withClient
+ * Pass these via the deps parameter when wrapping with withFeature
  *
  * @export
+ * @param deps - Dependencies from other features (provided by withFeature wrapper)
  * @return {*}
  */
-export function withSave() {
+export function withSave(deps: WithSaveDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -53,14 +62,11 @@ export function withSave() {
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
-                                    // @ts-expect-error - graphql, $graphqlWithParams, setGraphqlResponse provided by withClient (composed before withSave)
-                                    const pageRequest = !store.graphql()
+                                    const pageRequest = !deps.graphqlRequest()
                                         ? dotPageApiService.get(store.pageParams())
-                                        : // @ts-expect-error - see above
-                                          dotPageApiService.getGraphQLPage(store.$graphqlWithParams())
+                                        : dotPageApiService.getGraphQLPage(deps.$graphqlWithParams())
                                               .pipe(
-                                                  // @ts-expect-error - see above
-                                                  tap((response) => store.setGraphqlResponse(response)
+                                                  tap((response) => deps.setGraphqlResponse(response)
                                                   ),
                                                   map((response) => response.pageAsset)
                                               );

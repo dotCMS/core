@@ -1,4 +1,4 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withFeature, withMethods, withState } from '@ngrx/signals';
 
 import { computed, untracked } from '@angular/core';
 
@@ -6,7 +6,7 @@ import { DotCMSPageAsset } from '@dotcms/types';
 
 import { withClient } from './features/client/withClient';
 import { withSave } from './features/editor/save/withSave';
-import { withUVEToolbar } from './features/editor/toolbar/withUVEToolbar';
+import { withToolbar } from './features/editor/toolbar/withToolbar';
 import { withEditor } from './features/editor/withEditor';
 import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
@@ -88,7 +88,13 @@ export const UVEStore = signalStore(
     withPageContext(),                // Common computed properties (depends on flags)
 
     // ---- Data Loading ----
-    withLoad(),                       // Load methods (depends on client, workflow)
+    withFeature((store) => withLoad({
+        resetClientConfiguration: () => store.resetClientConfiguration(),
+        getWorkflowActions: (inode: string) => store.getWorkflowActions(inode),
+        graphqlRequest: () => store.graphqlRequest(),
+        $graphqlWithParams: store.$graphqlWithParams,
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+    })),  // Load methods (depends on client, workflow)
 
     // ---- Core Store Methods ----
     withMethods((store) => {
@@ -127,12 +133,18 @@ export const UVEStore = signalStore(
 
     // ---- UI Features ----
     withLayout(),                     // Layout state
-    withUVEToolbar(),                 // Toolbar state (depends on flags, pageContext)
+    withToolbar(),                    // Toolbar state (depends on flags, pageContext)
     withEditor(),                     // Editor state (depends on pageContext, toolbar exists in store)
 
     // ---- Actions ----
-    withSave(),                       // Save methods (depends on load)
-    withLock(),                       // Lock methods (depends on load)
+    withFeature((store) => withSave({
+        graphqlRequest: () => store.graphqlRequest(),
+        $graphqlWithParams: store.$graphqlWithParams,
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+    })),  // Save methods (depends on client)
+    withFeature((store) => withLock({
+        reloadCurrentPage: () => store.reloadCurrentPage()
+    })),  // Lock methods (depends on load)
     withComputed(
         ({
             page,

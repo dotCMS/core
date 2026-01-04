@@ -73,7 +73,7 @@ describe('UVEStore', () => {
 
     it('should have initial state', () => {
         expect(store.isClientReady()).toBeFalsy();
-        expect(store.graphql()).toEqual(null);
+        expect(store.graphqlRequest()).toEqual(null);
         expect(store.graphqlResponse()).toEqual(null);
         expect(store.isClientReady()).toBe(false);
         expect(store.legacyGraphqlResponse()).toBe(false);
@@ -97,7 +97,7 @@ describe('UVEStore', () => {
 
                 store.setCustomGraphQL(graphql, true);
 
-                expect(store.graphql()).toEqual(graphql);
+                expect(store.graphqlRequest()).toEqual(graphql);
             });
         });
 
@@ -110,7 +110,7 @@ describe('UVEStore', () => {
             store.setCustomGraphQL(graphql, true);
             store.resetClientConfiguration();
 
-            expect(store.graphql()).toEqual(null);
+            expect(store.graphqlRequest()).toEqual(null);
         });
     });
 

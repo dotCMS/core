@@ -13,13 +13,25 @@ interface WithLockState {
 }
 
 /**
+ * Dependencies interface for withLock
+ * These are methods from other features that withLock needs
+ */
+export interface WithLockDeps {
+    reloadCurrentPage: () => void;
+}
+
+/**
  * Signal store feature that adds lock functionality to the UVE store.
  * Provides methods to lock/unlock pages and handles loading states and user notifications.
  *
- * Dependencies: Expects withLoad to be composed before this feature
- * - reloadCurrentPage() from withLoad
+ * Dependencies: Requires methods from withLoad
+ * Pass these via the deps parameter when wrapping with withFeature
+ *
+ * @export
+ * @param deps - Dependencies from other features (provided by withFeature wrapper)
+ * @return {*}
  */
-export function withLock() {
+export function withLock(deps: WithLockDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -46,8 +58,7 @@ export function withLock() {
                             summary: dotMessageService.get('edit.ema.page.lock'),
                             detail: dotMessageService.get('edit.ema.page.lock.success')
                         });
-                        // @ts-expect-error - reloadCurrentPage provided by withLoad (composed before withLock)
-                        store.reloadCurrentPage();
+                        deps.reloadCurrentPage();
                         patchState(store, { lockLoading: false });
                     },
                     error: () => {
@@ -74,8 +85,7 @@ export function withLock() {
                             summary: dotMessageService.get('edit.ema.page.unlock'),
                             detail: dotMessageService.get('edit.ema.page.unlock.success')
                         });
-                        // @ts-expect-error - reloadCurrentPage provided by withLoad (composed before withLock)
-                        store.reloadCurrentPage();
+                        deps.reloadCurrentPage();
                         patchState(store, { lockLoading: false });
                     },
                     error: () => {
