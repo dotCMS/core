@@ -7,7 +7,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotContentletLockerService, DotMessageService } from '@dotcms/data-access';
 
 import { UVEState } from '../../models';
-import { withLoad } from '../load/withLoad';
 
 interface WithLockState {
     lockLoading: boolean;
@@ -16,6 +15,9 @@ interface WithLockState {
 /**
  * Signal store feature that adds lock functionality to the UVE store.
  * Provides methods to lock/unlock pages and handles loading states and user notifications.
+ *
+ * Dependencies: Expects withLoad to be composed before this feature
+ * - reloadCurrentPage() from withLoad
  */
 export function withLock() {
     return signalStoreFeature(
@@ -25,7 +27,6 @@ export function withLock() {
         withState<WithLockState>({
             lockLoading: false
         }),
-        withLoad(),
         withMethods((store) => {
             const messageService = inject(MessageService);
             const dotMessageService = inject(DotMessageService);
@@ -45,6 +46,7 @@ export function withLock() {
                             summary: dotMessageService.get('edit.ema.page.lock'),
                             detail: dotMessageService.get('edit.ema.page.lock.success')
                         });
+                        // @ts-expect-error - reloadCurrentPage provided by withLoad (composed before withLock)
                         store.reloadCurrentPage();
                         patchState(store, { lockLoading: false });
                     },
@@ -72,6 +74,7 @@ export function withLock() {
                             summary: dotMessageService.get('edit.ema.page.unlock'),
                             detail: dotMessageService.get('edit.ema.page.unlock.success')
                         });
+                        // @ts-expect-error - reloadCurrentPage provided by withLoad (composed before withLock)
                         store.reloadCurrentPage();
                         patchState(store, { lockLoading: false });
                     },

@@ -17,11 +17,15 @@ import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
 import { isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { withClient } from '../client/withClient';
-import { withWorkflow } from '../workflow/withWorkflow';
 
 /**
  * Add load and reload method to the store
+ *
+ * Dependencies: Expects withClient and withWorkflow to be composed before this feature
+ * - resetClientConfiguration() from withClient
+ * - getWorkflowActions() from withWorkflow
+ * - graphql state and $graphqlWithParams computed from withClient
+ * - setGraphqlResponse() from withClient
  *
  * @export
  * @return {*}
@@ -31,8 +35,6 @@ export function withLoad() {
         {
             state: type<UVEState>()
         },
-        withClient(),
-        withWorkflow(),
         withMethods((store) => {
             return {
                 updatePageParams: (params: Partial<DotPageAssetParams>) => {
@@ -74,6 +76,7 @@ export function withLoad() {
                             };
                         }),
                         tap((pageParams) => {
+                            // @ts-expect-error - resetClientConfiguration provided by withClient (composed before withLoad)
                             store.resetClientConfiguration();
                             patchState(store, {
                                 status: UVE_STATUS.LOADING,
@@ -109,9 +112,10 @@ export function withLoad() {
                                     .pipe(take(1), shareReplay()),
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
-                                tap(({ pageAsset }) =>
-                                    store.getWorkflowActions(pageAsset?.page?.inode)
-                                ),
+                                tap(({ pageAsset }) => {
+                                    // @ts-expect-error - getWorkflowActions provided by withWorkflow (composed before withLoad)
+                                    store.getWorkflowActions(pageAsset?.page?.inode);
+                                }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;
                                     console.error('Error UVEStore', err);
@@ -192,9 +196,12 @@ export function withLoad() {
                             }
                         }),
                         switchMap(() => {
+                            // @ts-expect-error - graphql, $graphqlWithParams, setGraphqlResponse provided by withClient (composed before withLoad)
                             const pageRequest = !store.graphql()
                                 ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
+                                : // @ts-expect-error - see above
+                                  dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
+                                      // @ts-expect-error - see above
                                       tap((response) => store.setGraphqlResponse(response)),
                                       map((response) => response.pageAsset)
                                   );
@@ -212,6 +219,7 @@ export function withLoad() {
                                         vanityUrl: pageAsset?.vanityUrl,
                                         numberContents: pageAsset?.numberContents
                                     });
+                                    // @ts-expect-error - getWorkflowActions provided by withWorkflow (composed before withLoad)
                                     store.getWorkflowActions(pageAsset.page.inode);
                                 }),
                                 switchMap((pageAsset) => {

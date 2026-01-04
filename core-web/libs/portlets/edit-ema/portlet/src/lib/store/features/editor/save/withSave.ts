@@ -15,10 +15,14 @@ import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer } from '../../../../shared/models';
 import { UVEState } from '../../../models';
-import { withLoad } from '../../load/withLoad';
 
 /**
  * Add methods to save the page
+ *
+ * Dependencies: Expects withClient to be composed before this feature
+ * - graphql state from withClient
+ * - $graphqlWithParams computed from withClient
+ * - setGraphqlResponse() from withClient
  *
  * @export
  * @return {*}
@@ -28,7 +32,6 @@ export function withSave() {
         {
             state: type<UVEState>()
         },
-        withLoad(),
         withMethods((store) => {
             const dotPageApiService = inject(DotPageApiService);
             const dotPageLayoutService = inject(DotPageLayoutService);
@@ -50,13 +53,14 @@ export function withSave() {
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
+                                    // @ts-expect-error - graphql, $graphqlWithParams, setGraphqlResponse provided by withClient (composed before withSave)
                                     const pageRequest = !store.graphql()
                                         ? dotPageApiService.get(store.pageParams())
-                                        : dotPageApiService
-                                              .getGraphQLPage(store.$graphqlWithParams())
+                                        : // @ts-expect-error - see above
+                                          dotPageApiService.getGraphQLPage(store.$graphqlWithParams())
                                               .pipe(
-                                                  tap((response) =>
-                                                      store.setGraphqlResponse(response)
+                                                  // @ts-expect-error - see above
+                                                  tap((response) => store.setGraphqlResponse(response)
                                                   ),
                                                   map((response) => response.pageAsset)
                                               );

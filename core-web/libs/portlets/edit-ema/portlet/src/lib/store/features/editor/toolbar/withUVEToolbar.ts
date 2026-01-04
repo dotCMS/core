@@ -11,7 +11,7 @@ import { computed } from '@angular/core';
 import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import { DEFAULT_PERSONA, UVE_FEATURE_FLAGS } from '../../../../shared/consts';
+import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
 import {
@@ -21,7 +21,6 @@ import {
     getOrientation
 } from '../../../../utils';
 import { Orientation, PageType, UVEState } from '../../../models';
-import { withFlags } from '../../flags/withFlags';
 import { PersonaSelectorProps } from '../models';
 
 /**
@@ -33,7 +32,6 @@ export function withUVEToolbar() {
         {
             state: type<UVEState>()
         },
-        withFlags(UVE_FEATURE_FLAGS),
         withComputed((store) => ({
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
                 return store.urlContentMap();

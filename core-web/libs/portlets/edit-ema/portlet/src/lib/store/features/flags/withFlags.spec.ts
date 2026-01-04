@@ -10,19 +10,28 @@ import { withFlags } from './withFlags';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
-import { Orientation, UVEState } from '../../models';
+import { Orientation, PageType, UVEState } from '../../models';
 
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null,
+    flags: {},
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams: {} as DotPageApiParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false,
+    pageType: PageType.TRADITIONAL,
+    // Normalized page response properties
+    page: null,
+    site: null,
+    viewAs: null,
+    template: null,
+    layout: null,
+    urlContentMap: null,
+    containers: null,
+    vanityUrl: null,
+    numberContents: null,
     // Phase 3: Nested editor state
     editor: {
         dragItem: null,
@@ -30,6 +39,7 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
+        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }
@@ -42,6 +52,7 @@ const initialState: UVEState = {
         device: null,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,
+        viewParams: null,
         isEditState: true,
         isPreviewModeActive: false,
         ogTagsResults: null

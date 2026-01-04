@@ -4,13 +4,17 @@ import { computed, untracked } from '@angular/core';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
+import { withClient } from './features/client/withClient';
 import { withSave } from './features/editor/save/withSave';
+import { withUVEToolbar } from './features/editor/toolbar/withUVEToolbar';
 import { withEditor } from './features/editor/withEditor';
 import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
+import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
+import { withWorkflow } from './features/workflow/withWorkflow';
 import { TranslateProps, UVEState, Orientation, PageType } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
@@ -23,6 +27,7 @@ import { normalizeQueryParams } from '../utils';
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
+    flags: {}, // Will be populated by withFlags feature
     currentUser: null,
     experiment: null,
     errorCode: null,
@@ -72,8 +77,20 @@ const initialState: UVEState = {
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
-    // Make common computed available through all the features
-    withPageContext(),
+
+    // ---- Core State Features (no dependencies) ----
+    withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
+    withClient(),                     // Client config (independent)
+    withWorkflow(),                   // Workflow state (independent)
+    withTrack(),                      // Tracking (independent)
+
+    // ---- Shared Computeds ----
+    withPageContext(),                // Common computed properties (depends on flags)
+
+    // ---- Data Loading ----
+    withLoad(),                       // Load methods (depends on client, workflow)
+
+    // ---- Core Store Methods ----
     withMethods((store) => {
         return {
             setUveStatus(status: UVE_STATUS) {
@@ -107,12 +124,15 @@ export const UVEStore = signalStore(
             }
         };
     }),
-    withSave(),
-    withLayout(),
-    withEditor(),
-    withTrack(),
-    withFlags(UVE_FEATURE_FLAGS),
-    withLock(),
+
+    // ---- UI Features ----
+    withLayout(),                     // Layout state
+    withUVEToolbar(),                 // Toolbar state (depends on flags, pageContext)
+    withEditor(),                     // Editor state (depends on pageContext, toolbar exists in store)
+
+    // ---- Actions ----
+    withSave(),                       // Save methods (depends on load)
+    withLock(),                       // Lock methods (depends on load)
     withComputed(
         ({
             page,

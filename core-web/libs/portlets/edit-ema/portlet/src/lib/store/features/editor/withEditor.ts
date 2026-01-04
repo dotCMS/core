@@ -17,7 +17,6 @@ import {
     PageDataContainer,
     ReloadEditorContent
 } from './models';
-import { withUVEToolbar } from './toolbar/withUVEToolbar';
 
 import {
     Container,
@@ -63,7 +62,6 @@ export function withEditor() {
             state: type<UVEState>(),
             props: type<PageContextComputed>()
         },
-        withUVEToolbar(),
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 

@@ -5,9 +5,6 @@ import { computed, Signal } from '@angular/core';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
-import { withFlags } from './flags/withFlags';
-
-import { UVE_FEATURE_FLAGS } from '../../shared/consts';
 import { computeIsPageLocked } from '../../utils';
 import { PageType, UVEState } from '../models';
 
@@ -46,7 +43,6 @@ export interface PageContextComputed {
 export function withPageContext() {
     return signalStoreFeature(
         { state: type<UVEState>() },
-        withFlags(UVE_FEATURE_FLAGS),
         withComputed(
             ({
                 page,

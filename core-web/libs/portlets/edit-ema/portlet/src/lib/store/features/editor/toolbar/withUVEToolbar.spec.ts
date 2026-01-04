@@ -16,7 +16,7 @@ import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
-import { Orientation, UVEState } from '../../../models';
+import { Orientation, PageType, UVEState } from '../../../models';
 
 const pageParams = {
     url: 'test-url',
@@ -29,19 +29,23 @@ const pageParams = {
 const initialState: UVEState = {
     isEnterprise: true,
     languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
+    flags: {},
     currentUser: mockCurrentUser,
     experiment: null,
     errorCode: null,
     pageParams,
     status: UVE_STATUS.LOADED,
-    isTraditionalPage: false,
-    isClientReady: false,
-    viewParams: {
-        orientation: undefined,
-        seo: undefined,
-        device: undefined
-    },
+    pageType: PageType.HEADLESS,
+    // Normalized page response properties
+    page: MOCK_RESPONSE_HEADLESS.page,
+    site: MOCK_RESPONSE_HEADLESS.site,
+    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
+    template: MOCK_RESPONSE_HEADLESS.template,
+    layout: MOCK_RESPONSE_HEADLESS.layout,
+    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
+    containers: MOCK_RESPONSE_HEADLESS.containers,
+    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
+    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
     // Phase 3: Nested editor state
     editor: {
         dragItem: null,
@@ -49,6 +53,7 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
+        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }
@@ -61,6 +66,7 @@ const initialState: UVEState = {
         device: null,
         orientation: Orientation.LANDSCAPE,
         socialMedia: null,
+        viewParams: null,
         isEditState: true,
         isPreviewModeActive: false,
         ogTagsResults: null

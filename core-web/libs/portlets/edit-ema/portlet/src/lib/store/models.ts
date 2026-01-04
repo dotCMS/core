@@ -18,6 +18,8 @@ import {
 } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
+import { UVEFlags } from './features/flags/models';
+
 import {
     Container,
     ContentletArea,
@@ -107,6 +109,7 @@ export interface UVEState {
     // Core page data
     languages: DotLanguage[];
     isEnterprise: boolean;
+    flags?: UVEFlags; // Feature flags (added by withFlags feature)
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     pageParams?: DotPageAssetParams;
