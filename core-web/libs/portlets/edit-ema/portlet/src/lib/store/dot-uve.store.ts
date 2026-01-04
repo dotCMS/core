@@ -133,7 +133,9 @@ export const UVEStore = signalStore(
 
     // ---- UI Features ----
     withLayout(),                     // Layout state
-    withToolbar(),                    // Toolbar state (depends on flags, pageContext)
+    withFeature((store) => withToolbar({
+        $isPageLocked: () => store.$isPageLocked()
+    })),                              // Toolbar state (depends on flags, pageContext)
     withEditor(),                     // Editor state (depends on pageContext, toolbar exists in store)
 
     // ---- Actions ----

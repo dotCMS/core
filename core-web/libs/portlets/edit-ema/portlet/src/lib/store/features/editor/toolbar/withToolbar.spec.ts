@@ -76,7 +76,9 @@ const initialState: UVEState = {
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withToolbar()
+    withToolbar({
+        $isPageLocked: () => false  // Mock: page is not locked by default
+    })
 );
 
 describe('withEditor', () => {

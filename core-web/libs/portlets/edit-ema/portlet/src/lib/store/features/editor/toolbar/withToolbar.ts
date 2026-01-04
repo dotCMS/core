@@ -15,7 +15,6 @@ import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
 import {
-    computeIsPageLocked,
     getFullPageURL,
     getIsDefaultVariant,
     getOrientation
@@ -24,10 +23,18 @@ import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
 
 /**
+ * Dependencies interface for withToolbar
+ * These are methods/computeds from other features that withToolbar needs
+ */
+export interface WithToolbarDeps {
+    $isPageLocked: () => boolean;
+}
+
+/**
  * Phase 3.2: Refactored to work with nested toolbar state
  * Toolbar state is now nested under store.toolbar()
  */
-export function withToolbar() {
+export function withToolbar(deps: WithToolbarDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -44,13 +51,8 @@ export function withToolbar() {
                 }
 
                 const page = store.page();
-                const currentUser = store.currentUser();
+                const isLocked = deps.$isPageLocked();
 
-                const isLocked = computeIsPageLocked(
-                    page,
-                    currentUser,
-                    isToggleUnlockEnabled
-                );
                 const info = {
                     message: page.canLock
                         ? 'editpage.toolbar.page.release.lock.locked.by.user'

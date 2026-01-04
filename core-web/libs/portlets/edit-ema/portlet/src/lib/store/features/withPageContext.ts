@@ -17,6 +17,7 @@ export interface PageContextComputed {
 
     // Permission signals (used by components)
     $isLockFeatureEnabled: Signal<boolean>;
+    $isPageLocked: Signal<boolean>;
     $hasAccessToEditMode: Signal<boolean>;
 
     // Capability signals (used by components)
@@ -121,6 +122,7 @@ export function withPageContext() {
 
                     // ============ Permission Signals (Used by Components) ============
                     $isLockFeatureEnabled,
+                    $isPageLocked,
                     $hasAccessToEditMode,
 
                     // ============ Capability Signals (Used by Components) ============
