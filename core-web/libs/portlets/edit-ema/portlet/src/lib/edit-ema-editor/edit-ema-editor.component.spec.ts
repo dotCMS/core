@@ -7,10 +7,10 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { Observable, of, throwError } from 'rxjs';
+import { EMPTY, Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement, signal } from '@angular/core';
+import { DebugElement, signal, computed } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -99,6 +99,11 @@ import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-s
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
+import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
+import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
+import { DotUveZoomService } from '../services/dot-uve-zoom/dot-uve-zoom.service';
+import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
@@ -140,6 +145,48 @@ const messagesMock = {
 
 const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com')
+};
+
+const mockDotUveZoomService = {
+    $zoomLevel: signal(1),
+    $isZoomMode: signal(false),
+    $iframeDocHeight: signal(800),
+    $canvasOuterStyles: computed(() => ({
+        width: '1520px',
+        height: '800px'
+    })),
+    $canvasInnerStyles: computed(() => ({
+        width: '1520px',
+        height: '800px',
+        transform: 'scale(1)'
+    })),
+    setZoom: jest.fn(),
+    resetZoom: jest.fn(),
+    zoomIn: jest.fn(),
+    zoomOut: jest.fn(),
+    zoomLabel: jest.fn(() => '100%'),
+    setupZoomInteractions: jest.fn(),
+    setIframeDocHeight: jest.fn()
+};
+
+const mockDotUveBridgeService = {
+    initialize: jest.fn(() => EMPTY),
+    handleMessage: jest.fn(),
+    sendMessageToIframe: jest.fn()
+};
+
+const mockDotUveActionsHandlerService = {
+    handleAction: jest.fn(() => of({}))
+};
+
+const mockDotUveDragDropService = {
+    setupDragEvents: jest.fn()
+};
+
+const mockInlineEditService = {
+    enableInlineEdit: jest.fn(),
+    disableInlineEdit: jest.fn(),
+    injectInlineEdit: jest.fn()
 };
 
 const createRouting = () =>
@@ -246,7 +293,27 @@ const createRouting = () =>
                 provide: WINDOW,
                 useValue: window
             },
-            mockProvider(DotPageLayoutService)
+            mockProvider(DotPageLayoutService),
+            {
+                provide: DotUveActionsHandlerService,
+                useValue: mockDotUveActionsHandlerService
+            },
+            {
+                provide: DotUveBridgeService,
+                useValue: mockDotUveBridgeService
+            },
+            {
+                provide: DotUveDragDropService,
+                useValue: mockDotUveDragDropService
+            },
+            {
+                provide: DotUveZoomService,
+                useValue: mockDotUveZoomService
+            },
+            {
+                provide: InlineEditService,
+                useValue: mockInlineEditService
+            }
         ],
         providers: [
             {
@@ -441,6 +508,34 @@ describe('EditEmaEditorComponent', () => {
             });
 
             spectator.detectChanges();
+
+            // Mock iframe contentWindow for tests that need to access it
+            const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+            if (iframe) {
+                const mockContentWindow = {
+                    addEventListener: jest.fn(),
+                    removeEventListener: jest.fn(),
+                    postMessage: jest.fn(),
+                    scrollTo: jest.fn(),
+                    document: {
+                        getElementById: jest.fn(),
+                        querySelector: jest.fn(),
+                        createElement: jest.fn(),
+                        body: {
+                            appendChild: jest.fn(),
+                            querySelector: jest.fn()
+                        },
+                        head: {
+                            appendChild: jest.fn(),
+                            querySelector: jest.fn()
+                        }
+                    }
+                };
+                Object.defineProperty(iframe.nativeElement, 'contentWindow', {
+                    writable: true,
+                    value: mockContentWindow
+                });
+            }
         });
 
         describe('DOM', () => {
@@ -561,7 +656,7 @@ describe('EditEmaEditorComponent', () => {
             describe('$editorContentStyles', () => {
                 it('should return display block when socialMedia is null', () => {
                     patchState(store, {
-                        toolbar: {
+                        view: {
                             ...store.view(),
                             socialMedia: null
                         }
@@ -576,7 +671,7 @@ describe('EditEmaEditorComponent', () => {
 
                 it('should return display none when socialMedia is set', () => {
                     patchState(store, {
-                        toolbar: {
+                        view: {
                             ...store.view(),
                             socialMedia: 'facebook'
                         }
@@ -956,112 +1051,6 @@ describe('EditEmaEditorComponent', () => {
                     afterEach(() => jest.clearAllMocks());
                 });
 
-                xdescribe('reload', () => {
-                    let spyContentlet: jest.SpyInstance;
-                    let spyDialog: jest.SpyInstance;
-                    let spyReloadIframe: jest.SpyInstance;
-                    let spyStoreReload: jest.SpyInstance;
-                    let spyUpdateQueryParams: jest.SpyInstance;
-
-                    const emulateEditURLMapContent = () => {
-                        const editURLContentButton = spectator.debugElement.query(
-                            By.css('[data-testId="edit-url-content-map"]')
-                        );
-                        const dialog = spectator.debugElement.query(
-                            By.css('[data-testId="ema-dialog"]')
-                        );
-
-                        store.setContentletArea(baseContentletPayload);
-
-                        editURLContentButton.triggerEventHandler('onClick', {});
-
-                        triggerCustomEvent(dialog, 'action', {
-                            event: new CustomEvent('ng-event', {
-                                detail: {
-                                    name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                    payload: {
-                                        shouldReloadPage: true,
-                                        contentletIdentifier: URL_MAP_CONTENTLET.identifier,
-                                        htmlPageReferer: '/my-awesome-page'
-                                    }
-                                }
-                            })
-                        });
-                    };
-
-                    beforeEach(() => {
-                        const router = spectator.inject(Router, true);
-                        const dialog = spectator.component.dialog;
-                        spyContentlet = jest.spyOn(dotContentletService, 'getContentletByInode');
-                        spyDialog = jest.spyOn(dialog, 'editUrlContentMapContentlet');
-                        spyReloadIframe = jest.spyOn(spectator.component, 'reloadIframeContent');
-                        spyUpdateQueryParams = jest.spyOn(router, 'navigate');
-                        spyStoreReload = jest.spyOn(store, 'reloadCurrentPage');
-
-                        spectator.detectChanges();
-                    });
-
-                    it('should reload the page after editing a urlContentMap if the url do not change', () => {
-                        const storeReloadPayload = {
-                            params: {
-                                language_id: 1,
-                                url: 'page-one'
-                            }
-                        };
-
-                        spyContentlet.mockReturnValue(
-                            of({
-                                ...URL_MAP_CONTENTLET,
-                                URL_MAP_FOR_CONTENT: 'page-one'
-                            })
-                        );
-
-                        emulateEditURLMapContent();
-                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
-                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(spyReloadIframe).toHaveBeenCalled();
-                        expect(spyStoreReload).toHaveBeenCalledWith(storeReloadPayload);
-                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
-                    });
-
-                    it('should update the query params after editing a urlContentMap if the url changed', () => {
-                        const SpyEditorState = jest.spyOn(store, 'setEditorState');
-                        const queryParams = {
-                            queryParams: {
-                                url: URL_MAP_CONTENTLET.URL_MAP_FOR_CONTENT
-                            },
-                            queryParamsHandling: 'merge'
-                        };
-
-                        spyContentlet.mockReturnValue(of(URL_MAP_CONTENTLET));
-
-                        emulateEditURLMapContent();
-                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
-                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
-                        expect(spyUpdateQueryParams).toHaveBeenCalledWith([], queryParams);
-                        expect(spyStoreReload).not.toHaveBeenCalled();
-                        expect(spyReloadIframe).toHaveBeenCalled();
-                    });
-
-                    it('should handler error ', () => {
-                        const SpyEditorState = jest.spyOn(store, 'setEditorState');
-                        const SpyHandlerError = jest
-                            .spyOn(dotHttpErrorManagerService, 'handle')
-                            .mockReturnValue(of(null));
-
-                        spyContentlet.mockReturnValue(throwError({}));
-
-                        emulateEditURLMapContent();
-                        expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
-                        expect(SpyHandlerError).toHaveBeenCalledWith({});
-                        expect(SpyEditorState).toHaveBeenCalledWith(EDITOR_STATE.ERROR);
-                        expect(spyContentlet).toHaveBeenCalledWith(URL_MAP_CONTENTLET.identifier);
-                        expect(spyUpdateQueryParams).not.toHaveBeenCalled();
-                        expect(spyStoreReload).not.toHaveBeenCalled();
-                        expect(spyReloadIframe).not.toHaveBeenCalled();
-                    });
-                });
 
                 describe('Copy content', () => {
                     let copySpy: jest.SpyInstance<Observable<DotCMSContentlet>>;
@@ -1657,11 +1646,14 @@ describe('EditEmaEditorComponent', () => {
                 describe('drag start', () => {
                     it('should call the setEditorDragItem from the store for content-types and set the `dotcms/item` type ', async () => {
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
-                        const dataTransfer = {
-                            writable: false,
-                            value: {
-                                setData: jest.fn()
-                            }
+                        const mockDataTransfer = {
+                            setData: jest.fn(),
+                            getData: jest.fn(),
+                            dropEffect: 'none',
+                            effectAllowed: 'all',
+                            files: [],
+                            items: [],
+                            types: []
                         };
 
                         const target = {
@@ -1687,7 +1679,10 @@ describe('EditEmaEditorComponent', () => {
                             value: target.target
                         });
 
-                        Object.defineProperty(dragStart, 'dataTransfer', dataTransfer);
+                        Object.defineProperty(dragStart, 'dataTransfer', {
+                            writable: false,
+                            value: mockDataTransfer
+                        });
 
                         window.dispatchEvent(dragStart);
 
@@ -1707,7 +1702,7 @@ describe('EditEmaEditorComponent', () => {
                             }
                         });
 
-                        expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
+                        expect(mockDataTransfer.setData).toHaveBeenCalledWith('dotcms/item', '');
                     });
 
                     it('should call the setEditorDragItem from the store for contentlets', async () => {
@@ -1821,14 +1816,20 @@ describe('EditEmaEditorComponent', () => {
                                 dataset: {}
                             }
                         };
-                        const dataTransfer = {
-                            writable: false,
-                            value: {
-                                setData: jest.fn()
-                            }
+                        const mockDataTransfer = {
+                            setData: jest.fn(),
+                            getData: jest.fn(),
+                            dropEffect: 'none',
+                            effectAllowed: 'all',
+                            files: [],
+                            items: [],
+                            types: []
                         };
 
-                        Object.defineProperty(dragStart, 'dataTransfer', dataTransfer);
+                        Object.defineProperty(dragStart, 'dataTransfer', {
+                            writable: false,
+                            value: mockDataTransfer
+                        });
                         Object.defineProperty(dragStart, 'target', {
                             writable: false,
                             value: target.target
@@ -1836,7 +1837,7 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragStart);
                         expect(setEditorDragItemSpy).not.toHaveBeenCalled();
-                        expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
+                        expect(mockDataTransfer.setData).toHaveBeenCalledWith('dotcms/item', '');
                     });
                 });
 
