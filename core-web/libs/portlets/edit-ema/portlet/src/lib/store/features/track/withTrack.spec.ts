@@ -11,8 +11,8 @@ import { UVE_MODE } from '@dotcms/types';
 import { withTrack } from './withTrack';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { UVE_STATUS } from '../../../shared/enums';
-import { UVEState } from '../../models';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { Orientation, UVEState } from '../../models';
 
 const initialState: UVEState = {
     isEnterprise: false,
@@ -24,7 +24,30 @@ const initialState: UVEState = {
     pageParams: {} as DotPageApiParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    isClientReady: false
+    isClientReady: false,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested toolbar state
+    toolbar: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withTrack());

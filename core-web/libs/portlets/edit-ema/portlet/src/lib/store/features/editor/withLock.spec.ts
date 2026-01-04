@@ -25,8 +25,9 @@ import {
 import { withLock } from './withLock';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { dotPropertiesServiceMock, MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
-import { UVEState } from '../../models';
+import { Orientation, UVEState } from '../../models';
 import { withLoad } from '../load/withLoad';
 
 const mockLockResponse: DotContentletLockResponse = {
@@ -45,7 +46,30 @@ const initialState: UVEState = {
     pageParams: null,
     status: null,
     isTraditionalPage: true,
-    isClientReady: false
+    isClientReady: false,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested toolbar state
+    toolbar: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const uveStoreMock = signalStore(

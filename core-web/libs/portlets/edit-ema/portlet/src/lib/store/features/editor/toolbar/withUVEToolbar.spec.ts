@@ -14,7 +14,7 @@ import { withUVEToolbar } from './withUVEToolbar';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
-import { UVE_STATUS } from '../../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 
@@ -41,6 +41,29 @@ const initialState: UVEState = {
         orientation: undefined,
         seo: undefined,
         device: undefined
+    },
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested toolbar state
+    toolbar: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
     }
 };
 
@@ -412,8 +435,8 @@ describe('withEditor', () => {
                 const iphone = mockDotDevices[0];
 
                 store.setDevice(iphone);
-                expect(store.device()).toBe(iphone);
-                expect(store.orientation()).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
+                expect(store.toolbar().device).toBe(iphone);
+                expect(store.toolbar().orientation).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
 
                 expect(store.viewParams()).toEqual({
                     device: iphone.inode,
@@ -426,8 +449,8 @@ describe('withEditor', () => {
                 const iphone = mockDotDevices[0];
 
                 store.setDevice(iphone, Orientation.PORTRAIT);
-                expect(store.device()).toBe(iphone);
-                expect(store.orientation()).toBe(Orientation.PORTRAIT);
+                expect(store.toolbar().device).toBe(iphone);
+                expect(store.toolbar().orientation).toBe(Orientation.PORTRAIT);
 
                 expect(store.viewParams()).toEqual({
                     device: iphone.inode,
@@ -440,7 +463,7 @@ describe('withEditor', () => {
         describe('setOrientation', () => {
             it('should set the orientation and the view params', () => {
                 store.setOrientation(Orientation.PORTRAIT);
-                expect(store.orientation()).toBe(Orientation.PORTRAIT);
+                expect(store.toolbar().orientation).toBe(Orientation.PORTRAIT);
 
                 expect(store.viewParams()).toEqual({
                     device: store.viewParams().device,
@@ -456,10 +479,10 @@ describe('withEditor', () => {
 
                     store.clearDeviceAndSocialMedia();
 
-                    expect(store.device()).toBe(null);
+                    expect(store.toolbar().device).toBe(null);
                     expect(store.socialMedia()).toBe(null);
                     expect(store.isEditState()).toBe(true);
-                    expect(store.orientation()).toBe(null);
+                    expect(store.toolbar().orientation).toBe(null);
                     expect(store.viewParams()).toEqual({
                         device: null,
                         orientation: null,
@@ -474,8 +497,8 @@ describe('withEditor', () => {
                 store.setSEO('seo');
 
                 expect(store.socialMedia()).toBe('seo');
-                expect(store.device()).toBe(null);
-                expect(store.orientation()).toBe(null);
+                expect(store.toolbar().device).toBe(null);
+                expect(store.toolbar().orientation).toBe(null);
 
                 expect(store.viewParams()).toEqual({
                     device: null,

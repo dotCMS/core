@@ -11,9 +11,9 @@ import { withWorkflow } from './withWorkflow';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
-import { UVEState } from '../../models';
+import { Orientation, UVEState } from '../../models';
 
 const pageParams: DotPageApiParams = {
     url: 'new-url',
@@ -31,7 +31,30 @@ const initialState: UVEState = {
     pageParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    isClientReady: false
+    isClientReady: false,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested toolbar state
+    toolbar: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const uveStoreMock = signalStore(

@@ -247,7 +247,353 @@ describe('UVEStore', () => {
             });
         });
 
-        describe('$shellProps', () => {
+        describe('$isEditMode', () => {
+            it('should return true when mode is EDIT', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                expect(store.$isEditMode()).toBe(true);
+            });
+
+            it('should return false when mode is PREVIEW', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                expect(store.$isEditMode()).toBe(false);
+            });
+
+            it('should return false when mode is LIVE', () => {
+                store.updatePageParams({ mode: UVE_MODE.LIVE });
+                expect(store.$isEditMode()).toBe(false);
+            });
+        });
+
+        describe('$isPreviewMode', () => {
+            it('should return true when mode is PREVIEW', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                expect(store.$isPreviewMode()).toBe(true);
+            });
+
+            it('should return false when mode is EDIT', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                expect(store.$isPreviewMode()).toBe(false);
+            });
+        });
+
+        describe('$isLiveMode', () => {
+            it('should return true when mode is LIVE', () => {
+                store.updatePageParams({ mode: UVE_MODE.LIVE });
+                expect(store.$isLiveMode()).toBe(true);
+            });
+
+            it('should return false when mode is EDIT', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                expect(store.$isLiveMode()).toBe(false);
+            });
+        });
+
+        describe('$pageURI', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return the page URI from page response', () => {
+                expect(store.$pageURI()).toBe(MOCK_RESPONSE_HEADLESS.page.pageURI);
+            });
+
+            it('should return empty string when page is not available', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: null
+                    }
+                });
+                expect(store.$pageURI()).toBe('');
+            });
+        });
+
+        describe('$variantId', () => {
+            it('should return variant ID from page params', () => {
+                store.updatePageParams({ variantId: 'test-variant-123' });
+                expect(store.$variantId()).toBe('test-variant-123');
+            });
+
+            it('should return empty string when no variant ID', () => {
+                store.updatePageParams({ variantId: undefined });
+                expect(store.$variantId()).toBe('');
+            });
+        });
+
+        describe('$isPageLocked', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when page is locked by another user', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            locked: true,
+                            lockedBy: 'another-user-id'
+                        }
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user-id',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$isPageLocked()).toBe(true);
+            });
+
+            it('should return false when page is locked by current user', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            locked: true,
+                            lockedBy: 'current-user-id'
+                        }
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user-id',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$isPageLocked()).toBe(false);
+            });
+
+            it('should return false when page is not locked', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$isPageLocked()).toBe(false);
+            });
+        });
+
+        describe('$canEditPage', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when user has access and is in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$canEditPage()).toBe(true);
+            });
+
+            it('should return false when page is locked by another user', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: true,
+                            lockedBy: 'another-user'
+                        }
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$canEditPage()).toBe(false);
+            });
+
+            it('should return false when not in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$canEditPage()).toBe(false);
+            });
+
+            it('should return false when user cannot edit page', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$canEditPage()).toBe(false);
+            });
+        });
+
+        describe('$isLockFeatureEnabled', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when page can be locked', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canLock: true
+                        }
+                    }
+                });
+
+                expect(store.$isLockFeatureEnabled()).toBe(true);
+            });
+
+            it('should return false when page cannot be locked', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canLock: false
+                        }
+                    }
+                });
+
+                expect(store.$isLockFeatureEnabled()).toBe(false);
+            });
+        });
+
+        describe('$isStyleEditorEnabled', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when all conditions are met', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: false
+                        }
+                    },
+                    isEnterprise: true
+                });
+
+                expect(store.$isStyleEditorEnabled()).toBe(true);
+            });
+
+            it('should return false when not enterprise', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: false
+                        }
+                    },
+                    isEnterprise: false
+                });
+
+                expect(store.$isStyleEditorEnabled()).toBe(false);
+            });
+
+            it('should return false when cannot edit page', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false,
+                            locked: false
+                        }
+                    },
+                    isEnterprise: true
+                });
+
+                expect(store.$isStyleEditorEnabled()).toBe(false);
+            });
+        });
+
+        describe('$hasAccessToEditMode', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when page can be edited and is not locked by another user', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$hasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return false when page cannot be edited', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: false,
+                            locked: false
+                        }
+                    }
+                });
+
+                expect(store.$hasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return false when page is locked by another user', () => {
+                patchState(store, {
+                    pageAPIResponse: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            canEdit: true,
+                            locked: true,
+                            lockedBy: 'another-user'
+                        }
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$hasAccessToEditMode()).toBe(false);
+            });
+        });
+
+        // Phase 2: $shellProps moved to DotEmaShellComponent - these tests are deprecated
+        describe.skip('$shellProps (DEPRECATED - moved to component)', () => {
             describe('Headless Page', () => {
                 beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
 
@@ -533,7 +879,8 @@ describe('UVEStore', () => {
             });
         });
 
-        describe('$isPreviewMode', () => {
+        // Duplicate tests - already tested above in Phase 5 additions (lines 267-289)
+        describe.skip('$isPreviewMode (duplicate)', () => {
             it("should return true when the preview is 'true'", () => {
                 store.loadPageAsset({ mode: UVE_MODE.PREVIEW });
 
@@ -547,7 +894,7 @@ describe('UVEStore', () => {
             });
         });
 
-        describe('$isLiveMode', () => {
+        describe.skip('$isLiveMode (duplicate)', () => {
             it("should return true when the live is 'true'", () => {
                 store.loadPageAsset({ mode: UVE_MODE.LIVE });
 

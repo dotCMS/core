@@ -37,13 +37,17 @@ function triggerTabChange(
  * Mock UVEStore with default test values
  * Note: palette.currentTab and setPaletteTab removed - now using local signalState
  */
+const mockActiveContentlet = signal(null);
 const mockUVEStore = {
     $pageURI: signal('/test/page/path'),
     $languageId: signal(1),
     $variantId: signal('DEFAULT'),
     $isStyleEditorEnabled: signal(false),
     $styleSchema: signal(undefined),
-    activeContentlet: signal(null), // Added for effect() in component
+    // Phase 3: editor() method returns editor state with activeContentlet
+    editor: signal({
+        activeContentlet: mockActiveContentlet()
+    }),
     pageAPIResponse: signal(null) // Added for child DotRowReorderComponent
 };
 
@@ -66,7 +70,9 @@ describe('DotUvePaletteComponent', () => {
         mockUVEStore.$variantId.set('DEFAULT');
         mockUVEStore.$isStyleEditorEnabled.set(false);
         mockUVEStore.$styleSchema.set(undefined);
-        mockUVEStore.activeContentlet.set(null); // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
+        // Reset activeContentlet to prevent auto-switch to STYLE_EDITOR
+        mockActiveContentlet.set(null);
+        mockUVEStore.editor.set({ activeContentlet: null });
 
         spectator = createComponent({
             providers: [mockProvider(UVEStore, mockUVEStore)]

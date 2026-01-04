@@ -40,6 +40,7 @@ import {
     DotLicenseService,
     DotMessageDisplayService,
     DotMessageService,
+    DotPageLayoutService,
     DotPersonalizeService,
     DotPropertiesService,
     DotRouterService,
@@ -87,6 +88,7 @@ import {
 
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
@@ -155,6 +157,7 @@ const createRouting = () =>
             ConfirmationService,
             MessageService,
             UVEStore,
+            DotPaletteListStore,
             DotFavoritePageService,
             DotESContentService,
             DotSessionStorageService,
@@ -242,7 +245,8 @@ const createRouting = () =>
             {
                 provide: WINDOW,
                 useValue: window
-            }
+            },
+            mockProvider(DotPageLayoutService)
         ],
         providers: [
             {
@@ -1981,7 +1985,7 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragEnter);
 
-                        expect(store.state()).toBe(EDITOR_STATE.IDLE);
+                        expect(store.editor().state).toBe(EDITOR_STATE.IDLE);
                         expect(setEditorDragItemSpy).not.toHaveBeenCalled();
                         expect(setEditorStateSpy).not.toHaveBeenCalled();
                     });
@@ -3225,10 +3229,11 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    // Mock the store state for inline editing
-                    jest.spyOn(store, 'state').mockReturnValue(
-                        isInlineEditing ? EDITOR_STATE.INLINE_EDITING : EDITOR_STATE.IDLE
-                    );
+                    // Mock the store state for inline editing (Phase 3: nested editor state)
+                    jest.spyOn(store, 'editor').mockReturnValue({
+                        ...store.editor(),
+                        state: isInlineEditing ? EDITOR_STATE.INLINE_EDITING : EDITOR_STATE.IDLE
+                    });
 
                     return mockEvent;
                 };
@@ -3239,7 +3244,7 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, 'state').mockReturnValue(EDITOR_STATE.IDLE);
+                    jest.spyOn(store, 'editor').mockReturnValue({ ...store.editor(), state: EDITOR_STATE.IDLE });
 
                     spectator.component.handleInternalNav(mockEvent);
 
@@ -3351,7 +3356,7 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, 'state').mockReturnValue(EDITOR_STATE.IDLE);
+                    jest.spyOn(store, 'editor').mockReturnValue({ ...store.editor(), state: EDITOR_STATE.IDLE });
 
                     spectator.component.handleInternalNav(mockEvent);
 
