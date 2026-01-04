@@ -1,5 +1,6 @@
-@let preview = $isPreviewMode();
-@let live = $isLiveMode();
+@let mode = $mode();
+@let preview = mode === UVE_MODE.PREVIEW;
+@let live = mode === UVE_MODE.LIVE;
 @let runningExperiment = $runningExperiment();
 
 <p-toolbar styleClass="uve-toolbar">

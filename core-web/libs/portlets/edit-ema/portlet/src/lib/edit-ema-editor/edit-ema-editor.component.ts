@@ -234,13 +234,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
     protected readonly $showDialogs = computed<boolean>(() => {
-        const canEditPage = this.uveStore.$canEditPage();
+        const canEditPage = this.uveStore.$canEditPageContent();
         const isEditState = this.uveStore.toolbar().isEditState;
         return canEditPage && isEditState;
     });
 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
-        const canEditPage = this.uveStore.$canEditPage();
+        const canEditPage = this.uveStore.$canEditPageContent();
         const isEditState = this.uveStore.toolbar().isEditState;
         const isEnterprise = this.uveStore.isEnterprise();
         return canEditPage && isEditState && isEnterprise;
@@ -248,7 +248,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $iframeProps = computed(() => {
         // Use it to create dependencies to the pageAPIResponse
-        const params = this.uveStore.pageParams();
+        const mode = this.uveStore.$mode();
         const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
         const editor = this.uveStore.editor();
@@ -256,7 +256,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const state = editor.state;
         const device = toolbar.device;
 
-        const isEditMode = params?.mode === UVE_MODE.EDIT;
+        const isEditMode = mode === UVE_MODE.EDIT;
         const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
         const isLoading = !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
         const { dragIsActive } = getEditorStates(state);
@@ -271,17 +271,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $progressBar = computed<boolean>(() => {
-        const params = this.uveStore.pageParams();
+        const mode = this.uveStore.$mode();
         const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
 
-        const isEditMode = params?.mode === UVE_MODE.EDIT;
+        const isEditMode = mode === UVE_MODE.EDIT;
         const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
         return !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
     });
 
     protected readonly $dropzone = computed(() => {
-        const canEditPage = this.uveStore.$canEditPage();
+        const canEditPage = this.uveStore.$canEditPageContent();
         const editor = this.uveStore.editor();
         const state = editor.state;
         const bounds = editor.bounds;
@@ -312,7 +312,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             : null;
     });
 
-    readonly $isPreviewMode = this.uveStore.$isPreviewMode;
+    readonly $mode = this.uveStore.$mode;
 
     // Phase 4.3: Component-level computed (was in withEditor with cross-feature dependency)
     readonly $editorContentStyles = computed<Record<string, string>>(() => {
@@ -340,6 +340,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $isDragging = this.uveStore.$isDragging;
 
     readonly UVE_STATUS = UVE_STATUS;
+    readonly UVE_MODE = UVE_MODE;
     readonly DotCMSClazzes = DotCMSClazzes;
 
     readonly $paletteClass = computed(() => {

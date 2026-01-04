@@ -58,7 +58,7 @@ export class DotUvePaletteComponent {
     readonly $pagePath = computed(() => this.uveStore.$pageURI());
     readonly $languageId = computed(() => this.uveStore.$languageId());
     readonly $variantId = computed(() => this.uveStore.$variantId());
-    readonly $showStyleEditorTab = computed(() => this.uveStore.$isStyleEditorEnabled());
+    readonly $showStyleEditorTab = computed(() => this.uveStore.$canEditStyles());
     readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => this.uveStore.$styleSchema());
 
     /**

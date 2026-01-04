@@ -92,6 +92,9 @@ export class DotUveToolbarComponent {
     readonly #deviceService = inject(DotDevicesService);
     readonly #router = inject(Router);
 
+    // Expose enum for template usage
+    readonly UVE_MODE = UVE_MODE;
+
     // Component builds its own toolbar props locally (Phase 2.3: Move view models from store to components)
     protected readonly $bookmarksUrl = computed<string>(() => {
         const params = this.#store.pageParams();
@@ -104,9 +107,8 @@ export class DotUveToolbarComponent {
         });
     });
 
-    protected readonly $currentLanguage = computed(() => {
-        return this.#store.viewAs().language;
-    });
+    // Use store's $currentLanguage instead of redefining it
+    protected readonly $currentLanguage = this.#store.$currentLanguage;
 
     protected readonly $runningExperiment = computed(() => {
         const experiment = this.#store.experiment?.();
@@ -116,9 +118,7 @@ export class DotUveToolbarComponent {
     });
 
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
-    readonly $isEditMode = this.#store.$isEditMode;
-    readonly $isPreviewMode = this.#store.$isPreviewMode;
-    readonly $isLiveMode = this.#store.$isLiveMode;
+    readonly $mode = this.#store.$mode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;

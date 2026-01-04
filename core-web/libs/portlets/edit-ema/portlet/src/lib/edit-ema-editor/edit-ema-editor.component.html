@@ -14,7 +14,7 @@
         data-testId="results-seo-tool" />
 }
 
-@if (uveStore.$canEditPage()) {
+@if (uveStore.$canEditPageContent()) {
     <dot-uve-palette
         [ngClass]="$paletteClass()"
         (onNodeSelect)="handlePaletteNodeSelect($event)"
@@ -25,7 +25,7 @@
     class="editor-content"
     #editorContent
     [ngStyle]="$editorContentStyles()"
-    [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
+    [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
     <p-toolbar
         styleClass="browser-toolbar"
@@ -36,7 +36,7 @@
             zIndex: 1000
         }">
         <ng-template pTemplate="start">
-            @if (uveStore.$isEditMode()) {
+            @if (uveStore.$mode() === UVE_MODE.EDIT) {
                 <button
                     pButton
                     type="button"
@@ -98,7 +98,7 @@
             </div>
         </ng-template>
         <ng-template pTemplate="end">
-            @if (uveStore.$isEditMode()) {
+            @if (uveStore.$mode() === UVE_MODE.EDIT) {
                 <button
                     pButton
                     type="button"
@@ -172,7 +172,7 @@
                                 [contentletArea]="$contentArea"
                                 [isEnterprise]="uveStore.isEnterprise()"
                                 [allowContentDelete]="$allowContentDelete()"
-                                [showStyleEditorOption]="uveStore.$isStyleEditorEnabled()"
+                                [showStyleEditorOption]="uveStore.$canEditStyles()"
                                 data-testId="contentlet-tools" />
                         }
                         @if (!$toggleLockOptions()?.showOverlay && dropzone) {
@@ -194,7 +194,7 @@
     </div>
 </div>
 
-@if (uveStore.$isEditMode()) {
+@if (uveStore.$mode() === UVE_MODE.EDIT) {
     <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen">
         <dot-uve-contentlet-quick-edit
             [data]="$contentletEditData()"

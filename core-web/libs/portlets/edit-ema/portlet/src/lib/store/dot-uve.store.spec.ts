@@ -199,48 +199,73 @@ describe('UVEStore', () => {
         describe('$canEditLayout', () => {
             beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
 
-            it('should return true when page canEdit is true', () => {
+            it('should return true when has permission and in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            canEdit: true
-                        }
-                    }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
                 });
                 expect(store.$canEditLayout()).toBe(true);
             });
 
-            it('should return true when template is drawed', () => {
+            it('should return false when not in EDIT mode even with permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            canEdit: false
-                        },
-                        template: {
-                            ...MOCK_RESPONSE_HEADLESS.template,
-                            drawed: true
-                        }
-                    }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
                 });
-                expect(store.$canEditLayout()).toBe(true);
+                expect(store.$canEditLayout()).toBe(false);
             });
 
-            it('should return false when both page canEdit and template drawed are false', () => {
+            it('should return false when page is locked', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            canEdit: false
-                        },
-                        template: {
-                            ...MOCK_RESPONSE_HEADLESS.template,
-                            drawed: false
-                        }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'other-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user'
+                    }
+                });
+                expect(store.$canEditLayout()).toBe(false);
+            });
+
+            it('should return false when experiment is running', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getRunningExperimentMock()
+                });
+                expect(store.$canEditLayout()).toBe(false);
+            });
+
+            it('should return false when no permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false,
+                        locked: false
+                    },
+                    template: {
+                        ...MOCK_RESPONSE_HEADLESS.template,
+                        drawed: false
                     }
                 });
                 expect(store.$canEditLayout()).toBe(false);
@@ -285,6 +310,247 @@ describe('UVEStore', () => {
             it('should return false when mode is EDIT', () => {
                 store.updatePageParams({ mode: UVE_MODE.EDIT });
                 expect(store.$isLiveMode()).toBe(false);
+            });
+        });
+
+        describe('$mode', () => {
+            it('should return EDIT when mode is EDIT', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                expect(store.$mode()).toBe(UVE_MODE.EDIT);
+            });
+
+            it('should return PREVIEW when mode is PREVIEW', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                expect(store.$mode()).toBe(UVE_MODE.PREVIEW);
+            });
+
+            it('should return LIVE when mode is LIVE', () => {
+                store.updatePageParams({ mode: UVE_MODE.LIVE });
+                expect(store.$mode()).toBe(UVE_MODE.LIVE);
+            });
+
+            it('should return UNKNOWN when mode is undefined', () => {
+                store.updatePageParams({ mode: undefined });
+                expect(store.$mode()).toBe(UVE_MODE.UNKNOWN);
+            });
+        });
+
+        describe('$hasPermissionToEditLayout', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return false when page is locked', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'other-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user'
+                    }
+                });
+                expect(store.$hasPermissionToEditLayout()).toBe(false);
+            });
+
+            it('should return false when experiment is running', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getRunningExperimentMock()
+                });
+                expect(store.$hasPermissionToEditLayout()).toBe(false);
+            });
+
+            it('should return false when experiment is scheduled', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getScheduleExperimentMock()
+                });
+                expect(store.$hasPermissionToEditLayout()).toBe(false);
+            });
+
+            it('should return true when all conditions met (canEdit)', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$hasPermissionToEditLayout()).toBe(true);
+            });
+
+            it('should return true when template is drawed', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false,
+                        locked: false
+                    },
+                    template: {
+                        ...MOCK_RESPONSE_HEADLESS.template,
+                        drawed: true
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$hasPermissionToEditLayout()).toBe(true);
+            });
+        });
+
+        describe('$hasPermissionToEditStyles', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return false when page is locked', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'other-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user'
+                    }
+                });
+                expect(store.$hasPermissionToEditStyles()).toBe(false);
+            });
+
+            it('should return false when experiment is running', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getRunningExperimentMock()
+                });
+                expect(store.$hasPermissionToEditStyles()).toBe(false);
+            });
+
+            it('should return true when all conditions met', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$hasPermissionToEditStyles()).toBe(true);
+            });
+        });
+
+        describe('$canEditPageContent', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return false when not in EDIT mode even with permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    }
+                });
+                expect(store.$canEditPageContent()).toBe(false);
+            });
+
+            it('should return false when in EDIT mode but no permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false
+                    }
+                });
+                expect(store.$canEditPageContent()).toBe(false);
+            });
+
+            it('should return true when has permission and in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$canEditPageContent()).toBe(true);
+            });
+        });
+
+        describe('$canEditStyles', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when feature enabled, has permission, and in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageType: 1, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$canEditStyles()).toBe(true);
+            });
+
+            it('should return false when not in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                patchState(store, {
+                    pageType: 1, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    }
+                });
+                expect(store.$canEditStyles()).toBe(false);
+            });
+
+            it('should return false when page is locked', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageType: 1, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'other-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user'
+                    }
+                });
+                expect(store.$canEditStyles()).toBe(false);
+            });
+
+            it('should return false when experiment is running', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageType: 1, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getRunningExperimentMock()
+                });
+                expect(store.$canEditStyles()).toBe(false);
             });
         });
 

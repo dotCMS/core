@@ -79,7 +79,7 @@ export function withEditor() {
                 $showContentletControls: computed<boolean>(() => {
                     const editor = store.editor();
                     const contentletPosition = editor.contentArea;
-                    const canEditPage = store.$canEditPage();
+                    const canEditPage = store.$canEditPageContent();
                     const isIdle = editor.state === EDITOR_STATE.IDLE;
 
                     return !!contentletPosition && canEditPage && isIdle;
