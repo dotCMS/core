@@ -41,6 +41,24 @@ import {
 import { PageType, UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
 
+/**
+ * Dependencies interface for withEditor
+ * These are properties from other features that withEditor needs
+ */
+export interface WithEditorDeps {
+    /**
+     * Whether the editor is in edit state (vs device/SEO preview).
+     * Comes from toolbar state.
+     */
+    $isEditState: () => boolean;
+
+    /**
+     * Whether this is an enterprise license.
+     * Used to enable inline editing features.
+     */
+    isEnterprise: () => boolean;
+}
+
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
@@ -53,10 +71,13 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
  * Phase 3.2: Add computed and methods to handle the Editor UI
  * Editor state is now nested under store.editor()
  *
+ * Phase 4: Refactored to accept explicit dependencies via factory parameter pattern.
+ * This eliminates direct cross-feature state access.
+ *
  * @export
  * @return {*}
  */
-export function withEditor() {
+export function withEditor(deps: WithEditorDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
@@ -123,14 +144,14 @@ export function withEditor() {
                         code: store.page()?.rendered,
                         pageType: store.pageType(),
                         enableInlineEdit:
-                            store.toolbar().isEditState && untracked(() => store.isEnterprise())
+                            deps.$isEditState() && untracked(() => deps.isEnterprise())
                     };
                 }),
                 $pageRender: computed<string>(() => {
                     return store.page()?.rendered;
                 }),
                 $enableInlineEdit: computed<boolean>(() => {
-                    return store.toolbar().isEditState && untracked(() => store.isEnterprise());
+                    return deps.$isEditState() && untracked(() => deps.isEnterprise());
                 }),
                 $editorIsInDraggingState: computed<boolean>(() => {
                     return store.editor().state === EDITOR_STATE.DRAGGING;

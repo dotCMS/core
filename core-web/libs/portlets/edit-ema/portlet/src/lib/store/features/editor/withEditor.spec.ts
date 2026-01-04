@@ -96,7 +96,10 @@ export const uveStoreMock = signalStore(
             $canEditPage: computed(() => mockCanEditPage())
         };
     }),
-    withEditor()
+    withEditor({
+        $isEditState: () => true,  // Mock: editor is in edit state by default
+        isEnterprise: () => true   // Mock: enterprise license enabled by default
+    })
 );
 
 describe('withEditor', () => {
