@@ -248,6 +248,30 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 
 **Result:** Responsive preview (device viewport switching) now works correctly with zoom functionality enabled.
 
+#### 8. Feature Flags Breaking Panels and Contentlet Selection
+**Issue:** When feature flags for lock and show style editor are turned on, the panels and "select a contentlet" functionality is not working.
+
+**Action Needed:**
+- [ ] Investigate which feature flags are causing the issue (lock flag, show style editor flag)
+- [ ] Check if panels are properly initialized when feature flags are enabled
+- [ ] Verify contentlet selection state management with feature flags active
+- [ ] Test interaction between feature flags and panel visibility/functionality
+- [ ] Fix panel rendering and contentlet selection when flags are enabled
+
+#### 9. Quick Editor Form Not Showing on Contentlet Click
+**Issue:** When clicking a contentlet, the quick editor form doesn't show. This requires a UX decision on the expected behavior.
+
+**Action Needed:**
+- [ ] **UX Decision Required:** Determine expected behavior when clicking a contentlet
+  - Should quick editor form auto-open on click?
+  - Should it open in the right sidebar or as an overlay?
+  - What triggers the quick editor vs full editor?
+- [ ] Investigate why quick editor form is not triggering on contentlet click
+- [ ] Check if form opening logic is properly wired to contentlet selection event
+- [ ] Verify right sidebar state management when contentlet is selected
+- [ ] Implement quick editor form display based on UX decision
+- [ ] Test user flow: click contentlet → see form → edit → save/cancel
+
 ---
 
 ## What's Missing
@@ -295,6 +319,8 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Form editing
 - [ ] Template changes
 - [ ] Device/persona switching
+- [ ] **Feature flags with lock and style editor** - Test panels and contentlet selection (see Known Issues #8)
+- [ ] **Quick editor form on contentlet click** - Verify form opens correctly (see Known Issues #9)
 
 ### 3. Documentation
 - [ ] JSDoc comments for service methods
@@ -342,6 +368,14 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Decide on headless page support strategy
   - Implement or disable features accordingly
   - Add user messaging for unsupported scenarios
+- [ ] **Fix feature flags breaking panels** (see "Known Issues to Address" section above)
+  - Fix panel initialization when lock and style editor flags are enabled
+  - Fix contentlet selection with feature flags active
+  - Test all feature flag combinations
+- [ ] **Fix quick editor form on contentlet click** (see "Known Issues to Address" section above)
+  - Make UX decision on expected behavior
+  - Implement quick editor form display
+  - Verify right sidebar integration
 
 ### 6. Polish
 - [ ] Error handling in services
@@ -540,6 +574,20 @@ These issues **must** be fixed before production:
 
 ---
 
+#### 5. Feature Flags Breaking Panels and Contentlet Selection
+**Issue:** When feature flags for lock and show style editor are turned on, the panels and "select a contentlet" functionality is not working.
+
+**Action Items:**
+- [ ] Investigate which feature flags are causing the issue (lock flag, show style editor flag)
+- [ ] Check if panels are properly initialized when feature flags are enabled
+- [ ] Verify contentlet selection state management with feature flags active
+- [ ] Test interaction between feature flags and panel visibility/functionality
+- [ ] Fix panel rendering and contentlet selection when flags are enabled
+
+**Impact:** Core functionality broken when feature flags are enabled - blocking release if these flags are required.
+
+---
+
 ### 🟠 HIGH PRIORITY (Should Fix Before Release)
 
 #### 5. Code Architecture Cleanup
@@ -593,6 +641,24 @@ These issues **must** be fixed before production:
 - All new service error messages
 
 **Impact:** Product not usable in non-English locales.
+
+---
+
+#### 8. Quick Editor Form Not Showing on Contentlet Click
+**Issue:** When clicking a contentlet, the quick editor form doesn't show. This requires a UX decision on the expected behavior.
+
+**Action Items:**
+- [ ] **UX Decision Required:** Determine expected behavior when clicking a contentlet
+  - Should quick editor form auto-open on click?
+  - Should it open in the right sidebar or as an overlay?
+  - What triggers the quick editor vs full editor?
+- [ ] Investigate why quick editor form is not triggering on contentlet click
+- [ ] Check if form opening logic is properly wired to contentlet selection event
+- [ ] Verify right sidebar state management when contentlet is selected
+- [ ] Implement quick editor form display based on UX decision
+- [ ] Test user flow: click contentlet → see form → edit → save/cancel
+
+**Impact:** Primary content editing flow broken - users cannot edit contentlets via quick editor.
 
 ---
 
