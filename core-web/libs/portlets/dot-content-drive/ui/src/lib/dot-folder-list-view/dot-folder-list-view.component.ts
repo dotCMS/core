@@ -45,7 +45,7 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
-
+    styleUrls: ['./dot-folder-list-view.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'w-full h-full min-h-0 block' }
 })
@@ -168,26 +168,9 @@ export class DotFolderListViewComponent implements OnInit {
     );
 
     /**
-     * Computed style class for the table.
-     *
-     * @type {ComputedSignal<string>}
-     * @alias styleClass
-     */
-    protected readonly $styleClass = computed(() =>
-        this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
-    );
-
-    /**
      * Computed pass-through configuration for empty table.
      */
     protected readonly $ptConfig = computed(() => ({
-        root: { class: 'border-none rounded-none' },
-        tableContainer: {
-            class:
-                this.$items().length === 0
-                    ? 'border-none rounded-none overflow-hidden'
-                    : 'border-none rounded-none'
-        },
         table: {
             style: {
                 'table-layout': 'fixed',

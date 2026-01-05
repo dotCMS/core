@@ -1,7 +1,5 @@
 
 :host ::ng-deep {
-    /* Active drop state - uses :has() which cannot be done with Tailwind */
-    /* PrimeNG v21 changed class name from .p-treenode-content to .p-tree-node-content */
     .p-tree-node-content:has(span.active) {
         pointer-events: none;
         background-color: var(--color-palette-primary-200);
@@ -39,7 +37,7 @@
     }
 }
 
-/* Pulse animation for loading state - @keyframes cannot be done with Tailwind */
+/* Pulse animation for loading state  */
 .pulse-container::before {
     content: '';
     position: absolute;
