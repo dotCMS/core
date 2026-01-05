@@ -89,7 +89,10 @@ export interface PageContextComputed {
      * Takes into account:
      * - Page edit permissions (canEdit)
      * - Running/scheduled experiments (blocks editing)
-     * - Page lock status
+     * - Page lock status (only blocks access when feature flag is disabled)
+     *
+     * When toggle lock feature flag is enabled, always allows access
+     * (user can toggle lock to edit).
      *
      * @public Shared API - safe for all features to access
      */
@@ -228,7 +231,18 @@ export function withPageContext() {
                         DotExperimentStatus.RUNNING,
                         DotExperimentStatus.SCHEDULED
                     ].includes(experiment()?.status);
-                    return isPageEditable && !isExperimentRunning && !$isPageLocked();
+                    
+                    if (!isPageEditable || isExperimentRunning) {
+                        return false;
+                    }
+                    
+                    // When feature flag is enabled, always allow access (user can toggle lock)
+                    if ($isLockFeatureEnabled()) {
+                        return true;
+                    }
+                    
+                    // Legacy behavior: block access if page is locked
+                    return !$isPageLocked();
                 });
 
                 const $hasPermissionToEditLayout = computed(() => {
