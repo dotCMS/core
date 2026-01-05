@@ -30,7 +30,10 @@
     }
 </div>
 
-<dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" class="col-start-2 row-start-2" />
+<dot-content-drive-toolbar
+    (addNewDotAsset)="onAddNewDotAsset()"
+    data-testid="toolbar"
+    class="col-start-2 row-start-2" />
 
 <div
     class="flex flex-col justify-center items-center text-xl font-semibold overflow-hidden transition-all duration-300 ease-in-out border-r border-gray-300 col-start-1 row-start-2 row-span-2"
@@ -42,7 +45,10 @@
         (moveItems)="onMoveItems($event)" />
 </div>
 
-<dot-content-drive-dropzone data-testid="dropzone" (uploadFiles)="resolveFilesUpload($event)" class="overflow-auto col-start-2 row-start-3">
+<dot-content-drive-dropzone
+    data-testid="dropzone"
+    (uploadFiles)="resolveFilesUpload($event)"
+    class="overflow-auto col-start-2 row-start-3">
     <dot-folder-list-view
         [items]="$items()"
         [totalItems]="$totalItems()"
@@ -82,7 +88,8 @@
 }
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
-<div class="flex flex-col justify-center items-center text-xl font-semibold w-0 col-start-3 row-start-2 row-span-2"></div>
+<div
+    class="flex flex-col justify-center items-center text-xl font-semibold w-0 col-start-3 row-start-2 row-span-2"></div>
 <p-dialog
     [visible]="!!$dialog()"
     [header]="$dialog()?.header"
