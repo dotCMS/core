@@ -292,6 +292,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private final static Lazy<Boolean> SET_DEFAULT_VALUES = Lazy.of(()-> Config.getBooleanProperty("CONTENT_API_SET_DEFAULT_VALUES", true));
 
+    /**
+     * Configuration property to control whether to skip throwing FileAssetValidationException
+     * when a file asset is missing its binary field. When set to true, a debug log message
+     * will be written instead of throwing an exception. This can be useful during migration
+     * or bulk operations where some file assets may have missing binaries that need to be
+     * handled gracefully. Default: false (throw exception)
+     */
+    public static final String SKIP_FILE_ASSET_BINARY_VALIDATION = "SKIP_FILE_ASSET_BINARY_VALIDATION";
+
+    private static final Lazy<Boolean> SKIP_FILE_ASSET_BINARY_VALIDATION_FLAG = Lazy.of(() ->
+            Config.getBooleanProperty(SKIP_FILE_ASSET_BINARY_VALIDATION, false));
 
     private  final Lazy<UniqueFieldValidationStrategyResolver> uniqueFieldValidationStrategyResolver;
 
@@ -992,6 +1003,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 .build();
     }
 
+    @Override
+    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles, final int batchSize, final String sortBy)
+            throws DotSecurityException, DotDataException {
+
+        // Apply permissions to query
+        final String queryWithPermissions = applyPermissionsToQuery(luceneQuery, user, respectFrontendRoles);
+
+        // Delegate to factory with the permission-filtered query
+        return contentFactory.createScrollQuery(queryWithPermissions, user, respectFrontendRoles, batchSize, sortBy);
+    }
+
     @CloseDBIfOpened
     @Override
     public List<Contentlet> findContentletsByHost(Host parentHost,
@@ -1565,17 +1588,33 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    /**
+     * Applies permissions and category permissions to a lucene query string.
+     * This method handles admin checks, role loading, and permission clauses.
+     * <p>
+     * <strong>SECURITY NOTE:</strong> This method MUST be called on any query before
+     * passing it to Elasticsearch to ensure proper permission filtering.
+     * </p>
+     *
+     * @param luceneQuery The original lucene query string
+     * @param user The user making the request (required if not respecting frontend roles)
+     * @param respectFrontendRoles Whether to respect frontend roles
+     * @return The query with permissions clauses added
+     * @throws DotSecurityException If user is null and not respecting frontend roles
+     * @throws DotDataException If there's an error loading roles
+     */
+    protected String applyPermissionsToQuery(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
 
-    @Override
-    public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset,
-            String sortBy, User user, boolean respectFrontendRoles)
-            throws DotSecurityException, DotDataException {
-        boolean isAdmin = false;
-        List<Role> roles = new ArrayList<>();
+        // Validate user requirement
         if (user == null && !respectFrontendRoles) {
             throw new DotSecurityException(
                     "You must specify a user if you are not respecting frontend roles");
         }
+
+        // Check if user is admin
+        boolean isAdmin = false;
+        List<Role> roles = new ArrayList<>();
         if (user != null) {
             if (!APILocator.getRoleAPI()
                     .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
@@ -1584,13 +1623,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        final StringBuffer buffy = new StringBuffer(luceneQuery);
 
-        // Permissions in the query
-        if (!isAdmin) {
-            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
-            addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+        // If admin, return query unchanged
+        if (isAdmin) {
+            return luceneQuery;
         }
+
+        // Apply permissions
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
+        addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+        addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
+
+        return buffy.toString();
+    }
+
+    @Override
+    public List<ContentletSearch> searchIndex(String luceneQuery, int limit, int offset,
+            String sortBy, User user, boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+
+        // Apply permissions to query
+        final String queryWithPermissions = applyPermissionsToQuery(luceneQuery, user, respectFrontendRoles);
 
         if (UtilMethods.isSet(sortBy) && sortBy.trim().equalsIgnoreCase("random")) {
             sortBy = "random";
@@ -1601,7 +1654,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (limit <= MAX_LIMIT) {
-            final SearchHits searchHits = contentFactory.indexSearch(buffy.toString(), limit,
+            final SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
                     offset, sortBy);
             final PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
             list.setTotalResults(searchHits.getTotalHits().value);
@@ -1623,7 +1676,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
             return list;
         } else {
-            return contentFactory.indexSearchScroll(buffy.toString(), sortBy);
+            return contentFactory.indexSearchScroll(queryWithPermissions, sortBy);
         }
 
     }
@@ -5993,10 +6046,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         final String binaryNode =
                                 contentletRaw.getInode() != null ? contentletRaw.getInode()
                                         : BLANK;
-                        throw new FileAssetValidationException(
-                                "Unable to validate field: " + FileAssetAPI.BINARY_FIELD
-                                        + " identifier: " + binaryIdentifier
-                                        + " inode: " + binaryNode);
+
+                        if (SKIP_FILE_ASSET_BINARY_VALIDATION_FLAG.get()) {
+                            Logger.debug(this,
+                                    "Missing binary field " + FileAssetAPI.BINARY_FIELD
+                                            + " for identifier: " + binaryIdentifier
+                                            + ", inode: " + binaryNode);
+                        } else {
+                            throw new FileAssetValidationException(
+                                    "Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                            + " identifier: " + binaryIdentifier
+                                            + " inode: " + binaryNode);
+                        }
                     } else {
                         //We no longer use the old BinaryField to recover the file name.
                         //From now on we'll recover such value from the field "fileName" presented on the screen.

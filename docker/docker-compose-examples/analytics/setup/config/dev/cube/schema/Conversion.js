@@ -6,21 +6,23 @@
 cube('Conversion', {
     sql: `
         WITH conversion AS (
-            SELECT 
-                customer_id,
-                cluster_id,
-                title as conversion_name,
-                context_site_id,
-                SUM(daily_total) AS total,
-                max(day) as day
-            FROM content_events_counter
-            WHERE event_type = 'conversion' AND
-                ${FILTER_PARAMS.Conversion.customerId.filter('customer_id')} AND (
-                ${FILTER_PARAMS.Conversion.clusterId ? FILTER_PARAMS.Conversion.clusterId.filter('cluster_id') : '1=1'}
-                   OR (${FILTER_PARAMS.Conversion.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
-                ${FILTER_PARAMS.Conversion.day.filter('day')} AND
-                ${FILTER_PARAMS.Conversion.conversionName.filter('conversion_name')}
-            GROUP BY customer_id, cluster_id,title, context_site_id),
+            SELECT customer_id,
+                   cluster_id,
+                   title as conversion_name,
+                   context_site_id,
+                   max(day) as day,
+                   SUM(daily_total) AS total
+            FROM (
+                    SELECT *
+                    FROM content_events_counter
+                    WHERE event_type = 'conversion' AND 
+                        ${FILTER_PARAMS.Conversion.customerId.filter('customer_id')} AND (
+                        ${FILTER_PARAMS.Conversion.clusterId ? FILTER_PARAMS.Conversion.clusterId.filter('cluster_id') : '1=1'}
+                           OR (${FILTER_PARAMS.Conversion.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
+                        ${FILTER_PARAMS.Conversion.day.filter('day')} AND
+                        ${FILTER_PARAMS.Conversion.conversionName.filter('conversion_name')}
+                )
+            GROUP BY customer_id, cluster_id, title, context_site_id),
         top_attributed_content AS (
             SELECT
                 customer_id,
@@ -68,19 +70,24 @@ cube('Conversion', {
                ${FILTER_PARAMS.Conversion.conversionName.filter('conversion_name')}
         )
         SELECT
-            customer_id,
-            cluster_id,
-            conversion_name,
-            context_site_id,
-            total as total_conversion,
-            ((total_conversion * 100)/ (SELECT total FROM total_conversion)) as conv_rate,
+            conversion.customer_id,
+            conversion.cluster_id,
+            conversion.conversion_name,
+            conversion.context_site_id,
+            conversion.total as total_conversion,
+            ((conversion.total * 100)/ total_conversion.total ) as conv_rate,
             day,
             arrayMap(
-                x -> mapUpdate(x, map('conv_rate', toString((total_conversion* 100) / toInt64(x['conversions'])))),
-                top_attributed_content
+                x -> mapUpdate(x, map('conv_rate', toString((toInt64(x['conversions'])* 100) / conversion.total))),
+            top_attributed_content.top_attributed_content
             ) as top_attributed_content
-        FROM conversion INNER JOIN top_attributed_content
-            ON conversion.conversion_name = top_attributed_content.conversion_name
+        FROM conversion 
+            LEFT JOIN total_conversion ON 1 = 1
+            LEFT JOIN top_attributed_content
+                ON conversion.customer_id = top_attributed_content.customer_id AND
+                conversion.cluster_id = top_attributed_content.cluster_id AND
+                conversion.conversion_name = top_attributed_content.conversion_name AND
+                conversion.context_site_id = top_attributed_content.context_site_id 
     `,
     dimensions: {
         conversionName: {

@@ -10422,10 +10422,30 @@ paths:
             schema:
               $ref: "#/components/schemas/PageContainerForm"
       responses:
-        default:
+        "200":
           content:
-            application/json: {}
-          description: default response
+            application/json:
+              example:
+                entity:
+                - containerId: some-container-id
+                  contentletId: some-contentlet-id
+                  styleProperties:
+                    color: "#FF0000"
+                    margin: 10px
+                    width: 100px
+                  uuid: some-uuid
+                - containerId: other-container-id
+                  contentletId: other-contentlet-id
+                  styleProperties: null
+                  uuid: other-uuid
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                pagination: null
+                permissions: []
+          description: Contentlets saved successfully
+        "400":
+          description: Bad request or data exception
       tags:
       - Page
   /v1/page/{pageId}/content/tree:
@@ -10701,6 +10721,57 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Get permissions by permission type
+      tags:
+      - Permissions
+  /v1/permissions/user/{userId}:
+    get:
+      description: "Retrieves permissions for a user's individual role, organized\
+        \ by assets (hosts and folders). Admin users can view any user's permissions.\
+        \ Non-admin users can only view their own permissions."
+      operationId: getUserPermissions
+      parameters:
+      - description: User ID or email address
+        example: dotcms.org.1
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      - description: Page number (1-based)
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: User permissions retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - non-admin user attempted to view another user's
+            permissions
+        "404":
+          content:
+            application/json: {}
+          description: User not found
+      summary: Get user permissions
       tags:
       - Permissions
   /v1/permissions/user/{userId}/asset/{assetId}:
@@ -14089,36 +14160,6 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Find an user
-      tags:
-      - Users
-  /v1/users/{userId}/permissions:
-    get:
-      description: "Retrieves permissions for a user's individual role, organized\
-        \ by asset type and permission scope"
-      operationId: getUserPermissions
-      parameters:
-      - description: User ID or email address
-        in: path
-        name: userId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityUserPermissionsView"
-          description: User permissions retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - invalid user id
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - insufficient permissions
-      summary: Get user permissions
       tags:
       - Users
   /v1/variants:
@@ -25238,31 +25279,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/UsageSummary"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityUserPermissionsView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
         errors:
           type: array
           items:

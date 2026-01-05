@@ -11,6 +11,7 @@ describe('styleEditorField', () => {
     describe('input', () => {
         it('should create an input field with number type and number defaultValue', () => {
             const config = {
+                id: 'font-size',
                 label: 'Font Size',
                 inputType: 'number' as const,
                 placeholder: 'Enter font size',
@@ -30,6 +31,7 @@ describe('styleEditorField', () => {
 
         it('should create an input field with text type and string defaultValue', () => {
             const config = {
+                id: 'font-name',
                 label: 'Font Name',
                 inputType: 'text' as const,
                 placeholder: 'Enter font name',
@@ -49,6 +51,7 @@ describe('styleEditorField', () => {
 
         it('should create an input field without defaultValue', () => {
             const config = {
+                id: 'font-size',
                 label: 'Font Size',
                 inputType: 'number' as const,
                 placeholder: 'Enter font size'
@@ -65,6 +68,7 @@ describe('styleEditorField', () => {
 
         it('should create an input field without placeholder', () => {
             const config = {
+                id: 'font-size',
                 label: 'Font Size',
                 inputType: 'number' as const,
                 defaultValue: 16
@@ -81,6 +85,7 @@ describe('styleEditorField', () => {
 
         it('should preserve all properties from config', () => {
             const config = {
+                id: 'custom-field',
                 label: 'Custom Field',
                 inputType: 'text' as const,
                 placeholder: 'Custom placeholder',
@@ -97,28 +102,9 @@ describe('styleEditorField', () => {
     });
 
     describe('dropdown', () => {
-        it('should create a dropdown field with string options', () => {
-            const config = {
-                label: 'Font Family',
-                options: ['Arial', 'Helvetica', 'Times New Roman'],
-                defaultValue: 'Arial',
-                placeholder: 'Select a font'
-            };
-
-            const result = styleEditorField.dropdown(config);
-
-            expect(result).toEqual({
-                type: 'dropdown',
-                ...config
-            });
-            expect(result.type).toBe('dropdown');
-            expect(result.options).toEqual(['Arial', 'Helvetica', 'Times New Roman']);
-            expect(result.defaultValue).toBe('Arial');
-            expect(result.placeholder).toBe('Select a font');
-        });
-
         it('should create a dropdown field with object options', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     { label: 'Light Theme', value: 'light' },
@@ -140,53 +126,26 @@ describe('styleEditorField', () => {
             ]);
         });
 
-        it('should create a dropdown field with mixed string and object options', () => {
-            const config = {
-                label: 'Font Family',
-                options: [
-                    'Arial',
-                    { label: 'Helvetica Neue', value: 'helvetica-neue' },
-                    'Times New Roman'
-                ],
-                defaultValue: 'Arial'
-            };
-
-            const result = styleEditorField.dropdown(config);
-
-            expect(result.options).toEqual([
-                'Arial',
-                { label: 'Helvetica Neue', value: 'helvetica-neue' },
-                'Times New Roman'
-            ]);
-        });
-
         it('should create a dropdown field without defaultValue', () => {
             const config = {
+                id: 'font-family',
                 label: 'Font Family',
-                options: ['Arial', 'Helvetica']
+                options: [
+                    { label: 'Arial', value: 'arial' },
+                    { label: 'Helvetica', value: 'helvetica' }
+                ]
             };
 
             const result = styleEditorField.dropdown(config);
 
             expect(result.defaultValue).toBeUndefined();
         });
-
-        it('should create a dropdown field without placeholder', () => {
-            const config = {
-                label: 'Font Family',
-                options: ['Arial', 'Helvetica'],
-                defaultValue: 'Arial'
-            };
-
-            const result = styleEditorField.dropdown(config);
-
-            expect(result.placeholder).toBeUndefined();
-        });
     });
 
     describe('radio', () => {
         it('should create a radio field with string options', () => {
             const config = {
+                id: 'alignment',
                 label: 'Alignment',
                 options: ['Left', 'Center', 'Right'],
                 defaultValue: 'Left'
@@ -205,6 +164,7 @@ describe('styleEditorField', () => {
 
         it('should create a radio field with object options', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     { label: 'Light', value: 'light' },
@@ -223,14 +183,13 @@ describe('styleEditorField', () => {
 
         it('should create a radio field with options including images', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     {
                         label: 'Light',
                         value: 'light',
-                        imageURL: 'https://example.com/light-theme.png',
-                        width: 100,
-                        height: 60
+                        imageURL: 'https://example.com/light-theme.png'
                     },
                     { label: 'Dark', value: 'dark' }
                 ],
@@ -242,22 +201,19 @@ describe('styleEditorField', () => {
             expect(result.options[0]).toEqual({
                 label: 'Light',
                 value: 'light',
-                imageURL: 'https://example.com/light-theme.png',
-                width: 100,
-                height: 60
+                imageURL: 'https://example.com/light-theme.png'
             });
         });
 
         it('should create a radio field with mixed string and object options', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     {
                         label: 'Light',
                         value: 'light',
-                        imageURL: 'https://example.com/light-theme.png',
-                        width: 100,
-                        height: 60
+                        imageURL: 'https://example.com/light-theme.png'
                     },
                     { label: 'Dark', value: 'dark' },
                     'Auto'
@@ -274,6 +230,7 @@ describe('styleEditorField', () => {
 
         it('should create a radio field without defaultValue', () => {
             const config = {
+                id: 'alignment',
                 label: 'Alignment',
                 options: ['Left', 'Center', 'Right']
             };
@@ -285,6 +242,7 @@ describe('styleEditorField', () => {
 
         it('should handle options with only imageURL', () => {
             const config = {
+                id: 'theme',
                 label: 'Theme',
                 options: [
                     {
@@ -303,137 +261,87 @@ describe('styleEditorField', () => {
                 value: 'light',
                 imageURL: 'https://example.com/light.png'
             });
-            expect(result.options[0]).not.toHaveProperty('width');
-            expect(result.options[0]).not.toHaveProperty('height');
         });
     });
 
     describe('checkboxGroup', () => {
-        it('should create a checkbox group field with string options', () => {
+        it('should create a checkbox group field with new option structure', () => {
             const config = {
-                label: 'Text Decoration',
-                options: ['Underline', 'Overline', 'Line Through'],
-                defaultValue: {
-                    Underline: true,
-                    Overline: false,
-                    'Line Through': false
-                }
-            };
-
-            const result = styleEditorField.checkboxGroup(config);
-
-            expect(result).toEqual({
-                type: 'checkboxGroup',
-                ...config
-            });
-            expect(result.type).toBe('checkboxGroup');
-            expect(result.options).toEqual(['Underline', 'Overline', 'Line Through']);
-            expect(result.defaultValue).toEqual({
-                Underline: true,
-                Overline: false,
-                'Line Through': false
-            });
-        });
-
-        it('should create a checkbox group field with object options', () => {
-            const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [
-                    { label: 'Underline', value: 'underline' },
-                    { label: 'Overline', value: 'overline' },
-                    { label: 'Line Through', value: 'line-through' }
-                ],
-                defaultValue: {
-                    underline: true,
-                    overline: false,
-                    'line-through': false
-                }
-            };
-
-            const result = styleEditorField.checkboxGroup(config);
-
-            expect(result.options).toEqual([
-                { label: 'Underline', value: 'underline' },
-                { label: 'Overline', value: 'overline' },
-                { label: 'Line Through', value: 'line-through' }
-            ]);
-            expect(result.defaultValue).toEqual({
-                underline: true,
-                overline: false,
-                'line-through': false
-            });
-        });
-
-        it('should create a checkbox group field with mixed string and object options', () => {
-            const config = {
-                label: 'Text Decoration',
-                options: [
-                    { label: 'Underline', value: 'underline' },
-                    'Bold',
-                    { label: 'Italic', value: 'italic' }
-                ],
-                defaultValue: {
-                    underline: true,
-                    Bold: false,
-                    italic: true
-                }
-            };
-
-            const result = styleEditorField.checkboxGroup(config);
-
-            expect(result.options).toHaveLength(3);
-            expect(result.defaultValue).toEqual({
-                underline: true,
-                Bold: false,
-                italic: true
-            });
-        });
-
-        it('should create a checkbox group field without defaultValue', () => {
-            const config = {
-                label: 'Text Decoration',
-                options: [
-                    { label: 'Underline', value: 'underline' },
-                    { label: 'Overline', value: 'overline' }
+                    { label: 'Underline', key: 'underline', value: true },
+                    { label: 'Overline', key: 'overline', value: false },
+                    { label: 'Line Through', key: 'line-through', value: false }
                 ]
             };
 
             const result = styleEditorField.checkboxGroup(config);
 
-            expect(result.defaultValue).toBeUndefined();
+            expect(result.options).toEqual([
+                { label: 'Underline', key: 'underline', value: true },
+                { label: 'Overline', key: 'overline', value: false },
+                { label: 'Line Through', key: 'line-through', value: false }
+            ]);
+            expect(result.type).toBe('checkboxGroup');
         });
 
-        it('should handle empty defaultValue object', () => {
+        it('should create a checkbox group field with all options checked', () => {
             const config = {
-                label: 'Text Decoration',
-                options: [{ label: 'Underline', value: 'underline' }],
-                defaultValue: {}
-            };
-
-            const result = styleEditorField.checkboxGroup(config);
-
-            expect(result.defaultValue).toEqual({});
-        });
-
-        it('should handle defaultValue with all options checked', () => {
-            const config = {
+                id: 'text-decoration',
                 label: 'Text Decoration',
                 options: [
-                    { label: 'Underline', value: 'underline' },
-                    { label: 'Overline', value: 'overline' }
-                ],
-                defaultValue: {
-                    underline: true,
-                    overline: true
-                }
+                    { label: 'Underline', key: 'underline', value: true },
+                    { label: 'Overline', key: 'overline', value: true }
+                ]
             };
 
             const result = styleEditorField.checkboxGroup(config);
 
-            expect(result.defaultValue).toEqual({
-                underline: true,
-                overline: true
-            });
+            expect(result.options).toEqual([
+                { label: 'Underline', key: 'underline', value: true },
+                { label: 'Overline', key: 'overline', value: true }
+            ]);
+        });
+
+        it('should create a checkbox group field with all options unchecked', () => {
+            const config = {
+                id: 'text-decoration',
+                label: 'Text Decoration',
+                options: [
+                    { label: 'Underline', key: 'underline', value: false },
+                    { label: 'Overline', key: 'overline', value: false }
+                ]
+            };
+
+            const result = styleEditorField.checkboxGroup(config);
+
+            expect(result.options).toEqual([
+                { label: 'Underline', key: 'underline', value: false },
+                { label: 'Overline', key: 'overline', value: false }
+            ]);
+        });
+
+        it('should create a checkbox group field with mixed checked states', () => {
+            const config = {
+                id: 'type-settings',
+                label: 'Type settings',
+                options: [
+                    { label: 'Bold', key: 'bold', value: true },
+                    { label: 'Italic', key: 'italic', value: false },
+                    { label: 'Underline', key: 'underline', value: true },
+                    { label: 'Strikethrough', key: 'strikethrough', value: false }
+                ]
+            };
+
+            const result = styleEditorField.checkboxGroup(config);
+
+            expect(result.options).toEqual([
+                { label: 'Bold', key: 'bold', value: true },
+                { label: 'Italic', key: 'italic', value: false },
+                { label: 'Underline', key: 'underline', value: true },
+                { label: 'Strikethrough', key: 'strikethrough', value: false }
+            ]);
         });
     });
 });
@@ -452,6 +360,7 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'input',
+                            id: 'font-size',
                             label: 'Font Size',
                             config: {
                                 inputType: 'number',
@@ -472,6 +381,7 @@ describe('defineStyleEditorSchema', () => {
                     title: 'Typography',
                     fields: [
                         styleEditorField.input({
+                            id: 'font-size',
                             label: 'Font Size',
                             inputType: 'number',
                             defaultValue: 16
@@ -497,6 +407,7 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'input',
+                            id: 'font-size',
                             label: 'Font Size',
                             config: { inputType: 'number', defaultValue: 16 }
                         }
@@ -508,6 +419,7 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'dropdown',
+                            id: 'primary-color',
                             label: 'Primary Color',
                             config: { options: [{ label: 'Red', value: 'red' }] }
                         }
@@ -525,6 +437,7 @@ describe('defineStyleEditorSchema', () => {
                     title: 'Typography',
                     fields: [
                         styleEditorField.input({
+                            id: 'font-size',
                             label: 'Font Size',
                             inputType: 'number',
                             defaultValue: 16
@@ -535,6 +448,7 @@ describe('defineStyleEditorSchema', () => {
                     title: 'Colors',
                     fields: [
                         styleEditorField.dropdown({
+                            id: 'primary-color',
                             label: 'Primary Color',
                             options: [{ label: 'Red', value: 'red' }]
                         })
@@ -559,12 +473,14 @@ describe('defineStyleEditorSchema', () => {
                     fields: [
                         {
                             type: 'input',
+                            id: 'width',
                             label: 'Width',
                             config: { inputType: 'number' }
                         },
 
                         {
                             type: 'input',
+                            id: 'height',
                             label: 'Height',
                             config: { inputType: 'number' }
                         }
@@ -583,11 +499,13 @@ describe('defineStyleEditorSchema', () => {
 
                     fields: [
                         styleEditorField.input({
+                            id: 'width',
                             label: 'Width',
                             inputType: 'number'
                         }),
 
                         styleEditorField.input({
+                            id: 'height',
                             label: 'Height',
                             inputType: 'number'
                         })
