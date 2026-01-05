@@ -114,16 +114,17 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
 
         // Verify it's set up
         assertNotNull("ThreadLocal should be set", HttpServletRequestThreadLocal.INSTANCE.getRequest());
-        assertNotNull("Accounting should be initialized", request.getAttribute(RequestCostApi.REQUEST_COST_ATTRIBUTE));
+        assertNotNull("Accounting should be initialized",
+                request.getAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE));
 
         // When
         listener.requestDestroyed(event);
 
         // Then
         assertNull("ThreadLocal should be cleared", HttpServletRequestThreadLocal.INSTANCE.getRequest());
-        assertNull("Cost attribute should be removed",
-                request.getAttribute(RequestCostApi.REQUEST_COST_ATTRIBUTE));
-        assertNull("Full accounting attribute should be removed",
+        assertNull("Running total attribute should be removed",
+                request.getAttribute(RequestCostApi.REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE));
+        assertNull("Accounting type attribute should be removed",
                 request.getAttribute(RequestCostApi.REQUEST_COST_ACCOUNTING_TYPE));
     }
 
