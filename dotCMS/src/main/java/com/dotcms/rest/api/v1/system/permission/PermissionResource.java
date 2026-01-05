@@ -11,8 +11,6 @@ import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Permission;
-import com.dotcms.rest.api.v1.user.UserPermissionHelper;
-import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -82,10 +80,6 @@ public class PermissionResource {
     private final UserPermissionsPaginator userPermissionsPaginator;
     private final AssetPermissionHelper assetPermissionHelper;
     private final AssetPermissionsPaginator assetPermissionsPaginator;
-    private final AssetPermissionHelper assetPermissionHelper;
-    private final UserPermissionHelper userPermissionHelper;
-    private final UserAPI          userAPI;
-    private final RoleAPI          roleAPI;
 
     public PermissionResource() {
         this(new WebResource(),
@@ -96,12 +90,7 @@ public class PermissionResource {
              new UserPermissionsPaginator(),
              new AssetPermissionHelper(),
              new AssetPermissionsPaginator());
-
-        this(new WebResource(), PermissionHelper.getInstance(),
-             new AssetPermissionHelper(), new UserPermissionHelper(),
-             APILocator.getUserAPI(), APILocator.getRoleAPI());
     }
-
 
     @VisibleForTesting
     public PermissionResource(final PermissionSaveHelper permissionSaveHelper) {
@@ -123,9 +112,6 @@ public class PermissionResource {
                               final PermissionSaveHelper permissionSaveHelper,
                               final UserPermissionsPaginator userPermissionsPaginator,
                               final AssetPermissionHelper assetPermissionHelper,
-                              final UserPermissionHelper userPermissionHelper,
-                              final UserAPI          userAPI,
-                              final RoleAPI          roleAPI) {
                               final AssetPermissionsPaginator assetPermissionsPaginator) {
 
         this.webResource = webResource;
@@ -135,9 +121,7 @@ public class PermissionResource {
         this.permissionSaveHelper = permissionSaveHelper;
         this.userPermissionsPaginator = userPermissionsPaginator;
         this.assetPermissionHelper = assetPermissionHelper;
-        this.userPermissionHelper = userPermissionHelper;
         this.assetPermissionsPaginator = assetPermissionsPaginator;
-        this.roleAPI          = roleAPI;
     }
 
     /**
@@ -1027,20 +1011,20 @@ public class PermissionResource {
         }
 
         // Build permission response (reuse existing helper)
-        final List<Map<String, Object>> assets = userPermissionHelper
-                .buildUserPermissionResponse(role, requestingUser);
+        final List<UserPermissionAssetView> assets = permissionSaveHelper
+                .getUserPermissionAssets(role, requestingUser);
 
-        // Build response with roleId and roleName
-        final Map<String, Object> responseData = Map.of(
-            "roleId", role.getId(),
-            "roleName", role.getName(),
-            "assets", assets
-        );
+        // Build typed response
+        final RolePermissionsView rolePermissionsView = RolePermissionsView.builder()
+            .roleId(role.getId())
+            .roleName(role.getName())
+            .assets(assets)
+            .build();
 
         Logger.info(this, () -> String.format(
             "Successfully retrieved permissions for role %s (requested by %s)",
             roleId, requestingUser.getUserId()));
 
-        return new ResponseEntityRolePermissionsView(responseData);
+        return new ResponseEntityRolePermissionsView(rolePermissionsView);
     }
 }

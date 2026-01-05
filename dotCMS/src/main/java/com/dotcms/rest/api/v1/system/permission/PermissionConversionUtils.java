@@ -17,6 +17,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -148,10 +149,10 @@ public final class PermissionConversionUtils {
     /**
      * Converts permission level names to a bitwise permission value.
      *
-     * @param permissionNames List of permission level names (READ, WRITE, etc.)
+     * @param permissionNames Collection of permission level names (READ, WRITE, etc.)
      * @return Combined bit value
      */
-    public static int convertPermissionNamesToBits(final List<String> permissionNames) {
+    public static int convertPermissionNamesToBits(final Collection<String> permissionNames) {
         if (permissionNames == null || permissionNames.isEmpty()) {
             return 0;
         }

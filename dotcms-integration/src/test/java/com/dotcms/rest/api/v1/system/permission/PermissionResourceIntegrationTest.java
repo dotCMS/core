@@ -5,6 +5,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.system.permission.SaveUserPermissionsForm;
 import com.dotcms.rest.api.v1.system.permission.PermissionSaveHelper;
@@ -38,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.glassfish.jersey.internal.util.Base64;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -175,6 +177,29 @@ public class PermissionResourceIntegrationTest {
 
         request.setHeader("Authorization",
                 "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
+
+        return request;
+    }
+
+    /**
+     * Creates a mock HTTP request with custom credentials.
+     *
+     * @param email User email for authentication
+     * @param password User password for authentication
+     * @return Mock HTTP request with specified credentials
+     */
+    private static HttpServletRequest getHttpRequest(final String email, final String password) {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest(testHost.getHostname(), "/").request())
+                                .request())
+                        .request());
+
+        request.setHeader("Authorization",
+                "Basic " + new String(Base64.encode((email + ":" + password).getBytes())));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
@@ -1196,7 +1221,7 @@ public class PermissionResourceIntegrationTest {
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Create a folder and add permissions for this role
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
 
         final RolePermissionForm rolePermissionForm = new RolePermissionForm(
                 testRole.getId(),
@@ -1225,16 +1250,16 @@ public class PermissionResourceIntegrationTest {
 
         // Verify response
         assertNotNull("Response should not be null", responseView);
-        final Map<String, Object> entity = responseView.getEntity();
+        final RolePermissionsView entity = responseView.getEntity();
         assertNotNull("Entity should not be null", entity);
 
         // Verify response fields
-        assertEquals("roleId should match", testRole.getId(), entity.get("roleId"));
-        assertEquals("roleName should match", testRole.getName(), entity.get("roleName"));
-        assertNotNull("assets should be present", entity.get("assets"));
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
+        assertNotNull("assets should be present", entity.assets());
 
         // Verify assets is a list
-        final List<Map<String, Object>> assets = (List<Map<String, Object>>) entity.get("assets");
+        final List<UserPermissionAssetView> assets = entity.assets();
         assertNotNull("assets should be a list", assets);
     }
 
@@ -1264,13 +1289,13 @@ public class PermissionResourceIntegrationTest {
 
         // Verify response
         assertNotNull("Response should not be null", responseView);
-        final Map<String, Object> entity = responseView.getEntity();
+        final RolePermissionsView entity = responseView.getEntity();
         assertNotNull("Entity should not be null", entity);
 
         // Verify response fields
-        assertEquals("roleId should match", testRole.getId(), entity.get("roleId"));
-        assertEquals("roleName should match", testRole.getName(), entity.get("roleName"));
-        assertNotNull("assets should be present", entity.get("assets"));
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
+        assertNotNull("assets should be present", entity.assets());
     }
 
     /**
@@ -1339,7 +1364,7 @@ public class PermissionResourceIntegrationTest {
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Create a folder and add permissions for this role with inheritable permissions
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
 
         final Map<String, List<String>> inheritable = new HashMap<>();
         inheritable.put("FOLDER", Arrays.asList("READ", "WRITE"));
@@ -1371,30 +1396,30 @@ public class PermissionResourceIntegrationTest {
         );
 
         // Verify response structure
-        final Map<String, Object> entity = responseView.getEntity();
-        assertEquals("roleId should match", testRole.getId(), entity.get("roleId"));
-        assertEquals("roleName should match", testRole.getName(), entity.get("roleName"));
+        final RolePermissionsView entity = responseView.getEntity();
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
 
-        final List<Map<String, Object>> assets = (List<Map<String, Object>>) entity.get("assets");
+        final List<UserPermissionAssetView> assets = entity.assets();
         assertNotNull("assets should be present", assets);
         assertFalse("assets should not be empty", assets.isEmpty());
 
         // Find the folder in the assets
         boolean foundFolder = false;
-        for (Map<String, Object> asset : assets) {
-            if (testFolder.getInode().equals(asset.get("id"))) {
+        for (UserPermissionAssetView asset : assets) {
+            if (testFolder.getInode().equals(asset.id())) {
                 foundFolder = true;
 
                 // Verify asset structure
-                assertEquals("type should be FOLDER", "FOLDER", asset.get("type"));
-                assertNotNull("name should be present", asset.get("name"));
-                assertNotNull("path should be present", asset.get("path"));
-                assertNotNull("hostId should be present", asset.get("hostId"));
-                assertNotNull("canEditPermissions should be present", asset.get("canEditPermissions"));
-                assertNotNull("inheritsPermissions should be present", asset.get("inheritsPermissions"));
+                assertEquals("type should be FOLDER", "FOLDER", asset.type());
+                assertNotNull("name should be present", asset.name());
+                assertNotNull("path should be present", asset.path());
+                assertNotNull("hostId should be present", asset.hostId());
+                assertNotNull("canEditPermissions should be present", asset.canEditPermissions());
+                assertNotNull("inheritsPermissions should be present", asset.inheritsPermissions());
 
                 // Verify permissions map
-                final Map<String, List<String>> permissions = (Map<String, List<String>>) asset.get("permissions");
+                final Map<String, Set<String>> permissions = asset.permissions();
                 assertNotNull("permissions should be present", permissions);
                 assertFalse("permissions should not be empty", permissions.isEmpty());
 
