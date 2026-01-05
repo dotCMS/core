@@ -24328,6 +24328,27 @@ components:
           type: array
           items:
             type: string
+    ResetAssetPermissionsView:
+      type: object
+      properties:
+        assetId:
+          type: string
+          description: The identifier of the asset whose permissions were reset
+          example: abc123-def456
+        message:
+          type: string
+          description: Success message describing the operation result
+          example: Individual permissions removed. Asset now inherits from parent.
+        previousPermissionCount:
+          type: integer
+          format: int32
+          description: Number of individual permissions that were removed during the
+            reset operation
+          example: 5
+      required:
+      - assetId
+      - message
+      - previousPermissionCount
     ResetPasswordForm:
       type: object
       properties:
@@ -25258,9 +25279,7 @@ components:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/ResetAssetPermissionsView"
         errors:
           type: array
           items:

@@ -922,7 +922,7 @@ public class PermissionResource {
         }
 
         // Delegate to helper for business logic
-        final java.util.Map<String, Object> result = assetPermissionHelper.resetAssetPermissions(
+        final ResetAssetPermissionsView result = assetPermissionHelper.resetAssetPermissions(
             assetId, user);
 
         Logger.info(this, () -> String.format(

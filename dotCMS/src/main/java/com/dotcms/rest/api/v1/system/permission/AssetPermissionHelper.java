@@ -653,13 +653,13 @@ public class AssetPermissionHelper {
      *
      * @param assetId Asset identifier (inode or identifier)
      * @param user    Requesting user (must be admin)
-     * @return Response map containing message, assetId, and previousPermissionCount
+     * @return ResetAssetPermissionsView containing message, assetId, and previousPermissionCount
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      * @throws NotFoundInDbException If asset is not found
      * @throws ConflictException    If asset already inherits permissions (409)
      */
-    public Map<String, Object> resetAssetPermissions(final String assetId, final User user)
+    public ResetAssetPermissionsView resetAssetPermissions(final String assetId, final User user)
             throws DotDataException, DotSecurityException {
 
         Logger.debug(this, () -> String.format(
@@ -706,11 +706,10 @@ public class AssetPermissionHelper {
             "Successfully reset permissions for asset: %s (removed %d permissions)",
             assetId, previousPermissionCount));
 
-        final Map<String, Object> response = new HashMap<>();
-        response.put("message", "Individual permissions removed. Asset now inherits from parent.");
-        response.put("assetId", assetId);
-        response.put("previousPermissionCount", previousPermissionCount);
-
-        return response;
+        return ResetAssetPermissionsView.builder()
+                .message("Individual permissions removed. Asset now inherits from parent.")
+                .assetId(assetId)
+                .previousPermissionCount(previousPermissionCount)
+                .build();
     }
 }
