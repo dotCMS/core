@@ -102,7 +102,6 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
-import { DotUveZoomService } from '../services/dot-uve-zoom/dot-uve-zoom.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
@@ -145,28 +144,6 @@ const messagesMock = {
 
 const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com')
-};
-
-const mockDotUveZoomService = {
-    $zoomLevel: signal(1),
-    $isZoomMode: signal(false),
-    $iframeDocHeight: signal(800),
-    $canvasOuterStyles: computed(() => ({
-        width: '1520px',
-        height: '800px'
-    })),
-    $canvasInnerStyles: computed(() => ({
-        width: '1520px',
-        height: '800px',
-        transform: 'scale(1)'
-    })),
-    setZoom: jest.fn(),
-    resetZoom: jest.fn(),
-    zoomIn: jest.fn(),
-    zoomOut: jest.fn(),
-    zoomLabel: jest.fn(() => '100%'),
-    setupZoomInteractions: jest.fn(),
-    setIframeDocHeight: jest.fn()
 };
 
 const mockDotUveBridgeService = {
@@ -305,10 +282,6 @@ const createRouting = () =>
             {
                 provide: DotUveDragDropService,
                 useValue: mockDotUveDragDropService
-            },
-            {
-                provide: DotUveZoomService,
-                useValue: mockDotUveZoomService
             },
             {
                 provide: InlineEditService,

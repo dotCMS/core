@@ -6,7 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { WINDOW } from '@dotcms/utils';
 
 import { PostMessage } from '../../shared/models';
-import { DotUveZoomService } from '../dot-uve-zoom/dot-uve-zoom.service';
+import { UVEStore } from '../../store/dot-uve.store';
 
 export interface IframeHeightMessage {
     height: number;
@@ -199,16 +199,16 @@ export interface IframeHeightMessage {
 export class DotUveBridgeService {
     private readonly window = inject(WINDOW);
     private readonly destroyRef = inject(DestroyRef);
-    private zoomService?: DotUveZoomService;
+    private store?: InstanceType<typeof UVEStore>;
     private iframeElement?: HTMLIFrameElement;
     private readonly $iframeDocHeight = signal<number>(0);
 
     initialize(
         iframe: ElementRef<HTMLIFrameElement>,
-        zoomService: DotUveZoomService,
+        store: InstanceType<typeof UVEStore>,
     ): Observable<MessageEvent> {
         this.iframeElement = iframe.nativeElement;
-        this.zoomService = zoomService;
+        this.store = store;
 
         return fromEvent<MessageEvent>(this.window, 'message').pipe(
             takeUntilDestroyed(this.destroyRef)
@@ -284,8 +284,8 @@ export class DotUveBridgeService {
         if (this.iframeElement) {
             this.iframeElement.style.height = `${Math.ceil(height)}px`;
             this.$iframeDocHeight.set(Math.ceil(height));
-            if (this.zoomService) {
-                this.zoomService.setIframeDocHeight(Math.ceil(height));
+            if (this.store) {
+                this.store.setIframeDocHeight(Math.ceil(height));
             }
             onClampScroll();
         }

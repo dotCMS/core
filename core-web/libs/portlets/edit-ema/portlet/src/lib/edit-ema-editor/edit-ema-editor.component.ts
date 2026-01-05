@@ -83,7 +83,6 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
-import { DotUveZoomService } from '../services/dot-uve-zoom/dot-uve-zoom.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
@@ -150,7 +149,6 @@ import {
         DotHttpErrorManagerService,
         DotContentletService,
         DotTempFileUploadService,
-        DotUveZoomService,
         DotUveBridgeService,
         DotUveActionsHandlerService,
         DotUveDragDropService
@@ -219,7 +217,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
-    readonly zoomService = inject(DotUveZoomService);
     private readonly bridgeService = inject(DotUveBridgeService);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
@@ -347,8 +344,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return this.$paletteOpen ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });
 
-    readonly $canvasOuterStyles = this.zoomService.$canvasOuterStyles;
-    readonly $canvasInnerStyles = this.zoomService.$canvasInnerStyles;
+    readonly $canvasOuterStyles = this.uveStore.$canvasOuterStyles;
+    readonly $canvasInnerStyles = this.uveStore.$canvasInnerStyles;
 
     readonly $iframeWrapperStyles = computed((): Record<string, string> => {
         const wrapper = this.$iframeProps().wrapper;
@@ -526,7 +523,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // Bridge service handles message events - needs iframe which is available now
         const messageStream = this.bridgeService.initialize(
             this.iframe,
-            this.zoomService
+            this.uveStore
         );
 
         messageStream.subscribe((event) => {
@@ -537,7 +534,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             );
         });
 
-        this.setupZoom();
         this.setupDragDrop();
     }
 
@@ -545,19 +541,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         selectedContentlet: Pick<ClientData, 'container' | 'contentlet'>
     ): void {
         this.uveStore.setSelectedContentlet(selectedContentlet);
-    }
-
-    private setupZoom(): void {
-        const zoomContainer = this.zoomContainer?.nativeElement;
-        const editorContent = this.editorContent?.nativeElement;
-
-        if (!zoomContainer || !editorContent) {
-            return;
-        }
-
-        this.zoomService.setupZoomInteractions(zoomContainer, editorContent, () =>
-            this.#clampScrollWithinBounds()
-        );
     }
 
     private setupDragDrop(): void {
@@ -698,7 +681,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframeDocHeightChange(height: number): void {
-        this.zoomService.setIframeDocHeight(height);
+        this.uveStore.setIframeDocHeight(height);
         this.#clampScrollWithinBounds();
     }
 
@@ -1537,7 +1520,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Use getBoundingClientRect() which accounts for all transforms including zoom
         const elementRect = htmlElement.getBoundingClientRect();
-        const zoomLevel = this.zoomService.$zoomLevel();
+        const zoomLevel = this.uveStore.$zoomLevel();
 
         // elementRect.top works correctly at 100% zoom (zoomLevel = 1)
         // For other zoom levels, convert from scaled to unscaled coordinates

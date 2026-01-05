@@ -15,6 +15,7 @@ import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
 import { withWorkflow } from './features/workflow/withWorkflow';
+import { withZoom } from './features/zoom/withZoom';
 import { TranslateProps, UVEState, Orientation, PageType } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
@@ -133,6 +134,7 @@ export const UVEStore = signalStore(
 
     // ---- UI Features ----
     withLayout(),                     // Layout state
+    withZoom(),                       // Zoom state
     withFeature((store) => withView({
         $isPageLocked: () => store.$isPageLocked()
     })),                              // View state - manages view modes (edit vs preview)

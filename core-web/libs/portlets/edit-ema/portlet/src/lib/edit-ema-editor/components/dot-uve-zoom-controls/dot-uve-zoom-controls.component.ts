@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
-import { DotUveZoomService } from '../../../services/dot-uve-zoom/dot-uve-zoom.service';
 import { ButtonModule } from 'primeng/button';
+
+import { UVEStore } from '../../../store/dot-uve.store';
 
 @Component({
     selector: 'dot-uve-zoom-controls',
@@ -12,25 +13,25 @@ import { ButtonModule } from 'primeng/button';
     ]
 })
 export class DotUveZoomControlsComponent {
-    protected readonly zoomService = inject(DotUveZoomService);
+    protected readonly store = inject(UVEStore);
 
-    readonly $zoomLevel = this.zoomService.$zoomLevel;
-    readonly $zoomLabel = this.zoomService.zoomLabel.bind(this.zoomService);
+    readonly $zoomLevel = this.store.$zoomLevel;
+    readonly $zoomLabel = this.store.zoomLabel.bind(this.store);
 
     zoomIn(): void {
-        this.zoomService.zoomIn();
+        this.store.zoomIn();
     }
 
     zoomOut(): void {
-        this.zoomService.zoomOut();
+        this.store.zoomOut();
     }
 
     resetView(): void {
-        this.zoomService.resetZoom();
+        this.store.resetZoom();
     }
 
     zoomLabel(): string {
-        return this.zoomService.zoomLabel();
+        return this.store.zoomLabel();
     }
 }
 
