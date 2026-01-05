@@ -1,4 +1,4 @@
-import { DotCMSBasicContentlet, DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
 
 import { ActionPayload } from '../../../../../../shared/models';
 
@@ -10,10 +10,7 @@ import { ActionPayload } from '../../../../../../shared/models';
 export type GraphQLResponse =
     | DotCMSPageAsset
     | {
-          graphql?: {
-              query: string;
-              variables: Record<string, string>;
-          };
+          graphql?: DotCMSPageResponse['graphql'];
           pageAsset: DotCMSPageAsset;
           content?: Record<string, unknown>;
       };
