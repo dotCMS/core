@@ -89,7 +89,9 @@ async function fetchJWT(serverUrl) {
     if (error.name === "AbortError") {
       throw new Error("JWT fetch request timed out");
     }
-    throw new Error(`Failed to fetch JWT: ${error.message}`);
+
+    throw new Error(`Failed to fetch JWT:` + JSON.stringify(error,
+        Object.getOwnPropertyNames(error)));
   }
 }
 
