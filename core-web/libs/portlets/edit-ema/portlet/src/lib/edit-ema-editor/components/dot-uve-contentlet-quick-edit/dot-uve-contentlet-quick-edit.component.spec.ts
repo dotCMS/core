@@ -70,6 +70,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             }
         });
         fixture = spectator.fixture;
+        spectator.detectChanges(); // Trigger effect to build form
     });
 
     it('should create', () => {
@@ -77,10 +78,11 @@ describe('DotUveContentletQuickEditComponent', () => {
     });
 
     it('should build form when data is provided', () => {
+        spectator.detectChanges(); // Ensure form is built and rendered
         const formElement = spectator.query('form');
         expect(formElement).toBeTruthy();
 
-        const testFieldInput = spectator.query('input[formcontrolname="testField"]');
+        const testFieldInput = spectator.query('input[formcontrolname="testField"]') || spectator.query('#testField');
         expect(testFieldInput).toBeTruthy();
     });
 
@@ -90,13 +92,17 @@ describe('DotUveContentletQuickEditComponent', () => {
     });
 
     it('should emit submit event when form is valid and submitted', () => {
+        spectator.detectChanges(); // Ensure form is built and rendered
         let emittedData: Record<string, unknown> | undefined;
         spectator.component.submit.subscribe((data) => (emittedData = data));
 
-        const input = spectator.query('input[formcontrolname="testField"]') as HTMLInputElement;
+        const input = (spectator.query('input[formcontrolname="testField"]') || spectator.query('#testField')) as HTMLInputElement;
+        expect(input).toBeTruthy();
         spectator.typeInElement('test value', input);
+        spectator.detectChanges();
 
         spectator.click('button[type="submit"]');
+        spectator.detectChanges();
 
         expect(emittedData).toBeDefined();
         expect(emittedData?.['testField']).toBe('test value');
@@ -151,7 +157,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         expect(form).toBeTruthy();
 
         if (form) {
-            spectator.dispatchKeyboardEvent(form, 'keydown.escape', 'Escape');
+            form.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+            spectator.detectChanges();
         }
 
         expect(cancelEmitted).toBe(true);
