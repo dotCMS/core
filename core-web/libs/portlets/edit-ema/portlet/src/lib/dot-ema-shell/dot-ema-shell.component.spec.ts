@@ -27,6 +27,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPageLayoutService,
     DotPropertiesService,
     DotSiteService,
     DotSystemConfigService,
@@ -306,6 +307,12 @@ describe('DotEmaShellComponent', () => {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
                     track: jest.fn()
+                }
+            },
+            {
+                provide: DotPageLayoutService,
+                useValue: {
+                    save: jest.fn().mockReturnValue(of({}))
                 }
             },
             {
@@ -1100,6 +1107,10 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('$seoParams computed property', () => {
+            beforeEach(() => {
+                spectator.detectChanges();
+            });
+
             it('should build SEO params with correct structure', () => {
                 const seoParams = spectator.component['$seoParams']();
 
@@ -1143,6 +1154,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('$canRead computed property', () => {
             it('should return true when page can be read', () => {
+                spectator.detectChanges();
                 const canRead = spectator.component['$canRead']();
 
                 expect(canRead).toBe(true);
@@ -1183,13 +1195,15 @@ describe('DotEmaShellComponent', () => {
 
     afterEach(() => {
         // Restoring the snapshot to the default
-        overrideRouteSnashot(
-            activatedRoute,
-            SNAPSHOT_MOCK({
-                queryParams: INITIAL_PAGE_PARAMS,
-                data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
-            })
-        );
+        if (activatedRoute && typeof activatedRoute === 'object') {
+            overrideRouteSnashot(
+                activatedRoute,
+                SNAPSHOT_MOCK({
+                    queryParams: INITIAL_PAGE_PARAMS,
+                    data: UVE_CONFIG_MOCK(BASIC_OPTIONS)
+                })
+            );
+        }
         jest.clearAllMocks();
     });
 });
