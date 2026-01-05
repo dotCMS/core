@@ -107,7 +107,7 @@ public class RequestCostFilterTest extends UnitTestBase {
             HttpServletResponse response = (HttpServletResponse) res;
             // Test the wrapper
             assertTrue("Should contain cost header", response.containsHeader(RequestCostApi.REQUEST_COST_HEADER_NAME));
-            assertTrue("Should contain cost header (case insensitive)", response.containsHeader("x-request-cost"));
+            assertTrue("Should contain cost header (case insensitive)", response.containsHeader("x-dotrequest-cost"));
             wrapperTested[0] = true;
         };
 
@@ -136,7 +136,7 @@ public class RequestCostFilterTest extends UnitTestBase {
             HttpServletResponse response = (HttpServletResponse) res;
             String costHeader = response.getHeader(RequestCostApi.REQUEST_COST_HEADER_NAME);
             assertNotNull("Cost header should not be null", costHeader);
-            int cost = Integer.parseInt(costHeader);
+            double cost = Double.parseDouble(costHeader);
             assertTrue("Cost should be at least 42", cost >= 42 / requestCostApi.getRequestCostDenominator());
             wrapperTested[0] = true;
         };
@@ -168,7 +168,7 @@ public class RequestCostFilterTest extends UnitTestBase {
             assertNotNull("Headers collection should not be null", headers);
             assertEquals("Should have exactly one header value", 1, headers.size());
             String costValue = headers.iterator().next();
-            int cost = Integer.parseInt(costValue);
+            double cost = Double.parseDouble(costValue);
             assertTrue("Cost should be at least 25", cost >= 25 / requestCostApi.getRequestCostDenominator());
             wrapperTested[0] = true;
         };
