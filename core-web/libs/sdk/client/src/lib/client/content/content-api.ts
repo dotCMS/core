@@ -1,7 +1,7 @@
 import { DotRequestOptions, DotHttpClient, DotCMSClientConfig } from '@dotcms/types';
 
 import { CollectionBuilder } from './builders/collection/collection';
-import { RawQueryBuilder } from './builders/rawQuery';
+import { RawQueryBuilder } from './builders/rawQuery/raw-query-builder';
 
 import { BaseApiClient } from '../base/base-api';
 
@@ -145,28 +145,27 @@ export class Content extends BaseApiClient {
     }
 
     /**
-     * Executes a raw Lucene query with optional pagination, sorting, and constraints.
+     * Executes a raw Lucene query with optional pagination, sorting, and rendering options.
      *
      * This method provides direct access to Lucene query syntax, giving you full control
      * over query construction while still benefiting from common features like pagination,
-     * sorting, language filtering, and error handling.
+     * sorting, and error handling.
      *
      * **Important Notes:**
-     * - The raw query is used as-is with minimal sanitization
+     * - The raw query is used as-is (minimal sanitization only)
      * - NO automatic field prefixing (unlike `getCollection()`)
-     * - You must include content type constraints manually if needed
-     * - System constraints (language, live/draft, site) are added automatically
+     * - NO implicit/system constraints are added (language, live/draft, site, variant, etc.)
+     * - If you need constraints, include them in the raw query string (e.g. `+contentType:Blog +languageId:1 +live:true`)
      *
      * @template T - The type of the content items (defaults to unknown)
      * @param {string} rawQuery - Raw Lucene query string
      * @return {RawQueryBuilder<T>} A RawQueryBuilder instance for chaining options
      * @memberof Content
      *
-     * @example Simple query with pagination and language
+     * @example Simple query with pagination
      * ```typescript
      * const response = await client.content
      *     .query('+contentType:Blog +title:"Hello World"')
-     *     .language(1)
      *     .limit(10)
      *     .page(1);
      *
@@ -176,10 +175,7 @@ export class Content extends BaseApiClient {
      * @example Complex query with all available options
      * ```typescript
      * const response = await client.content
-     *     .query('+(contentType:Blog OR contentType:News) +tags:"technology"')
-     *     .language(1)
-     *     .draft()
-     *     .variant('legends-forceSensitive')
+     *     .query('+(contentType:Blog OR contentType:News) +tags:"technology" +languageId:1 +(live:false AND working:true AND deleted:false) +variant:legends-forceSensitive')
      *     .limit(20)
      *     .page(2)
      *     .sortBy([{ field: 'modDate', order: 'desc' }])
@@ -200,7 +196,6 @@ export class Content extends BaseApiClient {
      *
      * const response = await client.content
      *     .query<BlogPost>('+contentType:Blog +author:"John Doe"')
-     *     .language(1)
      *     .limit(10);
      *
      * // TypeScript knows the type of contentlets
@@ -213,8 +208,7 @@ export class Content extends BaseApiClient {
      * ```typescript
      * try {
      *     const response = await client.content
-     *         .query('+contentType:Blog +publishDate:[2024-01-01 TO 2024-12-31]')
-     *         .language(1);
+     *         .query('+contentType:Blog +publishDate:[2024-01-01 TO 2024-12-31]');
      * } catch (error) {
      *     if (error instanceof DotErrorContent) {
      *         console.error('Query failed:', error.message);
@@ -227,7 +221,6 @@ export class Content extends BaseApiClient {
      * ```typescript
      * client.content
      *     .query('+contentType:Blog')
-     *     .language(1)
      *     .limit(10)
      *     .then(response => console.log(response.contentlets))
      *     .catch(error => console.error(error));

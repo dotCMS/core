@@ -8,7 +8,7 @@ import {
 
 import { BuildQuery } from '../../shared/types';
 import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
-import { BaseBuilder } from '../base';
+import { BaseBuilder } from '../base/base-builder';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
 import { sanitizeQuery } from '../query/utils';
@@ -27,7 +27,6 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
     #rawQuery?: string;
     #languageId: number | string = 1;
     #draft = false;
-    #variantId?: string;
 
     /**
      * Creates an instance of CollectionBuilder.
@@ -176,7 +175,6 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
      * @memberof CollectionBuilder
      */
     variant(variantId: string): this {
-        this.#variantId = variantId;
         this.#query = this.currentQuery.field('variant').equals(variantId);
 
         return this;

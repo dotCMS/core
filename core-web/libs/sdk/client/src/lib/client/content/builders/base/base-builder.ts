@@ -303,6 +303,7 @@ export abstract class BaseBuilder<T = unknown> extends BaseApiClient {
      */
     protected fetch(): Promise<GetCollectionRawResponse<T>> {
         const finalQuery = this.buildFinalQuery();
+        const languageId = this.getLanguageId();
 
         return this.httpClient.request<GetCollectionRawResponse<T>>(this.url, {
             ...this.requestOptions,
@@ -318,7 +319,7 @@ export abstract class BaseBuilder<T = unknown> extends BaseApiClient {
                 limit: this.#limit,
                 offset: this.offset,
                 depth: this.#depth,
-                languageId: this.getLanguageId()
+                ...(languageId !== undefined ? { languageId } : {})
             })
         });
     }
@@ -353,5 +354,5 @@ export abstract class BaseBuilder<T = unknown> extends BaseApiClient {
      * @return {number | string} The language ID
      * @memberof BaseBuilder
      */
-    protected abstract getLanguageId(): number | string;
+    protected abstract getLanguageId(): number | string | undefined;
 }
