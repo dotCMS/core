@@ -70,7 +70,7 @@
             padding-right: $spacing-6;
         }
 
-        button:not(.p-button),
+        button:not(.p-button):not(.custom-select-button),
         input[type="button"],
         input[type="submit"],
         input[type="reset"] {

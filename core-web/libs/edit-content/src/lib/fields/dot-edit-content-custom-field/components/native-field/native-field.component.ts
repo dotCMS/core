@@ -207,6 +207,11 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
 
         const hostElement = this.$container().nativeElement;
 
+        // If the container is already mounted, do nothing
+        if (hostElement.innerHTML.length > 0) {
+            return;
+        }
+
         // 1. Clean up previous style elements
         this.#styleElements.forEach((styleElement) => {
             if (styleElement.parentNode) {
@@ -304,6 +309,17 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             }
         });
         this.#styleElements = [];
+
+        // Clean up hostElement completely
+        const hostElement = this.$container()?.nativeElement;
+        if (hostElement) {
+            // Remove all child nodes
+            while (hostElement.firstChild) {
+                hostElement.removeChild(hostElement.firstChild);
+            }
+            // Clear innerHTML to ensure everything is removed
+            hostElement.innerHTML = '';
+        }
 
         if (this.#formBridge) {
             this.#formBridge.destroy();
