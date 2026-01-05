@@ -1,10 +1,10 @@
 export default {
-    displayName: 'create-app',
+    displayName: 'sdk-create-app',
     preset: '../../../jest.preset.js',
     testEnvironment: 'node',
     transform: {
         '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }]
     },
     moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../../coverage/libs/sdk/sdk-create-app'
+    coverageDirectory: '../../../coverage/libs/sdk/create-app'
 };

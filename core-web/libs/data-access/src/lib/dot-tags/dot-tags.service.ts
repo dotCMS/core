@@ -1,16 +1,12 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotTag, DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
-// Response type for endpoints that return bodyJsonObject with tags
-interface DotTagsResponse {
-    bodyJsonObject: { [key: string]: DotTag };
-}
 
 /**
  * Provide util methods to get Tags available in the system.
@@ -21,7 +17,7 @@ interface DotTagsResponse {
     providedIn: 'root'
 })
 export class DotTagsService {
-    private http = inject(HttpClient);
+    readonly #http = inject(HttpClient);
 
     /**
      * Get tags suggestions
@@ -29,11 +25,22 @@ export class DotTagsService {
      * @memberof DotTagDotTagsServicesService
      */
     getSuggestions(name?: string): Observable<DotTag[]> {
-        return this.http.get<DotTagsResponse>(`/api/v1/tags${name ? `?name=${name}` : ''}`).pipe(
-            map((response) => response.bodyJsonObject),
-            map((tags: { [key: string]: DotTag }) => {
-                return Object.entries(tags).map(([_key, value]) => value);
-            })
-        );
+        const params = name ? new HttpParams().set('name', name) : new HttpParams();
+        return this.#http
+            .get<Record<string, DotTag>>(`/api/v1/tags`, { params })
+            .pipe(map((tags) => Object.values(tags)));
+    }
+
+    /**
+     * Retrieves tags based on the provided name.
+     * @param name - The name of the tags to retrieve.
+     * @returns An Observable that emits an array of tag labels.
+     */
+    getTags(name: string): Observable<DotTag[]> {
+        const params = new HttpParams().set('name', name);
+
+        return this.#http
+            .get<DotCMSAPIResponse<DotTag[]>>('/api/v2/tags', { params })
+            .pipe(map((response) => response.entity));
     }
 }

@@ -1,47 +1,76 @@
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+
+import { DotCMSAPIResponse, DotTag } from '@dotcms/dotcms-models';
 
 import { DotTagsService } from './dot-tags.service';
 
 describe('DotTagsService', () => {
-    let dotTagsService: DotTagsService;
-    let httpMock: HttpTestingController;
+    let spectator: SpectatorHttp<DotTagsService>;
 
-    const mockResponse = {
-        test: { label: 'test', siteId: '1', siteName: 'Site', persona: false },
-        united: { label: 'united', siteId: '1', siteName: 'Site', persona: false }
-    };
+    const createFakeTag = (overrides: Partial<DotTag> = {}): DotTag => ({
+        label: 'test',
+        siteId: '1',
+        siteName: 'Site',
+        persona: false,
+        ...overrides
+    });
+
+    const createHttp = createHttpFactory({
+        service: DotTagsService
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [provideHttpClient(), provideHttpClientTesting(), DotTagsService]
-        });
-        dotTagsService = TestBed.inject(DotTagsService);
-        httpMock = TestBed.inject(HttpTestingController);
+        spectator = createHttp();
     });
 
-    it('should get Tags', () => {
-        dotTagsService.getSuggestions().subscribe((res) => {
-            expect(res).toEqual([mockResponse.test, mockResponse.united]);
+    it('should get tags suggestions without name filter', () => {
+        const mockTag1 = createFakeTag({ label: 'test' });
+        const mockTag2 = createFakeTag({ label: 'united' });
+        const mockResponse: Record<string, DotTag> = {
+            test: mockTag1,
+            united: mockTag2
+        };
+
+        spectator.service.getSuggestions().subscribe((res) => {
+            expect(res).toEqual([mockTag1, mockTag2]);
         });
 
-        const req = httpMock.expectOne('/api/v1/tags');
-        expect(req.request.method).toBe('GET');
+        const req = spectator.expectOne('/api/v1/tags', HttpMethod.GET);
         req.flush(mockResponse);
     });
 
-    it('should get Tags filtered by name ', () => {
-        dotTagsService.getSuggestions('test').subscribe((res) => {
-            expect(res).toEqual([mockResponse.test, mockResponse.united]);
+    it('should get tags suggestions filtered by name', () => {
+        const mockTag1 = createFakeTag({ label: 'test' });
+        const mockTag2 = createFakeTag({ label: 'testing' });
+        const mockResponse: Record<string, DotTag> = {
+            test: mockTag1,
+            testing: mockTag2
+        };
+
+        spectator.service.getSuggestions('test').subscribe((res) => {
+            expect(res).toEqual([mockTag1, mockTag2]);
         });
 
-        const req = httpMock.expectOne('/api/v1/tags?name=test');
-        expect(req.request.method).toBe('GET');
+        const req = spectator.expectOne('/api/v1/tags?name=test', HttpMethod.GET);
         req.flush(mockResponse);
     });
 
-    afterEach(() => {
-        httpMock.verify();
+    it('should get tags by name', () => {
+        const mockTag1 = createFakeTag({ label: 'angular' });
+        const mockTag2 = createFakeTag({ label: 'typescript' });
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
+            entity: [mockTag1, mockTag2],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {}
+        };
+
+        spectator.service.getTags('angular').subscribe((res) => {
+            expect(res).toEqual([mockTag1, mockTag2]);
+        });
+
+        const req = spectator.expectOne('/api/v2/tags?name=angular', HttpMethod.GET);
+        req.flush(mockResponse);
     });
 });
