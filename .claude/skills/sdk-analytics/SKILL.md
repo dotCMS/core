@@ -209,8 +209,14 @@ Create or update `.env.local` file in the Next.js project root:
 
 ```bash
 # dotCMS Analytics Configuration
-NEXT_PUBLIC_DOTCMS_SITE_AUTH=your_site_auth_key_here
-NEXT_PUBLIC_DOTCMS_SERVER=https://your-dotcms-server.com
+NEXT_PUBLIC_DOTCMS_AUTH_TOKEN={GENERATE TOKEN FROM USER PORTLET API ACCESS TOKEN}
+NEXT_PUBLIC_DOTCMS_HOST={URL WHERE DOTCMS IS RUNNING}
+NEXT_PUBLIC_DOTCMS_SITE_ID={SITE IDENTIFIER}
+NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY={GENERATE KEY FROM CONTENT ANALYTICS APP}
+NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST={SITE IDENTIFIER}
+NEXT_PUBLIC_EXPERIMENTS_API_KEY={GENERATED KEY FROM THE EXPERIMENTS APP}
+NEXT_PUBLIC_DOTCMS_MODE='production'
+NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
 **Important**: Replace `your_site_auth_key_here` with your actual dotCMS Analytics site auth key. This can be obtained from the Analytics app in your dotCMS instance.

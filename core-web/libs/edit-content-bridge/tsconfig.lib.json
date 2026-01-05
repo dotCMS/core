@@ -3,11 +3,15 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "declaration": true,
-        "module": "ES2015",
+        "module": "ESNext",
         "moduleResolution": "bundler",
         "target": "ES2015",
         "lib": ["es2020", "dom"],
-        "types": ["node", "vite/client"]
+        "types": ["node", "vite/client"],
+        "skipLibCheck": true,
+        "noPropertyAccessFromIndexSignature": false,
+        "downlevelIteration": true,
+        "strictPropertyInitialization": false
     },
     "include": ["src/**/*.ts"],
     "exclude": [
