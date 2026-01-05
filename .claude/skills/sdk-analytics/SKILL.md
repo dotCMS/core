@@ -14,6 +14,7 @@ This skill provides step-by-step instructions for installing and configuring the
 The `@dotcms/analytics` SDK is dotCMS's official JavaScript library for tracking content-aware events and analytics. It provides:
 
 - Automatic page view tracking
+- Conversion tracking (purchases, downloads, sign-ups, etc.)
 - Custom event tracking
 - Session management (30-minute timeout)
 - Anonymous user identity tracking
@@ -27,6 +28,7 @@ The `@dotcms/analytics` SDK is dotCMS's official JavaScript library for tracking
 ### Component Roles
 
 1. **`<DotContentAnalytics />`** - Auto Page View Tracker
+
    - Only purpose: Automatically track pageviews on route changes
    - **NOT a React Context Provider**
    - Does **NOT** provide config to child components
@@ -54,7 +56,7 @@ export const analyticsConfig = {
 import { DotContentAnalytics } from "@dotcms/analytics/react";
 import { analyticsConfig } from "@/config/analytics.config";
 
-<DotContentAnalytics config={analyticsConfig} />
+<DotContentAnalytics config={analyticsConfig} />;
 
 // 3. Import config in every component that uses the hook
 // /src/components/MyComponent.js
@@ -90,6 +92,7 @@ Here's the complete setup flow:
 ```
 
 **Key Benefits of Centralized Config**:
+
 - ✅ Single source of truth for configuration values
 - ✅ Easy to update environment variables in one place
 - ✅ Consistent config across all components
@@ -148,6 +151,7 @@ export const analyticsConfig = {
 ```
 
 **Benefits of this approach**:
+
 - ✅ Single source of truth for analytics configuration
 - ✅ Easy to import and reuse across components
 - ✅ Centralized environment variable management
@@ -205,8 +209,14 @@ Create or update `.env.local` file in the Next.js project root:
 
 ```bash
 # dotCMS Analytics Configuration
-NEXT_PUBLIC_DOTCMS_SITE_AUTH=your_site_auth_key_here
-NEXT_PUBLIC_DOTCMS_SERVER=https://your-dotcms-server.com
+NEXT_PUBLIC_DOTCMS_AUTH_TOKEN={GENERATE TOKEN FROM USER PORTLET API ACCESS TOKEN}
+NEXT_PUBLIC_DOTCMS_HOST={URL WHERE DOTCMS IS RUNNING}
+NEXT_PUBLIC_DOTCMS_SITE_ID={SITE IDENTIFIER}
+NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY={GENERATE KEY FROM CONTENT ANALYTICS APP}
+NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST={SITE IDENTIFIER}
+NEXT_PUBLIC_EXPERIMENTS_API_KEY={GENERATED KEY FROM THE EXPERIMENTS APP}
+NEXT_PUBLIC_DOTCMS_MODE='production'
+NODE_TLS_REJECT_UNAUTHORIZED=0
 ```
 
 **Important**: Replace `your_site_auth_key_here` with your actual dotCMS Analytics site auth key. This can be obtained from the Analytics app in your dotCMS instance.
@@ -374,17 +384,80 @@ function ProductPage({ product }) {
 }
 ```
 
+### Conversion Tracking (E-commerce Purchase)
+
+```javascript
+"use client";
+
+import { useContentAnalytics } from "@dotcms/analytics/react";
+import { analyticsConfig } from "@/config/analytics.config";
+
+function CheckoutButton({ product, quantity }) {
+  const { conversion } = useContentAnalytics(analyticsConfig);
+
+  const handlePurchase = () => {
+    // Process checkout logic here...
+    // After successful payment confirmation:
+
+    // Track conversion ONLY after successful purchase
+    conversion("purchase", {
+      value: product.price * quantity,
+      currency: "USD",
+      productId: product.sku,
+      productName: product.title,
+      quantity: quantity,
+      category: product.category,
+    });
+  };
+
+  return <button onClick={handlePurchase}>Complete Purchase</button>;
+}
+```
+
+### Conversion Tracking (Lead Generation)
+
+```javascript
+"use client";
+
+import { useContentAnalytics } from "@dotcms/analytics/react";
+import { analyticsConfig } from "@/config/analytics.config";
+
+function DownloadWhitepaper() {
+  const { conversion } = useContentAnalytics(analyticsConfig);
+
+  const handleDownload = () => {
+    // Trigger download logic here...
+    // After download is successfully completed:
+
+    // Track conversion ONLY after successful download
+    conversion("download", {
+      fileType: "pdf",
+      fileName: "whitepaper-2024.pdf",
+      category: "lead-magnet",
+    });
+  };
+
+  return (
+    <button id="download-btn" onClick={handleDownload}>
+      Download Whitepaper
+    </button>
+  );
+}
+```
+
 ## Configuration Options
 
 ### Analytics Config Object
 
-| Option         | Type                   | Required | Default                | Description                                     |
-| -------------- | ---------------------- | -------- | ---------------------- | ----------------------------------------------- |
-| `siteAuth`     | `string`               | Yes      | -                      | Site authentication key from dotCMS Analytics   |
-| `server`       | `string`               | Yes      | -                      | Your dotCMS server URL                          |
-| `debug`        | `boolean`              | No       | `false`                | Enable verbose logging for debugging            |
-| `autoPageView` | `boolean`              | No       | `true` (React)         | Automatically track page views on route changes |
-| `queue`        | `QueueConfig \| false` | No       | Default queue settings | Event batching configuration                    |
+| Option         | Type                          | Required | Default                | Description                                                      |
+| -------------- | ----------------------------- | -------- | ---------------------- | ---------------------------------------------------------------- |
+| `siteAuth`     | `string`                      | Yes      | -                      | Site authentication key from dotCMS Analytics                    |
+| `server`       | `string`                      | Yes      | -                      | Your dotCMS server URL                                           |
+| `debug`        | `boolean`                     | No       | `false`                | Enable verbose logging for debugging                             |
+| `autoPageView` | `boolean`                     | No       | `true` (React)         | Automatically track page views on route changes                  |
+| `queue`        | `QueueConfig \| false`        | No       | Default queue settings | Event batching configuration                                     |
+| `impressions`  | `ImpressionConfig \| boolean` | No       | `false`                | Content impression tracking (disabled by default)                |
+| `clicks`       | `boolean`                     | No       | `false`                | Content click tracking with 300ms throttle (disabled by default) |
 
 ### Queue Configuration
 
@@ -402,6 +475,149 @@ const analyticsConfig = {
   siteAuth: "your_key",
   server: "https://your-server.com",
   queue: false, // Send events immediately
+};
+```
+
+### Impression Tracking Configuration
+
+Controls automatic tracking of content visibility:
+
+| Option                | Type     | Default | Description                               |
+| --------------------- | -------- | ------- | ----------------------------------------- |
+| `visibilityThreshold` | `number` | `0.5`   | Min percentage visible (0.0 to 1.0)       |
+| `dwellMs`             | `number` | `750`   | Min time visible in milliseconds          |
+| `maxNodes`            | `number` | `1000`  | Max elements to track (performance limit) |
+
+**Enable with defaults:**
+
+```javascript
+const analyticsConfig = {
+  siteAuth: "your_key",
+  server: "https://your-server.com",
+  impressions: true, // 50% visible, 750ms dwell, 1000 max nodes
+};
+```
+
+**Custom thresholds:**
+
+```javascript
+const analyticsConfig = {
+  siteAuth: "your_key",
+  server: "https://your-server.com",
+  impressions: {
+    visibilityThreshold: 0.7, // Require 70% visible
+    dwellMs: 1000, // Must be visible for 1 second
+    maxNodes: 500, // Track max 500 elements
+  },
+};
+```
+
+**How it works:**
+
+- ✅ Tracks contentlets marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+- ✅ Uses Intersection Observer API for high performance and battery efficiency
+- ✅ Only fires when element is ≥50% visible for ≥750ms (configurable)
+- ✅ Only tracks during active tab (respects page visibility)
+- ✅ One impression per contentlet per session (no duplicates)
+- ✅ Automatically disabled in dotCMS editor mode
+
+### Click Tracking Configuration
+
+Controls automatic tracking of user interactions with content elements.
+
+**Enable click tracking:**
+
+```javascript
+const analyticsConfig = {
+  siteAuth: "your_key",
+  server: "https://your-server.com",
+  clicks: true, // Enable with 300ms throttle (fixed)
+};
+```
+
+**How it works:**
+
+- ✅ Tracks clicks on `<a>` and `<button>` elements within contentlets
+- ✅ Contentlets must be marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+- ✅ Captures semantic attributes (`href`, `aria-label`, `data-*`) and excludes CSS classes
+- ✅ Throttles rapid clicks to prevent duplicate tracking (300ms fixed)
+- ✅ Automatically disabled in dotCMS editor mode
+
+**Captured Data:**
+
+For each click, the SDK captures:
+
+- **Content Info**: `identifier`, `inode`, `title`, `content_type`
+- **Element Info**:
+  - `text` - Button/link text (truncated to 100 chars)
+  - `type` - Element type (`a` or `button`)
+  - `id` - Element ID (required by backend, empty string if not present)
+  - `class` - Element CSS classes (required by backend, empty string if not present)
+  - `href` - Link destination as written in HTML (e.g., `/signup` not `http://...`, only for `<a>`, empty string for buttons)
+  - `attributes` - Additional useful attributes (see below)
+- **Position Info**:
+  - `viewport_offset_pct` - Position relative to viewport (0-100%)
+  - `dom_index` - Element position in DOM
+
+**Attributes Object:**
+
+The `attributes` object captures additional semantic data:
+
+✅ **Included** (semantic/analytics value):
+
+- `data-*` - Custom data attributes (e.g., `data-category="primary-cta"`)
+- `aria-*` - Accessibility attributes
+- `title`, `target` - Standard HTML attributes
+
+❌ **Excluded** (to avoid duplication):
+
+- `class` - Already captured as top-level property
+- `id` - Already captured as top-level property
+- `href` - Already captured as top-level property
+- `data-dot-analytics-*` - Internal SDK attributes
+
+**Adding Custom Analytics Metadata:**
+
+Use `data-*` attributes to enrich click tracking:
+
+```javascript
+// In your Next.js component
+<a
+  href="/signup"
+  id="cta-signup"
+  data-category="primary-cta"
+  data-campaign="summer-sale"
+  aria-label="Sign up for free trial">
+  Start Free Trial →
+</a>
+
+<button
+  data-action="download"
+  data-file-type="pdf"
+  data-category="lead-magnet">
+  Download Whitepaper
+</button>
+```
+
+**Complete Configuration Example:**
+
+```javascript
+// /config/analytics.config.js
+export const analyticsConfig = {
+  siteAuth: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_SITE_KEY,
+  server: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_HOST,
+  autoPageView: true,
+  debug: process.env.NEXT_PUBLIC_DOTCMS_ANALYTICS_DEBUG === "true",
+  queue: {
+    eventBatchSize: 15,
+    flushInterval: 5000,
+  },
+  impressions: {
+    visibilityThreshold: 0.5, // 50% visible
+    dwellMs: 750, // 750ms dwell time
+    maxNodes: 1000, // Track up to 1000 elements
+  },
+  clicks: true, // Enable click tracking (300ms throttle, fixed)
 };
 ```
 
@@ -504,9 +720,11 @@ Open browser DevTools � Application � Local Storage:
 ### Config File Issues
 
 1. **Import Path Not Found**:
+
    ```javascript
    // ❌ Error: Cannot find module '@/config/analytics.config'
    ```
+
    - Verify the file exists at `/src/config/analytics.config.js`
    - Check your `jsconfig.json` or `tsconfig.json` has the `@` alias configured:
      ```json
@@ -520,9 +738,11 @@ Open browser DevTools � Application � Local Storage:
      ```
 
 2. **Undefined Config Values**:
+
    ```javascript
    // Config shows undefined for siteAuth or server
    ```
+
    - Verify environment variables are set in `.env.local`
    - Restart dev server after changing `.env.local`
    - Check variable names start with `NEXT_PUBLIC_`
@@ -575,11 +795,12 @@ interface QueueConfig {
 interface ContentAnalyticsHook {
   pageView: (customData?: Record<string, unknown>) => void;
   track: (eventName: string, properties?: Record<string, unknown>) => void;
+  conversion: (name: string, options?: Record<string, unknown>) => void;
 }
 
 // ✅ CORRECT: Always pass config - import from centralized config file
 import { analyticsConfig } from "@/config/analytics.config";
-const { pageView, track } = useContentAnalytics(analyticsConfig);
+const { pageView, track, conversion } = useContentAnalytics(analyticsConfig);
 ```
 
 **CRITICAL**: The hook **ALWAYS requires config as a parameter**. There is no provider pattern for the hook - `<DotContentAnalytics />` is only for auto pageview tracking and does NOT provide context to child components.
@@ -611,7 +832,7 @@ Track a custom event with optional properties.
 
 **Parameters**:
 
-- `eventName` (required): String identifier for the event (cannot be "pageview")
+- `eventName` (required): String identifier for the event (cannot be "pageview" or "conversion")
 - `properties` (optional): Object with event-specific data
 
 **Example**:
@@ -623,9 +844,47 @@ track("button-click", {
 });
 ```
 
+#### `conversion(name, options?)`
+
+Track a conversion event (purchase, download, sign-up, etc.) with optional metadata.
+
+**⚠️ IMPORTANT: Conversion events are business events that should only be tracked after a successful action or completed goal.** Tracking conversions on clicks or attempts (before success) diminishes their value as conversion metrics. Only track conversions when:
+
+- ✅ Purchase is completed and payment is confirmed
+- ✅ Download is successfully completed
+- ✅ Sign-up form is submitted and account is created
+- ✅ Form submission is successful and data is saved
+- ✅ Any business goal is actually achieved
+
+**Parameters**:
+
+- `name` (required): String identifier for the conversion (e.g., "purchase", "download", "signup")
+- `options` (optional): Object with conversion metadata (all properties go into `custom` object)
+
+**Examples**:
+
+```javascript
+// Basic conversion (after successful download)
+conversion("download");
+
+// Conversion with custom metadata (after successful purchase)
+conversion("purchase", {
+  value: 99.99,
+  currency: "USD",
+  productId: "SKU-12345",
+});
+
+// Conversion with additional context (after successful signup)
+conversion("signup", {
+  source: "homepage",
+  plan: "premium",
+});
+```
+
 ## Best Practices
 
 1. **Centralize Configuration**: Create a dedicated config file (`/config/analytics.config.js`) for all analytics settings
+
    ```javascript
    // ✅ GOOD: Centralized config file
    // /config/analytics.config.js
@@ -644,6 +903,7 @@ track("button-click", {
    ```
 
 2. **Always Import and Pass Config**: The hook requires config as a parameter
+
    ```javascript
    // ✅ CORRECT: Import centralized config in every component
    // MyComponent.js
@@ -653,29 +913,30 @@ track("button-click", {
    // ❌ WRONG: Inline config duplication
    // MyComponent.js
    const { track } = useContentAnalytics({
-     siteAuth: "...",  // Duplicated!
-     server: "..."     // Duplicated!
+     siteAuth: "...", // Duplicated!
+     server: "...", // Duplicated!
    });
    ```
 
 3. **Use DotContentAnalytics for Auto PageViews**: Add to layout for automatic tracking
+
    ```javascript
    // layout.js - For automatic pageview tracking only
    import { analyticsConfig } from "@/config/analytics.config";
-   <DotContentAnalytics config={analyticsConfig} />
+   <DotContentAnalytics config={analyticsConfig} />;
    ```
 
 4. **Environment Variables**: Always use environment variables for sensitive config (siteAuth)
 
-3. **Event Naming**: Use consistent, descriptive event names (e.g., `cta-click`, not just `click`)
+5. **Event Naming**: Use consistent, descriptive event names (e.g., `cta-click`, not just `click`)
 
-4. **Custom Data**: Include relevant context in event properties
+6. **Custom Data**: Include relevant context in event properties
 
-5. **Queue Configuration**: Use default queue settings unless you have specific performance needs
+7. **Queue Configuration**: Use default queue settings unless you have specific performance needs
 
-6. **Debug Mode**: Enable only in development, disable in production
+8. **Debug Mode**: Enable only in development, disable in production
 
-7. **Auto Page Views**: Keep enabled for SPAs (Next.js) to track route changes
+9. **Auto Page Views**: Keep enabled for SPAs (Next.js) to track route changes
 
 ## Related Resources
 

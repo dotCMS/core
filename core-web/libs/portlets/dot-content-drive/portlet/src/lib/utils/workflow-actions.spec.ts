@@ -21,7 +21,10 @@ describe('workflow-actions', () => {
                     noneLocked: false,
                     allAreAssets: false,
                     isPage: false,
-                    isContentlet: false
+                    isContentlet: false,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: false
                 });
             });
         });
@@ -53,7 +56,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
-                    isContentlet: true
+                    isContentlet: true,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -83,7 +89,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: false,
                     isPage: true,
-                    isContentlet: false
+                    isContentlet: false,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -113,7 +122,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: true,
                     isPage: false,
-                    isContentlet: false
+                    isContentlet: false,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -143,7 +155,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: true,
                     isPage: false,
-                    isContentlet: false
+                    isContentlet: false,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
         });
@@ -182,7 +197,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
-                    isContentlet: true
+                    isContentlet: true,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -226,7 +244,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: false,
                     isPage: true,
-                    isContentlet: false
+                    isContentlet: false,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -263,7 +284,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
-                    isContentlet: true
+                    isContentlet: true,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -460,7 +484,10 @@ describe('workflow-actions', () => {
                     noneLocked: true,
                     allAreAssets: false,
                     isPage: false,
-                    isContentlet: true
+                    isContentlet: true,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -490,7 +517,10 @@ describe('workflow-actions', () => {
                     noneLocked: false,
                     allAreAssets: false,
                     isPage: false,
-                    isContentlet: true
+                    isContentlet: true,
+                    allAreFolders: false,
+                    isFolder: false,
+                    noneFolder: true
                 });
             });
 
@@ -1098,6 +1128,120 @@ describe('workflow-actions', () => {
                     expect(result.noneArchived).toBe(false);
                     expect(result.allArchived).toBe(false);
                 });
+            });
+        });
+
+        describe('folder selection', () => {
+            it('should identify a single folder', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        type: 'folder',
+                        identifier: 'folder-123',
+                        path: '/documents/',
+                        name: 'Documents'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result).toEqual({
+                    hasSelection: true,
+                    isSingleSelection: true,
+                    allArchived: false,
+                    allLive: false,
+                    allWorking: false,
+                    allLocked: false,
+                    noneArchived: false,
+                    noneLive: false,
+                    noneWorking: false,
+                    noneLocked: false,
+                    allAreAssets: false,
+                    isPage: false,
+                    isContentlet: false,
+                    allAreFolders: true,
+                    isFolder: true,
+                    noneFolder: false
+                });
+            });
+
+            it('should identify multiple folders', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        type: 'folder',
+                        identifier: 'folder-1',
+                        path: '/documents/',
+                        name: 'Documents'
+                    } as DotContentDriveItem,
+                    {
+                        type: 'folder',
+                        identifier: 'folder-2',
+                        path: '/images/',
+                        name: 'Images'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result).toEqual({
+                    hasSelection: true,
+                    isSingleSelection: false,
+                    allArchived: false,
+                    allLive: false,
+                    allWorking: false,
+                    allLocked: false,
+                    noneArchived: false,
+                    noneLive: false,
+                    noneWorking: false,
+                    noneLocked: false,
+                    allAreAssets: false,
+                    isPage: false,
+                    isContentlet: false,
+                    allAreFolders: true,
+                    isFolder: true,
+                    noneFolder: false
+                });
+            });
+
+            it('should identify mixed folders and content items', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        type: 'folder',
+                        identifier: 'folder-1',
+                        path: '/documents/',
+                        name: 'Documents'
+                    } as DotContentDriveItem,
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.allAreFolders).toBe(false);
+                expect(result.isFolder).toBe(false);
+                expect(result.noneFolder).toBe(false);
+                expect(result.hasSelection).toBe(true);
+                expect(result.isSingleSelection).toBe(false);
+            });
+
+            it('should set noneFolder to true when no folders are selected', () => {
+                const items: DotContentDriveItem[] = [
+                    {
+                        archived: false,
+                        live: true,
+                        working: false,
+                        baseType: 'CONTENT'
+                    } as DotContentDriveItem
+                ];
+
+                const result = getActionConditions(items);
+
+                expect(result.noneFolder).toBe(true);
+                expect(result.allAreFolders).toBe(false);
+                expect(result.isFolder).toBe(false);
             });
         });
     });

@@ -1,7 +1,9 @@
+@let data = $data();
+@let collapsed = $collapsed();
 <div class="dot-nav__title">
     <div
         (mouseenter)="setSubMenuPosition()"
-        [class.dot-nav__item--active]="data.active"
+        [class.dot-nav__item--active]="data.isOpen"
         class="dot-nav__item"
         data-testid="nav-item"
         appendTo="target">
@@ -10,22 +12,18 @@
             data-testid="nav-item-main"
             (click)="clickHandler($event, data)">
             <dot-nav-icon
-                [icon]="
-                    data.tabIcon === labelImportantIcon
-                        ? (data.tabName | dotRandomIcon)
-                        : data.tabIcon
-                "
-                aria-hidden="true"></dot-nav-icon>
-            <span class="dot-nav__item-label" data-testid="nav-item-label">{{ data.tabName }}</span>
+                [icon]="data.icon === labelImportantIcon ? (data.label | dotRandomIcon) : data.icon"
+                aria-hidden="true" />
+            <span class="dot-nav__item-label" data-testid="nav-item-label">{{ data.label }}</span>
         </div>
         <div
             class="dot-nav__item-toggle"
             data-testid="nav-item-toggle"
             (click)="toggleHandler($event, data)">
-            <dot-icon
-                class="dot-nav__item-arrow"
-                aria-hidden="true"
-                name="{{ data.isOpen ? 'arrow_drop_down' : 'arrow_drop_up' }}"></dot-icon>
+            <i
+                class="dot-nav__item-arrow pi"
+                [ngClass]="data.isOpen ? 'pi-chevron-up' : 'pi-chevron-down'"
+                aria-hidden="true"></i>
         </div>
     </div>
 </div>
@@ -34,4 +32,4 @@
     [ngStyle]="customStyles"
     [data]="data"
     [collapsed]="collapsed"
-    #subnav></dot-sub-nav>
+    #subnav />

@@ -10,7 +10,8 @@ import {
     HintPropertyComponent,
     NamePropertyComponent,
     RegexCheckPropertyComponent,
-    ValuesPropertyComponent
+    ValuesPropertyComponent,
+    NewRenderModePropertyComponent
 } from '../content-type-fields-properties-form/field-properties';
 import { DotRelationshipsPropertyComponent } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/dot-relationships-property.component';
 import { validateRelationship } from '../content-type-fields-properties-form/field-properties/dot-relationships-property/services/validators/dot-relationship-validator';
@@ -89,5 +90,10 @@ export const PROPERTY_INFO = {
         },
         order: 6,
         validations: [validateRelationship]
+    },
+    newRenderMode: {
+        component: NewRenderModePropertyComponent,
+        defaultValue: '',
+        order: 1
     }
 };
