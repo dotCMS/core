@@ -4,7 +4,7 @@
             "runner": "nx/tasks-runners/default",
             "options": {
                 "cacheableOperations": ["build", "lint", "test", "e2e", "build-storybook"],
-                "parallel": 1
+                "parallel": 3
             }
         }
     },
@@ -25,7 +25,8 @@
         },
         "@nx/angular:component": {
             "style": "scss",
-            "changeDetection": "OnPush"
+            "changeDetection": "OnPush",
+            "type": "component"
         },
         "@nx/angular": {
             "application": {
@@ -36,12 +37,63 @@
             },
             "storybook-configuration": {
                 "linter": "eslint"
+            },
+            "directive": {
+                "type": "directive"
+            },
+            "service": {
+                "type": "service"
+            },
+            "scam": {
+                "type": "component"
+            },
+            "scam-directive": {
+                "type": "directive"
+            },
+            "guard": {
+                "typeSeparator": "."
+            },
+            "interceptor": {
+                "typeSeparator": "."
+            },
+            "module": {
+                "typeSeparator": "."
+            },
+            "pipe": {
+                "typeSeparator": "."
+            },
+            "resolver": {
+                "typeSeparator": "."
             }
         },
         "@nx/react": {
             "library": {
                 "unitTestRunner": "jest"
             }
+        },
+        "@schematics/angular:component": {
+            "type": "component"
+        },
+        "@schematics/angular:directive": {
+            "type": "directive"
+        },
+        "@schematics/angular:service": {
+            "type": "service"
+        },
+        "@schematics/angular:guard": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:interceptor": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:module": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:pipe": {
+            "typeSeparator": "."
+        },
+        "@schematics/angular:resolver": {
+            "typeSeparator": "."
         }
     },
     "$schema": "./node_modules/nx/schemas/nx-schema.json",
@@ -183,5 +235,7 @@
             "preVersionCommand": "yarn nx run-many -t build"
         }
     },
-    "useLegacyCache": true
+    "serve": {
+        "dependsOn": []
+    }
 }

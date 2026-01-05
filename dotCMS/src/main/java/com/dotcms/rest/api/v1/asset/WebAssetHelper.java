@@ -884,16 +884,24 @@ public class WebAssetHelper {
         if (null != meta) {
             final String name = meta.name();
             if (UtilMethods.isSet(name)) {
+                final String currentPath = folder.getPath();
+                // /application/container/
                 //If the field name is used to rename the folder to something else that already exists
-                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
-                final Folder byPath = folderAPI.findFolderByPath(PATH_SEPARATOR + folderName, host, user, false);
+                final String folderName = name.toLowerCase().trim().replaceAll("^/+", "").replaceAll("/+$", "");
+
+                // Build the new path by replacing the last component of the current path
+                final String newPath = buildNewFolderPath(currentPath, folderName);
+
+                final Folder byPath = folderAPI.findFolderByPath(newPath, host, user, false);
                 if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
                     throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
                 }
                 folder.setName(folderName);
+                folder.setPath(newPath);
             }
         }
         applyDetail(folder, host, meta);
+        //The returning folder must be set with the new path if changed
         return folder;
     }
 
@@ -939,6 +947,49 @@ public class WebAssetHelper {
         return Optional.empty();
     }
 
+
+    /**
+     * Builds a new folder path by replacing the last component of the current path with the new folder name.
+     * Examples:
+     * - currentPath="/images/gallery/", folderName="lol" -> "/images/lol/"
+     * - currentPath="/", folderName="lol" -> "/lol/"
+     * - currentPath="/images/", folderName="lol" -> "/lol/"
+     * @param currentPath the current folder path
+     * @param folderName the new folder name (already cleaned)
+     * @return the new folder path
+     */
+    private String buildNewFolderPath(final String currentPath, final String folderName) {
+        if (!UtilMethods.isSet(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Handle root folder case
+        if (PATH_SEPARATOR.equals(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Remove trailing slash for processing
+        String pathToProcess = currentPath.endsWith(PATH_SEPARATOR)
+            ? currentPath.substring(0, currentPath.length() - 1)
+            : currentPath;
+
+        // Find the last separator to replace the last component
+        int lastSeparatorIndex = pathToProcess.lastIndexOf(PATH_SEPARATOR);
+
+        if (lastSeparatorIndex == -1) {
+            // No separator found, treat as root level
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        if (lastSeparatorIndex == 0) {
+            // Only root separator found (e.g., "/images")
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Replace the last component
+        String parentPath = pathToProcess.substring(0, lastSeparatorIndex);
+        return parentPath + PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+    }
 
     /**
      * Creates a new instance of {@link WebAssetHelper}

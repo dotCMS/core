@@ -1,5 +1,6 @@
 import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFieldType } from '@dotcms/uve';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -17,6 +18,8 @@ export const EDIT_CONTENT_CALLBACK_FUNCTION = 'saveAssignCallBackAngular';
 export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
+
+export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
@@ -103,3 +106,14 @@ export const DEFAULT_DEVICES: DotDeviceListItem[] = [
         _isDefault: true
     }
 ];
+
+/**
+ * Constants for style editor field types.
+ * Use these constants in templates instead of hardcoded strings.
+ */
+export const STYLE_EDITOR_FIELD_TYPES = {
+    INPUT: 'input',
+    DROPDOWN: 'dropdown',
+    RADIO: 'radio',
+    CHECKBOX_GROUP: 'checkboxGroup'
+} as const satisfies Record<string, StyleEditorFieldType>;

@@ -2,8 +2,6 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.rest.ResponseEntityView;
 
-import java.util.Map;
-
 /**
  * Response entity view for the PUT /api/v1/permissions/{assetId}/_reset endpoint.
  *
@@ -21,14 +19,14 @@ import java.util.Map;
  * @author dotCMS
  * @since 24.01
  */
-public class ResponseEntityResetPermissionsView extends ResponseEntityView<Map<String, Object>> {
+public class ResponseEntityResetPermissionsView extends ResponseEntityView<ResetAssetPermissionsView> {
 
     /**
      * Creates a new ResponseEntityResetPermissionsView.
      *
-     * @param entity Map containing message, assetId, and previousPermissionCount
+     * @param entity ResetAssetPermissionsView containing message, assetId, and previousPermissionCount
      */
-    public ResponseEntityResetPermissionsView(final Map<String, Object> entity) {
+    public ResponseEntityResetPermissionsView(final ResetAssetPermissionsView entity) {
         super(entity);
     }
 }

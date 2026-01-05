@@ -8,7 +8,7 @@ import { LoginService } from '@dotcms/dotcms-js';
         ':host { display: flex; width:100%; min-height: 100%; height: 100%; margin-right: 80px; }'
     ],
     template:
-        '@if (this.loginService.auth) {<cw-rule-engine-container class="rules__engine-container"></cw-rule-engine-container>}',
+        '@if (this.loginService.auth) {<cw-rule-engine-container class="rules__engine-container" />}',
     standalone: false
 })
 export class AppRulesComponent {

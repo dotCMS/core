@@ -402,6 +402,39 @@ public interface ContentletAPI {
 	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Creates an ElasticSearch Scroll API query with proper permissions applied.
+	 * <p>
+	 * This method should be used instead of directly accessing the factory when you need
+	 * scroll functionality for large result sets. It ensures that permissions are properly
+	 * applied to the query before creating the scroll context.
+	 * </p>
+	 * <p>
+	 * <strong>IMPORTANT:</strong> Always use try-with-resources to ensure the scroll
+	 * context is properly cleaned up:
+	 * </p>
+	 * <pre>
+	 * try (ESContentletScroll scroll = contentletAPI.createScrollQuery(query, user, false, 100, "title asc")) {
+	 *     List&lt;ContentletSearch&gt; batch;
+	 *     while ((batch = scroll.nextBatch()) != null && !batch.isEmpty()) {
+	 *         // process batch
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param luceneQuery The base lucene query (permissions will be added automatically)
+	 * @param user The user making the request (required if not respecting frontend roles)
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch
+	 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+	 * @return ESContentletScroll instance for iterating through results
+	 * @throws DotSecurityException If user is null and not respecting frontend roles
+	 * @throws DotDataException If there's an error creating the scroll query
+	 */
+	public com.dotcms.content.elasticsearch.business.ESContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy)
+			throws DotSecurityException, DotDataException;
+
+	/**
 	 *
 	 * Returns a list of {@link Contentlet} whose parent host matches the given host and whose base-type
 	 * (See {@link Structure.Type}) matches any of the given base types. .

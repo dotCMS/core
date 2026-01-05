@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1188,6 +1189,29 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 					excludingContentTypes, user, respectFrontendRoles);
 		}
 		return paginatedContentletsByHost;
+	}
+
+	@Override
+	public ESContentletScroll createScrollQuery(
+			final String luceneQuery, final com.liferay.portal.model.User user,
+			final boolean respectFrontendRoles, final int batchSize, final String sortBy)
+			throws DotSecurityException, DotDataException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+
+		final ESContentletScroll scrollQuery = conAPI.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy, scrollQuery);
+		}
+
+		return scrollQuery;
 	}
 
 

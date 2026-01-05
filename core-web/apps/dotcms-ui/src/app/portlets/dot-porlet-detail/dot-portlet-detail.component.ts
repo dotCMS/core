@@ -17,7 +17,7 @@ export class DotPortletDetailComponent implements OnInit {
     isContent = false;
 
     ngOnInit() {
-        const currentPortlet: string = this.route.parent.parent.snapshot.params.id;
+        const currentPortlet: string = this.route.parent.snapshot.params.id;
         this.isWorkflow = currentPortlet === 'workflow';
         this.isContent = !this.isWorkflow;
     }

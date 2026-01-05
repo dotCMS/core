@@ -130,7 +130,9 @@ const baseUVEState = {
     toggleLock: jest.fn(),
     socialMedia: signal(null),
     trackUVECalendarChange: jest.fn(),
-    paletteOpen: signal(false),
+    palette: {
+        open: signal(false)
+    },
     setPaletteOpen: jest.fn()
 };
 
@@ -433,6 +435,17 @@ describe('DotUveToolbarComponent', () => {
                     severity: 'success',
                     summary: 'Copied',
                     life: 3000
+                });
+            });
+
+            it('should have rel="noreferrer noopener" on URL links for security', () => {
+                const urlLinks = spectator.queryAll('.url-value a');
+
+                expect(urlLinks.length).toBeGreaterThan(0);
+
+                urlLinks.forEach((link) => {
+                    expect(link.getAttribute('rel')).toBe('noreferrer noopener');
+                    expect(link.getAttribute('target')).toBe('_blank');
                 });
             });
         });
@@ -894,7 +907,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with true when palette is closed', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
-                baseUVEState.paletteOpen.set(false);
+                baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
@@ -906,7 +919,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with false when palette is open', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
-                baseUVEState.paletteOpen.set(true);
+                baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('uve-toolbar-palette-toggle'));
@@ -917,7 +930,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show close icon and hide open icon when palette is closed', () => {
                 baseUVEState.$isEditMode.set(true);
-                baseUVEState.paletteOpen.set(false);
+                baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
                 const openIcon = spectator.query(byTestId('palette-open-icon'));
@@ -931,7 +944,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show open icon and hide close icon when palette is open', () => {
                 baseUVEState.$isEditMode.set(true);
-                baseUVEState.paletteOpen.set(true);
+                baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 
                 const openIcon = spectator.query(byTestId('palette-open-icon'));

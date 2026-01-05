@@ -1,0 +1,17 @@
+{
+    "name": "@dotcms/create-app",
+    "version": "1.0.0",
+    "type": "commonjs",
+    "main": "./src/index.js",
+    "types": "./src/index.d.ts",
+    "bin": {
+        "create-dotcms-app": "./src/index.js"
+    },
+    "files": [
+        "dist",
+        "!**/*.tsbuildinfo"
+    ],
+    "dependencies": {
+        "tslib": "^2.3.0"
+    }
+}
