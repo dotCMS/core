@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -40,16 +41,15 @@ public interface AbstractAssetPermissionsView {
     /**
      * Gets the asset type.
      *
-     * @return Asset type constant (HOST, FOLDER, CONTENT, TEMPLATE, CONTAINER, etc.)
+     * @return Asset type scope (HOST, FOLDER, CONTENT, TEMPLATE, CONTAINER, etc.)
      */
     @JsonProperty("assetType")
     @Schema(
         description = "Asset type",
         example = "FOLDER",
-        allowableValues = {"HOST", "FOLDER", "CONTENT", "TEMPLATE", "CONTAINER", "PAGE", "LINK", "CATEGORY", "RULE", "CONTENT_TYPE"},
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    String assetType();
+    PermissionAPI.Scope assetType();
 
     /**
      * Gets the permission inheritance mode.
@@ -60,10 +60,9 @@ public interface AbstractAssetPermissionsView {
     @Schema(
         description = "Permission inheritance mode",
         example = "INDIVIDUAL",
-        allowableValues = {"INHERITED", "INDIVIDUAL"},
         requiredMode = Schema.RequiredMode.REQUIRED
     )
-    String inheritanceMode();
+    InheritanceMode inheritanceMode();
 
     /**
      * Indicates if this asset can have child permissionables.

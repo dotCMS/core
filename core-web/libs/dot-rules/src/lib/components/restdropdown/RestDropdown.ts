@@ -31,7 +31,7 @@ import { Verify } from '../../services/validation/Verify';
             [minSelections]="minSelections"
             [allowAdditions]="allowAdditions"
             [options]="options | async"
-            placeholder="{{ placeholder }}"></cw-input-dropdown>
+            placeholder="{{ placeholder }}" />
     `,
     standalone: false
 })

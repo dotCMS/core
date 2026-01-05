@@ -694,7 +694,7 @@ public class PermissionResource {
         }
 
         // Get asset metadata for the response
-        final AssetPermissionHelper.AssetMetadata metadata = assetPermissionHelper.getAssetMetadata(asset, user);
+        final AssetMetadata metadata = assetPermissionHelper.getAssetMetadata(asset, user);
 
         // Use PaginationUtil with paginator (same pattern as getUserPermissions)
         final PaginationUtil paginationUtil = new PaginationUtil(assetPermissionsPaginator);

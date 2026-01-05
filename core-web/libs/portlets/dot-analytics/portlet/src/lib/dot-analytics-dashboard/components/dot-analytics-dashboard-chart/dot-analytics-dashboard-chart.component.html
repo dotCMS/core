@@ -41,17 +41,11 @@
                     <div class="line-chart-skeleton">
                         <!-- Y-axis labels skeleton -->
                         <div class="y-axis-skeleton">
-                            <p-skeleton height="0.75rem" width="1.875rem" class="mb-4"></p-skeleton>
-                            <p-skeleton
-                                height="0.75rem"
-                                width="1.5625rem"
-                                class="mb-4"></p-skeleton>
-                            <p-skeleton
-                                height="0.75rem"
-                                width="2.1875rem"
-                                class="mb-4"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="1.75rem" class="mb-4"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="1.25rem"></p-skeleton>
+                            <p-skeleton height="0.75rem" width="1.875rem" class="mb-4" />
+                            <p-skeleton height="0.75rem" width="1.5625rem" class="mb-4" />
+                            <p-skeleton height="0.75rem" width="2.1875rem" class="mb-4" />
+                            <p-skeleton height="0.75rem" width="1.75rem" class="mb-4" />
+                            <p-skeleton height="0.75rem" width="1.25rem" />
                         </div>
 
                         <!-- Chart area skeleton -->
@@ -68,23 +62,23 @@
 
                         <!-- X-axis labels skeleton -->
                         <div class="x-axis-skeleton">
-                            <p-skeleton height="0.75rem" width="2.5rem"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="2.8125rem"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="2.1875rem"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="3.125rem"></p-skeleton>
-                            <p-skeleton height="0.75rem" width="2.625rem"></p-skeleton>
+                            <p-skeleton height="0.75rem" width="2.5rem" />
+                            <p-skeleton height="0.75rem" width="2.8125rem" />
+                            <p-skeleton height="0.75rem" width="2.1875rem" />
+                            <p-skeleton height="0.75rem" width="3.125rem" />
+                            <p-skeleton height="0.75rem" width="2.625rem" />
                         </div>
                     </div>
                 </div>
             } @else if (type === 'pie' || type === 'doughnut') {
                 <!-- Pie/Doughnut chart skeleton -->
                 <div class="chart-skeleton chart-skeleton--pie">
-                    <p-skeleton shape="circle" size="21.875rem" class="mx-auto"></p-skeleton>
+                    <p-skeleton shape="circle" size="21.875rem" class="mx-auto" />
                 </div>
             } @else {
                 <!-- Default chart skeleton for other types -->
                 <div class="chart-skeleton chart-skeleton--default">
-                    <p-skeleton height="100%" width="100%"></p-skeleton>
+                    <p-skeleton height="100%" width="100%" />
                 </div>
             }
         </div>
@@ -106,7 +100,7 @@
                 [options]="$chartOptions()"
                 width="100%"
                 [height]="height"
-                data-testid="chart"></p-chart>
+                data-testid="chart" />
         </div>
     }
 </p-card>

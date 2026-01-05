@@ -724,22 +724,22 @@ public class PermissionResourceIntegrationTest {
         assertNotNull(metadata);
 
         // Verify permission levels
-        Set<String> levels = metadata.levels();
+        Set<PermissionAPI.Type> levels = metadata.levels();
         assertNotNull(levels);
         assertFalse("Should have permission levels", levels.isEmpty());
-        assertTrue("Should include READ level", levels.contains("READ"));
-        assertTrue("Should include WRITE level", levels.contains("WRITE"));
-        assertTrue("Should include PUBLISH level", levels.contains("PUBLISH"));
-        assertTrue("Should include EDIT_PERMISSIONS level", levels.contains("EDIT_PERMISSIONS"));
-        assertTrue("Should include CAN_ADD_CHILDREN level", levels.contains("CAN_ADD_CHILDREN"));
+        assertTrue("Should include READ level", levels.contains(PermissionAPI.Type.READ));
+        assertTrue("Should include WRITE level", levels.contains(PermissionAPI.Type.WRITE));
+        assertTrue("Should include PUBLISH level", levels.contains(PermissionAPI.Type.PUBLISH));
+        assertTrue("Should include EDIT_PERMISSIONS level", levels.contains(PermissionAPI.Type.EDIT_PERMISSIONS));
+        assertTrue("Should include CAN_ADD_CHILDREN level", levels.contains(PermissionAPI.Type.CAN_ADD_CHILDREN));
 
         // Verify permission scopes
-        Set<String> scopes = metadata.scopes();
+        Set<PermissionAPI.Scope> scopes = metadata.scopes();
         assertNotNull(scopes);
         assertFalse("Should have permission scopes", scopes.isEmpty());
-        assertTrue("Should include INDIVIDUAL scope", scopes.contains("INDIVIDUAL"));
-        assertTrue("Should include HOST scope", scopes.contains("HOST"));
-        assertTrue("Should include FOLDER scope", scopes.contains("FOLDER"));
+        assertTrue("Should include INDIVIDUAL scope", scopes.contains(PermissionAPI.Scope.INDIVIDUAL));
+        assertTrue("Should include HOST scope", scopes.contains(PermissionAPI.Scope.HOST));
+        assertTrue("Should include FOLDER scope", scopes.contains(PermissionAPI.Scope.FOLDER));
     }
 
     // ==================== PUT Asset Permissions Tests (updateAssetPermissions) ====================

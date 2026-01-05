@@ -9,5 +9,5 @@
 </div>
 <div [class.disabled]="disabled" class="text">
     <div [innerHTML]="uiMessage.message | dm: uiMessage?.args" data-testId="ui-message-span"></div>
-    <ng-content></ng-content>
+    <ng-content />
 </div>
