@@ -13,7 +13,7 @@
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)">
         <ng-template let-node pTemplate="default">
-            <span>{{ node.label | truncatePath }}</span>
+            <span>{{ node.label | dotTruncatePath }}</span>
         </ng-template>
     </p-tree>
 } @else {

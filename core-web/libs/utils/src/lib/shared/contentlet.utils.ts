@@ -1,5 +1,4 @@
 import { DotCMSContentlet, DotFileMetadata, DotCMSTempFile } from '@dotcms/dotcms-models';
-
 /**
  * Returns the metadata associated with the given contentlet.
  *
