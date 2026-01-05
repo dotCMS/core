@@ -36,7 +36,7 @@
         </p-messages>
     }
 
-    <router-outlet></router-outlet>
+    <router-outlet />
     <dot-edit-ema-navigation-bar
         [items]="$menuItems()"
         (action)="handleItemAction($event)"
@@ -57,7 +57,7 @@
     (action)="handleNgEvent($event)"
     (reloadFromDialog)="reloadFromDialog()"
     #dialog
-    data-testId="ema-dialog"></dot-edit-ema-dialog>
+    data-testId="ema-dialog" />
 <p-confirmDialog
     [style]="{
         width: '400px'
@@ -66,4 +66,4 @@
     rejectIcon="hidden"
     acceptIcon="hidden"
     rejectButtonStyleClass="p-button-outlined"
-    data-testId="confirm-dialog"></p-confirmDialog>
+    data-testId="confirm-dialog" />

@@ -1,6 +1,15 @@
+import { Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, computed, signal, DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    OnInit,
+    OnDestroy,
+    computed,
+    signal
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -26,9 +35,9 @@ import { DotMessagePipe } from '@dotcms/ui';
     styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUsageShellComponent implements OnInit {
+export class DotUsageShellComponent implements OnInit, OnDestroy {
     private readonly usageService = inject(DotUsageService);
-    private readonly destroyRef = inject(DestroyRef);
+    private dataSubscription?: Subscription;
 
     // UI state managed by component
     readonly summary = signal<UsageSummary | null>(null);
@@ -44,28 +53,36 @@ export class DotUsageShellComponent implements OnInit {
         this.loadData();
     }
 
+    ngOnDestroy(): void {
+        if (this.dataSubscription) {
+            this.dataSubscription.unsubscribe();
+        }
+    }
+
     loadData(): void {
+        // Unsubscribe from previous subscription if it exists
+        if (this.dataSubscription) {
+            this.dataSubscription.unsubscribe();
+        }
+
         this.loading.set(true);
         this.error.set(null);
         this.errorStatus.set(null);
 
-        this.usageService
-            .getSummary()
-            .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe({
-                next: (summary) => {
-                    this.summary.set(summary);
-                    this.loading.set(false);
-                    this.lastUpdated.set(new Date());
-                },
-                error: (error) => {
-                    const errorMessage = this.usageService.getErrorMessage(error);
-                    this.error.set(errorMessage);
-                    this.errorStatus.set(error.status || null);
-                    this.loading.set(false);
-                    console.error('Failed to load usage data:', error);
-                }
-            });
+        this.dataSubscription = this.usageService.getSummary().subscribe({
+            next: (summary) => {
+                this.summary.set(summary);
+                this.loading.set(false);
+                this.lastUpdated.set(new Date());
+            },
+            error: (error) => {
+                const errorMessage = this.usageService.getErrorMessage(error);
+                this.error.set(errorMessage);
+                this.errorStatus.set(error.status || null);
+                this.loading.set(false);
+                console.error('Failed to load usage data:', error);
+            }
+        });
     }
 
     onRefresh(): void {
