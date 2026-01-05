@@ -231,16 +231,16 @@ export function withPageContext() {
                         DotExperimentStatus.RUNNING,
                         DotExperimentStatus.SCHEDULED
                     ].includes(experiment()?.status);
-                    
+
                     if (!isPageEditable || isExperimentRunning) {
                         return false;
                     }
-                    
+
                     // When feature flag is enabled, always allow access (user can toggle lock)
                     if ($isLockFeatureEnabled()) {
                         return true;
                     }
-                    
+
                     // Legacy behavior: block access if page is locked
                     return !$isPageLocked();
                 });

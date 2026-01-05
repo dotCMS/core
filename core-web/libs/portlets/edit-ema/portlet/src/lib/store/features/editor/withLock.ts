@@ -58,8 +58,15 @@ export function withLock(deps: WithLockDeps) {
                             summary: dotMessageService.get('edit.ema.page.lock'),
                             detail: dotMessageService.get('edit.ema.page.lock.success')
                         });
+                        const editor = store.editor();
+                        patchState(store, {
+                            editor: {
+                                ...editor,
+                                selectedContentlet: null
+                            },
+                            lockLoading: false
+                        });
                         deps.reloadCurrentPage();
-                        patchState(store, { lockLoading: false });
                     },
                     error: () => {
                         messageService.add({
@@ -85,8 +92,15 @@ export function withLock(deps: WithLockDeps) {
                             summary: dotMessageService.get('edit.ema.page.unlock'),
                             detail: dotMessageService.get('edit.ema.page.unlock.success')
                         });
+                        const editor = store.editor();
+                        patchState(store, {
+                            editor: {
+                                ...editor,
+                                selectedContentlet: null
+                            },
+                            lockLoading: false
+                        });
                         deps.reloadCurrentPage();
-                        patchState(store, { lockLoading: false });
                     },
                     error: () => {
                         messageService.add({
