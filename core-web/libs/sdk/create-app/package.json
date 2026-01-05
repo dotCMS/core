@@ -12,6 +12,14 @@
         "!**/*.tsbuildinfo"
     ],
     "dependencies": {
+        "axios": "^1.13.2",
+        "chalk": "^5.6.2",
+        "commander": "^14.0.2",
+        "execa": "^9.6.0",
+        "fs-extra": "^11.3.2",
+        "inquirer": "^13.0.1",
+        "ora": "^9.0.0",
+        "ts-results": "^3.3.0",
         "tslib": "^2.3.0"
     }
 }
