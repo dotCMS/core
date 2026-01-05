@@ -64,7 +64,7 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     it('should render toolbar container', () => {
-        const toolbar = spectator.query('.dot-content-drive-toolbar');
+        const toolbar = spectator.query('p-toolbar');
         expect(toolbar).toBeTruthy();
     });
 
@@ -82,9 +82,9 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(button).toBeTruthy();
     });
 
-    it('should render start and end groups', () => {
-        expect(spectator.query('.p-toolbar-group-top')).toBeTruthy();
-        expect(spectator.query('.p-toolbar-group-bottom')).toBeTruthy();
+    it('should render grid layout with rows', () => {
+        expect(spectator.query('.row-start-1.col-start-2')).toBeTruthy();
+        expect(spectator.query('.row-start-2.col-start-2')).toBeTruthy();
     });
 
     it('should render the content type field', () => {
@@ -114,12 +114,12 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should add the hidden class to the tree toggler when tree is expanded', () => {
+        it('should add the invisible class to the tree toggler when tree is expanded', () => {
             store.isTreeExpanded.mockReturnValue(true);
             spectator.detectChanges();
             const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
             expect(toggler).toBeDefined();
-            expect(toggler?.classes['sidebar-expanded']).toBe(true);
+            expect(toggler?.classes['invisible']).toBe(true);
         });
     });
 
