@@ -8,6 +8,7 @@ import { registerSearchTools } from './tools/search';
 import { registerWorkflowTools } from './tools/workflow';
 import { createContextCheckingServer } from './utils/context-checking-server';
 import { registerListFolderTools } from './tools/list-folder';
+import { registerPageTools } from './tools/page';
 
 const originalServer = new McpServer({
     name: 'DotCMS',
@@ -46,6 +47,7 @@ registerWorkflowTools(server);
 
 // Register custom tools
 registerListFolderTools(server);
+registerPageTools(server);
 
 const transport = new StdioServerTransport();
 (async () => {
