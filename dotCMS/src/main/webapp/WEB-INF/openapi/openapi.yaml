@@ -19354,16 +19354,19 @@ components:
           type: string
           description: Asset type
           enum:
+          - INDIVIDUAL
           - HOST
           - FOLDER
-          - CONTENT
-          - TEMPLATE
           - CONTAINER
-          - PAGE
+          - TEMPLATE
+          - TEMPLATE_LAYOUT
           - LINK
+          - CONTENT
+          - PAGE
+          - CONTENT_TYPE
+          - STRUCTURE
           - CATEGORY
           - RULE
-          - CONTENT_TYPE
           example: FOLDER
         canEdit:
           type: boolean
@@ -22555,17 +22558,17 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: Individual permission levels assigned directly to this role on
-        the asset
+      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
+        \ *.pdf)"
       example:
-      - READ
-      - WRITE
-      - PUBLISH
+      - '*.jpg'
+      - '*.png'
+      - '*.pdf'
       items:
         type: string
-        description: Individual permission levels assigned directly to this role on
-          the asset
-        example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
+        description: "List of file patterns that are allowed in this folder (e.g.,\
+          \ *.jpg, *.pdf)"
+        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
       properties:
         empty:
           type: boolean
@@ -22591,22 +22594,13 @@ components:
       properties:
         empty:
           type: boolean
-    ImmutableMapStringListSampleData:
-      type: object
-      additionalProperties:
-        type: array
-        items:
-          $ref: "#/components/schemas/SampleData"
-      properties:
-        empty:
-          type: boolean
-    ImmutableMapStringListString:
+    ImmutableMapScopeSetType:
       type: object
       additionalProperties:
         type: array
         description: "Inheritable permissions by scope (only for parent permissionables).\
           \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are permission\
-          \ level names"
+          \ types"
         example:
           FOLDER:
           - READ
@@ -22617,17 +22611,35 @@ components:
           type: string
           description: "Inheritable permissions by scope (only for parent permissionables).\
             \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are\
-            \ permission level names"
+            \ permission types"
+          enum:
+          - READ
+          - USE
+          - EDIT
+          - WRITE
+          - PUBLISH
+          - EDIT_PERMISSIONS
+          - CAN_ADD_CHILDREN
           example: "{\"FOLDER\":[\"READ\",\"WRITE\"],\"CONTENT\":[\"READ\"]}"
+        uniqueItems: true
       description: "Inheritable permissions by scope (only for parent permissionables).\
         \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are permission\
-        \ level names"
+        \ types"
       example:
         FOLDER:
         - READ
         - WRITE
         CONTENT:
         - READ
+      properties:
+        empty:
+          type: boolean
+    ImmutableMapStringListSampleData:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: "#/components/schemas/SampleData"
       properties:
         empty:
           type: boolean
@@ -22717,17 +22729,16 @@ components:
       uniqueItems: true
     ImmutableSetType:
       type: array
-      description: Available permission levels that can be assigned to users and roles
+      description: Individual permission levels assigned directly to this role on
+        the asset
       example:
       - READ
       - WRITE
       - PUBLISH
-      - EDIT_PERMISSIONS
-      - CAN_ADD_CHILDREN
       items:
         type: string
-        description: Available permission levels that can be assigned to users and
-          roles
+        description: Individual permission levels assigned directly to this role on
+          the asset
         enum:
         - READ
         - USE
@@ -22736,8 +22747,7 @@ components:
         - PUBLISH
         - EDIT_PERMISSIONS
         - CAN_ADD_CHILDREN
-        example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
-          ]"
+        example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
       properties:
         empty:
           type: boolean
@@ -26648,21 +26658,26 @@ components:
             type: string
             description: Individual permission levels assigned directly to this role
               on the asset
+            enum:
+            - READ
+            - USE
+            - EDIT
+            - WRITE
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
             example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
           properties:
             empty:
               type: boolean
-            first:
-              type: string
-            last:
-              type: string
+          uniqueItems: true
         inheritable:
           type: object
           additionalProperties:
             type: array
             description: "Inheritable permissions by scope (only for parent permissionables).\
               \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are\
-              \ permission level names"
+              \ permission types"
             example:
               CONTENT:
               - READ
@@ -26673,11 +26688,20 @@ components:
               type: string
               description: "Inheritable permissions by scope (only for parent permissionables).\
                 \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values\
-                \ are permission level names"
+                \ are permission types"
+              enum:
+              - READ
+              - USE
+              - EDIT
+              - WRITE
+              - PUBLISH
+              - EDIT_PERMISSIONS
+              - CAN_ADD_CHILDREN
               example: "{\"FOLDER\":[\"READ\",\"WRITE\"],\"CONTENT\":[\"READ\"]}"
+            uniqueItems: true
           description: "Inheritable permissions by scope (only for parent permissionables).\
             \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are\
-            \ permission level names"
+            \ permission types"
           example:
             CONTENT:
             - READ

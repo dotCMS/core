@@ -771,19 +771,37 @@ public class PermissionResourceIntegrationTest {
                 request, this.response, updateTestHost.getIdentifier(), false, form
         );
 
-        // Assert response
+        // Assert response metadata
         assertNotNull(response);
         UpdateAssetPermissionsView data = response.getEntity();
         assertNotNull(data);
         assertEquals("Permissions saved successfully", data.message());
         assertTrue("Permission count should be > 0", data.permissionCount() > 0);
 
-        // Verify asset in response
+        // Verify asset metadata in response
         AssetPermissionsView asset = data.asset();
         assertNotNull(asset);
         assertEquals(updateTestHost.getIdentifier(), asset.assetId());
-        assertEquals("HOST", asset.assetType());
         assertTrue("Host should be parent permissionable", asset.isParentPermissionable());
+
+        // Verify the permissions were actually saved - check response contains our role with correct permissions
+        assertFalse("Response should contain permissions", asset.permissions().isEmpty());
+        RolePermissionView rolePermission = asset.permissions().stream()
+                .filter(rp -> rp.roleId().equals(testRole.getId()))
+                .findFirst()
+                .orElse(null);
+        assertNotNull("Response should contain permissions for testRole", rolePermission);
+        assertTrue("Should have READ permission", rolePermission.individual().contains(PermissionAPI.Type.READ));
+        assertTrue("Should have WRITE permission", rolePermission.individual().contains(PermissionAPI.Type.WRITE));
+        assertTrue("Should have PUBLISH permission", rolePermission.individual().contains(PermissionAPI.Type.PUBLISH));
+
+        // Verify via PermissionAPI (ground truth) that permissions were actually persisted
+        assertTrue("Role should have READ permission on host via API",
+                APILocator.getPermissionAPI().doesRoleHavePermission(updateTestHost, PermissionAPI.PERMISSION_READ, testRole));
+        assertTrue("Role should have WRITE permission on host via API",
+                APILocator.getPermissionAPI().doesRoleHavePermission(updateTestHost, PermissionAPI.PERMISSION_WRITE, testRole));
+        assertTrue("Role should have PUBLISH permission on host via API",
+                APILocator.getPermissionAPI().doesRoleHavePermission(updateTestHost, PermissionAPI.PERMISSION_PUBLISH, testRole));
     }
 
     /**
@@ -874,7 +892,7 @@ public class PermissionResourceIntegrationTest {
         assertNotNull(response);
         UpdateAssetPermissionsView data = response.getEntity();
         assertTrue("inheritanceBroken should be true", data.inheritanceBroken());
-        assertEquals("INDIVIDUAL", data.asset().inheritanceMode());
+        assertEquals(InheritanceMode.INDIVIDUAL, data.asset().inheritanceMode());
 
         // VERIFY inheritance broken after PUT (critical assertion)
         assertFalse("Child folder should NOT be inheriting after PUT",
