@@ -20,7 +20,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                                     *ngComponentOutlet="
                                         blockEditorItem;
                                         inputs: { content: cellNode.content }
-                                    "></ng-container>
+                                    " />
                             </th>
                         }
                     </tr>
@@ -37,7 +37,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                                     *ngComponentOutlet="
                                         blockEditorItem;
                                         inputs: { content: cellNode.content }
-                                    "></ng-container>
+                                    " />
                             </td>
                         }
                     </tr>

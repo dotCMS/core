@@ -55,6 +55,14 @@ public class MultiTreeCacheTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    private Map<String, Object> testStyleProperties() {
+        Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("backgroundColor", "red");
+        styleProperties.put("fontSize", "16px");
+        styleProperties.put("padding", "10px");
+        return styleProperties;
+    }
+
     /**
      * Method to test: {@link MultiTreeCache#putPageMultiTrees(String, String, boolean, Table)} and {@link MultiTreeCache#getPageMultiTrees(String, String, boolean)}
      * When: put a {@link MultiTree} collections with live equals true and DEFAULT Variant
@@ -93,10 +101,12 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(),
+                multiTree_1.getPersonalization(), 1, testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(),
+                multiTree_2.getPersonalization(), 1, testStyleProperties()));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);
@@ -153,10 +163,12 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(),
+                multiTree_1.getPersonalization(), 1, testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(),
+                multiTree_2.getPersonalization(), 1, testStyleProperties()));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);
@@ -217,10 +229,12 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(),
+                multiTree_1.getPersonalization(), 1, testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(),
+                multiTree_2.getPersonalization(), 1, testStyleProperties()));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);
@@ -277,10 +291,12 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(),
+                multiTree_1.getPersonalization(), 1, testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(),
+                multiTree_2.getPersonalization(), 1, testStyleProperties()));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);
@@ -341,10 +357,10 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1,testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1,testStyleProperties()));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);
@@ -402,10 +418,10 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1,testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1,testStyleProperties()));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);
@@ -462,10 +478,12 @@ public class MultiTreeCacheTest {
         final Table<String, String, Set<PersonalizedContentlet>> multiTrees =  HashBasedTable.create();
 
         final Set<PersonalizedContentlet> contentlets_1 = new HashSet<>();
-        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(), multiTree_1.getPersonalization(), 1));
+        contentlets_1.add(new PersonalizedContentlet(multiTree_1.getContentlet(),
+                multiTree_1.getPersonalization(), 1, testStyleProperties()));
 
         final Set<PersonalizedContentlet> contentlets_2 = new HashSet<>();
-        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(), multiTree_2.getPersonalization(), 1));
+        contentlets_2.add(new PersonalizedContentlet(multiTree_2.getContentlet(),
+                multiTree_2.getPersonalization(), 1, null));
 
         multiTrees.put(multiTree_1.getContainer(), multiTree_1.getContainerAsID(), contentlets_1);
         multiTrees.put(multiTree_2.getContainer(), multiTree_2.getContainerAsID(), contentlets_2);

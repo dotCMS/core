@@ -18,7 +18,7 @@
                         (click)="handleTabClick($event); actionsMenu.toggle($event)"
                         class="pi pi-plus add-tab-icon"></i>
                 } @else {
-                    <p-skeleton borderRadius="0px" height="3.9rem" width="4rem"></p-skeleton>
+                    <p-skeleton borderRadius="0px" height="3.9rem" width="4rem" />
                 }
 
                 <p-menu
@@ -29,12 +29,12 @@
                         overflow: 'auto'
                     }"
                     #actionsMenu
-                    appendTo="body"></p-menu>
+                    appendTo="body" />
             </ng-template>
             <ng-template pTemplate="content">
                 <div
                     class="dot-container-code__empty-content flex justify-content-center align-items-center flex-column">
-                    <dot-icon data-testId="code" name="code" size="100"></dot-icon>
+                    <dot-icon data-testId="code" name="code" size="100" />
                     <div
                         class="dot-container-code__empty-content-title"
                         data-testId="empty-content-title">
@@ -79,7 +79,7 @@
                         [value]="containerContent.value.code"
                         #body
                         formControlName="code"
-                        language="html"></dot-textarea-content>
+                        language="html" />
                 </div>
             </p-tabPanel>
         }

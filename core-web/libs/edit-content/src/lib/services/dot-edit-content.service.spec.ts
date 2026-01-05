@@ -7,12 +7,10 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import {
-    DotContentTypeService,
-    DotSiteService,
-    DotWorkflowActionsFireService
-} from '@dotcms/data-access';
+import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotContentletDepths } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentService } from './dot-edit-content.service';
 
@@ -25,12 +23,12 @@ describe('DotEditContentService', () => {
     let spectator: SpectatorHttp<DotEditContentService>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
-    let dotSiteService: SpyObject<DotSiteService>;
+    let dotBrowsingService: SpyObject<DotBrowsingService>;
 
     const createHttp = createHttpFactory({
         service: DotEditContentService,
         providers: [
-            mockProvider(DotSiteService),
+            mockProvider(DotBrowsingService),
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowActionsFireService)
         ]
@@ -39,7 +37,7 @@ describe('DotEditContentService', () => {
         spectator = createHttp();
         dotContentTypeService = spectator.inject(DotContentTypeService);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-        dotSiteService = spectator.inject(DotSiteService);
+        dotBrowsingService = spectator.inject(DotBrowsingService);
     });
 
     describe('Endpoints', () => {
@@ -379,21 +377,51 @@ describe('DotEditContentService', () => {
     });
 
     describe('getContentByFolder', () => {
-        it('should call siteService with correct params when only folderId is provided', () => {
-            dotSiteService.getContentByFolder.mockReturnValue(of([]));
-            spectator.service.getContentByFolder({ folderId: '123' });
+        it('should call dotBrowsingService with correct params when only hostFolderId is provided', () => {
+            const mockContentlets = [];
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
 
-            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith({
-                mimeTypes: [],
+            const params = { hostFolderId: '123' };
+            spectator.service.getContentByFolder(params);
+
+            expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith(params);
+        });
+
+        it('should call dotBrowsingService with all provided params', () => {
+            const mockContentlets = [];
+            const params = {
                 hostFolderId: '123',
-                showLinks: false,
-                showDotAssets: true,
-                showPages: false,
-                showFiles: true,
-                showFolders: false,
-                showWorking: true,
-                sortByDesc: true,
-                showArchived: false
+                mimeTypes: ['image/jpeg', 'image/png'],
+                showLinks: true,
+                showDotAssets: false,
+                showPages: true,
+                showFiles: false,
+                showFolders: true,
+                showWorking: false,
+                sortByDesc: false,
+                showArchived: true
+            };
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
+
+            spectator.service.getContentByFolder(params);
+
+            expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith(params);
+        });
+
+        it('should return content from dotBrowsingService', (done) => {
+            const mockContentlets = [
+                createFakeContentlet({
+                    inode: 'content-1',
+                    title: 'Test Content',
+                    identifier: 'content-1'
+                })
+            ];
+            const params = { hostFolderId: '123' };
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
+
+            spectator.service.getContentByFolder(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
             });
         });
     });

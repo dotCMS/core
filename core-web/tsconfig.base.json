@@ -69,6 +69,7 @@
             "@dotcms/portlets/dot-locales/portlet/data-access": [
                 "libs/portlets/dot-locales/data-access/src/index.ts"
             ],
+            "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
             "@dotcms/query-builder": [
                 "libs/sdk/client/src/lib/client/content/builders/query/query.ts"
             ],
@@ -89,7 +90,8 @@
             "@portlets/*": ["apps/dotcms-ui/src/app/portlets/*"],
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
-            "@tests/*": ["apps/dotcms-ui/src/app/test/*"]
+            "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
+            "sdk-create-app": ["libs/sdk/create-app/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

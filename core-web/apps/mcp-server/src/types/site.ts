@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const SiteSchema = z
     .object({
-        aliases: z.string().optional(),
+        aliases: z.string().nullable().optional(),
         archived: z.boolean(),
         categoryId: z.string(),
         contentTypeId: z.string(),
@@ -50,7 +50,7 @@ export const SiteSchema = z
 export const SiteResponseSchema = z.object({
     entity: SiteSchema,
     errors: z.array(z.any()),
-    i18nMessagesMap: z.record(z.any()),
+    i18nMessagesMap: z.record(z.string(), z.unknown()),
     messages: z.array(z.any()),
     pagination: z.any().nullable(),
     permissions: z.array(z.any())

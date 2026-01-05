@@ -52,7 +52,8 @@ export class DotRouterService {
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
-            id: this.getPortletId(this.router.routerState.snapshot.url)
+            id: this.getPortletId(this.router.routerState.snapshot.url),
+            parentMenuId: this.route.snapshot.queryParams['mId']
         };
     }
 
@@ -73,7 +74,7 @@ export class DotRouterService {
     }
 
     get queryParams(): Params {
-        const nav = this.router.currentNavigation();
+        const nav = this.router.getCurrentNavigation();
 
         return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
     }
@@ -117,9 +118,9 @@ export class DotRouterService {
         const menuId = 'edit-page';
 
         return this.router.navigate([`/${menuId}/content`], {
-            queryParams,
-            state: {
-                menuId
+            queryParams: {
+                ...queryParams,
+                mId: menuId.substring(0, 4)
             }
         });
     }
@@ -345,6 +346,7 @@ export class DotRouterService {
             queryParamsHandling = '',
             queryParams = {}
         } = navigateToPorletOptions || {};
+
         const url = this.router.createUrlTree([link], {
             queryParamsHandling,
             queryParams

@@ -4,6 +4,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCustomField;
 import com.dotcms.contenttype.model.field.layout.FieldLayout;
@@ -14,6 +15,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.contenttype.transform.contenttype.DetailPageTransformerImpl;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
+import com.dotcms.contenttype.transform.field.JsonFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.exception.ExceptionUtil;
@@ -38,6 +40,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.vavr.Tuple2;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.context.Context;
 
@@ -52,6 +55,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -507,7 +511,8 @@ public class ContentTypeHelper implements Serializable {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         fieldsMap.forEach(field -> {
-            if (field.get("clazz").equals(ImmutableCustomField.class.getName())) {
+            if (field.get("clazz").equals(ImmutableCustomField.class.getName())
+                    && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.COMPONENT)) {
                 try {
                     final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
                     final String textValue = (String) field.getOrDefault("values", BLANK);
@@ -519,6 +524,32 @@ public class ContentTypeHelper implements Serializable {
                 }
             }
         });
+    }
+
+    /**
+     * Tries to get the render mode for the specified Custom Field. Such a mode is set via Field
+     * Variable. If it exists, then the specified mode is returned.
+     *
+     * @param fieldData A map with all the properties and attributes of the Custom Field.
+     *
+     * @return The render mode for the specified Custom Field, as specified by the
+     * {@link CustomField.RenderMode} enum.
+     */
+    @SuppressWarnings("unchecked")
+    private CustomField.RenderMode getCustomFieldRenderMode(final Map<String, Object> fieldData) {
+        final List<Map<String, Object>> fieldVariables =
+                (List<Map<String, Object>>) fieldData.get(JsonFieldTransformer.FIELDS_VARIABLES_PROPERTY_NAME);
+        if (!fieldVariables.isEmpty()) {
+            final Optional<Map<String, Object>> renderMode = fieldVariables.stream()
+                    .filter(fieldVariable -> fieldVariable.get("key").equals("newRenderMode"))
+                    .findFirst();
+            if (renderMode.isPresent()) {
+                return Try.of(
+                        () -> CustomField.RenderMode.valueOf(renderMode.get().get("value").toString().trim().toUpperCase()))
+                        .getOrElse(CustomField.RenderMode.COMPONENT);
+            }
+        }
+        return CustomField.RenderMode.IFRAME;
     }
 
     /**
