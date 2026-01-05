@@ -79,7 +79,13 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
+import {
+    CONTAINER_INSERT_ERROR,
+    EDITOR_STATE,
+    NG_CUSTOM_EVENTS,
+    PALETTE_CLASSES,
+    UVE_STATUS
+} from '../shared/enums';
 import {
     ActionPayload,
     ClientData,
@@ -103,10 +109,24 @@ import {
     createReorderMenuURL,
     deleteContentletFromContainer,
     getDragItemData,
+    getHrefFromClickTarget,
     getTargetUrl,
+    injectBaseTag,
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
+
+// Message keys constants
+const MESSAGE_KEY = {
+    DUPLICATE_CONTENT: {
+        TITLE: 'editpage.content.add.already.title',
+        MESSAGE: 'editpage.content.add.already.message'
+    },
+    CONTAINER_LIMIT: {
+        TITLE: 'editpage.content.container.limit.title',
+        MESSAGE: 'editpage.content.container.limit.message'
+    }
+} as const;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -249,8 +269,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const target = e.target as HTMLAnchorElement;
-        const href = target.href || target.closest('a')?.getAttribute('href');
+        const href = getHrefFromClickTarget(e.target);
         const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
@@ -561,12 +580,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * Inject the editor page script and styles to the VTL content
      *
      * @private
-     * @param {string} rendered
+     * @param {string} html
      * @return {*}  {string}
      * @memberof EditEmaEditorComponent
      */
-    private inyectCodeToVTL(rendered: string): string {
-        const fileWithScript = this.addEditorPageScript(rendered);
+    private inyectCodeToVTL(html: string): string {
+        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
+        const origin = this.window.location.origin;
+        const fileWithBase = injectBaseTag({ html, url, origin });
+        const fileWithScript = this.addEditorPageScript(fileWithBase);
         const fileWithStylesAndScript = this.addCustomStyles(fileWithScript);
 
         return fileWithStylesAndScript;
@@ -630,13 +652,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 });
             }
 
-            const { pageContainers, didInsert } = insertContentletInContainer({
+            const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                 ...payload,
                 newContentletId: draggedPayload.item.contentlet.identifier
             });
 
             if (!didInsert) {
-                this.handleDuplicatedContentlet();
+                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                    this.handleContainerLimitReached(payload.container.maxContentlets);
+                } else {
+                    this.handleDuplicatedContentlet();
+                }
 
                 return;
             }
@@ -653,13 +679,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 language_id: this.uveStore.$languageId()
             });
         } else if (dragItem.draggedPayload.type === 'temp') {
-            const { pageContainers, didInsert } = insertContentletInContainer({
+            const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                 ...payload,
                 newContentletId: payload.newContentlet.identifier
             });
 
             if (!didInsert) {
-                this.handleDuplicatedContentlet();
+                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                    this.handleContainerLimitReached(payload.container.maxContentlets);
+                } else {
+                    this.handleDuplicatedContentlet();
+                }
 
                 return;
             }
@@ -758,13 +788,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 /* */
             },
             [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const { pageContainers, didInsert } = insertContentletInContainer({
+                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                     ...actionPayload,
                     newContentletId: detail.data.identifier
                 });
 
                 if (!didInsert) {
-                    this.handleDuplicatedContentlet();
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                    } else {
+                        this.handleDuplicatedContentlet();
+                    }
 
                     return;
                 }
@@ -796,13 +830,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     );
                 }
 
-                const { pageContainers, didInsert } = insertContentletInContainer({
+                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                     ...actionPayload,
                     newContentletId: contentletIdentifier
                 });
 
                 if (!didInsert) {
-                    this.handleDuplicatedContentlet();
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                    } else {
+                        this.handleDuplicatedContentlet();
+                    }
 
                     return;
                 }
@@ -836,10 +874,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         take(1)
                     )
                     .subscribe((response) => {
-                        const { pageContainers, didInsert } = insertContentletInContainer(response);
+                        const { pageContainers, didInsert, errorCode } =
+                            insertContentletInContainer(response);
 
                         if (!didInsert) {
-                            this.handleDuplicatedContentlet();
+                            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                                this.handleContainerLimitReached(response.container.maxContentlets);
+                            } else {
+                                this.handleDuplicatedContentlet();
+                            }
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
                             this.uveStore.savePage(pageContainers);
@@ -1129,9 +1172,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private handleDuplicatedContentlet() {
         this.messageService.add({
             severity: 'info',
-            summary: this.dotMessageService.get('editpage.content.add.already.title'),
-            detail: this.dotMessageService.get('editpage.content.add.already.message'),
+            summary: this.dotMessageService.get(MESSAGE_KEY.DUPLICATE_CONTENT.TITLE),
+            detail: this.dotMessageService.get(MESSAGE_KEY.DUPLICATE_CONTENT.MESSAGE),
             life: 2000
+        });
+
+        this.uveStore.resetEditorProperties();
+
+        this.dialog.resetDialog();
+    }
+
+    private handleContainerLimitReached(maxContentlets: number) {
+        this.messageService.add({
+            severity: 'warn',
+            summary: this.dotMessageService.get(MESSAGE_KEY.CONTAINER_LIMIT.TITLE),
+            detail: this.dotMessageService.get(
+                MESSAGE_KEY.CONTAINER_LIMIT.MESSAGE,
+                maxContentlets.toString()
+            ),
+            life: 3000
         });
 
         this.uveStore.resetEditorProperties();

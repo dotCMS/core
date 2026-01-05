@@ -1,13 +1,13 @@
 <div class="row">
     <div class="row__content-container">
-        <ng-content></ng-content>
+        <ng-content />
     </div>
     <div class="row__actions-container">
         <p-button
             (onClick)="editClasses()"
             data-testid="row-style-class-button"
             styleClass="p-button-text p-button-sm p-button-rounded"
-            icon="pi pi-palette"></p-button>
+            icon="pi pi-palette" />
         <div class="row__drag-container">
             <i
                 [style.font-size.px]="20"
@@ -16,11 +16,10 @@
                 drag_indicator
             </i>
         </div>
-        <dotcms-remove-confirm-dialog
-            (deleteConfirmed)="deleteRow()"></dotcms-remove-confirm-dialog>
+        <dotcms-remove-confirm-dialog (deleteConfirmed)="deleteRow()" />
     </div>
     <dotcms-template-builder-background-columns
         [ngStyle]="{
             opacity: isResizing ? 1 : 0
-        }"></dotcms-template-builder-background-columns>
+        }" />
 </div>

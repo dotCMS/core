@@ -1,5 +1,5 @@
 <div class="dot-pages-create-page-dialog__search-container p-input-icon-right">
-    <dot-icon data-testid="dot-pages-create-page-filter-icon" name="search" size="24"></dot-icon>
+    <dot-icon data-testid="dot-pages-create-page-filter-icon" name="search" size="24" />
     <input
         [placeholder]="'Search' | dm"
         #searchInput
@@ -14,7 +14,7 @@
         <div
             (click)="goToCreatePage(item.variable)"
             class="dot-pages-create-page-dialog__page-item">
-            <dot-icon [name]="item.icon" size="18"></dot-icon>
+            <dot-icon [name]="item.icon" size="18" />
             {{ item.name }}
         </div>
     }

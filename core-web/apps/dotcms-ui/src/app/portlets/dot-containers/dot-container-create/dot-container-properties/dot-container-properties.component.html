@@ -32,7 +32,7 @@
                         pInputText
                         formControlName="title" />
                     @if (form?.value?.identifier) {
-                        <dot-api-link [href]="vm.apiLink"></dot-api-link>
+                        <dot-api-link [href]="vm.apiLink" />
                     }
                 </div>
             </div>
@@ -78,15 +78,13 @@
                     (buttonClick)="showLoopInput()"
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     label="pre_loop"
-                    formControlName="preLoop"></dot-loop-editor>
-                <dot-container-code
-                    [contentTypes]="vm.contentTypes"
-                    [fg]="form"></dot-container-code>
+                    formControlName="preLoop" />
+                <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form" />
                 <dot-loop-editor
                     (buttonClick)="showLoopInput()"
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     formControlName="postLoop"
-                    label="post_loop"></dot-loop-editor>
+                    label="post_loop" />
             </div>
         }
         @if (!vm.isContentTypeVisible) {
@@ -97,7 +95,7 @@
                     id="code"
                     data-testId="code"
                     formControlName="code"
-                    language="html"></dot-textarea-content>
+                    language="html" />
             </div>
         }
     </form>
