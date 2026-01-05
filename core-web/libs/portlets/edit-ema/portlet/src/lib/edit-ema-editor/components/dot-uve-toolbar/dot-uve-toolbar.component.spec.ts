@@ -4,7 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, signal } from '@angular/core';
+import { DebugElement, signal, computed } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -48,7 +48,7 @@ import {
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { Orientation } from '../../../store/models';
+import { Orientation, PageType } from '../../../store/models';
 import {
     getFullPageURL,
     createFavoritePagesURL,
@@ -101,21 +101,47 @@ const infoDisplayPropsSignal = signal(undefined);
 const urlContentMapSignal = signal(undefined);
 const unlockButtonSignal = signal(null);
 
+// Separate signals for view state properties (for test control)
+const deviceSignal = signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'));
+const socialMediaSignal = signal(null);
+const orientationSignal = signal(Orientation.LANDSCAPE);
+const viewParamsSignal = signal({
+    seo: undefined,
+    device: undefined,
+    orientation: undefined
+});
+
+// View signal that returns ViewState object
+const viewSignal = computed(() => ({
+    device: deviceSignal(),
+    socialMedia: socialMediaSignal(),
+    orientation: orientationSignal(),
+    viewParams: viewParamsSignal(),
+    isEditState: true,
+    isPreviewModeActive: false,
+    ogTagsResults: null
+}));
+
+// Mutable signal for pageParams control (for test control)
+const pageParamsSignal = signal({ ...params, mode: UVE_MODE.EDIT });
+
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
     setDevice: jest.fn(),
     setSEO: jest.fn(),
     setOrientation: jest.fn(),
-    pageParams: signal(params),
+    pageParams: pageParamsSignal,
     page: signal(MOCK_RESPONSE_VTL.page),
     site: signal(MOCK_RESPONSE_VTL.site),
     viewAs: signal(MOCK_RESPONSE_VTL.viewAs),
     template: signal(MOCK_RESPONSE_VTL.template),
     layout: signal(MOCK_RESPONSE_VTL.layout),
     containers: signal(MOCK_RESPONSE_VTL.containers),
+    // View state signal
+    view: viewSignal,
     // Computed properties (most are functions, some are mutable signals for test control)
     $apiURL: () => $apiURL,
-    $mode: () => 'EDIT_MODE',  // Default mode value (pageParams doesn't have mode property)
+    $mode: computed(() => pageParamsSignal()?.mode ?? UVE_MODE.UNKNOWN),  // Compute from pageParams signal
     $currentLanguage: () => ({
         id: 1,
         language: 'English',
@@ -138,11 +164,7 @@ const baseUVEState = {
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
-    viewParams: signal({
-        seo: undefined,
-        device: undefined,
-        orientation: undefined
-    }),
+    viewParams: viewParamsSignal,
     languages: signal([
         {
             id: 1,
@@ -170,13 +192,14 @@ const baseUVEState = {
         }
     ]),
     patchViewParams: jest.fn(),
-    orientation: signal(''),
+    orientation: orientationSignal,  // Use the shared signal
     clearDeviceAndSocialMedia: jest.fn(),
-    device: signal(DEFAULT_DEVICES.find((device) => device.inode === 'default')),
+    device: deviceSignal,  // Use the shared signal
     lockLoading: signal(false),
     toggleLock: jest.fn(),
-    socialMedia: signal(null),
+    socialMedia: socialMediaSignal,  // Use the shared signal
     trackUVECalendarChange: jest.fn(),
+    pageType: signal(PageType.TRADITIONAL),
     isTraditionalPage: signal(true),
     experiment: signal(null),
     palette: {
@@ -1012,6 +1035,10 @@ describe('DotUveToolbarComponent', () => {
     });
 
     describe('preview', () => {
+        beforeEach(() => {
+            pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
+        });
+
         const previewBaseUveState = {
             ...baseUVEState,
             $isPreviewMode: signal(true)
@@ -1366,6 +1393,7 @@ describe('DotUveToolbarComponent', () => {
             describe('Handler Methods', () => {
                 describe('handleDeviceSelectorChange', () => {
                     beforeEach(() => {
+                        pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
                         baseUVEState.$isPreviewMode.set(true);
                         spectator.detectChanges();
                     });
@@ -1457,6 +1485,7 @@ describe('DotUveToolbarComponent', () => {
 
             describe('Template Bindings', () => {
                 beforeEach(() => {
+                    pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
                     baseUVEState.$isPreviewMode.set(true);
                     spectator.detectChanges();
                 });
