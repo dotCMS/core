@@ -30,8 +30,8 @@ public interface RequestCostApi {
     }
 
     // Request Cost Header
-    String REQUEST_COST_HEADER_NAME = "X-Request-Cost";
-
+    String REQUEST_COST_HEADER_NAME = "x-dotrequest-cost";
+    String REQUEST_COST_HEADER_TOKEN_MAX = "x-dotratelimit-toks-max";
     String REQUEST_COST_ATTRIBUTE = "dotRequestCost";
 
     // The cost running total attribute that is calculated and stored in the request

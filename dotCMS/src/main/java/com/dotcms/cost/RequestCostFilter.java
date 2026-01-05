@@ -46,7 +46,8 @@ public class RequestCostFilter implements Filter {
         Accounting fullAccounting = requestCostApi.resolveAccounting(request);
 
         boolean allowed = bucket.allow();
-        response.addHeader("X-dotRateLimit-Toks/Max", bucket.getTokenCount() + "/" + bucket.getMaximumBucketSize());
+        response.addHeader(RequestCostApi.REQUEST_COST_HEADER_TOKEN_MAX,
+                bucket.getTokenCount() + "/" + bucket.getMaximumBucketSize());
 
         if (!allowed) {
             response.sendError(429);
