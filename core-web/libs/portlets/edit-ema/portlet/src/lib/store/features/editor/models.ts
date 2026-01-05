@@ -68,6 +68,6 @@ export enum UVE_PALETTE_TABS {
     CONTENT_TYPES = 0,
     WIDGETS = 1,
     FAVORITES = 2,
-    STYLE_EDITOR = 3,
-    LAYERS = 4
+    STYLE_EDITOR = 4,
+    LAYERS = 3
 }

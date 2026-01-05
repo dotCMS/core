@@ -49,7 +49,7 @@
                 <i class="pi pi-table"></i>
             </div>
         </ng-template>
-        @if ($activeTab() === 3) {
+        @if ($activeTab() === TABS_MAP.LAYERS) {
             <div class="w-full h-full p-3">
                 <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
             </div>
