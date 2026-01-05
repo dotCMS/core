@@ -69,8 +69,10 @@
             <tr
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"
-                [class.text-(--text-color-hover)]="state.dragOverRowId() === item.identifier"
-                [class.bg-(--color-palette-primary-100)]="state.dragOverRowId() === item.identifier"
+                [class.text-[var(--text-color-hover)]]="state.dragOverRowId() === item.identifier"
+                [class.bg-[var(--color-palette-primary-100)]]="
+                    state.dragOverRowId() === item.identifier
+                "
                 [pSelectableRow]="item"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
@@ -98,7 +100,7 @@
                                 [attr.data-table-id]="item.identifier" />
                         } @else {
                             <i
-                                class="pi pi-folder text-4xl! flex! items-center! justify-center! w-full! h-full! text-(--gray-700)"
+                                class="pi pi-folder text-4xl! flex! items-center! justify-center! w-full! h-full! text-gray-700"
                                 data-testId="folder-icon"></i>
                         }
                     </div>
@@ -108,7 +110,7 @@
                         (click)="onDoubleClick(item); $event.stopPropagation()">
                         {{ isFolder ? item.name : item.title }}
                     </span>
-                    <span data-testId="lock-hint" class="text-(--gray-700)">
+                    <span data-testId="lock-hint" class="text-gray-700]">
                         @if (!isFolder) {
                             @if (item.locked) {
                                 <i class="pi pi-lock" data-testId="lock-icon"></i>
@@ -165,17 +167,17 @@
         }
     </ng-template>
     <ng-template pTemplate="emptymessage">
-        <tr class="hover:bg-transparent! h-max" >
+        <tr class="hover:bg-transparent! h-max">
             <td colspan="7" class="p-6 text-center h-full border-none">
                 <div class="flex flex-col items-center gap-4 max-w-[400px] mx-auto">
                     <div class="flex items-center justify-center w-20 h-20 rounded-full">
                         <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
                     </div>
                     <div class="flex flex-col">
-                        <h3 class="m-0 text-lg font-medium text-center text-(--gray-800)">
+                        <h3 class="m-0 text-lg font-medium text-center text-gray-800">
                             {{ 'content.drive.empty.state.title' | dm }}
                         </h3>
-                        <p class="m-0 text-(--text-color) text-base leading-6">
+                        <p class="m-0 text-text-color text-base leading-6">
                             {{ 'content.drive.empty.state.description' | dm }}
                         </p>
                     </div>

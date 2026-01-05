@@ -72,7 +72,7 @@ export class DotContentletThumbnail {
                     />
                 ) : this.renderImage ? (
                     <div
-                        class={`thumbnail `}
+                        class={`thumbnail`}
                         style={{
                             'background-image': backgroundImageURL
                         }}>
