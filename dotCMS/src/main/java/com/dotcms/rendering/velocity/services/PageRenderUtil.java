@@ -544,7 +544,7 @@ public class PageRenderUtil implements Serializable {
         final Map<String, Object> styleProperties = personalizedContentlet.getStyleProperties();
 
         if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
-            contentlet.getMap().put("styleProperties", styleProperties);
+            contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
         }
     }
 
