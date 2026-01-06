@@ -151,6 +151,14 @@ export class DotFolderListViewComponent implements OnInit {
     drop = output<DotContentDriveItem>();
 
     /**
+     * An output that emits the scroll event.
+     *
+     * @type {Output<Event>}
+     * @alias scroll
+     */
+    scroll = output<Event>();
+
+    /**
      * An array of selected items.
      *
      * @type {DotContentDriveItem[]}
@@ -193,6 +201,11 @@ export class DotFolderListViewComponent implements OnInit {
         this.selectedItems = [];
     });
 
+    /**
+     * Bound scroll handler to ensure the same reference is used for add/remove event listener
+     */
+    private readonly boundScrollHandler = this.scrollHandler.bind(this);
+
     ngOnInit(): void {
         // We should be getting this from the Global Store
         // But it gets out of scope for the ticket.
@@ -204,6 +217,43 @@ export class DotFolderListViewComponent implements OnInit {
 
             patchState(this.state, { languagesMap });
         });
+    }
+
+    /**
+     * Initializes the component after the view has been initialized
+     */
+    ngAfterViewInit(): void {
+        const tableBody = this.getTableBody();
+
+        if (tableBody) {
+            tableBody.addEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Destroys the component
+     */
+    ngOnDestroy(): void {
+        const tableBody = this.getTableBody();
+        if (tableBody) {
+            tableBody.removeEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Gets the table body element
+     * @returns The table body element
+     */
+    private getTableBody(): HTMLElement | null {
+        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-wrapper');
+    }
+
+    /**
+     * Handles scroll events from the table body
+     * @param event The scroll event
+     */
+    private scrollHandler(event: Event) {
+        this.scroll.emit(event);
     }
 
     /**
@@ -407,6 +457,7 @@ export class DotFolderListViewComponent implements OnInit {
      */
     protected onFirstChange() {
         const dataTable = this.dataTable();
+
         if (dataTable) {
             dataTable.first = this.$offset();
         }

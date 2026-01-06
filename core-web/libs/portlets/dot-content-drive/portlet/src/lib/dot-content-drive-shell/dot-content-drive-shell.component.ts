@@ -517,4 +517,8 @@ export class DotContentDriveShellComponent {
     protected onSelectItems(items: DotContentDriveItem[]) {
         this.#store.setSelectedItems(items);
     }
+
+    protected onTableScroll() {
+        this.#store.resetContextMenu();
+    }
 }
