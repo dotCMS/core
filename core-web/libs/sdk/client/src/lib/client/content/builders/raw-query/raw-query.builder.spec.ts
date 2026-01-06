@@ -7,7 +7,7 @@ import {
     DotErrorContent
 } from '@dotcms/types';
 
-import { RawQueryBuilder } from './raw-query-builder';
+import { RawQueryBuilder } from './raw-query.builder';
 
 import { FetchHttpClient } from '../../../adapters/fetch-http-client';
 import { CONTENT_API_URL } from '../../shared/const';
@@ -83,6 +83,24 @@ describe('RawQueryBuilder', () => {
                     offset: 0,
                     depth: 0
                     // NOTE: no languageId, no live/draft, no site/variant constraints are injected
+                })
+            });
+        });
+
+        it('should include languageId in request body when language() is called', async () => {
+            const builder = createRawQueryBuilder('+contentType:Blog').language(13);
+
+            await builder;
+
+            expect(mockRequest).toHaveBeenCalledWith(requestURL, {
+                ...baseRequest,
+                body: JSON.stringify({
+                    query: '+contentType:Blog',
+                    render: false,
+                    limit: 10,
+                    offset: 0,
+                    depth: 0,
+                    languageId: 13
                 })
             });
         });

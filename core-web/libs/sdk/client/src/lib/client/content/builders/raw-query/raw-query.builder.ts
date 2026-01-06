@@ -27,6 +27,17 @@ export class RawQueryBuilder<T = unknown> extends BaseBuilder<T> {
     #rawQuery: string;
 
     /**
+     * Optional language ID for the request body.
+     * When provided, it will be sent as `languageId` in the request payload.
+     *
+     * NOTE: This does NOT modify the raw query string. If you need `+languageId:<id>` inside
+     * the Lucene query, include it in the raw query yourself.
+     *
+     * @private
+     */
+    #languageId?: number | string;
+
+    /**
      * Creates an instance of RawQueryBuilder.
      *
      * @param {object} params - Constructor parameters
@@ -44,6 +55,29 @@ export class RawQueryBuilder<T = unknown> extends BaseBuilder<T> {
     }) {
         super(params);
         this.#rawQuery = params.rawQuery;
+    }
+
+    /**
+     * Filters the content by the specified language ID.
+     *
+     * This sets the `languageId` request body field (it does not alter the raw Lucene query string).
+     *
+     * @example
+     * ```typescript
+     * const response = await client.content
+     *     .query('+contentType:Blog +title:Hello')
+     *     .language(1)
+     *     .limit(10);
+     * ```
+     *
+     * @param {number | string} languageId The language ID to filter the content by.
+     * @return {RawQueryBuilder} A RawQueryBuilder instance.
+     * @memberof RawQueryBuilder
+     */
+    language(languageId: number | string): this {
+        this.#languageId = languageId;
+
+        return this;
     }
 
     /**
@@ -76,15 +110,12 @@ export class RawQueryBuilder<T = unknown> extends BaseBuilder<T> {
     }
 
     /**
-     * Raw queries do not automatically inject any system constraints.
-     * If you need constraints like language, live/draft, site, or variant, include them in the raw query string.
-     *
      * @protected
-     * @return {undefined} No languageId is sent unless provided in the raw query string itself.
+     * @return {number | string | undefined} Optional languageId to send in the request body.
      * @memberof RawQueryBuilder
      */
-    protected getLanguageId(): undefined {
-        return undefined;
+    protected getLanguageId(): number | string | undefined {
+        return this.#languageId;
     }
 
     /**

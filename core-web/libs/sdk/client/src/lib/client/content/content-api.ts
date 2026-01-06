@@ -1,7 +1,7 @@
 import { DotRequestOptions, DotHttpClient, DotCMSClientConfig } from '@dotcms/types';
 
 import { CollectionBuilder } from './builders/collection/collection';
-import { RawQueryBuilder } from './builders/rawQuery/raw-query-builder';
+import { RawQueryBuilder } from './builders/raw-query/raw-query.builder';
 
 import { BaseApiClient } from '../base/api/base-api';
 
