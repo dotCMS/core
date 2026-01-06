@@ -5,6 +5,12 @@ if [ -z "$BASH_VERSION" ]; then
     exec bash "$0" "$@"
 fi
 
+# Increase resource limits for git hook subprocess environment
+# Git hooks run with restricted limits which can cause ENOBUFS errors
+# Set soft limits to match typical shell environment
+ulimit -n 10240 2>/dev/null || true  # Open files (file descriptors)
+ulimit -u 2048 2>/dev/null || true   # Max user processes
+
 # Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -54,6 +60,24 @@ fi
 
 print_color "$GREEN" "✅ mise is installed ($(mise --version))"
 # mise will automatically use version config from .nvmrc, .sdkmanrc, or .mise.toml
+
+# Check if mise configuration is trusted
+# Use mise trust --show which outputs "path: trusted" or "path: untrusted"
+trust_status=$(mise trust --show 2>&1)
+if ! echo "$trust_status" | grep -q "trusted"; then
+    print_color "$RED" "❌ mise configuration not trusted - required for security"
+    print_color "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_color "$BLUE" "📋 mise requires you to explicitly trust configuration files before using them."
+    printf "\n"
+    print_color "$GREEN" "  To trust this configuration, run:"
+    printf "    mise trust\n"
+    printf "\n"
+    print_color "$BLUE" "  This will mark the .mise.toml configuration as trusted on your system."
+    print_color "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    exit 1
+fi
+
+print_color "$GREEN" "✅ mise configuration is trusted"
 
 # Auto-setup Husky if needed
 if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
@@ -182,18 +206,25 @@ perform_frontend_fixes() {
         cd "${root_dir}/core-web" || exit 1
     fi
 
+    # CRITICAL FIX: Unset Git environment variables that prevent .gitignore from working correctly
+    # Git sets GIT_DIR and GIT_INDEX_FILE during pre-commit hooks in worktrees
+    # These cause git ls-files to return 17MB+ of .nx/cache files, triggering ENOBUFS in Nx
+    unset GIT_DIR
+    unset GIT_INDEX_FILE
+    unset GIT_WORK_TREE
+
     # Run nx affected lint
-    # Disable Nx daemon to prevent resource exhaustion in Git hook context
+    # Disable Nx daemon and limit parallelism to prevent resource exhaustion in Git hook context
     print_color "$BLUE" "🔍 Running nx affected lint..."
-    if ! NX_DAEMON=false mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+    if ! NX_DAEMON=false NX_PARALLEL=1 mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true --parallel=1; then
         print_color "$YELLOW" "⚠️ nx affected lint failed, but continuing..."
         has_errors=true
     fi
 
     # Run nx format
-    # Disable Nx daemon to prevent resource exhaustion in Git hook context
+    # Disable Nx daemon and limit parallelism to prevent resource exhaustion in Git hook context
     print_color "$BLUE" "✨ Running nx format:write..."
-    if ! NX_DAEMON=false mise exec -- yarn nx format:write; then
+    if ! NX_DAEMON=false NX_PARALLEL=1 mise exec -- yarn nx format:write --parallel=1; then
         print_color "$YELLOW" "⚠️ nx format:write failed, but continuing..."
         has_errors=true
     fi
