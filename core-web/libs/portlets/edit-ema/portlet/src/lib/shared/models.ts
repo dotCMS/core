@@ -225,8 +225,10 @@ export interface EditEmaDialogState {
 
 export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
 
-export interface DialogAction
-    extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
+export interface DialogAction extends Pick<
+    EditEmaDialogState,
+    'actionPayload' | 'form' | 'clientAction'
+> {
     event: CustomEvent;
 }
 

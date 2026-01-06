@@ -19,9 +19,9 @@ import { DotPropertiesService } from '@dotcms/data-access';
  *  }
  */
 @Injectable()
-export class DotFeatureFlagResolver
-    implements Resolve<Observable<Record<string, boolean | string>> | Observable<boolean | string>>
-{
+export class DotFeatureFlagResolver implements Resolve<
+    Observable<Record<string, boolean | string>> | Observable<boolean | string>
+> {
     private readonly dotConfigurationService = inject(DotPropertiesService);
 
     resolve(route: ActivatedRouteSnapshot) {

@@ -376,9 +376,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     }
 
     private async showCloneContentTypeDialog(item: DotCMSContentType) {
-        const { DotContentTypeCopyDialogComponent } = await import(
-            './components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component'
-        );
+        const { DotContentTypeCopyDialogComponent } =
+            await import('./components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component');
         const componentRef = this.dotDynamicDialog.createComponent(
             DotContentTypeCopyDialogComponent
         );

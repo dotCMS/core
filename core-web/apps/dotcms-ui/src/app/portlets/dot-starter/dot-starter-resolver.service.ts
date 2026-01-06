@@ -21,9 +21,9 @@ import {
  * @implements {Resolve<Observable<{ user: DotCurrentUser, permissions: DotPermissionsType }>>}
  */
 @Injectable()
-export class DotStarterResolver
-    implements Resolve<Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }>>
-{
+export class DotStarterResolver implements Resolve<
+    Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }>
+> {
     private dotCurrentUserService = inject(DotCurrentUserService);
 
     resolve(): Observable<{ user: DotCurrentUser; permissions: DotPermissionsType }> {
