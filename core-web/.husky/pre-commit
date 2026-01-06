@@ -20,63 +20,88 @@ print_color() {
 # This script is used as a pre-commit hook for a Git repository.
 # It performs operations such as formatting and linting on staged files.
 
-# Source husky script
-if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
-    print_color "$RED" "⚠️  Husky setup incomplete: _/husky.sh not found"
-    print_color "$YELLOW" "This usually happens on first setup or after pulling changes."
-    print_color "$BLUE" "Fix: Run 'just build' or './mvnw clean install' to complete setup"
-    print_color "$YELLOW" "Then try your commit again."
-    exit 1
-fi
-
-. "$(dirname "$0")/_/husky.sh" || {
-    print_color "$RED" "❌ Failed to source husky.sh"
-    exit 1
-}
+# Display mise installation instructions
+show_mise_install_instructions() {
+    print_color "$RED" "❌ mise not found - required for consistent tooling"
+    print_color "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_color "$BLUE" "📦 Please install mise to continue:"
+    printf "\n"
+    print_color "$GREEN" "  macOS/Linux:"
+    printf "    curl https://mise.run | sh\n"
+    printf "\n"
+    print_color "$GREEN" "  Or with Homebrew:"
+    printf "    brew install mise\n"
+    printf "\n"
+    print_color "$BLUE" "  Then activate in your shell (~/.zshrc or ~/.bashrc):"
+    printf "    eval \"\$(mise activate zsh)\"   # for zsh\n"
+    printf "    eval \"\$(mise activate bash)\"  # for bash\n"
+    printf "\n"
+    print_color "$BLUE" "  Reload your shell:"
+    printf "    source ~/.zshrc  # or restart terminal\n"
+    printf "\n"
+    print_color "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    print_color "$BLUE" "  For more info: https://mise.jdx.dev/getting-started.html"
+    }
 
 # Determine the root directory of the git repository
 root_dir="$(git rev-parse --show-toplevel)"
 
-# Load nvm and use the version specified in .nvmrc
-setup_nvm() {
-    # Check if nvm is already installed
-    if [ -s "$NVM_DIR/nvm.sh" ]; then
-        print_color "$GREEN" "✅ nvm is already installed."
-    else
-        print_color "$YELLOW" "📦 Installing nvm..."
-        # Use the project's Node.js to download and run the nvm install script
-        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+# Check for mise first - required for all operations
+if ! command -v mise >/dev/null 2>&1; then
+    show_mise_install_instructions
+    exit 1
+fi
 
-        print_color "$GREEN" "✅ nvm installed successfully."
+print_color "$GREEN" "✅ mise is installed ($(mise --version))"
+# mise will automatically use version config from .nvmrc, .sdkmanrc, or .mise.toml
+
+# Auto-setup Husky if needed
+if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
+    print_color "$YELLOW" "📦 Husky setup incomplete: _/husky.sh not found"
+    print_color "$BLUE" "🔧 Auto-installing Husky dependencies with mise..."
+
+    # Install Husky using mise-managed yarn
+    cd "${root_dir}/core-web" || exit 1
+    print_color "$BLUE" "🔧 Running yarn install to set up Husky..."
+    if mise exec -- yarn install --frozen-lockfile 2>/dev/null || mise exec -- yarn install 2>/dev/null; then
+        print_color "$GREEN" "✅ Husky setup completed successfully"
+    else
+        print_color "$RED" "❌ Failed to install Husky dependencies"
+        print_color "$YELLOW" "💡 Please run 'yarn install' in the core-web directory"
+        exit 1
     fi
 
-    # Source nvm
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ]  && \. "$NVM_DIR/nvm.sh"
+    # Go back to original directory
+    cd - >/dev/null || exit 1
 
-    # Ensure the correct Node.js version is used
-    if [ -f "$root_dir/.nvmrc" ]; then
-        print_color "$BLUE" "📋 Using Node.js version specified in .nvmrc"
-
-        nvm install
-    else
-        print_color "$YELLOW" "⚠️ No .nvmrc found. Using default Node.js version."
-        nvm use default
+    # Verify husky.sh now exists
+    if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
+        print_color "$RED" "❌ Husky setup still incomplete after installation"
+        print_color "$YELLOW" "💡 Please run 'yarn install' in the core-web directory to complete setup"
+        exit 1
     fi
+
+    print_color "$GREEN" "✅ Husky is now ready - continuing with pre-commit checks..."
+fi
+
+# Source husky script
+. "$(dirname "$0")/_/husky.sh" || {
+    print_color "$RED" "❌ Failed to source husky.sh"
+    exit 1
 }
 
 check_sdk_client_affected() {
     # Check if initial build has been done (nx cache and build artifacts exist)
     if [ ! -d "${root_dir}/core-web/.nx" ] || [ ! -d "${root_dir}/core-web/dist" ]; then
         print_color "$YELLOW" "⚠️  Initial build not detected - nx cache or dist directory missing"
-        print_color "$BLUE" "💡 Run 'just build' or './mvnw clean install' to complete initial setup"
+        print_color "$BLUE" "💡 Run 'yarn install && yarn nx run-many -t build' in the core-web directory to build frontend"
         print_color "$YELLOW" "Skipping sdk-uve build check for now"
         return 0
     fi
 
     # Check if sdk-uve related files have been modified (avoid nx affected due to ENOBUFS)
     local sdk_uve_affected=false
-    
+
     # Check staged files for sdk-uve related changes
     if git diff --cached --name-only | grep -E "(sdk-uve|uve)" >/dev/null 2>&1; then
         sdk_uve_affected=true
@@ -91,7 +116,7 @@ check_sdk_client_affected() {
             fi
         fi
     fi
-    
+
     if [ "$sdk_uve_affected" = false ]; then
         print_color "$GREEN" "✅ No SDK-UVE related changes detected, skipping build"
     fi
@@ -99,7 +124,7 @@ check_sdk_client_affected() {
     # Build sdk-client if affected
     if [ "$sdk_uve_affected" = true ]; then
         print_color "$BLUE" "🔨 Building sdk-client"
-        if ! yarn nx run sdk-uve:build:js 2>/dev/null; then
+        if ! mise exec -- yarn nx run sdk-uve:build:js 2>/dev/null; then
             print_color "$YELLOW" "⚠️ SDK-UVE build failed or not available, continuing..."
             # Don't set has_errors=true here as sdk-uve might not always be available
         fi
@@ -132,27 +157,8 @@ check_sdk_client_affected() {
     fi
 }
 
-check_sdkman() {
-    SDKMAN_INIT="$HOME/.sdkman/bin/sdkman-init.sh"
-
-    # Check if sdkman-init.sh exists and is readable
-    if [ -s "$SDKMAN_INIT" ]; then
-        source "$SDKMAN_INIT" # Source sdkman to make sdk command available
-        print_color "$GREEN" "✅ SDKMAN! sourced from $SDKMAN_INIT"
-
-        # Optionally check if sdk command is available
-        if command -v sdk >/dev/null 2>&1; then
-            print_color "$GREEN" "✅ SDKMAN! is installed and functional."
-        else
-            print_color "$RED" "❌ SDKMAN! command is not available. Please check the installation."
-            exit 1
-        fi
-    else
-        print_color "$RED" "❌ SDKMAN! not found at $SDKMAN_INIT. Please install SDKMAN! first."
-        print_color "$RED" "💡 You can install this and other required utilities from https://github.com/dotCMS/dotcms-utilities"
-        exit 1
-    fi
-}
+# SDKMAN check removed - mise handles Java versions from .sdkmanrc
+# check_sdkman() function is no longer needed
 
 has_errors=false
 
@@ -163,9 +169,9 @@ perform_frontend_fixes() {
     local file
 
     # Check if yarn.lock is present
-    if ! yarn install; then
+    if ! mise exec -- yarn install; then
         print_color "$RED" "❌ Failed to install dependencies with yarn install"
-        print_color "$YELLOW" "💡 Please run 'yarn install' to update the lockfile and make sure you commit this with any package.json changes."
+        print_color "$YELLOW" "💡 Please run 'yarn install' in the core-web directory and commit the updated lockfile with any package.json changes"
         has_errors=true
         return 1
     else
@@ -176,90 +182,20 @@ perform_frontend_fixes() {
         cd "${root_dir}/core-web" || exit 1
     fi
 
-    # ENOBUFS auto-fix will handle cache issues when they occur
-    
-    # Function to attempt ENOBUFS auto-fix
-    attempt_enobufs_fix() {
-        print_color "$YELLOW" "🔧 Attempting automatic ENOBUFS fix..."
-        
-        # Reset nx cache
-        if yarn nx reset >/dev/null 2>&1; then
-            print_color "$GREEN" "✓ nx cache reset successful"
-        else
-            print_color "$RED" "✗ nx cache reset failed"
-            return 1
-        fi
-        
-        # Reinstall dependencies
-        if yarn install >/dev/null 2>&1; then
-            print_color "$GREEN" "✓ yarn install successful"
-        else
-            print_color "$RED" "✗ yarn install failed"
-            return 1
-        fi
-        
-        # Reset again after fresh install
-        if yarn nx reset >/dev/null 2>&1; then
-            print_color "$GREEN" "✓ final nx cache reset successful"
-        else
-            print_color "$RED" "✗ final nx cache reset failed"
-            return 1
-        fi
-        
-        print_color "$GREEN" "🎉 ENOBUFS auto-fix completed, retrying commands..."
-        return 0
-    }
-
-    # Run nx affected lint with ENOBUFS detection and auto-fix
+    # Run nx affected lint
+    # Disable Nx daemon to prevent resource exhaustion in Git hook context
     print_color "$BLUE" "🔍 Running nx affected lint..."
-    lint_output=$(yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true 2>&1)
-    lint_exit_code=$?
-    
-    if [ $lint_exit_code -ne 0 ]; then
-        if echo "$lint_output" | grep -q "ENOBUFS"; then
-            print_color "$RED" "❌ ENOBUFS error detected in nx lint"
-            if attempt_enobufs_fix; then
-                # Retry after fix
-                print_color "$BLUE" "🔄 Retrying nx affected lint after fix..."
-                if ! yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
-                    print_color "$YELLOW" "⚠️ nx lint still failing after auto-fix, continuing..."
-                    has_errors=true
-                fi
-            else
-                print_color "$RED" "❌ Auto-fix failed. Manual fix required:"
-                print_color "$BLUE" "💡 cd core-web && yarn nx reset && yarn install"
-                has_errors=true
-            fi
-        else
-            print_color "$YELLOW" "⚠️ nx affected lint failed (non-ENOBUFS), but continuing..."
-            has_errors=true
-        fi
+    if ! NX_DAEMON=false mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true; then
+        print_color "$YELLOW" "⚠️ nx affected lint failed, but continuing..."
+        has_errors=true
     fi
 
-    # Run nx format with ENOBUFS detection and auto-fix
+    # Run nx format
+    # Disable Nx daemon to prevent resource exhaustion in Git hook context
     print_color "$BLUE" "✨ Running nx format:write..."
-    format_output=$(yarn nx format:write 2>&1)
-    format_exit_code=$?
-    
-    if [ $format_exit_code -ne 0 ]; then
-        if echo "$format_output" | grep -q "ENOBUFS"; then
-            print_color "$RED" "❌ ENOBUFS error detected in nx format"
-            if attempt_enobufs_fix; then
-                # Retry after fix
-                print_color "$BLUE" "🔄 Retrying nx format:write after fix..."
-                if ! yarn nx format:write; then
-                    print_color "$YELLOW" "⚠️ nx format still failing after auto-fix, continuing..."
-                    has_errors=true
-                fi
-            else
-                print_color "$RED" "❌ Auto-fix failed. Manual fix required:"
-                print_color "$BLUE" "💡 cd core-web && yarn nx reset && yarn install"
-                has_errors=true
-            fi
-        else
-            print_color "$YELLOW" "⚠️ nx format:write failed (non-ENOBUFS), but continuing..."
-            has_errors=true
-        fi
+    if ! NX_DAEMON=false mise exec -- yarn nx format:write; then
+        print_color "$YELLOW" "⚠️ nx format:write failed, but continuing..."
+        has_errors=true
     fi
 
     if [ "$add_to_index" = "true" ]; then
@@ -301,50 +237,48 @@ perform_frontend_fixes() {
 }
 
 restore_untracked_files() {
-    if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ] && [ "$(ls -A "${temp_dir}")" ]; then
-        print_color "$BLUE" "🔄 Restoring untracked files..."
-        # Copy each file back from the temporary directory while maintaining the directory structure
-        find "${temp_dir}" -type f -exec sh -c '
-            for file do
-                temp_dir='"${temp_dir}"'
-                root_dir='"${root_dir}"'
-                rel_path="${file#${temp_dir}/}"  # Extract the relative path by removing the temp directory prefix
-                dest_dir="$(dirname "${rel_path}")"  # Determine the destination directory based on the relative path
-                full_dest_path="${root_dir}/${rel_path}"  # Construct the full destination path
-                mkdir -p "${root_dir}/${dest_dir}"  # Ensure the destination directory exists
-                cp "${file}" "${full_dest_path}"  # Copy the file to the destination directory
-            done
-        ' sh {} +
+    if [ "$backup_untracked" != true ] || [ -z "$temp_dir" ] || [ ! -d "$temp_dir" ]; then
+        return 0
+    fi
+
+    # Only restore if there are files in the temp directory
+    if [ -n "$(ls -A "${temp_dir}" 2>/dev/null)" ]; then
+        print_color "$BLUE" "🔄 Restoring files with unstaged changes..."
+        # Use find with while loop for safer file handling (cross-platform)
+        find "$temp_dir" -type f | while IFS= read -r backup_file; do
+            # Extract relative path by removing temp_dir prefix
+            rel_path="${backup_file#${temp_dir}/}"
+            target_file="${root_dir}/${rel_path}"
+
+            # Ensure target directory exists
+            target_dir=$(dirname "$target_file")
+            mkdir -p "$target_dir"
+
+            # Restore the file
+            cp "$backup_file" "$target_file"
+        done
+        print_color "$GREEN" "✅ Restored files with unstaged changes"
     fi
 
     # Clean up temporary directory
-    if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
-        rm -rf "${temp_dir}"
-    fi
+    rm -rf "$temp_dir"
 }
 
 original_pwd=${PWD}
-root_dir="$(git rev-parse --show-toplevel)"
 
-# Check for sdkman before running other initializations
-
-# This will ensure that the correct version of node and yarn is installed
-# from core-web/pom.xml and .nvmrc files are updated
+# Setup development tools with mise
 cd "${root_dir}" || exit 1
 
-# Need to follow steps to ensure versions are available
-# 1. SDKMAN to get right version of java before maven can be called.
-# 2. Run base validate on maven, will ensure that local version of node and yarn are installed to ${root_dir}/installs/node and ${root_dir}/installs/node/yarn/dist/bin:$PATH
-#.   This also updates the local .nvmrc file
-# 3  Ensure that developers have the correct version of node and yarn installed with nvm
+print_color "$BLUE" "🔧 Setting up development tools with mise..."
 
-check_sdkman
+# Display tool versions - mise automatically reads from .nvmrc, .sdkmanrc, and .mise.toml
+java_version=$(mise current java 2>&1 | grep -v "WARN" || echo "not configured")
+node_version=$(mise current node 2>&1 | grep -v "WARN" || echo "not configured")
 
-print_color "$BLUE" "☕ Setting up Java environment..."
-sdk env install
-print_color "$BLUE" "🔧 Initializing Maven, Node, and Yarn versions..."
-# Output maven and java versions
-./mvnw --version
+print_color "$GREEN" "  ✓ Java: ${java_version} (from .sdkmanrc)"
+print_color "$GREEN" "  ✓ Node: ${node_version} (from .nvmrc)"
+print_color "$GREEN" "  ✓ Yarn: $(mise exec -- yarn --version) (via Node Corepack)"
+print_color "$GREEN" "  ✓ Maven: $(mise exec -- mvn --version 2>&1 | head -n 1 | sed 's/Apache //')"
 
 # Function to check if Maven is needed at all
 needs_maven() {
@@ -382,7 +316,7 @@ needs_openapi_compile() {
         # Use macOS-compatible approach to handle files with spaces and special characters
         local java_files_list
         java_files_list=$(echo "$staged_files" | grep "\.java$")
-        
+
         # Use a more portable approach for iterating over filenames
         local IFS=$'\n'
         for file in $java_files_list; do
@@ -401,7 +335,7 @@ needs_openapi_compile() {
                 fi
             fi
         done
-        
+
         # Restore IFS to default
         unset IFS
     fi
@@ -454,103 +388,72 @@ if needs_maven; then
     fi
 else
     print_color "$GREEN" "🚀 Only core-web files changed (excluding pom.xml) - skipping Maven entirely"
-    # Still need to setup basic paths for Node/Yarn, but skip Maven validation
-    # Create minimal node/yarn setup without Maven
-    if [ ! -d "${root_dir}/installs/node" ]; then
-        print_color "$YELLOW" "📦 Node.js not found in project directory. Running minimal Maven setup..."
-        # Run minimal Maven setup only to get Node/Yarn installed
-        if ! ./mvnw validate -pl :dotcms-core --am -q; then
-            print_color "$RED" "❌ Failed to run './mvnw validate -pl :dotcms-core --am'"
-            exit 1
-        fi
-    fi
 fi
-
-# Update PATH to include project-specific Node.js and Yarn
-export PATH="${root_dir}/installs/node:${root_dir}/installs/node/yarn/dist/bin:$PATH"
-
-# Verify that node and yarn are accessible
-if ! command -v node > /dev/null 2>&1 || ! command -v yarn > /dev/null 2>&1; then
-    print_color "$RED" "❌ Error: Node.js or Yarn not found in the project directory."
-    print_color "$YELLOW" "💡 Please ensure they are installed in ${root_dir}/installs/node"
-    exit 1
-fi
-
-# Not needed for this script as we are referring directly in the path to the binaries of maven and yarn maven downloaded
-# We want to make sure the developer has the correct version using nvm
-setup_nvm
-
-# Log the versions being used
-print_color "$BLUE" "📋 Using Node version: $(node --version)"
-print_color "$BLUE" "📋 Using Yarn version: $(yarn --version)"
 
 core_web_dir="${root_dir}/core-web"
 cd "${core_web_dir}" || exit 1
 
+# Collect file lists once for efficiency
 staged_files=$(git diff --cached --name-only)
 modified_files=$(git diff --name-only)
 
-untracked_files=$(printf "%s\n%s" "$staged_files" "$modified_files" | sort | uniq -d)
-
-if [ -n "${staged_files}" ]; then
-    # Check if there are any staged files in the core-web directory
-    core_web_files_staged=$(echo "$staged_files" | grep -E '^core-web/' || true )
-
-    # Determine if untracked files should be backed up
-    backup_untracked=true # Default to true if not set
+# Files with unstaged changes (modified but not fully staged)
+# These are files that appear in both lists
+files_with_unstaged_changes=""
+if [ -n "$staged_files" ] && [ -n "$modified_files" ]; then
+    # Use temporary files to avoid process substitution (for better shell compatibility)
+    staged_sorted=$(mktemp)
+    modified_sorted=$(mktemp)
+    echo "$staged_files" | sort > "$staged_sorted"
+    echo "$modified_files" | sort > "$modified_sorted"
+    files_with_unstaged_changes=$(comm -12 "$staged_sorted" "$modified_sorted")
+    rm -f "$staged_sorted" "$modified_sorted"
 fi
 
-printf "%s\n" "${core_web_files_staged}"
+# Filter for core-web files only
+core_web_files_staged=""
+if [ -n "$staged_files" ]; then
+    core_web_files_staged=$(echo "$staged_files" | grep -E '^core-web/' || true)
+fi
 
-# Only create a temporary directory if there are untracked files and backup_untracked is true
-if [ "$backup_untracked" = true ] && [ -n "${untracked_files}" ]; then
+# Backup files with unstaged changes before running fixes
+# This preserves unstaged changes that we'll restore after linting/formatting
+backup_untracked=false
+temp_dir=""
+if [ -n "$files_with_unstaged_changes" ]; then
+    backup_untracked=true
     temp_dir=$(mktemp -d)
-    if [ ! -d "${temp_dir}" ]; then
+    if [ ! -d "$temp_dir" ]; then
         print_color "$RED" "❌ Failed to create temporary directory."
         exit 1
     fi
-    print_color "$BLUE" "📁 Created temporary directory ${temp_dir}"
+    print_color "$BLUE" "📁 Backing up files with unstaged changes..."
 
-    for file in $untracked_files; do
-        if echo "${staged_files}" | grep -q "^${file}$"; then
-            mkdir -p "${temp_dir}/$(dirname "${file}")"  # Ensure the directory structure exists in the temp directory
-            cp "${root_dir}/${file}" "${temp_dir}/${file}"  # Copy the file to the temp directory, preserving the directory structure
-            print_color "$BLUE" "💾 Backing up ${file}"
-            # Restore the original file state in the repo, removing unstaged changes
-            cd "$root_dir" || exit 1
-            git restore "${file}"
-            cd "${root_dir}/core-web" || exit 1
+    # Use while loop with IFS to handle filenames safely (cross-platform)
+    echo "$files_with_unstaged_changes" | while IFS= read -r file; do
+        if [ -n "$file" ] && [ -f "${root_dir}/${file}" ]; then
+            # Create directory structure in temp
+            mkdir -p "${temp_dir}/$(dirname "${file}")"
+            # Backup the file
+            cp "${root_dir}/${file}" "${temp_dir}/${file}"
+            print_color "$BLUE" "💾 Backed up ${file}"
+            # Restore to staged version only
+            (cd "$root_dir" && git restore "${file}")
         fi
     done
 
     # Set trap to ensure restore_untracked_files is called on exit
     trap restore_untracked_files EXIT
-
-    for file in $untracked_files; do
-            if echo "${staged_files}" | grep -q "^${file}$"; then
-                cd "$root_dir" || exit 1
-                git restore "${file}"
-                cd "${root_dir}/core-web" || exit 1
-            fi
-    done
-
-    print_color "$GREEN" "✅ Backed up workspace to ${temp_dir}"
+    print_color "$GREEN" "✅ Backup completed"
 fi
 
-# Run fixes on staged files
+# Run fixes on staged core-web files
 if [ -n "$core_web_files_staged" ]; then
-    perform_frontend_fixes "${core_web_files_staged}" true
-    errors=$?  # Capture the return value from perform_frontend_fixes
+    perform_frontend_fixes "$core_web_files_staged" true
 fi
 
-# Restore untracked files if necessary
+# Restore files with unstaged changes
 restore_untracked_files
-
-## Running fixes on untracked files
-core_web_files_untracked=$(echo "$untracked_files" | grep -E '^core-web/' || true )
-if [ -n "$core_web_files_untracked" ]; then
-    perform_frontend_fixes "${core_web_files_untracked}" false
-fi
 
 # Check if sdk-client is affected
 check_sdk_client_affected
