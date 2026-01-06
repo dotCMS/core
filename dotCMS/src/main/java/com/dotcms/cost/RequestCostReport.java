@@ -16,7 +16,7 @@ public class RequestCostReport {
     String writeAccounting(HttpServletRequest request) {
         List<Map<String, Object>> accounting = requestCostApi.getAccountList(request);
         int requestCost = requestCostApi.getRequestCost(request);
-        float denominator = requestCostApi.getRequestCostDenominator();
+        double denominator = requestCostApi.getRequestCostDenominator();
         String url = Xss.escapeHTMLAttrib(request.getRequestURI());
 
         requestCostApi.endAccounting(request);

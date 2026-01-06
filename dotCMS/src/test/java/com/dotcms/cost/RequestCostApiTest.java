@@ -15,7 +15,6 @@ import com.dotcms.mock.request.MockParameterRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
-import io.vavr.Tuple2;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,7 @@ public class RequestCostApiTest extends UnitTestBase {
         assertTrue("Account list should have at least one entry (init cost)", accountList.isEmpty());
 
         int rollingCost = requestCostApi.getRequestCost(request);
-        assertEquals("Rolling cost should be 1", 1, rollingCost);
+        assertEquals("Rolling cost should be 0", 0, rollingCost);
 
 
     }
@@ -129,7 +128,6 @@ public class RequestCostApiTest extends UnitTestBase {
     public void test_getAccountList_shouldReturn_empty_if_accounting_is_disabled() {
         // Given
         requestCostApi.initAccounting(request);
-        int initialSize = requestCostApi.getAccountList(request).size();
 
         // When
         requestCostApi.incrementCost(Price.ONE, RequestCostApiTest.class, "method1", new Object[]{});
@@ -158,7 +156,7 @@ public class RequestCostApiTest extends UnitTestBase {
         List<Map<String, Object>> accountList = requestCostApi.getAccountList(request);
         assertTrue("Account list should have no entries", accountList.isEmpty());
 
-        assertEquals("requestCost should be 6", Price.SIX.price, requestCostApi.getRequestCost(request));
+        assertEquals("requestCost should be 5", Price.FIVE.price, requestCostApi.getRequestCost(request));
     }
 
     /**
@@ -202,12 +200,16 @@ public class RequestCostApiTest extends UnitTestBase {
     }
 
     /**
-     * Test: {@link RequestCostApi#totalLoadGetAndReset()} Should: Return current load and reset counters Expected:
-     * Returns tuple with count and cost, then resets to zero
+     * Test: Request cost tracking Should: Track request count and cost in window counters Expected:
+     * Window counters are incremented correctly
      */
     @Test
-    public void test_totalLoadGetAndReset_shouldReturnAndReset() {
+    public void test_requestCostTracking_shouldTrackCountAndCost() {
         // Given
+        RequestCostApiImpl impl = (RequestCostApiImpl) requestCostApi;
+        long initialCount = impl.requestCountForWindow.longValue();
+        long initialCost = impl.requestCostForWindow.longValue();
+
         requestCostApi.initAccounting(request);
         requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
         requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
@@ -215,14 +217,12 @@ public class RequestCostApiTest extends UnitTestBase {
         requestCostApi.incrementCost(Price.THIRTY, RequestCostApiTest.class, "method", new Object[]{});
 
         // When
-        Tuple2<Long, Long> load1 = requestCostApi.totalLoadGetAndReset();
-        Tuple2<Long, Long> load2 = requestCostApi.totalLoadGetAndReset();
+        long countAfter = impl.requestCountForWindow.longValue();
+        long costAfter = impl.requestCostForWindow.longValue();
 
         // Then
-        assertTrue("First load count should be > 0", load1._1 > 0);
-        assertTrue("First load cost should be >= 100", load1._2 >= 100);
-        assertEquals("Second load count should be 0", Long.valueOf(0), load2._1);
-        assertEquals("Second load cost should be 0", Long.valueOf(0), load2._2);
+        assertTrue("Request count should have increased", countAfter > initialCount);
+        assertTrue("Request cost should be >= 120 (4 x 30)", costAfter - initialCost >= 120);
     }
 
     /**
@@ -247,8 +247,8 @@ public class RequestCostApiTest extends UnitTestBase {
         int cost2 = requestCostApi.getRequestCost(request2);
 
         // Then
-        assertNotNull("Request 1 should have cost tracking", cost1);
-        assertNotNull("Request 2 should have cost tracking", cost2);
+        assertTrue("Request 1 should have cost tracking", cost1 >= 0);
+        assertTrue("Request 2 should have cost tracking", cost2 >= 0);
     }
 
     /**

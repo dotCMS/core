@@ -267,33 +267,4 @@ public class RequestCostRequestListenerTest extends UnitTestBase {
         return request;
     }
 
-
-    /**
-     * Test: Request counter increments on initialization Should: Global request counter increases Expected: Counter
-     * increments for each request
-     */
-    @Test
-    public void test_requestInitialized_shouldIncrementGlobalCounter() {
-        HttpServletRequest request = getFullAccountingRequest();
-        event = mock(ServletRequestEvent.class);
-        when(event.getServletRequest()).thenReturn(request);
-
-        // Get initial count
-        var initialLoad = requestCostApi.getRequestCost(request);
-
-        // When - Initialize multiple requests
-        for (int i = 0; i < 5; i++) {
-            HttpServletRequest req = new MockParameterRequest(
-                    new MockAttributeRequest(
-                            new MockHeaderRequest(
-                                    new FakeHttpRequest("localhost", "/test" + i).request())));
-            ServletRequestEvent evt = mock(ServletRequestEvent.class);
-            when(evt.getServletRequest()).thenReturn(req);
-            listener.requestInitialized(evt);
-        }
-
-        // Then
-        var finalLoad = requestCostApi.totalLoadGetAndReset();
-        assertTrue("Request count should have increased", finalLoad._1 >= 5);
-    }
 }

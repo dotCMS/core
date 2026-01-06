@@ -2,7 +2,6 @@ package com.dotcms.cost;
 
 
 import com.dotcms.cost.RequestPrices.Price;
-import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -46,15 +45,7 @@ public interface RequestCostApi {
     String ARGS = "args";
 
 
-    float getRequestCostDenominator();
-
-    /**
-     * Returns the current load of the system. The first value is the current number of requests in the system. The
-     * second value is the sum of the current cost for all the requests.
-     *
-     * @return
-     */
-    Tuple2<Long, Long> totalLoadGetAndReset();
+    double getRequestCostDenominator();
 
     /**
      * Returns the current Accounting list for the request

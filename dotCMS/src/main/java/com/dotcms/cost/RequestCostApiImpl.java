@@ -8,7 +8,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import io.vavr.Tuple2;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +31,8 @@ import javax.servlet.http.HttpServletResponse;
 public class RequestCostApiImpl implements RequestCostApi {
 
 
-    private final LongAdder requestCountForWindow = new LongAdder();
-    private final LongAdder requestCostForWindow = new LongAdder();
+    final LongAdder requestCountForWindow = new LongAdder();
+    final LongAdder requestCostForWindow = new LongAdder();
     private final LongAdder requestCountTotal = new LongAdder();
     private final LongAdder requestCostTotal = new LongAdder();
     private final Optional<Boolean> enableForTests;
@@ -41,7 +40,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     private int requestCostTimeWindowSeconds;
     private ScheduledExecutorService scheduler;
     // make the request cost points look like $$
-    private float requestCostDenominator = 1;
+    private double requestCostDenominator = 1.0d;
 
     private final LeakyTokenBucket bucket = CDIUtils.getBeanThrows(LeakyTokenBucket.class);
 
@@ -77,10 +76,9 @@ public class RequestCostApiImpl implements RequestCostApi {
             if (!isAccountingEnabled()) {
                 return;
             }
-            Tuple2<Long, Long> load = totalLoadGetAndReset();
 
-            long totalRequestsForDuration = load._1;
-            double totalCostForDuration = load._2 / getRequestCostDenominator();
+            long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
+            double totalCostForDuration = this.requestCostForWindow.sumThenReset() / getRequestCostDenominator();
             double costPerRequestForDuration = totalRequestsForDuration == 0
                     ? 0
                     : totalCostForDuration / totalRequestsForDuration;
@@ -88,13 +86,13 @@ public class RequestCostApiImpl implements RequestCostApi {
             if (totalRequestsForDuration == 0 && skipZeroRequests) {
                 return;
             }
-
             skipZeroRequests = totalRequestsForDuration == 0;
 
-            double costPerRequestsTotal = requestCountTotal.longValue() == 0
+            long totalRequestsTotal = requestCountTotal.longValue();
+            double totalCostTotal = requestCostTotal.longValue() / getRequestCostDenominator();
+            double costPerRequestTotal = requestCountTotal.longValue() == 0
                     ? 0
-                    : requestCostTotal.longValue() / requestCountTotal.longValue();
-
+                    : requestCostTotal.longValue() / totalCostTotal;
 
 
             Logger.info("REQUEST COST MONITOR >",
@@ -104,9 +102,9 @@ public class RequestCostApiImpl implements RequestCostApi {
                             totalRequestsForDuration,
                             totalCostForDuration,
                             costPerRequestForDuration,
-                            requestCountTotal.longValue(),
-                            requestCostTotal.longValue() / getRequestCostDenominator(),
-                            costPerRequestsTotal));
+                            totalRequestsTotal,
+                            totalCostTotal,
+                            costPerRequestTotal));
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), "Error logging request cost:" + e.getMessage(), e);
         }
@@ -114,15 +112,10 @@ public class RequestCostApiImpl implements RequestCostApi {
 
 
     @Override
-    public float getRequestCostDenominator() {
+    public double getRequestCostDenominator() {
         return requestCostDenominator;
     }
 
-
-    @Override
-    public Tuple2<Long, Long> totalLoadGetAndReset() {
-        return new Tuple2<>(this.requestCountForWindow.sumThenReset(), this.requestCostForWindow.sumThenReset());
-    }
 
 
     @Override
