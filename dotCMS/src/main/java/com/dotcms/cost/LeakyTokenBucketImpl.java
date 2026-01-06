@@ -1,7 +1,11 @@
 package com.dotcms.cost;
 
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import io.vavr.Tuple;
+import io.vavr.Tuple2;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.enterprise.context.ApplicationScoped;
 
@@ -14,7 +18,7 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     final boolean enabled;
     private final AtomicLong lastRefill = new AtomicLong(0);
     private final AtomicLong tokenCount = new AtomicLong(0);
-
+    String REQUEST_COST_HEADER_TOKEN_MAX = "x-dotratelimit-toks-max";
 
     LeakyTokenBucketImpl(boolean enabled, long refillPerSecond, long maximumBucketSize) {
         this.enabled = enabled;
@@ -28,11 +32,25 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
 
     LeakyTokenBucketImpl() {
         this(
-                Config.getBooleanProperty("RATE_LIMIT_ENABLED", false),
+                Config.getBooleanProperty("RATE_LIMIT_ENABLED", false) && APILocator.getRequestCostAPI()
+                        .isAccountingEnabled(),
                 Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 500),
                 Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 10000)
         );
     }
+
+    @Override
+    public Optional<Tuple2<String, String>> getHeaderInfo() {
+        if (!enabled) {
+            return Optional.empty();
+        }
+        return Optional.of(Tuple.of(REQUEST_COST_HEADER_TOKEN_MAX, getTokenCount() + "/" + getMaximumBucketSize()));
+
+
+    }
+
+
+
 
     @Override
     public boolean isEnabled() {

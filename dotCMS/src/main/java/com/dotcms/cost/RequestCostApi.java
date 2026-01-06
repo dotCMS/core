@@ -30,7 +30,7 @@ public interface RequestCostApi {
 
     // Request Cost Header
     String REQUEST_COST_HEADER_NAME = "x-dotrequest-cost";
-    String REQUEST_COST_HEADER_TOKEN_MAX = "x-dotratelimit-toks-max";
+
     String REQUEST_COST_ATTRIBUTE = "dotRequestCost";
 
     // The cost running total attribute that is calculated and stored in the request
@@ -62,6 +62,8 @@ public interface RequestCostApi {
      * @return
      */
     Accounting resolveAccounting(@NotNull HttpServletRequest request);
+
+    boolean isAccountingEnabled();
 
     /**
      * Reolves Accounting using the ThreadLocal request

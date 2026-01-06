@@ -129,8 +129,8 @@ public class RequestCostApiImpl implements RequestCostApi {
         return myList;
     }
 
-
-    private boolean isAccountingEnabled() {
+    @Override
+    public boolean isAccountingEnabled() {
         return enableForTests.orElse(Config.getBooleanProperty("REQUEST_COST_ACCOUNTING_ENABLED", true));
     }
 

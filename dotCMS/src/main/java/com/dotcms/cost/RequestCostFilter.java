@@ -4,8 +4,10 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotmarketing.business.APILocator;
 import com.liferay.util.servlet.NullServletResponse;
+import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Optional;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -46,8 +48,10 @@ public class RequestCostFilter implements Filter {
         Accounting fullAccounting = requestCostApi.resolveAccounting(request);
 
         boolean allowed = bucket.allow();
-        response.addHeader(RequestCostApi.REQUEST_COST_HEADER_TOKEN_MAX,
-                bucket.getTokenCount() + "/" + bucket.getMaximumBucketSize());
+        Optional<Tuple2<String, String>> header = bucket.getHeaderInfo();
+        if (header.isPresent()) {
+            response.addHeader(header.get()._1, header.get()._2);
+        }
 
         if (!allowed) {
             response.sendError(429);

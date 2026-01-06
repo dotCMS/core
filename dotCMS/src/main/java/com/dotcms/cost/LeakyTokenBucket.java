@@ -1,7 +1,16 @@
 package com.dotcms.cost;
 
+import io.vavr.Tuple2;
+import java.util.Optional;
+
 public interface LeakyTokenBucket {
 
+
+    /**
+     *
+     * @return
+     */
+    Optional<Tuple2<String, String>> getHeaderInfo();
 
     /**
      * Is the LeakyTokenBucket rate limiter enabled? If so, requests will be limited based upon the bucket parameters
