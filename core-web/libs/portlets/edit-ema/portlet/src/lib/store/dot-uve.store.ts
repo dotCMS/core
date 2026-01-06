@@ -1,43 +1,103 @@
-import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withFeature, withMethods, withState } from '@ngrx/signals';
 
 import { computed, untracked } from '@angular/core';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
+import { withClient } from './features/client/withClient';
 import { withSave } from './features/editor/save/withSave';
+import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
+import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
-import { DotUveViewParams, ShellProps, TranslateProps, UVEState } from './models';
+import { withWorkflow } from './features/workflow/withWorkflow';
+import { withZoom } from './features/zoom/withZoom';
+import { TranslateProps, UVEState, Orientation, PageType } from './models';
 
-import { UVE_FEATURE_FLAGS } from '../shared/consts';
-import { UVE_STATUS } from '../shared/enums';
-import { getErrorPayload, getRequestHostName, normalizeQueryParams, sanitizeURL } from '../utils';
+import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
+import { ClientData } from '../shared/models';
+import { normalizeQueryParams } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null,
+    flags: {}, // Will be populated by withFlags feature
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams: null,
-    viewParams: null,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
+    pageType: PageType.TRADITIONAL,
+    // Normalized page response properties
+    page: null,
+    site: null,
+    viewAs: null,
+    template: null,
+    layout: null,
+    urlContentMap: null,
+    containers: null,
+    vanityUrl: null,
+    numberContents: null,
+    // Phase 3.2: Nested UI state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        selectedContentlet: null,
+        panels: {
+            palette: {
+                open: true
+            },
+            rightSidebar: {
+                open: false
+            }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    view: {
+        device: DEFAULT_DEVICE,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        viewParams: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
-    // Make common computed available through all the features
-    withPageContext(),
+
+    // ---- Core State Features (no dependencies) ----
+    withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
+    withClient(),                     // Client config (independent)
+    withWorkflow(),                   // Workflow state (independent)
+    withTrack(),                      // Tracking (independent)
+
+    // ---- Shared Computeds ----
+    withPageContext(),                // Common computed properties (depends on flags)
+
+    // ---- Data Loading ----
+    withFeature((store) => withLoad({
+        resetClientConfiguration: () => store.resetClientConfiguration(),
+        getWorkflowActions: (inode: string) => store.getWorkflowActions(inode),
+        graphqlRequest: () => store.graphqlRequest(),
+        $graphqlWithParams: store.$graphqlWithParams,
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+    })),  // Load methods (depends on client, workflow)
+
+    // ---- Core Store Methods ----
     withMethods((store) => {
         return {
             setUveStatus(status: UVE_STATUS) {
@@ -48,131 +108,74 @@ export const UVEStore = signalStore(
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
-                    pageAPIResponse
+                    page: pageAPIResponse?.page,
+                    site: pageAPIResponse?.site,
+                    viewAs: pageAPIResponse?.viewAs,
+                    template: pageAPIResponse?.template,
+                    layout: pageAPIResponse?.layout,
+                    urlContentMap: pageAPIResponse?.urlContentMap,
+                    containers: pageAPIResponse?.containers,
+                    vanityUrl: pageAPIResponse?.vanityUrl,
+                    numberContents: pageAPIResponse?.numberContents
                 });
             },
-            patchViewParams(viewParams: Partial<DotUveViewParams>) {
+            setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined) {
+                const editor = store.editor();
+
                 patchState(store, {
-                    viewParams: {
-                        ...store.viewParams(),
-                        ...viewParams
+                    editor: {
+                        ...editor,
+                        selectedContentlet: selectedContentlet ?? null
                     }
                 });
             }
         };
     }),
-    withSave(),
-    withLayout(),
-    withEditor(),
-    withTrack(),
-    withFlags(UVE_FEATURE_FLAGS),
-    withLock(),
+
+    // ---- UI Features ----
+    withLayout(),                     // Layout state
+    withZoom(),                       // Zoom state
+    withFeature((store) => withView({
+        $isPageLocked: () => store.$isPageLocked()
+    })),                              // View state - manages view modes (edit vs preview)
+    withEditor(),                     // Editor state (uses shared PageContextComputed contract)
+
+    // ---- Actions ----
+    withFeature((store) => withSave({
+        graphqlRequest: () => store.graphqlRequest(),
+        $graphqlWithParams: store.$graphqlWithParams,
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+    })),  // Save methods (depends on client)
+    withFeature((store) => withLock({
+        reloadCurrentPage: () => store.reloadCurrentPage()
+    })),  // Lock methods (depends on load)
     withComputed(
         ({
-            pageAPIResponse,
+            page,
+            viewAs,
             pageParams,
-            viewParams,
+            view,
             languages,
-            errorCode: error,
-            status,
-            isEnterprise
         }) => {
             return {
                 $translateProps: computed<TranslateProps>(() => {
-                    const response = pageAPIResponse();
-                    const languageId = response?.viewAs.language?.id;
+                    const pageData = page();
+                    const viewAsData = viewAs();
+                    const languageId = viewAsData?.language?.id;
                     const translatedLanguages = untracked(() => languages());
                     const currentLanguage = translatedLanguages.find(
                         (lang) => lang.id === languageId
                     );
 
                     return {
-                        page: response?.page,
+                        page: pageData,
                         currentLanguage
-                    };
-                }),
-                $shellProps: computed<ShellProps>(() => {
-                    const response = pageAPIResponse();
-
-                    const url = sanitizeURL(response?.page.pageURI);
-                    const currentUrl = url.startsWith('/') ? url : '/' + url;
-
-                    const requestHostName = getRequestHostName(pageParams());
-
-                    const page = response?.page;
-                    const templateDrawed = response?.template.drawed;
-
-                    const isLayoutDisabled = !page?.canEdit || !templateDrawed;
-                    const errorCode = error();
-
-                    const errorPayload = getErrorPayload(errorCode);
-                    const isLoading = status() === UVE_STATUS.LOADING;
-                    const isEnterpriseLicense = isEnterprise();
-
-                    const canSeeRulesExists = page && 'canSeeRules' in page;
-
-                    return {
-                        canRead: page?.canRead,
-                        error: errorPayload,
-                        seoParams: {
-                            siteId: response?.site?.identifier,
-                            languageId: response?.viewAs.language.id,
-                            currentUrl,
-                            requestHostName
-                        },
-                        items: [
-                            {
-                                icon: 'pi-file',
-                                label: 'editema.editor.navbar.content',
-                                href: 'content',
-                                id: 'content'
-                            },
-                            {
-                                icon: 'pi-table',
-                                label: 'editema.editor.navbar.layout',
-                                href: 'layout',
-                                id: 'layout',
-                                isDisabled: isLayoutDisabled || !isEnterpriseLicense,
-                                tooltip: templateDrawed
-                                    ? null
-                                    : 'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                            },
-                            {
-                                icon: 'pi-sliders-h',
-                                label: 'editema.editor.navbar.rules',
-                                id: 'rules',
-                                href: `rules/${page?.identifier}`,
-                                isDisabled:
-                                    // Check if the page has the canSeeRules property, GraphQL query does suppport this property
-                                    (canSeeRulesExists && !page.canSeeRules) ||
-                                    !page?.canEdit ||
-                                    !isEnterpriseLicense
-                            },
-                            {
-                                iconURL: 'experiments',
-                                label: 'editema.editor.navbar.experiments',
-                                href: `experiments/${page?.identifier}`,
-                                id: 'experiments',
-                                isDisabled: !page?.canEdit || !isEnterpriseLicense
-                            },
-                            {
-                                icon: 'pi-th-large',
-                                label: 'editema.editor.navbar.page-tools',
-                                id: 'page-tools'
-                            },
-                            {
-                                icon: 'pi-ellipsis-v',
-                                label: 'editema.editor.navbar.properties',
-                                id: 'properties',
-                                isDisabled: isLoading
-                            }
-                        ]
                     };
                 }),
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(pageParams() ?? {}),
-                        ...(viewParams() ?? {})
+                        ...(view().viewParams ?? {})
                     };
 
                     return normalizeQueryParams(params);

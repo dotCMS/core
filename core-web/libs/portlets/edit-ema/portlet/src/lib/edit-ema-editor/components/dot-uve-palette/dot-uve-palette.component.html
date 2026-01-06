@@ -11,7 +11,8 @@
             <dot-uve-palette-list
                 [listType]="DotUVEPaletteListTypes.CONTENT"
                 [languageId]="$languageId()"
-                [pagePath]="$pagePath()" />
+                [pagePath]="$pagePath()"
+                [variantId]="$variantId()" />
         }
     </p-tabPanel>
     <p-tabPanel>
@@ -24,7 +25,8 @@
             <dot-uve-palette-list
                 [listType]="DotUVEPaletteListTypes.WIDGET"
                 [languageId]="$languageId()"
-                [pagePath]="$pagePath()" />
+                [pagePath]="$pagePath()"
+                [variantId]="$variantId()" />
         }
     </p-tabPanel>
     <p-tabPanel>
@@ -37,7 +39,20 @@
             <dot-uve-palette-list
                 [listType]="DotUVEPaletteListTypes.FAVORITES"
                 [languageId]="$languageId()"
-                [pagePath]="$pagePath()" />
+                [pagePath]="$pagePath()"
+                [variantId]="$variantId()" />
+        }
+    </p-tabPanel>
+    <p-tabPanel>
+        <ng-template pTemplate="header">
+            <div class="tab-header" pTooltip="Layers" tooltipPosition="bottom">
+                <i class="pi pi-table"></i>
+            </div>
+        </ng-template>
+        @if ($activeTab() === TABS_MAP.LAYERS) {
+            <div class="w-full h-full p-3">
+                <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
+            </div>
         }
     </p-tabPanel>
     @if ($showStyleEditorTab()) {

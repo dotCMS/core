@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -17,8 +17,24 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../../../shared/consts';
-import { UVEStore } from '../../../../../store/dot-uve.store';
 import { Orientation } from '../../../../../store/models';
+
+/**
+ * State - what the user has selected (changes frequently)
+ */
+export interface DeviceSelectorState {
+    currentDevice: DotDevice | null;
+    currentSocialMedia: string | null;
+    currentOrientation: Orientation | null;
+}
+
+/**
+ * Change events - discriminated union for type-safe event handling
+ */
+export type DeviceSelectorChange =
+    | { type: 'device'; device: DotDevice }
+    | { type: 'socialMedia'; socialMedia: string }
+    | { type: 'orientation'; orientation: Orientation };
 
 @Component({
     selector: 'dot-uve-device-selector',
@@ -27,17 +43,20 @@ import { Orientation } from '../../../../../store/models';
     styleUrl: './dot-uve-device-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUveDeviceSelectorComponent implements OnInit {
-    #store = inject(UVEStore);
+export class DotUveDeviceSelectorComponent {
     #messageService = inject(DotMessageService);
-    $devices = input<DotDeviceListItem[]>([], {
-        alias: 'devices'
-    });
+
+    // State input - what's currently selected
+    state = input.required<DeviceSelectorState>();
+
+    // Config inputs - available options and settings
+    devices = input<DotDeviceListItem[]>([]);
+    isTraditionalPage = input<boolean>(true);
+
+    // Single output - unified state change event
+    stateChange = output<DeviceSelectorChange>();
 
     readonly defaultDevices = DEFAULT_DEVICES;
-    readonly $currentDevice = this.#store.device;
-    readonly $currentSocialMedia = this.#store.socialMedia;
-    readonly $currentOrientation = this.#store.orientation;
     readonly socialMediaMenu = {
         label: this.#messageService.get('uve.preview.mode.social.media.subheader'),
         id: 'social-media',
@@ -49,14 +68,14 @@ export class DotUveDeviceSelectorComponent implements OnInit {
         items: this.#getSocialMediaMenuItems(SEARCH_ENGINE_TILES)
     };
     readonly $disableOrientation = computed(
-        () => this.#store.device()?.inode === 'default' || this.#store.socialMedia()
+        () => this.state().currentDevice?.inode === 'default' || this.state().currentSocialMedia !== null
     );
 
     readonly $menuItems = computed(() => {
-        const isTraditionalPage = this.#store.isTraditionalPage();
+        const isTraditionalPage = this.isTraditionalPage();
         const menu = [];
 
-        const extraDevices = this.$devices().filter((device) => !device._isDefault);
+        const extraDevices = this.devices().filter((device) => !device._isDefault);
 
         if (extraDevices.length) {
             const customDevices = {
@@ -79,78 +98,77 @@ export class DotUveDeviceSelectorComponent implements OnInit {
     readonly $moreButtonLabel = computed(() => {
         const DEFAULT_LABEL = 'more';
 
-        const customDevice = this.$devices().find(
-            (device) => !device._isDefault && device.inode === this.$currentDevice()?.inode
+        const customDevice = this.devices().find(
+            (device) => !device._isDefault && device.inode === this.state().currentDevice?.inode
         );
 
-        const label = customDevice?.name || this.$currentSocialMedia();
+        const label = customDevice?.name || this.state().currentSocialMedia;
 
         return label || DEFAULT_LABEL;
     });
 
     readonly activeMenuItemId = computed(() => {
-        const deviceInode = this.$currentDevice()?.inode;
-        const socialMedia = this.$currentSocialMedia();
+        const deviceInode = this.state().currentDevice?.inode;
+        const socialMedia = this.state().currentSocialMedia;
 
         return socialMedia || deviceInode;
     });
 
-    readonly $isMoreButtonActive = computed(() => !this.$currentDevice()?._isDefault);
-
-    ngOnInit(): void {
-        const { device: deviceInode, orientation, seo: socialMedia } = this.#store.viewParams();
-        const device = this.$devices().find((d) => d.inode === deviceInode);
-
-        if (!socialMedia) {
-            this.#store.setDevice(device || DEFAULT_DEVICE, orientation);
-
-            return;
-        }
-
-        this.#store.setSEO(socialMedia);
-    }
+    readonly $isMoreButtonActive = computed(() => !this.state().currentDevice?._isDefault);
 
     /**
      * Select a social media
+     * Emits unified state change event to parent container
      *
      * @param {string} socialMedia
      * @memberof DotUveDeviceSelectorComponent
      */
     onSocialMediaSelect(socialMedia: string): void {
-        const isSameSocialMedia = this.$currentSocialMedia() === socialMedia;
+        const isSameSocialMedia = this.state().currentSocialMedia === socialMedia;
 
         if (isSameSocialMedia) {
-            this.#store.setDevice(DEFAULT_DEVICE);
+            // Emit default device to clear social media
+            this.stateChange.emit({ type: 'device', device: DEFAULT_DEVICE });
 
             return;
         }
 
-        this.#store.setSEO(socialMedia);
+        // Emit social media selection
+        this.stateChange.emit({ type: 'socialMedia', socialMedia });
     }
 
     /**
      * Select a device
+     * Emits unified state change event to parent container
      *
      * @param {DotDevice} device
      * @memberof DotUveDeviceSelectorComponent
      */
     onDeviceSelect(device: DotDevice): void {
-        const currentDevice = this.$currentDevice();
+        const currentDevice = this.state().currentDevice;
         const isSameDevice = currentDevice?.inode === device.inode;
-        this.#store.setDevice(isSameDevice ? DEFAULT_DEVICE : device);
+
+        // Emit device selection (or default to clear)
+        this.stateChange.emit({
+            type: 'device',
+            device: isSameDevice ? DEFAULT_DEVICE : device
+        });
     }
 
     /**
      * Toggle orientation
+     * Emits unified state change event to parent container
      *
      * @memberof DotUveDeviceSelectorComponent
      */
     onOrientationChange(): void {
-        this.#store.setOrientation(
-            this.$currentOrientation() === Orientation.LANDSCAPE
+        const newOrientation =
+            this.state().currentOrientation === Orientation.LANDSCAPE
                 ? Orientation.PORTRAIT
-                : Orientation.LANDSCAPE
-        );
+                : Orientation.LANDSCAPE;
+
+        // Emit orientation change
+        this.stateChange.emit({ type: 'orientation', orientation: newOrientation });
     }
 
     /**

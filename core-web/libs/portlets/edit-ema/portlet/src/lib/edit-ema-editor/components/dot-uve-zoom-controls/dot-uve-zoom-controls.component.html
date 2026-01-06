@@ -1,0 +1,27 @@
+<button
+    pButton
+    icon="pi pi-minus"
+    size="small"
+    [text]="true"
+    (click)="zoomOut()"
+    aria-label="Zoom out"
+    data-testId="zoom-out"></button>
+<div data-testId="zoom-level">
+    {{ zoomLabel() }}
+</div>
+<button
+    pButton
+    icon="pi pi-plus"
+    size="small"
+    [text]="true"
+    (click)="zoomIn()"
+    aria-label="Zoom in"
+    data-testId="zoom-in"></button>
+<button
+    pButton
+    icon="pi pi-expand"
+    size="small"
+    [text]="true"
+    (click)="resetView()"
+    aria-label="Reset zoom and position"
+    data-testId="zoom-reset"></button>

@@ -10,22 +10,51 @@ import { withClient } from './withClient';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { UVE_STATUS } from '../../../shared/enums';
-import { UVEState } from '../../models';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
+import { Orientation, PageType, UVEState } from '../../models';
 
 const emptyParams = {} as DotPageApiParams;
 
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null,
+    // Normalized page response properties
+    page: null,
+    site: null,
+    template: null,
+    layout: null,
+    containers: null,
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams: emptyParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
+    pageType: PageType.TRADITIONAL,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        selectedContentlet: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested view state
+    view: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        viewParams: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const uveStoreMock = signalStore(
@@ -50,7 +79,7 @@ describe('UVEStore', () => {
 
     it('should have initial state', () => {
         expect(store.isClientReady()).toBeFalsy();
-        expect(store.graphql()).toEqual(null);
+        expect(store.graphqlRequest()).toEqual(null);
         expect(store.graphqlResponse()).toEqual(null);
         expect(store.isClientReady()).toBe(false);
         expect(store.legacyGraphqlResponse()).toBe(false);
@@ -74,7 +103,7 @@ describe('UVEStore', () => {
 
                 store.setCustomGraphQL(graphql, true);
 
-                expect(store.graphql()).toEqual(graphql);
+                expect(store.graphqlRequest()).toEqual(graphql);
             });
         });
 
@@ -87,7 +116,7 @@ describe('UVEStore', () => {
             store.setCustomGraphQL(graphql, true);
             store.resetClientConfiguration();
 
-            expect(store.graphql()).toEqual(null);
+            expect(store.graphqlRequest()).toEqual(null);
         });
     });
 

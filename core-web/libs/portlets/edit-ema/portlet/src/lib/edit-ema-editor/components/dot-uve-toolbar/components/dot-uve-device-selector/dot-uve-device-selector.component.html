@@ -4,7 +4,7 @@
         [pTooltip]="device.name | dm"
         tooltipPosition="bottom"
         styleClass="p-button-text p-button-sm p-button-rounded"
-        [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
+        [ngClass]="{ active: device.inode === state().currentDevice?.inode }"
         (click)="onDeviceSelect(device)"
         [attr.data-testId]="device.inode" />
 }
@@ -15,7 +15,7 @@
     (click)="onOrientationChange()"
     data-testId="orientation">
     <svg
-        [ngClass]="$currentOrientation()"
+        [ngClass]="state().currentOrientation"
         fill="currentColor"
         viewBox="0 0 24 24"
         width="24px"

@@ -35,7 +35,7 @@ import {
     DotFavoriteContentTypeService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -69,16 +69,19 @@ const EMPTY_SEARCH_PARAMS: Partial<DotPaletteSearchParams> = {
 const DEBOUNCE_TIME = 300;
 
 /**
- * Component for displaying and managing a list of content types in the UVE palette.
+ * Presentational component for displaying and managing a list of content types in the UVE palette.
  * Supports grid/list view modes, sorting, filtering, and pagination.
+ *
+ * Receives all required state via @Input properties from parent container.
+ * Does not inject UVEStore directly - follows container/presentational pattern.
  *
  * @example
  * ```html
  * <dot-uve-palette-list
- *   [type]="'content'"
- *   [languageId]="1"
- *   [pagePath]="'/home'"
- *   [variantId]="'1'" />
+ *   [listType]="type"
+ *   [languageId]="languageId"
+ *   [pagePath]="pagePath"
+ *   [variantId]="variantId" />
  * ```
  */
 @Component({
@@ -100,7 +103,7 @@ const DEBOUNCE_TIME = 300;
         DotMessagePipe,
         ContextMenuModule
     ],
-    providers: [DotPaletteListStore, DotESContentService],
+    providers: [DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
     styleUrl: './dot-uve-palette-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -109,10 +112,14 @@ export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('menu') menu!: { toggle: (event: Event) => void };
     @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
+    /**
+     * Input properties passed down from parent container.
+     * Container pattern: parent reads from store, child receives via props.
+     */
     $type = input.required<DotUVEPaletteListTypes>({ alias: 'listType' });
     $languageId = input.required<number>({ alias: 'languageId' });
     $pagePath = input.required<string>({ alias: 'pagePath' });
-    $variantId = input<string>(DEFAULT_VARIANT_ID, { alias: 'variantId' });
+    $variantId = input.required<string>({ alias: 'variantId' });
 
     readonly #globalStore = inject(GlobalStore);
     readonly #paletteListStore = inject(DotPaletteListStore);

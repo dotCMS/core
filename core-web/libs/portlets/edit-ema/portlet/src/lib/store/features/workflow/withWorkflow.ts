@@ -1,6 +1,6 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,6 +17,19 @@ import { UVEState } from '../../models';
 interface WithWorkflowState {
     workflowActions: DotCMSWorkflowAction[];
     workflowLoading: boolean;
+}
+
+/**
+ * Interface defining the methods provided by withWorkflow
+ * Use this as props type in dependent features
+ *
+ * @export
+ * @interface WithWorkflowMethods
+ */
+export interface WithWorkflowMethods {
+    // Methods
+    getWorkflowActions: RxMethod<string>;
+    setWorkflowActionLoading: (workflowLoading: boolean) => void;
 }
 
 /**

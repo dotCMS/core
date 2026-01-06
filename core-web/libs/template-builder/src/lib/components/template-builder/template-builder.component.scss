@@ -6,6 +6,23 @@
 
 :host {
     position: relative;
+
+    ::ng-deep {
+        .p-toolbar-group-end {
+            gap: $spacing-1;
+        }
+
+        .p-toolbar {
+            border-color: $color-palette-gray-300;
+            padding: $spacing-1 $spacing-5;
+        }
+
+        .p-divider {
+            &.p-component {
+                color: $color-palette-gray-300;
+            }
+        }
+    }
 }
 
 .grid-stack-nested {
@@ -61,22 +78,7 @@ p-divider {
     height: 48px;
 }
 
-::ng-deep {
-    .p-toolbar-group-end {
-        gap: $spacing-1;
-    }
 
-    .p-toolbar {
-        border-color: $color-palette-gray-300;
-        padding: $spacing-1 $spacing-5;
-    }
-
-    .p-divider {
-        &.p-component {
-            color: $color-palette-gray-300;
-        }
-    }
-}
 
 .template-builder__main {
     padding: 0 $spacing-5 5rem $spacing-5;

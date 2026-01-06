@@ -7,7 +7,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed } from '@angular/core';
+import { computed, Signal } from '@angular/core';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -23,7 +23,7 @@ import { UVEState } from '../../models';
 export interface ClientConfigState {
     legacyGraphqlResponse: boolean;
     isClientReady: boolean;
-    graphql: {
+    graphqlRequest: {
         query: string;
         variables: Record<string, string>;
     };
@@ -33,8 +33,33 @@ export interface ClientConfigState {
     };
 }
 
+/**
+ * Interface defining the state, methods, and computed properties provided by withClient
+ * Use this as props type in dependent features
+ *
+ * @export
+ * @interface WithClientMethods
+ */
+export interface WithClientMethods {
+    // State (added via withState, available as signals on the store)
+    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
+    graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
+    isClientReady: () => boolean;
+    legacyGraphqlResponse: () => boolean;
+
+    // Methods
+    setIsClientReady: (isClientReady: boolean) => void;
+    setCustomGraphQL: (graphqlRequest: { query: string; variables: Record<string, string> }, legacyGraphqlResponse: boolean) => void;
+    setGraphqlResponse: (graphqlResponse: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    resetClientConfiguration: () => void;
+
+    // Computed
+    $customGraphqlResponse: Signal<any>;
+    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+}
+
 const clientState: ClientConfigState = {
-    graphql: null,
+    graphqlRequest: null,
     graphqlResponse: null,
     isClientReady: false,
     legacyGraphqlResponse: false
@@ -62,7 +87,7 @@ export function withClient() {
                 setCustomGraphQL: ({ query, variables }, legacyGraphqlResponse) => {
                     patchState(store, {
                         legacyGraphqlResponse,
-                        graphql: {
+                        graphqlRequest: {
                             query,
                             variables
                         }
@@ -91,11 +116,11 @@ export function withClient() {
 
                     return {
                         ...store.graphqlResponse(),
-                        grapql: store.graphql()
+                        graphqlRequest: store.graphqlRequest()
                     };
                 }),
                 $graphqlWithParams: computed(() => {
-                    if (!store.graphql()) {
+                    if (!store.graphqlRequest()) {
                         return null;
                     }
 
@@ -103,9 +128,9 @@ export function withClient() {
                     const { mode, language_id, url, variantName } = params;
 
                     return {
-                        ...store.graphql(),
+                        ...store.graphqlRequest(),
                         variables: {
-                            ...store.graphql().variables,
+                            ...store.graphqlRequest().variables,
                             url,
                             mode,
                             languageId: language_id,
