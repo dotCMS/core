@@ -5,12 +5,6 @@ if [ -z "$BASH_VERSION" ]; then
     exec bash "$0" "$@"
 fi
 
-# Increase resource limits for git hook subprocess environment
-# Git hooks run with restricted limits which can cause ENOBUFS errors
-# Set soft limits to match typical shell environment
-ulimit -n 10240 2>/dev/null || true  # Open files (file descriptors)
-ulimit -u 2048 2>/dev/null || true   # Max user processes
-
 # Color definitions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -52,6 +46,11 @@ show_mise_install_instructions() {
 # Determine the root directory of the git repository
 root_dir="$(git rev-parse --show-toplevel)"
 
+# Source husky script first (it will re-execute this script, so put all logic after this)
+. "$(dirname "$0")/_/husky.sh" || exit 1
+
+# Everything below this line runs only once (after husky.sh re-execution)
+
 # Check for mise first - required for all operations
 if ! command -v mise >/dev/null 2>&1; then
     show_mise_install_instructions
@@ -59,17 +58,17 @@ if ! command -v mise >/dev/null 2>&1; then
 fi
 
 print_color "$GREEN" "✅ mise is installed ($(mise --version))"
-# mise will automatically use version config from .nvmrc, .sdkmanrc, or .mise.toml
 
-# Check if mise configuration is trusted
-# Use mise trust --show which outputs "path: trusted" or "path: untrusted"
+# Check if mise configuration is trusted using mise trust --show
 trust_status=$(mise trust --show 2>&1)
-if ! echo "$trust_status" | grep -q "trusted"; then
+
+if echo "$trust_status" | grep -q "untrusted"; then
     print_color "$RED" "❌ mise configuration not trusted - required for security"
     print_color "$YELLOW" "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     print_color "$BLUE" "📋 mise requires you to explicitly trust configuration files before using them."
     printf "\n"
-    print_color "$GREEN" "  To trust this configuration, run:"
+    print_color "$GREEN" "  To trust this configuration, run from repository root:"
+    printf "    cd ${root_dir}\n"
     printf "    mise trust\n"
     printf "\n"
     print_color "$BLUE" "  This will mark the .mise.toml configuration as trusted on your system."
@@ -78,41 +77,6 @@ if ! echo "$trust_status" | grep -q "trusted"; then
 fi
 
 print_color "$GREEN" "✅ mise configuration is trusted"
-
-# Auto-setup Husky if needed
-if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
-    print_color "$YELLOW" "📦 Husky setup incomplete: _/husky.sh not found"
-    print_color "$BLUE" "🔧 Auto-installing Husky dependencies with mise..."
-
-    # Install Husky using mise-managed yarn
-    cd "${root_dir}/core-web" || exit 1
-    print_color "$BLUE" "🔧 Running yarn install to set up Husky..."
-    if mise exec -- yarn install --frozen-lockfile 2>/dev/null || mise exec -- yarn install 2>/dev/null; then
-        print_color "$GREEN" "✅ Husky setup completed successfully"
-    else
-        print_color "$RED" "❌ Failed to install Husky dependencies"
-        print_color "$YELLOW" "💡 Please run 'yarn install' in the core-web directory"
-        exit 1
-    fi
-
-    # Go back to original directory
-    cd - >/dev/null || exit 1
-
-    # Verify husky.sh now exists
-    if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
-        print_color "$RED" "❌ Husky setup still incomplete after installation"
-        print_color "$YELLOW" "💡 Please run 'yarn install' in the core-web directory to complete setup"
-        exit 1
-    fi
-
-    print_color "$GREEN" "✅ Husky is now ready - continuing with pre-commit checks..."
-fi
-
-# Source husky script
-. "$(dirname "$0")/_/husky.sh" || {
-    print_color "$RED" "❌ Failed to source husky.sh"
-    exit 1
-}
 
 check_sdk_client_affected() {
     # Check if initial build has been done (nx cache and build artifacts exist)
