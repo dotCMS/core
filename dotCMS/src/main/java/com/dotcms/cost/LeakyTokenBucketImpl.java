@@ -50,10 +50,17 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
         refillTokens();
         long currentCount = getTokenCount();
 
-        if (enabled && currentCount <= 0) {
-            Logger.debug(this.getClass(),
-                    "Rate limited - no request tokens, refilling @ " + refillPerSecond + " per second");
-            return false;
+        if (currentCount <= 0) {
+            if (enabled) {
+                Logger.warnEvery(this.getClass(), "RATE_LIMIT_HIT",
+                        "Rate limit (enabled) - max tokens:" + maximumBucketSize + ", refilling @ " + refillPerSecond
+                                + "/sec", 10000);
+                return false;
+            } else {
+                Logger.warnEvery(this.getClass(), "RATE_LIMIT_HIT",
+                        "Rate limit (disabled) - max tokens:" + maximumBucketSize + ", refilling @ " + refillPerSecond
+                                + "/sec", 10000);
+            }
         }
 
         Logger.debug(this.getClass(), "Request tokens available: " + currentCount);
