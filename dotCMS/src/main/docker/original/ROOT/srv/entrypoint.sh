@@ -6,6 +6,7 @@ umask 007
 
 export TOMCAT_HOME=/srv/dotserver/tomcat
 
+source /srv/15-detect-fips-and-set-ssl-engine.sh
 source /srv/20-copy-overriden-files.sh
 source /srv/25-generate-dev-ssl-cert.sh
 source /srv/30-override-config-props.sh
