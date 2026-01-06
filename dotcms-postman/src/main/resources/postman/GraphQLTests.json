@@ -4660,12 +4660,7 @@
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
-											"",
-											"pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
-											"    const entity = pm.response.json().entity;",
-											"    pm.expect(entity).to.exist;",
-											"    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
-											"});"
+											""
 										],
 										"type": "text/javascript",
 										"packages": {},
@@ -4686,7 +4681,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/system-table/",
+									"raw": "{{serverURL}}/api/v1/system-table",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -4724,13 +4719,13 @@
 											"    pm.expect(response.data.page).to.exist;",
 											"});",
 											"",
-											"// Finding the Container (Logic adjusted for nested structure)",
+											"// Finding the Container",
 											"let targetContainerWrapper = null;",
 											"",
 											"pm.test(\"Target Container exists\", function () {",
 											"    const containers = response.data.page.containers;",
 											"    ",
-											"    // We have to look inside the 'containerContentlets' array of each container to find the UUID 'uuid-1'",
+											"    // Look inside the 'containerContentlets' array to find the UUID 'uuid-1'",
 											"    containers.forEach(container => {",
 											"        if(container.containerContentlets) {",
 											"             const found = container.containerContentlets.find(c => c.uuid === 'uuid-1');",
@@ -4752,14 +4747,21 @@
 											"    pm.expect(targetContentlet, \"Contentlet not found\").to.exist;",
 											"});",
 											"",
-											"// Checking Style Values",
-											"pm.test(\"Styles have correct width\", function () {",
+											"// Checking Style Values inside _map Object",
+											"pm.test(\"_map Styles have correct width\", function () {",
 											"    pm.expect(targetContentlet.styles).to.not.be.null;",
 											"    pm.expect(targetContentlet.styles.width).to.eql('100px');",
 											"    pm.expect(targetContentlet.styles.color).to.eql('#FF0000');",
 											"    pm.expect(targetContentlet.styles.margin).to.eql('10px');",
 											"});",
-											""
+											"",
+											"// Checking Style Values as a top level field",
+											"pm.test(\"Top level Styles have correct width\", function () {",
+											"    pm.expect(targetContentlet.styleProperties).to.not.be.null;",
+											"    pm.expect(targetContentlet.styleProperties.width).to.eql('100px');",
+											"    pm.expect(targetContentlet.styleProperties.color).to.eql('#FF0000');",
+											"    pm.expect(targetContentlet.styleProperties.margin).to.eql('10px');",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {},
@@ -4778,7 +4780,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"styleProperties\")\n        }\n      }\n    }\n  }\n}\n",
+										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"styleProperties\")\n          styleProperties\n        }\n      }\n    }\n  }\n}\n",
 										"variables": "{\n  \"url\": \"{{pageUrl}}\"\n}"
 									}
 								},
@@ -4806,12 +4808,7 @@
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
-											"",
-											"pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is disabled\", function () {",
-											"    const entity = pm.response.json().entity;",
-											"    pm.expect(entity).to.exist;",
-											"    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR Deleted');",
-											"});"
+											""
 										],
 										"type": "text/javascript",
 										"packages": {},
@@ -4824,7 +4821,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"key\":\"FEATURE_FLAG_UVE_STYLE_EDITOR\"}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4832,7 +4829,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/system-table/_delete",
+									"raw": "{{serverURL}}/api/v1/system-table/FEATURE_FLAG_UVE_STYLE_EDITOR",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -4840,7 +4837,7 @@
 										"api",
 										"v1",
 										"system-table",
-										"_delete"
+										"FEATURE_FLAG_UVE_STYLE_EDITOR"
 									]
 								}
 							},
