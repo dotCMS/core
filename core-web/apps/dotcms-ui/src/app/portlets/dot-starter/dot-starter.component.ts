@@ -1,7 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
-
 import { DotOnboardingAuthorComponent } from './components/onboarding-author/onboarding-author.component';
 import { DotOnboardingDevComponent } from './components/onboarding-dev/onboarding-dev.component';
 
@@ -11,7 +9,7 @@ export type UserProfile = 'developer' | 'marketer';
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
     styleUrls: ['./dot-starter.component.scss'],
-    imports: [DotOnboardingDevComponent, DotOnboardingAuthorComponent, CardModule]
+    imports: [DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent implements OnInit {
     public profile: UserProfile = localStorage.getItem('user_profile') as UserProfile;

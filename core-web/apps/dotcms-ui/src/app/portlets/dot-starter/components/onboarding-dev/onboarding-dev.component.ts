@@ -26,8 +26,8 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { ButtonCopyComponent } from '@dotcms/ui';
 
-import { ONBOARDING_CONTENT, STORAGE_KEY } from './content';
-import { OnboardingFramework, OnboardingSubstep } from './models';
+import { getOnboardingContent, STORAGE_KEY } from './content';
+import { OnboardingFramework, OnboardingSubstep, SupportedFrameworks } from './models';
 import { state } from './store';
 
 @Component({
@@ -52,10 +52,11 @@ import { state } from './store';
 })
 export class DotOnboardingDevComponent implements OnInit {
     readonly state = state;
-    readonly content = ONBOARDING_CONTENT;
+
     @Output() eventEmitter = new EventEmitter<'reset-user-profile'>();
 
-    selectedFramework = 'nextjs';
+    selectedFramework: SupportedFrameworks = 'nextjs';
+    content = getOnboardingContent(this.selectedFramework);
     frameworks: OnboardingFramework[] = [
         {
             id: 'nextjs',
@@ -66,36 +67,22 @@ export class DotOnboardingDevComponent implements OnInit {
             id: 'angular',
             label: 'Angular',
             logo: '/dotAdmin/assets/logos/angular.png',
-            disabled: true,
-            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
+            disabled: false
+            // githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
         },
         {
             id: 'angular-ssr',
             label: 'Angular SSR',
             logo: '/dotAdmin/assets/logos/angular.png',
-            disabled: true,
-            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
+            disabled: false
+            // githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
         },
         {
             id: 'astro',
             label: 'Astro',
             logo: '/dotAdmin/assets/logos/astro.svg',
-            disabled: true,
-            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
-        },
-        {
-            id: 'php',
-            label: 'PHP',
-            logo: '/dotAdmin/assets/logos/php.png',
-            disabled: true,
-            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
-        },
-        {
-            id: 'dotnet',
-            label: '.NET',
-            logo: '/dotAdmin/assets/logos/dot-net.png',
-            disabled: true,
-            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
+            disabled: false
+            // githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
         }
     ];
 
@@ -200,5 +187,11 @@ ${substep.code}
     public resetUserProfile(): void {
         localStorage.removeItem('user_profile');
         this.eventEmitter.emit('reset-user-profile');
+    }
+
+    public changeSelectedFramework(event: Event): void {
+        const value: SupportedFrameworks = (event.target as HTMLInputElement)
+            .value as SupportedFrameworks;
+        this.content = getOnboardingContent(value);
     }
 }

@@ -19,6 +19,7 @@
                         [value]="framework.id"
                         [(ngModel)]="selectedFramework"
                         [inputId]="framework.id"
+                        (click)="changeSelectedFramework($event)"
                         [disabled]="framework.disabled" />
 
                     @if (framework.disabled) {

@@ -3,6 +3,8 @@ interface OnboardingSubstepExplanation {
     description: string;
 }
 
+export type SupportedFrameworks = 'nextjs' | 'angular' | 'angular-ssr' | 'astro';
+
 type SubstepType = 'file' | 'terminal' | 'config';
 
 interface OnboardingStep {
