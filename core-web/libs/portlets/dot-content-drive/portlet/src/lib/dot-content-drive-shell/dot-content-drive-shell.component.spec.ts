@@ -167,6 +167,7 @@ describe('DotContentDriveShellComponent', () => {
                     sidebarLoading: jest.fn(),
                     closeDialog: jest.fn(),
                     patchContextMenu: jest.fn(),
+                    resetContextMenu: jest.fn(),
                     setDragItems: jest.fn(),
                     cleanDragItems: jest.fn(),
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
@@ -1963,6 +1964,22 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(toolbar, 'addNewDotAsset', undefined);
 
             expect(clickSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('onTableScroll', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        it('should reset context menu when table scroll event is emitted', () => {
+            const folderListView = spectator.debugElement.query(
+                By.directive(DotFolderListViewComponent)
+            );
+
+            spectator.triggerEventHandler(folderListView, 'scroll', new Event('scroll'));
+
+            expect(store.resetContextMenu).toHaveBeenCalled();
         });
     });
 });
