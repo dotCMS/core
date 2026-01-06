@@ -67,22 +67,36 @@ export class DotOnboardingDevComponent implements OnInit {
             id: 'angular',
             label: 'Angular',
             logo: '/dotAdmin/assets/logos/angular.png',
-            disabled: false
-            // githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
+            disabled: false,
+            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
         },
         {
             id: 'angular-ssr',
             label: 'Angular SSR',
             logo: '/dotAdmin/assets/logos/angular.png',
-            disabled: false
-            // githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
+            disabled: false,
+            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
         },
         {
             id: 'astro',
             label: 'Astro',
             logo: '/dotAdmin/assets/logos/astro.svg',
-            disabled: false
-            // githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
+            disabled: false,
+            githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
+        },
+        {
+            id: '.net',
+            label: '.Net',
+            logo: '/dotAdmin/assets/logos/dot-net.png',
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
+        },
+        {
+            id: 'php',
+            label: 'PHP',
+            logo: '/dotAdmin/assets/logos/php.png',
+            disabled: true,
+            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         }
     ];
 

@@ -75,26 +75,28 @@
                                                         substep.explanation.description
                                                     "></markdown>
                                             </div>
-                                            <div>
-                                                @if (substep.filePath) {
-                                                    <div class="dot-step__file-path">
-                                                        {{ substep.filePath }}
-                                                    </div>
-                                                } @else {
-                                                    <div class="dot-step__file-path">
-                                                        {{ substep.type }}
-                                                    </div>
-                                                }
-                                                <ng-template #buttonTemplate>
-                                                    <dot-button-copy />
-                                                </ng-template>
-                                                <markdown
-                                                    clipboard
-                                                    [data]="formatSubstep(substep)"
-                                                    [clipboardButtonTemplate]="
-                                                        buttonTemplate
-                                                    "></markdown>
-                                            </div>
+                                            @if (substep.code !== '') {
+                                                <div>
+                                                    @if (substep.filePath) {
+                                                        <div class="dot-step__file-path">
+                                                            {{ substep.filePath }}
+                                                        </div>
+                                                    } @else {
+                                                        <div class="dot-step__file-path">
+                                                            {{ substep.type }}
+                                                        </div>
+                                                    }
+                                                    <ng-template #buttonTemplate>
+                                                        <dot-button-copy />
+                                                    </ng-template>
+                                                    <markdown
+                                                        clipboard
+                                                        [data]="formatSubstep(substep)"
+                                                        [clipboardButtonTemplate]="
+                                                            buttonTemplate
+                                                        "></markdown>
+                                                </div>
+                                            }
                                         </div>
                                     }
                                 }
