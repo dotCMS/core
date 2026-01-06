@@ -418,6 +418,7 @@ public class PortalUtil {
       return null;
     }
     req.setAttribute(WebKeys.USER, user);
+    req.setAttribute(WebKeys.USER_ID, user.getUserId());
     return user;
   }
 
