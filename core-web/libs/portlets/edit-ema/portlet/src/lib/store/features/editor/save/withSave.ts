@@ -100,7 +100,7 @@ export function withSave() {
                  */
                 saveStyleEditor: (payload: SaveStylePropertiesPayload) => {
                     return dotPageApiService.saveStyleProperties(payload).pipe(
-                        tapResponse({
+                        tap({
                             next: () => {
                                 // Success - optimistic update remains, no rollback needed
                             },
@@ -129,6 +129,7 @@ export function withSave() {
                             }
                         }),
                         catchError((error) => {
+                            console.error('Error saving style properties:', error);
                             // Re-throw error so component can handle it (show toast, etc.)
                             // Rollback is already handled in tapResponse error callback
                             return throwError(() => error);

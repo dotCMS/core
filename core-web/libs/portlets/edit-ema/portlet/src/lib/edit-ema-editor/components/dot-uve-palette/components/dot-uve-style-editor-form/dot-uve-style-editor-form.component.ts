@@ -7,7 +7,8 @@ import {
     signal,
     effect,
     DestroyRef,
-    untracked
+    untracked,
+    linkedSignal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -65,20 +66,36 @@ export class DotUveStyleEditorFormComponent {
     $form = computed(() => this.#form());
 
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
-    readonly $previousIndex = signal(-1);
+
+    /**
+     * Tracks rollback detection using linkedSignal.
+     * Returns true when currentIndex decreases (undo operation detected).
+     * The previous parameter contains both the source (currentIndex) and the computed value from last run.
+     */
+    readonly $isRollback = linkedSignal({
+        source: this.#uveStore.currentIndex,
+        computation: (currentIndex: number, previous?: { source: number; value: boolean }) => {
+            // First run: no previous value, not a rollback
+            if (!previous) {
+                return false;
+            }
+
+            const previousIndex = previous.source;
+
+            // Rollback detected: index decreased from a valid position
+            return previousIndex >= 0 && currentIndex < previousIndex;
+        }
+    });
 
     readonly #rollbackDetectionEffect = effect(() => {
-        const currentIndex = this.#uveStore.currentIndex();
-        const previousIndex = this.$previousIndex();
+        const isRollback = this.$isRollback();
 
-        // Detect rollback: index decreased AND we can undo (meaning undo() was called)
-        // This ensures we only restore on actual rollbacks, not on addHistory() operations
-        if (previousIndex >= 0 && currentIndex < previousIndex) {
+        // When rollback is detected, restore form from the rolled-back state
+        if (isRollback) {
             untracked(() => {
                 this.#restoreFormFromRollback();
             });
         }
-        this.$previousIndex.set(currentIndex);
     });
 
     $reloadSchemaEffect = effect(() => {
