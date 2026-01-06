@@ -6,9 +6,9 @@ import {
     DotErrorContent
 } from '@dotcms/types';
 
+import { BaseBuilder } from '../../../base/builder/base-builder';
 import { BuildQuery } from '../../shared/types';
 import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from '../../shared/utils';
-import { BaseBuilder } from '../base/base-builder';
 import { Equals } from '../query/lucene-syntax';
 import { QueryBuilder } from '../query/query';
 import { sanitizeQuery } from '../query/utils';

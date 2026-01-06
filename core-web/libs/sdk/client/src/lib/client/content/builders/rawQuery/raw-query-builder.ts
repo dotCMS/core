@@ -6,7 +6,7 @@ import {
     DotErrorContent
 } from '@dotcms/types';
 
-import { BaseBuilder } from '../base/base-builder';
+import { BaseBuilder } from '../../../base/builder/base-builder';
 import { sanitizeQuery } from '../query/utils';
 
 /**

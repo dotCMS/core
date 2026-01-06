@@ -5,15 +5,15 @@ import {
     DotErrorContent
 } from '@dotcms/types';
 
-import { BaseApiClient } from '../../../base/base-api';
-import { CONTENT_API_URL } from '../../shared/const';
+import { CONTENT_API_URL } from '../../content/shared/const';
 import {
     GetCollectionResponse,
     SortBy,
     GetCollectionRawResponse,
     OnFullfilled,
     OnRejected
-} from '../../shared/types';
+} from '../../content/shared/types';
+import { BaseApiClient } from '../api/base-api';
 
 /**
  * Abstract base class for content builders that provides common functionality

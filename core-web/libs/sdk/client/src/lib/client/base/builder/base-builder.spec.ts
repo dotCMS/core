@@ -10,8 +10,8 @@ import {
 
 import { BaseBuilder } from './base-builder';
 
-import { CONTENT_API_URL } from '../../shared/const';
-import { SortBy } from '../../shared/types';
+import { CONTENT_API_URL } from '../../content/shared/const';
+import { SortBy } from '../../content/shared/types';
 
 type MockRawResponse<T = unknown> = {
     entity: {

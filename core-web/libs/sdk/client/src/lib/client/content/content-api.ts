@@ -3,7 +3,7 @@ import { DotRequestOptions, DotHttpClient, DotCMSClientConfig } from '@dotcms/ty
 import { CollectionBuilder } from './builders/collection/collection';
 import { RawQueryBuilder } from './builders/rawQuery/raw-query-builder';
 
-import { BaseApiClient } from '../base/base-api';
+import { BaseApiClient } from '../base/api/base-api';
 
 /**
  * Creates a builder to filter and fetch a collection of content items.
