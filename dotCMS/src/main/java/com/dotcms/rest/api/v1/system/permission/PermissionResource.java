@@ -1102,6 +1102,20 @@ public class PermissionResource {
             "updateRolePermissions called - roleId: %s, assetId: %s, cascade: %s",
             roleId, assetId, cascade));
 
+        // Validate parameters (matching updateUserPermissions pattern)
+        if (!UtilMethods.isSet(roleId)) {
+            throw new BadRequestException("Role ID is required");
+        }
+        if (!UtilMethods.isSet(assetId)) {
+            throw new BadRequestException("Asset ID is required");
+        }
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        // Validate form data
+        form.checkValid();
+
         // Initialize request context with authentication
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -1120,7 +1134,7 @@ public class PermissionResource {
         }
 
         // Delegate to helper for business logic
-        final Map<String, Object> result = assetPermissionHelper.updateRolePermissions(
+        final UpdateRolePermissionsView result = assetPermissionHelper.updateRolePermissions(
             roleId, assetId, form, cascade, user);
 
         Logger.info(this, () -> String.format(

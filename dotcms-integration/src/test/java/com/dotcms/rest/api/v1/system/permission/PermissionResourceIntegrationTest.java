@@ -16,6 +16,8 @@ import com.dotcms.rest.api.v1.system.permission.UserPermissionsView;
 import com.dotcms.rest.api.v1.system.permission.UserInfoView;
 import com.dotcms.rest.api.v1.system.permission.PermissionMetadataView;
 import com.dotcms.rest.api.v1.system.permission.ResponseEntityPermissionMetadataView;
+import com.dotcms.rest.api.v1.system.permission.UpdateRolePermissionsView;
+import com.dotcms.rest.api.v1.system.permission.RolePermissionAssetView;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -1441,7 +1443,7 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateRolePermissions_success() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Build the form with scope-to-permissions map
@@ -1462,20 +1464,20 @@ public class PermissionResourceIntegrationTest {
 
         // Verify response
         assertNotNull("Response should not be null", responseView);
-        final Map<String, Object> entity = responseView.getEntity();
+        final UpdateRolePermissionsView entity = responseView.getEntity();
         assertNotNull("Entity should not be null", entity);
 
         // Verify response fields
-        assertEquals("roleId should match", testRole.getId(), entity.get("roleId"));
-        assertEquals("roleName should match", testRole.getName(), entity.get("roleName"));
-        assertNotNull("asset should be present", entity.get("asset"));
+        assertEquals("roleId should match", testRole.getId(), entity.roleId());
+        assertEquals("roleName should match", testRole.getName(), entity.roleName());
+        assertNotNull("asset should be present", entity.asset());
 
         // Verify asset structure
-        final Map<String, Object> asset = (Map<String, Object>) entity.get("asset");
-        assertEquals("asset id should match", testFolder.getInode(), asset.get("id"));
-        assertEquals("asset type should be FOLDER", "FOLDER", asset.get("type"));
-        assertNotNull("asset permissions should be present", asset.get("permissions"));
-        assertFalse("asset should not inherit", (Boolean) asset.get("inheritsPermissions"));
+        final RolePermissionAssetView asset = entity.asset();
+        assertEquals("asset id should match", testFolder.getInode(), asset.id());
+        assertEquals("asset type should be FOLDER", "FOLDER", asset.type());
+        assertNotNull("asset permissions should be present", asset.permissions());
+        assertFalse("asset should not inherit", asset.inheritsPermissions());
     }
 
     /**
@@ -1498,16 +1500,16 @@ public class PermissionResourceIntegrationTest {
                 getHttpRequest(adminUser.getEmailAddress(), "admin"),
                 response,
                 testRole.getId(),
-                testSite.getHostname(),  // Using hostname
+                testHost.getHostname(),  // Using hostname
                 false,
                 form
         );
 
         // Verify response
         assertNotNull("Response should not be null", responseView);
-        final Map<String, Object> entity = responseView.getEntity();
-        final Map<String, Object> asset = (Map<String, Object>) entity.get("asset");
-        assertEquals("asset type should be HOST", "HOST", asset.get("type"));
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        final RolePermissionAssetView asset = entity.asset();
+        assertEquals("asset type should be HOST", "HOST", asset.type());
     }
 
     /**
@@ -1518,7 +1520,7 @@ public class PermissionResourceIntegrationTest {
     @Test(expected = DotSecurityException.class)
     public void test_updateRolePermissions_nonAdminUser_throws403() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Create a non-admin user
@@ -1552,7 +1554,7 @@ public class PermissionResourceIntegrationTest {
     @Test(expected = com.dotcms.contenttype.exception.NotFoundInDbException.class)
     public void test_updateRolePermissions_invalidRoleId_throws404() throws DotDataException, DotSecurityException {
         // Create test folder
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
 
         // Build the form
         final Map<String, List<String>> permissions = new HashMap<>();
@@ -1599,12 +1601,12 @@ public class PermissionResourceIntegrationTest {
     /**
      * Method to test: updateRolePermissions in the PermissionResource
      * Given Scenario: Invalid permission scope in request
-     * ExpectedResult: IllegalArgumentException is thrown
+     * ExpectedResult: BadRequestException is thrown
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void test_updateRolePermissions_invalidScope_throws400() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Build form with invalid scope
@@ -1626,12 +1628,12 @@ public class PermissionResourceIntegrationTest {
     /**
      * Method to test: updateRolePermissions in the PermissionResource
      * Given Scenario: Invalid permission level in request
-     * ExpectedResult: IllegalArgumentException is thrown
+     * ExpectedResult: BadRequestException is thrown
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void test_updateRolePermissions_invalidPermissionLevel_throws400() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Build form with invalid permission level
@@ -1658,12 +1660,12 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateRolePermissions_breaksInheritance() throws DotDataException, DotSecurityException {
         // Create parent and child folder (child inherits by default)
-        final Folder parentFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Folder childFolder = new FolderDataGen().parent(parentFolder).nextPersisted();
 
         // Verify child is inheriting
         assertTrue("Child folder should initially inherit permissions",
-                permissionAPI.isInheritingPermissions(childFolder));
+                APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
 
         // Create test role
         final Role testRole = new RoleDataGen().nextPersisted();
@@ -1684,13 +1686,13 @@ public class PermissionResourceIntegrationTest {
         );
 
         // Verify response
-        final Map<String, Object> entity = responseView.getEntity();
-        final Map<String, Object> asset = (Map<String, Object>) entity.get("asset");
-        assertFalse("Asset should not inherit after update", (Boolean) asset.get("inheritsPermissions"));
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        final RolePermissionAssetView asset = entity.asset();
+        assertFalse("Asset should not inherit after update", asset.inheritsPermissions());
 
         // Verify folder is no longer inheriting
         assertFalse("Child folder should no longer inherit permissions",
-                permissionAPI.isInheritingPermissions(childFolder));
+                APILocator.getPermissionAPI().isInheritingPermissions(childFolder));
     }
 
     /**
@@ -1701,7 +1703,7 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateRolePermissions_emptyArrayRemovesScope() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // First, set some permissions
@@ -1735,9 +1737,9 @@ public class PermissionResourceIntegrationTest {
         );
 
         // Verify response
-        final Map<String, Object> entity = responseView.getEntity();
-        final Map<String, Object> asset = (Map<String, Object>) entity.get("asset");
-        final Map<String, List<String>> permMap = (Map<String, List<String>>) asset.get("permissions");
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        final RolePermissionAssetView asset = entity.asset();
+        final Map<String, List<String>> permMap = asset.permissions();
 
         // CONTENT should be removed (not present or empty)
         assertTrue("CONTENT scope should be removed",
@@ -1756,7 +1758,7 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateRolePermissions_omittedScopePreservesPermissions() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // First, set permissions for INDIVIDUAL and CONTENT
@@ -1790,9 +1792,9 @@ public class PermissionResourceIntegrationTest {
         );
 
         // Verify response
-        final Map<String, Object> entity = responseView.getEntity();
-        final Map<String, Object> asset = (Map<String, Object>) entity.get("asset");
-        final Map<String, List<String>> permMap = (Map<String, List<String>>) asset.get("permissions");
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        final RolePermissionAssetView asset = entity.asset();
+        final Map<String, List<String>> permMap = asset.permissions();
 
         // INDIVIDUAL should be updated to just READ
         assertEquals("INDIVIDUAL should have only READ",
@@ -1807,12 +1809,12 @@ public class PermissionResourceIntegrationTest {
     /**
      * Method to test: updateRolePermissions in the PermissionResource
      * Given Scenario: Empty permissions map provided
-     * ExpectedResult: IllegalArgumentException is thrown
+     * ExpectedResult: BadRequestException is thrown
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = BadRequestException.class)
     public void test_updateRolePermissions_emptyPermissions_throws400() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Build form with empty permissions map
@@ -1838,7 +1840,7 @@ public class PermissionResourceIntegrationTest {
     @Test
     public void test_updateRolePermissions_allScopes() throws DotDataException, DotSecurityException {
         // Create test data
-        final Folder testFolder = new FolderDataGen().site(testSite).nextPersisted();
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
         final Role testRole = new RoleDataGen().nextPersisted();
 
         // Build form with all scopes
@@ -1869,13 +1871,139 @@ public class PermissionResourceIntegrationTest {
 
         // Verify response
         assertNotNull("Response should not be null", responseView);
-        final Map<String, Object> entity = responseView.getEntity();
-        final Map<String, Object> asset = (Map<String, Object>) entity.get("asset");
-        final Map<String, List<String>> permMap = (Map<String, List<String>>) asset.get("permissions");
+        final UpdateRolePermissionsView entity = responseView.getEntity();
+        final RolePermissionAssetView asset = entity.asset();
+        final Map<String, List<String>> permMap = asset.permissions();
 
         // Verify INDIVIDUAL permissions
         assertNotNull("INDIVIDUAL should be present", permMap.get("INDIVIDUAL"));
         assertTrue("INDIVIDUAL should contain EDIT_PERMISSIONS",
                 permMap.get("INDIVIDUAL").contains("EDIT_PERMISSIONS"));
+    }
+
+    /**
+     * Method to test: updateRolePermissions in the PermissionResource
+     * Given Scenario: Null role ID provided
+     * ExpectedResult: BadRequestException is thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_nullRoleId_throws400() throws DotDataException, DotSecurityException {
+        // Create test folder
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+
+        // Build the form
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ"));
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        // Call with null role ID - should throw BadRequestException
+        resource.updateRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                null,
+                testFolder.getInode(),
+                false,
+                form
+        );
+    }
+
+    /**
+     * Method to test: updateRolePermissions in the PermissionResource
+     * Given Scenario: Empty role ID provided
+     * ExpectedResult: BadRequestException is thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_emptyRoleId_throws400() throws DotDataException, DotSecurityException {
+        // Create test folder
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+
+        // Build the form
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ"));
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        // Call with empty role ID - should throw BadRequestException
+        resource.updateRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                "",
+                testFolder.getInode(),
+                false,
+                form
+        );
+    }
+
+    /**
+     * Method to test: updateRolePermissions in the PermissionResource
+     * Given Scenario: Null asset ID provided
+     * ExpectedResult: BadRequestException is thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_nullAssetId_throws400() throws DotDataException, DotSecurityException {
+        // Create test role
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Build the form
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ"));
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        // Call with null asset ID - should throw BadRequestException
+        resource.updateRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testRole.getId(),
+                null,
+                false,
+                form
+        );
+    }
+
+    /**
+     * Method to test: updateRolePermissions in the PermissionResource
+     * Given Scenario: Empty asset ID provided
+     * ExpectedResult: BadRequestException is thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_emptyAssetId_throws400() throws DotDataException, DotSecurityException {
+        // Create test role
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Build the form
+        final Map<String, List<String>> permissions = new HashMap<>();
+        permissions.put("INDIVIDUAL", Arrays.asList("READ"));
+        final UpdateRolePermissionsForm form = new UpdateRolePermissionsForm(permissions);
+
+        // Call with empty asset ID - should throw BadRequestException
+        resource.updateRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testRole.getId(),
+                "",
+                false,
+                form
+        );
+    }
+
+    /**
+     * Method to test: updateRolePermissions in the PermissionResource
+     * Given Scenario: Null form provided
+     * ExpectedResult: BadRequestException is thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_updateRolePermissions_nullForm_throws400() throws DotDataException, DotSecurityException {
+        // Create test data
+        final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
+        final Role testRole = new RoleDataGen().nextPersisted();
+
+        // Call with null form - should throw BadRequestException
+        resource.updateRolePermissions(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"),
+                response,
+                testRole.getId(),
+                testFolder.getInode(),
+                false,
+                null
+        );
     }
 }

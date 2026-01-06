@@ -387,6 +387,12 @@ public class AssetPermissionHelper {
             return PermissionAPI.Scope.INDIVIDUAL;
         }
 
+        // Host.getPermissionType() returns Contentlet's type (inherited),
+        // but API should show HOST for user clarity
+        if (asset instanceof Host) {
+            return PermissionAPI.Scope.HOST;
+        }
+
         return getScopeFromPermissionType(asset.getPermissionType());
     }
 
@@ -569,14 +575,11 @@ public class AssetPermissionHelper {
             final String roleId = roleForm.getRoleId();
 
             // Build individual permissions
-            if (roleForm.getIndividual() != null && !roleForm.getIndividual().isEmpty()) {
-                final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(
-                    roleForm.getIndividual());
             // null = omit (preserve), empty = remove, values = set
             if (roleForm.getIndividual() != null) {
                 final int permissionBits = roleForm.getIndividual().isEmpty()
                     ? 0  // Empty array = remove (bits=0 triggers delete)
-                    : convertPermissionNamesToBits(roleForm.getIndividual());
+                    : PermissionConversionUtils.convertPermissionNamesToBits(roleForm.getIndividual());
                 permissions.add(new Permission(
                     PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                     assetPermissionId,
@@ -601,11 +604,9 @@ public class AssetPermissionHelper {
                     }
 
                     final String permissionType = PermissionConversionUtils.convertScopeToPermissionType(scopeName);
-                    final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(scopePermissions);
-                    final String permissionType = convertScopeToPermissionType(scopeName);
                     final int permissionBits = scopePermissions.isEmpty()
                         ? 0  // Empty array = remove (bits=0 triggers delete)
-                        : convertPermissionNamesToBits(scopePermissions);
+                        : PermissionConversionUtils.convertPermissionNamesToBits(scopePermissions);
 
                     permissions.add(new Permission(
                         permissionType,
@@ -756,11 +757,11 @@ public class AssetPermissionHelper {
      * @param form     Permission update form with scope-to-permissions map
      * @param cascade  If true, triggers async cascade job (query parameter)
      * @param user     Requesting user (must be admin)
-     * @return Response map containing roleId, roleName, and asset with updated permissions
+     * @return UpdateRolePermissionsView containing roleId, roleName, and asset with updated permissions
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
-    public Map<String, Object> updateRolePermissions(final String roleId,
+    public UpdateRolePermissionsView updateRolePermissions(final String roleId,
                                                       final String assetId,
                                                       final UpdateRolePermissionsForm form,
                                                       final boolean cascade,
@@ -984,69 +985,70 @@ public class AssetPermissionHelper {
     }
 
     /**
-     * Builds the response map for the role permission update operation.
+     * Builds the response view for the role permission update operation.
      *
      * @param asset Updated asset
      * @param role  Updated role
      * @param user  Requesting user
-     * @return Response map with roleId, roleName, and asset data
+     * @return UpdateRolePermissionsView with roleId, roleName, and asset data
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
-    private Map<String, Object> buildRolePermissionUpdateResponse(final Permissionable asset,
-                                                                    final Role role,
-                                                                    final User user)
+    private UpdateRolePermissionsView buildRolePermissionUpdateResponse(final Permissionable asset,
+                                                                         final Role role,
+                                                                         final User user)
             throws DotDataException, DotSecurityException {
 
-        final Map<String, Object> response = new HashMap<>();
-        response.put("roleId", role.getId());
-        response.put("roleName", role.getName());
-
         // Build asset object with permissions for this role only
-        final Map<String, Object> assetData = buildAssetWithRolePermissions(asset, role, user);
-        response.put("asset", assetData);
+        final RolePermissionAssetView assetView = buildAssetWithRolePermissions(asset, role, user);
 
-        return response;
+        return UpdateRolePermissionsView.builder()
+            .roleId(role.getId())
+            .roleName(role.getName())
+            .asset(assetView)
+            .build();
     }
 
     /**
-     * Builds asset data map with permissions filtered to a specific role.
+     * Builds asset view with permissions filtered to a specific role.
      *
      * @param asset Target asset
      * @param role  Target role
      * @param user  Requesting user
-     * @return Asset data map with id, type, name, path, hostId, and permissions
+     * @return RolePermissionAssetView with id, type, name, path, hostId, and permissions
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
-    private Map<String, Object> buildAssetWithRolePermissions(final Permissionable asset,
-                                                               final Role role,
-                                                               final User user)
+    private RolePermissionAssetView buildAssetWithRolePermissions(final Permissionable asset,
+                                                                   final Role role,
+                                                                   final User user)
             throws DotDataException, DotSecurityException {
 
-        final Map<String, Object> assetData = new HashMap<>();
+        // Extract name, path, hostId based on asset type
+        final String name;
+        final String path;
+        final String hostId;
 
-        // Basic asset info
-        assetData.put("id", asset.getPermissionId());
-        assetData.put("type", getAssetType(asset));
-
-        // Add name and path based on asset type
         if (asset instanceof Host) {
             final Host host = (Host) asset;
-            assetData.put("name", host.getHostname());
-            assetData.put("path", "/" + host.getHostname());
-            assetData.put("hostId", host.getIdentifier());
+            name = host.getHostname();
+            path = "/" + host.getHostname();
+            hostId = host.getIdentifier();
         } else if (asset instanceof Folder) {
             final Folder folder = (Folder) asset;
-            assetData.put("name", folder.getName());
-            assetData.put("path", APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath());
-            assetData.put("hostId", folder.getHostId());
+            name = folder.getName();
+            path = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
+            hostId = folder.getHostId();
+        } else {
+            name = "";
+            path = "";
+            hostId = "";
         }
 
         // Permission metadata
-        assetData.put("canEditPermissions", permissionAPI.doesUserHavePermission(
-            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false));
-        assetData.put("inheritsPermissions", permissionAPI.isInheritingPermissions(asset));
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+        final boolean inheritsPermissions = permissionAPI.isInheritingPermissions(asset);
 
         // Get permissions for this role and build permission map
         // We need BOTH individual permissions (INDIVIDUAL scope) AND inheritable permissions
@@ -1074,8 +1076,15 @@ public class AssetPermissionHelper {
             }
         }
 
-        assetData.put("permissions", permissionMap);
-
-        return assetData;
+        return RolePermissionAssetView.builder()
+            .id(asset.getPermissionId())
+            .type(getAssetTypeAsScope(asset).name())
+            .name(name)
+            .path(path)
+            .hostId(hostId)
+            .canEditPermissions(canEditPermissions)
+            .inheritsPermissions(inheritsPermissions)
+            .permissions(permissionMap)
+            .build();
     }
 }

@@ -1,8 +1,12 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.exception.BadRequestException;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
@@ -44,8 +48,17 @@ import java.util.Map;
  * @author dotCMS
  * @since 24.01
  */
-public class UpdateRolePermissionsForm {
+public class UpdateRolePermissionsForm extends Validated {
 
+    @JsonProperty("permissions")
+    @Schema(
+        description = "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER, CONTENT, etc.) "
+            + "with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN). "
+            + "Omitting a scope preserves existing permissions. Empty array [] removes permissions for that scope.",
+        example = "{\"INDIVIDUAL\": [\"READ\", \"WRITE\"], \"CONTENT\": [\"READ\", \"PUBLISH\"]}",
+        required = true
+    )
+    @NotNull(message = "permissions is required")
     private final Map<String, List<String>> permissions;
 
     /**
@@ -68,5 +81,51 @@ public class UpdateRolePermissionsForm {
      */
     public Map<String, List<String>> getPermissions() {
         return permissions;
+    }
+
+    /**
+     * Validates the form data.
+     *
+     * <p>Validates:
+     * <ul>
+     *   <li>permissions is not null or empty</li>
+     *   <li>Each scope is a valid permission scope</li>
+     *   <li>Each permission level is valid (empty arrays are allowed for removal)</li>
+     * </ul>
+     *
+     * @throws BadRequestException If validation fails
+     */
+    @Override
+    public void checkValid() {
+        super.checkValid(); // JSR-303 validation
+
+        if (permissions == null || permissions.isEmpty()) {
+            throw new BadRequestException("permissions cannot be empty");
+        }
+
+        // Validate scopes and permission levels
+        for (final Map.Entry<String, List<String>> entry : permissions.entrySet()) {
+            final String scope = entry.getKey();
+            if (!PermissionConversionUtils.isValidScope(scope)) {
+                throw new BadRequestException(String.format(
+                    "Invalid permission scope: %s", scope));
+            }
+
+            final List<String> levels = entry.getValue();
+            // Note: Empty arrays are valid (they mean "remove permissions for this scope")
+            // but null values within the array are not valid
+            if (levels != null) {
+                for (final String level : levels) {
+                    if (level == null) {
+                        throw new BadRequestException(String.format(
+                            "Permission level cannot be null in scope '%s'", scope));
+                    }
+                    if (!PermissionConversionUtils.isValidPermissionLevel(level)) {
+                        throw new BadRequestException(String.format(
+                            "Invalid permission level '%s' in scope '%s'", level, scope));
+                    }
+                }
+            }
+        }
     }
 }

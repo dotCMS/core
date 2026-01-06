@@ -2,8 +2,6 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.rest.ResponseEntityView;
 
-import java.util.Map;
-
 /**
  * Response entity view for PUT /api/v1/permissions/role/{roleId}/asset/{assetId} endpoint.
  *
@@ -35,14 +33,14 @@ import java.util.Map;
  * @author dotCMS
  * @since 24.01
  */
-public class ResponseEntityUpdateRolePermissionsView extends ResponseEntityView<Map<String, Object>> {
+public class ResponseEntityUpdateRolePermissionsView extends ResponseEntityView<UpdateRolePermissionsView> {
 
     /**
      * Creates a new ResponseEntityUpdateRolePermissionsView.
      *
-     * @param entity Map containing roleId, roleName, and asset data with updated permissions
+     * @param entity UpdateRolePermissionsView containing roleId, roleName, and asset data with updated permissions
      */
-    public ResponseEntityUpdateRolePermissionsView(final Map<String, Object> entity) {
+    public ResponseEntityUpdateRolePermissionsView(final UpdateRolePermissionsView entity) {
         super(entity);
     }
 }
