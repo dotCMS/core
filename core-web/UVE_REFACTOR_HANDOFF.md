@@ -12,6 +12,8 @@
 - ✅ Added right sidebar with toggle and empty state
 - ✅ Fixed responsive preview broken by zoom implementation
 - ✅ Fixed missing "Edit All Pages vs This Page" dialog in contentlet form submission
+- ✅ Consolidated zoom service into UVEStore (moved to `withZoom.ts` feature)
+- ✅ Fixed feature flags breaking panels and contentlet selection
 
 ---
 
@@ -23,14 +25,15 @@ Extracted business logic from the monolithic `EditEmaEditor` component into spec
 **Main Component:**
 - [`edit-ema-editor.component.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/edit-ema-editor.component.ts) - Refactored to use new service architecture
 
-### New Services (No Tests Yet - May become 3 after consolidation)
+### New Services (No Tests Yet)
 
 | Service | Purpose | Location |
 |---------|---------|----------|
 | **DotUveActionsHandlerService** | Centralized action handling (edit, delete, reorder) | [`dot-uve-actions-handler.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-actions-handler/dot-uve-actions-handler.service.ts) |
 | **DotUveBridgeService** | PostMessage communication with iframe | [`dot-uve-bridge.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-bridge/dot-uve-bridge.service.ts) |
 | **DotUveDragDropService** | Drag-and-drop logic | [`dot-uve-drag-drop.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-drag-drop/dot-uve-drag-drop.service.ts) |
-| **DotUveZoomService** | Zoom controls (25%-150%) - **Should be moved to UVEStore** | [`dot-uve-zoom.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-zoom/dot-uve-zoom.service.ts) |
+
+**Note:** Zoom functionality has been consolidated into UVEStore as `withZoom.ts` feature. The `DotUveZoomService` has been removed.
 
 ### New Components (No Tests Yet)
 
@@ -41,7 +44,8 @@ Extracted business logic from the monolithic `EditEmaEditor` component into spec
 | **DotRowReorderComponent** | Row/column drag-and-drop reordering | [`dot-row-reorder/`](core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-palette/components/dot-row-reorder/) |
 
 ### State Management
-- [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts) - Enhanced to re-fetch page content after save
+- [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts) - Enhanced to re-fetch page content after save (contains `updateRows` method that should be moved to `withLayout.ts`)
+- [`withZoom.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/zoom/withZoom.ts) - Zoom functionality consolidated from service into store feature
 - [`dot-uve.store.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/dot-uve.store.ts) - Improved integration with new services
 
 ### UI/UX Improvements
@@ -209,32 +213,30 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Migration: Consider data migration for existing styleClass "names"
 
 #### 5. "Rules" Feature Not Loading
-**Issue:** "Rules" feature is not loading in the editor. Unknown if this is a regression from refactor or an existing issue with Angular dev server (port 4200).
+**Issue:** "Rules" feature is not loading in the editor. Confirmed as still broken - needs investigation.
+
+**Status:** 🔴 **NOT FIXED** - Still not working. Unknown if regression from refactor or existing issue.
 
 **Action Needed:**
 - [ ] Investigate: Does "rules" work in production build?
 - [ ] Investigate: Did refactor break rules functionality?
 - [ ] Investigate: Is this a dev server proxy/routing issue?
 - [ ] Test rules in full dotCMS environment (port 8080)
+- [ ] Check if `RuleEngineComponent` is properly imported/rendered in UVE editor
 - [ ] Fix or document known limitation if dev-server only issue
 
-#### 6. Missing "Edit All Pages vs This Page" Dialog
+**Impact:** Rules feature completely non-functional in editor.
+
+#### 6. Missing "Edit All Pages vs This Page" Dialog ✅ RESOLVED
 **Issue:** The new palette form to edit content doesn't ask users whether to edit content globally or just for this page.
 
-**Current Flow (Exists):** Dialog with two options:
-- **"All Pages"** - Edit the original/global content (changes appear on all pages using this content)
-- **"This Page"** - Copy the content, add copy to this page, then edit (changes only affect current page)
+**Solution Implemented:** Added logic in `handleEditContentlet` method to check `contentlet.onNumberOfPages`:
+- If contentlet is on only one page (`onNumberOfPages <= 1`), edit directly
+- If contentlet exists on multiple pages (`onNumberOfPages > 1`), show `DotCopyContentModalService` dialog
+- If user selects "This Page", copy content before editing
+- After copying, update the selected contentlet with the new inode
 
-**New Flow (Missing):** Goes directly to edit without asking, potentially editing global content unintentionally.
-
-**Impact:** Users could accidentally modify content globally when they only intended to change it on one page.
-
-**Action Needed:**
-- [ ] Add "All Pages vs This Page" dialog before opening edit form
-- [ ] Implement copy logic when "This Page" is selected
-- [ ] Handle workflow: Check if content is shared across pages → Show dialog
-- [ ] Handle workflow: If content only on current page → Skip dialog, go straight to edit
-- [ ] Reuse existing dialog UI/logic from current edit flow
+**Status:** ✅ **FIXED** - Dialog now properly shows when content exists on multiple pages, preventing accidental global content modifications.
 
 #### 7. Responsive Preview Broken by Zoom Implementation ✅ RESOLVED
 **Issue:** Responsive preview (device viewport switching) stopped working after adding zoom-in-out functionality to the iframe.
@@ -248,29 +250,29 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 
 **Result:** Responsive preview (device viewport switching) now works correctly with zoom functionality enabled.
 
-#### 8. Feature Flags Breaking Panels and Contentlet Selection
+#### 8. Feature Flags Breaking Panels and Contentlet Selection ✅ RESOLVED
 **Issue:** When feature flags for lock and show style editor are turned on, the panels and "select a contentlet" functionality is not working.
 
-**Action Needed:**
-- [ ] Investigate which feature flags are causing the issue (lock flag, show style editor flag)
-- [ ] Check if panels are properly initialized when feature flags are enabled
-- [ ] Verify contentlet selection state management with feature flags active
-- [ ] Test interaction between feature flags and panel visibility/functionality
-- [ ] Fix panel rendering and contentlet selection when flags are enabled
+**Status:** ✅ **FIXED** - Feature flags now work correctly with panels and contentlet selection functionality.
 
 #### 9. Quick Editor Form Not Showing on Contentlet Click
-**Issue:** When clicking a contentlet, the quick editor form doesn't show. This requires a UX decision on the expected behavior.
+**Issue:** When clicking a contentlet, the quick editor form behavior is unclear. This requires a UX decision on the expected behavior.
+
+**Current Implementation:**
+- Quick edit form component exists: `dot-uve-contentlet-quick-edit`
+- Data binding: `$contentletEditData()` computed from `uveStore.editor().selectedContentlet`
+- Selection trigger: `handleSelectedContentlet()` sets selection via `uveStore.setSelectedContentlet()`
+- Form is rendered in right sidebar when `$contentletEditData()` has data
 
 **Action Needed:**
 - [ ] **UX Decision Required:** Determine expected behavior when clicking a contentlet
   - Should quick editor form auto-open on click?
-  - Should it open in the right sidebar or as an overlay?
+  - Should it open in the right sidebar automatically or require explicit action?
+  - Should right sidebar auto-open when contentlet is selected?
   - What triggers the quick editor vs full editor?
-- [ ] Investigate why quick editor form is not triggering on contentlet click
-- [ ] Check if form opening logic is properly wired to contentlet selection event
-- [ ] Verify right sidebar state management when contentlet is selected
-- [ ] Implement quick editor form display based on UX decision
+- [ ] Verify right sidebar auto-opens when contentlet is selected (if that's the desired UX)
 - [ ] Test user flow: click contentlet → see form → edit → save/cancel
+- [ ] Implement any missing UX behavior based on decision
 
 ---
 
@@ -287,9 +289,15 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 **⚠️ Critical:** This is a major refactor - comprehensive smoke and regression testing required before release.
 
 #### Unit Tests
-- [ ] Unit tests for 3 new services (after zoom consolidation) or 4 if keeping zoom service
-- [ ] Unit tests for 3 new components
-- [ ] Unit tests for zoom logic in UVEStore (after consolidation)
+- [ ] Unit tests for 3 new services:
+  - `DotUveActionsHandlerService`
+  - `DotUveBridgeService`
+  - `DotUveDragDropService`
+- [ ] Unit tests for 3 new components:
+  - `DotUveIframeComponent`
+  - `DotUveZoomControlsComponent`
+  - `DotRowReorderComponent`
+- [ ] Unit tests for zoom logic in UVEStore (`withZoom.ts` feature)
 - [ ] Update existing tests for refactored `EditEmaEditor`
 
 #### Smoke Testing (New Features)
@@ -301,6 +309,8 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] All new services communicate correctly
 
 #### Regression Testing (Existing Features - Don't Break These!)
+**⚠️ Status:** No comprehensive regression testing has been performed yet. This is critical before release.
+
 - [ ] Page loading and rendering
 - [ ] Content drag-and-drop from palette
 - [ ] Inline editing (text, WYSIWYG)
@@ -319,8 +329,9 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 - [ ] Form editing
 - [ ] Template changes
 - [ ] Device/persona switching
-- [ ] **Feature flags with lock and style editor** - Test panels and contentlet selection (see Known Issues #8)
-- [ ] **Quick editor form on contentlet click** - Verify form opens correctly (see Known Issues #9)
+- [x] **Feature flags with lock and style editor** ✅ **FIXED - See Known Issues #8**
+- [ ] **Quick editor form on contentlet click** - UX decision pending (see Known Issues #9)
+- [ ] **Rules feature** - Currently broken, needs investigation (see Known Issues #5)
 
 ### 3. Documentation
 - [ ] JSDoc comments for service methods
@@ -347,6 +358,10 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Selected overlay uses `pointer-events: none` to allow iframe interaction
   - Clear visual distinction between hover and selected states
   - Both states can be visible simultaneously
+- [x] **Consolidate zoom service into UVEStore** ✅ **COMPLETED**
+  - Zoom logic moved to `withZoom.ts` store feature
+  - `DotUveZoomService` removed
+  - Components updated to use store directly
 - [ ] **Implement contentlet controls redesign** (see "Design Decisions Needed" section above)
   - Make entire contentlet draggable
   - Move code/delete/edit actions to right panel
@@ -368,10 +383,10 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
   - Decide on headless page support strategy
   - Implement or disable features accordingly
   - Add user messaging for unsupported scenarios
-- [ ] **Fix feature flags breaking panels** (see "Known Issues to Address" section above)
-  - Fix panel initialization when lock and style editor flags are enabled
-  - Fix contentlet selection with feature flags active
-  - Test all feature flag combinations
+- [x] **Fix feature flags breaking panels** ✅ **COMPLETED** (see "Known Issues to Address" section above)
+  - Fixed panel initialization when lock and style editor flags are enabled
+  - Fixed contentlet selection with feature flags active
+  - Feature flags now work correctly
 - [ ] **Fix quick editor form on contentlet click** (see "Known Issues to Address" section above)
   - Make UX decision on expected behavior
   - Implement quick editor form display
@@ -391,13 +406,12 @@ The contentlet-level controls in [`dot-uve-contentlet-tools`](core-web/libs/port
 
 **⚠️ Important:** This code "works" but needs proper cleanup before release. Expect to find quick fixes and shortcuts that need refactoring.
 
-- [ ] **Consolidate zoom service into UVEStore**
-  - Move [`dot-uve-zoom.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-zoom/dot-uve-zoom.service.ts) logic into [`dot-uve.store.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/dot-uve.store.ts)
-  - Remove unnecessary service abstraction
-  - Update components to use store directly
-  - Clean up service references
+- [x] **Consolidate zoom service into UVEStore** ✅ **COMPLETED**
+  - Zoom logic moved to [`withZoom.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/zoom/withZoom.ts) store feature
+  - `DotUveZoomService` removed
+  - Components updated to use store directly
 
-- [ ] **Move `updateRows` method to proper location**
+- [ ] **Move `updateRows` method to proper location** ⚠️ **STILL PENDING**
   - Currently in [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts) but doesn't belong there
   - **Should move to:** [`withLayout.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/layout/withLayout.ts) - already exists!
   - Proper separation: layout operations belong in layout feature, not save feature
@@ -468,12 +482,15 @@ git log origin/main..uve-experiment --oneline
 
 ```
 EditEmaEditor (Main Component)
-    ├── UVEStore (State + Zoom logic to be consolidated)
+    ├── UVEStore
+    │   ├── withZoom (Zoom feature - consolidated from service)
+    │   ├── withLayout (Layout operations)
+    │   ├── withSave (Save operations - contains updateRows that should move to withLayout)
+    │   └── Other store features...
     └── Services
         ├── DotUveActionsHandlerService (Actions)
         ├── DotUveBridgeService (PostMessage)
-        ├── DotUveDragDropService (Drag & Drop)
-        └── DotUveZoomService (Zoom - TO BE REMOVED, move to store)
+        └── DotUveDragDropService (Drag & Drop)
 ```
 
 ---
@@ -522,16 +539,19 @@ These issues **must** be fixed before production:
 ---
 
 #### 2. "Rules" Feature Not Loading
-**Issue:** Unknown if regression from refactor or dev server issue.
+**Issue:** Rules feature is not loading in the editor. Confirmed as still broken - needs investigation.
+
+**Status:** 🔴 **NOT FIXED** - Still not working. Unknown if regression from refactor or existing issue.
 
 **Action Items:**
 - [ ] Test in production build (not just dev server on port 4200)
 - [ ] Test in full dotCMS environment (port 8080)
 - [ ] Check if refactor broke rules functionality
 - [ ] Verify proxy/routing configuration
+- [ ] Check if `RuleEngineComponent` is properly imported/rendered in UVE editor
 - [ ] Fix or document known limitation
 
-**Impact:** Feature may be completely broken in production.
+**Impact:** Rules feature completely non-functional in editor. May be broken in production.
 
 ---
 
@@ -540,7 +560,10 @@ These issues **must** be fixed before production:
 
 **Issue:** When reordering columns, offset values are lost. Logic only calculates based on width, not preserving offset configuration.
 
+**Status:** 🔴 **NOT FIXED** - Decision needed: fix now or defer?
+
 **Action Items:**
+- [ ] **Decision Required:** Should we fix this now or defer?
 - [ ] Review column reorder logic
 - [ ] Preserve offset values during reorder
 - [ ] Test edge cases (columns with various offset values)
@@ -552,6 +575,8 @@ These issues **must** be fixed before production:
 
 #### 4. Comprehensive Regression Testing
 **Issue:** Major refactor requires full testing before release.
+
+**Status:** 🔴 **NOT STARTED** - No comprehensive regression testing has been performed yet.
 
 **Critical Test Areas:**
 - [ ] Page loading and rendering
@@ -569,22 +594,18 @@ These issues **must** be fixed before production:
 - [ ] Form editing
 - [ ] Template changes
 - [ ] Device/persona switching
+- [ ] Rules feature (currently broken)
 
-**Impact:** Risk of breaking existing functionality.
+**Impact:** High risk of breaking existing functionality. Must be completed before release.
 
 ---
 
-#### 5. Feature Flags Breaking Panels and Contentlet Selection
+#### 5. Feature Flags Breaking Panels and Contentlet Selection ✅ **FIXED**
 **Issue:** When feature flags for lock and show style editor are turned on, the panels and "select a contentlet" functionality is not working.
 
-**Action Items:**
-- [ ] Investigate which feature flags are causing the issue (lock flag, show style editor flag)
-- [ ] Check if panels are properly initialized when feature flags are enabled
-- [ ] Verify contentlet selection state management with feature flags active
-- [ ] Test interaction between feature flags and panel visibility/functionality
-- [ ] Fix panel rendering and contentlet selection when flags are enabled
+**Status:** ✅ **FIXED** - Feature flags now work correctly with panels and contentlet selection functionality.
 
-**Impact:** Core functionality broken when feature flags are enabled - blocking release if these flags are required.
+**Impact:** No longer blocking release.
 
 ---
 
@@ -592,12 +613,12 @@ These issues **must** be fixed before production:
 
 #### 5. Code Architecture Cleanup
 
-**5a. Consolidate Zoom Service into UVEStore**
-- **Location:** [`dot-uve-zoom.service.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/services/dot-uve-zoom/dot-uve-zoom.service.ts)
-- **Action:** Move logic into [`dot-uve.store.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/dot-uve.store.ts), remove service abstraction
-- **Why:** Reduces unnecessary service layer, aligns with store pattern
+**5a. Consolidate Zoom Service into UVEStore** ✅ **COMPLETED**
+- **Location:** Zoom logic now in [`withZoom.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/zoom/withZoom.ts)
+- **Action:** Logic moved to store feature, service removed
+- **Status:** ✅ Completed - Zoom functionality consolidated into UVEStore
 
-**5b. Move `updateRows` Method**
+**5b. Move `updateRows` Method** ⚠️ **STILL PENDING**
 - **Current:** [`withSave.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/save/withSave.ts)
 - **Should be:** [`withLayout.ts`](core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/layout/withLayout.ts)
 - **Why:** Proper separation of concerns - layout operations don't belong in save feature
@@ -645,20 +666,25 @@ These issues **must** be fixed before production:
 ---
 
 #### 8. Quick Editor Form Not Showing on Contentlet Click
-**Issue:** When clicking a contentlet, the quick editor form doesn't show. This requires a UX decision on the expected behavior.
+**Issue:** When clicking a contentlet, the quick editor form behavior is unclear. This requires a UX decision on the expected behavior.
+
+**Current Implementation:**
+- Quick edit form component exists: `dot-uve-contentlet-quick-edit`
+- Data binding: `$contentletEditData()` computed from `uveStore.editor().selectedContentlet`
+- Selection trigger: `handleSelectedContentlet()` sets selection via `uveStore.setSelectedContentlet()`
+- Form is rendered in right sidebar when `$contentletEditData()` has data
 
 **Action Items:**
 - [ ] **UX Decision Required:** Determine expected behavior when clicking a contentlet
   - Should quick editor form auto-open on click?
-  - Should it open in the right sidebar or as an overlay?
+  - Should right sidebar auto-open when contentlet is selected?
+  - Should it open in the right sidebar automatically or require explicit action?
   - What triggers the quick editor vs full editor?
-- [ ] Investigate why quick editor form is not triggering on contentlet click
-- [ ] Check if form opening logic is properly wired to contentlet selection event
-- [ ] Verify right sidebar state management when contentlet is selected
-- [ ] Implement quick editor form display based on UX decision
+- [ ] Verify right sidebar auto-opens when contentlet is selected (if that's the desired UX)
 - [ ] Test user flow: click contentlet → see form → edit → save/cancel
+- [ ] Implement any missing UX behavior based on decision
 
-**Impact:** Primary content editing flow broken - users cannot edit contentlets via quick editor.
+**Impact:** UX flow unclear - needs decision before implementation.
 
 ---
 
@@ -711,16 +737,16 @@ These issues **must** be fixed before production:
 ## Implementation Priority
 
 ### Phase 1: Critical Fixes (Week 1)
-1. Fix "All Pages vs This Page" dialog
-2. Investigate and fix "Rules" feature
-3. Fix column offset preservation
-4. Begin regression testing
+1. ✅ Fix "All Pages vs This Page" dialog - **COMPLETED**
+2. Investigate and fix "Rules" feature - **IN PROGRESS** (still broken)
+3. Fix column offset preservation - **DECISION NEEDED** (fix now or defer?)
+4. Begin comprehensive regression testing - **NOT STARTED**
 
 ### Phase 2: Architecture & Testing (Week 2)
-1. Consolidate zoom service into store
-2. Move `updateRows` to `withLayout.ts`
-3. Write unit tests for services
-4. Write unit tests for components
+1. ✅ Consolidate zoom service into store - **COMPLETED**
+2. Move `updateRows` to `withLayout.ts` - **PENDING**
+3. Write unit tests for services - **NOT STARTED**
+4. Write unit tests for components - **NOT STARTED**
 
 ### Phase 3: Polish & i18n (Week 3)
 1. Add i18n support
@@ -738,16 +764,45 @@ These issues **must** be fixed before production:
 
 ## Risk Assessment
 
-| Risk | Severity | Likelihood | Mitigation |
-|------|----------|------------|------------|
-| Missing dialog causes data loss | 🔴 High | Medium | Fix in Phase 1 |
-| Rules feature broken in production | 🔴 High | Unknown | Test immediately |
-| Column offset bug loses user config | 🔴 High | High | Fix in Phase 1 |
-| Regression in existing features | 🔴 High | Medium | Comprehensive testing |
-| No test coverage | 🟠 Medium | High | Add tests in Phase 2 |
-| i18n missing | 🟠 Medium | High | Add in Phase 3 |
-| Code quality issues | 🟡 Low | High | Cleanup in Phase 3 |
+| Risk | Severity | Likelihood | Mitigation | Status |
+|------|----------|------------|------------|--------|
+| Missing dialog causes data loss | 🔴 High | Medium | ✅ Fixed | ✅ Resolved |
+| Rules feature broken in production | 🔴 High | High | Investigate & fix | 🔴 Still broken |
+| Column offset bug loses user config | 🔴 High | High | Decision needed | ⚠️ Pending decision |
+| Regression in existing features | 🔴 High | High | Comprehensive testing | 🔴 Not started |
+| No test coverage | 🟠 Medium | High | Add tests in Phase 2 | 🔴 Not started |
+| i18n missing | 🟠 Medium | High | Add in Phase 3 | 🔴 Not started |
+| Code quality issues | 🟡 Low | High | Cleanup in Phase 3 | 🟡 Pending |
 
 ---
 
 **Last Updated:** 2025-01-28
+
+---
+
+## Current Status Summary
+
+### ✅ Completed Items
+- "All Pages vs This Page" dialog implementation
+- Zoom service consolidation into UVEStore (`withZoom.ts`)
+- Feature flags fixed (lock and style editor flags working)
+- Responsive preview with zoom
+- Inline editing vs selection conflict (dual overlay system)
+- Hover/selected state management in contentlet tools
+- Toolbar button relocations
+- Right sidebar with toggle and empty state
+
+### 🔴 Critical Issues Still Open
+1. **Rules feature not loading** - Still broken, needs investigation
+2. **Column offset preservation bug** - Decision needed: fix now or defer?
+3. **Comprehensive regression testing** - Not started, critical before release
+4. **`updateRows` method location** - Still in `withSave.ts`, should be in `withLayout.ts`
+
+### ⚠️ Pending Decisions
+1. **Quick editor UX** - Need to decide expected behavior when clicking contentlet
+2. **Column offset bug** - Need to decide if this should be fixed now or deferred
+
+### 📋 High Priority Items
+1. **Unit testing** - Zero coverage for new services/components
+2. **Internationalization (i18n)** - All new UI has hardcoded English strings
+3. **Code cleanup** - `updateRows` method needs to be moved, some TODOs remain
