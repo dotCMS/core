@@ -63,7 +63,10 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
     );
 
     // UVE attributes - always applied
-    const dotAttributes = getDotContentletAttributes(contentlet, container);
+    const dotAttributes = useMemo(
+        () => getDotContentletAttributes(contentlet, container),
+        [contentlet, container]
+    );
 
     return (
         <div
