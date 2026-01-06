@@ -23,6 +23,8 @@ export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
+export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
+
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
         icon: 'compass',
