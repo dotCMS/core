@@ -34,13 +34,15 @@ public class RequestCostApiImpl implements RequestCostApi {
 
     private final LongAdder requestCountForWindow = new LongAdder();
     private final LongAdder requestCostForWindow = new LongAdder();
+    private final LongAdder requestCountTotal = new LongAdder();
+    private final LongAdder requestCostTotal = new LongAdder();
     private final Optional<Boolean> enableForTests;
     //log an accounting every X seconds
     private int requestCostTimeWindowSeconds;
     private ScheduledExecutorService scheduler;
     // make the request cost points look like $$
     private float requestCostDenominator = 1;
-    private volatile boolean skipZeroRequests = false;
+
     private final LeakyTokenBucket bucket = CDIUtils.getBeanThrows(LeakyTokenBucket.class);
 
     public RequestCostApiImpl() {
@@ -69,6 +71,7 @@ public class RequestCostApiImpl implements RequestCostApi {
                 requestCostTimeWindowSeconds, TimeUnit.SECONDS);
     }
 
+    private volatile boolean skipZeroRequests = false;
     private void logRequestCost() {
         try {
             if (!isAccountingEnabled()) {
@@ -76,25 +79,34 @@ public class RequestCostApiImpl implements RequestCostApi {
             }
             Tuple2<Long, Long> load = totalLoadGetAndReset();
 
-            long totalRequests = load._1;
-            float totalCost = load._2 / getRequestCostDenominator();
-            float costPerRequest = totalRequests == 0
+            long totalRequestsForDuration = load._1;
+            double totalCostForDuration = load._2 / getRequestCostDenominator();
+            double costPerRequestForDuration = totalRequestsForDuration == 0
                     ? 0
-                    : totalCost / totalRequests;
+                    : totalCostForDuration / totalRequestsForDuration;
 
-            if (totalRequests == 0 && skipZeroRequests) {
+            if (totalRequestsForDuration == 0 && skipZeroRequests) {
                 return;
             }
 
-            skipZeroRequests = totalRequests == 0;
+            skipZeroRequests = totalRequestsForDuration == 0;
+
+            double costPerRequestsTotal = requestCountTotal.longValue() == 0
+                    ? 0
+                    : requestCostTotal.longValue() / requestCountTotal.longValue();
+
+
 
             Logger.info("REQUEST COST MONITOR >",
                     String.format(
-                            "Window: %ds, Count: %d, Total Cost: %.2f, Cost/Request: %.2f",
+                            "Last %ds: Reqs: %d, Cost: %.2f, Avg Cost: %.2f | Totals: Reqs: %d, Cost: %.2f, Avg Cost: %.2f",
                             requestCostTimeWindowSeconds,
-                            totalRequests,
-                            totalCost,
-                            costPerRequest));
+                            totalRequestsForDuration,
+                            totalCostForDuration,
+                            costPerRequestForDuration,
+                            requestCountTotal.longValue(),
+                            requestCostTotal.longValue() / getRequestCostDenominator(),
+                            costPerRequestsTotal));
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), "Error logging request cost:" + e.getMessage(), e);
         }
@@ -224,9 +236,15 @@ public class RequestCostApiImpl implements RequestCostApi {
         } else {
             Logger.debug(RequestCostAdvice.class, logMessage);
         }
+        int currentCost = getRequestCost(request);
+        if (currentCost == 0) {
+            this.requestCountForWindow.increment();
+            this.requestCountTotal.increment();
+        }
 
-        request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, getRequestCost(request) + price.price);
+        request.setAttribute(REQUEST_COST_RUNNING_TOTAL_ATTRIBUTE, currentCost + price.price);
         requestCostForWindow.add(price.price);
+        requestCostTotal.add(price.price);
         bucket.drainFromBucket(price.price);
     }
 
@@ -255,9 +273,6 @@ public class RequestCostApiImpl implements RequestCostApi {
             return;
         }
 
-        // Increment request counter for monitoring window
-        this.requestCountForWindow.increment();
-
         Accounting accounting = resolveAccounting(request);
         if (accounting.ordinal() > Accounting.HEADER.ordinal()) {
             Logger.info(this.getClass(), "<--- REQUESTCOST --- : " + request.getRequestURI());
@@ -267,8 +282,7 @@ public class RequestCostApiImpl implements RequestCostApi {
 
         request.setAttribute(REQUEST_COST_ACCOUNTING_TYPE, accounting);
 
-        this.incrementCost(Price.COSTING_INIT, RequestCostApiImpl.class, "initAccounting",
-                new Object[]{request, accounting});
+
     }
 
 
