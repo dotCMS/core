@@ -186,115 +186,6 @@ check_sdk_client_affected() {
 
 has_errors=false
 
-# Perform fix operations on the staged files
-perform_frontend_fixes() {
-    local files="$1"
-    local add_to_index="$2"
-    local file
-
-    # Check if yarn.lock is present
-    if ! mise exec -- yarn install; then
-        print_color "$RED" "❌ Failed to install dependencies with yarn install"
-        print_color "$YELLOW" "💡 Please run 'yarn install' in the core-web directory and commit the updated lockfile with any package.json changes"
-        has_errors=true
-        return 1
-    else
-        print_color "$GREEN" "✅ Completed yarn install adding yarn.lock if it was modified"
-        # Change to root directory to add yarn.lock with correct path
-        cd "$root_dir" || exit 1
-        git add "core-web/yarn.lock"
-        cd "${root_dir}/core-web" || exit 1
-    fi
-
-    # CRITICAL FIX: Unset Git environment variables that prevent .gitignore from working correctly
-    # Git sets GIT_DIR and GIT_INDEX_FILE during pre-commit hooks in worktrees
-    # These cause git ls-files to return 17MB+ of .nx/cache files, triggering ENOBUFS in Nx
-    unset GIT_DIR
-    unset GIT_INDEX_FILE
-    unset GIT_WORK_TREE
-
-    # Run nx affected lint
-    # Disable Nx daemon and limit parallelism to prevent resource exhaustion in Git hook context
-    print_color "$BLUE" "🔍 Running nx affected lint..."
-    if ! NX_DAEMON=false NX_PARALLEL=1 mise exec -- yarn nx affected -t lint --exclude='tag:skip:lint' --fix=true --parallel=1; then
-        print_color "$YELLOW" "⚠️ nx affected lint failed, but continuing..."
-        has_errors=true
-    fi
-
-    # Run nx format
-    # Disable Nx daemon and limit parallelism to prevent resource exhaustion in Git hook context
-    print_color "$BLUE" "✨ Running nx format:write..."
-    if ! NX_DAEMON=false NX_PARALLEL=1 mise exec -- yarn nx format:write --parallel=1; then
-        print_color "$YELLOW" "⚠️ nx format:write failed, but continuing..."
-        has_errors=true
-    fi
-
-    if [ "$add_to_index" = "true" ]; then
-        local modified_files
-        modified_files=$( (git diff --name-only && git diff --name-only --cached) | sort | uniq)
-
-        local unmatched_files=()
-
-        for file in $files; do
-            if echo "$modified_files" | grep -Fxq "$file"; then
-                # Change to root directory to add files with correct relative paths
-                cd "$root_dir" || exit 1
-                if ! git add -- "${file}"; then
-                    has_errors=true
-                fi
-                cd "${root_dir}/core-web" || exit 1
-            else
-                unmatched_files+=("$file")
-            fi
-        done
-
-        if [ ${#unmatched_files[@]} -ne 0 ]; then
-            printf "===================================\n"
-            print_color "$YELLOW" "⚠️ Warning: The following unrelated files in the affected modules should be linted and/or formatted"
-            printf "\n"
-            for file in "${unmatched_files[@]}"; do
-                printf "    %s\n" "${file}"
-                # Change to root directory to restore files with correct relative paths
-                cd "$root_dir" || exit 1
-                git restore "${file}"
-                cd "${root_dir}/core-web" || exit 1
-            done
-            printf "\n"
-            print_color "$YELLOW" "💡 You can fix these files by running the following commands:"
-            printf "nx affected -t lint --exclude='tag:skip:lint' --fix=true\n"
-            printf "nx format:write;\n"
-        fi
-    fi
-}
-
-restore_untracked_files() {
-    if [ "$backup_untracked" != true ] || [ -z "$temp_dir" ] || [ ! -d "$temp_dir" ]; then
-        return 0
-    fi
-
-    # Only restore if there are files in the temp directory
-    if [ -n "$(ls -A "${temp_dir}" 2>/dev/null)" ]; then
-        print_color "$BLUE" "🔄 Restoring files with unstaged changes..."
-        # Use find with while loop for safer file handling (cross-platform)
-        find "$temp_dir" -type f | while IFS= read -r backup_file; do
-            # Extract relative path by removing temp_dir prefix
-            rel_path="${backup_file#${temp_dir}/}"
-            target_file="${root_dir}/${rel_path}"
-
-            # Ensure target directory exists
-            target_dir=$(dirname "$target_file")
-            mkdir -p "$target_dir"
-
-            # Restore the file
-            cp "$backup_file" "$target_file"
-        done
-        print_color "$GREEN" "✅ Restored files with unstaged changes"
-    fi
-
-    # Clean up temporary directory
-    rm -rf "$temp_dir"
-}
-
 original_pwd=${PWD}
 
 # Setup development tools with mise
@@ -424,67 +315,25 @@ fi
 core_web_dir="${root_dir}/core-web"
 cd "${core_web_dir}" || exit 1
 
-# Collect file lists once for efficiency
-staged_files=$(git diff --cached --name-only)
-modified_files=$(git diff --name-only)
+# CRITICAL FIX: Unset Git environment variables that prevent .gitignore from working correctly
+# Git sets GIT_DIR and GIT_INDEX_FILE during pre-commit hooks in worktrees
+# These cause git ls-files to return massive output including .nx/cache files
+# Solution validated by lint-staged PR #887: https://github.com/lint-staged/lint-staged/pull/887
+unset GIT_DIR
+unset GIT_INDEX_FILE
+unset GIT_WORK_TREE
 
-# Files with unstaged changes (modified but not fully staged)
-# These are files that appear in both lists
-files_with_unstaged_changes=""
-if [ -n "$staged_files" ] && [ -n "$modified_files" ]; then
-    # Use temporary files to avoid process substitution (for better shell compatibility)
-    staged_sorted=$(mktemp)
-    modified_sorted=$(mktemp)
-    echo "$staged_files" | sort > "$staged_sorted"
-    echo "$modified_files" | sort > "$modified_sorted"
-    files_with_unstaged_changes=$(comm -12 "$staged_sorted" "$modified_sorted")
-    rm -f "$staged_sorted" "$modified_sorted"
+# Run lint-staged for frontend linting and formatting
+# lint-staged will:
+# - Only process staged files (more precise than nx affected)
+# - Handle backup/restore of unstaged changes automatically
+# - Handle git environment variables correctly
+# - Stage fixed files automatically
+print_color "$BLUE" "🔍 Running lint-staged on staged frontend files..."
+if ! NX_DAEMON=false mise exec -- yarn lint-staged; then
+    print_color "$RED" "❌ lint-staged failed"
+    has_errors=true
 fi
-
-# Filter for core-web files only
-core_web_files_staged=""
-if [ -n "$staged_files" ]; then
-    core_web_files_staged=$(echo "$staged_files" | grep -E '^core-web/' || true)
-fi
-
-# Backup files with unstaged changes before running fixes
-# This preserves unstaged changes that we'll restore after linting/formatting
-backup_untracked=false
-temp_dir=""
-if [ -n "$files_with_unstaged_changes" ]; then
-    backup_untracked=true
-    temp_dir=$(mktemp -d)
-    if [ ! -d "$temp_dir" ]; then
-        print_color "$RED" "❌ Failed to create temporary directory."
-        exit 1
-    fi
-    print_color "$BLUE" "📁 Backing up files with unstaged changes..."
-
-    # Use while loop with IFS to handle filenames safely (cross-platform)
-    echo "$files_with_unstaged_changes" | while IFS= read -r file; do
-        if [ -n "$file" ] && [ -f "${root_dir}/${file}" ]; then
-            # Create directory structure in temp
-            mkdir -p "${temp_dir}/$(dirname "${file}")"
-            # Backup the file
-            cp "${root_dir}/${file}" "${temp_dir}/${file}"
-            print_color "$BLUE" "💾 Backed up ${file}"
-            # Restore to staged version only
-            (cd "$root_dir" && git restore "${file}")
-        fi
-    done
-
-    # Set trap to ensure restore_untracked_files is called on exit
-    trap restore_untracked_files EXIT
-    print_color "$GREEN" "✅ Backup completed"
-fi
-
-# Run fixes on staged core-web files
-if [ -n "$core_web_files_staged" ]; then
-    perform_frontend_fixes "$core_web_files_staged" true
-fi
-
-# Restore files with unstaged changes
-restore_untracked_files
 
 # Check if sdk-client is affected
 check_sdk_client_affected

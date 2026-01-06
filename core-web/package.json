@@ -273,6 +273,7 @@
         "jiti": "2.4.2",
         "jsdom": "~22.1.0",
         "jsonc-eslint-parser": "^2.4.0",
+        "lint-staged": "^16.2.7",
         "mock-socket": "^9.0.3",
         "mockdate": "^3.0.5",
         "monaco-editor": "^0.33.0",
