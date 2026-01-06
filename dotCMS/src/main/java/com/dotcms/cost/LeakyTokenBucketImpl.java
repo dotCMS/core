@@ -20,6 +20,10 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
         this.enabled = enabled;
         this.maximumBucketSize = maximumBucketSize;
         this.refillPerSecond = refillPerSecond;
+
+        Logger.info(this.getClass(),
+                "Rate limiting enabled: " + enabled + ", refill per second: " + refillPerSecond + ", max bucket size: "
+                        + maximumBucketSize);
     }
 
     LeakyTokenBucketImpl() {

@@ -90,9 +90,9 @@ public class RequestCostApiImpl implements RequestCostApi {
 
             long totalRequestsTotal = requestCountTotal.longValue();
             double totalCostTotal = requestCostTotal.longValue() / getRequestCostDenominator();
-            double costPerRequestTotal = requestCountTotal.longValue() == 0
+            double costPerRequestTotal = totalRequestsTotal == 0
                     ? 0
-                    : requestCostTotal.longValue() / totalCostTotal;
+                    : totalCostTotal / totalRequestsTotal;
 
 
             Logger.info("REQUEST COST MONITOR >",
