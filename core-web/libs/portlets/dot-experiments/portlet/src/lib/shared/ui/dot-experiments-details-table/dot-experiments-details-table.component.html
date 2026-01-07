@@ -16,7 +16,7 @@
                         *ngTemplateOutlet="
                             headers || defaultHeaders;
                             context: { $implicit: data }
-                        "></ng-container>
+                        " />
                 </div>
                 <div class="details__rows-wrapper flex flex-col gap-2">
                     @for (row of data; track row) {
@@ -27,7 +27,7 @@
                                 *ngTemplateOutlet="
                                     rows || defaultRowsTemplate;
                                     context: { $implicit: row }
-                                "></ng-container>
+                                " />
                         </div>
                     }
                 </div>

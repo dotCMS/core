@@ -114,6 +114,7 @@ import {
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
+import * as uveUtils from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -1380,7 +1381,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1,
+                            maxContentlets: 2,
                             contentletsId: ['123'],
                             variantId: '123'
                         },
@@ -1537,7 +1538,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1,
+                            maxContentlets: 2,
                             contentletsId: ['123'],
                             variantId: '123'
                         },
@@ -2930,6 +2931,22 @@ describe('EditEmaEditorComponent', () => {
                             store.loadPageAsset({ url: 'index', clientHost: null });
                         });
 
+                        it('should call injectBaseTag with the right data', () => {
+                            const origin = window.location.origin;
+                            const injectBaseTagSpy = jest.spyOn(uveUtils, 'injectBaseTag');
+
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            iframe.dispatchEvent(new Event('load'));
+
+                            spectator.detectChanges();
+
+                            expect(injectBaseTagSpy).toHaveBeenCalledWith({
+                                html: MOCK_RESPONSE_VTL.page.rendered,
+                                url: MOCK_RESPONSE_VTL.page.pageURI,
+                                origin
+                            });
+                        });
+
                         it('should add script and styles to iframe', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
@@ -3238,7 +3255,7 @@ describe('EditEmaEditorComponent', () => {
                     const mockAnchor = {
                         href,
                         getAttribute: jest.fn().mockReturnValue(href),
-                        closest: jest.fn().mockReturnValue({ getAttribute: () => href })
+                        closest: jest.fn().mockReturnValue({ href, getAttribute: () => href })
                     };
 
                     const mockEvent = {
@@ -3364,6 +3381,7 @@ describe('EditEmaEditorComponent', () => {
                         target: {
                             href: null,
                             closest: jest.fn().mockReturnValue({
+                                href: 'http://localhost:3000/fallback-page?test=123',
                                 getAttribute: jest
                                     .fn()
                                     .mockReturnValue('http://localhost:3000/fallback-page?test=123')

@@ -49,7 +49,7 @@ import { isEmpty } from '@dotcms/utils';
                 [inputId]="name"
                 [value]="modelValue"
                 [options]="dropdownOptions | async"
-                [placeholder]="placeholder"></dot-autocomplete-tags>
+                [placeholder]="placeholder" />
         }
     `,
     standalone: false

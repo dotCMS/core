@@ -38,15 +38,13 @@
         </p-message>
     }
 
-    <router-outlet></router-outlet>
+    <router-outlet />
     <dot-edit-ema-navigation-bar
         [items]="$shellProps().items"
         (action)="handleItemAction($event)"
-        data-testId="ema-nav-bar"></dot-edit-ema-navigation-bar>
-    <p-toast position="top-center" data-testId="ema-toast"></p-toast>
-    <dot-page-tools-seo
-        [currentPageUrlParams]="$shellProps().seoParams"
-        #pageTools></dot-page-tools-seo>
+        data-testId="ema-nav-bar" />
+    <p-toast position="top-center" data-testId="ema-toast" />
+    <dot-page-tools-seo [currentPageUrlParams]="$shellProps().seoParams" #pageTools />
 } @else {
     @if ($shellProps().error?.code === 401) {
         <dot-not-license />
@@ -59,7 +57,7 @@
     (action)="handleNgEvent($event)"
     (reloadFromDialog)="reloadFromDialog()"
     #dialog
-    data-testId="ema-dialog"></dot-edit-ema-dialog>
+    data-testId="ema-dialog" />
 <p-confirmDialog
     [style]="{
         width: '400px'
@@ -68,4 +66,4 @@
     rejectIcon="hidden"
     acceptIcon="hidden"
     rejectButtonStyleClass="p-button-outlined"
-    data-testId="confirm-dialog"></p-confirmDialog>
+    data-testId="confirm-dialog" />

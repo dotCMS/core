@@ -20,7 +20,7 @@
                         (save)="save.emit($event)"
                         (cancel)="cancel.emit()"
                         [didTemplateChanged]="didTemplateChanged"
-                        [body]="item.body"></dot-template-advanced>
+                        [body]="item.body" />
                 }
                 @case ('design') {
                     <dotcms-template-builder-lib
@@ -33,7 +33,7 @@
                         }"
                         [containerMap]="item.containers"
                         data-testId="new-template-builder">
-                        <dot-global-message toolbar-left></dot-global-message>
+                        <dot-global-message toolbar-left />
                     </dotcms-template-builder-lib>
                 }
             }

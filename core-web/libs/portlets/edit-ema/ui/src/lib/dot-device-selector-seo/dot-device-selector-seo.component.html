@@ -39,7 +39,7 @@
                         </li>
                     }
                 </ul>
-                <p-divider [align]="'center'" layout="vertical"></p-divider>
+                <p-divider [align]="'center'" layout="vertical" />
                 <ul class="device-list">
                     @for (option of options$ | async; track $index) {
                         <li class="device-list-item" data-testId="device-selector-option">

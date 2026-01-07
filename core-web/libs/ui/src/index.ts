@@ -30,6 +30,7 @@ export * from './lib/components/dot-content-type/dot-content-type.component';
 export * from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
 export * from './lib/components/dot-workflow-actions/dot-workflow-actions.component';
+export * from './lib/components/dot-browser-selector/dot-browser-selector.component';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
@@ -51,6 +52,7 @@ export * from './lib/dot-site-selector/dot-site-selector.directive';
 // Services
 export * from './lib/services/clipboard/ClipboardUtil';
 export * from './lib/services/dot-copy-content-modal/dot-copy-content-modal.service';
+export * from './lib/services/dot-browsing/dot-browsing.service';
 // Pipes
 export * from './lib/dot-contentlet-status/dot-contentlet-status.pipe';
 export * from './lib/dot-message/dot-message.pipe';
@@ -65,6 +67,7 @@ export * from './lib/pipes/dot-safe-html/dot-safe-html.pipe';
 export * from './lib/pipes/dot-string-format/dot-string-format.pipe';
 export * from './lib/pipes/dot-timestamp-to-date/dot-timestamp-to-date.pipe';
 export * from './lib/pipes/safe-url/safe-url.pipe';
+export * from './lib/pipes/dot-truncate-path/dot-truncate-path.pipe';
 // Resolvers
 export * from './lib/resolvers/dot-analytics-health-check.resolver.service';
 export * from './lib/resolvers/dot-enterprise-license-resolver.service';

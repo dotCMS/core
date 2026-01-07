@@ -1,6 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { TreeNode } from 'primeng/api';
+import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Tree, TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 

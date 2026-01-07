@@ -27,7 +27,7 @@
                                 [class]="columnConfig.cssClass"
                                 class="flex-1"
                                 [style.width]="columnConfig.width">
-                                <p-skeleton height="1.2rem" width="80%"></p-skeleton>
+                                <p-skeleton height="1.2rem" width="80%" />
                             </div>
                         }
                     </div>
@@ -45,7 +45,7 @@
                                     [style.width]="columnConfig.width">
                                     <p-skeleton
                                         height="1rem"
-                                        [width]="columnConfig.skeletonWidth"></p-skeleton>
+                                        [width]="columnConfig.skeletonWidth" />
                                 </div>
                             }
                         </div>
@@ -120,7 +120,7 @@
                                 [style.width]="columnConfig.width">
                                 {{ columnConfig.header | dm }}
                                 @if (columnConfig.sortable) {
-                                    <p-sortIcon [field]="columnConfig.field"></p-sortIcon>
+                                    <p-sortIcon [field]="columnConfig.field" />
                                 }
                             </th>
                         }

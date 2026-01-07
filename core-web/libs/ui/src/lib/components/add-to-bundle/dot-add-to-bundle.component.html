@@ -26,9 +26,7 @@
                 optionLabel="name"></p-select>
             <dot-field-validation-message
                 [field]="form.get('addBundle')"
-                message="{{
-                    'contenttypes.content.add_to_bundle.errormsg' | dm
-                }}"></dot-field-validation-message>
+                message="{{ 'contenttypes.content.add_to_bundle.errormsg' | dm }}" />
         </div>
     </form>
     @if (dialogActions) {

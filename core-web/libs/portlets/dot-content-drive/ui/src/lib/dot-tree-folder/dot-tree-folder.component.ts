@@ -12,7 +12,7 @@ import {
     InputSignal
 } from '@angular/core';
 
-import { TreeNode } from 'primeng/api';
+import type { TreeNode } from 'primeng/api';
 import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';

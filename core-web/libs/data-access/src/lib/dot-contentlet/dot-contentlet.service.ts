@@ -1,17 +1,25 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, pluck, switchMap } from 'rxjs/operators';
 
-import { DotCMSContentlet, DotContentletCanLock, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotCMSAPIResponse,
+    DotCMSContentlet,
+    DotContentletCanLock,
+    DotLanguage
+} from '@dotcms/dotcms-models';
+
+import { DotUploadFileService } from '../dot-upload-file/dot-upload-file.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DotContentletService {
-    private http = inject(HttpClient);
+    readonly #http = inject(HttpClient);
+    readonly #dotUploadFileService = inject(DotUploadFileService);
 
     private readonly CONTENTLET_API_URL = '/api/v1/content/';
 
@@ -24,9 +32,11 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     getContentletVersions(identifier: string, language: string): Observable<DotCMSContentlet[]> {
-        return this.http
-            .get(`${this.CONTENTLET_API_URL}versions?identifier=${identifier}&groupByLang=1`)
-            .pipe(take(1), pluck('entity', 'versions', language));
+        return this.#http
+            .get<
+                DotCMSAPIResponse<DotCMSContentlet[]>
+            >(`${this.CONTENTLET_API_URL}versions?identifier=${identifier}&groupByLang=1`)
+            .pipe(pluck('entity', 'versions', language));
     }
 
     /**
@@ -36,8 +46,28 @@ export class DotContentletService {
      * @returns {Observable<DotCMSContentlet>} An observable emitting the contentlet.
      * @memberof DotContentletService
      */
-    getContentletByInode(inode: string): Observable<DotCMSContentlet> {
-        return this.http.get(`${this.CONTENTLET_API_URL}${inode}`).pipe(take(1), pluck('entity'));
+    getContentletByInode(inode: string, httpParams?: HttpParams): Observable<DotCMSContentlet> {
+        return this.#http
+            .get<
+                DotCMSAPIResponse<DotCMSContentlet>
+            >(`${this.CONTENTLET_API_URL}${inode}`, { params: httpParams })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Get the Contentlet by its inode and adds the content if it's a editable as text file.
+     *
+     * @param {string} inode - The inode of the contentlet.
+     * @returns {Observable<DotCMSContentlet>} An observable emitting the contentlet.
+     * @memberof DotContentletService
+     */
+    getContentletByInodeWithContent(
+        inode: string,
+        httpParams?: HttpParams
+    ): Observable<DotCMSContentlet> {
+        return this.getContentletByInode(inode, httpParams).pipe(
+            switchMap((contentlet) => this.#dotUploadFileService.addContent(contentlet))
+        );
     }
 
     /**
@@ -48,9 +78,11 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     getLanguages(identifier: string): Observable<DotLanguage[]> {
-        return this.http
-            .get(`${this.CONTENTLET_API_URL}${identifier}/languages`)
-            .pipe(take(1), pluck('entity'));
+        return this.#http
+            .get<
+                DotCMSAPIResponse<DotLanguage[]>
+            >(`${this.CONTENTLET_API_URL}${identifier}/languages`)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -61,9 +93,11 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     lockContent(inode: string): Observable<DotCMSContentlet> {
-        return this.http
-            .put(`${this.CONTENTLET_API_URL}_lock/${inode}`, {})
-            .pipe(take(1), pluck('entity'));
+        return this.#http
+            .put<
+                DotCMSAPIResponse<DotCMSContentlet>
+            >(`${this.CONTENTLET_API_URL}_lock/${inode}`, {})
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -74,9 +108,11 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     unlockContent(inode: string): Observable<DotCMSContentlet> {
-        return this.http
-            .put(`${this.CONTENTLET_API_URL}_unlock/${inode}`, {})
-            .pipe(take(1), pluck('entity'));
+        return this.#http
+            .put<
+                DotCMSAPIResponse<DotCMSContentlet>
+            >(`${this.CONTENTLET_API_URL}_unlock/${inode}`, {})
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -87,8 +123,10 @@ export class DotContentletService {
      * @memberof DotContentletService
      */
     canLock(inode: string): Observable<DotContentletCanLock> {
-        return this.http
-            .get(`${this.CONTENTLET_API_URL}_canlock/${inode}`)
-            .pipe(take(1), pluck('entity'));
+        return this.#http
+            .get<
+                DotCMSAPIResponse<DotContentletCanLock>
+            >(`${this.CONTENTLET_API_URL}_canlock/${inode}`)
+            .pipe(map((response) => response.entity));
     }
 }
