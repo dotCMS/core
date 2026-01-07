@@ -688,14 +688,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         try {
             final String baseQuery = buildBaseESQuery(browserQuery);
             final List<String> inodesList = new ArrayList<>(inodes);
-            String mimeTypesFilter = "";
-            if (UtilMethods.isSet(browserQuery.mimeTypes)) {
-                mimeTypesFilter = String.format(" +(%s)", browserQuery.mimeTypes.stream()
-                        .map(mimeType -> String.format("metadata.contenttype:%s", mimeType))
-                        .collect(Collectors.joining(" ")));
-            }
             final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
-            final String luceneQuery = mimeTypesFilter + inodeFilter + baseQuery;
+            final String luceneQuery = inodeFilter + baseQuery;
             final String esQuery = String.format(ES_QUERY_TEMPLATE, luceneQuery);
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
