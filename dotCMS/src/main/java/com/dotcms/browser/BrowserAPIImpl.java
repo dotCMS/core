@@ -1700,7 +1700,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
         final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
-                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType == \"%s\")')", mimeType))
+                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType))
                 .collect(Collectors.joining(" OR ")));
         sqlQuery.append(mimeTypesFilter);
     }
