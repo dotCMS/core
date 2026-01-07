@@ -71,7 +71,6 @@ public class RequestCostFilter implements Filter {
             out.write(new RequestCostReport().writeAccounting(request));
         }
 
-
     }
 
     @Override

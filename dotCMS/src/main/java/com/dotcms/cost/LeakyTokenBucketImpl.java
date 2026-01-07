@@ -13,9 +13,9 @@ import javax.enterprise.context.ApplicationScoped;
 public class LeakyTokenBucketImpl implements LeakyTokenBucket {
 
 
-    final Long testingRefillPerSecond;
-    final Long testingMaximumBucketSize;
-    final Boolean testingEnabled;
+    final long refillPerSecond;
+    final long maximumBucketSize;
+    final boolean enabled;
 
     private final AtomicLong lastRefill = new AtomicLong(0);
     private final AtomicLong tokenCount = new AtomicLong(0);
@@ -23,9 +23,9 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
 
     @VisibleForTesting
     LeakyTokenBucketImpl(boolean enabled, long refillPerSecond, long maximumBucketSize) {
-        this.testingEnabled = enabled;
-        this.testingMaximumBucketSize = maximumBucketSize;
-        this.testingRefillPerSecond = refillPerSecond;
+        this.enabled = enabled;
+        this.maximumBucketSize = maximumBucketSize;
+        this.refillPerSecond = refillPerSecond;
 
         Logger.info(this.getClass(),
                 "Rate limiting enabled: " + enabled + ", refill per second: " + refillPerSecond + ", max bucket size: "
@@ -33,9 +33,11 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
     }
 
     LeakyTokenBucketImpl() {
-        this.testingEnabled = null;
-        this.testingMaximumBucketSize = null;
-        this.testingRefillPerSecond = null;
+        this(
+                Config.getBooleanProperty("RATE_LIMIT_ENABLED", false),
+                Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 500),
+                Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 10000)
+        );
     }
 
 
@@ -52,23 +54,17 @@ public class LeakyTokenBucketImpl implements LeakyTokenBucket {
 
     @Override
     public boolean isEnabled() {
-        return testingEnabled != null
-                ? testingEnabled
-                : Config.getBooleanProperty("RATE_LIMIT_ENABLED", false);
+        return Config.getBooleanProperty("RATE_LIMIT_ENABLED", enabled);
     }
 
     @Override
     public long getMaximumBucketSize() {
-        return testingMaximumBucketSize != null
-                ? testingMaximumBucketSize
-                : Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", 10000);
+        return Config.getLongProperty("RATE_LIMIT_MAX_BUCKET_SIZE", maximumBucketSize);
     }
 
     @Override
     public long getRefillPerSecond() {
-        return testingRefillPerSecond != null
-                ? testingRefillPerSecond
-                : Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", 500);
+        return Config.getLongProperty("RATE_LIMIT_REFILL_PER_SECOND", refillPerSecond);
     }
 
     @Override
