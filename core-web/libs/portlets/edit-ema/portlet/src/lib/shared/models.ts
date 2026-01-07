@@ -6,6 +6,15 @@ import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
 
+/**
+ * Represents a map of style property keys and their corresponding values
+ * for use in the style editor.
+ *
+ * Key is a string representing the property name,
+ * value can be any type, allowing flexibility for different style values.
+ */
+export type StyleEditorProperties = Record<string, unknown>;
+
 export interface MessagePipeOptions {
     message: string;
     args: string[];
@@ -53,6 +62,10 @@ export interface ActionPayload extends PositionPayload {
     newContentletId?: string;
 }
 
+export interface StyleEditorContentletPayload extends ActionPayload {
+    contentlet: ContentletPayload;
+}
+
 export interface PageContainer {
     personaTag?: string;
     identifier: string;
@@ -90,6 +103,14 @@ export interface SavePagePayload {
     params?: DotPageApiParams;
     pageId: string;
     whenSaved?: () => void;
+}
+
+export interface SaveStylePropertiesPayload {
+    pageId: string;
+    containerUUID: string;
+    containerIdentifier: string;
+    contentletIdentifier: string;
+    styleProperties: StyleEditorProperties;
 }
 
 export interface NavigationBarItem {
@@ -225,8 +246,10 @@ export interface EditEmaDialogState {
 
 export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
 
-export interface DialogAction
-    extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
+export interface DialogAction extends Pick<
+    EditEmaDialogState,
+    'actionPayload' | 'form' | 'clientAction'
+> {
     event: CustomEvent;
 }
 

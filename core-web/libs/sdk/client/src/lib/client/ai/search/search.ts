@@ -13,7 +13,7 @@ import {
 import { DotCMSAISearchRawResponse } from '@dotcms/types/internal';
 
 import { appendMappedParams } from '../../../utils/params/utils';
-import { BaseApiClient } from '../../base/base-api';
+import { BaseApiClient } from '../../base/api/base-api';
 import { DEFAULT_AI_CONFIG, DEFAULT_QUERY } from '../shared/const';
 import { OnFullfilled, OnRejected } from '../shared/types';
 
