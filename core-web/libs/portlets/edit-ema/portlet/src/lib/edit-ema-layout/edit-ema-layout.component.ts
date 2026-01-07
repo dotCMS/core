@@ -1,3 +1,4 @@
+import { signalMethod } from '@ngrx/signals';
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -6,8 +7,8 @@ import {
     Component,
     DestroyRef,
     OnInit,
-    effect,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -45,20 +46,13 @@ export class EditEmaLayoutComponent implements OnInit {
 
     protected readonly $layoutProperties = this.uveStore.$layoutProps;
 
-    readonly $handleCanEditLayout = effect(() => {
-        // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
-        if (this.uveStore.$canEditLayout()) {
-            return;
-        }
-
-        this.#router.navigate(['edit-page/content'], {
-            queryParamsHandling: 'merge'
-        });
-    });
-
-    private lastTemplate: DotTemplateDesigner;
+    $lastTemplate = signal<DotTemplateDesigner | null>(null);
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
+
+    constructor() {
+        this.handleCanEditLayout(this.uveStore.$canEditLayout);
+    }
 
     ngOnInit(): void {
         this.initSaveTemplateDebounce();
@@ -73,9 +67,18 @@ export class EditEmaLayoutComponent implements OnInit {
      */
     nextTemplateUpdate(template: DotTemplateDesigner) {
         this.dotRouterService.forbidRouteDeactivation();
+        this.updateLastTemplate(template);
         this.updateTemplate$.next(template);
-        this.lastTemplate = template;
-        console.log('nextTemplateUpdate', template);
+    }
+
+    /**
+     * Update the last template
+     *
+     * @param {Partial<DotTemplateDesigner>} template
+     * @memberof EditEmaLayoutComponent
+     */
+    updateLastTemplate(template: Partial<DotTemplateDesigner>) {
+        this.$lastTemplate.update((prev) => ({ ...prev, ...template }));
     }
 
     /**
@@ -91,12 +94,16 @@ export class EditEmaLayoutComponent implements OnInit {
             detail: this.dotMessageService.get('dot.common.message.saving'),
             life: 1000
         });
-        return this.dotPageLayoutService.save(this.uveStore.$layoutProps().pageId, {
-            ...template,
-            title: null
-        }).pipe(
-            tap(response => console.log('response', response))
-        );
+        return this.dotPageLayoutService
+            .saveLayout(this.uveStore.$layoutProps().pageId, {
+                ...template,
+                title: null
+            })
+            .pipe(
+                tap((response) => {
+                    //this.updateLastTemplate(response);
+                })
+            );
     }
 
     /**
@@ -173,7 +180,7 @@ export class EditEmaLayoutComponent implements OnInit {
             .pipe(
                 takeUntilDestroyed(this.#destroyRef),
                 distinctUntilChanged(),
-                switchMap(() => this.saveTemplate(this.lastTemplate))
+                switchMap(() => this.saveTemplate(this.$lastTemplate()))
             ) // To prevent an spam of toasts when clicking on some route
             .subscribe({
                 next: () => this.handleSuccessSaveTemplate(),
@@ -181,4 +188,21 @@ export class EditEmaLayoutComponent implements OnInit {
                 complete: () => this.dotRouterService.allowRouteDeactivation()
             });
     }
+
+    /*
+     * Handle the can edit layout
+     *
+     * @private
+     * @param {boolean} canEdit
+     * @memberof EditEmaLayoutComponent
+     */
+    readonly handleCanEditLayout = signalMethod((canEdit: boolean) => {
+        if (canEdit) {
+            return;
+        }
+
+        this.#router.navigate(['edit-page/content'], {
+            queryParamsHandling: 'merge'
+        });
+    });
 }
