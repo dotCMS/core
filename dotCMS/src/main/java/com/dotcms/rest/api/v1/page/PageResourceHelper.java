@@ -51,6 +51,7 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -494,11 +495,11 @@ public class PageResourceHelper implements Serializable {
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
 
         final Template saveTemplate;
-        final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
-                .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
-                        !((HTMLPageAsset) page).getVariantId().equals(pageVersion.getVariantName()));
 
-        if (!useByAnotherPage && !oldTemplate.getIdentifier().equals(Template.SYSTEM_TEMPLATE)) {
+        final boolean isAnonymousTemplate = oldTemplate.isAnonymous();
+
+        if (isAnonymousTemplate) {
+            // Template is already a custom page layout, modify
             saveTemplate = oldTemplate;
         } else {
             saveTemplate = new Template();
