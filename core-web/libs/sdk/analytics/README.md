@@ -247,7 +247,7 @@ The `impressions` option controls automatic tracking of content visibility:
 
 **How it works:**
 
--   ✅ Tracks contentlets marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+-   ✅ Tracks contentlets marked with `dotcms-contentlet` class and `data-dot-*` attributes (e.g., `data-dot-identifier`, `data-dot-inode`, `data-dot-type`)
 -   ✅ Uses Intersection Observer API for high performance and battery efficiency
 -   ✅ Only fires when element is ≥50% visible for ≥750ms (configurable)
 -   ✅ Only tracks during active tab (respects page visibility)
@@ -299,7 +299,7 @@ The `clicks` option controls automatic tracking of user interactions with conten
 **How it works:**
 
 -   ✅ Tracks clicks on `<a>` and `<button>` elements within contentlets
--   ✅ Contentlets must be marked with `dotcms-analytics-contentlet` class and `data-dot-analytics-*` attributes
+-   ✅ Contentlets must be marked with `dotcms-contentlet` class and `data-dot-*` attributes (e.g., `data-dot-identifier`, `data-dot-inode`, `data-dot-type`)
 -   ✅ Captures semantic attributes (`href`, `aria-label`, `data-*`) and excludes CSS classes
 -   ✅ Throttles rapid clicks to prevent duplicate tracking (300ms fixed)
 -   ✅ One click event per interaction
@@ -341,7 +341,7 @@ The `attributes` array captures additional semantic data in `'key:value'` string
 -   `class` - Already captured as top-level property
 -   `id` - Already captured as top-level property
 -   `href` - Already captured as top-level property
--   `data-dot-analytics-*` - Internal SDK attributes
+-   `data-dot-*` - Internal SDK attributes (e.g., `data-dot-identifier`, `data-dot-inode`, `data-dot-type`)
 
 **Example: Enable click tracking**
 

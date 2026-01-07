@@ -1,9 +1,9 @@
 import { AnalyticsPlugin, PageData } from 'analytics';
 
 import {
-    ANALYTICS_CONTENTLET_CLASS,
     ANALYTICS_JS_DEFAULT_PROPERTIES,
     ANALYTICS_MINIFIED_SCRIPT_NAME,
+    CONTENTLET_CLASS,
     DEFAULT_IMPRESSION_MUTATION_OBSERVER_DEBOUNCE_MS,
     DEFAULT_SESSION_TIMEOUT_MINUTES,
     DotCMSPredefinedEventType,
@@ -635,7 +635,7 @@ export function createThrottle<T extends (...args: unknown[]) => void>(
  * @returns The contentlet identifier or null if not found
  */
 export function extractContentletIdentifier(element: HTMLElement): string | null {
-    return element.dataset.dotAnalyticsIdentifier || null;
+    return element.dataset.dotIdentifier || null;
 }
 
 /**
@@ -645,11 +645,11 @@ export function extractContentletIdentifier(element: HTMLElement): string | null
  */
 export function extractContentletData(element: HTMLElement): ContentletData {
     return {
-        identifier: element.dataset.dotAnalyticsIdentifier || '',
-        inode: element.dataset.dotAnalyticsInode || '',
-        contentType: element.dataset.dotAnalyticsContenttype || '',
-        title: element.dataset.dotAnalyticsTitle || '',
-        baseType: element.dataset.dotAnalyticsBasetype || ''
+        identifier: element.dataset.dotIdentifier || '',
+        inode: element.dataset.dotInode || '',
+        contentType: element.dataset.dotType || '',
+        title: element.dataset.dotTitle || '',
+        baseType: element.dataset.dotBasetype || ''
     };
 }
 
@@ -672,7 +672,7 @@ export const isBrowser = (): boolean => {
  * @returns Array of contentlet HTMLElements
  */
 export const findContentlets = (): HTMLElement[] => {
-    return Array.from(document.querySelectorAll<HTMLElement>(`.${ANALYTICS_CONTENTLET_CLASS}`));
+    return Array.from(document.querySelectorAll<HTMLElement>(`.${CONTENTLET_CLASS}`));
 };
 
 /**
@@ -710,12 +710,12 @@ export const createContentletObserver = (
                 const element = node as HTMLElement;
 
                 // Check if node itself is a contentlet
-                if (element.classList?.contains(ANALYTICS_CONTENTLET_CLASS)) {
+                if (element.classList?.contains(CONTENTLET_CLASS)) {
                     return true;
                 }
 
                 // Check if node contains contentlets
-                return element.querySelector?.(`.${ANALYTICS_CONTENTLET_CLASS}`) !== null;
+                return element.querySelector?.(`.${CONTENTLET_CLASS}`) !== null;
             });
         });
 

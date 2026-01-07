@@ -1,17 +1,17 @@
 import { useContext, useMemo, useRef } from 'react';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
-import {
-    CUSTOM_NO_COMPONENT,
-    getDotAnalyticsAttributes,
-    getDotContentletAttributes
-} from '@dotcms/uve/internal';
+import { CUSTOM_NO_COMPONENT, getDotContentletAttributes } from '@dotcms/uve/internal';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
-import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
+
+/**
+ * CSS class name for contentlet elements
+ */
+export const CONTENTLET_CLASS = 'dotcms-contentlet';
 
 /**
  * @internal
@@ -55,7 +55,6 @@ interface CustomComponentProps {
 export function Contentlet({ contentlet, container }: DotCMSContentletRendererProps) {
     const ref = useRef<HTMLDivElement | null>(null);
     const isDevMode = useIsDevMode();
-    const isAnalyticsActive = useIsAnalyticsActive();
     const haveContent = useCheckVisibleContent(ref);
 
     const style = useMemo(
@@ -63,36 +62,17 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
         [isDevMode, haveContent]
     );
 
-    // UVE attributes - only when in development/editor mode
+    // UVE attributes - always applied
     const dotAttributes = useMemo(
-        () => (isDevMode ? getDotContentletAttributes(contentlet, container) : {}),
-        [isDevMode, contentlet, container]
+        () => getDotContentletAttributes(contentlet, container),
+        [contentlet, container]
     );
-
-    // Analytics attributes - only when analytics is active AND NOT in UVE editor
-    const analyticsAttributes = useMemo(
-        () => (isAnalyticsActive && !isDevMode ? getDotAnalyticsAttributes(contentlet) : {}),
-        [isAnalyticsActive, isDevMode, contentlet]
-    );
-
-    // Build container class name
-    const containerClassName = useMemo(() => {
-        const classes: string[] = [];
-
-        // Add analytics class if active
-        if (isAnalyticsActive && !isDevMode) {
-            classes.push('dotcms-analytics-contentlet');
-        }
-
-        return classes.length > 0 ? classes.join(' ') : undefined;
-    }, [isAnalyticsActive, isDevMode]);
 
     return (
         <div
             {...dotAttributes}
-            {...analyticsAttributes}
             data-dot-object="contentlet"
-            className={containerClassName}
+            className={CONTENTLET_CLASS}
             ref={ref}
             style={style}>
             <CustomComponent contentlet={contentlet} />
