@@ -8,7 +8,14 @@
         },
         {
             "files": ["*.ts", "*.tsx"],
-            "rules": {}
+            "rules": {
+                "@nx/enforce-module-boundaries": [
+                    "error",
+                    {
+                        "allow": ["@dotcms/ui"]
+                    }
+                ]
+            }
         },
         {
             "files": ["*.js", "*.jsx"],

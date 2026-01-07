@@ -8,10 +8,13 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
 /**
  * Collect the total size in Mb of all the Site Search indices.
  */
+@MetricsProfile(ProfileType.FULL)
 @ApplicationScoped
 public class TotalSizeSiteSearchIndicesMetricType extends IndicesSiteSearchMetricType {
 

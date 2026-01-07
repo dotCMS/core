@@ -1,4 +1,5 @@
 <p-table
+    #dataTable
     [value]="$items()"
     [tableStyle]="{ width: '100%' }"
     [paginator]="$showPagination()"
@@ -6,13 +7,15 @@
     [rowsPerPageOptions]="rowsPerPageOptions"
     [totalRecords]="$totalItems()"
     [lazy]="true"
+    [lazyLoadOnInit]="true"
     [scrollable]="true"
     [styleClass]="$styleClass()"
     [(selection)]="selectedItems"
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
-    [first]="state.currentPageFirstRowIndex()"
+    [first]="$offset()"
+    (firstChange)="onFirstChange()"
     dataKey="identifier"
     sortMode="single"
     selectionMode="multiple"
@@ -22,18 +25,20 @@
     scrollHeight="flex">
     <ng-template pTemplate="header">
         <tr data-testId="header-row">
-            <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
+            <th [style.width]="'3rem'">
+                <p-tableHeaderCheckbox data-testId="header-checkbox" />
+            </th>
             @for (column of HEADER_COLUMNS; track column.field) {
                 @if (column.sortable) {
                     <th
                         [pSortableColumn]="column.field"
-                        [width]="column.width"
+                        [style.width]="column.width"
                         data-testId="header-column-sortable">
                         {{ column.header | dm }}
                         <p-sortIcon [field]="column.field" data-testId="sort-icon" />
                     </th>
                 } @else {
-                    <th [width]="column.width" data-testId="header-column-not-sortable">
+                    <th [style.width]="column.width" data-testId="header-column-not-sortable">
                         {{ column.header | dm }}
                     </th>
                 }
@@ -45,10 +50,15 @@
         @let status = item | dotContentletStatus;
         @let isFolder = item.type === 'folder';
 
-        @if ($loading()) {
+        @if ($loading() || !$items().length) {
             <tr data-testId="loading-row" class="content-drive-table__loading-row">
-                @for (i of HEADER_COLUMNS; track i) {
-                    <td>
+                <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
+                    <span class="skeleton-wrapper">
+                        <p-skeleton height="1.5rem" width="2.5rem" />
+                    </span>
+                </td>
+                @for (column of HEADER_COLUMNS; track column.field) {
+                    <td [style.width]="column.width">
                         <span class="skeleton-wrapper">
                             <p-skeleton height="1.5rem" width="100%" />
                         </span>

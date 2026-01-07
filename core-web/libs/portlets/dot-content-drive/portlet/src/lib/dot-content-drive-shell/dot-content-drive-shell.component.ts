@@ -9,6 +9,7 @@ import {
     ElementRef,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 import { Router } from '@angular/router';
@@ -83,6 +84,7 @@ export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
+
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
 
@@ -96,11 +98,16 @@ export class DotContentDriveShellComponent {
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+
     readonly $contextMenuData = this.#store.contextMenu;
 
     readonly $dialog = this.#store.dialog;
 
     readonly DIALOG_TYPE = DIALOG_TYPE;
+
+    readonly $offset = computed(() => this.#store.pagination().offset, {
+        equal: (a, b) => a === b
+    });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
     readonly $showMessage = signal(false);
@@ -118,25 +125,37 @@ export class DotContentDriveShellComponent {
 
         if (path && path.length) {
             queryParams['path'] = path;
+        } else {
+            queryParams['path'] = null;
         }
 
         if (filters && Object.keys(filters).length) {
             queryParams['filters'] = encodeFilters(filters);
         } else {
-            delete queryParams['filters'];
+            queryParams['filters'] = null;
         }
 
-        const urlTree = this.#router.createUrlTree([], { queryParams });
+        const urlTree = this.#router.createUrlTree([], {
+            queryParams,
+            queryParamsHandling: 'merge'
+        });
         this.#location.go(urlTree.toString());
     });
 
     /**
      * Effect that sets the path when a node is selected
+     * Uses untracked to avoid creating a dependency on path signal
      */
     readonly setPathEffect = effect(() => {
         const selectedNode = this.#store.selectedNode();
+
         if (selectedNode) {
-            this.#store.setPath(selectedNode.data.path);
+            // Read current path without tracking it to avoid circular dependencies
+            const currentPath = untracked(() => this.#store.path()) ?? '';
+
+            if (selectedNode.data.path != currentPath) {
+                this.#store.setPath(selectedNode.data.path);
+            }
         }
     });
 
@@ -497,5 +516,9 @@ export class DotContentDriveShellComponent {
 
     protected onSelectItems(items: DotContentDriveItem[]) {
         this.#store.setSelectedItems(items);
+    }
+
+    protected onTableScroll() {
+        this.#store.resetContextMenu();
     }
 }

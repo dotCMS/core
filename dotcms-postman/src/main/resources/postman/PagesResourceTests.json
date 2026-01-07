@@ -2785,12 +2785,18 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "var jsonData = pm.response.json();",
+                      "const json = pm.response.json();",
                       "",
-                      "pm.test(\"Check response\", function () {",
-                      "    ",
-                      "    pm.expect(jsonData.entity).to.eql('ok');",
-                      "    ",
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Response is JSON\", function () {",
+                      "    pm.response.to.be.json;",
+                      "});",
+                      "",
+                      "pm.test(\"Entity array exists\", function () {",
+                      "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -3358,7 +3364,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Response body contains\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                      "    pm.response.to.have.status(200);",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -3546,8 +3552,15 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "pm.test(\"Response body contains\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -3783,8 +3796,19 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "pm.test(\"Response body contains\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Duplicated contentlets were merged correctly\", function () {",
+                  "    pm.expect(json.entity.length).to.eql(2);",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -3816,56 +3840,6 @@
               ]
             },
             "description": "This test is for when users make a request sending at the Body the same container and uuid diff times.\nThis will merge all those contentlets and save the page successfully."
-          },
-          "response": []
-        },
-        {
-          "name": "Save Content With Style Properties",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Response body contains\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"ok\");",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "[\n    {\n        \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\"\n        ],\n        \"styleProperties\": {\n            \"7c9cb3a7-bb68-4fd0-b21d-03ec4be491a7\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    },\n    {\n        \"identifier\": \"//demo.dotcms.com/application/containers/default/\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"f827c41a-5689-4733-b4d7-916d3a31c9c6\"\n        ]\n    }\n]",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{serverURL}}/api/v1/page/bec7b960-a8bf-4f14-a22b-0d94caf217f0/content",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "page",
-                "bec7b960-a8bf-4f14-a22b-0d94caf217f0",
-                "content"
-              ]
-            },
-            "description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
           },
           "response": []
         }

@@ -7,7 +7,7 @@
                 [contentlet]="data.contentlet"
                 [width]="42"
                 [height]="42"
-                [iconSize]="'42px'"></dot-contentlet-thumbnail>
+                [iconSize]="'42px'" />
         } @else {
             <img [src]="url" alt="" />
         }
@@ -20,7 +20,7 @@
     }
     @if (data?.contentlet) {
         <div class="state">
-            <dot-state-icon [state]="data.contentlet" size="16px"></dot-state-icon>
+            <dot-state-icon [state]="data.contentlet" size="16px" />
             <dot-badge bordered="true">{{ data.contentlet.language | lowercase }}</dot-badge>
         </div>
     }

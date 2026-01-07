@@ -11,6 +11,10 @@
                 .p-datatable-wrapper {
                     border: none;
                     border-radius: 0;
+
+                    table {
+                        table-layout: fixed;
+                    }
                 }
 
                 .p-datatable-tbody {
@@ -31,6 +35,10 @@
                                 justify-content: center;
                                 height: 100%;
                             }
+
+                            &:nth-child(2) {
+                                text-align: left;
+                            }
                         }
 
                         &:hover {
@@ -40,10 +48,6 @@
                     }
 
                     tr.content-drive-table__row {
-                        td:nth-child(2) {
-                            min-width: 15.625rem;
-                        }
-
                         .content-drive-table__actions-button {
                             opacity: 0;
                             transition: opacity 0.2s ease-in-out;
@@ -98,10 +102,10 @@
     align-items: center;
     gap: $spacing-1;
     width: 100%;
+    padding-left: $spacing-3;
 
     .container-thumbnail {
         background-color: $color-palette-primary-100;
-        // min-width: 72px;
 
         .folder-icon {
             font-size: 2.25rem;

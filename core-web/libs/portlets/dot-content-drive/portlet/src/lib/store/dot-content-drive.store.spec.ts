@@ -496,6 +496,67 @@ describe('DotContentDriveStore', () => {
             });
         });
 
+        describe('setGlobalSearch', () => {
+            it('should update filters with title search value', () => {
+                store.setGlobalSearch('test search');
+                expect(store.filters()).toEqual({ title: 'test search' });
+            });
+
+            it('should clear filters when search is empty', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+
+                store.setGlobalSearch('');
+                expect(store.filters()).toEqual({});
+            });
+
+            it('should reset pagination offset when setting global search', () => {
+                store.setPagination({ limit: 10, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+
+                store.setGlobalSearch('test');
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+            });
+
+            it('should reset path to DEFAULT_PATH when setting global search', () => {
+                store.setPath('/some/custom/path');
+                expect(store.path()).toBe('/some/custom/path');
+
+                store.setGlobalSearch('test');
+                expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('removeFilter', () => {
+            it('should remove the specified filter', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'], baseType: ['1'] });
+
+                store.removeFilter('contentType');
+                expect(store.filters()).toEqual({ baseType: ['1'] });
+            });
+
+            it('should reset pagination offset when removing filter', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                store.setPagination({ limit: 10, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+
+                store.removeFilter('contentType');
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+            });
+
+            it('should not change state if filter does not exist', () => {
+                const initialFilters = { contentType: ['Blog'] };
+                store.patchFilters(initialFilters);
+                store.setPagination({ limit: 10, offset: 20 });
+
+                store.removeFilter('nonExistentFilter');
+
+                expect(store.filters()).toEqual(initialFilters);
+                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+            });
+        });
+
         describe('patchFilters', () => {
             it('should update filters with provided values', () => {
                 store.patchFilters({ contentType: ['Blog'] });
@@ -580,6 +641,37 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.selectedItems()).toEqual(selectedItem);
                 expect(store.selectedItems().length).toBe(1);
+            });
+        });
+
+        describe('setPath', () => {
+            it('should reset pagination offset when setting path', () => {
+                store.initContentDrive({
+                    currentSite: MOCK_SITES[0],
+                    path: '/test/',
+                    filters: {},
+                    isTreeExpanded: false
+                });
+                store.setPagination({ limit: 20, offset: 40 });
+                expect(store.pagination()).toEqual({ limit: 20, offset: 40 });
+
+                store.setPath('/documents/');
+
+                expect(store.path()).toBe('/documents/');
+                expect(store.pagination()).toEqual({ limit: 20, offset: 0 });
+            });
+
+            it('should update path', () => {
+                store.initContentDrive({
+                    currentSite: MOCK_SITES[0],
+                    path: '/test/',
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                store.setPath('/new/path/');
+
+                expect(store.path()).toBe('/new/path/');
             });
         });
     });

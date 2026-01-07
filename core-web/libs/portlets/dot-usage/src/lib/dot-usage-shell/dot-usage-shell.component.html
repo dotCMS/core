@@ -1,346 +1,196 @@
-<div class="usage-dashboard">
-    <!-- Header -->
-    <div class="usage-header">
-        <div class="usage-header__title">
-            <h1>Usage Dashboard</h1>
+<p-messages severity="info" data-testid="analytics-message">
+    <ng-template pTemplate="content">
+        <div class="flex align-items-center justify-content-between gap-2 w-full">
+            <div class="flex align-items-center gap-2">
+                <i class="pi pi-info-circle"></i>
+                <span data-testid="message-content">
+                    {{ 'analytics.feature.state' | dm }}
+                    <b>{{ 'development' | dm }}</b>
+                </span>
+            </div>
         </div>
+    </ng-template>
+</p-messages>
 
-        <div class="usage-header__actions">
-            <p-button
-                icon="pi pi-refresh"
-                [text]="true"
-                [loading]="loading()"
-                [disabled]="loading()"
-                (onClick)="onRefresh()"
-                pTooltip="Refresh metrics"
-                data-testid="refresh-button"></p-button>
-        </div>
+<p-toolbar>
+    <div class="p-toolbar-group-start">
+        @if (lastUpdated()) {
+            <span class="text-color-secondary">
+                {{ 'usage.dashboard.lastUpdated' | dm }}:
+                {{ lastUpdated()! | date: 'short' }}
+            </span>
+        }
     </div>
+    <div class="p-toolbar-group-end">
+        <p-button
+            icon="pi pi-refresh"
+            [label]="'analytics.dashboard.refresh.button' | dm"
+            [loading]="loading()"
+            [disabled]="loading()"
+            (onClick)="onRefresh()"
+            [rounded]="false"
+            severity="primary"
+            size="small"
+            data-testid="refresh-button"></p-button>
+    </div>
+</p-toolbar>
 
+<div class="mx-auto" style="max-width: 50rem">
     <!-- Loading State -->
-    @if (loading() && !hasData()) {
-        <div class="usage-skeleton">
-            <div class="usage-grid">
-                @for (i of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]; track i) {
-                    <p-card class="metric-card">
-                        <div class="metric-card__content">
-                            <p-skeleton height="1.5rem" width="60%"></p-skeleton>
-                            <p-skeleton height="3rem" width="80%" class="mt-2"></p-skeleton>
-                            <p-skeleton height="1rem" width="40%" class="mt-1"></p-skeleton>
-                        </div>
-                    </p-card>
-                }
+    @if (loading()) {
+        <div
+            class="flex flex-column gap-6"
+            role="status"
+            aria-live="polite"
+            [attr.aria-busy]="loading()">
+            <span class="visually-hidden">
+                {{ 'usage.dashboard.loading' | dm }}
+            </span>
+            <!-- Site Metrics: 3 cards -->
+            <div>
+                <h2>
+                    <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
+                </h2>
+                <div class="flex gap-3">
+                    @for (i of [1, 2, 3]; track i) {
+                        <p-card class="flex-1">
+                            <ng-template pTemplate="header">
+                                <h3>
+                                    <p-skeleton width="60%"></p-skeleton>
+                                </h3>
+                            </ng-template>
+                            <ng-template pTemplate="body">
+                                <p class="m-0">
+                                    <p-skeleton width="80%" height="3rem"></p-skeleton>
+                                </p>
+                            </ng-template>
+                        </p-card>
+                    }
+                </div>
+            </div>
+
+            <!-- System Configuration: 3 cards -->
+            <div>
+                <h2>
+                    <p-skeleton width="12rem" height="1.5rem"></p-skeleton>
+                </h2>
+                <div class="flex gap-3">
+                    @for (i of [1, 2, 3]; track i) {
+                        <p-card class="flex-1">
+                            <ng-template pTemplate="header">
+                                <h3>
+                                    <p-skeleton width="60%"></p-skeleton>
+                                </h3>
+                            </ng-template>
+                            <ng-template pTemplate="body">
+                                <p class="m-0">
+                                    <p-skeleton width="80%" height="3rem"></p-skeleton>
+                                </p>
+                            </ng-template>
+                        </p-card>
+                    }
+                </div>
+            </div>
+
+            <!-- User Activity: 2 cards -->
+            <div>
+                <h2>
+                    <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
+                </h2>
+                <div class="flex gap-3">
+                    @for (i of [1, 2]; track i) {
+                        <p-card class="flex-1">
+                            <ng-template pTemplate="header">
+                                <h3>
+                                    <p-skeleton width="60%"></p-skeleton>
+                                </h3>
+                            </ng-template>
+                            <ng-template pTemplate="body">
+                                <p class="m-0">
+                                    <p-skeleton width="80%" height="3rem"></p-skeleton>
+                                </p>
+                            </ng-template>
+                        </p-card>
+                    }
+                </div>
             </div>
         </div>
     }
 
     <!-- Error State -->
     @if (error() && !loading()) {
-        <div class="usage-error">
-            <p-messages severity="error" [closable]="false">
-                <ng-template pTemplate>
-                    <div class="error-content">
-                        <i class="pi pi-exclamation-triangle"></i>
-                        <div>
-                            <strong>Error Loading Usage Data</strong>
-                            <p>{{ error() }}</p>
-                        </div>
-                        <p-button
-                            label="Retry"
-                            severity="secondary"
-                            size="small"
-                            (onClick)="onRetry()"
-                            data-testid="retry-button"></p-button>
-                    </div>
-                </ng-template>
-            </p-messages>
-        </div>
+        <p-card>
+            <ng-template pTemplate="header">
+                <h3 class="flex align-items-center gap-2">
+                    <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+                    <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
+                </h3>
+            </ng-template>
+            <ng-template pTemplate="body">
+                <p class="m-0 mb-3">
+                    @if (error() === 'usage.dashboard.error.requestFailed' && errorStatus()) {
+                        {{
+                            'usage.dashboard.error.requestFailed' | dm: [errorStatus()!.toString()]
+                        }}
+                    } @else {
+                        {{ error() | dm }}
+                    }
+                </p>
+                <p-button
+                    [label]="'usage.dashboard.retry.button' | dm"
+                    severity="secondary"
+                    size="small"
+                    (onClick)="onRetry()"
+                    data-testid="retry-button"></p-button>
+            </ng-template>
+        </p-card>
     }
 
     <!-- Dashboard Content -->
-    @if (hasData() && summary(); as data) {
-        <div class="usage-content">
-            <!-- Site Metrics -->
-            <div class="usage-section">
-                <h2 class="section-title">Site Metrics</h2>
-                <div class="metrics-row">
-                    <p-card class="metric-card metric-card--success" data-testid="total-sites-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-globe"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Total Sites</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.siteMetrics.totalSites) }}
-                                </span>
-                            </div>
+    @if (hasData() && !loading()) {
+        <div class="flex flex-column gap-6">
+            @for (category of getCategories(); track category) {
+                @if (getCategoryMetrics(category); as categoryMetrics) {
+                    <div>
+                        <h2>{{ getCategoryTitleKey(category) | dm }}</h2>
+                        <div class="flex gap-3">
+                            @for (
+                                metricEntry of categoryMetrics | keyvalue;
+                                track metricEntry.key
+                            ) {
+                                @if (metricEntry.value; as metricData) {
+                                    <p-card
+                                        class="flex-1"
+                                        [attr.data-testid]="
+                                            category + '-' + metricEntry.key + '-card'
+                                        ">
+                                        <ng-template pTemplate="header">
+                                            <h3>
+                                                {{ metricData.displayLabel | dm }}
+                                            </h3>
+                                        </ng-template>
+                                        <ng-template pTemplate="body">
+                                            <p
+                                                class="metric-value"
+                                                [class.metric-value--text]="
+                                                    isStringValue(metricData.value)
+                                                ">
+                                                @if (
+                                                    isI18nKey(formatMetricValue(metricData.value))
+                                                ) {
+                                                    {{ formatMetricValue(metricData.value) | dm }}
+                                                } @else {
+                                                    {{ formatMetricValue(metricData.value) }}
+                                                }
+                                            </p>
+                                        </ng-template>
+                                    </p-card>
+                                }
+                            }
                         </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="active-sites-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-check-circle"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Active Sites</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.siteMetrics.activeSites) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="templates-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-clone"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Templates</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.siteMetrics.templates) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="site-aliases-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-link"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Site Aliases</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.siteMetrics.siteAliases) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-                </div>
-            </div>
-
-            <!-- Content Metrics -->
-            <div class="usage-section">
-                <h2 class="section-title">Content Metrics</h2>
-                <div class="metrics-row">
-                    <p-card
-                        class="metric-card metric-card--primary"
-                        data-testid="total-content-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-file"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Total Content</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.contentMetrics.totalContent) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="content-types-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-list"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Content Types</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.contentMetrics.contentTypes) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="workflows-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-sitemap"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">With Workflows</span>
-                                <span class="metric-value">
-                                    {{
-                                        formatNumber(data.contentMetrics.contentTypesWithWorkflows)
-                                    }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card
-                        class="metric-card metric-card--warning"
-                        data-testid="recently-edited-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-pencil"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Recently Edited (30d)</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.contentMetrics.recentlyEdited) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="last-edited-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-clock"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Last Edited</span>
-                                <span class="metric-value metric-value--text">
-                                    {{ data.contentMetrics.lastContentEdited || 'N/A' }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-                </div>
-            </div>
-
-            <!-- User Metrics -->
-            <div class="usage-section">
-                <h2 class="section-title">User Activity</h2>
-                <div class="metrics-row">
-                    <p-card class="metric-card metric-card--info" data-testid="total-users-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-user"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Total Users</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.userMetrics.totalUsers) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="active-users-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-users"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Active Users</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.userMetrics.activeUsers) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="recent-logins-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-sign-in"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Recent Logins</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.userMetrics.recentLogins) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="last-login-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-calendar"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Last Login</span>
-                                <span class="metric-value metric-value--text">
-                                    {{ data.userMetrics.lastLogin || 'N/A' }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-                </div>
-            </div>
-
-            <!-- System Metrics -->
-            <div class="usage-section">
-                <h2 class="section-title">System Configuration</h2>
-                <div class="metrics-row">
-                    <p-card class="metric-card" data-testid="languages-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-flag"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Languages</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.systemMetrics.languages) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="workflow-schemes-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-share-alt"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Workflows</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.systemMetrics.workflowSchemes) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="workflow-steps-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-sitemap"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Workflow Steps</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.systemMetrics.workflowSteps) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="live-containers-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-box"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Live Containers</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.systemMetrics.liveContainers) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-
-                    <p-card class="metric-card" data-testid="builder-templates-card">
-                        <div class="metric-card__content">
-                            <div class="metric-card__icon">
-                                <i class="pi pi-th-large"></i>
-                            </div>
-                            <div class="metric-card__data">
-                                <span class="metric-label">Builder Templates</span>
-                                <span class="metric-value">
-                                    {{ formatNumber(data.systemMetrics.builderTemplates) }}
-                                </span>
-                            </div>
-                        </div>
-                    </p-card>
-                </div>
-            </div>
+                    </div>
+                }
+            }
         </div>
     }
 </div>

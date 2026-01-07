@@ -8,14 +8,13 @@ import {
     inject,
     input,
     model,
-    signal,
-    output
+    output,
+    signal
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Params } from '@angular/router';
 
 import { CalendarModule } from 'primeng/calendar';
-import { DropdownModule, DropdownChangeEvent } from 'primeng/dropdown';
+import { DropdownChangeEvent, DropdownModule } from 'primeng/dropdown';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -65,7 +64,7 @@ export class DotAnalyticsDashboardFiltersComponent {
         }));
     });
 
-    changeFilters = output<Params>();
+    changeFilters = output<TimeRangeInput>();
 
     constructor() {
         this.#handleChangeInputTimeRange(this.$timeRange);
@@ -77,9 +76,7 @@ export class DotAnalyticsDashboardFiltersComponent {
             return;
         }
 
-        this.changeFilters.emit({
-            time_range: event.value
-        });
+        this.changeFilters.emit(event.value);
     }
 
     /** Handle change custom date range */
@@ -97,11 +94,7 @@ export class DotAnalyticsDashboardFiltersComponent {
             return;
         }
 
-        this.changeFilters.emit({
-            time_range: TIME_RANGE_OPTIONS.custom,
-            from: fromDate,
-            to: toDate
-        });
+        this.changeFilters.emit([fromDate, toDate]);
     }
 
     /** Handle change input time range */

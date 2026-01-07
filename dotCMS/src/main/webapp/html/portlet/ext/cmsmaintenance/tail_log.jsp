@@ -1,5 +1,7 @@
 <%@page import="java.io.File"%>
 <%@ page import="com.dotcms.rest.api.v1.taillog.TailLogResource" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <script type="text/javascript" src="/html/js/sse.js"></script>
 
 <style>
@@ -40,7 +42,7 @@
     if (!logPath.endsWith(java.io.File.separator)) {
         logPath = logPath + java.io.File.separator;
     }
-	File[] files = com.liferay.util.FileUtil.listFileHandles(logPath, true);
+	List<File> files = new ArrayList<>(com.liferay.util.FileUtil.getFilesByPattern(new File(logPath), "*.*"));
 	java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
 	java.util.List<File> l = new java.util.ArrayList<File>();
 	for(File x : files){
@@ -50,10 +52,8 @@
 	}
 	// http://jira.dotmarketing.net/browse/DOTCMS-6271
 	// put matched files set to an array with exact size and then sort them
-	files = l.toArray(new File[l.size()]);
-	java.util.Arrays.sort(files);
-
-
+    files = new ArrayList<>(l);
+    files.sort(File::compareTo);
 
 
 	com.liferay.portal.model.User uu=null;

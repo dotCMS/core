@@ -133,8 +133,24 @@ export const DotContentDriveStore = signalStore(
             removeFilter(filter: string) {
                 const { [filter]: removedFilter, ...restFilters } = store.filters();
                 if (removedFilter) {
-                    patchState(store, { filters: restFilters });
+                    patchState(store, {
+                        filters: restFilters,
+                        pagination: { ...store.pagination(), offset: 0 }
+                    });
                 }
+            },
+            setPath(path: string) {
+                // Only reset the title if the path is changed and its not the default path
+                const title = path ? undefined : store.filters().title;
+
+                patchState(store, {
+                    path,
+                    pagination: { ...store.pagination(), offset: 0 },
+                    filters: {
+                        ...store.filters(),
+                        title
+                    }
+                });
             },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
@@ -157,12 +173,11 @@ export const DotContentDriveStore = signalStore(
                 patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
 
                 // Avoid fetching content for SYSTEM_HOST sites
-                if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                if (currentSite?.identifier == SYSTEM_HOST.identifier) {
                     return;
                 }
 
                 // Since we are using scored search for the title we need to sort by score desc
-
                 dotContentDriveService
                     .search(request)
                     .pipe(
@@ -182,9 +197,6 @@ export const DotContentDriveStore = signalStore(
             },
             reloadContentDrive() {
                 this.loadItems();
-            },
-            setPath(path: string) {
-                patchState(store, { path });
             }
         };
     }),

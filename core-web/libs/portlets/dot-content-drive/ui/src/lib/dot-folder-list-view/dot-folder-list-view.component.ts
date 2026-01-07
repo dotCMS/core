@@ -10,14 +10,15 @@ import {
     input,
     OnInit,
     output,
-    Renderer2
+    Renderer2,
+    viewChild
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
@@ -51,6 +52,8 @@ export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
+    dataTable = viewChild<Table>('dataTable');
+
     /**
      * A signal that takes an array of DotContentDriveItem objects.
      *
@@ -74,6 +77,14 @@ export class DotFolderListViewComponent implements OnInit {
      * @alias loading
      */
     $loading = input<boolean>(false, { alias: 'loading' });
+
+    /**
+     * A signal that takes the offset.
+     *
+     * @type {InputSignal<number>}
+     * @alias offset
+     */
+    $offset = input<number>(0, { alias: 'offset' });
 
     /**
      * An output that emits the selected items.
@@ -140,6 +151,14 @@ export class DotFolderListViewComponent implements OnInit {
     drop = output<DotContentDriveItem>();
 
     /**
+     * An output that emits the scroll event.
+     *
+     * @type {Output<Event>}
+     * @alias scroll
+     */
+    scroll = output<Event>();
+
+    /**
      * An array of selected items.
      *
      * @type {DotContentDriveItem[]}
@@ -170,19 +189,8 @@ export class DotFolderListViewComponent implements OnInit {
      */
     readonly state = signalState({
         isDragging: false,
-        currentPageFirstRowIndex: 0,
         languagesMap: new Map<number, DotLanguage>(),
         dragOverRowId: null as string | null
-    });
-
-    /**
-     * Effect that handles pagination state management
-     */
-    protected readonly firstEffect = effect(() => {
-        const showPagination = this.$showPagination();
-        if (showPagination) {
-            patchState(this.state, { currentPageFirstRowIndex: 0 });
-        }
     });
 
     /**
@@ -192,6 +200,11 @@ export class DotFolderListViewComponent implements OnInit {
         this.$items();
         this.selectedItems = [];
     });
+
+    /**
+     * Bound scroll handler to ensure the same reference is used for add/remove event listener
+     */
+    private readonly boundScrollHandler = this.scrollHandler.bind(this);
 
     ngOnInit(): void {
         // We should be getting this from the Global Store
@@ -204,6 +217,43 @@ export class DotFolderListViewComponent implements OnInit {
 
             patchState(this.state, { languagesMap });
         });
+    }
+
+    /**
+     * Initializes the component after the view has been initialized
+     */
+    ngAfterViewInit(): void {
+        const tableBody = this.getTableBody();
+
+        if (tableBody) {
+            tableBody.addEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Destroys the component
+     */
+    ngOnDestroy(): void {
+        const tableBody = this.getTableBody();
+        if (tableBody) {
+            tableBody.removeEventListener('scroll', this.boundScrollHandler);
+        }
+    }
+
+    /**
+     * Gets the table body element
+     * @returns The table body element
+     */
+    private getTableBody(): HTMLElement | null {
+        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-wrapper');
+    }
+
+    /**
+     * Handles scroll events from the table body
+     * @param event The scroll event
+     */
+    private scrollHandler(event: Event) {
+        this.scroll.emit(event);
     }
 
     /**
@@ -221,7 +271,6 @@ export class DotFolderListViewComponent implements OnInit {
      * @param event The lazy load event containing pagination info
      */
     onPage(event: LazyLoadEvent) {
-        patchState(this.state, { currentPageFirstRowIndex: event.first });
         this.paginate.emit(event);
     }
 
@@ -320,6 +369,15 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
+     * Handles drag end on a content item
+     */
+    onDragEnd() {
+        // Reset dragging state to false and clear drag over
+        patchState(this.state, { isDragging: false, dragOverRowId: null });
+        this.dragEnd.emit();
+    }
+
+    /**
      * Creates drag image from actual rendered thumbnails (img/icon elements)
      * @param items The items to create the drag image from
      * @param totalCount The total number of items
@@ -389,11 +447,19 @@ export class DotFolderListViewComponent implements OnInit {
     }
 
     /**
-     * Handles drag end on a content item
+     * Handles first change event from the PrimeNG Table
+     * Basically primeNG Table handles the change of the first on every OnChange
+     * Making it lose the reference if you do a sort and do not handle this manually
+     *
+     * Check this issue to know if we are able to remove this function
+     * since its a legacy issue that they are basically ignoring.
+     * https://github.com/primefaces/primeng/issues/11898#issuecomment-1831076132
      */
-    onDragEnd() {
-        // Reset dragging state to false and clear drag over
-        patchState(this.state, { isDragging: false, dragOverRowId: null });
-        this.dragEnd.emit();
+    protected onFirstChange() {
+        const dataTable = this.dataTable();
+
+        if (dataTable) {
+            dataTable.first = this.$offset();
+        }
     }
 }
