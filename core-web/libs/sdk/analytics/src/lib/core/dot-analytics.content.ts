@@ -1,13 +1,15 @@
 import { Analytics } from 'analytics';
 
-import { ANALYTICS_WINDOWS_ACTIVE_KEY, ANALYTICS_WINDOWS_CLEANUP_KEY } from '@dotcms/uve/internal';
-
 import { dotAnalyticsClickPlugin } from './plugin/click/dot-analytics.click.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
 import { dotAnalyticsImpressionPlugin } from './plugin/impression/dot-analytics.impression.plugin';
 import { dotAnalytics } from './plugin/main/dot-analytics.plugin';
-import { DotCMSPredefinedEventType } from './shared/constants/dot-analytics.constants';
+import {
+    ANALYTICS_WINDOWS_ACTIVE_KEY,
+    ANALYTICS_WINDOWS_CLEANUP_KEY,
+    DotCMSPredefinedEventType
+} from './shared/constants/dot-analytics.constants';
 import {
     DotCMSAnalytics,
     DotCMSAnalyticsConfig,
