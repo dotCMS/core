@@ -8,6 +8,7 @@ import { Result, Ok, Err } from 'ts-results';
 
 import { DotCMSApi } from './api';
 import {
+    askCloudOrLocalInstance,
     askDirectory,
     askDotcmsCloudUrl,
     askFramework,
@@ -67,6 +68,8 @@ program
 
         let directoryInput: string;
         let finalDirectory: string;
+        let isCloudInstanceSelected: boolean;
+        let selectedFramework: string;
 
         if (dir === undefined && directory === undefined) {
             directoryInput = await askDirectory();
@@ -76,29 +79,30 @@ program
             finalDirectory = await prepareDirectory(directoryInput, projectName);
         }
 
-        let selectedFramework: string;
-
         if (framework === undefined && f === undefined) {
             selectedFramework = await askFramework();
         } else {
             selectedFramework = framework || f;
         }
 
-        const isCloudInstanceSelected: boolean = options.local === undefined;
+        if (options.local === undefined) {
+            isCloudInstanceSelected = await askCloudOrLocalInstance();
+        } else {
+            isCloudInstanceSelected = options.local;
+        }
 
         if (isCloudInstanceSelected) {
-            let urlDotcmsInstance: string;
-            let userNameDotCmsInstance: string;
-            let passwordDotCmsInstance: string;
+            const urlDotcmsInstance = url === undefined ? await askDotcmsCloudUrl() : url;
 
-            if (url === undefined) await askDotcmsCloudUrl();
-            else urlDotcmsInstance = url;
+            const userNameDotCmsInstance =
+                user === undefined && username === undefined
+                    ? await askUserNameForDotcmsCloud()
+                    : user || username;
 
-            if (user === undefined && username === undefined) await askUserNameForDotcmsCloud();
-            else userNameDotCmsInstance = user || username;
-
-            if (pass === undefined && password === undefined) await askPasswordForDotcmsCloud();
-            else passwordDotCmsInstance = pass || password;
+            const passwordDotCmsInstance =
+                pass === undefined && password === undefined
+                    ? await askPasswordForDotcmsCloud()
+                    : pass || password;
 
             const spinner = ora(`Scaffolding ${selectedFramework} application ...`).start();
 
@@ -251,7 +255,7 @@ program
         const ran = await runDockerCompose({ directory: finalDirectory });
         if (!ran.ok) {
             spinner.fail(
-                'Failed to start dotCMS with Docker Compose.Please make sure docker is installed and running.'
+                'Failed to start dotCMS Ensure Docker is running and ports 8082, 8443, 9200, and 9600 are free.'
             );
             return;
         }
