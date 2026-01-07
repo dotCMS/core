@@ -21,7 +21,7 @@
                         type="button"
                         icon="pi pi-times"
                         data-testid="close-message"
-                        (click)="onCloseMessage()"></p-button>
+                        (click)="onCloseMessage()" />
                 </div>
             </div>
         </ng-template>
@@ -54,6 +54,7 @@
         (dragStart)="onDragStart($event)"
         (dragEnd)="onDragEnd()"
         (drop)="onTableDrop($event)"
+        (scroll)="onTableScroll()"
         #listView />
 </dot-content-drive-dropzone>
 <dot-folder-list-context-menu />

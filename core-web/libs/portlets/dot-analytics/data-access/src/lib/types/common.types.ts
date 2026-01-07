@@ -57,7 +57,7 @@ export interface RequestState<T = unknown> {
  */
 export interface MetricData {
     name: string;
-    value: number;
+    value: number | string;
     subtitle: string;
     icon: string;
     status: ComponentStatus;

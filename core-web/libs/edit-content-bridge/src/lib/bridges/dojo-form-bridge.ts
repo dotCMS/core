@@ -1,4 +1,10 @@
-import { FormBridge, FormFieldAPI, FormFieldValue } from '../interfaces/form-bridge.interface';
+import {
+    BrowserSelectorController,
+    BrowserSelectorOptions,
+    FormBridge,
+    FormFieldAPI,
+    FormFieldValue
+} from '../interfaces/form-bridge.interface';
 
 interface FieldCallback {
     id: symbol;
@@ -259,5 +265,27 @@ export class DojoFormBridge implements FormBridge {
         };
 
         window.addEventListener('load', this.loadHandler);
+    }
+
+    /**
+     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     *
+     * @param _options - Configuration options for the browser selector.
+     * @returns A controller object to manage the dialog.
+     *
+     * @example
+     * // Select a page
+     * bridge.openBrowserModal({
+     *   header: 'Select a Page',
+     *   mimeTypes: ['application/dotpage'],
+     *   onClose: (result) => console.log(result)
+     * });
+     */
+    openBrowserModal(_options: BrowserSelectorOptions): BrowserSelectorController {
+        // TODO: Implement browser selector modal for Dojo
+        return {
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            close: () => {}
+        };
     }
 }

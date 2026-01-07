@@ -104,11 +104,11 @@ export function withEditor() {
 
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
-                $styleSchema: computed<unknown>(() => {
-                    const contentlet = store.activeContentlet();
+                $styleSchema: computed<StyleEditorFormSchema>(() => {
+                    const activeContentlet = store.activeContentlet();
                     const styleSchemas = store.styleSchemas();
                     const contentSchema = styleSchemas.find(
-                        (schema) => schema.contentType === contentlet?.contentType
+                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
                     );
                     return contentSchema;
                 }),
@@ -307,7 +307,7 @@ export function withEditor() {
                         state: EDITOR_STATE.IDLE
                     });
                 },
-                setActiveContentlet(contentlet: ContentletPayload) {
+                setActiveContentlet(contentlet: ActionPayload) {
                     patchState(store, {
                         activeContentlet: contentlet,
                         palette: {

@@ -1,0 +1,25 @@
+@let loading = $loading();
+
+@if (!loading) {
+    <p-tree
+        [value]="$state().folders"
+        [loading]="loading"
+        selectionMode="single"
+        [(selection)]="$state().selectedFile"
+        loadingMode="icon"
+        class="w-full h-full"
+        styleClass="w-full h-full"
+        loadingMode="icon"
+        (onNodeSelect)="onNodeSelect.emit($event)"
+        (onNodeExpand)="onNodeExpand.emit($event)">
+        <ng-template let-node pTemplate="default">
+            <span>{{ node.label | dotTruncatePath }}</span>
+        </ng-template>
+    </p-tree>
+} @else {
+    <div class="flex w-full h-full flex-column p-2">
+        @for (col of $fakeColumns(); track $index) {
+            <p-skeleton styleClass="mb-3" [width]="col" />
+        }
+    </div>
+}

@@ -281,15 +281,15 @@ The process works as follows:
 Here's how the client is configured:
 
 ```js
-import { createDotCMSClient } from '@dotcms/client';
+import { createDotCMSClient } from "@dotcms/client";
 
 export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
     siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID,
     requestOptions: {
-        cache: 'no-cache'
-    }
+        cache: "no-cache",
+    },
 });
 ```
 
@@ -300,7 +300,7 @@ export const getDotCMSPage = async (path, searchParams) => {
     try {
         return await dotCMSClient.page.get(path, searchParams);
     } catch (e) {
-        console.error('ERROR FETCHING PAGE: ', e.message);
+        console.error("ERROR FETCHING PAGE: ", e.message);
         return null;
     }
 };
@@ -339,15 +339,15 @@ When a page is rendered:
 Here's how this looks in code:
 
 ```js
-'use client';
+"use client";
 
-import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
 // Define custom components for specific Content Types
 // The key is the Content Type variable name in dotCMS
 const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
-    dotCMSBlogPost: BlogPostComponent
+    dotCMSBlogPost: BlogPostComponent,
 };
 
 export function MyPage({ page }) {
@@ -385,7 +385,7 @@ const pageComponents = {
     // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
     DotCMSProduct: ProductComponent,
     // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-    DotCMSBlogPost: BlogPostComponent
+    DotCMSBlogPost: BlogPostComponent,
 };
 ```
 
