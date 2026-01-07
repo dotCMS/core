@@ -58,18 +58,18 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                     return this.dotActionUrlService
                         .getCreateContentletUrl(variable, language_id)
                         .pipe(
-                            tapResponse(
-                                (url) => {
+                            tapResponse({
+                                next: (url) => {
                                     this.createContentlet({
                                         url,
                                         contentType: name,
                                         actionPayload
                                     });
                                 },
-                                (e) => {
+                                error: (e) => {
                                     console.error(e);
                                 }
-                            )
+                            })
                         );
                 })
             );

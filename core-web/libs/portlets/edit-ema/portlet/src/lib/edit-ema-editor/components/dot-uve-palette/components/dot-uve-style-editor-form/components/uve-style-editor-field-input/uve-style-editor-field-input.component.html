@@ -1,0 +1,9 @@
+<div class="form-field">
+    <label class="field-label" [attr.for]="$field().id">{{ $field().label }}</label>
+    <input
+        pInputText
+        [formControlName]="$field().id"
+        [id]="$field().id"
+        class="uve-input"
+        [placeholder]="$field().config.placeholder" />
+</div>

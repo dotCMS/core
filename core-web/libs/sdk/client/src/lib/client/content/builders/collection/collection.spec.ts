@@ -31,6 +31,17 @@ describe('CollectionBuilder', () => {
         siteId: 'test-site'
     };
 
+    const createCollectionBuilder = (
+        contentType: string,
+        customConfig: DotCMSClientConfig = config
+    ) =>
+        new CollectionBuilder({
+            requestOptions,
+            config: customConfig,
+            contentType,
+            httpClient: new FetchHttpClient()
+        });
+
     const baseRequest = {
         method: 'POST',
         headers: {
@@ -64,24 +75,14 @@ describe('CollectionBuilder', () => {
 
     it('should initialize with valid configuration', async () => {
         const contentType = 'my-content-type';
-        const collectionBuilder = new CollectionBuilder(
-            requestOptions,
-            config,
-            contentType,
-            new FetchHttpClient()
-        );
+        const collectionBuilder = createCollectionBuilder(contentType);
         expect(collectionBuilder).toBeDefined();
     });
 
     describe('successful requests', () => {
         it('should build a query for a basic collection', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder;
 
@@ -92,19 +93,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should return the contentlets in the mapped response', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             const response = await collectionBuilder;
 
@@ -118,12 +115,7 @@ describe('CollectionBuilder', () => {
 
         it('should return the contentlets in the mapped response with sort', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             const sortBy: SortBy[] = [
                 {
@@ -147,14 +139,33 @@ describe('CollectionBuilder', () => {
             });
         });
 
+        it('should handle onfulfilled callback returning void', async () => {
+            const contentType = 'song';
+            const collectionBuilder = createCollectionBuilder(contentType);
+
+            const onfulfilledCallback = jest.fn((_data) => {
+                // Callback with no return statement (returns void)
+            });
+
+            const result = await collectionBuilder.then(onfulfilledCallback);
+
+            expect(onfulfilledCallback).toHaveBeenCalledWith({
+                contentlets: [],
+                page: 1,
+                size: 0,
+                total: 0
+            });
+            expect(result).toEqual({
+                contentlets: [],
+                page: 1,
+                size: 0,
+                total: 0
+            });
+        });
+
         it('should build a query for a collection with a specific language', async () => {
             const contentType = 'ringsOfPower';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.language(13);
 
@@ -165,19 +176,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 13
                 })
             });
         });
 
         it('should build a query for a collection with render on true', async () => {
             const contentType = 'boringContentType';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.render();
 
@@ -188,19 +195,15 @@ describe('CollectionBuilder', () => {
                     render: true,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it("should build a query with multiply sortBy's", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.sortBy([
                 {
@@ -225,19 +228,15 @@ describe('CollectionBuilder', () => {
                     sort: 'name asc,force desc,midichlorians desc',
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query with a specific depth', async () => {
             const contentType = 'droid';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.depth(2);
 
@@ -248,19 +247,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 2
+                    depth: 2,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query with a specific limit and page', async () => {
             const contentType = 'ship';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.limit(20).page(3);
 
@@ -271,19 +266,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 20,
                     offset: 40,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query with an specific query with main fields and custom fields of the content type', async () => {
             const contentType = 'lightsaber';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder
                 .query(
@@ -300,19 +291,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it("should throw an error if the query doesn't end in an instance of Equals", async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -330,12 +317,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the parameter for query is not a function or string', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -353,12 +335,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the depth is out of range (positive value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -372,12 +349,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw an error if the depth is out of range (negative value)', async () => {
             const contentType = 'jedi';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             try {
                 // Force the error
@@ -391,12 +363,7 @@ describe('CollectionBuilder', () => {
 
         it('should build a query for draft content', async () => {
             const contentType = 'draftContent';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.draft();
 
@@ -407,19 +374,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should build a query for a collection with a specific variant', async () => {
             const contentType = 'adventure';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             await collectionBuilder.variant('dimension-1334-adventure');
 
@@ -430,19 +393,15 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
 
         it('should handle all the query methods on GetCollection', async () => {
             const contentType = 'forceSensitive';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType);
 
             // be sure that this test is updated when new methods are added
             let methods = Object.getOwnPropertyNames(
@@ -452,7 +411,15 @@ describe('CollectionBuilder', () => {
             // Remove the constructor and the methods that are not part of the query builder.
             // Fetch method is removed because it is the one that makes the request and we already test that
             // For example: ["constructor", "thisMethodIsPrivate", "thisMethodIsNotAQueryMethod", "formatQuery"]
-            const methodsToIgnore = ['constructor', 'formatResponse', 'fetchContentApi'];
+            const methodsToIgnore = [
+                'constructor',
+                // Internal implementation details (not part of the fluent query API)
+                'buildFinalQuery',
+                'getLanguageId',
+                'wrapError',
+                'formatResponse',
+                'fetchContentApi'
+            ];
 
             // Filter to take only the methods that are part of the query builder
             methods = methods.filter((method) => {
@@ -514,7 +481,8 @@ describe('CollectionBuilder', () => {
                     sort: 'name asc,midichlorians desc',
                     limit: 20,
                     offset: 40,
-                    depth: 2
+                    depth: 2,
+                    languageId: 13
                 })
             });
 
@@ -533,12 +501,7 @@ describe('CollectionBuilder', () => {
                 authToken: 'test-token',
                 siteId: 'my-default-site'
             };
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                configWithSite,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
 
             await collectionBuilder;
 
@@ -549,7 +512,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -561,12 +525,7 @@ describe('CollectionBuilder', () => {
                 authToken: 'test-token',
                 siteId: 'my-default-site'
             };
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                configWithSite,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
 
             await collectionBuilder.query('+conhost:user-specified-site');
 
@@ -579,7 +538,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -591,12 +551,7 @@ describe('CollectionBuilder', () => {
                 authToken: 'test-token'
                 // No siteId configured
             };
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                configWithoutSite,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType, configWithoutSite);
 
             await collectionBuilder;
 
@@ -607,7 +562,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -619,12 +575,7 @@ describe('CollectionBuilder', () => {
                 authToken: 'test-token',
                 siteId: 'my-default-site'
             };
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                configWithSite,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
 
             await collectionBuilder.query((qb) =>
                 qb.field('conhost').equals('user-specified-site')
@@ -639,7 +590,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -651,12 +603,7 @@ describe('CollectionBuilder', () => {
                 authToken: 'test-token',
                 siteId: 'my-default-site'
             };
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                configWithSite,
-                contentType,
-                new FetchHttpClient()
-            );
+            const collectionBuilder = createCollectionBuilder(contentType, configWithSite);
 
             await collectionBuilder.query('-conhost:my-default-site');
 
@@ -669,7 +616,8 @@ describe('CollectionBuilder', () => {
                     render: false,
                     limit: 10,
                     offset: 0,
-                    depth: 0
+                    depth: 0,
+                    languageId: 1
                 })
             });
         });
@@ -678,12 +626,7 @@ describe('CollectionBuilder', () => {
     describe('fetch is rejected', () => {
         it('should trigger onrejected callback', (done) => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            ).language(13);
+            const collectionBuilder = createCollectionBuilder(contentType).language(13);
 
             // Mock the request to return a rejected promise
             mockRequest.mockRejectedValue(new Error('URL is invalid'));
@@ -711,12 +654,9 @@ describe('CollectionBuilder', () => {
 
         it('should trigger catch method', (done) => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
+            const collectionBuilder = createCollectionBuilder(contentType).query((dotQuery) =>
+                dotQuery.field('author').equals('Linkin Park')
+            );
 
             // Mock the request to return a rejected promise
             mockRequest.mockRejectedValue(new Error('DNS are not resolving'));
@@ -737,12 +677,9 @@ describe('CollectionBuilder', () => {
 
         it('should trigger catch of try catch block', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            ).query((dotQuery) => dotQuery.field('author').equals('Linkin Park'));
+            const collectionBuilder = createCollectionBuilder(contentType).query((dotQuery) =>
+                dotQuery.field('author').equals('Linkin Park')
+            );
 
             // Mock a network error
             mockRequest.mockRejectedValue(new Error('Network error'));
@@ -762,12 +699,7 @@ describe('CollectionBuilder', () => {
 
         it('should throw HttpError when HTTP request fails', async () => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            ).limit(10);
+            const collectionBuilder = createCollectionBuilder(contentType).limit(10);
 
             const httpError = new DotHttpError({
                 status: 404,
@@ -798,12 +730,7 @@ describe('CollectionBuilder', () => {
 
         it('should handle HttpError in onrejected callback', (done) => {
             const contentType = 'song';
-            const collectionBuilder = new CollectionBuilder(
-                requestOptions,
-                config,
-                contentType,
-                new FetchHttpClient()
-            ).language(13);
+            const collectionBuilder = createCollectionBuilder(contentType).language(13);
 
             const httpError = new DotHttpError({
                 status: 500,

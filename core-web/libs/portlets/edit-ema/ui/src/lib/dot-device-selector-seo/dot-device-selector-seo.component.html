@@ -18,9 +18,7 @@
                         [routerLink]="linkToAddDevice"
                         [queryParams]="linkToEditDeviceQueryParams"
                         data-testId="dot-device-link-add">
-                        <p-button
-                            icon="pi pi-pencil"
-                            styleClass="p-button-rounded p-button-text"></p-button>
+                        <p-button icon="pi pi-pencil" styleClass="p-button-rounded p-button-text" />
                     </a>
                 }
             </div>
@@ -41,7 +39,7 @@
                         </li>
                     }
                 </ul>
-                <p-divider [align]="'center'" layout="vertical"></p-divider>
+                <p-divider [align]="'center'" layout="vertical" />
                 <ul class="device-list">
                     @for (option of options$ | async; track $index) {
                         <li class="device-list-item" data-testId="device-selector-option">

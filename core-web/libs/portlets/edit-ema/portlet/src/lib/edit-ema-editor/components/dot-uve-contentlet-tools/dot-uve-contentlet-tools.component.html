@@ -1,0 +1,69 @@
+@let context = contentContext();
+@let dragItem = dragPayload();
+@let isEmpty = isContainerEmpty();
+
+<div [ngStyle]="boundsStyles()" class="bounds" data-testId="bounds">
+    <p-button
+        (click)="setPositionFlag('before'); menu.toggle($event)"
+        class="add-button-top"
+        data-testId="add-top-button"
+        icon="pi pi-plus" />
+    @if (!isEmpty) {
+        <p-button
+            (click)="setPositionFlag('after'); menu.toggle($event)"
+            class="add-button-bottom"
+            data-testId="add-bottom-button"
+            icon="pi pi-plus" />
+    }
+
+    @if (!isEmpty) {
+        <div class="actions" data-testId="actions">
+            @if (hasVtlFiles()) {
+                <p-button
+                    (click)="menuVTL.toggle($event)"
+                    data-testId="edit-vtl-button"
+                    styleClass="p-button-rounded p-button-raised"
+                    icon="pi pi-code" />
+                <p-menu
+                    [model]="vtlMenuItems()"
+                    [popup]="true"
+                    #menuVTL
+                    appendTo="body"
+                    data-testId="menu-vtl" />
+            }
+            <p-button
+                [attr.data-item]="dragItem | json"
+                [attr.data-use-custom-drag-image]="useCustomDragImage"
+                data-type="contentlet"
+                draggable="true"
+                data-testId="drag-button"
+                styleClass="p-button-rounded p-button-raised"
+                icon="pi pi-arrows-alt" />
+            <p-button
+                (click)="deleteContent.emit(context)"
+                [disabled]="!allowContentDelete()"
+                [pTooltip]="deleteButtonTooltip() | dm"
+                tooltipPosition="bottom"
+                [escape]="false"
+                data-testId="delete-button"
+                styleClass="p-button-rounded p-button-raised delete"
+                icon="pi pi-times" />
+
+            <p-button
+                (click)="editContent.emit(context)"
+                data-testId="edit-button"
+                styleClass="p-button-rounded p-button-raised"
+                icon="pi pi-pencil" />
+
+            @if (showStyleEditorOption()) {
+                <p-button
+                    (click)="setSelectedContent()"
+                    data-testId="palette-button"
+                    styleClass="p-button-rounded p-button-raised"
+                    icon="pi pi-palette" />
+            }
+        </div>
+    }
+
+    <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
+</div>
