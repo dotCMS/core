@@ -1385,7 +1385,6 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return The {@link SelectAndCountQueries} object containing both select and count queries with parameters.
      */
     private SelectAndCountQueries selectAndCountQueries(final BrowserQuery browserQuery) {
-
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
@@ -1442,7 +1441,10 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendExcludeArchivedQuery(selectQuery);
             appendExcludeArchivedQuery(countQuery);
         }
-
+        if (UtilMethods.isSet(browserQuery.mimeTypes)) {
+            appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes);
+            appendMIMETypeQuery(countQuery, browserQuery.mimeTypes);
+        }
         if (null != browserQuery.sortBy) {
             appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
         }
@@ -1694,6 +1696,19 @@ public class BrowserAPIImpl implements BrowserAPI {
         } else  {
             sqlQuery.append(" c.mod_date asc");
         }
+    }
+
+    /**
+     * Appends the specified MIME Types to the main SQL query.
+     *
+     * @param sqlQuery  The main SQL query.
+     * @param mimeTypes The list of MIME Types specified by the client.
+     */
+    private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
+        final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
+                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType == \"%s\")')", mimeType))
+                .collect(Collectors.joining(" OR ")));
+        sqlQuery.append(mimeTypesFilter);
     }
 
     /**
