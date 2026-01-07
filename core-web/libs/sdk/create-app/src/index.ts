@@ -84,11 +84,10 @@ program
         } else {
             selectedFramework = framework || f;
         }
-
         if (options.local === undefined) {
             isCloudInstanceSelected = await askCloudOrLocalInstance();
         } else {
-            isCloudInstanceSelected = options.local;
+            isCloudInstanceSelected = !JSON.parse(options.local);
         }
 
         if (isCloudInstanceSelected) {
