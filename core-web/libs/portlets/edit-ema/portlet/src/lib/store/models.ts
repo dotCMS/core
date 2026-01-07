@@ -4,6 +4,7 @@ import {
     DotDeviceListItem,
     DotExperiment,
     DotLanguage,
+    SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
@@ -75,7 +76,7 @@ export interface EditorUIState {
     };
 
     // Editor-specific data
-    ogTags: any | null;
+    ogTags: SeoMetaTags | null;
     styleSchemas: StyleEditorFormSchema[];
 }
 
