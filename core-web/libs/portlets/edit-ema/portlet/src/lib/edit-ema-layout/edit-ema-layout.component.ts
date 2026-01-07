@@ -4,24 +4,17 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
-    OnDestroy,
+    DestroyRef,
     OnInit,
     effect,
     inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
-import {
-    debounceTime,
-    distinctUntilChanged,
-    finalize,
-    switchMap,
-    take,
-    takeUntil,
-    tap
-} from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
 import { DotTemplateDesigner } from '@dotcms/dotcms-models';
@@ -39,12 +32,14 @@ export const DEBOUNCE_TIME = 5000;
     styleUrls: ['./edit-ema-layout.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class EditEmaLayoutComponent implements OnInit, OnDestroy {
+export class EditEmaLayoutComponent implements OnInit {
     private readonly dotRouterService = inject(DotRouterService);
     private readonly dotPageLayoutService = inject(DotPageLayoutService);
     private readonly messageService = inject(MessageService);
     private readonly dotMessageService = inject(DotMessageService);
     readonly #router = inject(Router);
+
+    readonly #destroyRef = inject(DestroyRef);
 
     protected readonly uveStore = inject(UVEStore);
 
@@ -64,16 +59,10 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     private lastTemplate: DotTemplateDesigner;
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
-    destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
         this.initSaveTemplateDebounce();
         this.initForceSaveOnLeave();
-    }
-
-    ngOnDestroy() {
-        this.destroy$.next(true);
-        this.destroy$.complete();
     }
 
     /**
@@ -86,6 +75,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         this.dotRouterService.forbidRouteDeactivation();
         this.updateTemplate$.next(template);
         this.lastTemplate = template;
+        console.log('nextTemplateUpdate', template);
     }
 
     /**
@@ -101,16 +91,12 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             detail: this.dotMessageService.get('dot.common.message.saving'),
             life: 1000
         });
-
-        this.dotPageLayoutService
-            // To save a layout and no a template the title should be null
-            .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
-            .pipe(take(1))
-            .subscribe(
-                () => this.handleSuccessSaveTemplate(),
-                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
-                () => this.dotRouterService.allowRouteDeactivation()
-            );
+        return this.dotPageLayoutService.save(this.uveStore.$layoutProps().pageId, {
+            ...template,
+            title: null
+        }).pipe(
+            tap(response => console.log('response', response))
+        );
     }
 
     /**
@@ -132,27 +118,14 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
                 tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)), // Prevent the user to access page properties
                 debounceTime(DEBOUNCE_TIME),
-                takeUntil(this.destroy$),
-                switchMap((layout: DotTemplateDesigner) => {
-                    this.messageService.add({
-                        severity: 'info',
-                        summary: 'Info',
-                        detail: this.dotMessageService.get('dot.common.message.saving'),
-                        life: 1000
-                    });
-
-                    return this.dotPageLayoutService
-                        .save(this.uveStore.$layoutProps().pageId, {
-                            ...layout,
-                            title: null
-                        })
-                        .pipe(finalize(() => this.dotRouterService.allowRouteDeactivation()));
-                })
+                takeUntilDestroyed(this.#destroyRef),
+                switchMap((template) => this.saveTemplate(template))
             )
-            .subscribe(
-                () => this.handleSuccessSaveTemplate(),
-                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err)
-            );
+            .subscribe({
+                next: () => this.handleSuccessSaveTemplate(),
+                error: (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
+                complete: () => this.dotRouterService.allowRouteDeactivation()
+            });
     }
 
     /**
@@ -197,9 +170,15 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      */
     private initForceSaveOnLeave(): void {
         this.dotRouterService.pageLeaveRequest$
-            .pipe(takeUntil(this.destroy$), distinctUntilChanged()) // To prevent an spam of toasts when clicking on some route
-            .subscribe(() => {
-                this.saveTemplate(this.lastTemplate);
+            .pipe(
+                takeUntilDestroyed(this.#destroyRef),
+                distinctUntilChanged(),
+                switchMap(() => this.saveTemplate(this.lastTemplate))
+            ) // To prevent an spam of toasts when clicking on some route
+            .subscribe({
+                next: () => this.handleSuccessSaveTemplate(),
+                error: (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err),
+                complete: () => this.dotRouterService.allowRouteDeactivation()
             });
     }
 }
