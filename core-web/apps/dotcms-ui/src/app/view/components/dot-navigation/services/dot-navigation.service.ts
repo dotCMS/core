@@ -33,11 +33,12 @@ export class DotNavigationService {
             this.#globalStore.loadMenu(menus);
 
             if (this.dotRouterService.currentPortlet.id) {
-                this.#globalStore.setActiveMenu(
-                    this.dotRouterService.currentPortlet.id,
-                    this.dotRouterService.queryParams['mId'],
-                    true
-                );
+                this.#globalStore.setActiveMenu({
+                    portletId: this.dotRouterService.currentPortlet.id,
+                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                    bookmark: true,
+                    breadcrumbs: this.#globalStore.breadcrumbs()
+                });
             }
         });
 
@@ -60,11 +61,12 @@ export class DotNavigationService {
                                 Object.keys(this.dotRouterService.queryParams).length === 0;
 
                             if (this.dotRouterService.currentPortlet.id) {
-                                this.#globalStore.setActiveMenu(
-                                    this.dotRouterService.currentPortlet.id,
-                                    this.dotRouterService.queryParams['mId'],
-                                    queryParamsValid
-                                );
+                                this.#globalStore.setActiveMenu({
+                                    portletId: this.dotRouterService.currentPortlet.id,
+                                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                                    bookmark: queryParamsValid,
+                                    breadcrumbs: this.#globalStore.breadcrumbs()
+                                });
                             }
                         }),
                         map(() => true)
@@ -83,10 +85,10 @@ export class DotNavigationService {
                     this.#globalStore.loadMenu(menus);
 
                     if (this.dotRouterService.currentPortlet.id) {
-                        this.#globalStore.setActiveMenu(
-                            this.dotRouterService.currentPortlet.id,
-                            this.dotRouterService.queryParams['mId']
-                        );
+                        this.#globalStore.setActiveMenu({
+                            portletId: this.dotRouterService.currentPortlet.id,
+                            shortParentMenuId: this.dotRouterService.queryParams['mId']
+                        });
                     }
                 });
         });

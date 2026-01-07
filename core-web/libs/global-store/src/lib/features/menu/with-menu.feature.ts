@@ -16,12 +16,24 @@ import {
 
 import { computed, effect, inject } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
+
 import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { initialMenuSlice, menuConfig, REPLACE_SECTIONS_MAP } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
+
+/**
+ * Parameters for setting the active menu item.
+ */
+export interface SetActiveMenuParams {
+    portletId: string;
+    shortParentMenuId: string;
+    bookmark?: boolean;
+    breadcrumbs?: MenuItem[];
+}
 
 /**
  * Custom Store Feature for managing menu state using Entity Management.
@@ -265,39 +277,61 @@ export function withMenu() {
              * Loads menu and sets active item based on current URL.
              * Uses entity map to find the matching menu item without iterating keys.
              *
-             * @param portletId - The ID of the menu item (portlet) to activate
-             * @param shortParentMenuId - The first 4 characters of the parent menu ID
+             * @param params - Object containing portletId, shortParentMenuId, bookmark flag, and breadcrumbs
              */
-            const setActiveMenu = (
-                portletId: string,
-                shortParentMenuId: string,
-                bookmark?: boolean
-            ) => {
+            const setActiveMenu = ({
+                portletId,
+                shortParentMenuId,
+                bookmark,
+                breadcrumbs
+            }: SetActiveMenuParams) => {
                 if (!portletId) {
                     return;
                 }
 
-                // Check if portletId should be replaced according to REPLACE_SECTIONS_MAP
                 const resolvedPortletId = REPLACE_SECTIONS_MAP[portletId] || portletId;
-
-                // Direct lookup using the composite key
                 const entityMap = store.entityMap();
-                let compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
-                const item = entityMap[compositeKey];
 
-                // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (bookmark) {
-                    const foundItem = Object.values(entityMap).find((item) => {
-                        return item.id === resolvedPortletId || item.id === portletId;
-                    });
-                    if (foundItem) {
-                        compositeKey = `${foundItem.id}__${foundItem.parentMenuId?.substring(0, 4)}`;
-                        activateMenuItemWithParent(compositeKey, foundItem.parentMenuId);
-                    }
-                }
+                // Direct lookup using the composite key (fastest path)
+                const compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
+                const item = entityMap[compositeKey];
 
                 if (item) {
                     activateMenuItemWithParent(compositeKey, item.parentMenuId);
+                    return;
+                }
+
+                // Fallback for missing shortParentMenuId cases like old bookmarks
+                // or portlets without `mId`
+                if (!bookmark) {
+                    return;
+                }
+
+                // sync with the first breadcrumb that has a URL
+                if (breadcrumbs) {
+                    const firstBreadcrumbWithUrl = breadcrumbs.find((bc) => bc.url);
+
+                    if (firstBreadcrumbWithUrl) {
+                        const foundMenuItem = Object.values(entityMap).find(
+                            (item) => item.label === firstBreadcrumbWithUrl.label
+                        );
+
+                        if (foundMenuItem) {
+                            const key = `${foundMenuItem.id}__${foundMenuItem.parentMenuId?.substring(0, 4)}`;
+                            activateMenuItemWithParent(key, foundMenuItem.parentMenuId);
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback to ID matching for old bookmarks without mId
+                const foundItem = Object.values(entityMap).find(
+                    (item) => item.id === resolvedPortletId || item.id === portletId
+                );
+
+                if (foundItem) {
+                    const key = `${foundItem.id}__${foundItem.parentMenuId?.substring(0, 4)}`;
+                    activateMenuItemWithParent(key, foundItem.parentMenuId);
                 }
             };
 
