@@ -1,6 +1,7 @@
 package com.dotcms.mock.response;
 
 import com.dotcms.ema.proxy.MockPrintWriter;
+import com.liferay.util.servlet.NullServletOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -143,6 +144,9 @@ public class DotCMSMockResponse implements HttpServletResponse {
 
     @Override
     public ServletOutputStream getOutputStream() throws IOException {
+        if (this.outputStream == null) {
+            return new NullServletOutputStream();
+        }
         return this.outputStream;
     }
 

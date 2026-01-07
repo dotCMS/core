@@ -20,7 +20,7 @@
 package com.liferay.portal.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.api.web.RequestThreadLocalListener;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -399,22 +399,42 @@ public class PortalUtil {
       final HttpServletRequest req = HttpServletRequestThreadLocal.INSTANCE.getRequest();
       return req==null ? null : getUser(req);
   }
-  
+
   public static User getUser(HttpServletRequest req) {
     User user = (User) req.getAttribute(WebKeys.USER);
     if (user == null) {
-        user = getUser(req.getSession(false));
+      user = getUser(req.getSession(false));
     }
     if (user == null) {
       String userId = PortalUtil.getUserId(req);
-      if (userId == null) {
-        return null;
+      if (userId != null) {
+        user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
       }
-      user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
+    }
+    if (user == null) {
+      user = getUserFromAuthHeader(req);
+    }
+    if (user == null) {
+      return null;
     }
     req.setAttribute(WebKeys.USER, user);
+    req.setAttribute(WebKeys.USER_ID, user.getUserId());
     return user;
   }
+
+  public static User getUserFromAuthHeader(HttpServletRequest req) {
+    if (req == null || req.getHeader("Authorization") == null) {
+      return null;
+    }
+
+    String tok = req.getHeader("Authorization").replace("Bearer ", "").trim();
+
+    return Try.of(() -> JsonWebTokenFactory.getInstance().getJsonWebTokenService().parseToken(tok).getActiveUser()
+            .orElse(null)).getOrNull();
+
+
+  }
+
 
   public static User getUser(HttpSession session) {
     User user = null;
