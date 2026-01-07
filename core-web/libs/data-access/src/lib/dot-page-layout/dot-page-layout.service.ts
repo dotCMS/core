@@ -9,7 +9,6 @@ import {
     DotPageRender,
     DotTemplateDesigner,
     DotCMSAPIResponse,
-    DotLayout,
     DotPageRenderParameters
 } from '@dotcms/dotcms-models';
 
@@ -49,28 +48,5 @@ export class DotPageLayoutService {
                 DotCMSAPIResponse<DotPageRenderParameters>
             >(url, dotLayout, { params: httpParams })
             .pipe(map((response) => new DotPageRender(response.entity)));
-    }
-
-    /**
-     * Save the layout of a page
-     *
-     * @param {string} pageIdentifier
-     * @param {DotLayout} DotTemplateDesignerPayload
-     * @returns {Observable<DotPageRender>}
-     * @memberof DotPageLayoutService
-     */
-    saveLayout(pageIdentifier: string, dotLayout: DotTemplateDesigner) {
-        const url = `/api/v1/page/${pageIdentifier}/layout`;
-
-        const currentVariantName = this.dotSessionStorageService.getVariationId();
-
-        let httpParams = new HttpParams();
-        if (currentVariantName) {
-            httpParams = httpParams.set('variantName', currentVariantName);
-        }
-
-        return this.#http
-            .post<DotCMSAPIResponse<{ layout: DotLayout }>>(url, dotLayout, { params: httpParams })
-            .pipe(map((response) => response.entity));
     }
 }
