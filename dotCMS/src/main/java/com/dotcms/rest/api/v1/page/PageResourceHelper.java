@@ -51,7 +51,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
