@@ -1,11 +1,17 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, map } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotPageRender, DotPageRenderParameters, DotTemplateDesigner } from '@dotcms/dotcms-models';
+import {
+    DotPageRender,
+    DotTemplateDesigner,
+    DotCMSAPIResponse,
+    DotLayout,
+    DotPageRenderParameters
+} from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
@@ -17,7 +23,7 @@ import { DotSessionStorageService } from '../dot-session-storage/dot-session-sto
  */
 @Injectable()
 export class DotPageLayoutService {
-    private coreWebService = inject(CoreWebService);
+    readonly #http = inject(HttpClient);
     private readonly dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
@@ -29,26 +35,42 @@ export class DotPageLayoutService {
      * @memberof DotPageLayoutService
      */
     save(pageIdentifier: string, dotLayout: DotTemplateDesigner): Observable<DotPageRender> {
-        const requestOptions: DotRequestOptionsArgs = {
-            body: dotLayout,
-            method: 'POST',
-            url: `v1/page/${pageIdentifier}/layout`
-        };
+        const url = `/api/v1/page/${pageIdentifier}/layout`;
 
         const currentVariantName = this.dotSessionStorageService.getVariationId();
 
+        let httpParams = new HttpParams();
         if (currentVariantName) {
-            requestOptions.params = {
-                variantName: currentVariantName
-            };
+            httpParams = httpParams.set('variantName', currentVariantName);
         }
 
-        return this.coreWebService.requestView(requestOptions).pipe(
-            pluck('entity'),
-            map(
-                (dotPageRenderResponse: DotPageRenderParameters) =>
-                    new DotPageRender(dotPageRenderResponse)
-            )
-        );
+        return this.#http
+            .post<
+                DotCMSAPIResponse<DotPageRenderParameters>
+            >(url, dotLayout, { params: httpParams })
+            .pipe(map((response) => new DotPageRender(response.entity)));
+    }
+
+    /**
+     * Save the layout of a page
+     *
+     * @param {string} pageIdentifier
+     * @param {DotLayout} DotTemplateDesignerPayload
+     * @returns {Observable<DotPageRender>}
+     * @memberof DotPageLayoutService
+     */
+    saveLayout(pageIdentifier: string, dotLayout: DotTemplateDesigner) {
+        const url = `/api/v1/page/${pageIdentifier}/layout`;
+
+        const currentVariantName = this.dotSessionStorageService.getVariationId();
+
+        let httpParams = new HttpParams();
+        if (currentVariantName) {
+            httpParams = httpParams.set('variantName', currentVariantName);
+        }
+
+        return this.#http
+            .post<DotCMSAPIResponse<{ layout: DotLayout }>>(url, dotLayout, { params: httpParams })
+            .pipe(map((response) => response.entity));
     }
 }
