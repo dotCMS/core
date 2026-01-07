@@ -263,7 +263,7 @@ SELECT customer_id,
        context_site_id,
        toStartOfDay(utc_time) as day,
        (CASE
-           WHEN event_type = 'pageview' THEN url
+           WHEN event_type = 'pageview' THEN doc_path
            WHEN event_type = 'conversion' THEN conversion_name
            ELSE content_identifier
         END) as identifier,
@@ -327,7 +327,8 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
     title String,
 
     conversion_name String,
-    conversion_count UInt32
+    conversion_count UInt32,
+    events_count UInt32
 )
     ENGINE = SummingMergeTree
         PARTITION BY (customer_id)
@@ -396,19 +397,20 @@ WITH conversion AS (
                                                              e.context_user_id = conversion_time.context_user_id AND e.context_site_id = conversion_time.context_site_id
     WHERE event_type = 'conversion'
     group by context_user_id,utc_time, _timestamp, conversion_name
-    HAVING (_timestamp >  last_timestamp_previous_batch AND _timestamp <= now())
+    HAVING (_timestamp >=  last_timestamp_previous_batch AND _timestamp <= now())
 )
 SELECT
     toStartOfDay(conversion.conversion_time) as day,
     customer_id,
     cluster_id,
-    (CASE WHEN event_type = 'pageview' THEN url ELSE content_identifier END) as identifier,
+    (CASE WHEN event_type = 'pageview' THEN doc_path ELSE content_identifier END) as identifier,
     (CASE WHEN event_type = 'pageview' THEN page_title ELSE content_title END) as title,
     event_type,
     context_user_id,
     context_site_id,
     conversion.conversion_name as conversion_name,
-    count(*) AS conversion_count,
+    count(*) AS events_count,
+    count(DISTINCT identifier, title) AS conversion_count,
     max(conversion._timestamp) as last_timestamp,
     max(conversion.conversion_time) as last_conversion_time
 FROM clickhouse_test_db.events e
