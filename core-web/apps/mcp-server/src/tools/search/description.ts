@@ -1,157 +1,99 @@
 export const searchDescription = `
-Searches content using Lucene syntax. Use this tool to query dotCMS content using Lucene queries. Only indexed fields can be searched. See the documentation for Lucene syntax instructions.
+Universal search function for dotCMS content.
 
-Only fields that are indexed can be searched. System fields like "title" or "modDate" are always indexed. For custom fields, the field must have the System Indexed option checked in your Content Type definition. To search a custom field, you must prefix it with the content type variable name. For example, if you have a "Products" content type and a "productType" field, you would write:
+Use this function for ALL search operations.
+It performs a Drive Search API query (no Lucene syntax required) and returns raw API results.
 
-"+products.productType:etf"
+The function posts structured parameters directly to:
+POST /api/v1/drive/search
 
-For system fields, you do not need the content type prefix. For example:
+----------------------------------------
+Required / Common Parameters
+----------------------------------------
 
-"+title:bond"
+- assetPath (string)
+  Root path to search from.
+  Examples:
+  "//"                → entire system
+  "//SiteName/"       → specific site
 
-instead of
+- filters.text (string)
+  Free-text query string. May be empty for broad listings.
 
-"+products.title:bond".
+----------------------------------------
+Optional Parameters
+----------------------------------------
 
-A basic search term is written as "field:value". To make sure a term must be present, add "+" in front of it. To exclude a term, add "-". For example:
+- includeSystemHost (boolean)
+  Whether to include the system host in results.
 
-"+contentType:Blog +Blog.body:(+"investment" "JetBlue")"
+- filters.filterFolders (boolean)
+  If true, excludes folders from results.
 
-This means: must be a Blog, body must contain investment, body may contain JetBlue.
+- showFolders (boolean)
+  If true, explicitly includes folders in results.
 
-Operators include plus for required, minus for prohibited, AND written as "&&", OR written as "||", and NOT written as "!".
+- language (string[])
+  Language IDs as strings, e.g. ["1", "4600065"].
+  Defaults to the system default language if known, otherwise "1" (English).
+  Examples: ["1", "4600065"]
 
-Example using AND:
+- contentTypes (string[])
+  Optional list of content type variable names to restrict results.
+  Examples: ["article", "blog", "product"]
 
-"+Blog.body:("business" && "Apple")"
+- baseTypes (string[])
+  dotCMS base types to include.
+  Examples: ["HTMLPAGE", "FILEASSET", "CONTENT"]
 
-This finds blog posts with both the word business and Apple in the body.
+- archived (boolean)
+  Whether to include archived content.
 
-Example using OR:
+----------------------------------------
+Pagination & Sorting
+----------------------------------------
 
-"+Blog.body:("analyst" || "investment")"
+- offset (number)
+  Starting index for results (default: 0).
 
-This finds blog posts with either analyst or investment in the body.
+- maxResults (number)
+  Maximum number of results to return (default: 20).
 
-Example using NOT:
+- sortBy (string)
+  Sort expression, e.g. "modDate:desc".
 
-"+Blog.body:("investment" !"JetBlue")"
+----------------------------------------
+dotCMS Base Types Reference
+----------------------------------------
 
-This finds posts that have investment but do not have JetBlue.
+0: HTMLPAGE
+   Page-based content types.
 
-Wildcards are supported. Use "*" for multiple characters and "?" for a single character.
+1: FILEASSET
+   Uploaded files and media assets.
 
-Example multiple character wildcard:
+2: CONTENT
+   Standard structured content types.
 
-"+Employee.firstName:R*"
+3: WIDGET
+   Reusable widget instances sharing core code.
 
-This finds employees whose first name starts with R.
+4: KEY_VALUE
+   Key/value pair content types.
 
-Example single character wildcard:
+5: VANITY_URL
+   Vanity URL content types with extensible fields.
 
-"+Employee.firstName:Mari?"
+6: DOTASSET
+   Internal dotCMS assets without standard URL paths.
 
-This finds employees whose first name is Maria or Marie.
+7: PERSONA
+   Persona content types used for personalization.
 
-Fuzzy search is supported using a tilde "~".
+----------------------------------------
+Return Value
+----------------------------------------
 
-Example:
-
-"+title:dotCMS~"
-
-This finds matches that are close to dotCMS, like dotcms or dotCMSs.
-
-Use square brackets with TO for a value range. Use the strict date format "yyyyMMddHHmmss" for dates.
-
-Example number range:
-
-"+News.title_dotraw:[A TO C]*"
-
-This finds News items with a title starting A through C.
-
-Example date range:
-
-"+News.sysPublishDate:[20240101000000 TO 20241231235959]"
-
-This finds News items published in 2024.
-
-Use "catchall" to search all fields.
-
-Example:
-
-"+catchall:*seo*"
-
-This searches for seo anywhere in the content.
-
-Use a caret "^" to boost some terms so they rank higher.
-
-Example:
-
-"+News.title:("American"^10 "invest"^2)"
-
-This gives more weight to results with American than invest.
-
-Lucene treats a space between terms as OR by default. Always use explicit "||" or "&&" for clarity if needed.
-
-Example:
-
-"+Blog.body:("finance" "investment")"
-
-This means finance OR investment.
-
-Better:
-
-"+Blog.body:("finance" && "investment")"
-
-if you want both.
-
-When you want to match multiple values for the same field, wrap them in parentheses.
-
-Example:
-
-"+field:(term1 || term2)"
-
-or
-
-"+(field:term1 field:term2)"
-
-When you need an exact phrase, use double quotes.
-
-Example:
-
-"+"Blog.body":"final exam""
-
-This matches final exam as a whole phrase in that order.
-
-Lucene does not directly check for null or empty values. If you need to find records with any value in a field, you can use a range hack. For example:
-
-"+typeVar.binaryVal:([0 TO 9] [a TO z] [A TO Z])"
-
-Always escape special characters so they are not treated as operators. Use a backslash. For example.
-
-Lucene syntax does not let you search relationships directly. If you need to work with related content, use "$dotcontent.pullRelated()" in Velocity or use the Content API "depth" parameter to pull related contentlets.
-
-Example queries you can use for reference:
-
-Find blog posts about investment but not JetBlue:
-
-"+contentType:Blog +Blog.body:("investment" !"JetBlue")"
-
-Find news with title starting A through C:
-
-"+contentType:News +News.title_dotraw:[A TO C]*"
-
-Find employees whose first name starts with R but last name does not start with A:
-
-"+contentType:Employee +(Employee.firstName:R*) -(Employee.lastName:A*)"
-
-Do a fuzzy search for dotCMS in the title:
-
-"+title:dotCMS~"
-
-Find news published in 2024:
-
-"+News.sysPublishDate:[20240101000000 TO 20241231235959]"
-
-When writing dotCMS Lucene queries, always use the correct content type and field format, explicit operators, escape special characters, stick to the strict date format, and do not generate raw OpenSearch JSON unless you really need advanced features.
+Returns the raw Drive Search API response.
+No post-processing or filtering is applied by this tool.
 `;
