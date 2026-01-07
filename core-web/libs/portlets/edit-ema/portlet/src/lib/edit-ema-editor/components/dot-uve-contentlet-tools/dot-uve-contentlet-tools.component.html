@@ -62,7 +62,7 @@
 
             @if (showStyleEditorOption()) {
                 <p-button
-                    (click)="selectContent.emit(context.contentlet)"
+                    (click)="setSelectedContent()"
                     data-testId="palette-button"
                     [rounded]="true"
                     [raised]="true"
