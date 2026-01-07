@@ -87,7 +87,8 @@ export class DotNavigationService {
                     if (this.dotRouterService.currentPortlet.id) {
                         this.#globalStore.setActiveMenu({
                             portletId: this.dotRouterService.currentPortlet.id,
-                            shortParentMenuId: this.dotRouterService.queryParams['mId']
+                            shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                            breadcrumbs: this.#globalStore.breadcrumbs()
                         });
                     }
                 });

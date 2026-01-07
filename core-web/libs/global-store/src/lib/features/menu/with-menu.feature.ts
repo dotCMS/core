@@ -30,7 +30,7 @@ const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
  */
 export interface SetActiveMenuParams {
     portletId: string;
-    shortParentMenuId: string;
+    shortParentMenuId?: string;
     bookmark?: boolean;
     breadcrumbs?: MenuItem[];
 }
@@ -111,6 +111,20 @@ export function withMenu() {
             const entityMap = computed(() => menuItemsEntityMap());
 
             /**
+             * Computed signal that returns a label-to-menuItem lookup map.
+             * Enables O(1) lookups by label instead of O(n) iteration.
+             *
+             * @returns Record mapping menu item labels to their entities
+             */
+            const menuItemsByLabel = computed(() => {
+                const items = menuItemsEntities();
+                return items.reduce<Record<string, MenuItemEntity>>((acc, item) => {
+                    acc[item.label] = item;
+                    return acc;
+                }, {});
+            });
+
+            /**
              * Computed signal that returns entity keys for debugging.
              * Shows the ID (key) of each menu item entity.
              *
@@ -140,6 +154,7 @@ export function withMenu() {
                 menuGroup,
                 activeMenuItem,
                 entityMap,
+                menuItemsByLabel,
                 entityKeys,
                 firstMenuItem,
                 isGroupActive
@@ -274,10 +289,12 @@ export function withMenu() {
                 }
             };
             /**
-             * Loads menu and sets active item based on current URL.
-             * Uses entity map to find the matching menu item without iterating keys.
+             * Activates menu item using multi-strategy fallback approach.
+             * 1. Composite key lookup (portletId + shortParentMenuId)
+             * 2. Breadcrumb label matching (if bookmark flag enabled)
+             * 3. ID fallback (iterate entityMap) - Last resort
              *
-             * @param params - Object containing portletId, shortParentMenuId, bookmark flag, and breadcrumbs
+             * @param params - Navigation parameters with portletId, shortParentMenuId, bookmark flag, and breadcrumbs
              */
             const setActiveMenu = ({
                 portletId,
@@ -312,9 +329,11 @@ export function withMenu() {
                     const firstBreadcrumbWithUrl = breadcrumbs.find((bc) => bc.url);
 
                     if (firstBreadcrumbWithUrl) {
-                        const foundMenuItem = Object.values(entityMap).find(
-                            (item) => item.label === firstBreadcrumbWithUrl.label
-                        );
+                        // O(1) lookup by label
+                        const menuItemsByLabelMap = store.menuItemsByLabel();
+
+                        const foundMenuItem =
+                            menuItemsByLabelMap[firstBreadcrumbWithUrl.label ?? ''];
 
                         if (foundMenuItem) {
                             const key = `${foundMenuItem.id}__${foundMenuItem.parentMenuId?.substring(0, 4)}`;
