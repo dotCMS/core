@@ -3,7 +3,7 @@ services:
   # Analytics Database (separate from dotCMS DB)
   analytics-postgres:
     container_name: analytics-postgres
-    image: postgres:13.2
+    image: pgvector/pgvector:pg18
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRESQL_DB:-postgres}
@@ -14,7 +14,7 @@ services:
     networks:
       - analytics-net
     volumes:
-      - analytics-db-data:/var/lib/postgresql/data
+      - analytics-db-data:/var/lib/postgresql/18/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USER:-postgres} -d ${POSTGRESQL_DB:-postgres} -h localhost -p 5432"]
       interval: 10s
@@ -25,14 +25,14 @@ services:
   dotcms-db:
     profiles: ["full"]
     container_name: dotcms-db
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
       POSTGRES_USER: 'dotcmsdbuser'
       POSTGRES_PASSWORD: 'password'
       POSTGRES_DB: 'dotcms'
     volumes:
-      - dotcms-db-data:/var/lib/postgresql/data
+      - dotcms-db-data:/var/lib/postgresql/18/data
     networks:
       - dotcms-net
     healthcheck:

@@ -68,14 +68,14 @@ services:
       - "8443:8443"
 
   db-sender:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata_sender:/var/lib/postgresql/data
+      - dbdata_sender:/var/lib/postgresql/18/data
     networks:
       - db_net_sender
 
@@ -133,13 +133,13 @@ services:
       - "8444:8443"
 
   db-receiver:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata_receiver:/var/lib/postgresql/data
+      - dbdata_receiver:/var/lib/postgresql/18/data
     networks:
       - db_net_receiver        

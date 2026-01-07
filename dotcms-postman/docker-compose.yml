@@ -35,7 +35,7 @@ services:
         links:
             - elasticsearch-test
     db-test:
-        image: postgres:15
+        image: pgvector/pgvector:pg18
         command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
         environment:
             POSTGRES_USER: ${DB_USER:-postgres}
@@ -44,7 +44,7 @@ services:
         volumes:
             - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
         tmpfs:
-            - /var/lib/postgresql/data:rw
+            - /var/lib/postgresql/18/data:rw
         networks:
             - db_net
         ports:

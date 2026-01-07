@@ -73,13 +73,13 @@ services:
       - redis_net
 
   db:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:pg18
     command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
     environment:
         "POSTGRES_USER": 'dotcmsdbuser'
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/18/data
     networks:
       - db_net
