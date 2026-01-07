@@ -1,3 +1,4 @@
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 import { defineConfig } from 'vite';
 
 import { resolve } from 'path';
@@ -11,6 +12,7 @@ export default defineConfig(() => {
     const outDir = resolve(__dirname, '../../dist/libs/edit-content-bridge');
 
     return {
+        plugins: [nxViteTsPaths()],
         build: {
             // Explicitly set outDir to prevent Vite from resolving paths incorrectly
             // This is critical for reproducible builds, especially when dist folders
@@ -22,7 +24,12 @@ export default defineConfig(() => {
                 formats: ['iife'],
                 fileName: () => 'edit-content-bridge.js'
             },
-            minify: true
+            minify: true,
+            rollupOptions: {
+                // Externalize Angular and UI dependencies since they're not needed in the Dojo IIFE build
+                // The IIFE only uses DojoFormBridge, not AngularFormBridge
+                external: ['@angular/core', '@angular/forms', 'primeng/dynamicdialog', '@dotcms/ui']
+            }
         }
     };
 });

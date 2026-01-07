@@ -1,15 +1,24 @@
+import { Subscription } from 'rxjs';
+
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, computed } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    inject,
+    OnInit,
+    OnDestroy,
+    computed,
+    signal
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { MessagesModule } from 'primeng/messages';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TooltipModule } from 'primeng/tooltip';
+import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotUsageService, MetricData, UsageSummary } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-
-import { DotUsageService, MetricData } from '../services/dot-usage.service';
 
 @Component({
     selector: 'lib-dot-usage-shell',
@@ -19,34 +28,58 @@ import { DotUsageService, MetricData } from '../services/dot-usage.service';
         CardModule,
         MessagesModule,
         SkeletonModule,
-        TooltipModule,
-        DotMessagePipe
+        DotMessagePipe,
+        ToolbarModule
     ],
     templateUrl: './dot-usage-shell.component.html',
     styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotUsageShellComponent implements OnInit {
+export class DotUsageShellComponent implements OnInit, OnDestroy {
     private readonly usageService = inject(DotUsageService);
+    private dataSubscription?: Subscription;
 
-    // Reactive state from service
-    readonly summary = this.usageService.summary;
-    readonly loading = this.usageService.loading;
-    readonly error = this.usageService.error;
-    readonly errorStatus = this.usageService.errorStatus;
+    // UI state managed by component
+    readonly summary = signal<UsageSummary | null>(null);
+    readonly loading = signal<boolean>(false);
+    readonly error = signal<string | null>(null);
+    readonly errorStatus = signal<number | null>(null);
 
     // Computed values for display
     readonly hasData = computed(() => this.summary() !== null);
+    readonly lastUpdated = signal<Date | null>(null);
+
     ngOnInit(): void {
         this.loadData();
     }
 
+    ngOnDestroy(): void {
+        if (this.dataSubscription) {
+            this.dataSubscription.unsubscribe();
+        }
+    }
+
     loadData(): void {
-        this.usageService.getSummary().subscribe({
-            next: () => {
-                // Data is automatically updated via signals
+        // Unsubscribe from previous subscription if it exists
+        if (this.dataSubscription) {
+            this.dataSubscription.unsubscribe();
+        }
+
+        this.loading.set(true);
+        this.error.set(null);
+        this.errorStatus.set(null);
+
+        this.dataSubscription = this.usageService.getSummary().subscribe({
+            next: (summary) => {
+                this.summary.set(summary);
+                this.loading.set(false);
+                this.lastUpdated.set(new Date());
             },
             error: (error) => {
+                const errorMessage = this.usageService.getErrorMessage(error);
+                this.error.set(errorMessage);
+                this.errorStatus.set(error.status || null);
+                this.loading.set(false);
                 console.error('Failed to load usage data:', error);
             }
         });
@@ -57,7 +90,9 @@ export class DotUsageShellComponent implements OnInit {
     }
 
     onRetry(): void {
-        this.usageService.reset();
+        this.summary.set(null);
+        this.error.set(null);
+        this.errorStatus.set(null);
         this.loadData();
     }
 
