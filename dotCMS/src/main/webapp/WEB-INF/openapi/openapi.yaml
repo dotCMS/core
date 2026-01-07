@@ -64,6 +64,8 @@ tags:
   name: Page
 - description: Content relationship management
   name: Relationships
+- description: Endpoints for service-to-service JWT authentication
+  name: Service Authentication
 - description: Endpoints for managing sites (hosts) and their configuration
   name: Sites
 - description: System configuration and company settings
@@ -11911,6 +11913,97 @@ paths:
       summary: Load users and roles by role ID
       tags:
       - Roles
+  /v1/service-auth/health:
+    get:
+      description: "Simple health check endpoint for Kubernetes liveness/readiness\
+        \ probes. Returns 200 if enabled, 503 if disabled."
+      operationId: serviceAuthHealthCheck
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Service authentication is healthy
+        "503":
+          content:
+            application/json: {}
+          description: Service authentication is not available
+      summary: Health check for service authentication
+      tags:
+      - Service Authentication
+  /v1/service-auth/status:
+    get:
+      description: Returns whether service-to-service authentication is enabled and
+        the system is ready to issue/validate tokens.
+      operationId: getServiceAuthStatus
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  enabled: true
+                  ready: true
+                  message: Service authentication is enabled and ready
+                errors: []
+                messages: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityServiceAuthStatusView"
+          description: Service authentication status
+      summary: Check service authentication status
+      tags:
+      - Service Authentication
+  /v1/service-auth/validate:
+    post:
+      description: "Validates a JWT token issued for service-to-service authentication.\
+        \ Returns the token claims if valid, or an error if invalid/expired. External\
+        \ microservices should call this endpoint to verify tokens received from dotCMS\
+        \ before processing requests."
+      operationId: validateServiceToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceTokenValidationForm"
+        description: Token validation request
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                entity:
+                  valid: true
+                  claims:
+                    tokenId: 550e8400-e29b-41d4-a716-446655440000
+                    serviceId: wa11y-checker
+                    issuer: dotcms-cluster-1
+                    audience: wa11y-checker
+                    sourceCluster: dotcms-cluster-1
+                    issuedAt: 2024-01-15T10:30:00Z
+                    expiresAt: 2024-01-15T10:35:00Z
+                errors: []
+                messages: []
+              schema:
+                $ref: "#/components/schemas/ResponseEntityServiceTokenValidationView"
+          description: Token validation result
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - missing token or malformed request
+        "401":
+          content:
+            application/json: {}
+          description: "Token validation failed - expired, invalid signature, or wrong\
+            \ audience"
+        "503":
+          content:
+            application/json: {}
+          description: Service authentication is not enabled
+      summary: Validate a service JWT token
+      tags:
+      - Service Authentication
   /v1/site:
     get:
       operationId: sites
@@ -25203,6 +25296,52 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityServiceAuthStatusView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ServiceAuthStatus"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityServiceTokenValidationView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ServiceTokenValidationResult"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySingleExperimentView:
       type: object
       properties:
@@ -26784,6 +26923,85 @@ components:
           type: string
         url:
           type: string
+    ServiceAuthStatus:
+      type: object
+      description: Status of service-to-service authentication
+      properties:
+        enabled:
+          type: boolean
+          description: Whether service authentication is enabled
+          example: true
+        message:
+          type: string
+          description: Status message
+          example: Service authentication is enabled and ready
+        ready:
+          type: boolean
+          description: Whether the service is ready to issue/validate tokens
+          example: true
+    ServiceTokenClaimsView:
+      type: object
+      description: Validated claims from the service JWT
+      properties:
+        audience:
+          type: string
+          description: The intended audience/target service
+          example: wa11y-checker
+        expiresAt:
+          type: integer
+          format: int64
+          description: When the token expires (epoch ms)
+          example: 1705316100000
+        issuedAt:
+          type: integer
+          format: int64
+          description: When the token was issued (epoch ms)
+          example: 1705315800000
+        issuer:
+          type: string
+          description: The issuer (dotCMS cluster ID)
+          example: dotcms-cluster-1
+        serviceId:
+          type: string
+          description: The service ID this token was issued for
+          example: wa11y-checker
+        sourceCluster:
+          type: string
+          description: The source cluster that issued this token
+          example: dotcms-cluster-1
+        tokenId:
+          type: string
+          description: Unique token identifier
+          example: 550e8400-e29b-41d4-a716-446655440000
+    ServiceTokenValidationForm:
+      type: object
+      description: Request to validate a service-to-service JWT token
+      properties:
+        expectedAudience:
+          type: string
+          description: "Expected audience claim. If provided, validation will fail\
+            \ if the token's audience doesn't match. This ensures tokens intended\
+            \ for one service can't be used with another."
+          example: wa11y-checker
+        token:
+          type: string
+          description: The JWT token to validate
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      required:
+      - token
+    ServiceTokenValidationResult:
+      type: object
+      description: Result of service token validation
+      properties:
+        claims:
+          $ref: "#/components/schemas/ServiceTokenClaimsView"
+        error:
+          type: string
+          description: Error message if validation failed
+        valid:
+          type: boolean
+          description: Whether the token is valid
+          example: true
     SetForm:
       type: object
       properties:
