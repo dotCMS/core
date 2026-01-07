@@ -180,9 +180,9 @@ const PORTLETS_IFRAME = [
                 children: [
                     {
                         loadChildren: () =>
-                            import(
-                                '@components/dot-contentlet-editor/dot-contentlet-editor.routes'
-                            ).then((m) => m.dotContentletEditorRoutes),
+                            import('@components/dot-contentlet-editor/dot-contentlet-editor.routes').then(
+                                (m) => m.dotContentletEditorRoutes
+                            ),
                         path: 'new'
                     },
                     {
