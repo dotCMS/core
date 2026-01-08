@@ -20,12 +20,3 @@ export const initialMenuSlice: MenuSlice = {
     isNavigationCollapsed: true,
     openParentMenuId: null
 };
-
-/**
- * Map for replacing legacy section IDs with current ones.
- * Maintains backward compatibility for bookmarks and old URLs.
- */
-export const REPLACE_SECTIONS_MAP: Record<string, string> = {
-    'edit-page': 'site-browser',
-    analytics: 'analytics-dashboard'
-};

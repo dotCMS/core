@@ -21,7 +21,7 @@ import { MenuItem } from 'primeng/api';
 import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { initialMenuSlice, menuConfig, REPLACE_SECTIONS_MAP } from './menu.slice';
+import { initialMenuSlice, menuConfig } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
 
@@ -306,11 +306,10 @@ export function withMenu() {
                     return;
                 }
 
-                const resolvedPortletId = REPLACE_SECTIONS_MAP[portletId] || portletId;
                 const entityMap = store.entityMap();
 
                 // Direct lookup using the composite key (fastest path)
-                const compositeKey = `${resolvedPortletId}__${shortParentMenuId}`;
+                const compositeKey = `${portletId}__${shortParentMenuId}`;
                 const item = entityMap[compositeKey];
 
                 if (item) {
@@ -345,7 +344,7 @@ export function withMenu() {
 
                 // Fallback to ID matching for old bookmarks without mId
                 const foundItem = Object.values(entityMap).find(
-                    (item) => item.id === resolvedPortletId || item.id === portletId
+                    (item) => item.id === portletId || item.id === portletId
                 );
 
                 if (foundItem) {
