@@ -12,9 +12,9 @@ interface RenderMode {
 }
 
 @Component({
-    selector: 'dot-new-render-mode-property',
-    templateUrl: './new-render-mode-property.component.html',
-    styleUrls: ['./new-render-mode-property.component.scss'],
+    selector: 'dot-render-mode-property',
+    templateUrl: './render-mode-property.component.html',
+    styleUrls: ['./render-mode-property.component.scss'],
     standalone: false
 })
 export class NewRenderModePropertyComponent {
