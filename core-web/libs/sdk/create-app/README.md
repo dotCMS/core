@@ -47,19 +47,19 @@ This CLI solves that by offering:
 Run using npx (recommended):
 
 ```sh
-npx create-dotcms-app <project-name>
+npx @dotcms/create-app <project-name>
 ```
 
 Or install cli globally
 
 ```sh
-npm install -g @dotcms/sdk-create-app
+npm install -g @dotcms/create-app
 ```
 
 ## Usage
 
 ```sh
-npx create-dotcms-app my-dotcms-site
+npx @dotcms/create-app <project-name>
 ```
 
 This will:
@@ -88,8 +88,12 @@ API Token : YOUR_API_TOKEN
 create-dotcms-app <project-name> [options]
 ```
 
-| Option                   | Description                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------ |
-| `-f, --framework <name>` | Skip prompts and directly choose a framework. Must be one of: `nextjs`, `react`, `vue`, `svelte`, etc. |
-| `-h, --help`             | Show help menu                                                                                         |
-| `-V, --version`          | Show CLI version                                                                                       |
+| Option                   | Description                                                                                                     |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------|
+| `-f, --framework <name>` | Skip prompts and directly choose a framework. Must be one of: `nextjs`, `angular`, `angular-ssr`, `astro`, etc. |
+| `-d, --directory`        | Project Directory                                                                                               |
+| `--local`                | Use local dotCMS instance using docker:                                                                         |
+| `-u, --username`         | dotCMS instance username (skip in case of local)                                                                |
+| `-p, --password`         | dotCMS instance password (skip in case of local)
+| `--url`                  | dotCMS instance url (skip in case of local)                                                                     |
+| `-V, --version`          | Show CLI version                                                                                                |
