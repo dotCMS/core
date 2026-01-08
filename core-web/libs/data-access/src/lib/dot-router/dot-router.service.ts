@@ -329,7 +329,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     isEditPage(): boolean {
-        return this.currentPortlet.id === 'edit-page';
+        return this.currentPortlet.id === 'site-browser';
     }
 
     /**
@@ -476,5 +476,8 @@ const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = 
         }
 
         return `${urlSegments[0]}-${urlSegments[1]}`;
+    },
+    'edit-page': () => {
+        return 'site-browser';
     }
 };

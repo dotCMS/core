@@ -419,33 +419,10 @@ describe('withMenu Feature', () => {
             expect(finalActive).toEqual(initialActive);
         });
 
-        it('should resolve legacy section IDs using REPLACE_SECTIONS_MAP', () => {
-            // Add items that match the mapped sections
-            const menuWithMappedSections: DotMenu[] = [
+        it('should resolve multi-segment portlet IDs correctly', () => {
+            // Add items that match the multi-segment portlets
+            const menuWithMultiSegmentPortlets: DotMenu[] = [
                 ...mockMenuItems,
-                {
-                    active: false,
-                    id: 'CONTENT',
-                    label: 'Content',
-                    isOpen: false,
-                    menuItems: [
-                        {
-                            active: false,
-                            ajax: true,
-                            angular: true,
-                            id: 'site-browser',
-                            label: 'Site Browser',
-                            url: '/c/site-browser',
-                            menuLink: '/c/site-browser',
-                            parentMenuId: 'CONTENT'
-                        }
-                    ],
-                    name: 'Content',
-                    tabDescription: 'Content',
-                    tabIcon: 'pi pi-folder',
-                    tabName: 'Content',
-                    url: '/content'
-                },
                 {
                     active: false,
                     id: 'MARKETING',
@@ -481,15 +458,7 @@ describe('withMenu Feature', () => {
                 }
             ];
 
-            store.loadMenu(menuWithMappedSections);
-
-            // Test legacy ID 'edit-page' maps to 'site-browser'
-            store.setActiveMenu({ portletId: 'edit-page', shortParentMenuId: 'CONT' });
-            expect(store.activeMenuItem()?.id).toBe('site-browser');
-
-            // Test current ID still works
-            store.setActiveMenu({ portletId: 'site-browser', shortParentMenuId: 'CONT' });
-            expect(store.activeMenuItem()?.id).toBe('site-browser');
+            store.loadMenu(menuWithMultiSegmentPortlets);
 
             // Test analytics-dashboard ID works directly
             // getPortletId() now resolves /analytics/dashboard → analytics-dashboard directly

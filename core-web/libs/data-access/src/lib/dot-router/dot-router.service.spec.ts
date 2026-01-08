@@ -224,6 +224,7 @@ describe('DotRouterService', () => {
 
     it('should return true if edit page url', () => {
         router.routerState.snapshot.url = 'edit-page';
+        expect(service.currentPortlet.id).toBe('site-browser');
         expect(service.isEditPage()).toBe(true);
     });
 
@@ -318,6 +319,13 @@ describe('DotRouterService', () => {
         expect(service.getPortletId('/')).toBe('');
         expect(service.getPortletId('/c/')).toBe('');
         expect(service.getPortletId('/#/')).toBe('');
+    });
+
+    it('should resolve legacy portlet IDs using custom resolver', () => {
+        // Test legacy ID 'edit-page' maps to 'site-browser'
+        expect(service.getPortletId('/c/edit-page')).toBe('site-browser');
+        expect(service.getPortletId('/c/edit-page/content')).toBe('site-browser');
+        expect(service.getPortletId('#/c/edit-page?url=test')).toBe('site-browser');
     });
 
     it('should navigate replacing URL params', () => {
