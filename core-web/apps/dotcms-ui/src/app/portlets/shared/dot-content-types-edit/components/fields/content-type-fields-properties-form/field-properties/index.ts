@@ -6,4 +6,4 @@ export * from './hint-property';
 export * from './name-property';
 export * from './regex-check-property';
 export * from './values-property';
-export * from './render-mode-proptery';
+export * from './render-mode-property';
