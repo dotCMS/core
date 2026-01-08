@@ -209,4 +209,40 @@ describe('DotPageApiService', () => {
             expect(request.body).toEqual({ contentlet });
         });
     });
+
+    describe('saveStyleProperties', () => {
+        it('should send a POST request with correct payload structure', () => {
+            const payload = {
+                pageId: 'test-page-123',
+                containerIdentifier: 'container-id-456',
+                containerUUID: 'container-uuid-789',
+                contentletIdentifier: 'contentlet-id-abc',
+                styleProperties: {
+                    'font-size': '16px',
+                    color: '#000000'
+                }
+            };
+
+            spectator.service.saveStyleProperties(payload).subscribe();
+
+            const { request } = spectator.expectOne(
+                '/api/v1/page/test-page-123/content',
+                HttpMethod.POST
+            );
+
+            expect(request.body).toEqual([
+                {
+                    identifier: 'container-id-456',
+                    uuid: 'container-uuid-789',
+                    contentletsId: ['contentlet-id-abc'],
+                    styleProperties: {
+                        'contentlet-id-abc': {
+                            'font-size': '16px',
+                            color: '#000000'
+                        }
+                    }
+                }
+            ]);
+        });
+    });
 });
