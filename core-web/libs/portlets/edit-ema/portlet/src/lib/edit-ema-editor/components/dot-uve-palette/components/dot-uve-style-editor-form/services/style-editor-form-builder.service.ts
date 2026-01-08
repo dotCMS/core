@@ -24,15 +24,17 @@ export class StyleEditorFormBuilderService {
      * Builds a FormGroup from a StyleEditorFormSchema
      *
      * @param schema - The style editor form schema
+     * @param initialValues - Optional initial values to populate the form with
      * @returns A FormGroup with controls for all fields in the schema
      */
-    buildForm(schema: StyleEditorFormSchema): FormGroup {
+    buildForm(schema: StyleEditorFormSchema, initialValues?: Record<string, unknown>): FormGroup {
         const formControls: Record<string, AbstractControl> = {};
 
         schema.sections.forEach((section: StyleEditorSectionSchema) => {
             section.fields.forEach((field: StyleEditorFieldSchema) => {
                 const fieldKey = field.id;
-                const defaultValue = this.getDefaultValue(field);
+                // Use initial value if available, otherwise use default value
+                const defaultValue = initialValues?.[fieldKey] ?? this.getDefaultValue(field);
 
                 switch (field.type) {
                     case STYLE_EDITOR_FIELD_TYPES.DROPDOWN:
@@ -41,7 +43,11 @@ export class StyleEditorFormBuilderService {
 
                     case STYLE_EDITOR_FIELD_TYPES.CHECKBOX_GROUP: {
                         const options = field.config?.options || [];
-                        const checkboxDefaults = this.getCheckboxGroupDefaultValue(field.config);
+                        // For checkbox groups, merge initial values with defaults
+                        const checkboxDefaults =
+                            (initialValues?.[fieldKey] as
+                                | StyleEditorCheckboxDefaultValue
+                                | undefined) ?? this.getCheckboxGroupDefaultValue(field.config);
                         const checkboxGroupControls: Record<string, FormControl> = {};
 
                         options.forEach((option) => {
