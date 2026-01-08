@@ -80,6 +80,6 @@ services:
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata:/var/lib/postgresql/18/data
+      - dbdata:/var/lib/postgresql
     networks:
       - db_net

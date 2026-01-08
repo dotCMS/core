@@ -75,7 +75,7 @@ services:
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata_sender:/var/lib/postgresql/18/data
+      - dbdata_sender:/var/lib/postgresql
     networks:
       - db_net_sender
 
@@ -140,6 +140,6 @@ services:
         "POSTGRES_PASSWORD": 'password'
         "POSTGRES_DB": 'dotcms'
     volumes:
-      - dbdata_receiver:/var/lib/postgresql/18/data
+      - dbdata_receiver:/var/lib/postgresql
     networks:
       - db_net_receiver        

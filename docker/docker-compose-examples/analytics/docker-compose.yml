@@ -14,7 +14,7 @@ services:
     networks:
       - analytics-net
     volumes:
-      - analytics-db-data:/var/lib/postgresql/18/data
+      - analytics-db-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRESQL_USER:-postgres} -d ${POSTGRESQL_DB:-postgres} -h localhost -p 5432"]
       interval: 10s
@@ -32,7 +32,7 @@ services:
       POSTGRES_PASSWORD: 'password'
       POSTGRES_DB: 'dotcms'
     volumes:
-      - dotcms-db-data:/var/lib/postgresql/18/data
+      - dotcms-db-data:/var/lib/postgresql
     networks:
       - dotcms-net
     healthcheck:

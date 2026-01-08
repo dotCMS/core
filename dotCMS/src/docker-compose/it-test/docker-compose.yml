@@ -50,7 +50,7 @@ services:
             'POSTGRES_PASSWORD': ${DB_PWD:-postgres}
             'POSTGRES_DB': ${DB_DB:-dotcms}
         volumes:
-            - dbdata-test:/var/lib/postgresql/18/data
+            - dbdata-test:/var/lib/postgresql
             - ./initdb.sh:/docker-entrypoint-initdb.d/initdb.sh
         networks:
             - db_net

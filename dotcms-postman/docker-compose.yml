@@ -44,7 +44,7 @@ services:
         volumes:
             - ./setup/db/postgres/init-scripts:/docker-entrypoint-initdb.d/
         tmpfs:
-            - /var/lib/postgresql/18/data:rw
+            - /var/lib/postgresql:rw
         networks:
             - db_net
         ports:
