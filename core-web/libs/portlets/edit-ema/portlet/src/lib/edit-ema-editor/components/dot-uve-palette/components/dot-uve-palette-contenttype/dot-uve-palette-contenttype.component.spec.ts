@@ -1,10 +1,15 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
+import { By } from '@angular/platform-browser';
+
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotUVEPaletteContenttypeComponent } from './dot-uve-palette-contenttype.component';
+
+import { DotCMSContentTypePalette } from '../../models';
 
 @Component({
     selector: 'dot-test-host',
@@ -211,6 +216,46 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             expect(chevronIcon).toBeTruthy();
             expect(chevronIcon).toHaveClass('pi');
             expect(chevronIcon).toHaveClass('pi-chevron-right');
+        });
+    });
+
+    describe('Tooltip behavior', () => {
+        it('should enable tooltip when contentType is disabled', () => {
+            const disabledContentType: DotCMSContentTypePalette = {
+                ...spectator.hostComponent.contentType,
+                disabled: true
+            };
+
+            spectator.setHostInput({
+                contentType: disabledContentType as unknown as DotCMSContentType
+            });
+            spectator.detectChanges();
+
+            const contentDebugEl = spectator.fixture.debugElement.query(By.css('.content'));
+            const tooltip = contentDebugEl.injector.get(Tooltip);
+
+            expect(tooltip).toBeTruthy();
+            expect(tooltip.disabled).toBe(false);
+            expect(tooltip.content).toBe('not allowed on this page');
+        });
+
+        it('should disable tooltip when contentType is not disabled', () => {
+            const enabledContentType: DotCMSContentTypePalette = {
+                ...spectator.hostComponent.contentType,
+                disabled: false
+            };
+
+            spectator.setHostInput({
+                contentType: enabledContentType as unknown as DotCMSContentType
+            });
+            spectator.detectChanges();
+
+            const contentDebugEl = spectator.fixture.debugElement.query(By.css('.content'));
+            const tooltip = contentDebugEl.injector.get(Tooltip);
+
+            expect(tooltip).toBeTruthy();
+            expect(tooltip.disabled).toBe(true);
+            expect(tooltip.content).toBe('not allowed on this page');
         });
     });
 

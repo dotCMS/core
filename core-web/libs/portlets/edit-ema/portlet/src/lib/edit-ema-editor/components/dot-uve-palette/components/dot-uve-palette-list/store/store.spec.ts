@@ -2,6 +2,16 @@ import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+jest.mock('../../../utils', () => {
+    // jest.requireActual is typed as unknown, cast so we can spread and reference exports
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const actual = jest.requireActual('../../../utils') as any;
+    return {
+        ...actual,
+        buildPaletteFavorite: jest.fn(actual.buildPaletteFavorite)
+    };
+});
+
 import {
     DotESContentService,
     DotFavoriteContentTypeService,
@@ -12,12 +22,14 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms
 
 import { DotPaletteListStore } from './store';
 
+import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
+    DotCMSContentTypePalette,
     DotPaletteListStatus,
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
-import { EMPTY_PAGINATION } from '../../../utils';
+import { buildPaletteFavorite, EMPTY_PAGINATION } from '../../../utils';
 
 // ===== Mock Data =====
 
@@ -65,6 +77,7 @@ describe('DotPaletteListStore', () => {
     let dotESContentService: jest.Mocked<DotESContentService>;
     let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
     let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
+    let uveStore: { $allowedContentTypes: jest.Mock };
 
     // ===== Test Helper Functions =====
 
@@ -139,6 +152,13 @@ describe('DotPaletteListStore', () => {
         providers: [
             DotPaletteListStore,
             {
+                provide: UVEStore,
+                useValue: {
+                    // Default to empty map so favorites are marked as disabled unless tests override.
+                    $allowedContentTypes: jest.fn().mockReturnValue({})
+                }
+            },
+            {
                 provide: DotLocalstorageService,
                 useValue: {
                     getItem: jest.fn().mockReturnValue(null),
@@ -157,6 +177,7 @@ describe('DotPaletteListStore', () => {
         dotESContentService = spectator.inject(DotESContentService);
         dotFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
         dotLocalstorageService = spectator.inject(DotLocalstorageService);
+        uveStore = spectator.inject(UVEStore) as unknown as { $allowedContentTypes: jest.Mock };
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
@@ -451,10 +472,10 @@ describe('DotPaletteListStore', () => {
                 expect(dotFavoriteContentTypeService.add).toHaveBeenCalledWith(mockContentTypes[0]);
                 // Favorites are sorted alphabetically by name: Blog, Events, News
                 const expectedOrder = [
-                    mockContentTypes[0], // Blog
-                    extraFavorite, // Events
-                    mockContentTypes[1] // News
-                ];
+                    { ...mockContentTypes[0], disabled: true }, // Blog
+                    { ...extraFavorite, disabled: true }, // Events
+                    { ...mockContentTypes[1], disabled: true } // News
+                ] as DotCMSContentTypePalette[];
                 expect(store.contenttypes()).toEqual(expectedOrder);
             });
 
@@ -477,7 +498,24 @@ describe('DotPaletteListStore', () => {
                 expect(dotFavoriteContentTypeService.remove).toHaveBeenCalledWith(
                     mockContentTypes[0].id
                 );
-                expect(store.contenttypes()).toEqual(remainingFavorites);
+                expect(store.contenttypes()).toEqual([
+                    { ...remainingFavorites[0], disabled: true }
+                ] as DotCMSContentTypePalette[]);
+            });
+
+            it('should pass allowedContentTypes to buildPaletteFavorite when refreshing favorites state', () => {
+                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
+
+                (buildPaletteFavorite as unknown as jest.Mock).mockClear();
+                uveStore.$allowedContentTypes.mockReturnValueOnce({ blog: true, banner: true });
+
+                store.setContentTypesFromFavorite(mockContentTypes);
+
+                expect(buildPaletteFavorite).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        allowedContentTypes: { blog: true, banner: true }
+                    })
+                );
             });
 
             it('should not refresh store when removing favorites outside favorites view', () => {
@@ -522,7 +560,11 @@ describe('DotPaletteListStore', () => {
                 store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
 
                 expect(dotFavoriteContentTypeService.getAll).toHaveBeenCalled();
-                expect(store.contenttypes()).toEqual(mockContentTypes);
+                expect(store.contenttypes()).toEqual(
+                    mockContentTypes.map(
+                        (ct) => ({ ...ct, disabled: true }) as DotCMSContentTypePalette
+                    )
+                );
             });
 
             it('should update search params with provided values', () => {

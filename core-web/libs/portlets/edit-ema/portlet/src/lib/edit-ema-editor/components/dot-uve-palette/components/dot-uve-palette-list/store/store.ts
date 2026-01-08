@@ -191,13 +191,13 @@ export const DotPaletteListStore = signalStore(
     withMethods((store) => {
         const params = store.searchParams;
         const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
-        const uveStore = inject(UVEStore);
+        const uveStore = inject(UVEStore, { optional: true });
         const updateFavoriteState = (contentTypes: DotCMSContentType[]) => {
             const response = buildPaletteFavorite({
                 contentTypes,
                 filter: params.filter(),
                 page: params.page() || 1,
-                allowedContentTypes: uveStore.$allowedContentTypes()
+                allowedContentTypes: uveStore?.$allowedContentTypes()
             });
             patchState(store, response);
         };
