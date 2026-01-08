@@ -2,6 +2,7 @@ import { MenuItem } from 'primeng/api';
 
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     ESContent
@@ -9,6 +10,7 @@ import {
 
 import {
     DEFAULT_PER_PAGE,
+    DotCMSContentTypePalette,
     DotPaletteSortOption,
     DotPaletteListStatus,
     DotPaletteViewMode,
@@ -44,7 +46,7 @@ export const EMPTY_PAGINATION = {
  * Used when an error occurs during content types fetch.
  */
 export const EMPTY_CONTENTTYPE_RESPONSE = {
-    contenttypes: [] as DotCMSContentType[],
+    contenttypes: [] as DotCMSContentTypePalette[],
     pagination: EMPTY_PAGINATION
 };
 
@@ -202,13 +204,15 @@ export function getPaletteState(
 export function buildPaletteFavorite({
     contentTypes,
     filter = '',
-    page = 1
+    page = 1,
+    allowedContentTypes
 }: {
-    contentTypes: DotCMSContentType[];
+    contentTypes: DotCMSContentTypePalette[];
     filter?: string;
     page?: number;
+    allowedContentTypes?: Record<string, true>;
 }): {
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSContentTypePalette[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
     status: DotPaletteListStatus;
 } {
@@ -222,7 +226,30 @@ export function buildPaletteFavorite({
     const totalEntries = filteredContentTypes.length;
     const startIndex = (page - 1) * DEFAULT_PER_PAGE;
     const endIndex = page * DEFAULT_PER_PAGE;
-    const contenttypes = filteredContentTypes.slice(startIndex, endIndex);
+    const pageContentTypes = filteredContentTypes.slice(startIndex, endIndex);
+
+    // Favorites are stored locally, so we need to mark which are not allowed on this page
+    // (allowedContentTypes comes from containerStructures[*].contentTypeVar and matches contentType.variable)
+    const hasAllowedMap = !!allowedContentTypes && Object.keys(allowedContentTypes).length > 0;
+    const enabled: DotCMSContentTypePalette[] = [];
+    const disabled: DotCMSContentTypePalette[] = [];
+
+    for (const ct of pageContentTypes) {
+        const isAllowed =
+            hasAllowedMap &&
+            (allowedContentTypes![ct.variable] === true ||
+                ct.baseType === DotCMSBaseTypesContentTypes.WIDGET);
+
+        if (isAllowed) {
+            enabled.push(ct);
+        } else {
+            disabled.push({ ...ct, disabled: true });
+        }
+    }
+
+    enabled.sort((a, b) => a.name.localeCompare(b.name));
+    disabled.sort((a, b) => a.name.localeCompare(b.name));
+    const contenttypes = [...enabled, ...disabled];
 
     const pagination = {
         currentPage: page,

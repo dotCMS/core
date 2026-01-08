@@ -113,7 +113,7 @@ export interface DotPaletteListState {
     /** Current search and filter parameters */
     searchParams: DotPaletteSearchParams;
     /** List of content types to display */
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSContentTypePalette[];
     /** List of contentlets (when drilling into a content type) */
     contentlets: DotCMSContentlet[];
     /** Pagination information */
@@ -131,7 +131,7 @@ export interface DotPaletteListState {
  */
 export interface DotContentTypeResponse {
     /** Array of content types */
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSContentTypePalette[];
     /** Pagination metadata */
     pagination: DotPagination;
 }
@@ -169,3 +169,10 @@ export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
  * All base content types that can be added to favorites.
  */
 export const BASE_TYPES_FOR_FAVORITES = [...BASETYPES_FOR_CONTENT, ...BASETYPES_FOR_WIDGET];
+
+/**
+ * Content type for the palette.
+ */
+export interface DotCMSContentTypePalette extends DotCMSContentType {
+    disabled?: boolean;
+}
