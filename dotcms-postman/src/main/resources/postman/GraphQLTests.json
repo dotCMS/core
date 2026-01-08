@@ -4361,6 +4361,491 @@
 					]
 				},
 				{
+					"name": "Checking Style Properties",
+					"item": [
+						{
+							"name": "Get default site",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"",
+											"    const entity = pm.response.json().entity;",
+											"    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+											"    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/site/defaultSite",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"site",
+										"defaultSite"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Page created successfully\", function () {",
+											"    const json = pm.response.json();",
+											"    pm.expect(json.errors.length).to.eql(0);",
+											"    pm.collectionVariables.set(\"pageIdentifier\", json.entity.identifier);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.collectionVariables.set(\"pageUrl\", \"contentlet-styles-test-page\" + Date.now());"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"htmlpageasset\",\n        \"title\": \"Test Page Styles_{{$timestamp}}\",\n        \"url\": \"{{pageUrl}}\",\n        \"hostFolder\": \"{{hostname}}\",\n        \"template\": \"SYSTEM_TEMPLATE\",\n        \"friendlyName\": \"First Test Page Styles_{{$timestamp}}\",\n        \"cachettl\": 0\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "Creates a test page"
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Content Type",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Store first content type ID\", function () {",
+											"    const entity = pm.response.json().entity;",
+											"    pm.expect(entity).to.not.be.null;",
+											"    pm.expect(entity[0]).to.not.be.null;",
+											"    pm.expect(entity[0].id).to.not.be.null;",
+											"    pm.collectionVariables.set(\"contentTypeId\", entity[0].id);",
+											"    pm.collectionVariables.set(\"contentTypeVarName\", entity[0].variable);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{jwt}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_Test_ContentType_{{$timestamp}}\",\n    \"description\": \"Content type for contentlet styles tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Test Contentlet",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Test Rich Text created successfully\", function () {",
+											"    const json = pm.response.json();",
+											"    pm.expect(json.errors.length).to.eql(0);",
+											"    pm.collectionVariables.set(\"Contentlet_1\", json.entity.identifier);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeVarName}}\",\n        \"title\": \"Contentlet 1\",\n        \"hostfolder\": \"{{hostname}}\"\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"workflow",
+										"actions",
+										"default",
+										"fire",
+										"PUBLISH"
+									]
+								},
+								"description": "Creates test data"
+							},
+							"response": []
+						},
+						{
+							"name": "Save Content With Basic Styles Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"// Parse JSON",
+											"const json = pm.response.json();",
+											"",
+											"pm.test(\"No errors returned\", function () {",
+											"    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+											"});",
+											"",
+											"pm.test(\"Contentlet_1 has correct styleProperties\", function () {",
+											"    const first = json.entity.find(item => item.contentletId === contentlet1);",
+											"    pm.expect(first).to.exist;",
+											"    pm.expect(first.styleProperties).to.be.an(\"object\");",
+											"    pm.expect(first.styleProperties.width).to.eql(\"100px\");",
+											"    pm.expect(first.styleProperties.color).to.eql(\"#FF0000\");",
+											"    pm.expect(first.styleProperties.margin).to.eql(\"10px\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    }\n]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"{{pageIdentifier}}",
+										"content"
+									]
+								},
+								"description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+							},
+							"response": []
+						},
+						{
+							"name": "Turn ON Style Editor",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/system-table",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"system-table",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "GivenRequestByURI_ContainerContentletsFieldContainsStyleProperties",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"GraphQL response has no errors\", function () {",
+											"    pm.expect(response.errors).to.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"Page data exists\", function () {",
+											"    pm.expect(response.data).to.exist;",
+											"    pm.expect(response.data.page).to.exist;",
+											"});",
+											"",
+											"// Finding the Container",
+											"let targetContainerWrapper = null;",
+											"",
+											"pm.test(\"Target Container exists\", function () {",
+											"    const containers = response.data.page.containers;",
+											"    ",
+											"    // Look inside the 'containerContentlets' array to find the UUID 'uuid-1'",
+											"    containers.forEach(container => {",
+											"        if(container.containerContentlets) {",
+											"             const found = container.containerContentlets.find(c => c.uuid === 'uuid-1');",
+											"             if(found) targetContainerWrapper = found;",
+											"        }",
+											"    });",
+											"",
+											"    pm.expect(targetContainerWrapper, \"Could not find container with uuid-1\").to.exist;",
+											"});",
+											"",
+											"// Finding the Contentlet",
+											"let targetContentlet = null;",
+											"",
+											"pm.test(\"Contentlet exists in container\", function () {",
+											"    // Only run this if previous test passed",
+											"    pm.expect(targetContainerWrapper).to.exist; ",
+											"",
+											"    targetContentlet = targetContainerWrapper.contentlets.find(c => c.identifier === contentlet1);",
+											"    pm.expect(targetContentlet, \"Contentlet not found\").to.exist;",
+											"});",
+											"",
+											"// Checking Style Values inside _map Object",
+											"pm.test(\"_map Styles have correct width\", function () {",
+											"    pm.expect(targetContentlet.styles).to.not.be.null;",
+											"    pm.expect(targetContentlet.styles.width).to.eql('100px');",
+											"    pm.expect(targetContentlet.styles.color).to.eql('#FF0000');",
+											"    pm.expect(targetContentlet.styles.margin).to.eql('10px');",
+											"});",
+											"",
+											"// Checking Style Values as a top level field",
+											"pm.test(\"Top level Styles have correct width\", function () {",
+											"    pm.expect(targetContentlet.styleProperties).to.not.be.null;",
+											"    pm.expect(targetContentlet.styleProperties.width).to.eql('100px');",
+											"    pm.expect(targetContentlet.styleProperties.color).to.eql('#FF0000');",
+											"    pm.expect(targetContentlet.styleProperties.margin).to.eql('10px');",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"styleProperties\")\n          styleProperties\n        }\n      }\n    }\n  }\n}\n",
+										"variables": "{\n  \"url\": \"{{pageUrl}}\"\n}"
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Turn OFF Style Editor",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/system-table/FEATURE_FLAG_UVE_STYLE_EDITOR",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"system-table",
+										"FEATURE_FLAG_UVE_STYLE_EDITOR"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
 					"name": "pre_ImportBundleWithMexicoPageAndRule",
 					"event": [
 						{
@@ -13901,6 +14386,30 @@
 		},
 		{
 			"key": "lockedByName",
+			"value": ""
+		},
+		{
+			"key": "hostname",
+			"value": ""
+		},
+		{
+			"key": "hostIdentifier",
+			"value": ""
+		},
+		{
+			"key": "pageIdentifier",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVarName",
+			"value": ""
+		},
+		{
+			"key": "Contentlet_1",
 			"value": ""
 		}
 	]

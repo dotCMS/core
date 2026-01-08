@@ -10832,6 +10832,64 @@ paths:
       summary: Update user permissions on asset
       tags:
       - Permissions
+  /v1/permissions/{assetId}:
+    get:
+      description: "Retrieves permissions for a specific asset by its identifier (inode\
+        \ or identifier). Returns asset metadata, a paginated list of roles with their\
+        \ permission levels, and pagination information. Supports all permissionable\
+        \ asset types including hosts, folders, contentlets, templates, containers,\
+        \ categories, links, and rules."
+      operationId: getAssetPermissions
+      parameters:
+      - description: Asset identifier (inode or identifier)
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      - description: Page number for pagination (1-indexed)
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: "Number of roles to return per page (max: 100)"
+        example: 40
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid query parameters (page < 1 or per_page
+            not in 1-100 range)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks permission to view asset
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+      summary: Get asset permissions
+      tags:
+      - Permissions
   /v1/personalization/pagepersonas:
     post:
       description: Copies the current content associated to page containers with default
@@ -19990,8 +20048,6 @@ components:
           type: string
         owner:
           type: string
-        parentPermissionable:
-          $ref: "#/components/schemas/Permissionable"
         parents:
           type: array
           items:
@@ -22454,7 +22510,7 @@ components:
       properties:
         empty:
           type: boolean
-    ImmutableSetString:
+    ImmutableSetScope:
       type: array
       description: Available permission scopes (asset types) that support permissions
       example:
@@ -22470,8 +22526,49 @@ components:
       items:
         type: string
         description: Available permission scopes (asset types) that support permissions
+        enum:
+        - INDIVIDUAL
+        - HOST
+        - FOLDER
+        - CONTAINER
+        - TEMPLATE
+        - TEMPLATE_LAYOUT
+        - LINK
+        - CONTENT
+        - PAGE
+        - CONTENT_TYPE
+        - STRUCTURE
+        - CATEGORY
+        - RULE
         example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\",\"\
           PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
+      properties:
+        empty:
+          type: boolean
+      uniqueItems: true
+    ImmutableSetType:
+      type: array
+      description: Available permission levels that can be assigned to users and roles
+      example:
+      - READ
+      - WRITE
+      - PUBLISH
+      - EDIT_PERMISSIONS
+      - CAN_ADD_CHILDREN
+      items:
+        type: string
+        description: Available permission levels that can be assigned to users and
+          roles
+        enum:
+        - READ
+        - USE
+        - EDIT
+        - WRITE
+        - PUBLISH
+        - EDIT_PERMISSIONS
+        - CAN_ADD_CHILDREN
+        example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
+          ]"
       properties:
         empty:
           type: boolean
@@ -23362,6 +23459,14 @@ components:
             type: string
             description: Available permission levels that can be assigned to users
               and roles
+            enum:
+            - READ
+            - USE
+            - EDIT
+            - WRITE
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
             example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
               ]"
           properties:
@@ -23384,6 +23489,20 @@ components:
           items:
             type: string
             description: Available permission scopes (asset types) that support permissions
+            enum:
+            - INDIVIDUAL
+            - HOST
+            - FOLDER
+            - CONTAINER
+            - TEMPLATE
+            - TEMPLATE_LAYOUT
+            - LINK
+            - CONTENT
+            - PAGE
+            - CONTENT_TYPE
+            - STRUCTURE
+            - CATEGORY
+            - RULE
             example: "[\"INDIVIDUAL\",\"HOST\",\"FOLDER\",\"CONTENT\",\"TEMPLATE\"\
               ,\"PAGE\",\"CONTAINER\",\"CONTENT_TYPE\",\"CATEGORY\"]"
           properties:
