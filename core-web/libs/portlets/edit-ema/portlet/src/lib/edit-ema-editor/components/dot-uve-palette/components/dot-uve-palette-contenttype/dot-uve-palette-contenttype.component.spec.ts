@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 
 import { Tooltip } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotUVEPaletteContenttypeComponent } from './dot-uve-palette-contenttype.component';
@@ -54,7 +55,16 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     const createHost = createHostFactory({
         component: DotUVEPaletteContenttypeComponent,
         host: TestHostComponent,
-        imports: [DotUVEPaletteContenttypeComponent]
+        imports: [DotUVEPaletteContenttypeComponent],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: {
+                    // Keep it deterministic for tests: return the key as-is
+                    get: jest.fn((key: string) => key)
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -236,7 +246,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             expect(tooltip).toBeTruthy();
             expect(tooltip.disabled).toBe(false);
-            expect(tooltip.content).toBe('not allowed on this page');
+            expect(tooltip.content).toBe('uve.palette.item.disabled.tooltip');
         });
 
         it('should disable tooltip when contentType is not disabled', () => {
@@ -255,7 +265,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             expect(tooltip).toBeTruthy();
             expect(tooltip.disabled).toBe(true);
-            expect(tooltip.content).toBe('not allowed on this page');
+            expect(tooltip.content).toBe('uve.palette.item.disabled.tooltip');
         });
     });
 

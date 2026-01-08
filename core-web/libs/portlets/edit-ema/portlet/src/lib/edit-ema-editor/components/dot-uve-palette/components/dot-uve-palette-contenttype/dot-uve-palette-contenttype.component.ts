@@ -9,11 +9,13 @@ import {
 
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotCMSContentTypePalette } from '../../models';
 
 @Component({
     selector: 'dot-uve-palette-contenttype',
-    imports: [TooltipModule],
+    imports: [TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-palette-contenttype.component.html',
     styleUrl: './dot-uve-palette-contenttype.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
