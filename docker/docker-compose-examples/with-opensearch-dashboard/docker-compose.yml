@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: 'password'
       POSTGRES_DB: 'dotcms'
     volumes:
-      - dbdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/18/data
     networks:
       - db_net
     healthcheck:
