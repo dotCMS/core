@@ -20,6 +20,8 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -124,6 +126,7 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
 import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.common.unit.TimeValue;
@@ -154,6 +157,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
+    private static final Lazy<Integer> SCROLL_KEEP_ALIVE_MINUTES = Lazy.of(() ->
+            Config.getIntProperty("ES_SCROLL_KEEP_ALIVE_MINUTES", 5));
+    private static final Lazy<Integer> SCROLL_BATCH_SIZE = Lazy.of(() ->
+            Config.getIntProperty("ES_SCROLL_BATCH_SIZE", 1000));
     private static final String[] UPSERT_INODE_EXTRA_COLUMNS = {"owner", "idate", "type"};
 
     private static final String[] UPSERT_EXTRA_COLUMNS = {"show_on_menu", "title", "mod_date", "mod_user",
@@ -1805,6 +1812,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return optionalHits.get();
         }
         try {
+            APILocator.getRequestCostAPI()
+                    .incrementCost(Price.ES_QUERY, ESContentFactoryImpl.class, "cachedIndexSearch",
+                            new Object[]{searchRequest});
             SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
             SearchHits hits  = response.getHits();
             if(shouldQueryCache()) {
@@ -1855,6 +1865,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param countRequest
      * @return
      */
+    @RequestCost(Price.ES_CACHE)
     Long cachedIndexCount(final CountRequest countRequest) {
 
         final Optional<Long> optionalCount = shouldQueryCache() ? queryCache.get(countRequest) : Optional.empty();
@@ -1862,6 +1873,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return optionalCount.get();
         }
         try {
+
+            APILocator.getRequestCostAPI().incrementCost(Price.ES_COUNT, ESContentFactoryImpl.class, "cachedIndexCount",
+                    new Object[]{countRequest});
+
+
             final CountResponse response = RestHighLevelClientProvider.getInstance().getClient().count(countRequest, RequestOptions.DEFAULT);
             final long count = response.getCount();
             if(shouldQueryCache()) {
@@ -1894,8 +1910,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    
-    
+
     @Override
     protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 
@@ -1960,112 +1975,110 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
 
+    /**
+     * Performs a scroll-based search to retrieve all results matching the query.
+     * <p>
+     * Results are fetched in batches using the ElasticSearch Scroll API. The batch size
+     * is configurable via the {@code ES_SCROLL_BATCH_SIZE} property (default: 1000).
+     * This helps manage memory usage when dealing with large result sets.
+     * </p>
+     *
+     * @param query Lucene query string
+     * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+     * @return PaginatedArrayList containing all search results
+     */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-
-        final String formattedQuery = LuceneQueryDateTimeFormatter
-                .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
-
-        // we check the query to figure out which indexes to hit
-        final String indexToHit;
-        try {
-            indexToHit = inferIndexToHit(query);
-        } catch (Exception e) {
-            Logger.fatal(this, "Can't get indices information.", e);
-            return null;
-        }
-
-        final SearchRequest searchRequest = new SearchRequest();
-        final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
-        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchRequest.indices(indexToHit);
-
-        if(UtilMethods.isSet(sortBy) ) {
-            sortBy = sortBy.toLowerCase();
-
-            if(sortBy.startsWith("score")){
-                String[] sortByCriteria = sortBy.split("[,|\\s+]");
-                String defaultSecondarySort = "moddate";
-                SortOrder defaultSecondardOrder = SortOrder.DESC;
-
-                if(sortByCriteria.length>2){
-                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
-                        defaultSecondardOrder = SortOrder.DESC;
-                    } else {
-                        defaultSecondardOrder = SortOrder.ASC;
-                    }
-                }
-                if(sortByCriteria.length>1){
-                    defaultSecondarySort= sortByCriteria[1];
-                }
-
-                searchSourceBuilder.sort("_score", SortOrder.DESC);
-                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
-                addBuilderSort(sortBy, searchSourceBuilder);
-            }
-        }else{
-            searchSourceBuilder.sort("moddate", SortOrder.DESC);
-        }
-
-        searchSourceBuilder.size(MAX_LIMIT);
-        searchRequest.source(searchSourceBuilder);
-        final Scroll scroll = new Scroll(TimeValue.timeValueMinutes(1L));
-        searchRequest.scroll(scroll);
-
         PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
 
-        try {
-            SearchResponse searchResponse = RestHighLevelClientProvider.getInstance().getClient()
-                    .search(searchRequest, RequestOptions.DEFAULT);
-            String scrollId = searchResponse.getScrollId();
-            SearchHits searchHits = searchResponse.getHits();
+        // Use the ESContentletScrollImpl inner class to handle all scroll logic
+        // Using configurable batch size instead of MAX_LIMIT for better memory management
+        try (ESContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
+                false, SCROLL_BATCH_SIZE.get(), sortBy)) {
 
-            contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
-            contentletSearchList.setTotalResults(searchHits.getTotalHits().value);
+            contentletSearchList.setTotalResults(contentletScroll.getTotalHits());
 
-            while (searchHits.getHits() != null && searchHits.getHits().length > 0) {
-
-                SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId);
-                scrollRequest.scroll(scroll);
-                searchResponse = RestHighLevelClientProvider.getInstance().getClient()
-                        .scroll(scrollRequest, RequestOptions.DEFAULT);
-                scrollId = searchResponse.getScrollId();
-                searchHits = searchResponse.getHits();
-
-                contentletSearchList.addAll(getContentletSearchFromSearchHits(searchHits));
+            // Fetch all batches (first batch is returned on first nextBatch() call)
+            List<ContentletSearch> batch;
+            while ((batch = contentletScroll.nextBatch()) != null && !batch.isEmpty()) {
+                contentletSearchList.addAll(batch);
             }
 
-            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
-            clearScrollRequest.addScrollId(scrollId);
-            ClearScrollResponse clearScrollResponse = RestHighLevelClientProvider.getInstance()
-                    .getClient().clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
-            boolean succeeded = clearScrollResponse.isSucceeded();
+            Logger.debug(this.getClass(),
+                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                            contentletSearchList.getTotalResults(), query));
 
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), String.format("Elasticsearch error in index '%s'", (searchRequest.indices()!=null) ? String.join(",", searchRequest.indices()): "unknown"));
-            Logger.warn(this.getClass(), String.format("ES Query: %s", String.valueOf(searchRequest.source()) ));
+            Logger.warn(this.getClass(), String.format("Elasticsearch error for query: %s", query));
             Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new PaginatedArrayList<>();
-        } catch(final IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
-            if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+            if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 rebuildRestHighLevelClientIfNeeded(e);
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
-                    searchRequest.source().toString(), e.getMessage());
+                    query, e.getMessage());
             Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
 
         return contentletSearchList;
+    }
 
+    /**
+     * Creates an ESContentletScroll instance for scroll-based queries.
+     * <p>
+     * The Scroll API is designed for efficiently retrieving large result sets that exceed
+     * ElasticSearch's max_result_window limit. Use this when you need to iterate through
+     * thousands of results.
+     * </p>
+     * <p>
+     * <strong>IMPORTANT:</strong> Always use try-with-resources to ensure scroll contexts
+     * are properly cleaned up:
+     * </p>
+     * <pre>
+     * try (ESContentletScroll scroll = factory.createScrollQuery(query, user, false, 100)) {
+     *     List&lt;ContentletSearch&gt; batch = scroll.initialize();
+     *     while (!batch.isEmpty()) {
+     *         // process batch
+     *         batch = scroll.nextBatch();
+     *     }
+     * }
+     * </pre>
+     *
+     * @param luceneQuery Lucene query string to search for contentlets
+     * @param user User for permission checking
+     * @param respectFrontendRoles Whether to respect frontend roles
+     * @param batchSize Number of results to retrieve per batch (page size)
+     * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+     * @return ESContentletScroll instance for iterating through results
+     */
+    @Override
+    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+                                                  final boolean respectFrontendRoles, final int batchSize,
+                                                  final String sortBy) {
+        return new ESContentletScrollImpl(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+    }
 
+    /**
+     * Creates an ESContentletScroll instance with default sort by "title asc".
+     *
+     * @param luceneQuery Lucene query string to search for contentlets
+     * @param user User for permission checking
+     * @param respectFrontendRoles Whether to respect frontend roles
+     * @param batchSize Number of results to retrieve per batch (page size)
+     * @return ESContentletScroll instance for iterating through results
+     */
+    @Override
+    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+                                                  final boolean respectFrontendRoles, final int batchSize) {
+        return createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, "title asc");
     }
 
     private List<ContentletSearch> getContentletSearchFromSearchHits(final SearchHits searchHits) {
@@ -2576,11 +2589,188 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
 	}
 
-	///////////////////////////////////////////////////////
-	////////// imported from old LuceneUtils //////////////
-	///////////////////////////////////////////////////////
+	/**
+	 * Private implementation of ESContentletScroll that encapsulates all ElasticSearch
+	 * Scroll API logic in one place.
+	 */
+	private class ESContentletScrollImpl implements ESContentletScroll {
 
-	   public static class TranslatedQuery implements Serializable {
+		// State fields
+		private String scrollId;
+		private long totalHits = 0;
+		private boolean hasMoreResults = false;
+		private boolean firstBatchReturned = false;
+		private List<ContentletSearch> firstBatch;
+		private RestHighLevelClient esClient;
+
+		/**
+		 * Creates a new scroll query instance and initializes the scroll context.
+		 * The first batch is fetched immediately and cached for the first {@link #nextBatch()} call.
+		 *
+		 * @param luceneQuery Lucene query string
+		 * @param user User for permission checking (only used during initialization)
+		 * @param respectFrontendRoles Whether to respect frontend roles (only used during initialization)
+		 * @param batchSize Number of results to retrieve per batch
+		 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+		 * @throws DotRuntimeException if scroll initialization fails
+		 */
+		ESContentletScrollImpl(final String luceneQuery, final User user, final boolean respectFrontendRoles,
+					  final int batchSize, final String sortBy) {
+			this.esClient = RestHighLevelClientProvider.getInstance().getClient();
+
+			// Initialize scroll and fetch first batch
+			this.firstBatch = Try.of(() -> {
+				// Translate query to ES format
+				final String formattedQuery = LuceneQueryDateTimeFormatter
+						.findAndReplaceQueryDates(translateQuery(luceneQuery, sortBy).getQuery());
+
+				// Determine which index to query
+				final String indexToHit = inferIndexToHit(luceneQuery);
+
+				// Build search request
+				final SearchSourceBuilder sourceBuilder = createSearchSourceBuilder(formattedQuery, sortBy);
+				sourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+				sourceBuilder.size(batchSize);
+
+				// Apply sorting
+				applySorting(sortBy, sourceBuilder);
+
+				final SearchRequest searchRequest = new SearchRequest()
+						.indices(indexToHit)
+						.source(sourceBuilder)
+						.scroll(TimeValue.timeValueMinutes(SCROLL_KEEP_ALIVE_MINUTES.get()));
+
+				// Execute initial search
+				final SearchResponse response = esClient.search(searchRequest, RequestOptions.DEFAULT);
+				this.scrollId = response.getScrollId();
+				final SearchHits searchHits = response.getHits();
+
+				this.totalHits = searchHits.getTotalHits().value;
+
+				// Convert hits to ContentletSearch
+				final List<ContentletSearch> results = getContentletSearchFromSearchHits(searchHits);
+				this.hasMoreResults = (searchHits.getHits() != null && searchHits.getHits().length > 0);
+
+				Logger.debug(this.getClass(),
+						() -> String.format("Scroll initialized: scrollId=%s, totalHits=%d, firstBatchSize=%d",
+								scrollId, totalHits, results.size()));
+
+				return results;
+
+			}).getOrElseThrow(e -> {
+				if (e instanceof DotRuntimeException) {
+					return (DotRuntimeException) e;
+				}
+				return new DotRuntimeException("Error initializing scroll API: " + e.getMessage(), e);
+			});
+		}
+
+		@Override
+		public List<ContentletSearch> nextBatch() throws DotDataException {
+			// On first call, return the cached first batch
+			if (!firstBatchReturned) {
+				firstBatchReturned = true;
+				Logger.debug(this.getClass(),
+						() -> String.format("Returning first batch: size=%d", firstBatch.size()));
+				return firstBatch;
+			}
+
+			// No more results
+			if (!hasMoreResults) {
+				return new ArrayList<>();
+			}
+
+			// Fetch next batch from scroll
+			return Try.of(() -> {
+				final SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId)
+						.scroll(TimeValue.timeValueMinutes(SCROLL_KEEP_ALIVE_MINUTES.get()));
+
+				final SearchResponse response = esClient.scroll(scrollRequest, RequestOptions.DEFAULT);
+				final SearchHits searchHits = response.getHits();
+
+				final List<ContentletSearch> results = getContentletSearchFromSearchHits(searchHits);
+				this.hasMoreResults = (searchHits.getHits() != null && searchHits.getHits().length > 0);
+
+				Logger.debug(this.getClass(),
+						() -> String.format("Scroll next batch: batchSize=%d, hasMore=%b",
+								results.size(), hasMoreResults));
+
+				return results;
+
+			}).getOrElseThrow(e -> {
+				if (e instanceof DotDataException) {
+					return (DotDataException) e;
+				}
+				return new DotDataException("Error continuing scroll API: " + e.getMessage(), e);
+			});
+		}
+
+		@Override
+		public long getTotalHits() {
+			return totalHits;
+		}
+
+		@Override
+		public boolean hasMoreResults() {
+			// If we haven't returned the first batch yet and it has results, there are more
+			if (!firstBatchReturned && firstBatch != null && !firstBatch.isEmpty()) {
+				return true;
+			}
+			return hasMoreResults;
+		}
+
+		@Override
+		public void close() {
+			if (scrollId != null && esClient != null) {
+				Try.run(() -> {
+					final ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+					clearScrollRequest.addScrollId(scrollId);
+					esClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
+					Logger.debug(this.getClass(), () -> "Cleared scroll context: " + scrollId);
+				}).onFailure(e ->
+						Logger.error(this.getClass(), "Error clearing scroll context: " + e.getMessage(), e)
+				);
+				scrollId = null;
+			}
+		}
+
+		/**
+		 * Applies sorting to the search source builder based on sortBy parameter.
+		 */
+		private void applySorting(String sortBy, SearchSourceBuilder searchSourceBuilder) {
+			if (UtilMethods.isSet(sortBy)) {
+				sortBy = sortBy.toLowerCase();
+
+				if (sortBy.startsWith("score")) {
+					String[] sortByCriteria = sortBy.split("[,|\\s+]");
+					String defaultSecondarySort = "moddate";
+					SortOrder defaultSecondaryOrder = SortOrder.DESC;
+
+					if (sortByCriteria.length > 2) {
+						defaultSecondaryOrder = sortByCriteria[2].equalsIgnoreCase("desc")
+								? SortOrder.DESC : SortOrder.ASC;
+					}
+					if (sortByCriteria.length > 1) {
+						defaultSecondarySort = sortByCriteria[1];
+					}
+
+					searchSourceBuilder.sort("_score", SortOrder.DESC);
+					searchSourceBuilder.sort(defaultSecondarySort, defaultSecondaryOrder);
+				} else if (!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")
+						&& !sortBy.equals("random")) {
+					addBuilderSort(sortBy, searchSourceBuilder);
+				}
+			} else {
+				searchSourceBuilder.sort("moddate", SortOrder.DESC);
+			}
+		}
+	}
+
+    ///////////////////////////////////////////////////////
+    ////////// imported from old LuceneUtils //////////////
+    ///////////////////////////////////////////////////////
+
+    public static class TranslatedQuery implements Serializable {
 
 	        private static final long serialVersionUID = 1L;
 	        private String query;

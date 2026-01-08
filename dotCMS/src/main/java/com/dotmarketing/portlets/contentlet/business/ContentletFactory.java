@@ -1,7 +1,10 @@
-package com.dotmarketing.portlets.contentlet.business; 
+package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.transform.TransformerLocator;
@@ -20,15 +23,14 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.SearchHits;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.search.SearchHits;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -58,6 +60,7 @@ public abstract class ContentletFactory {
 	 */
 	protected abstract List<Contentlet> findAllCurrent(int offset, int limit) throws DotDataException;
 
+    @RequestCost(Price.CONTENT_FROM_DB)
     public Optional<Contentlet> findInDb(final String inode, final String variant) {
         try {
             if (inode != null) {
@@ -638,6 +641,49 @@ public abstract class ContentletFactory {
 	public abstract int updateModDate(final Set<String> inodes, User user) throws DotDataException;
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
+
+	/**
+	 * Creates an ESContentletScroll instance for scroll-based queries.
+	 * <p>
+	 * The Scroll API is designed for efficiently retrieving large result sets that exceed
+	 * ElasticSearch's max_result_window limit. Use this when you need to iterate through
+	 * thousands of results without hitting deep pagination limits.
+	 * </p>
+	 * <p>
+	 * <strong>IMPORTANT:</strong> Always use try-with-resources to ensure scroll contexts
+	 * are properly cleaned up:
+	 * </p>
+	 * <pre>
+	 * try (ESContentletScroll scroll = factory.createScrollQuery(query, user, false, 100, "title asc")) {
+	 *     List&lt;ContentletSearch&gt; batch = scroll.initialize();
+	 *     while (!batch.isEmpty()) {
+	 *         // process batch
+	 *         batch = scroll.nextBatch();
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param luceneQuery Lucene query string to search for contentlets
+	 * @param user User for permission checking
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch (page size)
+	 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+	 * @return ESContentletScroll instance for iterating through results
+	 */
+	public abstract ESContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy);
+
+	/**
+	 * Creates an ESContentletScroll instance with default sort by "title asc".
+	 *
+	 * @param luceneQuery Lucene query string to search for contentlets
+	 * @param user User for permission checking
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch (page size)
+	 * @return ESContentletScroll instance for iterating through results
+	 */
+	public abstract ESContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize);
 
 	public static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
 		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {

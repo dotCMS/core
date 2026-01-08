@@ -26,9 +26,7 @@
                             required
                             type="text" />
                         <dot-field-validation-message
-                            [field]="
-                                getConditionsFormArrayItemByIndex(i).controls['parameter']
-                            "></dot-field-validation-message>
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']" />
                     </div>
                     <div class="field flex-none flex flex-col w-60">
                         <label dotFieldRequired for="operator">
@@ -47,9 +45,7 @@
                                     | dm
                             }}"></p-select>
                         <dot-field-validation-message
-                            [field]="
-                                getConditionsFormArrayItemByIndex(i).controls['operator']
-                            "></dot-field-validation-message>
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['operator']" />
                     </div>
                     <div class="field grow flex flex-col" formGroupName="value">
                         <label dotFieldRequired for="value">
@@ -68,9 +64,7 @@
                             required
                             type="text" />
                         <dot-field-validation-message
-                            [field]="
-                                getConditionsFormArrayItemByIndex(i).controls['value']
-                            "></dot-field-validation-message>
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['value']" />
                     </div>
                 </div>
             </ng-container>

@@ -21,7 +21,7 @@
                 [title]="pageState.page.title"
                 [apiLink]="apiLink"
                 [url]="pageState.page.pageURI"
-                class="flex gap-2"></dot-edit-page-info-seo>
+                class="flex gap-2" />
             @if (showFavoritePageStar) {
                 <p-button
                     (click)="favoritePage.emit(true)"
@@ -30,18 +30,18 @@
                     class="flex gap-4"
                     styleClass="p-button-rounded p-button-sm p-button-text"
                     data-testId="addFavoritePageButton"
-                    tooltipPosition="bottom"></p-button>
+                    tooltipPosition="bottom" />
             }
         }
     </div>
 
     <div class="main-toolbar-right flex items-center gap-4">
         @if (variant) {
-            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            <dot-global-message data-testId="globalMessage" right />
             <i class="pi pi-filter-fill -rotate-180"></i>
             <h2>{{ variant.experimentName }}</h2>
         } @else {
-            <dot-global-message data-testId="globalMessage" right></dot-global-message>
+            <dot-global-message data-testId="globalMessage" right />
             @if (runningExperiment) {
                 <p-tag
                     [value]="
@@ -66,7 +66,7 @@
             }
             <dot-edit-page-workflows-actions
                 (fired)="actionFired.emit($event)"
-                [page]="pageState.page"></dot-edit-page-workflows-actions>
+                [page]="pageState.page" />
         }
     </div>
 
@@ -76,7 +76,7 @@
             (modeChange)="stateChange()"
             [pageState]="pageState"
             [variant]="variant"
-            [apiLink]="apiLink"></dot-edit-page-state-controller-seo>
+            [apiLink]="apiLink" />
     </div>
 
     <div class="lower-toolbar-right w-6/12">
@@ -97,6 +97,6 @@
         <dot-edit-page-view-as-controller-seo
             [pageState]="pageState"
             [variant]="variant"
-            class="flex gap-2"></dot-edit-page-view-as-controller-seo>
+            class="flex gap-2" />
     </div>
 </dot-secondary-toolbar>

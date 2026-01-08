@@ -2,7 +2,7 @@
     @for (item of items; track $index) {
         <ng-container
             [ngTemplateOutlet]="!item.href?.length ? button : anchor"
-            [ngTemplateOutletContext]="{ item: item, index: $index }"></ng-container>
+            [ngTemplateOutletContext]="{ item: item, index: $index }" />
     }
 </nav>
 
@@ -27,7 +27,7 @@
             rel="noopener">
             <ng-container
                 [ngTemplateOutlet]="item.icon ? icon : iconURL"
-                [ngTemplateOutletContext]="{ item: item }"></ng-container>
+                [ngTemplateOutletContext]="{ item: item }" />
             <span class="item__label" data-testId="nav-bar-item-label">
                 {{ item.label | dm }}
             </span>
@@ -44,7 +44,7 @@
         data-testId="nav-bar-item">
         <ng-container
             [ngTemplateOutlet]="item.icon ? icon : iconURL"
-            [ngTemplateOutletContext]="{ item: item }"></ng-container>
+            [ngTemplateOutletContext]="{ item: item }" />
         <span class="item__label" data-testId="nav-bar-item-label">
             {{ item.label | dm }}
         </span>

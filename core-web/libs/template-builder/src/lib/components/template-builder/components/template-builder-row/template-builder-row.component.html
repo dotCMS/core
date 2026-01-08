@@ -19,12 +19,11 @@
                 drag_indicator
             </i>
         </div>
-        <dotcms-remove-confirm-dialog
-            (deleteConfirmed)="deleteRow()"></dotcms-remove-confirm-dialog>
+        <dotcms-remove-confirm-dialog (deleteConfirmed)="deleteRow()" />
     </div>
     <dotcms-template-builder-background-columns
         class="absolute top-4 right-[3.625rem] bottom-6 left-4 -z-[1] transition-opacity duration-350 ease-in-out"
         [ngStyle]="{
             opacity: isResizing ? 1 : 0
-        }"></dotcms-template-builder-background-columns>
+        }" />
 </div>

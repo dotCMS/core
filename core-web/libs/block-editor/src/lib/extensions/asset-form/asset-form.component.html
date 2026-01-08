@@ -20,7 +20,7 @@
                     <dot-asset-search
                         (addAsset)="onSelectAsset($event)"
                         [type]="type"
-                        [languageId]="languageId"></dot-asset-search>
+                        [languageId]="languageId" />
                 </div>
             </p-tabpanel>
             <p-tabpanel [value]="1">
@@ -29,14 +29,12 @@
                         (uploadedFile)="onSelectAsset($event)"
                         (preventClose)="onPreventClose($event)"
                         (hide)="onHide($event)"
-                        [type]="type"></dot-upload-asset>
+                        [type]="type" />
                 </div>
             </p-tabpanel>
             <p-tabpanel [value]="2">
                 <div class="wrapper">
-                    <dot-external-asset
-                        (addAsset)="onSelectAsset($event)"
-                        [type]="type"></dot-external-asset>
+                    <dot-external-asset (addAsset)="onSelectAsset($event)" [type]="type" />
                 </div>
             </p-tabpanel>
         </p-tabpanels>

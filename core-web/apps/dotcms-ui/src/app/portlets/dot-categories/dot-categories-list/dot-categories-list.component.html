@@ -4,7 +4,7 @@
             <p-breadcrumb
                 (onItemClick)="updateBreadCrumb($event)"
                 [model]="vm.categoryBreadCrumbs"
-                [home]="breadCrumbHome"></p-breadcrumb>
+                [home]="breadCrumbHome" />
         </div>
         <div class="category_listing">
             <p-table
@@ -41,7 +41,7 @@
                                 [popup]="true"
                                 [model]="vm.categoriesBulkActions"
                                 #actionsMenu
-                                appendTo="body"></p-menu>
+                                appendTo="body" />
                         </div>
                         <div class="w-2/12">
                             <div class="p-inputgroup">
@@ -85,7 +85,7 @@
                     <tr data-testId="testHeadTableRow">
                         <th class="tableHeader" style="width: 3rem"></th>
                         <th class="tableHeader" style="width: 3rem">
-                            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+                            <p-tableHeaderCheckbox />
                         </th>
                         @for (col of columns; track col) {
                             <th
@@ -94,7 +94,7 @@
                                 class="tableHeader">
                                 {{ col.header }}
                                 @if (col.sortable) {
-                                    <p-sortIcon [field]="col.fieldName"></p-sortIcon>
+                                    <p-sortIcon [field]="col.fieldName" />
                                 }
                             </th>
                         }
@@ -114,7 +114,7 @@
                             <span class="pi pi-bars" pReorderableRowHandle></span>
                         </td>
                         <td (click)="$event.stopPropagation()" style="width: 3rem">
-                            <p-tableCheckbox [value]="category"></p-tableCheckbox>
+                            <p-tableCheckbox [value]="category" />
                         </td>
                         @for (col of columns; track col) {
                             <td [ngStyle]="{ width: col.width }">
@@ -130,7 +130,7 @@
                                                     class="pi pi-times"></i>
                                                 <p-inputNumber
                                                     [ngModel]="category.sortOrder"
-                                                    inputStyleClass="category_listing__sortOrder__field"></p-inputNumber>
+                                                    inputStyleClass="category_listing__sortOrder__field" />
                                             </span>
                                         </ng-template>
                                         <ng-template pTemplate="display">
@@ -145,7 +145,7 @@
                                             [attr.data-testId]="category.categoryId"
                                             [actions]="vm.categoriesActions"
                                             [item]="category"
-                                            class="listing-categories__action-button"></dot-action-menu-button>
+                                            class="listing-categories__action-button" />
                                     } @else {
                                         {{ category[col.fieldName] }}
                                     }
@@ -170,7 +170,7 @@
                                     [title]="'message.category.empty.title' | dm"
                                     [content]="'message.category.empty.content' | dm"
                                     [buttonLabel]="'message.category.empty.button.label' | dm"
-                                    icon="web"></dot-empty-state>
+                                    icon="web" />
                             }
                         </td>
                     </tr>

@@ -1,7 +1,7 @@
 <ng-container
     [ngTemplateOutlet]="
         boxVariant !== templateBuilderSizes.small ? largeTemplate : smallTemplate
-    "></ng-container>
+    " />
 
 <!-- Move to Another place -->
 <p-dialog
@@ -13,7 +13,7 @@
     [modal]="true"
     [dismissableMask]="true"
     data-testId="edit-box-dialog">
-    <ng-container [ngTemplateOutlet]="largeTemplate"></ng-container>
+    <ng-container [ngTemplateOutlet]="largeTemplate" />
 </p-dialog>
 
 <!-- Large -->
@@ -123,7 +123,7 @@
             <dotcms-remove-confirm-dialog
                 (deleteConfirmed)="deleteColumn.emit()"
                 (deleteRejected)="deleteColumnRejected.emit()"
-                [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
+                [skipConfirmation]="items.length === 0" />
         }
     </div>
 </ng-template>

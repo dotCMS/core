@@ -13,7 +13,7 @@
         styleClass="h-full flex flex-col"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
-        <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent"></ng-template>
+        <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
 
         <p-tablist>
             <p-tab [value]="0">
@@ -105,7 +105,7 @@
 </aside>
 
 <!-- Confirmation dialog for delete actions -->
-<p-confirmDialog></p-confirmDialog>
+<p-confirmDialog />
 
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>

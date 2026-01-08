@@ -18,9 +18,7 @@
                 type="text" />
             <dot-field-validation-message
                 [field]="nameControl"
-                [message]="
-                    'dot.common.message.field.required' | dm: [inputNameWithType]
-                "></dot-field-validation-message>
+                [message]="'dot.common.message.field.required' | dm: [inputNameWithType]" />
         </div>
 
         <div class="field">
@@ -35,8 +33,7 @@
                 pInputText
                 placeholder="{{ 'contentType.form.variable.placeholder' | dm }}"
                 type="text" />
-            <dot-field-validation-message
-                [field]="this.variableControl"></dot-field-validation-message>
+            <dot-field-validation-message [field]="this.variableControl" />
         </div>
 
         <div class="field">
@@ -44,7 +41,7 @@
             <dot-md-icon-selector
                 [tabindex]="3"
                 id="content-type-form-icon"
-                formControlName="icon"></dot-md-icon-selector>
+                formControlName="icon" />
         </div>
 
         <div class="field">

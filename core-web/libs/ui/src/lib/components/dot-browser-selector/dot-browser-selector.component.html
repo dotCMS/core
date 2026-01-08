@@ -1,0 +1,34 @@
+@let folders = store.folders();
+@let content = store.content();
+
+<div class="file-selector flex flex-col gap-4">
+    <div
+        class="file-selector__main grid grid-cols-12 gap-4 grid-nogutter flex-nowrap grow overflow-hidden">
+        <div class="file-selector__sidebar h-full overflow-auto">
+            <dot-sidebar
+                [folders]="folders.data"
+                [loading]="store.foldersIsLoading()"
+                (onNodeSelect)="onNodeSelect($event)"
+                (onNodeExpand)="store.loadChildren($event)" />
+        </div>
+        <div class="col h-full">
+            <dot-dataview
+                [data]="content.data"
+                [loading]="store.contentIsLoading()"
+                [error]="content.error"
+                (onRowSelect)="store.setSelectedContent($event)" />
+        </div>
+    </div>
+    <div class="flex justify-end flex-none flex-wrap gap-4">
+        <p-button
+            (click)="closeDialog()"
+            [label]="'dot.file.field.dialog.select.existing.file.actions.cancel' | dm"
+            [text]="true"
+            severity="primary" />
+        <p-button
+            [disabled]="!store.selectedContent()"
+            (click)="addContent()"
+            [label]="'dot.file.field.dialog.select.existing.file.actions.add' | dm"
+            severity="primary" />
+    </div>
+</div>

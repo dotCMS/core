@@ -129,5 +129,27 @@ declare module 'primeng/api' {
         title?: string;
         disabled?: boolean;
     }
+    
+    export interface TreeNode<T = any> {
+        checked?: boolean;
+        label?: string;
+        data?: T;
+        icon?: string;
+        expandedIcon?: string;
+        collapsedIcon?: string;
+        children?: TreeNode<T>[];
+        leaf?: boolean;
+        expanded?: boolean;
+        type?: string;
+        parent?: TreeNode<T>;
+        partialSelected?: boolean;
+        style?: any;
+        styleClass?: string;
+        draggable?: boolean;
+        droppable?: boolean;
+        selectable?: boolean;
+        key?: string;
+        loading?: boolean;
+    }
 }
 

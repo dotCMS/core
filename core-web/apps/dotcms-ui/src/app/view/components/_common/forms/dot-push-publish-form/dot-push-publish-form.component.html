@@ -13,7 +13,7 @@
             <p-selectButton
                 [options]="pushActions"
                 id="pushActionSelected"
-                formControlName="pushActionSelected"></p-selectButton>
+                formControlName="pushActionSelected" />
         </div>
         <div class="field">
             <label for="filterKey">{{ 'contenttypes.content.push_publish.filters' | dm }}:</label>
@@ -96,12 +96,10 @@
             <dot-push-publish-env-selector
                 [assetIdentifier]="assetIdentifier"
                 id="environment"
-                formControlName="environment"></dot-push-publish-env-selector>
+                formControlName="environment" />
             <dot-field-validation-message
                 [field]="form.get('environment')"
-                message="{{
-                    'contenttypes.content.push_publish.push_to_errormsg' | dm
-                }}"></dot-field-validation-message>
+                message="{{ 'contenttypes.content.push_publish.push_to_errormsg' | dm }}" />
         </div>
     </form>
 }

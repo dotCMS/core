@@ -33,7 +33,7 @@
         <!-- Error state -->
         <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon -->
-            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+            <ng-container [ngTemplateOutlet]="metricHeader" />
 
             <!-- Error message centered -->
             <div class="flex flex-col justify-center items-center flex-1" [@fadeInContent]>
@@ -46,7 +46,7 @@
         <!-- Empty state -->
         <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon -->
-            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+            <ng-container [ngTemplateOutlet]="metricHeader" />
 
             <!-- Empty message centered -->
             <div class="flex flex-col justify-center items-center flex-1" [@fadeInContent]>
@@ -62,24 +62,24 @@
             <div class="flex justify-between items-start" [@fadeInContent]>
                 <p-skeleton width="10rem" height="1.4rem"></p-skeleton>
                 @if (hasIcon) {
-                    <p-skeleton width="1.5rem" height="1.5rem" shape="circle"></p-skeleton>
+                    <p-skeleton width="1.5rem" height="1.5rem" shape="circle" />
                 }
             </div>
 
             <!-- Skeleton content -->
             <div class="flex flex-col gap-4" [@fadeInContent]>
                 <!-- Skeleton value -->
-                <p-skeleton width="1.5rem" height="1.4rem"></p-skeleton>
+                <p-skeleton width="1.5rem" height="1.4rem" />
             </div>
 
             <!-- Skeleton subtitle -->
-            <p-skeleton width="10rem" height="1rem" [@fadeInContent]></p-skeleton>
+            <p-skeleton width="10rem" height="1rem" [@fadeInContent] />
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
         <div class="flex flex-col justify-between h-full gap-4">
             <!-- Header with title and icon -->
-            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+            <ng-container [ngTemplateOutlet]="metricHeader" />
 
             <!-- Contenido principal -->
             <div class="flex flex-column gap-3" [@fadeInContent]>
