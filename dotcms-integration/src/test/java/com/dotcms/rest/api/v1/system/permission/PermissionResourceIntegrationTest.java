@@ -1026,7 +1026,7 @@ public class PermissionResourceIntegrationTest {
         final Role resetTestRole = new RoleDataGen().nextPersisted();
         final RolePermissionForm rolePermissionForm = new RolePermissionForm(
                 resetTestRole.getId(),
-                List.of("READ", "WRITE"),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
                 null
         );
         final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
