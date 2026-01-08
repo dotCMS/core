@@ -15,6 +15,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
 import {
     ChartData,
+    ChartDataset,
     ContentAttributionEntity,
     Granularity,
     PageViewDeviceBrowsersEntity,
@@ -268,6 +269,18 @@ export interface ConversionTrendEntity {
 }
 
 /**
+ * Extended ChartDataset type for Conversion Trend chart with Chart.js specific properties
+ * to make zero values visible in the chart.
+ */
+export interface ConversionTrendChartDataset extends ChartDataset {
+    spanGaps?: boolean;
+    pointRadius?: number | number[];
+    pointHoverRadius?: number | number[];
+    pointBackgroundColor?: string | string[];
+    pointBorderColor?: string | string[];
+}
+
+/**
  * Transforms ConversionTrendEntity array to Chart.js compatible format
  */
 export const transformConversionTrendData = (data: ConversionTrendEntity[] | null): ChartData => {
@@ -319,8 +332,16 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
-                cubicInterpolationMode: 'monotone'
-            }
+                cubicInterpolationMode: 'monotone',
+                // Use type assertion to allow Chart.js specific properties
+                spanGaps: false,
+                pointRadius: chartData.map((value) => (value === 0 ? 4 : 0)),
+                pointHoverRadius: chartData.map((value) => (value === 0 ? 6 : 4)),
+                pointBackgroundColor: chartData.map((value) =>
+                    value === 0 ? '#10B981' : 'rgba(16, 185, 129, 0.1)'
+                ),
+                pointBorderColor: '#10B981'
+            } as ConversionTrendChartDataset
         ]
     };
 };
@@ -337,7 +358,7 @@ export interface TrafficVsConversionsEntity {
 
 /**
  * Transforms TrafficVsConversionsEntity array to Chart.js compatible format.
- * Creates a combo chart with bars (uniqueVisitors) and line (conversion rate %).
+ * Creates a combo chart with bars (uniqueVisitors) and line (conversions).
  */
 export const transformTrafficVsConversionsData = (
     data: TrafficVsConversionsEntity[] | null
@@ -357,7 +378,7 @@ export const transformTrafficVsConversionsData = (
                 },
                 {
                     type: 'line',
-                    label: 'analytics.charts.conversion-rate',
+                    label: 'analytics.charts.conversions',
                     data: [],
                     borderColor: '#10B981',
                     borderWidth: 2,
@@ -393,12 +414,7 @@ export const transformTrafficVsConversionsData = (
 
     const visitorsData = transformedData.map((item) => item.uniqueVisitors);
 
-    // Conversion rate = (uniqueConvertingVisitors / uniqueVisitors) * 100
-    const conversionRateData = transformedData.map((item) =>
-        item.uniqueVisitors > 0
-            ? Math.round((item.uniqueConvertingVisitors / item.uniqueVisitors) * 10000) / 100
-            : 0
-    );
+    const conversionsData = transformedData.map((item) => item.uniqueConvertingVisitors);
 
     return {
         labels,
@@ -414,8 +430,8 @@ export const transformTrafficVsConversionsData = (
             },
             {
                 type: 'line',
-                label: 'analytics.charts.conversion-rate',
-                data: conversionRateData,
+                label: 'analytics.charts.conversions',
+                data: conversionsData,
                 borderColor: '#10B981',
                 borderWidth: 2,
                 fill: false,
@@ -560,41 +576,94 @@ export const transformDeviceBrowsersData = (
 };
 
 /**
- * Fills missing dates in the data array based on the granularity
- * @param data - The data array to fill missing dates
- * @param granularity - The granularity of the data
- * @returns The data array with missing dates filled
+ * Type for entities that have EventSummary.day and EventSummary.totalEvents fields
  */
-export const fillMissingDates = (
-    data: PageViewTimeLineEntity[],
+/**
+ * Base type for timeline entities that have a day dimension
+ */
+type TimelineEntity = {
+    'EventSummary.day': string;
+    'EventSummary.day.day'?: string;
+};
+
+/**
+ * Factory function type for creating empty entities
+ */
+type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
+
+/**
+ * Factory for PageViewTimeLineEntity and ConversionTrendEntity (same structure)
+ */
+export const createEmptyPageViewEntity = (date: Date, dateKey: string): PageViewTimeLineEntity => ({
+    'EventSummary.day': dateKey,
+    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+    'EventSummary.totalEvents': '0'
+});
+
+/**
+ * Factory for ConversionTrendEntity
+ */
+export const createEmptyConversionTrendEntity = (
+    date: Date,
+    dateKey: string
+): ConversionTrendEntity => ({
+    'EventSummary.day': dateKey,
+    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+    'EventSummary.totalEvents': '0'
+});
+
+/**
+ * Factory for TrafficVsConversionsEntity
+ */
+export const createEmptyTrafficVsConversionsEntity = (
+    date: Date,
+    dateKey: string
+): TrafficVsConversionsEntity => ({
+    'EventSummary.day': dateKey,
+    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+    'EventSummary.uniqueVisitors': '0',
+    'EventSummary.uniqueConvertingVisitors': '0'
+});
+
+/**
+ * Fills missing dates in the data array based on the granularity
+ * Works with any timeline entity type by using a factory function
+ * @param data - The data array to fill missing dates
+ * @param timeRange - The time range for the query
+ * @param granularity - The granularity of the data
+ * @param createEmptyEntity - Factory function to create empty entities for missing dates
+ * @returns The data array with missing dates filled with zero values
+ */
+export const fillMissingDates = <T extends TimelineEntity>(
+    data: T[],
     timeRange: TimeRangeInput,
-    granularity: Granularity
-): PageViewTimeLineEntity[] => {
+    granularity: Granularity,
+    createEmptyEntity: EmptyEntityFactory<T>
+): T[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
 
     const [startDate, endDate] = getDateRange(timeRange);
 
-    const dataMap = new Map();
+    const dataMap = new Map<string, T>();
     data.forEach((item) => {
         const dateKey = new Date(item['EventSummary.day']).toISOString();
         dataMap.set(dateKey, item);
     });
 
-    const filledData = [];
+    const filledData: T[] = [];
     let currentDate = startDate;
     while (currentDate <= endDate) {
         const currentDateKey = currentDate.toISOString();
 
         if (dataMap.has(currentDateKey)) {
-            filledData.push(dataMap.get(currentDateKey));
+            const existingItem = dataMap.get(currentDateKey);
+            if (existingItem) {
+                filledData.push(existingItem);
+            }
         } else {
-            filledData.push({
-                'EventSummary.day': currentDateKey,
-                'EventSummary.day.day': format(currentDate, 'yyyy-MM-dd'),
-                'EventSummary.totalEvents': '0'
-            });
+            filledData.push(createEmptyEntity(currentDate, currentDateKey));
         }
         currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
     }
