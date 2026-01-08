@@ -295,6 +295,17 @@ describe('DotRouterService', () => {
         ).toBe('content');
     });
 
+    it('should return correct Portlet Id using custom resolver for analytics', () => {
+        expect(service.getPortletId('/c/analytics/dashboard')).toBe('analytics-dashboard');
+        expect(service.getPortletId('/c/analytics/reports?test=value')).toBe('analytics-reports');
+        expect(service.getPortletId('#/c/analytics/overview')).toBe('analytics-overview');
+    });
+
+    it('should fallback to default behavior when no custom resolver exists', () => {
+        expect(service.getPortletId('/c/sites')).toBe('sites');
+        expect(service.getPortletId('/c/content-types/edit')).toBe('content-types');
+    });
+
     it('should navigate replacing URL params', () => {
         const params = { id: 'content' };
         service.replaceQueryParams(params);

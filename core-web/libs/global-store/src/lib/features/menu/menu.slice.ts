@@ -26,6 +26,5 @@ export const initialMenuSlice: MenuSlice = {
  * Maintains backward compatibility for bookmarks and old URLs.
  */
 export const REPLACE_SECTIONS_MAP: Record<string, string> = {
-    'edit-page': 'site-browser',
-    analytics: 'analytics-dashboard'
+    'edit-page': 'site-browser'
 };

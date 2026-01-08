@@ -318,7 +318,7 @@ export class DotRouterService {
      * @returns boolean
      * @memberof DotRouterService
      */
-    isJSPPortletURL(url): boolean {
+    isJSPPortletURL(url: string): boolean {
         return url.startsWith('/c/');
     }
 
@@ -361,6 +361,7 @@ export class DotRouterService {
 
     getPortletId(url: string): string {
         url = decodeURIComponent(url);
+
         if (url.indexOf('?') > 0) {
             url = url.substring(0, url.indexOf('?'));
         }
@@ -368,6 +369,10 @@ export class DotRouterService {
         const urlSegments = url
             .split('/')
             .filter((item) => item !== '' && item !== '#' && item !== 'c');
+
+        if (PORTLET_ID_RESOLVERS[urlSegments[0]]) {
+            return PORTLET_ID_RESOLVERS[urlSegments[0]](urlSegments);
+        }
 
         return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
     }
@@ -383,7 +388,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     isCurrentPortletCustom(): boolean {
-        return this.isCustomPortlet(this.currentPortlet.id);
+        return this.isCustomPortlet(this.currentPortlet.id || '');
     }
 
     /**
@@ -457,3 +462,9 @@ export class DotRouterService {
         return navExtras;
     }
 }
+
+const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = {
+    analytics: (urlSegments: string[]) => {
+        return `${urlSegments[0]}-${urlSegments[1]}`;
+    }
+};

@@ -461,6 +461,16 @@ describe('withMenu Feature', () => {
                             url: '/c/analytics-dashboard',
                             menuLink: '/c/analytics-dashboard',
                             parentMenuId: 'MARKETING'
+                        },
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'analytics-search',
+                            label: 'Analytics Search',
+                            url: '/c/analytics-search',
+                            menuLink: '/c/analytics-search',
+                            parentMenuId: 'MARKETING'
                         }
                     ],
                     name: 'Marketing',
@@ -481,13 +491,15 @@ describe('withMenu Feature', () => {
             store.setActiveMenu({ portletId: 'site-browser', shortParentMenuId: 'CONT' });
             expect(store.activeMenuItem()?.id).toBe('site-browser');
 
-            // Test legacy ID 'analytics' maps to 'analytics-dashboard'
-            store.setActiveMenu({ portletId: 'analytics', shortParentMenuId: 'MARK' });
-            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
-
-            // Test current ID still works
+            // Test analytics-dashboard ID works directly
+            // Note: 'analytics' is no longer mapped via REPLACE_SECTIONS_MAP because
+            // getPortletId() now resolves /analytics/dashboard → analytics-dashboard directly
             store.setActiveMenu({ portletId: 'analytics-dashboard', shortParentMenuId: 'MARK' });
             expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
+
+            // Test analytics-search ID works directly
+            store.setActiveMenu({ portletId: 'analytics-search', shortParentMenuId: 'MARK' });
+            expect(store.activeMenuItem()?.id).toBe('analytics-search');
         });
 
         it('should activate menu item using breadcrumbs when bookmark is true', () => {
