@@ -4,8 +4,7 @@
 		"name": "Content Drive",
 		"description": "Comprehensive tests for Content Drive search functionality including pagination, sorting, and filtering tests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "5403727",
-		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-7d861cdb-18a9-4c48-9df0-a7d1a99406c6?action=share&source=collection_link&creator=5403727"
+		"_exporter_id": "5403727"
 	},
 	"item": [
 		{
@@ -1321,7 +1320,8 @@
 									"    const list = jsonData.entity.list;",
 									"    pm.expect(list.length).to.be.at.least(1);",
 									"    ",
-									"    // Verify that results contain 'Test Image' in title or name",
+									"    // Verify that results contain 'Test Image' in its title. This file asset ",
+									"    // is 'Landscape_2008_urban_park_and_plaza_Ankaran.jpeg', created in the Test Data Setup",
 									"    const hasTestImage = list.some(item => {",
 									"        return item.title.toLowerCase().includes('test image');",
 									"    });",
@@ -1346,7 +1346,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"mimeTypes\": [\n        \"text\"\n    ],\n    \"maxResults\": 10\n}",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"mimeTypes\": [\n        \"image\"\n    ],\n    \"maxResults\": 10\n}",
 							"options": {
 								"raw": {
 									"language": "json"
