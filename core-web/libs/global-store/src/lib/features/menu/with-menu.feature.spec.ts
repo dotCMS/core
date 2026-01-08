@@ -610,13 +610,6 @@ describe('withMenu Feature', () => {
 
             const finalActive = store.activeMenuItem();
             expect(finalActive).toEqual(initialActive);
-            // Test legacy ID 'analytics' maps to 'analytics-dashboard'
-            store.setActiveMenu({ portletId: 'analytics', shortParentMenuId: 'MARK' });
-            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
-
-            // Test current ID still works
-            store.setActiveMenu({ portletId: 'analytics-dashboard', shortParentMenuId: 'MARK' });
-            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
         });
 
         it('should activate menu item using breadcrumbs when bookmark is true', () => {

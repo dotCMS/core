@@ -301,9 +301,23 @@ describe('DotRouterService', () => {
         expect(service.getPortletId('#/c/analytics/overview')).toBe('analytics-overview');
     });
 
+    it('should handle analytics without second segment gracefully', () => {
+        // Edge case: /analytics accessed without a second segment should return 'analytics'
+        // instead of 'analytics-undefined'
+        expect(service.getPortletId('/#/analytics')).toBe('analytics');
+        expect(service.getPortletId('/#/analytics?test=value')).toBe('analytics');
+    });
+
     it('should fallback to default behavior when no custom resolver exists', () => {
         expect(service.getPortletId('/c/sites')).toBe('sites');
         expect(service.getPortletId('/c/content-types/edit')).toBe('content-types');
+    });
+
+    it('should handle empty URL segments gracefully', () => {
+        // Edge case: URLs that result in empty segments after filtering
+        expect(service.getPortletId('/')).toBe('');
+        expect(service.getPortletId('/c/')).toBe('');
+        expect(service.getPortletId('/#/')).toBe('');
     });
 
     it('should navigate replacing URL params', () => {

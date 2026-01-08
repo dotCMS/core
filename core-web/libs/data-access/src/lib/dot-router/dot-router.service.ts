@@ -370,6 +370,11 @@ export class DotRouterService {
             .split('/')
             .filter((item) => item !== '' && item !== '#' && item !== 'c');
 
+        // ensure urlSegments has at least one element
+        if (urlSegments.length === 0) {
+            return '';
+        }
+
         if (PORTLET_ID_RESOLVERS[urlSegments[0]]) {
             return PORTLET_ID_RESOLVERS[urlSegments[0]](urlSegments);
         }
@@ -465,6 +470,11 @@ export class DotRouterService {
 
 const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = {
     analytics: (urlSegments: string[]) => {
+        // Handle edge case: /analytics without second segment should return 'analytics'
+        if (!urlSegments[1]) {
+            return urlSegments[0] || '';
+        }
+
         return `${urlSegments[0]}-${urlSegments[1]}`;
     }
 };
