@@ -25,7 +25,7 @@ import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
 
-export const DEBOUNCE_TIME = 1000;
+export const DEBOUNCE_TIME = 5000;
 
 @Component({
     selector: 'dot-edit-ema-layout',
