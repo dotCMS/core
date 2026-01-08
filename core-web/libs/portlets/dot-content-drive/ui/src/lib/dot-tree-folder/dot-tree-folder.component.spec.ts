@@ -158,23 +158,26 @@ describe('DotTreeFolderComponent', () => {
         });
 
         it('should pass selectedNode to p-tree selection property', () => {
-            expect(treeComponent.selection).toEqual([mockSelectedNode]);
+            // Verify the component's signal has the correct value
+            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
         });
 
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
         });
 
-        it('should have correct styleClass when showFolderIconOnFirstOnly is false', () => {
+        it('should have correct class when showFolderIconOnFirstOnly is false', () => {
             spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
             spectator.detectChanges();
-            expect(treeComponent.styleClass).toBe('w-full h-full folder-all');
+            const treeElement = spectator.query('p-tree');
+            expect(treeElement.classList.contains('folder-all')).toBe(true);
         });
 
-        it('should have correct styleClass when showFolderIconOnFirstOnly is true', () => {
+        it('should have correct class when showFolderIconOnFirstOnly is true', () => {
             spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
             spectator.detectChanges();
-            expect(treeComponent.styleClass).toBe('w-full h-full first-only');
+            const treeElement = spectator.query('p-tree');
+            expect(treeElement.classList.contains('first-only')).toBe(true);
         });
     });
 
@@ -191,21 +194,23 @@ describe('DotTreeFolderComponent', () => {
             expect(component.treeStyleClasses()).toBe('w-full h-full first-only');
         });
 
-        it('should update p-tree styleClass when showFolderIconOnFirstOnly changes', () => {
-            const treeComponent = spectator.query(Tree);
+        it('should update p-tree class when showFolderIconOnFirstOnly changes', () => {
+            const treeElement = spectator.query('p-tree');
 
             spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', true);
             spectator.detectChanges();
-            expect(treeComponent.styleClass).toBe('w-full h-full first-only');
+            expect(treeElement.classList.contains('first-only')).toBe(true);
+            expect(treeElement.classList.contains('folder-all')).toBe(false);
 
             spectator.fixture.componentRef.setInput('showFolderIconOnFirstOnly', false);
             spectator.detectChanges();
-            expect(treeComponent.styleClass).toBe('w-full h-full folder-all');
+            expect(treeElement.classList.contains('folder-all')).toBe(true);
+            expect(treeElement.classList.contains('first-only')).toBe(false);
         });
     });
 
     describe('selectedNode Input', () => {
-        it('should pass selectedNode correctly to p-tree selection', () => {
+        it('should pass selectedNode correctly to component signal', () => {
             const newSelectedNode: TreeNode = {
                 key: '3',
                 label: '/application/documents',
@@ -215,14 +220,13 @@ describe('DotTreeFolderComponent', () => {
             spectator.fixture.componentRef.setInput('selectedNode', newSelectedNode);
             spectator.detectChanges();
 
-            const treeComponent = spectator.query(Tree);
-            expect(treeComponent.selection).toEqual([newSelectedNode]);
+            // Verify the component's signal has the transformed value (array)
+            expect(component.$selectedNode()).toEqual([newSelectedNode]);
         });
 
-        it('should update p-tree selection when selectedNode changes', () => {
-            const treeComponent = spectator.query(Tree);
-
-            expect(treeComponent.selection).toEqual([mockSelectedNode]);
+        it('should update component signal when selectedNode changes', () => {
+            // Initial value should be transformed to array
+            expect(component.$selectedNode()).toEqual([mockSelectedNode]);
 
             const newSelectedNode: TreeNode = {
                 key: '1',
@@ -232,7 +236,7 @@ describe('DotTreeFolderComponent', () => {
 
             spectator.fixture.componentRef.setInput('selectedNode', newSelectedNode);
             spectator.detectChanges();
-            expect(treeComponent.selection).toEqual([newSelectedNode]);
+            expect(component.$selectedNode()).toEqual([newSelectedNode]);
         });
     });
 

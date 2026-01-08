@@ -12,8 +12,9 @@ import {
     InputSignal
 } from '@angular/core';
 
-import type { TreeNode } from 'primeng/api';
-import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/tree';
+import { TreeNode } from 'primeng/api';
+import { TreeModule } from 'primeng/tree';
+import { TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/types/tree';
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
@@ -29,7 +30,8 @@ import {
     imports: [TreeModule, FolderNamePipe, DotMessagePipe, JsonPipe],
     templateUrl: './dot-tree-folder.component.html',
     styleUrls: ['./dot-tree-folder.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'w-full h-full min-h-0 block' }
 })
 export class DotTreeFolderComponent {
     /**

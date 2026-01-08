@@ -7,6 +7,9 @@ setupZoneTestEnv({
     errorOnUnknownProperties: true
 });
 
+// Polyfill structuredClone for Jest environment
+globalThis.structuredClone ??= <T>(obj: T): T => JSON.parse(JSON.stringify(obj));
+
 const originalConsoleError = console.error;
 
 // To avoid the error: Error: Could not parse CSS stylesheet

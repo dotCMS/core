@@ -1,9 +1,13 @@
 <ng-content />
 
-<div class="message" data-testid="message">
-    <div class="message__content" data-testid="message-content">
-        <i class="pi pi-upload" data-testid="message-content-icon"></i>
-        <span class="message__content-text" data-testid="message-content-text">
+<div
+    class="message flex items-center justify-center w-full h-full absolute inset-0 z-[1001] transition-all duration-300 ease-in-out opacity-0 visible pointer-events-none"
+    data-testid="message">
+    <div class="flex flex-col items-center justify-center gap-3" data-testid="message-content">
+        <i
+            class="pi pi-upload h-[calc(48px+1.5rem)] w-[calc(48px+1.5rem)] text-[var(--color-palette-primary-500)] bg-[var(--color-palette-primary-200)] rounded-full text-4xl"
+            data-testid="message-content-icon"></i>
+        <span class="text-lg leading-[140%]" data-testid="message-content-text">
             {{ 'content-drive-dropzone.message.drag-and-drop-header' | dm }}
         </span>
     </div>

@@ -53,7 +53,7 @@ interface FolderForm {
         DotFieldRequiredDirective
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
-    styleUrls: ['./dot-content-drive-dialog-folder.component.scss']
+    host: { class: 'block' }
 })
 export class DotContentDriveDialogFolderComponent {
     #fb = inject(FormBuilder);

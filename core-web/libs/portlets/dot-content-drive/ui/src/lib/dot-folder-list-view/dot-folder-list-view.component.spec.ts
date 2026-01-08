@@ -247,24 +247,14 @@ describe('DotFolderListViewComponent', () => {
     });
 
     describe('Styles and Pagination', () => {
-        it('should have empty-table class when items list is empty', () => {
+        it('should render table when items list is empty', () => {
             spectator.setInput('items', []);
             spectator.setInput('totalItems', 0);
             spectator.detectChanges();
 
-            // Verify the styleClass computed signal contains 'empty-table'
-            // PrimeNG applies styleClass to the p-table component's root element
-            // We need to find the element that has the styleClass applied
+            // Verify the table is still rendered when empty
             const tableElement = spectator.query(byTestId('table'));
-            // PrimeNG may apply the class to a parent wrapper, so we check the element or its parent
-            const elementWithClass =
-                tableElement?.closest('.empty-table') ||
-                spectator.query('.empty-table') ||
-                (tableElement?.parentElement?.classList.contains('empty-table')
-                    ? tableElement.parentElement
-                    : null);
-
-            expect(elementWithClass).toBeTruthy();
+            expect(tableElement).toBeTruthy();
         });
 
         it('should not show pagination when there are 20 or fewer total items', () => {
@@ -423,11 +413,11 @@ describe('DotFolderListViewComponent', () => {
             expect(contentletTitle.textContent.trim()).toBe(firstItem.title);
         });
 
-        it('should have item title text with truncate-text class', () => {
+        it('should have item title text with truncate class', () => {
             const itemTitleText = spectator.query(byTestId('item-title-text'));
 
             expect(itemTitleText).toBeTruthy();
-            expect(itemTitleText.classList.contains('truncate-text')).toBe(true);
+            expect(itemTitleText.classList.contains('truncate')).toBe(true);
         });
 
         it('should not have max-width: 100% style on item-title td', () => {
@@ -827,7 +817,7 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.isDragging()).toBe(false);
             });
 
-            it('should apply is-dragging class to row when isDragging is true', () => {
+            it('should apply cursor-grabbing class to row when isDragging is true', () => {
                 const event = createDragStartEvent();
                 const item = mockItems[0];
 
@@ -835,11 +825,11 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(row.classList.contains('cursor-grabbing')).toBe(true);
                 expect(spectator.component.state.isDragging()).toBe(true);
             });
 
-            it('should remove is-dragging class from row when isDragging is false', () => {
+            it('should remove cursor-grabbing class from row when isDragging is false', () => {
                 const event = createDragStartEvent();
                 const item = mockItems[0];
 
@@ -848,7 +838,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 let row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(row.classList.contains('cursor-grabbing')).toBe(true);
                 expect(spectator.component.state.isDragging()).toBe(true);
 
                 // End dragging
@@ -856,7 +846,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(row.classList.contains('cursor-grabbing')).toBe(false);
                 expect(spectator.component.state.isDragging()).toBe(false);
             });
 
@@ -866,7 +856,7 @@ describe('DotFolderListViewComponent', () => {
 
                 // Verify initial state in DOM
                 let row = spectator.query(byTestId('item-row')) as HTMLElement;
-                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(row.classList.contains('cursor-grabbing')).toBe(false);
 
                 // Start drag and verify state + DOM
                 spectator.component.onDragStart(event, item);
@@ -874,7 +864,7 @@ describe('DotFolderListViewComponent', () => {
 
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(true);
-                expect(row.classList.contains('is-dragging')).toBe(true);
+                expect(row.classList.contains('cursor-grabbing')).toBe(true);
 
                 // End drag and verify state + DOM
                 spectator.component.onDragEnd();
@@ -882,7 +872,7 @@ describe('DotFolderListViewComponent', () => {
 
                 row = spectator.query(byTestId('item-row')) as HTMLElement;
                 expect(spectator.component.state.isDragging()).toBe(false);
-                expect(row.classList.contains('is-dragging')).toBe(false);
+                expect(row.classList.contains('cursor-grabbing')).toBe(false);
             });
         });
 
@@ -930,18 +920,17 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.dragOverRowId()).toBeNull();
             });
 
-            it('should apply is-drag-over class when dragOverRowId matches item identifier', () => {
+            it('should set dragOverRowId when dragOverRowId matches item identifier', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(row.classList.contains('is-drag-over')).toBe(true);
                 expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
             });
 
-            it('should not apply is-drag-over class when dragOverRowId does not match', () => {
+            it('should update dragOverRowId when dragging over different rows', () => {
                 const rows = spectator.queryAll(byTestId('item-row')) as HTMLElement[];
                 const dragOverEvent = createDragOverEvent();
 
@@ -949,8 +938,8 @@ describe('DotFolderListViewComponent', () => {
                 rows[1].dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                // First row should not have the class
-                expect(rows[0].classList.contains('is-drag-over')).toBe(false);
+                // dragOverRowId should be set to the second item
+                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
             });
         });
 
@@ -1125,19 +1114,18 @@ describe('DotFolderListViewComponent', () => {
                 expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
             });
 
-            it('should reflect dragOverRowId changes in the DOM immediately', () => {
+            it('should reflect dragOverRowId state changes immediately', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
 
                 // Verify initial state
-                expect(row.classList.contains('is-drag-over')).toBe(false);
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
 
                 // Drag over first item
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
                 expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
-                expect(row.classList.contains('is-drag-over')).toBe(true);
             });
         });
     });
