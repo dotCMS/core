@@ -114,6 +114,7 @@ jobs:
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull: true
           build_args: |
             DOTCMS_DOCKER_TAG=${{ inputs.environment }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
@@ -218,4 +219,3 @@ jobs:
             >
             > This automated script is happy to announce that a new *_SDK libs_* version *tagged as:* [ `${{ steps.sdks_publish.outputs.npm-package-version }}` ] is now available on the `NPM` registry :package:!
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}         
-            

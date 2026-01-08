@@ -6,6 +6,9 @@ on:
       sdkman_java_version:
         description: 'SDKMAN version string run "sdk list java" for options'
         required: true
+      image_suffix:
+        description: 'append suffix to image tag (can be empty)'
+        required: false
       multi_arch:
         description: 'Multi-arch flag, true: linux/amd64,linux/arm64 or false: linux/amd64'
         type: boolean
@@ -51,7 +54,7 @@ jobs:
         with:
           context: ./docker/java-base
           push: ${{ github.event.inputs.push }}
-          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}
+          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}${{ github.event.inputs.image_suffix }}
           platforms: ${{ env.PLATFORMS }}
           build-args:
             SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}
