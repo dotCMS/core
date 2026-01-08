@@ -17,7 +17,7 @@ interface RenderMode {
     styleUrls: ['./render-mode-property.component.scss'],
     standalone: false
 })
-export class NewRenderModePropertyComponent {
+export class RenderModePropertyComponent {
     property: FieldProperty;
     group: UntypedFormGroup;
 
