@@ -1,11 +1,11 @@
 {
 	"info": {
-		"_postman_id": "6d68d6dd-116e-470e-84a5-45b5d1ccb662",
+		"_postman_id": "7d861cdb-18a9-4c48-9df0-a7d1a99406c6",
 		"name": "Content Drive",
 		"description": "Comprehensive tests for Content Drive search functionality including pagination, sorting, and filtering tests.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "10041132",
-		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/lol~49b6fcea-069f-4fba-af82-85fac14c87ed/collection/10041132-6d68d6dd-116e-470e-84a5-45b5d1ccb662?action=share&source=collection_link&creator=10041132"
+		"_exporter_id": "5403727",
+		"_collection_link": "https://cloudy-robot-285072.postman.co/workspace/JCastro-Workspace~5bfa586e-54db-429b-b7d5-c4ff997e3a0d/collection/5403727-7d861cdb-18a9-4c48-9df0-a7d1a99406c6?action=share&source=collection_link&creator=5403727"
 	},
 	"item": [
 		{
@@ -31,7 +31,9 @@
 									"    pm.expect(jsonData.entity.identifier).to.not.be.empty;",
 									"});"
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
 							}
 						}
 					],
@@ -410,6 +412,56 @@
 								"folder",
 								"createfolders",
 								"{{testSiteName}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Image File",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "resources/image/Landscape_2008_urban_park_and_plaza_Ankaran.jpeg"
+								},
+								{
+									"key": "json",
+									"value": "{\n     \"contentlet\": {\n        \"contentType\":\"FileAsset\",\n        \"title\":\"Test Image\",\n        \"hostFolder\":\"{{testSiteName}}\"\n    }\n}",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?language=1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "language",
+									"value": "1"
+								}
 							]
 						}
 					},
@@ -1252,6 +1304,69 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Search - MIME Type Filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Verify results contain 'Test Image'\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const list = jsonData.entity.list;",
+									"    pm.expect(list.length).to.be.at.least(1);",
+									"    ",
+									"    // Verify that results contain 'Test Image' in title or name",
+									"    const hasTestImage = list.some(item => {",
+									"        return item.title.toLowerCase().includes('test image');",
+									"    });",
+									"    ",
+									"    pm.expect(hasTestImage).to.equal(true, \"Expected test image is not being returned\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"mimeTypes\": [\n        \"text\"\n    ],\n    \"maxResults\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/drive/search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"drive",
+								"search"
+							]
+						}
+					},
+					"response": []
 				}
 			],
 			"description": "Tests search and filtering functionality using the filters.text parameter."
@@ -1589,7 +1704,49 @@
 					"    console.log(`⏱️  Delayed ${milliseconds}ms`);",
 					"};",
 					"",
-					"sleep(3000);"
+					"sleep(3000);",
+					"",
+					"if (!pm.environment.get('jwt')) {",
+					"    console.log(\"generating....\")",
+					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"",
+					"    if (!pm.environment.get('jwt')) {",
+					"        const username = pm.environment.get(\"user\");",
+					"        const password = pm.environment.get(\"password\");",
+					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"",
+					"        const requestOptions = {",
+					"            url: apiUrl,",
+					"            method: \"POST\",",
+					"            header: {",
+					"                \"accept\": \"*/*\",",
+					"                \"content-type\": \"application/json\",",
+					"                \"Authorization\": `Basic ${basicAuth}`",
+					"            },",
+					"            body: {",
+					"                mode: \"raw\",",
+					"                raw: JSON.stringify({",
+					"                    \"expirationSeconds\": 7200,",
+					"                    \"userId\": \"dotcms.org.1\",",
+					"                    \"network\": \"0.0.0.0/0\",",
+					"                    \"claims\": {\"label\": \"postman-tests\"}",
+					"                })",
+					"            }",
+					"        };",
+					"",
+					"        pm.sendRequest(requestOptions, function (err, response) {",
+					"            if (err) {",
+					"                console.log(err);",
+					"            } else {",
+					"                const jwt = response.json().entity.jwt;",
+					"                pm.environment.set('jwt', jwt);",
+					"                console.log(jwt);",
+					"            }",
+					"        });",
+					"    }",
+					"}",
+					""
 				]
 			}
 		},
@@ -1603,56 +1760,6 @@
 					""
 				]
 			}
-		}
-	],
-	"variable": [
-		{
-			"key": "testSiteId",
-			"value": ""
-		},
-		{
-			"key": "testSiteName",
-			"value": ""
-		},
-		{
-			"key": "testContentTypeId",
-			"value": ""
-		},
-		{
-			"key": "testContentTypeVar",
-			"value": ""
-		},
-		{
-			"key": "testFolderId",
-			"value": ""
-		},
-		{
-			"key": "alphaContentlet1Id",
-			"value": ""
-		},
-		{
-			"key": "alphaContentlet2Id",
-			"value": ""
-		},
-		{
-			"key": "alphaContentlet3Id",
-			"value": ""
-		},
-		{
-			"key": "betaContentlet1Id",
-			"value": ""
-		},
-		{
-			"key": "betaContentlet2Id",
-			"value": ""
-		},
-		{
-			"key": "betaContentlet3Id",
-			"value": ""
-		},
-		{
-			"key": "betaSearchResultCount",
-			"value": ""
 		}
 	]
 }
