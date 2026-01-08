@@ -510,32 +510,15 @@ public class AssetPermissionHelper {
                     "Invalid role id: %s", roleForm.getRoleId()));
             }
 
-            // Validate individual permission names
-            if (roleForm.getIndividual() != null) {
-                for (final String perm : roleForm.getIndividual()) {
-                    if (!PermissionConversionUtils.isValidPermissionLevel(perm)) {
-                        throw new BadRequestException(String.format(
-                            "Invalid permission level: %s", perm));
-                    }
-                }
-            }
+            // Individual permission validation is handled by Jackson enum deserialization
+            // No manual validation needed for Set<PermissionAPI.Type>
 
-            // Validate inheritable permission names and scopes
+            // Validate inheritable scope names (permission types validated by Jackson)
             if (roleForm.getInheritable() != null) {
-                for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
-                    final String scope = entry.getKey();
+                for (final String scope : roleForm.getInheritable().keySet()) {
                     if (!PermissionConversionUtils.isValidScope(scope)) {
                         throw new BadRequestException(String.format(
                             "Invalid permission scope: %s", scope));
-                    }
-
-                    if (entry.getValue() != null) {
-                        for (final String perm : entry.getValue()) {
-                            if (!PermissionConversionUtils.isValidPermissionLevel(perm)) {
-                                throw new BadRequestException(String.format(
-                                    "Invalid permission level '%s' in scope '%s'", perm, scope));
-                            }
-                        }
                     }
                 }
             }
@@ -560,7 +543,7 @@ public class AssetPermissionHelper {
 
             // Build individual permissions
             if (roleForm.getIndividual() != null && !roleForm.getIndividual().isEmpty()) {
-                final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(
+                final int permissionBits = PermissionConversionUtils.convertTypesToBits(
                     roleForm.getIndividual());
                 permissions.add(new Permission(
                     PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -573,16 +556,16 @@ public class AssetPermissionHelper {
 
             // Build inheritable permissions (only for parent permissionables)
             if (asset.isParentPermissionable() && roleForm.getInheritable() != null) {
-                for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
+                for (final Map.Entry<String, Set<PermissionAPI.Type>> entry : roleForm.getInheritable().entrySet()) {
                     final String scopeName = entry.getKey();
-                    final List<String> scopePermissions = entry.getValue();
+                    final Set<PermissionAPI.Type> scopePermissions = entry.getValue();
 
                     if (scopePermissions == null || scopePermissions.isEmpty()) {
                         continue;
                     }
 
                     final String permissionType = PermissionConversionUtils.convertScopeToPermissionType(scopeName);
-                    final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(scopePermissions);
+                    final int permissionBits = PermissionConversionUtils.convertTypesToBits(scopePermissions);
 
                     permissions.add(new Permission(
                         permissionType,
