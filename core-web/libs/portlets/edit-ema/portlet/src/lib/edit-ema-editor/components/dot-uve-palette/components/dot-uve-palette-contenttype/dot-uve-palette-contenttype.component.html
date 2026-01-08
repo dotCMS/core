@@ -9,7 +9,7 @@
 <!-- Content type icon and name -->
 <div
     class="content"
-    [pTooltip]="'Not allowed in this page'"
+    [pTooltip]="'not allowed on this page'"
     [tooltipDisabled]="!contentType.disabled">
     <div class="icon">
         @if (contentType.icon) {
@@ -24,10 +24,6 @@
 </div>
 
 <!-- Chevron -->
-<div
-    class="chevron"
-    [pTooltip]="'Not allowed in this page'"
-    [tooltipDisabled]="!contentType.disabled"
-    (click)="onChevronClick(contentType)">
+<div class="chevron" (click)="onChevronClick(contentType)">
     <i class="pi pi-chevron-right"></i>
 </div>

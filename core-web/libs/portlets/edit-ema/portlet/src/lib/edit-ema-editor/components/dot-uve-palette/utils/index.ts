@@ -172,6 +172,42 @@ export function getPaletteState(
     return elements.length > 0 ? DotPaletteListStatus.LOADED : DotPaletteListStatus.EMPTY;
 }
 
+function sortContentTypesByName<T extends Pick<DotCMSContentType, 'name'>>(contentTypes: T[]): T[] {
+    return contentTypes.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function isAllowedFavoriteContentType({
+    contentType,
+    allowedContentTypes
+}: {
+    contentType: DotCMSContentType;
+    allowedContentTypes?: Record<string, true>;
+}): boolean {
+    if (!allowedContentTypes || Object.keys(allowedContentTypes).length === 0) {
+        // By UX rule: if we don't have an allowed map, everything is disabled
+        return false;
+    }
+
+    return (
+        allowedContentTypes[contentType.variable] === true ||
+        contentType.baseType === DotCMSBaseTypesContentTypes.WIDGET
+    );
+}
+
+function markDisabledFavorites({
+    contentTypes,
+    allowedContentTypes
+}: {
+    contentTypes: DotCMSContentTypePalette[];
+    allowedContentTypes?: Record<string, true>;
+}): DotCMSContentTypePalette[] {
+    return contentTypes.map((ct) =>
+        isAllowedFavoriteContentType({ contentType: ct, allowedContentTypes })
+            ? ct
+            : { ...ct, disabled: true }
+    );
+}
+
 /**
  * Filters content types by search term, sorts them alphabetically by name,
  * applies pagination, and builds a response object with pagination metadata.
@@ -216,40 +252,22 @@ export function buildPaletteFavorite({
     pagination: { currentPage: number; perPage: number; totalEntries: number };
     status: DotPaletteListStatus;
 } {
-    // Filter and sort all content types
-    const filteredContentTypes = contentTypes.filter(
-        (ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase())
+    // Filter + sort (A→Z) to keep pagination stable
+    const filteredContentTypes = sortContentTypesByName(
+        contentTypes.filter((ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase()))
     );
-    filteredContentTypes.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Calculate pagination slice
     const totalEntries = filteredContentTypes.length;
     const startIndex = (page - 1) * DEFAULT_PER_PAGE;
     const endIndex = page * DEFAULT_PER_PAGE;
     const pageContentTypes = filteredContentTypes.slice(startIndex, endIndex);
 
-    // Favorites are stored locally, so we need to mark which are not allowed on this page
-    // (allowedContentTypes comes from containerStructures[*].contentTypeVar and matches contentType.variable)
-    const hasAllowedMap = !!allowedContentTypes && Object.keys(allowedContentTypes).length > 0;
-    const enabled: DotCMSContentTypePalette[] = [];
-    const disabled: DotCMSContentTypePalette[] = [];
-
-    for (const ct of pageContentTypes) {
-        const isAllowed =
-            hasAllowedMap &&
-            (allowedContentTypes![ct.variable] === true ||
-                ct.baseType === DotCMSBaseTypesContentTypes.WIDGET);
-
-        if (isAllowed) {
-            enabled.push(ct);
-        } else {
-            disabled.push({ ...ct, disabled: true });
-        }
-    }
-
-    enabled.sort((a, b) => a.name.localeCompare(b.name));
-    disabled.sort((a, b) => a.name.localeCompare(b.name));
-    const contenttypes = [...enabled, ...disabled];
+    // Favorites are stored locally, so we need to mark which are not allowed on this page.
+    // `allowedContentTypes` comes from containerStructures[*].contentTypeVar and matches contentType.variable.
+    const contenttypes = markDisabledFavorites({
+        contentTypes: pageContentTypes,
+        allowedContentTypes
+    });
 
     const pagination = {
         currentPage: page,
