@@ -1,11 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { FormGroup } from '@angular/forms';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { StyleEditorFormBuilderService } from './style-editor-form-builder.service';
-import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../../shared/consts';
 
 const createMockSchema = (): StyleEditorFormSchema => ({
     contentType: 'test-content-type',
