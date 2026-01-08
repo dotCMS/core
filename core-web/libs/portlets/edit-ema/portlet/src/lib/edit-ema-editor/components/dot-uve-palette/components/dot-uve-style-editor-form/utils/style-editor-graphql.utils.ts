@@ -1,6 +1,6 @@
 import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
 
-import { ActionPayload } from '../../../../../../shared/models';
+import { ActionPayload, StyleEditorProperties } from '../../../../../../shared/models';
 
 /**
  * Type representing a GraphQL response that can be either:
@@ -34,7 +34,7 @@ function extractPageAsset(response: GraphQLResponse): DotCMSPageAsset {
 export function updateStylePropertiesInGraphQL(
     graphqlResponse: GraphQLResponse,
     payload: ActionPayload,
-    styleProperties: Record<string, unknown>
+    styleProperties: StyleEditorProperties
 ): GraphQLResponse {
     const pageAsset = extractPageAsset(graphqlResponse);
     const containerId = payload.container.identifier;
@@ -75,7 +75,7 @@ export function updateStylePropertiesInGraphQL(
 export function extractStylePropertiesFromGraphQL(
     graphqlResponse: GraphQLResponse,
     payload: ActionPayload
-): Record<string, unknown> | null {
+): StyleEditorProperties | null {
     const pageAsset = extractPageAsset(graphqlResponse);
     const containerId = payload.container.identifier;
     const contentletId = payload.contentlet.identifier;

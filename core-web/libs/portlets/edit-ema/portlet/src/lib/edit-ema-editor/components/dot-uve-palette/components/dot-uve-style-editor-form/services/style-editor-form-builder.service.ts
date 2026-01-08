@@ -9,6 +9,7 @@ import {
 } from '@dotcms/uve';
 
 import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../../shared/consts';
+import { StyleEditorProperties } from '../../../../../../shared/models';
 
 /**
  * Service responsible for building reactive forms from style editor schemas.
@@ -27,7 +28,7 @@ export class StyleEditorFormBuilderService {
      * @param initialValues - Optional initial values to populate the form with
      * @returns A FormGroup with controls for all fields in the schema
      */
-    buildForm(schema: StyleEditorFormSchema, initialValues?: Record<string, unknown>): FormGroup {
+    buildForm(schema: StyleEditorFormSchema, initialValues?: StyleEditorProperties): FormGroup {
         const formControls: Record<string, AbstractControl> = {};
 
         schema.sections.forEach((section: StyleEditorSectionSchema) => {
