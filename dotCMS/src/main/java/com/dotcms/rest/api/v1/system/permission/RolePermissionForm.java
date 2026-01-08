@@ -1,11 +1,12 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Form representing permissions for a single role in an asset permission update request.
@@ -42,27 +43,27 @@ public class RolePermissionForm {
         description = "Individual permission levels for this asset. Valid values: READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN",
         example = "[\"READ\", \"WRITE\", \"PUBLISH\"]"
     )
-    private final List<String> individual;
+    private final Set<PermissionAPI.Type> individual;
 
     @JsonProperty("inheritable")
     @Schema(
-        description = "Inheritable permissions by scope for child assets. Keys are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are lists of permission levels.",
+        description = "Inheritable permissions by scope for child assets. Keys are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are sets of permission levels.",
         example = "{\"FOLDER\": [\"READ\", \"CAN_ADD_CHILDREN\"], \"CONTENT\": [\"READ\", \"WRITE\"]}"
     )
-    private final Map<String, List<String>> inheritable;
+    private final Map<String, Set<PermissionAPI.Type>> inheritable;
 
     /**
      * Creates a new RolePermissionForm.
      *
      * @param roleId      Role identifier (required)
-     * @param individual  Permission levels for this asset (e.g., ["READ", "WRITE"])
+     * @param individual  Permission levels for this asset (e.g., [READ, WRITE])
      * @param inheritable Permission scopes to permission levels for child assets
      */
     @JsonCreator
     public RolePermissionForm(
             @JsonProperty("roleId") final String roleId,
-            @JsonProperty("individual") final List<String> individual,
-            @JsonProperty("inheritable") final Map<String, List<String>> inheritable) {
+            @JsonProperty("individual") final Set<PermissionAPI.Type> individual,
+            @JsonProperty("inheritable") final Map<String, Set<PermissionAPI.Type>> inheritable) {
         this.roleId = roleId;
         this.individual = individual;
         this.inheritable = inheritable;
@@ -78,23 +79,23 @@ public class RolePermissionForm {
     }
 
     /**
-     * Gets the individual (direct) permission levels for this asset.
+     * Gets the individual (direct) permission types for this asset.
      * Valid values: READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN
      *
-     * @return List of permission level strings, or null if not specified
+     * @return Set of permission types, or null if not specified
      */
-    public List<String> getIndividual() {
+    public Set<PermissionAPI.Type> getIndividual() {
         return individual;
     }
 
     /**
      * Gets the inheritable permissions map for child assets.
      * Keys are permission scopes (FOLDER, CONTENT, PAGE, etc.)
-     * Values are lists of permission level strings.
+     * Values are sets of permission types.
      *
-     * @return Map of scope to permission levels, or null if not specified
+     * @return Map of scope to permission types, or null if not specified
      */
-    public Map<String, List<String>> getInheritable() {
+    public Map<String, Set<PermissionAPI.Type>> getInheritable() {
         return inheritable;
     }
 }

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.business.PermissionAPI;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -24,7 +25,7 @@ public class SaveUserPermissionsForm extends Validated {
         required = true
     )
     @NotNull(message = "permissions is required")
-    private final Map<String, Set<String>> permissions;
+    private final Map<String, Set<PermissionAPI.Type>> permissions;
 
     @JsonProperty("cascade")
     @Schema(
@@ -37,11 +38,11 @@ public class SaveUserPermissionsForm extends Validated {
     /**
      * Constructs form for saving user permissions.
      *
-     * @param permissions Map of permission scopes to permission levels
+     * @param permissions Map of permission scopes to permission types
      * @param cascade Whether to cascade permissions to children
      */
     public SaveUserPermissionsForm(
-        @JsonProperty("permissions") final Map<String, Set<String>> permissions,
+        @JsonProperty("permissions") final Map<String, Set<PermissionAPI.Type>> permissions,
         @JsonProperty("cascade") final boolean cascade
     ) {
         this.permissions = permissions;
@@ -51,9 +52,9 @@ public class SaveUserPermissionsForm extends Validated {
     /**
      * Gets the permission assignments map.
      *
-     * @return Map of scopes to permission levels
+     * @return Map of scopes to permission types
      */
-    public Map<String, Set<String>> getPermissions() {
+    public Map<String, Set<PermissionAPI.Type>> getPermissions() {
         return permissions;
     }
 
@@ -74,18 +75,16 @@ public class SaveUserPermissionsForm extends Validated {
             throw new BadRequestException("permissions cannot be empty");
         }
 
-        // Validate against metadata API
-        final PermissionSaveHelper helper = new PermissionSaveHelper();
-        final Set<String> validScopes = helper.getAvailablePermissionScopes();
-        final Set<String> validLevels = helper.getAvailablePermissionLevels();
-
-        for (final Map.Entry<String, Set<String>> entry : permissions.entrySet()) {
+        for (final Map.Entry<String, Set<PermissionAPI.Type>> entry : permissions.entrySet()) {
             final String scope = entry.getKey();
-            if (!validScopes.contains(scope)) {
-                throw new BadRequestException("Invalid permission scope: " + scope);
+
+            // Validate scope using PermissionAPI.Scope enum
+            if (!PermissionConversionUtils.isValidScope(scope)) {
+                throw new BadRequestException("Invalid permission scope: " + scope +
+                    ". Valid scopes: " + PermissionAPI.Scope.getAllScopeNames());
             }
 
-            final Set<String> levels = entry.getValue();
+            final Set<PermissionAPI.Type> levels = entry.getValue();
 
             // Validate permission levels are not null or empty
             if (levels == null) {
@@ -95,15 +94,8 @@ public class SaveUserPermissionsForm extends Validated {
                 throw new BadRequestException("Permission levels for scope '" + scope + "' cannot be empty");
             }
 
-            // Validate each permission level
-            for (final String level : levels) {
-                if (level == null) {
-                    throw new BadRequestException("Permission level cannot be null in scope '" + scope + "'");
-                }
-                if (!validLevels.contains(level)) {
-                    throw new BadRequestException("Invalid permission level '" + level + "' in scope '" + scope + "'");
-                }
-            }
+            // Permission type validation is handled by Jackson enum deserialization
+            // If invalid enum values are passed, Jackson will fail to deserialize
         }
     }
 }
