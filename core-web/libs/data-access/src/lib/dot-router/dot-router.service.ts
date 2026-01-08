@@ -370,16 +370,13 @@ export class DotRouterService {
             .split('/')
             .filter((item) => item !== '' && item !== '#' && item !== 'c');
 
-        // ensure urlSegments has at least one element
-        if (urlSegments.length === 0) {
-            return '';
+        const key = urlSegments[0];
+
+        if (key && PORTLET_ID_RESOLVERS[key]) {
+            return PORTLET_ID_RESOLVERS[key](urlSegments);
         }
 
-        if (PORTLET_ID_RESOLVERS[urlSegments[0]]) {
-            return PORTLET_ID_RESOLVERS[urlSegments[0]](urlSegments);
-        }
-
-        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
+        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : key || '';
     }
 
     isPublicPage(): boolean {
