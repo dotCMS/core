@@ -1,0 +1,76 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🏃🏽‍♂️‍➡️ - Nx Command",
+      "type": "shell",
+      "command": "yarn nx ${input:nxCommand} ${input:nxProject}",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "🧪 - Test Specific File",
+      "type": "shell",
+      "command": "yarn nx test ${input:nxProject} --testPathPattern=${input:testFile}",
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "🧪 - Test Project",
+      "type": "shell",
+      "command": "yarn nx test ${input:nxProject}",
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "nxCommand",
+      "type": "pickString",
+      "description": "Select Nx command",
+      "options": ["serve", "build", "test", "lint", "e2e"],
+      "default": "serve"
+    },
+    {
+      "id": "nxProject",
+      "type": "pickString",
+      "description": "Select project",
+      "options": [
+        "dotcms-ui",
+        "dotcms-block-editor",
+        "sdk-client",
+        "sdk-react",
+        "sdk-angular",
+        "sdk-analytics",
+        "sdk-create-app"
+      ],
+      "default": "dotcms-ui"
+    },
+    {
+      "id": "testFile",
+      "type": "promptString",
+      "description": "Enter test file name pattern (e.g., dot-edit-content)",
+      "default": ""
+    }
+  ]
+}
