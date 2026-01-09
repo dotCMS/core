@@ -55,8 +55,8 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { DynamicFieldPropertyDirective } from './components/fields/content-type-fields-properties-form/field-properties/dynamic-field-property-directive/dynamic-field-property.directive';
 import { HintPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/hint-property';
 import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
-import { NewRenderModePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/new-render-mode-proptery';
 import { RegexCheckPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/regex-check-property';
+import { RenderModePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/render-mode-property';
 import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
@@ -115,7 +115,7 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
         DotBlockEditorSettingsComponent,
-        NewRenderModePropertyComponent
+        RenderModePropertyComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
