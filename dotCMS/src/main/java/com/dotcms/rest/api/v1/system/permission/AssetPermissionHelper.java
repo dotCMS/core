@@ -476,8 +476,14 @@ public class AssetPermissionHelper {
         }
 
         // 9. Build and return response
-        Logger.info(this, () -> String.format(
-            "Successfully updated permissions for asset: %s", assetId));
+        if (cascadeWarnings.isEmpty()) {
+            Logger.info(this, () -> String.format(
+                "Successfully updated permissions for asset: %s", assetId));
+        } else {
+            Logger.warn(this, () -> String.format(
+                "Permissions saved for asset: %s, but %d cascade job(s) failed to trigger",
+                assetId, cascadeWarnings.size()));
+        }
 
         return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size(), cascadeWarnings);
     }
