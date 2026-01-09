@@ -1,0 +1,55 @@
+{
+  "folders": [
+    {
+      "name": "🟣 core",
+      "path": ".",
+    },
+    {
+      "name": "🅰️ core-web",
+      "path": "./core-web"
+    },
+    {
+      "name": "📘 example-angular",
+      "path": "./examples/angular"
+    },
+    {
+      "name": "📗 example-angular-ssr",
+      "path": "./examples/angular-ssr"
+    },
+    {
+      "name": "📙 example-astro",
+      "path": "./examples/astro"
+    },
+    {
+      "name": "📕 example-nextjs",
+      "path": "./examples/nextjs"
+    },
+    {
+      "name": "📔 example-vuejs",
+      "path": "./examples/vuejs"
+    }
+  ],
+  "settings": {
+    // Global workspace settings (apply to all folders)
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/target": true,
+      "**/.nx": true,
+      // Hide folders that have their own workspace roots
+      "core-web": true,
+      "examples": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/target": true,
+      "**/dist": true
+    },
+    // Editor settings
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
+  }
+}

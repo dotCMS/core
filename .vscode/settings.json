@@ -1,0 +1,82 @@
+{
+    "workspaceIndexing": {
+        "ignorePatterns": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/.nx/**",
+            "**/*.timestamp-*",
+            "**/.vite/**",
+            "**/target/**"
+        ]
+    },
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms512m -Xlog:disable",
+
+    // Disable automatic Java build (use Maven CLI instead for dotCMS)
+    "java.autobuild.enabled": false,
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": true,
+
+    // Java Runtime Configuration
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/Users/fmontes/.sdkman/candidates/java/21.0.8-ms",
+            "default": true
+        }
+    ],
+
+    // Maven Configuration
+    "maven.executable.path": "./mvnw",
+    "maven.terminal.useJavaHome": true,
+    "java.home": "/Users/fmontes/.sdkman/candidates/java/21.0.8-ms",
+    "maven.terminal.customEnv": [
+        {
+            "environmentVariable": "MAVEN_OPTS",
+            "value": "-Xmx2048m"
+        }
+    ],
+
+    // Disable Maven lifecycle execution in IDE (use CLI instead)
+    "java.configuration.updateBuildConfiguration": "disabled",
+    "java.maven.lifecycle.skipResourceConfiguration": true,
+    "java.import.maven.disableTestClasspathFlag": false,
+
+    // Maven lifecycle mapping to ignore certain plugin executions
+    "maven.buildFilePath": "${workspaceFolder}/pom.xml",
+    "maven.lifecycleMappings.location": "${workspaceFolder}/.vscode/lifecycle-mappings.xml",
+
+    // Auto Import
+    "java.completion.importOrder": [
+        "java",
+        "javax",
+        "com",
+        "org"
+    ],
+    "java.saveActions.organizeImports": true,
+
+
+    // Code Formatting
+    "java.format.settings.profile": "GoogleStyle",
+
+    // Editor Settings
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+
+    // Files to exclude from explorer and search
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/target": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.flattened-pom.xml": true
+    },
+
+    "search.exclude": {
+        "**/target": true,
+        "**/node_modules": true,
+        "**/dist": true
+    }
+}

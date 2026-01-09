@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    // Java Development Pack (includes Language Support, Maven, Debugger, Test Runner, IntelliCode)
+    "vscjava.vscode-java-pack"
+  ]
+}
