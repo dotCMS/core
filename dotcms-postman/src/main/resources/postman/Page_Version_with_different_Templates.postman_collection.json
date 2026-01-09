@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "ceff4e40-0e76-4963-b742-5f7bd2470b7f",
+		"_postman_id": "f608c967-70bc-4606-96a4-96eaf2e76705",
 		"name": "Page Version with diferrent Templates",
 		"description": "Create two Templates with:\n\n- First\n    \n\nName: page_version_different_template_1\n\nBody: Template 1\n\n- Second\n    \n\nName: page_version_different_template_2\n\nBody: Template 2\n\nThese are going to be used later.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "4500400"
+		"_exporter_id": "36473486"
 	},
 	"item": [
 		{
@@ -929,6 +929,80 @@
 								"page",
 								"{{page_version_different_template_id}}",
 								"layout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish page 1 after change",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": " ",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{page_version_different_template_id}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{page_version_different_template_id}}"
+								}
 							]
 						}
 					},
