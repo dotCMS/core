@@ -310,7 +310,7 @@
                                     </ports>
                                     <volumes>
                                         <bind>
-                                            <volume>${docker.db.volume}:/var/lib/postgresql/data</volume>
+                                            <volume>${docker.db.volume}:/var/lib/postgresql</volume>
                                         </bind>
                                     </volumes>
                                     <env>
