@@ -8,7 +8,7 @@ export ES_JAVA_OPTS=${ES_JAVA_OPTS:-"-Xmx512m"}
 export DOTCMS_CLONE_TYPE=${DOTCMS_CLONE_TYPE:-"dump"}
 export ALL_ASSETS=${ALL_ASSETS:-"false"}
 export MAX_ASSET_SIZE=${MAX_ASSET_SIZE:-"100mb"}
-export PG_VERSION=${PG_VERSION:-"16"}
+export PG_VERSION=${PG_VERSION:-"18"}
 export PATH=$PATH:$JAVA_HOME/bin:/usr/local/pgsql/bin:/usr/lib/postgresql/$PG_VERSION/bin/
 
 
