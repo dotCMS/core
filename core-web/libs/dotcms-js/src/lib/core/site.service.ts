@@ -1,14 +1,21 @@
 import { Observable, Subject, merge, of } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, pluck, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, skip, startWith, switchMap, take, tap } from 'rxjs/operators';
 
-import { CoreWebService } from './core-web.service';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
+
 import { DotcmsEventsService } from './dotcms-events.service';
 import { LoggerService } from './logger.service';
 import { LoginService } from './login.service';
 import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper';
+
+// Response type for content search endpoints that return contentlets
+interface DotContentSearchResponse<T> {
+    contentlets: T;
+}
 
 /**
  * @deprecated
@@ -22,7 +29,7 @@ import { DotEventTypeWrapper } from './models/dot-events/dot-event-type-wrapper'
     providedIn: 'root'
 })
 export class SiteService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
     private selectedSite: Site;
@@ -44,9 +51,9 @@ export class SiteService {
         const dotcmsEventsService = inject(DotcmsEventsService);
 
         this.urls = {
-            currentSiteUrl: 'v1/site/currentSite',
-            sitesUrl: 'v1/site',
-            switchSiteUrl: 'v1/site/switch'
+            currentSiteUrl: '/api/v1/site/currentSite',
+            sitesUrl: '/api/v1/site',
+            switchSiteUrl: '/api/v1/site/switch'
         };
 
         dotcmsEventsService
@@ -153,12 +160,9 @@ export class SiteService {
      * @memberof SiteService
      */
     switchToDefaultSite(): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: 'v1/site/switch'
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .put<DotCMSResponse<Site>>(this.urls.switchSiteUrl, {})
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -169,14 +173,11 @@ export class SiteService {
      * @memberof SiteService
      */
     getSiteById(id: string): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                url: `/api/content/render/false/query/+contentType:host%20+identifier:${id}`
-            })
-            .pipe(
-                pluck('contentlets'),
-                map((sites: Site[]) => sites[0])
-            );
+        return this.http
+            .get<
+                DotContentSearchResponse<Site[]>
+            >(`/api/content/render/false/query/+contentType:host%20+identifier:${id}`)
+            .pipe(map((response) => response.contentlets[0]));
     }
 
     /**
@@ -209,11 +210,8 @@ export class SiteService {
     switchSite(site: Site): Observable<Site> {
         this.loggerService.debug('Applying a Site Switch', site.identifier);
 
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `${this.urls.switchSiteUrl}/${site.identifier}`
-            })
+        return this.http
+            .put<DotCMSResponse<unknown>>(`${this.urls.switchSiteUrl}/${site.identifier}`, {})
             .pipe(
                 take(1),
                 tap(() => this.setCurrentSite(site)),
@@ -234,11 +232,9 @@ export class SiteService {
     }
 
     private requestCurrentSite(): Observable<Site> {
-        return this.coreWebService
-            .requestView({
-                url: this.urls.currentSiteUrl
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<Site>>(this.urls.currentSiteUrl)
+            .pipe(map((response) => response.entity));
     }
 
     private setCurrentSite(site: Site): void {

@@ -1,15 +1,17 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 
-import { DotLoginInformation, SESSION_STORAGE_VARIATION_KEY } from '@dotcms/dotcms-models';
+import {
+    DotCMSResponse,
+    DotLoginInformation,
+    SESSION_STORAGE_VARIATION_KEY
+} from '@dotcms/dotcms-models';
 
-import { CoreWebService } from './core-web.service';
 import { DotcmsEventsService } from './dotcms-events.service';
-import { HttpCode } from './util/http-code';
 
 export interface DotLoginParams {
     login: string;
@@ -29,7 +31,7 @@ export const LOGOUT_URL = '/dotAdmin/logout';
     providedIn: 'root'
 })
 export class LoginService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private dotcmsEventsService = inject(DotcmsEventsService);
 
     currentUserLanguageId = '';
@@ -43,14 +45,14 @@ export class LoginService {
         this._loginAsUsersList$ = new Subject<User[]>();
 
         this.urls = {
-            changePassword: 'v1/changePassword',
-            getAuth: 'v1/authentication/logInUser',
-            loginAs: 'v1/users/loginas',
-            logout: 'v1/logout',
-            logoutAs: 'v1/users/logoutas',
-            recoverPassword: 'v1/forgotpassword',
-            serverInfo: 'v1/loginform',
-            userAuth: 'v1/authentication',
+            changePassword: '/api/v1/changePassword',
+            getAuth: '/api/v1/authentication/logInUser',
+            loginAs: '/api/v1/users/loginas',
+            logout: '/api/v1/logout',
+            logoutAs: '/api/v1/users/logoutas',
+            recoverPassword: '/api/v1/forgotpassword',
+            serverInfo: '/api/v1/loginform',
+            userAuth: '/api/v1/authentication',
             current: '/api/v1/users/current/'
         };
 
@@ -71,9 +73,9 @@ export class LoginService {
         return this._auth$.asObservable();
     }
 
-    private _logout$: Subject<any> = new Subject<any>();
+    private _logout$: Subject<void> = new Subject<void>();
 
-    get logout$(): Observable<any> {
+    get logout$(): Observable<void> {
         return this._logout$.asObservable();
     }
 
@@ -104,13 +106,7 @@ export class LoginService {
      * @memberof LoginService
      */
     getCurrentUser(): Observable<CurrentUser> {
-        return this.coreWebService
-            .request<CurrentUser>({
-                url: this.urls.current
-            })
-            .pipe(
-                map((res: HttpResponse<CurrentUser>) => res)
-            ) as unknown as Observable<CurrentUser>;
+        return this.http.get<CurrentUser>(this.urls.current);
     }
 
     /**
@@ -120,19 +116,15 @@ export class LoginService {
      * @memberof LoginService
      */
     loadAuth(): Observable<Auth> {
-        return this.coreWebService
-            .requestView({
-                url: this.urls.getAuth
-            })
-            .pipe(
-                pluck('entity'),
-                tap((auth: Auth) => {
-                    if (auth.user) {
-                        this.setAuth(auth);
-                    }
-                }),
-                map((auth: Auth) => this.getFullAuth(auth))
-            );
+        return this.http.get<DotCMSResponse<Auth>>(this.urls.getAuth).pipe(
+            map((response) => response.entity),
+            tap((auth: Auth) => {
+                if (auth.user) {
+                    this.setAuth(auth);
+                }
+            }),
+            map((auth: Auth) => this.getFullAuth(auth))
+        );
     }
 
     /**
@@ -146,13 +138,9 @@ export class LoginService {
     changePassword(password: string, token: string): Observable<string> {
         const body = JSON.stringify({ password: password, token: token });
 
-        return this.coreWebService
-            .requestView({
-                body: body,
-                method: 'POST',
-                url: this.urls.changePassword
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .post<DotCMSResponse<string>>(this.urls.changePassword, body)
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -166,17 +154,13 @@ export class LoginService {
     getLoginFormInfo(language: string, i18nKeys: Array<string>): Observable<DotLoginInformation> {
         this.setLanguage(language);
 
-        return this.coreWebService
-            .requestView<DotLoginInformation>({
-                body: {
-                    messagesKey: i18nKeys,
-                    language: this.lang,
-                    country: this.country
-                },
-                method: 'POST',
-                url: this.urls.serverInfo
+        return this.http
+            .post<{ bodyJsonObject: DotLoginInformation }>(this.urls.serverInfo, {
+                messagesKey: i18nKeys,
+                language: this.lang,
+                country: this.country
             })
-            .pipe(pluck('bodyJsonObject'));
+            .pipe(map((response) => response.bodyJsonObject));
     }
 
     /**
@@ -187,19 +171,15 @@ export class LoginService {
      * @memberof LoginService
      */
     loginAs(userData: { user: User; password: string }): Observable<boolean> {
-        return this.coreWebService
-            .requestView<{ loginAs: boolean }>({
-                body: {
-                    password: userData.password,
-                    userId: userData.user.userId
-                },
-                method: 'POST',
-                url: this.urls.loginAs
+        return this.http
+            .post<DotCMSResponse<{ loginAs: boolean }>>(this.urls.loginAs, {
+                password: userData.password,
+                userId: userData.user.userId
             })
             .pipe(
                 map((res) => {
                     if (!res.entity.loginAs) {
-                        throw res.errorsMessages;
+                        throw res.errors;
                     }
 
                     this.setAuth({
@@ -207,9 +187,8 @@ export class LoginService {
                         user: this._auth.user
                     });
 
-                    return res;
-                }),
-                pluck('entity', 'loginAs')
+                    return res.entity.loginAs;
+                })
             );
     }
 
@@ -235,18 +214,14 @@ export class LoginService {
     }: DotLoginParams): Observable<User> {
         this.setLanguage(language);
 
-        return this.coreWebService
-            .requestView<User>({
-                body: {
-                    userId: login,
-                    password: password,
-                    rememberMe: rememberMe,
-                    language: this.lang,
-                    country: this.country,
-                    backEndLogin: backEndLogin
-                },
-                method: 'POST',
-                url: this.urls.userAuth
+        return this.http
+            .post<DotCMSResponse<User>>(this.urls.userAuth, {
+                userId: login,
+                password: password,
+                rememberMe: rememberMe,
+                language: this.lang,
+                country: this.country,
+                backEndLogin: backEndLogin
             })
             .pipe(
                 map((response) => {
@@ -256,11 +231,6 @@ export class LoginService {
                     };
 
                     this.setAuth(auth);
-                    this.coreWebService
-                        .subscribeToHttpError(HttpCode.UNAUTHORIZED)
-                        .subscribe(() => {
-                            this.logOutUser();
-                        });
 
                     return response.entity;
                 })
@@ -274,21 +244,16 @@ export class LoginService {
      * @memberof LoginService
      */
     logoutAs(): Observable<boolean> {
-        return this.coreWebService
-            .requestView<{ logoutAs: boolean }>({
-                method: 'PUT',
-                url: `${this.urls.logoutAs}`
-            })
-            .pipe(
-                map((res) => {
-                    this.setAuth({
-                        loginAsUser: null,
-                        user: this._auth.user
-                    });
+        return this.http.put<DotCMSResponse<{ logoutAs: boolean }>>(this.urls.logoutAs, {}).pipe(
+            map((res) => {
+                this.setAuth({
+                    loginAsUser: null,
+                    user: this._auth.user
+                });
 
-                    return res.entity.logoutAs;
-                })
-            );
+                return res.entity.logoutAs;
+            })
+        );
     }
 
     /**
@@ -299,13 +264,9 @@ export class LoginService {
      * @memberof LoginService
      */
     recoverPassword(login: string): Observable<string> {
-        return this.coreWebService
-            .requestView<string>({
-                body: { userId: login },
-                method: 'POST',
-                url: this.urls.recoverPassword
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .post<DotCMSResponse<string>>(this.urls.recoverPassword, { userId: login })
+            .pipe(map((response) => response.entity));
     }
 
     /**
