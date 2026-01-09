@@ -33,7 +33,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.glassfish.jersey.internal.util.Base64;
+import com.liferay.util.Base64;
 import static org.junit.Assert.*;
 import java.util.HashMap;
 import java.util.HashSet;

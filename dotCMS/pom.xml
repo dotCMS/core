@@ -1376,18 +1376,19 @@
 
         <!-- Graalvm Js Engine -->
         <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.js</groupId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <!-- Select language: js, ruby, python, java, llvm, wasm, languages -->
             <artifactId>js</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
         </dependency>
-
         <!-- AI -->
         <dependency>
             <groupId>com.knuddels</groupId>
@@ -1916,6 +1917,40 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <!-- First execution: Process annotations to generate immutable classes -->
+                    <execution>
+                        <id>process-annotations</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Include both main and enterprise sources for annotation processing -->
+                            <compileSourceRoots>
+                                <compileSourceRoot>${basedir}/src/main/java</compileSourceRoot>
+                                <compileSourceRoot>${basedir}/src/enterprise/java</compileSourceRoot>
+                            </compileSourceRoots>
+                            <!-- Only process annotations, don't fail on errors from missing generated classes -->
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.immutables.processor.ProxyProcessor</annotationProcessor>
+                            </annotationProcessors>
+                        </configuration>
+                    </execution>
+                    <!-- Second execution: Normal compilation with generated sources available -->
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Disable annotation processing in this phase since it was already done -->
+                            <proc>none</proc>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -1930,6 +1965,8 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/src/enterprise/java</source>
+                                <!-- Add generated immutable classes to source path -->
+                                <source>${project.build.directory}/generated-sources/annotations</source>
                             </sources>
                         </configuration>
                     </execution>

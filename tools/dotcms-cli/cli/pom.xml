@@ -166,6 +166,35 @@
                     </compilerArgs>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                 </configuration>
+                <executions>
+                    <!-- First execution: Process annotations to generate immutable classes -->
+                    <execution>
+                        <id>process-annotations</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Only process annotations, don't fail on errors from missing generated classes -->
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.immutables.processor.ProxyProcessor</annotationProcessor>
+                            </annotationProcessors>
+                        </configuration>
+                    </execution>
+                    <!-- Second execution: Normal compilation with generated sources available -->
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Disable annotation processing in this phase since it was already done -->
+                            <proc>none</proc>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
