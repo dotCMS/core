@@ -8,7 +8,7 @@ import {
 
 import { AISearch } from './search/search';
 
-import { BaseApiClient } from '../base/base-api';
+import { BaseApiClient } from '../base/api/base-api';
 
 /**
  * Client for interacting with the DotCMS AI API.

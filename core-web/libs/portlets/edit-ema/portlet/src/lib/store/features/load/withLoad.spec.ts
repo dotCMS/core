@@ -79,8 +79,6 @@ const initialState: UVEState = {
     pageParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
     isClientReady: false
 };
 
@@ -179,7 +177,6 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(false);
                 expect(store.isClientReady()).toBe(false);
@@ -197,7 +194,6 @@ describe('withLoad', () => {
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
-                expect(store.pageIsLocked()).toBe(false);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
                 expect(store.isTraditionalPage()).toBe(true);
                 expect(store.isClientReady()).toBe(true);

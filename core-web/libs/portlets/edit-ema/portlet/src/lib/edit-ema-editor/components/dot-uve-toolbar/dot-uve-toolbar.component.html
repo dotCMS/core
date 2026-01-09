@@ -4,7 +4,7 @@
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
-        @if ($isEditMode()) {
+        @if ($isEditMode() && $canEditPage()) {
             <button
                 pButton
                 type="button"
@@ -38,7 +38,9 @@
                         <div class="url-item">
                             <span class="url-label">{{ url.label | dm }}:</span>
                             <div class="url-value">
-                                <a [href]="url.value" target="_blank">{{ url.value }}</a>
+                                <a [href]="url.value" target="_blank" rel="noreferrer noopener">
+                                    {{ url.value }}
+                                </a>
                                 <p-button
                                     icon="pi pi-copy"
                                     styleClass="p-button-text p-button-sm p-button-rounded"

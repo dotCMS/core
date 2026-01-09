@@ -1,6 +1,6 @@
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 import { EditButton } from "../ui/EditButton";
- interface Product extends DotCMSBasicContentlet {
+interface Product extends DotCMSBasicContentlet {
   inode: string;
   title: string;
   retailPrice: number;

@@ -4,6 +4,7 @@ import com.dotcms.adminsite.AdminSiteAPITest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
+import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
@@ -52,6 +53,7 @@ import org.junit.runners.Suite;
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
+        RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         AppsAPIImplTest.class,

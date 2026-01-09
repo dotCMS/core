@@ -23,7 +23,7 @@ import {
     DEFAULT_PERSONA,
     PERSONA_KEY
 } from '../shared/consts';
-import { EDITOR_STATE } from '../shared/enums';
+import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -36,6 +36,146 @@ import {
 import { Orientation } from '../store/models';
 
 export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
+
+/**
+ * Builds a `<base>` href from a page URI.
+ *
+ * Example:
+ * - pageURI: `/about-us/index`
+ * - origin: `https://example.com`
+ * => `https://example.com/about-us/`
+ */
+export function getBaseHrefFromPageURI(pageURI: string, origin: string): string {
+    try {
+        const parsedUrl = new URL(pageURI, origin);
+        const pathnameParts = parsedUrl.pathname.split('/');
+
+        // Remove last segment (page name) to keep the directory as base
+        if (pathnameParts.length > 1) {
+            pathnameParts.pop();
+        }
+
+        const basePath = pathnameParts.join('/') || '/';
+        const normalizedBasePath = basePath.endsWith('/') ? basePath : basePath + '/';
+
+        return parsedUrl.origin + normalizedBasePath;
+    } catch {
+        // If URL parsing fails (malformed input), fall back to a safe base.
+        // `origin` is expected to be a valid origin string (e.g. window.location.origin),
+        // but we guard it anyway.
+        try {
+            return new URL(origin).origin + '/';
+        } catch {
+            return '/';
+        }
+    }
+}
+
+/**
+ * Escapes a string for safe interpolation inside a double-quoted HTML attribute value.
+ *
+ * Note: Even if a value is a valid URL, it may still contain HTML-sensitive characters
+ * (or become unsafe if the upstream normalization changes). This is a defense-in-depth
+ * helper for string-based HTML injection use-cases.
+ */
+export function escapeHtmlAttributeValue(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Returns the resolved (absolute) href from a click target.
+ *
+ * - If the click happens on an `<a>`, returns `a.href`
+ * - If the click happens inside an `<a>` (e.g. `<img>` inside `<a>`), returns `closest('a').href`
+ *
+ * IMPORTANT: Uses the resolved `href` (respects `<base>`) rather than `getAttribute('href')`.
+ *
+ * This helper is intentionally tolerant of test doubles (plain objects) that expose `href` and `closest`.
+ */
+export function getHrefFromClickTarget(target: EventTarget | null): string | null {
+    const maybeTarget = target as unknown as {
+        href?: string | null;
+        closest?: (selector: string) => { href?: string | null } | null;
+    } | null;
+
+    if (!maybeTarget) {
+        return null;
+    }
+
+    if (maybeTarget.href) {
+        return maybeTarget.href;
+    }
+
+    return maybeTarget.closest?.('a')?.href ?? null;
+}
+
+/**
+ * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
+ *
+ * If a `<base>` tag already exists, this is a no-op.
+ */
+export type InjectBaseTagData = {
+    html: string;
+    url: string;
+    origin: string;
+};
+
+function hasRealBaseTag(html: string): boolean {
+    // Ignore <base> that appears inside HTML comments or CDATA blocks
+    // so we don't mistakenly treat it as an actual tag in the document.
+    const withoutCommentsAndCdata = html
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+    return /<base\b/i.test(withoutCommentsAndCdata);
+}
+
+/**
+ * Injects a `<base>` tag into the HTML if it is missing.
+ *
+ * @param {InjectBaseTagData} data - The data to inject the base tag into.
+ * @return {string} The HTML with the base tag injected.
+ */
+export function injectBaseTag({ html, url, origin }: InjectBaseTagData): string {
+    if (!html || !url || !origin || hasRealBaseTag(html)) {
+        return html;
+    }
+
+    const baseHref = getBaseHrefFromPageURI(url, origin);
+    const baseTag = `<base href="${escapeHtmlAttributeValue(baseHref)}">`;
+
+    // Prefer placing `<base>` inside an existing `<head>` (right after the opening tag)
+    // This avoids accidentally matching `</head>` that could appear in comments or strings.
+    const headOpenMatch = html.match(/<head[^>]*>/i)?.[0];
+    if (headOpenMatch) {
+        return html.replace(headOpenMatch, headOpenMatch + baseTag);
+    }
+
+    // Fallback: if there is a closing head but we couldn't find an opening head tag.
+    // Use a case-insensitive match for `</head>` and only replace the first occurrence.
+    const headCloseMatch = html.match(/<\/head\s*>/i)?.[0];
+    if (headCloseMatch) {
+        return html.replace(headCloseMatch, baseTag + headCloseMatch);
+    }
+
+    // Fallbacks for advanced templates (may not include head/body tags)
+    const htmlOpenMatch = html.match(/<html[^>]*>/i)?.[0];
+    if (htmlOpenMatch) {
+        return html.replace(htmlOpenMatch, htmlOpenMatch + `<head>${baseTag}</head>`);
+    }
+
+    const bodyOpenMatch = html.match(/<body[^>]*>/i)?.[0];
+    if (bodyOpenMatch) {
+        return html.replace(bodyOpenMatch, `<head>${baseTag}</head>` + bodyOpenMatch);
+    }
+
+    return `<head>${baseTag}</head>` + html;
+}
 
 const REORDER_MENU_BASE_URL =
     'c/portal/layout?p_l_id=2df9f117-b140-44bf-93d7-5b10a36fb7f9&p_p_id=site-browser&p_p_action=1&p_p_state=maximized&_site_browser_struts_action=%2Fext%2Ffolders%2Forder_menu';
@@ -56,17 +196,20 @@ export const TEMPORAL_DRAG_ITEM: EmaDragItem = {
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 export function insertContentletInContainer(action: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     if (action.position) {
         return insertPositionedContentletInContainer(action);
     }
 
     let didInsert = false;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, personaTag, newContentletId } = action;
 
@@ -86,10 +229,21 @@ export function insertContentletInContainer(action: ActionPayload): {
     }
 
     const newPageContainers = pageContainers.map((pageContainer) => {
-        if (
-            areContainersEquals(pageContainer, container) &&
-            !pageContainer.contentletsId.includes(newContentletId)
-        ) {
+        if (areContainersEquals(pageContainer, container)) {
+            // Check if content already exists (duplicate)
+            if (pageContainer.contentletsId.includes(newContentletId)) {
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
+                return pageContainer;
+            }
+
+            // Validate container limit before adding
+            const maxContentlets = container.maxContentlets;
+            if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
+                // Container is at or over its limit, don't add
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+                return pageContainer;
+            }
+
             pageContainer.contentletsId.push(newContentletId);
             didInsert = true;
         }
@@ -101,7 +255,8 @@ export function insertContentletInContainer(action: ActionPayload): {
 
     return {
         pageContainers: newPageContainers,
-        didInsert
+        didInsert,
+        errorCode
     };
 }
 
@@ -187,13 +342,16 @@ export function areContainersEquals(
  * @return {*}  {{
  *    pageContainers: PageContainer[];
  *   didInsert: boolean;
+ *   errorCode?: CONTAINER_INSERT_ERROR;
  * }}
  */
 function insertPositionedContentletInContainer(payload: ActionPayload): {
     pageContainers: PageContainer[];
     didInsert: boolean;
+    errorCode?: CONTAINER_INSERT_ERROR;
 } {
     let didInsert = false;
+    let errorCode: CONTAINER_INSERT_ERROR | undefined;
 
     const { pageContainers, container, contentlet, personaTag, newContentletId, position } =
         payload;
@@ -214,10 +372,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
     }
 
     const newPageContainers = pageContainers.map((pageContainer) => {
-        if (
-            areContainersEquals(pageContainer, container) &&
-            !pageContainer.contentletsId.includes(newContentletId)
-        ) {
+        if (areContainersEquals(pageContainer, container)) {
+            // Check if content already exists (duplicate)
+            if (pageContainer.contentletsId.includes(newContentletId)) {
+                errorCode = CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT;
+                return pageContainer;
+            }
+
+            // Validate container limit before adding
+            const maxContentlets = container.maxContentlets;
+            if (maxContentlets && pageContainer.contentletsId.length >= maxContentlets) {
+                // Container is at or over its limit, don't add
+                errorCode = CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+                return pageContainer;
+            }
+
             const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
 
             if (index !== -1) {
@@ -238,7 +407,8 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
 
     return {
         pageContainers: newPageContainers,
-        didInsert
+        didInsert,
+        errorCode
     };
 }
 
@@ -468,18 +638,9 @@ export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUs
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
- * @param {boolean} isFeatureFlagEnabled - Whether the lock toggle feature is enabled
  * @return {boolean} True if page is considered locked based on feature flag
  */
-export function computePageIsLocked(
-    page: DotCMSPage,
-    currentUser: CurrentUser,
-    isFeatureFlagEnabled: boolean
-): boolean {
-    if (isFeatureFlagEnabled) {
-        return !!page?.locked;
-    }
-
+export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
     // This is the legacy behavior, only show "locked" button if it is locked by another user
     const isLocked = isPageLockedByOtherUser(page, currentUser);
     return isLocked;
@@ -522,7 +683,7 @@ export function computeCanEditPage(
     }
 
     // Legacy behavior: user can access to Draft mode (edit) if page is not locked by another user
-    const isLocked = computePageIsLocked(page, currentUser, isFeatureFlagEnabled);
+    const isLocked = computeIsPageLocked(page, currentUser);
     // If the page is locked, the user cannot access to Draft mode (edit)
     return !isLocked;
 }

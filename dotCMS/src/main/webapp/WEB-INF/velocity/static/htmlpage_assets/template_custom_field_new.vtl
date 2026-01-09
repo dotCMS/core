@@ -1,0 +1,975 @@
+<style>
+    .custom-field-wrapper {
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+        sans-serif;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-width: 100%;
+    }
+  
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+  
+    .custom-select-button {
+      width: 100%;
+      padding: 0.5rem 3rem 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      color: #1f2937;
+      background-color: #ffffff;
+      border: 2px solid var(--color-palette-primary-500);
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: left;
+      position: relative;
+      box-shadow: inset 0 0 0 1px
+        color-mix(in srgb, var(--color-palette-primary-500) 20%, transparent);
+      min-height: 2.5rem;
+    }
+  
+    .custom-select-button::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 40px;
+      background-color: #f3f4f6;
+      border-top-right-radius: 6px;
+      border-bottom-right-radius: 6px;
+      background-image:
+        linear-gradient(
+          45deg,
+          transparent 50%,
+          var(--color-palette-primary-500) 50%
+        ),
+        linear-gradient(
+          135deg,
+          var(--color-palette-primary-500) 50%,
+          transparent 50%
+        );
+      background-position:
+        calc(50% - 3px) calc(50% + 1px),
+        calc(50% + 2px) calc(50% + 1px);
+      background-size:
+        5px 5px,
+        5px 5px;
+      background-repeat: no-repeat;
+      pointer-events: none;
+    }
+  
+    .custom-select-button:focus {
+      border-color: var(--color-palette-primary-500);
+      box-shadow:
+        inset 0 0 0 1px
+          color-mix(in srgb, var(--color-palette-primary-500) 30%, transparent),
+        0 0 0 2px
+          color-mix(in srgb, var(--color-palette-primary-500) 10%, transparent);
+    }
+  
+    .custom-select-button:hover {
+      border-color: var(--color-palette-primary-500);
+    }
+  
+    .custom-select-button.placeholder {
+      color: #6b7280;
+    }
+  
+    .custom-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      margin-top: 0.25rem;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+  
+    .custom-dropdown.open {
+      display: block;
+    }
+  
+    .custom-option {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #f3f4f6;
+      transition: background-color 0.15s;
+    }
+  
+    .custom-option:last-child {
+      border-bottom: none;
+    }
+  
+    .custom-option:hover {
+      background-color: #e5e7eb;
+    }
+  
+    .custom-option.selected {
+      background-color: #dbeafe;
+    }
+  
+    .option-title {
+      font-size: 0.875rem;
+      color: #1f2937;
+      font-weight: 400;
+      margin-bottom: 0.25rem;
+    }
+  
+    .option-subtitle {
+      font-size: 0.75rem;
+      color: #6b7280;
+      font-weight: 400;
+    }
+  
+    .custom-option.placeholder .option-title {
+      color: #6b7280;
+      font-style: italic;
+    }
+  
+    .more-choices-button {
+      padding: 0.75rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      color: #1f2937;
+      font-size: 0.875rem;
+      border-top: 1px solid #e5e7eb;
+      background-color: #ffffff;
+      transition: background-color 0.15s;
+    }
+  
+    .more-choices-button:hover {
+      background-color: #f9fafb;
+    }
+  
+    .more-choices-button:active {
+      background-color: #f3f4f6;
+    }
+  
+    .more-choices-button.loading {
+      color: #6b7280;
+      cursor: wait;
+    }
+  
+    #templateThumbnailHolder {
+      transition: all 0.3s ease;
+      max-width: 100%;
+    }
+  
+    .template-thumbnail-container {
+      display: none;
+    }
+  
+    .template-thumbnail-container.visible {
+      display: block;
+    }
+  
+    /* Scrollbar styling */
+    .custom-dropdown::-webkit-scrollbar {
+      width: 8px;
+    }
+  
+    .custom-dropdown::-webkit-scrollbar-track {
+      background: #f9fafb;
+    }
+  
+    .custom-dropdown::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 4px;
+    }
+  
+    .custom-dropdown::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+  </style>
+  
+  <script type="module">
+    // Global Constants
+    const initialHostId = "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+    const defaultTemplateName =
+      '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")';
+  
+    // Configuration constants
+    const DEFAULT_PER_PAGE = 15;
+    const ALL_SITES_IDENTIFIER = "0";
+    const SYSTEM_HOST = "System Host";
+    const ALL_SITES_TITLE = "All Sites";
+    const ALL_SITES_FORMATTED = "-- All Sites ---";
+  
+    // UTILS
+    /**
+     * Normalizes the key of a template
+     */
+    const normalizeKey = function (template) {
+      return template.fullTitle
+        .replace(new RegExp("\\(" + template.hostName + "\\)"), "")
+        .replace(/\s+/g, "")
+        .toLowerCase();
+    }; // [cite: 3]
+  
+    /**
+     * Returns a map of templates by name and by id
+     */
+    const getTemplatesMaps = (templates) => {
+      const mapByName = templates.reduce(function (map, template) {
+        const key = normalizeKey(template);
+        if (!map[key]) {
+          map[key] = template;
+        }
+        return map;
+      }, {});
+  
+      const mapById = templates.reduce(function (map, template) {
+        map[template.identifier] = template;
+        return map;
+      }, {}); // [cite: 5]
+  
+      return {
+        mapByName,
+        mapById,
+      };
+    };
+  
+    /**
+     * Validates if an inode is set and valid
+     * @param {string} inode - The inode to validate
+     * @returns {boolean} - True if inode is valid, false otherwise
+     */
+    function isInodeSet(inode) {
+      if (!inode) {
+        return false;
+      }
+  
+      if (inode === "SYSTEM_HOST" || inode === "SYSTEM_FOLDER") {
+        return true;
+      }
+  
+      const inodeStr = String(inode);
+  
+      // UUID format: 8-4-4-4-12 hexadecimal characters (with or without hyphens)
+      const validUUIDRegex =
+        /^[a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}$/i;
+      // Older numeric inode format
+      const olderInodeRegex = /^\d+$/;
+  
+      if (validUUIDRegex.test(inodeStr)) {
+        return true;
+      }
+  
+      if (olderInodeRegex.test(inodeStr) && inodeStr !== "0") {
+        return true;
+      }
+  
+      return false;
+    }
+  
+    /**
+     * Helper function to safely get DOM element
+     * @param {string} id - Element ID
+     * @returns {HTMLElement|null} - The element or null if not found
+     */
+    function getElement(id) {
+      return document.getElementById(id);
+    }
+  
+    /**
+     * Updates the selected state of options in dropdown
+     * @param {HTMLElement} dropdown - The dropdown element
+     * @param {string} identifier - The identifier of the selected option
+     */
+    function updateSelectedOption(dropdown, identifier) {
+      const options = dropdown.querySelectorAll(".custom-option");
+      options.forEach((opt) => {
+        opt.classList.remove("selected");
+        if (opt.dataset.identifier === identifier) {
+          opt.classList.add("selected");
+        }
+      });
+    }
+  
+    /**
+     * Shows or hides the template thumbnail container
+     * @param {boolean} show - Whether to show or hide the container
+     */
+    function toggleThumbnailContainer(show) {
+      const container = getElement("templateThumbnailContainer");
+      if (container) {
+        if (show) {
+          container.classList.add("visible");
+        } else {
+          container.classList.remove("visible");
+        }
+      }
+    }
+  
+    // UTILS END
+  
+    /**
+     * Fetches the template image from the server
+     */
+    async function fetchTemplateImage(templateId) {
+      try {
+        const response = await fetch("/api/v1/templates/image", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ templateId }),
+        });
+  
+        // The ok value represents the result of the response status 200 codes
+        if (response.ok) {
+          const result = await response.json();
+          getTemplateCallBack(result); // here we pass the result of the json response to the callback function
+        } else {
+          throw new Error("Error fetching template image");
+        }
+      } catch (error) {
+        toggleThumbnailContainer(false);
+      }
+    }
+  
+    /**
+     * Fetches templates from the API
+     */
+    async function fetchTemplates(queryParams) {
+      const {
+        hostId,
+        filter = "",
+        page = 1,
+        perPage = 15,
+        allSiteLabel = true,
+      } = queryParams;
+      const urlParams = new URLSearchParams();
+      urlParams.set("per_page", perPage);
+      urlParams.set("page", page);
+      urlParams.set("filter", filter);
+  
+      if (hostId) {
+        urlParams.set("host", hostId);
+      }
+  
+      const url = `/api/v1/templates/?${urlParams.toString()}`;
+      const response = await fetch(url);
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const data = await response.json();
+  
+      const templates = data.entity || [];
+      
+      // Calculate hasMore BEFORE adding "All Sites" to avoid affecting pagination logic
+      // Use pagination info from API response if available, otherwise fallback to length check
+      let hasMore = false;
+      if (data.pagination) {
+        const { currentPage: apiCurrentPage, perPage: apiPerPage, totalEntries } = data.pagination;
+        // Check if there are more pages available
+        hasMore = (apiCurrentPage * apiPerPage) < totalEntries;
+      } else {
+        // Fallback: check if we got a full page of results
+        hasMore = templates.length === perPage;
+      }
+  
+      // Check for first page and add the all site template, so it does not break the pagination
+      // This matches the ALL_SITE_TEMPLATE from TemplateReadStore.js
+      if (allSiteLabel && page === 1) {
+        const ALL_SITE_TEMPLATE = {
+          title: ALL_SITES_TITLE,
+          fullTitle: ALL_SITES_TITLE,
+          htmlTitle: `<div>${ALL_SITES_FORMATTED}</div>`,
+          identifier: ALL_SITES_IDENTIFIER,
+          inode: ALL_SITES_IDENTIFIER,
+          hostName: SYSTEM_HOST,
+        };
+        templates.unshift(ALL_SITE_TEMPLATE);
+      }
+  
+      return {
+        templates,
+        hasMore,
+        currentPage: page,
+      };
+    }
+  
+    /**
+     * Callback function to handle the template fetch
+     */
+    const onTemplateFetchComplete = function (
+      templates,
+      templateField,
+      selectedTemplate,
+    ) {
+      const templateId = templateField.getValue() || "";
+      const isTemplateValid = templateId && templateId !== ALL_SITES_IDENTIFIER;
+  
+      if (!templates || templates.length === 0) {
+        // If no templates, show "All Sites" as placeholder
+        updateSelectButton(null);
+        return;
+      }
+  
+      let template = selectedTemplate;
+  
+      if (!template) {
+        const { mapById, mapByName } = getTemplatesMaps(templates);
+        const normalizedName = defaultTemplateName
+          .replace(/\s+/g, "")
+          .toLowerCase();
+        template = isTemplateValid
+          ? mapById[templateId]
+          : mapByName[normalizedName]; // [cite: 18]
+      }
+  
+      if (!template) {
+        // If no template found, show "All Sites" as placeholder
+        updateSelectButton(null);
+        return;
+      }
+  
+      const { identifier, fullTitle } = template;
+      // We set the values directly into the components
+      const currentTemplateIdElement = getElement("currentTemplateId");
+      if (currentTemplateIdElement) {
+        currentTemplateIdElement.value = identifier;
+      }
+      templateField.setValue(identifier);
+  
+      updateSelectButton(template);
+  
+      // Update selected state in dropdown
+      const dropdown = getElement("customDropdown");
+      if (dropdown) {
+        updateSelectedOption(dropdown, identifier);
+      }
+  
+      fetchTemplateImage(identifier);
+    };
+  
+    function resetTemplateSelection(templateField) {
+      templateField.setValue("");
+  
+      const currentTemplateIdElement = getElement("currentTemplateId");
+      if (currentTemplateIdElement) {
+        currentTemplateIdElement.value = "";
+      }
+  
+      updateSelectButton(null);
+  
+      // Update selected state in dropdown
+      const dropdown = getElement("customDropdown");
+      if (dropdown) {
+        const options = dropdown.querySelectorAll(".custom-option");
+        options.forEach((opt) => {
+          opt.classList.remove("selected");
+        });
+      }
+  
+      toggleThumbnailContainer(false);
+    }
+  
+    /**
+     * Get the template callback
+     */
+    function getTemplateCallBack(data) {
+      const imageInode = data.identifier;
+      const imageEl = getElement("templateThumbnailHolder");
+  
+      if (!imageEl) {
+        return;
+      }
+  
+      if (isInodeSet(imageInode)) {
+        imageEl.src = `/dA/${imageInode}/250w`;
+        imageEl.style.border = "1px solid #B6CBEB";
+        imageEl.style.marginTop = "1rem";
+        imageEl.style.borderRadius = "4px";
+        toggleThumbnailContainer(true);
+      } else {
+        toggleThumbnailContainer(false);
+      }
+    }
+  
+    /**
+     * Extracts hostName from template
+     */
+    function getHostName(template) {
+      if (template.hostName) {
+        return template.hostName;
+      }
+  
+      // Try to extract from fullTitle if it contains hostname in parentheses
+      const fullTitle = template.fullTitle || template.title || "";
+      const match = fullTitle.match(/\(([^)]+)\)/);
+      if (match) {
+        return match[1];
+      }
+  
+      return SYSTEM_HOST;
+    }
+  
+    /**
+     * Gets clean title without hostname in parentheses
+     */
+    function getCleanTitle(template) {
+      const fullTitle = template.fullTitle || template.title || "";
+  
+      // For "All Sites", return the formatted version
+      if (
+        template.identifier === ALL_SITES_IDENTIFIER ||
+        fullTitle === ALL_SITES_TITLE
+      ) {
+        return ALL_SITES_FORMATTED;
+      }
+  
+      // Remove hostname in parentheses if present
+      return fullTitle.replace(/\s*\([^)]+\)\s*$/, "").trim();
+    }
+  
+    /**
+     * Creates an option element for the custom dropdown
+     */
+    function createOptionElement(template, selectedValue) {
+      const option = document.createElement("div");
+      option.className = "custom-option";
+      option.dataset.identifier = template.identifier;
+  
+      const hostName = getHostName(template);
+      option.dataset.hostName = hostName;
+  
+      if (template.identifier === selectedValue) {
+        option.classList.add("selected");
+      }
+  
+      if (template.identifier === ALL_SITES_IDENTIFIER) {
+        option.classList.add("placeholder");
+      }
+  
+      const title = document.createElement("div");
+      title.className = "option-title";
+  
+      // For "All Sites", show the formatted version from htmlTitle or use the format
+      if (template.identifier === ALL_SITES_IDENTIFIER) {
+        // Extract text from htmlTitle if available, otherwise use formatted version
+        if (template.htmlTitle) {
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = template.htmlTitle;
+          title.textContent = tempDiv.textContent || ALL_SITES_FORMATTED;
+        } else {
+          title.textContent = ALL_SITES_FORMATTED;
+        }
+      } else {
+        title.textContent = getCleanTitle(template);
+      }
+  
+      const subtitle = document.createElement("div");
+      subtitle.className = "option-subtitle";
+      subtitle.textContent = hostName;
+  
+      option.appendChild(title);
+      option.appendChild(subtitle);
+  
+      return option;
+    }
+  
+    /**
+     * Creates and populates the custom dropdown
+     */
+    function populateCustomDropdown(templates, selectedValue, append = false) {
+      const dropdown = getElement("customDropdown");
+      if (!dropdown) {
+        return;
+      }
+  
+      const moreChoicesButton = getElement("moreChoicesButton");
+  
+      if (!append) {
+        // Clear all except the more choices button
+        const existingOptions = dropdown.querySelectorAll(".custom-option");
+        existingOptions.forEach((opt) => opt.remove());
+      }
+  
+      templates.forEach((template) => {
+        const option = createOptionElement(template, selectedValue);
+        // Insert before the more choices button
+        if (moreChoicesButton) {
+          dropdown.insertBefore(option, moreChoicesButton);
+        } else {
+          dropdown.appendChild(option);
+        }
+      });
+    }
+  
+    /**
+     * Updates the button text with selected template
+     */
+    function updateSelectButton(template) {
+      const button = getElement("customSelectButton");
+      if (!button) {
+        return;
+      }
+  
+      if (template && template.identifier !== ALL_SITES_IDENTIFIER) {
+        button.textContent = getCleanTitle(template);
+        button.classList.remove("placeholder");
+      } else {
+        button.textContent = ALL_SITES_TITLE;
+        button.classList.add("placeholder");
+      }
+    }
+  
+    /**
+     * Handles the template selection
+     */
+    function handleTemplateSelection(
+      template,
+      templateField,
+      setAllSiteLabel,
+      reloadTemplates,
+    ) {
+      if (!template) {
+        resetTemplateSelection(templateField);
+        return;
+      }
+  
+      const value = template.identifier;
+      if (!value || value === ALL_SITES_IDENTIFIER) {
+        // Handle all sites selection - similar to handleAllSiteClick in old code
+        if (setAllSiteLabel) {
+          setAllSiteLabel(false);
+        }
+  
+        // Change hostId to "*" to show all sites templates
+        if (reloadTemplates) {
+          reloadTemplates("*", false);
+        }
+  
+        resetTemplateSelection(templateField);
+        return;
+      }
+  
+      templateField.setValue(value);
+  
+      const currentTemplateIdElement = getElement("currentTemplateId");
+      if (currentTemplateIdElement) {
+        currentTemplateIdElement.value = value;
+      }
+  
+      updateSelectButton(template);
+  
+      // Update selected state in dropdown
+      const dropdown = getElement("customDropdown");
+      if (dropdown) {
+        updateSelectedOption(dropdown, value);
+      }
+  
+      closeDropdown();
+      fetchTemplateImage(value);
+    }
+  
+    /**
+     * Opens the custom dropdown
+     */
+    function openDropdown() {
+      const dropdown = getElement("customDropdown");
+      if (dropdown) {
+        dropdown.classList.add("open");
+      }
+    }
+  
+    /**
+     * Closes the custom dropdown
+     */
+    function closeDropdown() {
+      const dropdown = getElement("customDropdown");
+      if (dropdown) {
+        dropdown.classList.remove("open");
+      }
+    }
+  
+    /**
+     * Toggles the custom dropdown
+     */
+    function toggleDropdown() {
+      const dropdown = getElement("customDropdown");
+      if (dropdown) {
+        if (dropdown.classList.contains("open")) {
+          closeDropdown();
+        } else {
+          openDropdown();
+        }
+      }
+    }
+  
+    DotCustomFieldApi.ready(() => {
+      const templateField = DotCustomFieldApi.getField("template");
+      const templateId = templateField.getValue() || "";
+      const isTemplateValid = templateId && templateId !== ALL_SITES_IDENTIFIER;
+  
+      const currentTemplateIdElement = getElement("currentTemplateId");
+      if (currentTemplateIdElement) {
+        currentTemplateIdElement.value = templateId;
+      }
+  
+      let currentHostId = initialHostId || "";
+      let allSiteLabel = true;
+      let currentPage = 1;
+      let allTemplates = [];
+      let hasMore = false;
+      let isLoading = false;
+  
+      const templateHolder = getElement("templateHolder");
+      if (!templateHolder) {
+        return;
+      }
+  
+      // Create custom select button
+      let selectButton = getElement("customSelectButton");
+      if (!selectButton) {
+        selectButton = document.createElement("button");
+        selectButton.id = "customSelectButton";
+        selectButton.className = "custom-select-button placeholder";
+        selectButton.type = "button";
+        selectButton.textContent = ALL_SITES_TITLE;
+        selectButton.setAttribute("aria-label", "Select template");
+        selectButton.setAttribute("aria-haspopup", "listbox");
+        templateHolder.appendChild(selectButton);
+      }
+  
+      // Create custom dropdown
+      let dropdown = getElement("customDropdown");
+      if (!dropdown) {
+        dropdown = document.createElement("div");
+        dropdown.id = "customDropdown";
+        dropdown.className = "custom-dropdown";
+        dropdown.setAttribute("role", "listbox");
+        templateHolder.appendChild(dropdown);
+      }
+  
+      // Create "More choices" button
+      let moreChoicesButton = getElement("moreChoicesButton");
+      if (!moreChoicesButton) {
+        moreChoicesButton = document.createElement("div");
+        moreChoicesButton.id = "moreChoicesButton";
+        moreChoicesButton.className = "more-choices-button";
+        moreChoicesButton.textContent = "More choices";
+        moreChoicesButton.style.display = "none";
+        dropdown.appendChild(moreChoicesButton);
+      }
+  
+      // Load more templates
+      async function loadMoreTemplates() {
+        if (isLoading || !hasMore) {
+          return;
+        }
+  
+        isLoading = true;
+        moreChoicesButton.classList.add("loading");
+        moreChoicesButton.textContent = "Loading...";
+  
+        currentPage++;
+        try {
+          const result = await fetchTemplates({
+            hostId: currentHostId,
+            filter: "",
+            page: currentPage,
+            perPage: DEFAULT_PER_PAGE,
+            allSiteLabel: false,
+          });
+  
+          allTemplates = allTemplates.concat(result.templates);
+          hasMore = result.hasMore;
+  
+          populateCustomDropdown(result.templates, templateId, true);
+  
+          if (!hasMore) {
+            moreChoicesButton.style.display = "none";
+          }
+  
+          isLoading = false;
+          moreChoicesButton.classList.remove("loading");
+          moreChoicesButton.textContent = "More choices";
+        } catch (error) {
+          isLoading = false;
+          moreChoicesButton.classList.remove("loading");
+          moreChoicesButton.textContent = "More choices";
+        }
+      }
+  
+      // Reload templates with new hostId (for "All Sites" functionality)
+      async function reloadTemplates(newHostId, showAllSiteLabel) {
+        currentHostId = newHostId || "";
+        allSiteLabel = showAllSiteLabel;
+        currentPage = 1;
+        allTemplates = [];
+        isLoading = true;
+  
+        // Show loading state
+        const button = getElement("customSelectButton");
+        if (button) {
+          button.disabled = true;
+        }
+  
+        try {
+          const result = await fetchTemplates({
+            hostId: currentHostId,
+            filter: "",
+            page: 1,
+            perPage: DEFAULT_PER_PAGE,
+            allSiteLabel: allSiteLabel,
+          });
+  
+          allTemplates = result.templates;
+          hasMore = result.hasMore;
+          currentPage = 1;
+  
+          populateCustomDropdown(result.templates, "");
+  
+          if (hasMore) {
+            moreChoicesButton.style.display = "block";
+          } else {
+            moreChoicesButton.style.display = "none";
+          }
+  
+          isLoading = false;
+          if (button) {
+            button.disabled = false;
+          }
+        } catch (error) {
+          isLoading = false;
+          if (button) {
+            button.disabled = false;
+          }
+        }
+      }
+  
+      // Handle option click
+      dropdown.addEventListener("click", (e) => {
+        // Don't trigger if clicking on "More choices" button
+        if (e.target.closest(".more-choices-button")) {
+          return;
+        }
+  
+        const option = e.target.closest(".custom-option");
+        if (option) {
+          const identifier = option.dataset.identifier;
+          const hostName = option.dataset.hostName;
+          const titleElement = option.querySelector(".option-title");
+          const fullTitle = titleElement ? titleElement.textContent : "";
+  
+          const template = allTemplates.find(
+            (t) => t.identifier === identifier,
+          ) || {
+            identifier,
+            fullTitle: fullTitle,
+            title: fullTitle,
+            hostName: hostName || SYSTEM_HOST,
+          };
+          handleTemplateSelection(
+            template,
+            templateField,
+            (value) => {
+              allSiteLabel = value;
+            },
+            reloadTemplates,
+          );
+        }
+      });
+  
+      // Handle "More choices" button click
+      moreChoicesButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        loadMoreTemplates();
+      });
+  
+      // Toggle dropdown on button click
+      selectButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleDropdown();
+      });
+  
+      // Close dropdown when clicking outside
+      document.addEventListener("click", (e) => {
+        if (!templateHolder.contains(e.target)) {
+          closeDropdown();
+        }
+      });
+  
+      // Fetch initial templates
+      (async () => {
+        try {
+          const result = await fetchTemplates({
+            hostId: currentHostId,
+            filter: "",
+            page: 1,
+            perPage: DEFAULT_PER_PAGE,
+            allSiteLabel: allSiteLabel,
+          });
+  
+          allTemplates = result.templates;
+          hasMore = result.hasMore;
+          currentPage = 1;
+  
+          populateCustomDropdown(result.templates, templateId);
+  
+          if (hasMore) {
+            moreChoicesButton.style.display = "block";
+          } else {
+            moreChoicesButton.style.display = "none";
+          }
+  
+          // Find selected template
+          let selectedTemplate = null;
+          if (isTemplateValid) {
+            selectedTemplate = allTemplates.find(
+              (t) => t.identifier === templateId,
+            );
+          }
+  
+          onTemplateFetchComplete(
+            result.templates,
+            templateField,
+            selectedTemplate,
+          );
+        } catch (error) {
+          console.error("Error fetching initial templates:", error);
+        }
+      })();
+  
+      if (isTemplateValid) {
+        fetchTemplateImage(templateId);
+      }
+    });
+  </script>
+  
+  <div class="custom-field-wrapper">
+    <div class="select-wrapper">
+      <div id="templateHolder"></div>
+    </div>
+  
+    <input
+      id="currentTemplateId"
+      type="hidden"
+      name="currentTemplateId"
+      value=""
+    />
+  
+    <div id="templateThumbnailContainer" class="template-thumbnail-container">
+      <img id="templateThumbnailHolder" alt="Template Thumbnail" />
+    </div>
+  </div>
+  

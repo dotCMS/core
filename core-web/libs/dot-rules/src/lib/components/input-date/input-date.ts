@@ -26,7 +26,7 @@ import { isEmpty } from '@dotcms/utils';
             [disabled]="disabled"
             [tabindex]="tabIndex || ''"
             hourFormat="12"
-            showButtonBar="true"></p-calendar>
+            showButtonBar="true" />
     `,
     standalone: false
 })

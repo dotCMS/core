@@ -2,7 +2,7 @@
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.variants.add' | dm }}"></dot-sidebar-header>
+            dotTitle="{{ 'experiments.configure.variants.add' | dm }}" />
         <div class="experiment-variant-add__form-wrapper">
             <form
                 [formGroup]="form"
@@ -29,8 +29,7 @@
                         }}"
                         required
                         type="text" />
-                    <dot-field-validation-message
-                        [field]="form.controls.name"></dot-field-validation-message>
+                    <dot-field-validation-message [field]="form.controls.name" />
                 </div>
             </form>
         </div>

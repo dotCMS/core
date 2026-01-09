@@ -15,6 +15,8 @@ const mockFormControl = {
     markAsTouched: jest.fn(),
     markAsDirty: jest.fn(),
     updateValueAndValidity: jest.fn(),
+    enable: jest.fn(),
+    disable: jest.fn(),
     valueChanges: {
         subscribe: jest.fn((callback) => {
             mockFormControl.valueChanges._callback = callback;
@@ -31,6 +33,23 @@ const mockNgZone = {
     run: (fn: () => void) => fn()
 };
 
+const mockDialogRef = {
+    close: jest.fn(),
+    onClose: {
+        subscribe: jest.fn((callback) => {
+            mockDialogRef.onClose._callback = callback;
+            return {
+                unsubscribe: jest.fn()
+            };
+        }),
+        _callback: null as ((content: any) => void) | null
+    }
+};
+
+const mockDialogService = {
+    open: jest.fn().mockReturnValue(mockDialogRef)
+};
+
 describe('AngularFormBridge', () => {
     let bridge: AngularFormBridge;
 
@@ -38,7 +57,13 @@ describe('AngularFormBridge', () => {
         // Reset singleton instance before each test
         AngularFormBridge.resetInstance();
         mockFormGroup.get.mockReturnValue(mockFormControl);
-        bridge = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+        mockFormControl.valueChanges._callback = null;
+        mockDialogRef.onClose._callback = null;
+        bridge = AngularFormBridge.getInstance(
+            mockFormGroup as any,
+            mockNgZone as any,
+            mockDialogService as any
+        );
         jest.clearAllMocks();
     });
 
@@ -175,7 +200,8 @@ describe('AngularFormBridge', () => {
             const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
             const testBridge = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             const callback = jest.fn();
 
@@ -244,11 +270,13 @@ describe('AngularFormBridge', () => {
         it('should return the same instance when getInstance is called multiple times', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             const instance2 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
 
             expect(instance1).toBe(instance2);
@@ -260,9 +288,14 @@ describe('AngularFormBridge', () => {
 
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
-            const instance2 = AngularFormBridge.getInstance(differentFormGroup, mockNgZone as any);
+            const instance2 = AngularFormBridge.getInstance(
+                differentFormGroup,
+                mockNgZone as any,
+                mockDialogService as any
+            );
 
             expect(instance1).toBe(instance2);
             expect(consoleSpy).toHaveBeenCalledWith(
@@ -277,12 +310,14 @@ describe('AngularFormBridge', () => {
         it('should reset instance when resetInstance is called', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             AngularFormBridge.resetInstance();
             const instance2 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
 
             expect(instance1).not.toBe(instance2);
@@ -292,7 +327,11 @@ describe('AngularFormBridge', () => {
             const unsubscribeSpy = jest.fn();
             mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
 
-            const instance = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+            const instance = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
             instance.onChangeField('testField', () => {});
 
             AngularFormBridge.resetInstance();
@@ -303,22 +342,389 @@ describe('AngularFormBridge', () => {
         it('should not allow direct instantiation with new', () => {
             // TypeScript will prevent this at compile time, but we can verify the constructor is private
             // by checking that getInstance is the only way to create an instance
-            const instance = AngularFormBridge.getInstance(mockFormGroup as any, mockNgZone as any);
+            const instance = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
             expect(instance).toBeInstanceOf(AngularFormBridge);
         });
 
         it('should reset instance in destroy method', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             instance1.destroy();
 
             const instance2 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
-                mockNgZone as any
+                mockNgZone as any,
+                mockDialogService as any
             );
             expect(instance1).not.toBe(instance2);
+        });
+    });
+
+    describe('getField', () => {
+        it('should return FormFieldAPI object', () => {
+            const fieldAPI = bridge.getField('testField');
+            expect(fieldAPI).toBeDefined();
+            expect(typeof fieldAPI.getValue).toBe('function');
+            expect(typeof fieldAPI.setValue).toBe('function');
+            expect(typeof fieldAPI.onChange).toBe('function');
+            expect(typeof fieldAPI.enable).toBe('function');
+            expect(typeof fieldAPI.disable).toBe('function');
+        });
+
+        it('should get value using getValue', () => {
+            mockFormControl.value = 'test value';
+            const fieldAPI = bridge.getField('testField');
+            const value = fieldAPI.getValue();
+            expect(value).toBe('test value');
+            expect(mockFormGroup.get).toHaveBeenCalledWith('testField');
+        });
+
+        it('should set value using setValue', () => {
+            const fieldAPI = bridge.getField('testField');
+            fieldAPI.setValue('new value');
+            expect(mockFormControl.setValue).toHaveBeenCalledWith('new value', {
+                emitEvent: true
+            });
+            expect(mockFormControl.markAsTouched).toHaveBeenCalled();
+            expect(mockFormControl.markAsDirty).toHaveBeenCalled();
+        });
+
+        it('should subscribe to changes using onChange', () => {
+            const callback = jest.fn();
+            const fieldAPI = bridge.getField('testField');
+            fieldAPI.onChange(callback);
+
+            expect(mockFormControl.valueChanges.subscribe).toHaveBeenCalled();
+
+            if (mockFormControl.valueChanges._callback) {
+                mockFormControl.valueChanges._callback('changed value');
+                expect(callback).toHaveBeenCalledWith('changed value');
+            }
+        });
+
+        it('should enable field using enable', () => {
+            const fieldAPI = bridge.getField('testField');
+            fieldAPI.enable();
+            expect(mockFormControl.enable).toHaveBeenCalledWith({ emitEvent: true });
+        });
+
+        it('should disable field using disable', () => {
+            const fieldAPI = bridge.getField('testField');
+            fieldAPI.disable();
+            expect(mockFormControl.disable).toHaveBeenCalledWith({ emitEvent: true });
+        });
+
+        it('should not enable field if control is not found', () => {
+            mockFormGroup.get.mockReturnValue(null);
+            const fieldAPI = bridge.getField('nonExistentField');
+            fieldAPI.enable();
+            expect(mockFormControl.enable).not.toHaveBeenCalled();
+        });
+
+        it('should not disable field if control is not found', () => {
+            mockFormGroup.get.mockReturnValue(null);
+            const fieldAPI = bridge.getField('nonExistentField');
+            fieldAPI.disable();
+            expect(mockFormControl.disable).not.toHaveBeenCalled();
+        });
+
+        it('should run enable inside NgZone', () => {
+            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const fieldAPI = bridge.getField('testField');
+            fieldAPI.enable();
+            expect(zoneRunSpy).toHaveBeenCalled();
+        });
+
+        it('should run disable inside NgZone', () => {
+            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const fieldAPI = bridge.getField('testField');
+            fieldAPI.disable();
+            expect(zoneRunSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('ready', () => {
+        it('should execute callback with bridge instance', () => {
+            const callback = jest.fn();
+            bridge.ready(callback);
+            expect(callback).toHaveBeenCalledWith(bridge);
+        });
+    });
+
+    describe('openBrowserModal', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should open dialog with correct configuration', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select a Page',
+                params: {
+                    hostFolderId: 'test-folder-id',
+                    mimeTypes: ['application/dotpage']
+                },
+                onClose
+            });
+
+            expect(mockDialogService.open).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    header: 'Select a Page',
+                    appendTo: 'body',
+                    closeOnEscape: false,
+                    draggable: false,
+                    keepInViewport: false,
+                    maskStyleClass: 'p-dialog-mask-dynamic',
+                    resizable: false,
+                    modal: true,
+                    width: '90%',
+                    style: { 'max-width': '1040px' },
+                    data: {
+                        hostFolderId: 'test-folder-id',
+                        mimeTypes: ['application/dotpage']
+                    }
+                })
+            );
+        });
+
+        it('should use default header if not provided', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: undefined as any,
+                params: {
+                    hostFolderId: 'test-folder-id',
+                    mimeTypes: ['image']
+                },
+                onClose
+            });
+
+            expect(mockDialogService.open).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    header: 'Select Content'
+                })
+            );
+        });
+
+        it('should pass params to dialog data', () => {
+            const onClose = jest.fn();
+            const params = {
+                hostFolderId: 'test-folder-id',
+                mimeTypes: ['image/jpeg', 'image/png'],
+                showPages: true,
+                showFiles: false
+            };
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params,
+                onClose
+            });
+
+            expect(mockDialogService.open).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    data: params
+                })
+            );
+        });
+
+        it('should handle onClose callback with content', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            const content = {
+                identifier: 'test-id',
+                inode: 'test-inode',
+                title: 'Test Title',
+                name: 'test-name',
+                url: 'https://example.com/test',
+                mimeType: 'image/png',
+                baseType: 'FILEASSET',
+                contentType: 'FileAsset'
+            };
+
+            if (mockDialogRef.onClose._callback) {
+                mockDialogRef.onClose._callback(content);
+            }
+
+            expect(onClose).toHaveBeenCalledWith({
+                identifier: 'test-id',
+                inode: 'test-inode',
+                title: 'Test Title',
+                name: 'test-name',
+                url: 'https://example.com/test',
+                mimeType: 'image/png',
+                baseType: 'FILEASSET',
+                contentType: 'FileAsset'
+            });
+        });
+
+        it('should handle onClose callback with null', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            if (mockDialogRef.onClose._callback) {
+                mockDialogRef.onClose._callback(null);
+            }
+
+            expect(onClose).toHaveBeenCalledWith(null);
+        });
+
+        it('should handle content with fileName instead of name', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            const content = {
+                identifier: 'test-id',
+                inode: 'test-inode',
+                title: 'Test Title',
+                fileName: 'test-file.png',
+                url: 'https://example.com/test',
+                mimeType: 'image/png'
+            };
+
+            if (mockDialogRef.onClose._callback) {
+                mockDialogRef.onClose._callback(content);
+            }
+
+            expect(onClose).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'test-file.png'
+                })
+            );
+        });
+
+        it('should handle content with urlMap instead of url', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            const content = {
+                identifier: 'test-id',
+                inode: 'test-inode',
+                title: 'Test Title',
+                urlMap: 'https://example.com/mapped-url'
+            };
+
+            if (mockDialogRef.onClose._callback) {
+                mockDialogRef.onClose._callback(content);
+            }
+
+            expect(onClose).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    url: 'https://example.com/mapped-url'
+                })
+            );
+        });
+
+        it('should handle content with empty url and urlMap', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            const content = {
+                identifier: 'test-id',
+                inode: 'test-inode',
+                title: 'Test Title'
+            };
+
+            if (mockDialogRef.onClose._callback) {
+                mockDialogRef.onClose._callback(content);
+            }
+
+            expect(onClose).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    url: ''
+                })
+            );
+        });
+
+        it('should return controller with close method', () => {
+            const onClose = jest.fn();
+            const controller = bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            expect(controller).toBeDefined();
+            expect(typeof controller.close).toBe('function');
+
+            controller.close();
+            expect(mockDialogRef.close).toHaveBeenCalled();
+        });
+
+        it('should run openBrowserModal inside NgZone', () => {
+            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            expect(zoneRunSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('destroy with dialog cleanup', () => {
+        it('should close dialog when destroyed', () => {
+            const onClose = jest.fn();
+            bridge.openBrowserModal({
+                header: 'Select Content',
+                params: {
+                    hostFolderId: 'test-folder-id'
+                },
+                onClose
+            });
+
+            bridge.destroy();
+
+            expect(mockDialogRef.close).toHaveBeenCalled();
+        });
+
+        it('should not throw if no dialog is open when destroyed', () => {
+            expect(() => bridge.destroy()).not.toThrow();
         });
     });
 });

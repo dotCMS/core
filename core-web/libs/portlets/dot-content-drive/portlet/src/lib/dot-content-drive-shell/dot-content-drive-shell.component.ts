@@ -1,14 +1,15 @@
-import { patchState, signalState } from '@ngrx/signals';
-import { BehaviorSubject, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     ElementRef,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 import { Router } from '@angular/router';
@@ -19,7 +20,7 @@ import { DialogModule } from 'primeng/dialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
-import { catchError, delay, switchMap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 
 import {
     DotFolderService,
@@ -50,13 +51,12 @@ import {
     SUCCESS_MESSAGE_LIFE,
     WARNING_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
-    MINIMUM_LOADING_TIME
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
 import { DotContentDriveSortOrder, DotContentDriveStatus } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { encodeFilters } from '../utils/functions';
+import { encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -84,6 +84,7 @@ export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
 
     readonly #router = inject(Router);
+
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
 
@@ -97,20 +98,19 @@ export class DotContentDriveShellComponent {
     readonly $totalItems = this.#store.totalItems;
     readonly $status = this.#store.status;
     readonly $treeExpanded = this.#store.isTreeExpanded;
+
     readonly $contextMenuData = this.#store.contextMenu;
 
     readonly $dialog = this.#store.dialog;
 
     readonly DIALOG_TYPE = DIALOG_TYPE;
 
-    // Component state for loading and showing message
-    readonly state = signalState({
-        $loading: this.$status() === DotContentDriveStatus.LOADING,
-        $showMessage: false
+    readonly $offset = computed(() => this.#store.pagination().offset, {
+        equal: (a, b) => a === b
     });
 
-    readonly $loading = this.state.$loading;
-    readonly $showMessage = this.state.$showMessage;
+    readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+    readonly $showMessage = signal(false);
 
     readonly $fileInput = viewChild<ElementRef>('fileInput');
 
@@ -125,62 +125,44 @@ export class DotContentDriveShellComponent {
 
         if (path && path.length) {
             queryParams['path'] = path;
+        } else {
+            queryParams['path'] = null;
         }
 
         if (filters && Object.keys(filters).length) {
             queryParams['filters'] = encodeFilters(filters);
         } else {
-            delete queryParams['filters'];
+            queryParams['filters'] = null;
         }
 
-        const urlTree = this.#router.createUrlTree([], { queryParams });
+        const urlTree = this.#router.createUrlTree([], {
+            queryParams,
+            queryParamsHandling: 'merge'
+        });
         this.#location.go(urlTree.toString());
     });
 
-    // We need to delay the loading to preserve a consistent loading with no flickering
-    readonly delayedLoading = new BehaviorSubject<{ loading: boolean; delayTime: number }>({
-        loading: this.$status() === DotContentDriveStatus.LOADING,
-        delayTime: 0
-    });
+    /**
+     * Effect that sets the path when a node is selected
+     * Uses untracked to avoid creating a dependency on path signal
+     */
+    readonly setPathEffect = effect(() => {
+        const selectedNode = this.#store.selectedNode();
 
-    // Actual elapsedTime, starting on 0 for no delay on initialization
-    readonly elapsedTime = signal(0);
+        if (selectedNode) {
+            // Read current path without tracking it to avoid circular dependencies
+            const currentPath = untracked(() => this.#store.path()) ?? '';
 
-    readonly delayedLoadingEffect = effect(() => {
-        const loading = this.$status() === DotContentDriveStatus.LOADING;
-
-        let delayTime = 0;
-
-        if (loading) {
-            // When transitioning to loading, show immediately and record start time
-            this.elapsedTime.set(Date.now());
-            delayTime = 0;
-        } else {
-            // When transitioning to loaded, ensure minimum 2 second display time
-            const elapsed = Date.now() - this.elapsedTime();
-
-            // Get the maximum time between 0 and the rest of the elapsed time to cover 1.2 second
-            // If the substraction of 1.2 second is negative, we dont need to delay, because we already waited more than 1.2 second
-            delayTime = Math.max(0, MINIMUM_LOADING_TIME - elapsed);
+            if (selectedNode.data.path != currentPath) {
+                this.#store.setPath(selectedNode.data.path);
+            }
         }
-
-        this.delayedLoading.next({ loading, delayTime });
     });
 
     ngOnInit() {
-        patchState(this.state, {
-            $showMessage: !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
-        });
-
-        // Delay pipe to update the internal loading state
-        // Use switchMaps to prevent rapid changes
-        this.delayedLoading
-            .pipe(switchMap(({ loading, delayTime }) => of(loading).pipe(delay(delayTime))))
-            .subscribe((loading) =>
-                patchState(this.state, {
-                    $loading: loading
-                })
-            );
+        this.$showMessage.set(
+            !this.#localStorageService.getItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY)
+        );
     }
 
     protected onPaginate(event: LazyLoadEvent) {
@@ -222,6 +204,22 @@ export class DotContentDriveShellComponent {
      * @param contentlet The content item that was double clicked
      */
     protected onDoubleClick(contentlet: DotContentDriveItem) {
+        if (isFolder(contentlet)) {
+            this.#store.setSelectedNode({
+                data: {
+                    type: 'folder',
+                    path: contentlet.path,
+                    hostname: this.#store.currentSite()?.hostname,
+                    id: contentlet.identifier,
+                    fromTable: true
+                },
+                key: contentlet.identifier,
+                label: contentlet.path,
+                leaf: false
+            });
+            return;
+        }
+
         this.#navigationService.editContent(contentlet);
     }
 
@@ -246,9 +244,7 @@ export class DotContentDriveShellComponent {
      * @memberof DotContentDriveShellComponent
      */
     protected onCloseMessage() {
-        patchState(this.state, {
-            $showMessage: false
-        });
+        this.$showMessage.set(false);
 
         this.#localStorageService.setItem(HIDE_MESSAGE_BANNER_LOCALSTORAGE_KEY, true);
     }
@@ -386,23 +382,37 @@ export class DotContentDriveShellComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected onMoveItems(event: DotContentDriveMoveItems): void {
-        const { folderName, assetCount, pathToMove, dragItems } = this.getMoveMetadata(event);
+        const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
 
-        const dragItemsInodes = dragItems.map((item) => item.inode);
+        const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
+        const assetContentletsCount = dragItems.contentlets.length;
 
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get(
-                'content-drive.move-to-folder-in-progress',
-                folderName
-            ),
-            detail: this.#dotMessageService.get(
-                'content-drive.move-to-folder-in-progress-detail',
-                assetCount.toString(),
-                `${assetCount > 1 ? 's ' : ' '}`
-            )
-        });
-
+        if (dragItems.folders.length > 0) {
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-with-folders'
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-detail-with-folders',
+                    assetContentletsCount.toString(),
+                    `${assetContentletsCount > 1 ? 's ' : ' '}`
+                )
+            });
+        } else {
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress',
+                    folderName
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.move-to-folder-in-progress-detail',
+                    assetContentletsCount.toString(),
+                    `${assetContentletsCount > 1 ? 's ' : ' '}`
+                )
+            });
+        }
         this.#dotWorkflowActionsFireService
             .bulkFire({
                 additionalParams: {
@@ -451,7 +461,7 @@ export class DotContentDriveShellComponent {
                 }
 
                 fails.forEach(({ errorMessage, inode }) => {
-                    const item = dragItems.find((item) => item.inode === inode);
+                    const item = dragItems.contentlets.find((item) => item.inode === inode);
 
                     const title = item?.title ?? inode;
 
@@ -470,6 +480,21 @@ export class DotContentDriveShellComponent {
             });
     }
 
+    protected onTableDrop(event: DotContentDriveItem) {
+        if (!isFolder(event)) {
+            return;
+        }
+
+        this.onMoveItems({
+            targetFolder: {
+                type: 'folder',
+                path: event.path,
+                hostname: this.#store.currentSite()?.hostname,
+                id: event.identifier
+            }
+        });
+    }
+
     protected getMoveMetadata(event: DotContentDriveMoveItems) {
         const dragItems = this.#store.dragItems();
 
@@ -484,12 +509,16 @@ export class DotContentDriveShellComponent {
         return {
             pathToMove: pathToMove,
             folderName: folderName,
-            assetCount: dragItems.length,
+            assetCount: dragItems.contentlets.length + dragItems.folders.length,
             dragItems
         };
     }
 
     protected onSelectItems(items: DotContentDriveItem[]) {
         this.#store.setSelectedItems(items);
+    }
+
+    protected onTableScroll() {
+        this.#store.resetContextMenu();
     }
 }
