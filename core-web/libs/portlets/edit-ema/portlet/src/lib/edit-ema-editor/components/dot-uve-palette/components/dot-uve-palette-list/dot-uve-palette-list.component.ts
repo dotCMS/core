@@ -42,7 +42,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotPaletteListStore } from './store/store';
 
 import {
-    DotCMSContentTypePalette,
+    DotCMSPaletteContentType,
     DotPaletteListStatus,
     DotPaletteSearchParams,
     DotPaletteSortOption,
@@ -301,7 +301,7 @@ export class DotUvePaletteListComponent implements OnInit {
         this.#resetSearch();
     }
 
-    protected onContextMenu(contentType: DotCMSContentTypePalette) {
+    protected onContextMenu(contentType: DotCMSPaletteContentType) {
         const isFavorite = this.#dotFavoriteContentTypeService.isFavorite(contentType.id);
         const label = isFavorite
             ? 'uve.palette.menu.favorite.option.remove'
@@ -332,7 +332,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Remove a content type from favorites.
      * @param contentType - The content type to remove.
      */
-    #removeFavorite(contentType: DotCMSContentTypePalette) {
+    #removeFavorite(contentType: DotCMSPaletteContentType) {
         this.#paletteListStore.removeFavorite(contentType.id);
         this.#messageService.add({
             severity: 'success',
@@ -346,7 +346,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Add a content type to favorites.
      * @param contentType - The content type to add.
      */
-    #addFavorite(contentType: DotCMSContentTypePalette) {
+    #addFavorite(contentType: DotCMSPaletteContentType) {
         this.#paletteListStore.addFavorite(contentType);
         this.#messageService.add({
             severity: 'success',

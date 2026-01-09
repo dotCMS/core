@@ -10,7 +10,7 @@ import {
 
 import {
     DEFAULT_PER_PAGE,
-    DotCMSContentTypePalette,
+    DotCMSPaletteContentType,
     DotPaletteSortOption,
     DotPaletteListStatus,
     DotPaletteViewMode,
@@ -46,7 +46,7 @@ export const EMPTY_PAGINATION = {
  * Used when an error occurs during content types fetch.
  */
 export const EMPTY_CONTENTTYPE_RESPONSE = {
-    contenttypes: [] as DotCMSContentTypePalette[],
+    contenttypes: [] as DotCMSPaletteContentType[],
     pagination: EMPTY_PAGINATION
 };
 
@@ -198,9 +198,9 @@ function markDisabledFavorites({
     contentTypes,
     allowedContentTypes
 }: {
-    contentTypes: DotCMSContentTypePalette[];
+    contentTypes: DotCMSPaletteContentType[];
     allowedContentTypes?: Record<string, true>;
-}): DotCMSContentTypePalette[] {
+}): DotCMSPaletteContentType[] {
     return contentTypes.map((ct) =>
         isAllowedFavoriteContentType({ contentType: ct, allowedContentTypes })
             ? ct
@@ -243,12 +243,12 @@ export function buildPaletteFavorite({
     page = 1,
     allowedContentTypes
 }: {
-    contentTypes: DotCMSContentTypePalette[];
+    contentTypes: DotCMSPaletteContentType[];
     filter?: string;
     page?: number;
     allowedContentTypes?: Record<string, true>;
 }): {
-    contenttypes: DotCMSContentTypePalette[];
+    contenttypes: DotCMSPaletteContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
     status: DotPaletteListStatus;
 } {

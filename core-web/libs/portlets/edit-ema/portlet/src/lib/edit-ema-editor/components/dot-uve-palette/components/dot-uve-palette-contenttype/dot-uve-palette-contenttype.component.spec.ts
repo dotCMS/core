@@ -10,7 +10,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotUVEPaletteContenttypeComponent } from './dot-uve-palette-contenttype.component';
 
-import { DotCMSContentTypePalette } from '../../models';
+import { DotCMSPaletteContentType } from '../../models';
 
 @Component({
     selector: 'dot-test-host',
@@ -231,7 +231,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
     describe('Tooltip behavior', () => {
         it('should enable tooltip when contentType is disabled', () => {
-            const disabledContentType: DotCMSContentTypePalette = {
+            const disabledContentType: DotCMSPaletteContentType = {
                 ...spectator.hostComponent.contentType,
                 disabled: true
             };
@@ -250,7 +250,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should disable tooltip when contentType is not disabled', () => {
-            const enabledContentType: DotCMSContentTypePalette = {
+            const enabledContentType: DotCMSPaletteContentType = {
                 ...spectator.hostComponent.contentType,
                 disabled: false
             };

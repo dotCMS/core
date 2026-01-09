@@ -24,7 +24,7 @@ import { DotPaletteListStore } from './store';
 
 import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
-    DotCMSContentTypePalette,
+    DotCMSPaletteContentType,
     DotPaletteListStatus,
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
@@ -475,7 +475,7 @@ describe('DotPaletteListStore', () => {
                     { ...mockContentTypes[0], disabled: true }, // Blog
                     { ...extraFavorite, disabled: true }, // Events
                     { ...mockContentTypes[1], disabled: true } // News
-                ] as DotCMSContentTypePalette[];
+                ] as DotCMSPaletteContentType[];
                 expect(store.contenttypes()).toEqual(expectedOrder);
             });
 
@@ -500,7 +500,7 @@ describe('DotPaletteListStore', () => {
                 );
                 expect(store.contenttypes()).toEqual([
                     { ...remainingFavorites[0], disabled: true }
-                ] as DotCMSContentTypePalette[]);
+                ] as DotCMSPaletteContentType[]);
             });
 
             it('should pass allowedContentTypes to buildPaletteFavorite when refreshing favorites state', () => {
@@ -562,7 +562,7 @@ describe('DotPaletteListStore', () => {
                 expect(dotFavoriteContentTypeService.getAll).toHaveBeenCalled();
                 expect(store.contenttypes()).toEqual(
                     mockContentTypes.map(
-                        (ct) => ({ ...ct, disabled: true }) as DotCMSContentTypePalette
+                        (ct) => ({ ...ct, disabled: true }) as DotCMSPaletteContentType
                     )
                 );
             });

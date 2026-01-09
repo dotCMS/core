@@ -11,7 +11,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotCMSContentTypePalette } from '../../models';
+import { DotCMSPaletteContentType } from '../../models';
 
 @Component({
     selector: 'dot-uve-palette-contenttype',
@@ -29,7 +29,7 @@ import { DotCMSContentTypePalette } from '../../models';
 })
 export class DotUVEPaletteContenttypeComponent {
     $view = input<'grid' | 'list'>('grid', { alias: 'view' });
-    $contentType = input.required<DotCMSContentTypePalette>({ alias: 'contentType' });
+    $contentType = input.required<DotCMSPaletteContentType>({ alias: 'contentType' });
 
     readonly onSelectContentType = output<string>();
     readonly contextMenu = output<MouseEvent>();
@@ -50,7 +50,7 @@ export class DotUVEPaletteContenttypeComponent {
         });
     });
 
-    protected onChevronClick(contentType: DotCMSContentTypePalette) {
+    protected onChevronClick(contentType: DotCMSPaletteContentType) {
         if (contentType.disabled) {
             return;
         }
