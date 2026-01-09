@@ -34,7 +34,11 @@
             <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
 
             <p-tablist>
-                <!-- Tabs are lazy -->
+                <!--
+                WARNING: TABS MUST NOT BE LAZY!
+                Custom fields need to execute code that doesn't depend on whether the tab is active or not.
+                They must load earlier, not lazy. Making tabs lazy will break custom fields functionality.
+                -->
                 @for (tab of tabs; track tab; let i = $index) {
                     <p-tab [value]="i" [@fadeIn]>
                         {{ tab.title }}
