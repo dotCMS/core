@@ -20,6 +20,8 @@ import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
@@ -1810,6 +1812,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return optionalHits.get();
         }
         try {
+            APILocator.getRequestCostAPI()
+                    .incrementCost(Price.ES_QUERY, ESContentFactoryImpl.class, "cachedIndexSearch",
+                            new Object[]{searchRequest});
             SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
             SearchHits hits  = response.getHits();
             if(shouldQueryCache()) {
@@ -1860,6 +1865,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param countRequest
      * @return
      */
+    @RequestCost(Price.ES_CACHE)
     Long cachedIndexCount(final CountRequest countRequest) {
 
         final Optional<Long> optionalCount = shouldQueryCache() ? queryCache.get(countRequest) : Optional.empty();
@@ -1867,6 +1873,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
             return optionalCount.get();
         }
         try {
+
+            APILocator.getRequestCostAPI().incrementCost(Price.ES_COUNT, ESContentFactoryImpl.class, "cachedIndexCount",
+                    new Object[]{countRequest});
+
+
             final CountResponse response = RestHighLevelClientProvider.getInstance().getClient().count(countRequest, RequestOptions.DEFAULT);
             final long count = response.getCount();
             if(shouldQueryCache()) {
@@ -1899,8 +1910,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
     }
 
-    
-    
+
     @Override
     protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 

@@ -150,6 +150,8 @@ export function withLoad() {
                                         tap(({ experiment, languages }) => {
                                             const isTraditionalPage = !pageParams.clientHost;
 
+                                            store.addHistory({ pageAsset });
+
                                             patchState(store, {
                                                 pageAPIResponse: pageAsset,
                                                 isEnterprise,
