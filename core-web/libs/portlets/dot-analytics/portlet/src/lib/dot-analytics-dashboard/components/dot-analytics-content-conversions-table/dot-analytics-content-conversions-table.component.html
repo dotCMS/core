@@ -2,6 +2,7 @@
 @let isError = $isError();
 @let isEmpty = $isEmpty();
 @let data = $data();
+@let eventTypeOptions = $eventTypeOptions();
 
 <p-card>
     <ng-template pTemplate="header">
@@ -78,16 +79,65 @@
             [paginator]="true"
             [rows]="20"
             [rowsPerPageOptions]="[20, 50, 100]"
-            sortField="conversions"
+            sortField="conversionRate"
             [sortOrder]="-1"
             data-testid="content-conversions-table">
             <ng-template pTemplate="header">
                 <tr>
                     <th pSortableColumn="eventType">
-                        {{ 'analytics.table.content-conversions.type' | dm }}
-                        <p-sortIcon field="eventType" />
+                        <div class="flex align-items-center">
+                            {{ 'analytics.table.content-conversions.type' | dm }}
+                            <p-sortIcon field="eventType" />
+                            <p-columnFilter
+                                field="eventType"
+                                matchMode="in"
+                                display="menu"
+                                [showMatchModes]="false"
+                                [showOperator]="false"
+                                [showAddButton]="false"
+                                [showClearButton]="false"
+                                [showApplyButton]="false">
+                                <ng-template
+                                    pTemplate="filter"
+                                    let-value
+                                    let-filter="filterCallback">
+                                    <p-multiSelect
+                                        [ngModel]="value"
+                                        [options]="eventTypeOptions"
+                                        placeholder="Any"
+                                        (onChange)="filter($event.value)"
+                                        optionLabel="label"
+                                        optionValue="value"
+                                        [filter]="false"
+                                        [showHeader]="false"
+                                        data-testid="event-type-filter">
+                                        <ng-template let-option pTemplate="item">
+                                            <p-tag
+                                                [value]="option.label"
+                                                severity="secondary"
+                                                [styleClass]="'event-type-badge ' + option.value" />
+                                        </ng-template>
+                                    </p-multiSelect>
+                                </ng-template>
+                            </p-columnFilter>
+                        </div>
                     </th>
-                    <th>{{ 'analytics.table.content-conversions.title-column' | dm }}</th>
+                    <th>
+                        <div class="flex align-items-center">
+                            {{ 'analytics.table.content-conversions.title-column' | dm }}
+                            <p-columnFilter
+                                type="text"
+                                field="title"
+                                display="menu"
+                                [placeholder]="
+                                    'analytics.table.content-conversions.filter.search-placeholder'
+                                        | dm
+                                "
+                                [showMatchModes]="false"
+                                [showOperator]="false"
+                                [showAddButton]="false" />
+                        </div>
+                    </th>
                     <th class="text-right" pSortableColumn="events">
                         {{ 'analytics.table.content-conversions.count' | dm }}
                         <p-sortIcon field="events" />

@@ -4,12 +4,16 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
     aggregateTotalConversions,
+    createEmptyConversionTrendEntity,
+    createEmptyPageViewEntity,
+    createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
     determineGranularityForTimeRange,
     extractPageTitle,
     extractPageViews,
     extractSessions,
     extractTopPageValue,
+    fillMissingDates,
     getDateRange,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData,
@@ -944,6 +948,144 @@ describe('Analytics Data Utils', () => {
 
                 expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
                 expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
+            });
+        });
+    });
+
+    describe('fillMissingDates', () => {
+        describe('with PageViewTimeLineEntity', () => {
+            it('should return empty array when data is null', () => {
+                const result = fillMissingDates(
+                    null as unknown as PageViewTimeLineEntity[],
+                    ['2024-01-01', '2024-01-03'],
+                    'day',
+                    createEmptyPageViewEntity
+                );
+
+                expect(result).toEqual([]);
+            });
+
+            it('should return empty array when data is not an array', () => {
+                const result = fillMissingDates(
+                    {} as unknown as PageViewTimeLineEntity[],
+                    ['2024-01-01', '2024-01-03'],
+                    'day',
+                    createEmptyPageViewEntity
+                );
+
+                expect(result).toEqual([]);
+            });
+
+            it('should fill all dates in range when data is empty', () => {
+                const result = fillMissingDates(
+                    [],
+                    ['2024-01-01', '2024-01-03'],
+                    'day',
+                    createEmptyPageViewEntity
+                );
+
+                // Should create 3 days worth of empty data
+                expect(result).toHaveLength(3);
+                result.forEach((item) => {
+                    expect(item['EventSummary.totalEvents']).toBe('0');
+                });
+            });
+
+            it('should return correct number of entries for date range', () => {
+                const result = fillMissingDates(
+                    [],
+                    ['2024-01-01', '2024-01-05'],
+                    'day',
+                    createEmptyPageViewEntity
+                );
+
+                // 5 days: Jan 1, 2, 3, 4, 5
+                expect(result).toHaveLength(5);
+                // All should be zero since input was empty
+                result.forEach((item) => {
+                    expect(item['EventSummary.totalEvents']).toBe('0');
+                    expect(item['EventSummary.day']).toBeDefined();
+                    expect(item['EventSummary.day.day']).toBeDefined();
+                });
+            });
+
+            it('should use the factory function to create empty entities', () => {
+                const customFactory = jest.fn((date: Date, dateKey: string) => ({
+                    'EventSummary.day': dateKey,
+                    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+                    'EventSummary.totalEvents': '999' // Custom value to verify factory is used
+                }));
+
+                const result = fillMissingDates(
+                    [],
+                    ['2024-01-01', '2024-01-02'],
+                    'day',
+                    customFactory
+                );
+
+                expect(customFactory).toHaveBeenCalledTimes(2);
+                expect(result[0]['EventSummary.totalEvents']).toBe('999');
+            });
+        });
+
+        describe('with TrafficVsConversionsEntity', () => {
+            it('should create entities with correct structure when filling gaps', () => {
+                const result = fillMissingDates(
+                    [],
+                    ['2024-01-01', '2024-01-02'],
+                    'day',
+                    createEmptyTrafficVsConversionsEntity
+                );
+
+                expect(result).toHaveLength(2);
+                result.forEach((item) => {
+                    expect(item['EventSummary.uniqueVisitors']).toBe('0');
+                    expect(item['EventSummary.uniqueConvertingVisitors']).toBe('0');
+                    expect(item['EventSummary.day']).toBeDefined();
+                    expect(item['EventSummary.day.day']).toBeDefined();
+                });
+            });
+        });
+    });
+
+    describe('Entity Factories', () => {
+        const testDate = new Date('2024-01-15T12:00:00.000Z');
+        const testDateKey = testDate.toISOString();
+
+        describe('createEmptyPageViewEntity', () => {
+            it('should create entity with correct structure', () => {
+                const result = createEmptyPageViewEntity(testDate, testDateKey);
+
+                expect(result).toEqual({
+                    'EventSummary.day': testDateKey,
+                    'EventSummary.day.day': '2024-01-15',
+                    'EventSummary.totalEvents': '0'
+                });
+            });
+        });
+
+        describe('createEmptyConversionTrendEntity', () => {
+            it('should create entity with correct structure', () => {
+                const result = createEmptyConversionTrendEntity(testDate, testDateKey);
+
+                expect(result).toEqual({
+                    'EventSummary.day': testDateKey,
+                    'EventSummary.day.day': '2024-01-15',
+                    'EventSummary.totalEvents': '0'
+                });
+            });
+        });
+
+        describe('createEmptyTrafficVsConversionsEntity', () => {
+            it('should create entity with correct structure', () => {
+                const result = createEmptyTrafficVsConversionsEntity(testDate, testDateKey);
+
+                expect(result).toEqual({
+                    'EventSummary.day': testDateKey,
+                    'EventSummary.day.day': '2024-01-15',
+                    'EventSummary.uniqueVisitors': '0',
+                    'EventSummary.uniqueConvertingVisitors': '0'
+                });
             });
         });
     });
