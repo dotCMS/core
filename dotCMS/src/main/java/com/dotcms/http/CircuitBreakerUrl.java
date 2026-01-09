@@ -1,5 +1,7 @@
 package com.dotcms.http;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
@@ -14,6 +16,24 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.net.URISyntaxException;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Function;
+import java.util.stream.Stream;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import net.jodah.failsafe.CircuitBreaker;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.FailsafeException;
@@ -31,25 +51,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.net.URISyntaxException;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -199,6 +200,7 @@ public class CircuitBreakerUrl {
         }
     }
 
+
     public String doString() throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             doOut(out);
@@ -242,6 +244,7 @@ public class CircuitBreakerUrl {
         });
     }
 
+    @RequestCost(Price.HTTP_FETCH)
     public void doOut(final HttpServletResponse response) throws IOException {
 
         circuitBreakerConnectionControl.check(this.proxyUrl);
