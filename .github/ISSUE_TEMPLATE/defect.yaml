@@ -4,6 +4,7 @@ title: "[DEFECT] "
 labels: ["Triage","OKR : Customer Support"]
 type: bug
 assignees: []
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown
