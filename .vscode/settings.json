@@ -9,7 +9,8 @@
             "**/target/**"
         ]
     },
-    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms512m -Xlog:disable",
+    // NOTE: Critical Java settings are duplicated in dotcms.code-workspace
+    // Multi-root workspaces need settings in workspace file to apply consistently
 
     // Disable automatic Java build (use Maven CLI instead for dotCMS)
     "java.autobuild.enabled": false,
@@ -25,25 +26,11 @@
         }
     ],
 
-    // Maven Configuration
-    "maven.executable.path": "./mvnw",
-    "maven.terminal.useJavaHome": true,
+    // Java Home for Terminal
     "java.home": "/Users/fmontes/.sdkman/candidates/java/21.0.8-ms",
-    "maven.terminal.customEnv": [
-        {
-            "environmentVariable": "MAVEN_OPTS",
-            "value": "-Xmx2048m"
-        }
-    ],
 
     // Disable Maven lifecycle execution in IDE (use CLI instead)
     "java.configuration.updateBuildConfiguration": "disabled",
-    "java.maven.lifecycle.skipResourceConfiguration": true,
-    "java.import.maven.disableTestClasspathFlag": false,
-
-    // Maven lifecycle mapping to ignore certain plugin executions
-    "maven.buildFilePath": "${workspaceFolder}/pom.xml",
-    "maven.lifecycleMappings.location": "${workspaceFolder}/.vscode/lifecycle-mappings.xml",
 
     // Auto Import
     "java.completion.importOrder": [
@@ -78,5 +65,6 @@
         "**/target": true,
         "**/node_modules": true,
         "**/dist": true
-    }
+    },
+    "java.compile.nullAnalysis.mode": "disabled"
 }

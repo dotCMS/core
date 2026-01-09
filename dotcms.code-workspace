@@ -50,6 +50,17 @@
     "editor.formatOnSave": false,
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
-    }
+    },
+    "angular.enable-strict-mode-prompt": false,
+    // Java Language Server Memory: 4GB for 16GB RAM machines (Cursor may auto-increase this)
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
+    // CRITICAL: Disable ALL automatic builds - use Maven CLI ONLY!
+    "java.autobuild.enabled": false,
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": true,
+    "java.configuration.updateBuildConfiguration": "disabled",
+    "java.maven.downloadSources": false,
+    "java.maven.updateSnapshots": false,
+    "java.compile.nullAnalysis.mode": "disabled"
   }
 }
