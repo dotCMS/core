@@ -1209,7 +1209,7 @@ public class PermissionResourceIntegrationTest {
 
         final RolePermissionForm rolePermissionForm = new RolePermissionForm(
                 testRole.getId(),
-                Arrays.asList("READ", "WRITE"),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
                 null
         );
         final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
@@ -1350,13 +1350,13 @@ public class PermissionResourceIntegrationTest {
         // Create a folder and add permissions for this role with inheritable permissions
         final Folder testFolder = new FolderDataGen().site(testHost).nextPersisted();
 
-        final Map<String, List<String>> inheritable = new HashMap<>();
-        inheritable.put("FOLDER", Arrays.asList("READ", "WRITE"));
-        inheritable.put("CONTENT", Arrays.asList("READ", "WRITE", "PUBLISH"));
+        final Map<String, Set<PermissionAPI.Type>> inheritable = new HashMap<>();
+        inheritable.put("FOLDER", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE));
+        inheritable.put("CONTENT", EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH));
 
         final RolePermissionForm rolePermissionForm = new RolePermissionForm(
                 testRole.getId(),
-                Arrays.asList("READ", "WRITE", "PUBLISH"),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE, PermissionAPI.Type.PUBLISH),
                 inheritable
         );
         final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(

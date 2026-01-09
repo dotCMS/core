@@ -194,7 +194,6 @@ public class PermissionSaveHelper {
             }
 
             final int permissionBits = PermissionConversionUtils.convertTypesToBits(levels);
-            final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(levels);
             if (permissionBits == 0) {
                 continue;
             }
