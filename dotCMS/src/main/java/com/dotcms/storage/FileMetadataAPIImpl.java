@@ -3,11 +3,14 @@ package com.dotcms.storage;
 
 import static com.dotmarketing.util.FileUtil.binaryPath;
 import static com.dotmarketing.util.UtilMethods.isSet;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
@@ -17,7 +20,6 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
@@ -98,6 +100,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fullBinaryFieldNameSet  {@link SortedSet} fields to generate full metadata
      * @return ContentletMetadata
      */
+    @RequestCost(Price.FILE_METADATA_FROM_DB)
     private ContentletMetadata internalGenerateContentletMetadata(final Contentlet contentlet,
                                                           final SortedSet<String> basicBinaryFieldNameSet,
                                                           final SortedSet<String> fullBinaryFieldNameSet,
@@ -314,6 +317,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param fieldVariableName  {@link String}
      * @return
      */
+
     @Override
     public Metadata getOrGenerateMetadata(final Contentlet contentlet, final String fieldVariableName)
             throws DotDataException {
@@ -327,6 +331,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      * @param generateIfAbsent  @boolean
      * @return
      */
+    @RequestCost(Price.FILE_METADATA_FROM_CACHE)
         private Metadata internalGetGenerateMetadata(final Contentlet contentlet, final String fieldVariableName, final boolean generateIfAbsent, final boolean checkVersion)
             throws DotDataException {
 
