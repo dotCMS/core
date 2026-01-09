@@ -1,6 +1,6 @@
-@if ($showMessage()) {
-    <p-message severity="info" data-testid="message">
-        <ng-template pTemplate="content">
+<div class="w-full col-span-3 row-start-1">
+    @if ($showMessage()) {
+        <p-message severity="info" data-testid="message" [pt]="{ text: { class: 'w-full' } }">
             <div class="flex items-center justify-between gap-2 w-full">
                 <div class="flex items-center gap-2">
                     <i class="pi pi-info-circle"></i>
@@ -17,22 +17,27 @@
                         {{ 'content-drive.feature.learn-more' | dm }}
                     </a>
                     <p-button
-                        styleClass="p-button-text p-button-rounded p-button-sm p-button-icon-only"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
                         type="button"
                         icon="pi pi-times"
                         data-testid="close-message"
                         (click)="onCloseMessage()" />
                 </div>
             </div>
-        </ng-template>
-    </p-message>
-}
+        </p-message>
+    }
+</div>
 
-<dot-content-drive-toolbar (addNewDotAsset)="onAddNewDotAsset()" data-testid="toolbar" />
+<dot-content-drive-toolbar
+    (addNewDotAsset)="onAddNewDotAsset()"
+    data-testid="toolbar"
+    class="col-start-2 row-start-2" />
 
 <div
-    class="tree-selector center-content"
-    [class.expanded]="$treeExpanded()"
+    class="flex flex-col justify-center items-center text-xl font-semibold overflow-hidden transition-all duration-300 ease-in-out border-r border-gray-300 col-start-1 row-start-2 row-span-2"
+    [class]="$treeExpanded() ? 'w-[16.5rem]' : 'w-0'"
     data-testid="tree-selector">
     <dot-content-drive-sidebar
         data-testid="sidebar"
@@ -40,7 +45,10 @@
         (moveItems)="onMoveItems($event)" />
 </div>
 
-<dot-content-drive-dropzone data-testid="dropzone" (uploadFiles)="resolveFilesUpload($event)">
+<dot-content-drive-dropzone
+    data-testid="dropzone"
+    (uploadFiles)="resolveFilesUpload($event)"
+    class="overflow-auto col-start-2 row-start-3">
     <dot-folder-list-view
         [items]="$items()"
         [totalItems]="$totalItems()"
@@ -81,7 +89,8 @@
 }
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
-<div class="detail-view center-content"></div>
+<div
+    class="flex flex-col justify-center items-center text-xl font-semibold w-0 col-start-3 row-start-2 row-span-2"></div>
 <p-dialog
     [visible]="!!$dialog()"
     [header]="$dialog()?.header"
@@ -90,7 +99,7 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
-    styleClass="content-drive-dialog"
+    [pt]="{ content: { class: 'w-[43.75rem] pt-0 p-4' } }"
     (visibleChange)="onHideDialog()">
     @switch ($dialog()?.type) {
         @case (DIALOG_TYPE.FOLDER) {

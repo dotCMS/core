@@ -18,8 +18,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 @Component({
     selector: 'dot-content-drive-language-field',
     imports: [MultiSelectModule, FormsModule, DotMessagePipe],
-    templateUrl: './dot-content-drive-language-field.component.html',
-    styleUrls: ['./dot-content-drive-language-field.component.scss']
+    templateUrl: './dot-content-drive-language-field.component.html'
 })
 export class DotContentDriveLanguageFieldComponent {
     readonly #dotLanguagesService = inject(DotLanguagesService);

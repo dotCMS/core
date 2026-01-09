@@ -77,8 +77,10 @@ import { encodeFilters, isFolder } from '../utils/functions';
     ],
     providers: [DotContentDriveStore, DotWorkflowsActionsService, MessageService, DotFolderService],
     templateUrl: './dot-content-drive-shell.component.html',
-    styleUrl: './dot-content-drive-shell.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]'
+    }
 })
 export class DotContentDriveShellComponent {
     readonly #store = inject(DotContentDriveStore);
