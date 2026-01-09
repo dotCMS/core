@@ -77,12 +77,12 @@ export function downloadFile(url: string, dest: string): Promise<void> {
 }
 
 export function finalStepsForNextjs({
-    projectName,
+    projectPath,
     urlDotCMSInstance,
     siteId,
     token
 }: {
-    projectName: string;
+    projectPath: string;
     urlDotCMSInstance: string;
     siteId: string;
     token: string;
@@ -91,7 +91,7 @@ export function finalStepsForNextjs({
     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
 
     console.log(chalk.white('🪜  Steps:\n'));
-    console.log(chalk.white('1- cd ') + chalk.green(projectName));
+    console.log(chalk.white('1- cd ') + chalk.green(projectPath));
     console.log(
         chalk.white('2- Create a new file with the name ') +
             chalk.green('.env') +
@@ -119,12 +119,12 @@ export function finalStepsForNextjs({
 }
 
 export function finalStepsForAstro({
-    projectName,
+    projectPath,
     urlDotCMSInstance,
     siteId,
     token
 }: {
-    projectName: string;
+    projectPath: string;
     urlDotCMSInstance: string;
     siteId: string;
     token: string;
@@ -133,7 +133,7 @@ export function finalStepsForAstro({
     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
 
     console.log(chalk.white('🪜  Steps:\n'));
-    console.log(chalk.white('1- cd ') + chalk.green(projectName));
+    console.log(chalk.white('1- cd ') + chalk.green(projectPath));
     console.log(
         chalk.white('2- Create a new file with the name ') +
             chalk.green('.env') +
@@ -163,12 +163,12 @@ export function finalStepsForAstro({
 }
 
 export function finalStepsForAngularAndAngularSSR({
-    projectName,
+    projectPath,
     urlDotCMSInstance,
     siteId,
     token
 }: {
-    projectName: string;
+    projectPath: string;
     urlDotCMSInstance: string;
     siteId: string;
     token: string;
@@ -177,7 +177,7 @@ export function finalStepsForAngularAndAngularSSR({
     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
 
     console.log(chalk.white('🪜  Steps:\n'));
-    console.log(chalk.white('1- cd ') + chalk.green(projectName) + '/src/environments');
+    console.log(chalk.white('1- cd ') + chalk.green(projectPath) + '/src/environments');
     console.log(
         chalk.white(
             '2- Replace the content of the file ' +
