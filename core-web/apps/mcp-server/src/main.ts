@@ -7,6 +7,7 @@ import { registerContextTools } from './tools/context';
 import { registerSearchTools } from './tools/search';
 import { registerWorkflowTools } from './tools/workflow';
 import { createContextCheckingServer } from './utils/context-checking-server';
+import { registerListFolderTools } from './tools/list-folder';
 
 const originalServer = new McpServer({
     name: 'DotCMS',
