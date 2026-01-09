@@ -6,7 +6,7 @@ FROM ubuntu:24.04 AS base-builder
 WORKDIR /srv
 
 # Defining default Java version, can be any java version provided by sdkman
-ARG SDKMAN_JAVA_VERSION="21.0.8-ms"
+ARG SDKMAN_JAVA_VERSION="25.0.1-ms"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
@@ -24,7 +24,7 @@ RUN apt update && \
     apt update && \
     apt install -y --no-install-recommends postgresql-common && \
     /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt install -y --no-install-recommends postgresql-client-18 && \
+    apt install -y --no-install-recommends postgresql-client-16 && \
     apt purge -y postgresql-common gnupg && \
     /usr/bin/pg_dump --version || exit 1 && \
     rm -rf /var/lib/apt/lists/*
