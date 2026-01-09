@@ -20313,8 +20313,6 @@ components:
           type: string
         owner:
           type: string
-        parentPermissionable:
-          $ref: "#/components/schemas/Permissionable"
         parents:
           type: array
           items:
@@ -26960,13 +26958,22 @@ components:
             type: string
             description: "Individual permission levels for this asset. Valid values:\
               \ READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN"
+            enum:
+            - READ
+            - USE
+            - EDIT
+            - WRITE
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
             example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
+          uniqueItems: true
         inheritable:
           type: object
           additionalProperties:
             type: array
             description: "Inheritable permissions by scope for child assets. Keys\
-              \ are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are lists\
+              \ are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are sets\
               \ of permission levels."
             example:
               CONTENT:
@@ -26979,11 +26986,20 @@ components:
               type: string
               description: "Inheritable permissions by scope for child assets. Keys\
                 \ are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are\
-                \ lists of permission levels."
+                \ sets of permission levels."
+              enum:
+              - READ
+              - USE
+              - EDIT
+              - WRITE
+              - PUBLISH
+              - EDIT_PERMISSIONS
+              - CAN_ADD_CHILDREN
               example: "{\"FOLDER\":[\"READ\",\"CAN_ADD_CHILDREN\"],\"CONTENT\":[\"\
                 READ\",\"WRITE\"]}"
+            uniqueItems: true
           description: "Inheritable permissions by scope for child assets. Keys are\
-            \ permission scopes (FOLDER, CONTENT, PAGE, etc.), values are lists of\
+            \ permission scopes (FOLDER, CONTENT, PAGE, etc.), values are sets of\
             \ permission levels."
           example:
             CONTENT:
@@ -27292,6 +27308,14 @@ components:
               description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
                 \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
                 \ CAN_ADD_CHILDREN)"
+              enum:
+              - READ
+              - USE
+              - EDIT
+              - WRITE
+              - PUBLISH
+              - EDIT_PERMISSIONS
+              - CAN_ADD_CHILDREN
               example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"HOST\":[\"READ\"]}"
             uniqueItems: true
           description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
@@ -28386,6 +28410,18 @@ components:
       properties:
         asset:
           $ref: "#/components/schemas/AssetPermissionsView"
+        cascadeWarnings:
+          type: array
+          description: Warnings from cascade operations that partially failed. Present
+            only when cascade was requested and some role cascades failed.
+          example:
+          - "Failed to trigger cascade for role xyz123: Connection timeout"
+          items:
+            type: string
+            description: Warnings from cascade operations that partially failed. Present
+              only when cascade was requested and some role cascades failed.
+            example: "[\"Failed to trigger cascade for role xyz123: Connection timeout\"\
+              ]"
         inheritanceBroken:
           type: boolean
           description: Whether permission inheritance was broken during this operation.

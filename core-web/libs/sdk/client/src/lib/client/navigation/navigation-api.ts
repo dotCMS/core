@@ -8,7 +8,7 @@ import {
     DotErrorNavigation
 } from '@dotcms/types';
 
-import { BaseApiClient } from '../base/base-api';
+import { BaseApiClient } from '../base/api/base-api';
 
 export class NavigationClient extends BaseApiClient {
     private BASE_URL: string;

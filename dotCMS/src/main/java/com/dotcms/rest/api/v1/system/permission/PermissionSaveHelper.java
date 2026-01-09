@@ -183,17 +183,17 @@ public class PermissionSaveHelper {
         }
 
         final List<Permission> permissionsToSave = new ArrayList<>();
-        final Map<String, Set<String>> permissionMap = form.getPermissions();
+        final Map<String, Set<PermissionAPI.Type>> permissionMap = form.getPermissions();
 
-        for (final Map.Entry<String, Set<String>> entry : permissionMap.entrySet()) {
+        for (final Map.Entry<String, Set<PermissionAPI.Type>> entry : permissionMap.entrySet()) {
             final String scope = entry.getKey();
-            final Set<String> levels = entry.getValue();
+            final Set<PermissionAPI.Type> levels = entry.getValue();
 
             if (levels == null || levels.isEmpty()) {
                 continue;
             }
 
-            final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(levels);
+            final int permissionBits = PermissionConversionUtils.convertTypesToBits(levels);
             if (permissionBits == 0) {
                 continue;
             }

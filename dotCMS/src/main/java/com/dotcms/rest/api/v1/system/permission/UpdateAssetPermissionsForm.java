@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -80,22 +81,18 @@ public class UpdateAssetPermissionsForm extends Validated {
             throw new BadRequestException("permissions cannot be empty");
         }
 
-        final Set<String> validScopes = PermissionConversionUtils.SCOPE_TO_TYPE_MAPPINGS.keySet();
-        final Set<String> validLevels = PermissionConversionUtils.VALID_PERMISSION_LEVELS;
-
         for (int i = 0; i < permissions.size(); i++) {
             final RolePermissionForm roleForm = permissions.get(i);
-            validateRolePermissionForm(roleForm, i, validScopes, validLevels);
+            validateRolePermissionForm(roleForm, i);
         }
     }
 
     /**
      * Validates a single RolePermissionForm entry.
+     * Note: Permission level validation is handled by Jackson's enum deserialization.
+     * This method validates structure and scope names.
      */
-    private void validateRolePermissionForm(final RolePermissionForm roleForm,
-                                            final int index,
-                                            final Set<String> validScopes,
-                                            final Set<String> validLevels) {
+    private void validateRolePermissionForm(final RolePermissionForm roleForm, final int index) {
         if (roleForm == null) {
             throw new BadRequestException(
                     String.format("permissions[%d] cannot be null", index));
@@ -115,31 +112,20 @@ public class UpdateAssetPermissionsForm extends Validated {
                     String.format("permissions[%d] must have at least 'individual' or 'inheritable' permissions", index));
         }
 
-        // Validate individual permission levels
-        if (hasIndividual) {
-            for (final String level : roleForm.getIndividual()) {
-                if (level == null) {
-                    throw new BadRequestException(
-                            String.format("permissions[%d].individual contains null value", index));
-                }
-                if (!validLevels.contains(level.toUpperCase())) {
-                    throw new BadRequestException(
-                            String.format("permissions[%d].individual contains invalid level '%s'. Valid levels: %s",
-                                    index, level, validLevels));
-                }
-            }
-        }
+        // Individual permission type validation is handled by Jackson enum deserialization
+        // If invalid enum values are passed, Jackson will fail to deserialize
 
-        // Validate inheritable permissions (scope -> levels)
+        // Validate inheritable permissions (scope names and structure)
         if (hasInheritable) {
-            for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
+            for (final Map.Entry<String, Set<PermissionAPI.Type>> entry : roleForm.getInheritable().entrySet()) {
                 final String scope = entry.getKey();
-                final List<String> levels = entry.getValue();
+                final Set<PermissionAPI.Type> levels = entry.getValue();
 
-                if (scope == null || !validScopes.contains(scope.toUpperCase())) {
+                // Validate scope name using PermissionAPI.Scope enum
+                if (scope == null || !PermissionConversionUtils.isValidScope(scope)) {
                     throw new BadRequestException(
                             String.format("permissions[%d].inheritable contains invalid scope '%s'. Valid scopes: %s",
-                                    index, scope, validScopes));
+                                    index, scope, PermissionAPI.Scope.getAllScopeNames()));
                 }
 
                 if (levels == null || levels.isEmpty()) {
@@ -147,17 +133,7 @@ public class UpdateAssetPermissionsForm extends Validated {
                             String.format("permissions[%d].inheritable['%s'] cannot be null or empty", index, scope));
                 }
 
-                for (final String level : levels) {
-                    if (level == null) {
-                        throw new BadRequestException(
-                                String.format("permissions[%d].inheritable['%s'] contains null value", index, scope));
-                    }
-                    if (!validLevels.contains(level.toUpperCase())) {
-                        throw new BadRequestException(
-                                String.format("permissions[%d].inheritable['%s'] contains invalid level '%s'. Valid levels: %s",
-                                        index, scope, level, validLevels));
-                    }
-                }
+                // Permission type validation is handled by Jackson enum deserialization
             }
         }
     }
