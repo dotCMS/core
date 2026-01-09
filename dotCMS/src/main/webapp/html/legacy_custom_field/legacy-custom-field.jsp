@@ -20,6 +20,8 @@
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="com.fasterxml.jackson.databind.JsonNode" %>
+<%@ page import="com.fasterxml.jackson.databind.node.ObjectNode" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%
@@ -282,7 +284,27 @@
 
             Field field = contentType.fieldMap().get(fieldName);
 
-            String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+            // Serialize fieldMap to JSON and remove 'values' attribute from each field
+            // to prevent JavaScript parsing errors from HTML/CSS/JS content in 'values'
+            String fieldJson;
+            try {
+                JsonNode fieldMapNode = mapper.valueToTree(contentType.fieldMap());
+                if (fieldMapNode.isObject()) {
+                    ObjectNode fieldMapObject = (ObjectNode) fieldMapNode;
+                    // Remove 'values' attribute from each field in the map
+                    fieldMapObject.fields().forEachRemaining(entry -> {
+                        JsonNode fieldNode = entry.getValue();
+                        if (fieldNode.isObject()) {
+                            ((ObjectNode) fieldNode).remove("values");
+                        }
+                    });
+                }
+                fieldJson = mapper.writeValueAsString(fieldMapNode);
+            } catch (Exception e) {
+                Logger.error("legacy-custom-field.jsp", "Error serializing fieldMap without 'values': " + e.getMessage(), e);
+                // Fallback to original serialization if something goes wrong
+                fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+            }
 
 
             if (null != field) {
