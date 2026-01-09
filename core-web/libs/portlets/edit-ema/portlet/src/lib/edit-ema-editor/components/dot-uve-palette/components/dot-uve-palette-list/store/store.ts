@@ -191,7 +191,7 @@ export const DotPaletteListStore = signalStore(
     withMethods((store) => {
         const params = store.searchParams;
         const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
-        const uveStore = inject(UVEStore, { optional: true });
+        const uveStore = inject(UVEStore);
         const updateFavoriteState = (contentTypes: DotCMSContentType[]) => {
             const response = buildPaletteFavorite({
                 contentTypes,
