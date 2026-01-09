@@ -107,6 +107,23 @@ public interface PermissionAPI {
 				.map(Enum::name)
 				.collect(Collectors.toList());
 		}
+
+		/**
+		 * Finds a Type by name (case-insensitive).
+		 * @param name Permission type name (e.g., "READ", "read", "Write")
+		 * @return The matching Type, or null if not found
+		 */
+		public static Type fromString(final String name) {
+			if (name == null || name.isEmpty()) {
+				return null;
+			}
+			try {
+				return Type.valueOf(name.toUpperCase());
+			} catch (IllegalArgumentException e) {
+				return null;
+			}
+		}
+
 	}
 
 	//Permission types
