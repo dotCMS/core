@@ -58,7 +58,7 @@ export function withPageContext() {
                     return flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
                 });
                 const $isPageLocked = computed(() => {
-                    return computeIsPageLocked(page(), currentUser(), $isLockFeatureEnabled());
+                    return computeIsPageLocked(page(), currentUser());
                 });
                 const $hasAccessToEditMode = computed(() => {
                     const isPageEditable = page()?.canEdit;
