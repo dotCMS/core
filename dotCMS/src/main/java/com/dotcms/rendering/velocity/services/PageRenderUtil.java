@@ -537,6 +537,10 @@ public class PageRenderUtil implements Serializable {
      *                               properties from the MultiTree relationship
      */
     private void addStyles(Contentlet contentlet, PersonalizedContentlet personalizedContentlet) {
+        // NOTE: Safe to modify contentlet.getMap() here because the contentlet is a COPY
+        // created by hydrate(), not the cached original instance.
+        // See: DotContentletTransformerImpl.hydrate() and copy()
+
         if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false)) {
             return;
         }
@@ -544,7 +548,7 @@ public class PageRenderUtil implements Serializable {
         final Map<String, Object> styleProperties = personalizedContentlet.getStyleProperties();
 
         if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
-            contentlet.getMap().put("styleProperties", styleProperties);
+            contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
         }
     }
 

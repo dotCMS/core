@@ -146,7 +146,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
                         ...(existingNewRenderMode || {}), // Preserve existing properties (id, etc.)
                         clazz: DotCMSClazzes.FIELD_VARIABLE,
                         key: NEW_RENDER_MODE_VARIABLE_KEY,
-                        value: value.newRenderMode
+                        value:
+                            value.newRenderMode || this.fieldPropertyService.$newRenderModeDefault()
                     }
                 ]
             };
