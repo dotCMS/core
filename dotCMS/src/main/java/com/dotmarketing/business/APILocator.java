@@ -1,5 +1,6 @@
 package com.dotmarketing.business;
 
+import com.dotcms.adminsite.AdminSiteAPI;
 import com.dotcms.ai.api.AIVisionAPI;
 import com.dotcms.ai.api.DotAIAPI;
 import com.dotcms.ai.api.DotAIAPIFacadeImpl;
@@ -929,6 +930,18 @@ public class APILocator extends Locator<APIIndex> {
     	return getAPILocatorInstance().getContentTypeAPIImpl(user, respectFrontendRoles);
 	}
 
+
+    /**
+     * Returns the system instance of the AdminSiteAPI
+     * @return
+     */
+    public static AdminSiteAPI getAdminSiteAPI() {
+        return (AdminSiteAPI) getInstance( APIIndex.ADMIN_SITE_API );
+    }
+
+
+
+
     public static MultiTreeAPI getMultiTreeAPI() {
         return (MultiTreeAPI) getInstance( APIIndex.MULTI_TREE_API );
     }
@@ -1312,6 +1325,7 @@ public class APILocator extends Locator<APIIndex> {
  */
 enum APIIndex
 {
+    ADMIN_SITE_API,
 	CATEGORY_API,
 	CONTENTLET_API,
 	CONTENTLET_API_INTERCEPTER,
@@ -1414,7 +1428,8 @@ enum APIIndex
 
 	Object create() {
 		switch(this) {
-    		case PERMISSION_API: return new PermissionBitAPIImpl();
+            case ADMIN_SITE_API: return CDIUtils.getBeanThrows(AdminSiteAPI.class);
+            case PERMISSION_API: return new PermissionBitAPIImpl();
     		case ROLE_API: return new RoleAPIImpl();
     		case USER_API: return new UserAPIImpl();
     		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
