@@ -58,6 +58,9 @@
             --add-opens java.base/sun.nio.cs=ALL-UNNAMED
             --add-opens java.base/sun.util.calendar=ALL-UNNAMED
             --add-opens java.base/sun.util.locale=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.loader=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.misc=ALL-UNNAMED
+            --add-opens java.base/jdk.internal.module=ALL-UNNAMED
         </java.module.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
@@ -214,7 +217,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
-        <glowroot.version>0.14.2</glowroot.version>
+        <glowroot.version>0.14.0-beta.3</glowroot.version>
         <jmeter.test.skip>true</jmeter.test.skip>
     </properties>
 
@@ -307,7 +310,7 @@
                                     </ports>
                                     <volumes>
                                         <bind>
-                                            <volume>${docker.db.volume}:/var/lib/postgresql</volume>
+                                            <volume>${docker.db.volume}:/var/lib/postgresql/data</volume>
                                         </bind>
                                     </volumes>
                                     <env>
@@ -725,6 +728,7 @@
                         -->
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            -Dnet.bytebuddy.experimental=true
                         </argLine>
 
                         <trimStackTrace>false</trimStackTrace>
@@ -876,6 +880,7 @@
                         <reuseForks>true</reuseForks>
                         <argLine>@{argLine} -Xmx1024m
                             ${java.module.args}
+                            -Dnet.bytebuddy.experimental=true
                         </argLine>
 
                         <systemPropertyVariables/>
