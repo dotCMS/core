@@ -2,6 +2,7 @@ import { MenuItem } from 'primeng/api';
 
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     ESContent
@@ -9,6 +10,7 @@ import {
 
 import {
     DEFAULT_PER_PAGE,
+    DotCMSPaletteContentType,
     DotPaletteSortOption,
     DotPaletteListStatus,
     DotPaletteViewMode,
@@ -44,7 +46,7 @@ export const EMPTY_PAGINATION = {
  * Used when an error occurs during content types fetch.
  */
 export const EMPTY_CONTENTTYPE_RESPONSE = {
-    contenttypes: [] as DotCMSContentType[],
+    contenttypes: [] as DotCMSPaletteContentType[],
     pagination: EMPTY_PAGINATION
 };
 
@@ -170,6 +172,42 @@ export function getPaletteState(
     return elements.length > 0 ? DotPaletteListStatus.LOADED : DotPaletteListStatus.EMPTY;
 }
 
+function sortContentTypesByName<T extends Pick<DotCMSContentType, 'name'>>(contentTypes: T[]): T[] {
+    return contentTypes.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function isAllowedFavoriteContentType({
+    contentType,
+    allowedContentTypes
+}: {
+    contentType: DotCMSContentType;
+    allowedContentTypes?: Record<string, true>;
+}): boolean {
+    if (!allowedContentTypes || Object.keys(allowedContentTypes).length === 0) {
+        // By UX rule: if we don't have an allowed map, everything is disabled
+        return false;
+    }
+
+    return (
+        allowedContentTypes[contentType.variable] === true ||
+        contentType.baseType === DotCMSBaseTypesContentTypes.WIDGET
+    );
+}
+
+function markDisabledFavorites({
+    contentTypes,
+    allowedContentTypes
+}: {
+    contentTypes: DotCMSPaletteContentType[];
+    allowedContentTypes?: Record<string, true>;
+}): DotCMSPaletteContentType[] {
+    return contentTypes.map((ct) =>
+        isAllowedFavoriteContentType({ contentType: ct, allowedContentTypes })
+            ? ct
+            : { ...ct, disabled: true }
+    );
+}
+
 /**
  * Filters content types by search term, sorts them alphabetically by name,
  * applies pagination, and builds a response object with pagination metadata.
@@ -202,27 +240,34 @@ export function getPaletteState(
 export function buildPaletteFavorite({
     contentTypes,
     filter = '',
-    page = 1
+    page = 1,
+    allowedContentTypes
 }: {
-    contentTypes: DotCMSContentType[];
+    contentTypes: DotCMSPaletteContentType[];
     filter?: string;
     page?: number;
+    allowedContentTypes?: Record<string, true>;
 }): {
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSPaletteContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
     status: DotPaletteListStatus;
 } {
-    // Filter and sort all content types
-    const filteredContentTypes = contentTypes.filter(
-        (ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase())
+    // Filter + sort (A→Z) to keep pagination stable
+    const filteredContentTypes = sortContentTypesByName(
+        contentTypes.filter((ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase()))
     );
-    filteredContentTypes.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Calculate pagination slice
     const totalEntries = filteredContentTypes.length;
     const startIndex = (page - 1) * DEFAULT_PER_PAGE;
     const endIndex = page * DEFAULT_PER_PAGE;
-    const contenttypes = filteredContentTypes.slice(startIndex, endIndex);
+    const pageContentTypes = filteredContentTypes.slice(startIndex, endIndex);
+
+    // Favorites are stored locally, so we need to mark which are not allowed on this page.
+    // `allowedContentTypes` comes from containerStructures[*].contentTypeVar and matches contentType.variable.
+    const contenttypes = markDisabledFavorites({
+        contentTypes: pageContentTypes,
+        allowedContentTypes
+    });
 
     const pagination = {
         currentPage: page,

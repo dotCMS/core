@@ -2,7 +2,12 @@ import { describe, expect, it } from '@jest/globals';
 
 import { MenuItemCommandEvent } from 'primeng/api';
 
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 
 import {
     buildContentletsQuery,
@@ -312,6 +317,93 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.contenttypes).toHaveLength(0);
             expect(result.pagination.totalEntries).toBe(0);
             expect(result.status).toBe(DotPaletteListStatus.EMPTY);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is undefined', () => {
+            const result = buildPaletteFavorite({ contentTypes: mockContentTypes });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is empty', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: {}
+            });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark only allowed variables as enabled when allowedContentTypes is provided', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: { banner: true, blog: true }
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+
+            expect(byVariable.blog.disabled).toBeUndefined();
+            expect(byVariable.banner.disabled).toBeUndefined();
+            expect(byVariable.article.disabled).toBe(true);
+            expect(byVariable.news.disabled).toBe(true);
+            expect(byVariable.product.disabled).toBe(true);
+        });
+
+        it('should treat WIDGET baseType as allowed when allowedContentTypes is non-empty', () => {
+            const contentTypes = [
+                { id: '1', name: 'Alpha', variable: 'alpha' } as DotCMSContentType,
+                {
+                    id: '2',
+                    name: 'WidgetZ',
+                    variable: 'widgetZ',
+                    baseType: DotCMSBaseTypesContentTypes.WIDGET
+                } as DotCMSContentType,
+                { id: '3', name: 'Beta', variable: 'beta' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { alpha: true } // non-empty map is required
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+            expect(byVariable.alpha.disabled).toBeUndefined();
+            expect(byVariable.widgetZ.disabled).toBeUndefined(); // allowed because widget
+            expect(byVariable.beta.disabled).toBe(true);
+        });
+
+        it('should keep alphabetical order even when some favorites are disabled', () => {
+            const contentTypes = [
+                { id: '1', name: 'B', variable: 'b' } as DotCMSContentType,
+                { id: '2', name: 'A', variable: 'a' } as DotCMSContentType,
+                { id: '3', name: 'C', variable: 'c' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { b: true } // A and C will be disabled
+            });
+
+            expect(result.contenttypes.map((ct) => ct.name)).toEqual(['A', 'B', 'C']);
+        });
+
+        it('should not normalize variable matching (case-sensitive)', () => {
+            const contentTypes = [
+                { id: '1', name: 'Banner', variable: 'Banner' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { banner: true } // different casing
+            });
+
+            expect(result.contenttypes[0].disabled).toBe(true);
         });
 
         it('should use default page 1 when page is not provided', () => {

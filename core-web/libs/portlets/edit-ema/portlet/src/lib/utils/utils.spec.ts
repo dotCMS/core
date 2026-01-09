@@ -1,6 +1,11 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSViewAsPersona,
+    UVE_MODE
+} from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -16,6 +21,7 @@ import {
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
+    getContentTypeVarRecord,
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
@@ -198,6 +204,70 @@ describe('utils functions', () => {
                     origin: 'https://example.com'
                 })
             ).toBe(html);
+        });
+    });
+
+    describe('getContentTypeVarRecord', () => {
+        it('should return empty record for undefined containers', () => {
+            expect(getContentTypeVarRecord(undefined)).toEqual({});
+        });
+
+        it('should return empty record for null containers', () => {
+            expect(getContentTypeVarRecord(null)).toEqual({});
+        });
+
+        it('should return empty record when containerStructures is missing or empty', () => {
+            const containers = {
+                a: { containerStructures: [] },
+                b: {}
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({});
+        });
+
+        it('should collect unique contentTypeVar values across all containers/structures', () => {
+            const containers = {
+                a: {
+                    containerStructures: [{ contentTypeVar: 'Blog' }, { contentTypeVar: 'Banner' }]
+                },
+                b: {
+                    containerStructures: [
+                        { contentTypeVar: 'Blog' }, // duplicate
+                        { contentTypeVar: 'News' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({
+                Blog: true,
+                Banner: true,
+                News: true
+            });
+        });
+
+        it('should skip non-string and empty string contentTypeVar values', () => {
+            const containers = {
+                a: {
+                    containerStructures: [
+                        { contentTypeVar: '' },
+                        { contentTypeVar: null },
+                        { contentTypeVar: undefined },
+                        { contentTypeVar: 123 },
+                        { contentTypeVar: 'Valid' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Valid: true });
+        });
+
+        it('should not normalize case', () => {
+            const containers = {
+                a: { containerStructures: [{ contentTypeVar: 'Blog' }] },
+                b: { containerStructures: [{ contentTypeVar: 'blog' }] }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Blog: true, blog: true });
         });
     });
 

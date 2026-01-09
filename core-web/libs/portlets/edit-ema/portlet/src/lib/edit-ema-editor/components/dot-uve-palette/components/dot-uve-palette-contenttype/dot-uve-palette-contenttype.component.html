@@ -7,7 +7,10 @@
 </div>
 
 <!-- Content type icon and name -->
-<div class="content">
+<div
+    class="content"
+    [pTooltip]="'uve.palette.item.disabled.tooltip' | dm"
+    [tooltipDisabled]="!contentType.disabled">
     <div class="icon">
         @if (contentType.icon) {
             <i class="material-icons material-icons-outlined">
@@ -21,6 +24,6 @@
 </div>
 
 <!-- Chevron -->
-<div class="chevron" (click)="onSelectContentType.emit(contentType.variable)">
+<div class="chevron" (click)="onChevronClick(contentType)">
     <i class="pi pi-chevron-right"></i>
 </div>

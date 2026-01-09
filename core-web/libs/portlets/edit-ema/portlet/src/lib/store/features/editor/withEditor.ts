@@ -44,7 +44,8 @@ import {
     getEditorStates,
     sanitizeURL,
     getWrapperMeasures,
-    getFullPageURL
+    getFullPageURL,
+    getContentTypeVarRecord
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
@@ -96,6 +97,9 @@ export function withEditor() {
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
                     return numberContents > 1 || !persona || isDefaultPersona;
+                }),
+                $allowedContentTypes: computed<Record<string, true>>(() => {
+                    return getContentTypeVarRecord(pageEntity()?.containers);
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.contentArea();
