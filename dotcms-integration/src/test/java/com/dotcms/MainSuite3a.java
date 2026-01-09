@@ -27,6 +27,7 @@ import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFiel
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
+import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -56,6 +57,7 @@ import org.junit.runners.Suite;
         ContentDriveHelperContentletAPIComparisonTest.class,
         AppsAPIImplTest.class,
         Task251103AddStylePropertiesColumnInMultiTreeTest.class,
+        Task251212AddVersionColumnIndicesTableTest.class,
         StoryBlockValidationTest.class,
         StoryBlockUtilTest.class
 })
