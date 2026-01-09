@@ -7,18 +7,28 @@ It performs a Drive Search API query (no Lucene syntax required) and returns raw
 The function posts structured parameters directly to:
 POST /api/v1/drive/search
 
+If context_initialization has not been called, call context_initialization first and then resume with this function.
+
+IMPORTANT:
+- Do NOT filter, collapse, summarize, or omit results unless explicitly instructed.
+- If the user asks for "everything", ALL returned items must be listed.
+- Internal content, file assets, widgets, dotAssets, and non-URL-mapped items MUST be included.
+
 ----------------------------------------
 Required / Common Parameters
 ----------------------------------------
 
-- assetPath (string)
+- assetPath (string, required)
   Root path to search from.
   Examples:
-  "//"                → entire system
   "//SiteName/"       → specific site
 
-- filters.text (string)
-  Free-text query string. May be empty for broad listings.
+  When searching items inside a folder, use the folder path as the assetPath.
+  Examples:
+  "//SiteName/folder/subfolder/"       → specific folder
+
+- filters.text (string, case insensitive)
+  Free-text query string. May be empty for broad listings. 
 
 ----------------------------------------
 Optional Parameters
@@ -42,8 +52,8 @@ Optional Parameters
   Optional list of content type variable names to restrict results.
   Examples: ["article", "blog", "product"]
 
-- baseTypes (string[])
-  dotCMS base types to include.
+- baseTypes (string[], optional)
+  dotCMS base types to include. Refer to the section 'dotCMS Base Types Reference' for available values. If no baseTypes are queried, leave empty.
   Examples: ["HTMLPAGE", "FILEASSET", "CONTENT"]
 
 - archived (boolean)
@@ -96,4 +106,29 @@ Return Value
 
 Returns the raw Drive Search API response.
 No post-processing or filtering is applied by this tool.
+
+DEFAULT OUTPUT EXPECTATION:
+- When returning search results, list ALL items.
+- Prefer human-readable fields in this order when available:
+  1. Title / Name
+  2. Content Type / Base Type
+  3. Short descriptor (e.g. Blog, Asset, Widget)
+- URLs are optional and should NOT be assumed necessary.
+
+CONSISTENCY RULE:
+- If the API returns N results, the response MUST account for all N.
+- If fewer than N items are displayed, the agent must explain why BEFORE responding.
+
+MIXED RESULT HANDLING:
+- If results include multiple baseTypes (HTMLPAGE, FILEASSET, CONTENT, etc.),
+  group them by baseType unless the user asks otherwise.
+- Assets are valid search results and must not be discarded.
+
+CORRECTION BEHAVIOR:
+- If the user corrects a misunderstanding ("I never asked for URLs"),
+  discard previous assumptions and re-answer from scratch using the tool output.
+
+MENTAL MODEL:
+The MCP server is the source of truth.
+The agent's role is to faithfully expose its results, not reinterpret them.
 `;
