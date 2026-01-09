@@ -92,6 +92,7 @@ export interface ContentletPayload {
     contentType: string;
     baseType?: string;
     onNumberOfPages?: number;
+    styleProperties?: StyleEditorProperties;
 }
 
 export interface SetUrlPayload {

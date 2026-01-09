@@ -106,6 +106,44 @@ describe('ContentletComponent', () => {
         expect(component.containerAttribute).not.toBeNull();
     });
 
+    it('should set styleProperties attribute when contentlet has styleProperties', () => {
+        // Set development mode to true
+        dotcmsStore.$isDevMode.mockReturnValue(true);
+
+        const contentletWithStyleProperties = {
+            ...mockContentlet,
+            styleProperties: {
+                'font-size': 20,
+                'font-family': 'Arial'
+            }
+        };
+
+        spectator.setInput('contentlet', contentletWithStyleProperties);
+        spectator.detectChanges();
+
+        expect(component.styleProperties).toBeTruthy();
+        expect(component.styleProperties).toBe(
+            JSON.stringify(contentletWithStyleProperties.styleProperties)
+        );
+
+        const hostElement = spectator.debugElement.nativeElement;
+        expect(hostElement.getAttribute('data-dot-style-properties')).toBe(
+            JSON.stringify(contentletWithStyleProperties.styleProperties)
+        );
+    });
+
+    it('should set styleProperties to null when contentlet has no styleProperties', () => {
+        // Set development mode to true
+        dotcmsStore.$isDevMode.mockReturnValue(true);
+
+        spectator.detectChanges();
+
+        expect(component.styleProperties).toBeNull();
+
+        const hostElement = spectator.debugElement.nativeElement;
+        expect(hostElement.getAttribute('data-dot-style-properties')).toBeNull();
+    });
+
     it('should set user component in ngOnChanges', async () => {
         component.ngOnChanges();
         const resolvedComponent = await component.$UserComponent();

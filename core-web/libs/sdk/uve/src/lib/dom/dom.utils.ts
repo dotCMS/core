@@ -279,7 +279,10 @@ export function getDotContentletAttributes(
         'data-dot-inode': contentlet?.inode,
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
-        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1'
+        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1',
+        ...(contentlet?.styleProperties && {
+            'data-dot-style-properties': JSON.stringify(contentlet.styleProperties)
+        })
     };
 }
 

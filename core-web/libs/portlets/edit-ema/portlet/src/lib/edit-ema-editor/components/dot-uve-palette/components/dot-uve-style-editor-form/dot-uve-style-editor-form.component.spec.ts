@@ -15,6 +15,7 @@ import { StyleEditorFormSchema } from '@dotcms/uve';
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const createMockSchema = (): StyleEditorFormSchema => ({
@@ -83,6 +84,10 @@ const createMockSchema = (): StyleEditorFormSchema => ({
 
 describe('DotUveStyleEditorFormComponent', () => {
     let spectator: Spectator<DotUveStyleEditorFormComponent>;
+    let mockUveStore: {
+        currentIndex: ReturnType<typeof signal<number>>;
+        activeContentlet: ReturnType<typeof signal<ActionPayload | null>>;
+    };
 
     const createComponent = createComponentFactory({
         component: DotUveStyleEditorFormComponent,
@@ -95,14 +100,17 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockProvider(MessageService),
             {
                 provide: UVEStore,
-                useValue: {
-                    currentIndex: signal(0)
-                }
+                useFactory: () => mockUveStore
             }
         ]
     });
 
     beforeEach(() => {
+        mockUveStore = {
+            currentIndex: signal(0),
+            activeContentlet: signal(null)
+        };
+
         spectator = createComponent({
             props: {
                 // This is a workaround to pass an input with alias.
@@ -230,38 +238,118 @@ describe('DotUveStyleEditorFormComponent', () => {
         });
     });
 
-    // TODO: Remove skip when we have the styleProperties in PageAPI response and remove the untracked in $reloadSchemaEffect.
-    xdescribe('schema changes', () => {
-        it('should rebuild form when schema changes', () => {
-            const initialForm = spectator.component.$form();
-
-            const newSchema: StyleEditorFormSchema = {
-                contentType: 'new-content-type',
-                sections: [
-                    {
-                        title: 'New Section',
-                        fields: [
-                            {
-                                id: 'new-field',
-                                label: 'New Field',
-                                type: 'input',
-                                config: {
-                                    inputType: 'text',
-                                    defaultValue: 'test'
-                                }
-                            }
-                        ]
-                    }
-                ]
+    describe('initial values from contentlet styleProperties', () => {
+        it('should use styleProperties from activeContentlet when available', () => {
+            const styleProperties = {
+                'font-size': 20,
+                'font-family': 'Helvetica',
+                'text-decoration': {
+                    underline: false,
+                    overline: true
+                },
+                alignment: 'right'
             };
 
-            spectator.setInput('schema', newSchema);
+            mockUveStore.activeContentlet.set({
+                contentlet: {
+                    identifier: 'test-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'test-content-type',
+                    styleProperties
+                },
+                container: {
+                    acceptTypes: 'test',
+                    identifier: 'test-container',
+                    maxContentlets: 1,
+                    variantId: 'test-variant',
+                    uuid: 'test-uuid'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'test-page'
+            });
+
+            spectator.setInput('schema', createMockSchema());
             spectator.detectChanges();
 
-            const newForm = spectator.component.$form();
-            expect(newForm).toBeTruthy();
-            expect(newForm).not.toBe(initialForm);
-            expect(newForm?.get('new-field')?.value).toBe('test');
+            const form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(20);
+            expect(form?.get('font-family')?.value).toBe('Helvetica');
+            expect(form?.get('alignment')?.value).toBe('right');
+
+            const textDecorationGroup = form?.get('text-decoration') as FormGroup;
+            expect(textDecorationGroup.get('underline')?.value).toBe(false);
+            expect(textDecorationGroup.get('overline')?.value).toBe(true);
+        });
+
+        it('should use default values when activeContentlet is null', () => {
+            mockUveStore.activeContentlet.set(null);
+
+            spectator.setInput('schema', createMockSchema());
+            spectator.detectChanges();
+
+            const form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(16);
+            expect(form?.get('font-family')?.value).toBe('Arial');
+            expect(form?.get('alignment')?.value).toBe('left');
+        });
+
+        it('should use default values when activeContentlet has no styleProperties', () => {
+            mockUveStore.activeContentlet.set({
+                contentlet: {
+                    identifier: 'test-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'test-content-type'
+                },
+                container: {
+                    acceptTypes: 'test',
+                    identifier: 'test-container',
+                    maxContentlets: 1,
+                    variantId: 'test-variant',
+                    uuid: 'test-uuid'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'test-page'
+            });
+
+            spectator.setInput('schema', createMockSchema());
+            spectator.detectChanges();
+
+            const form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(16);
+            expect(form?.get('font-family')?.value).toBe('Arial');
+        });
+
+        it('should use default values when styleProperties is empty object', () => {
+            mockUveStore.activeContentlet.set({
+                contentlet: {
+                    identifier: 'test-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'test-content-type',
+                    styleProperties: {}
+                },
+                container: {
+                    acceptTypes: 'test',
+                    identifier: 'test-container',
+                    maxContentlets: 1,
+                    variantId: 'test-variant',
+                    uuid: 'test-uuid'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'test-page'
+            });
+
+            spectator.setInput('schema', createMockSchema());
+            spectator.detectChanges();
+
+            const form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(16);
+            expect(form?.get('font-family')?.value).toBe('Arial');
         });
     });
 });

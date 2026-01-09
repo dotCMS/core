@@ -99,9 +99,8 @@ export class DotUveStyleEditorFormComponent {
     });
 
     $reloadSchemaEffect = effect(() => {
-        // This allow to preserve the current value on the form when the schema is reloaded.
-        // TODO: Remove untracked when we have the styleProperties in PageAPI response, also ensure that the form is rebuilt correctly.
         const schema = untracked(() => this.$schema());
+
         if (schema) {
             this.#buildForm(schema);
             this.#listenToFormChanges();
@@ -112,7 +111,12 @@ export class DotUveStyleEditorFormComponent {
      * Builds a form from the schema using the form builder service
      */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const form = this.#formBuilder.buildForm(schema);
+        const activeContentlet = this.#uveStore.activeContentlet();
+
+        // Get styleProperties directly from the contentlet payload (already in the postMessage)
+        const initialValues = activeContentlet?.contentlet?.styleProperties;
+
+        const form = this.#formBuilder.buildForm(schema, initialValues);
         this.#form.set(form);
     }
 

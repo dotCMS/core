@@ -282,6 +282,78 @@ describe('getDotContentletAttributes', () => {
         const result = getDotContentletAttributes(contentlet as any, 'container');
         expect(result['data-dot-title']).toBe('Widget Title');
     });
+
+    it('should include data-dot-style-properties when styleProperties exist', () => {
+        const styleProperties = {
+            'font-size': 20,
+            'font-family': 'Arial',
+            alignment: 'center'
+        };
+
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type',
+            styleProperties
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBe(JSON.stringify(styleProperties));
+    });
+
+    it('should not include data-dot-style-properties when styleProperties do not exist', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type'
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBeUndefined();
+    });
+
+    it('should not include data-dot-style-properties when styleProperties is null', () => {
+        const contentlet = {
+            identifier: 'test-id',
+            baseType: 'test-base',
+            title: 'Test Title',
+            inode: 'test-inode',
+            contentType: 'test-type',
+            styleProperties: null
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBeUndefined();
+    });
+
+    it('should stringify styleProperties correctly', () => {
+        const styleProperties = {
+            'font-size': 20,
+            'font-family': 'Arial',
+            'text-decoration': {
+                underline: true,
+                overline: false
+            }
+        };
+
+        const contentlet = {
+            identifier: 'test-id',
+            contentType: 'test-type',
+            styleProperties
+        } as unknown as DotCMSBasicContentlet;
+
+        const result = getDotContentletAttributes(contentlet, 'test-container');
+
+        expect(result['data-dot-style-properties']).toBe(JSON.stringify(styleProperties));
+        expect(JSON.parse(result['data-dot-style-properties']!)).toEqual(styleProperties);
+    });
 });
 
 describe('getContainersData', () => {
