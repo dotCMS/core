@@ -21,7 +21,7 @@
     "java.configuration.runtimes": [
         {
             "name": "JavaSE-21",
-            "path": "/Users/fmontes/.sdkman/candidates/java/21.0.8-ms",
+            "path": "${env:HOME}/.sdkman/candidates/java/21.0.8-ms",
             "default": true
         }
     ],
