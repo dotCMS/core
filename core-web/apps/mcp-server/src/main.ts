@@ -43,7 +43,6 @@ registerSearchTools(server);
 // Register workflow tools (will be protected by context checking)
 registerWorkflowTools(server);
 
-
 const transport = new StdioServerTransport();
 (async () => {
     await server.connect(transport);

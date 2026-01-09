@@ -18,9 +18,9 @@ export const SearchFormSchema = z.object({
             filterFolders: z.boolean().default(true)
         })
         .describe('Search filters'),
-	language: z.array(z.string()).optional().describe('Array of languageIds as strings'),
+    language: z.array(z.string()).optional().describe('Array of languageIds as strings'),
     contentTypes: z.array(z.string()).optional().default([]),
-	baseTypes: z.array(z.string()).optional().describe('e.g. ["HTMLPAGE","FILEASSET","CONTENT"]'),
+    baseTypes: z.array(z.string()).optional().describe('e.g. ["HTMLPAGE","FILEASSET","CONTENT"]'),
     offset: z.number().int().min(0).default(0),
     maxResults: z.number().int().positive().default(20),
     sortBy: z.string().default('modDate:desc'),
