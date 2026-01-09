@@ -28116,6 +28116,18 @@ components:
       properties:
         asset:
           $ref: "#/components/schemas/AssetPermissionsView"
+        cascadeWarnings:
+          type: array
+          description: Warnings from cascade operations that partially failed. Present
+            only when cascade was requested and some role cascades failed.
+          example:
+          - "Failed to trigger cascade for role xyz123: Connection timeout"
+          items:
+            type: string
+            description: Warnings from cascade operations that partially failed. Present
+              only when cascade was requested and some role cascades failed.
+            example: "[\"Failed to trigger cascade for role xyz123: Connection timeout\"\
+              ]"
         inheritanceBroken:
           type: boolean
           description: Whether permission inheritance was broken during this operation.

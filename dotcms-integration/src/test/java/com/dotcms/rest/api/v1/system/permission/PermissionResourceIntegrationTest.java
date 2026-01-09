@@ -485,12 +485,10 @@ public class PermissionResourceIntegrationTest {
 
         try {
             form.checkValid();
-            // Note: With enum types, null values may be filtered by Jackson or cause
-            // NullPointerException during bit conversion. The test validates the form
-            // handles this gracefully.
-        } catch (BadRequestException | NullPointerException e) {
-            // Either form validation catches it or the conversion throws NPE
-            // Both are acceptable outcomes for null enum values
+            fail("Should have thrown BadRequestException for null permission level");
+        } catch (BadRequestException e) {
+            assertTrue("Error message should mention null permission level",
+                    e.getResponse().getEntity().toString().contains("cannot be null"));
         }
     }
 

@@ -31,6 +31,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -453,6 +454,7 @@ public class AssetPermissionHelper {
         }
 
         // 8. Handle cascade if requested and asset is a parent permissionable
+        final List<String> cascadeWarnings = new ArrayList<>();
         if (cascade && asset.isParentPermissionable()) {
             Logger.info(this, () -> String.format(
                 "Triggering cascade permissions job for asset: %s", assetId));
@@ -464,9 +466,11 @@ public class AssetPermissionHelper {
                         CascadePermissionsJob.triggerJobImmediately(asset, role);
                     }
                 } catch (Exception e) {
-                    Logger.warn(this, String.format(
+                    final String warning = String.format(
                         "Failed to trigger cascade for role %s: %s",
-                        roleForm.getRoleId(), e.getMessage()));
+                        roleForm.getRoleId(), e.getMessage());
+                    Logger.warn(this, warning);
+                    cascadeWarnings.add(warning);
                 }
             }
         }
@@ -475,7 +479,7 @@ public class AssetPermissionHelper {
         Logger.info(this, () -> String.format(
             "Successfully updated permissions for asset: %s", assetId));
 
-        return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size());
+        return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size(), cascadeWarnings);
     }
 
     /**
@@ -589,14 +593,16 @@ public class AssetPermissionHelper {
      * @param user              Requesting user
      * @param inheritanceBroken Whether inheritance was broken during this operation
      * @param permissionCount   Number of permissions saved
-     * @return UpdateAssetPermissionsView with message, permissionCount, inheritanceBroken, and asset
+     * @param cascadeWarnings   Warnings from cascade operations that partially failed
+     * @return UpdateAssetPermissionsView with message, permissionCount, inheritanceBroken, cascadeWarnings, and asset
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
     private UpdateAssetPermissionsView buildUpdateResponse(final Permissionable asset,
                                                             final User user,
                                                             final boolean inheritanceBroken,
-                                                            final int permissionCount)
+                                                            final int permissionCount,
+                                                            final List<String> cascadeWarnings)
             throws DotDataException, DotSecurityException {
 
         // Use existing method to get asset metadata
@@ -622,6 +628,7 @@ public class AssetPermissionHelper {
             .message("Permissions saved successfully")
             .permissionCount(permissionCount)
             .inheritanceBroken(inheritanceBroken)
+            .cascadeWarnings(cascadeWarnings.isEmpty() ? Optional.empty() : Optional.of(cascadeWarnings))
             .asset(assetView)
             .build();
     }

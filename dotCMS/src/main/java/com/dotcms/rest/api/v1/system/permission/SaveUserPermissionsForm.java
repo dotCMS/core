@@ -94,6 +94,11 @@ public class SaveUserPermissionsForm extends Validated {
                 throw new BadRequestException("Permission levels for scope '" + scope + "' cannot be empty");
             }
 
+            // Validate no null elements in the set
+            if (levels.contains(null)) {
+                throw new BadRequestException("Permission level cannot be null for scope '" + scope + "'");
+            }
+
             // Permission type validation is handled by Jackson enum deserialization
             // If invalid enum values are passed, Jackson will fail to deserialize
         }
