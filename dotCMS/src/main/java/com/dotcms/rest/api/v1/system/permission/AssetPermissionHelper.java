@@ -31,6 +31,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -453,6 +454,7 @@ public class AssetPermissionHelper {
         }
 
         // 8. Handle cascade if requested and asset is a parent permissionable
+        final List<String> cascadeWarnings = new ArrayList<>();
         if (cascade && asset.isParentPermissionable()) {
             Logger.info(this, () -> String.format(
                 "Triggering cascade permissions job for asset: %s", assetId));
@@ -464,9 +466,11 @@ public class AssetPermissionHelper {
                         CascadePermissionsJob.triggerJobImmediately(asset, role);
                     }
                 } catch (Exception e) {
-                    Logger.warn(this, String.format(
+                    final String warning = String.format(
                         "Failed to trigger cascade for role %s: %s",
-                        roleForm.getRoleId(), e.getMessage()));
+                        roleForm.getRoleId(), e.getMessage());
+                    Logger.warn(this, warning);
+                    cascadeWarnings.add(warning);
                 }
             }
         }
@@ -475,7 +479,7 @@ public class AssetPermissionHelper {
         Logger.info(this, () -> String.format(
             "Successfully updated permissions for asset: %s", assetId));
 
-        return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size());
+        return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size(), cascadeWarnings);
     }
 
     /**
@@ -511,32 +515,15 @@ public class AssetPermissionHelper {
                     "Invalid role id: %s", roleForm.getRoleId()));
             }
 
-            // Validate individual permission names
-            if (roleForm.getIndividual() != null) {
-                for (final String perm : roleForm.getIndividual()) {
-                    if (!PermissionConversionUtils.isValidPermissionLevel(perm)) {
-                        throw new BadRequestException(String.format(
-                            "Invalid permission level: %s", perm));
-                    }
-                }
-            }
+            // Individual permission validation is handled by Jackson enum deserialization
+            // No manual validation needed for Set<PermissionAPI.Type>
 
-            // Validate inheritable permission names and scopes
+            // Validate inheritable scope names (permission types validated by Jackson)
             if (roleForm.getInheritable() != null) {
-                for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
-                    final String scope = entry.getKey();
+                for (final String scope : roleForm.getInheritable().keySet()) {
                     if (!PermissionConversionUtils.isValidScope(scope)) {
                         throw new BadRequestException(String.format(
                             "Invalid permission scope: %s", scope));
-                    }
-
-                    if (entry.getValue() != null) {
-                        for (final String perm : entry.getValue()) {
-                            if (!PermissionConversionUtils.isValidPermissionLevel(perm)) {
-                                throw new BadRequestException(String.format(
-                                    "Invalid permission level '%s' in scope '%s'", perm, scope));
-                            }
-                        }
                     }
                 }
             }
@@ -561,7 +548,7 @@ public class AssetPermissionHelper {
 
             // Build individual permissions
             if (roleForm.getIndividual() != null && !roleForm.getIndividual().isEmpty()) {
-                final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(
+                final int permissionBits = PermissionConversionUtils.convertTypesToBits(
                     roleForm.getIndividual());
                 permissions.add(new Permission(
                     PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -574,16 +561,16 @@ public class AssetPermissionHelper {
 
             // Build inheritable permissions (only for parent permissionables)
             if (asset.isParentPermissionable() && roleForm.getInheritable() != null) {
-                for (final Map.Entry<String, List<String>> entry : roleForm.getInheritable().entrySet()) {
+                for (final Map.Entry<String, Set<PermissionAPI.Type>> entry : roleForm.getInheritable().entrySet()) {
                     final String scopeName = entry.getKey();
-                    final List<String> scopePermissions = entry.getValue();
+                    final Set<PermissionAPI.Type> scopePermissions = entry.getValue();
 
                     if (scopePermissions == null || scopePermissions.isEmpty()) {
                         continue;
                     }
 
                     final String permissionType = PermissionConversionUtils.convertScopeToPermissionType(scopeName);
-                    final int permissionBits = PermissionConversionUtils.convertPermissionNamesToBits(scopePermissions);
+                    final int permissionBits = PermissionConversionUtils.convertTypesToBits(scopePermissions);
 
                     permissions.add(new Permission(
                         permissionType,
@@ -606,14 +593,16 @@ public class AssetPermissionHelper {
      * @param user              Requesting user
      * @param inheritanceBroken Whether inheritance was broken during this operation
      * @param permissionCount   Number of permissions saved
-     * @return UpdateAssetPermissionsView with message, permissionCount, inheritanceBroken, and asset
+     * @param cascadeWarnings   Warnings from cascade operations that partially failed
+     * @return UpdateAssetPermissionsView with message, permissionCount, inheritanceBroken, cascadeWarnings, and asset
      * @throws DotDataException     If there's an error accessing data
      * @throws DotSecurityException If security validation fails
      */
     private UpdateAssetPermissionsView buildUpdateResponse(final Permissionable asset,
                                                             final User user,
                                                             final boolean inheritanceBroken,
-                                                            final int permissionCount)
+                                                            final int permissionCount,
+                                                            final List<String> cascadeWarnings)
             throws DotDataException, DotSecurityException {
 
         // Use existing method to get asset metadata
@@ -639,6 +628,7 @@ public class AssetPermissionHelper {
             .message("Permissions saved successfully")
             .permissionCount(permissionCount)
             .inheritanceBroken(inheritanceBroken)
+            .cascadeWarnings(cascadeWarnings.isEmpty() ? Optional.empty() : Optional.of(cascadeWarnings))
             .asset(assetView)
             .build();
     }

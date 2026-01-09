@@ -832,7 +832,7 @@ public class PermissionResource {
 
         // Verify user is admin
         if (!user.isAdmin()) {
-            Logger.warn(this, String.format(
+            Logger.error(this, String.format(
                 "Non-admin user %s attempted to update permissions for asset: %s",
                 user.getUserId(), assetId));
             throw new DotSecurityException("Only admin users can update asset permissions");
@@ -916,7 +916,7 @@ public class PermissionResource {
 
         // Verify user is admin
         if (!user.isAdmin()) {
-            Logger.warn(this, String.format(
+            Logger.error(this, String.format(
                 "Non-admin user %s attempted to reset permissions for asset: %s",
                 user.getUserId(), assetId));
             throw new DotSecurityException("Only admin users can reset asset permissions");

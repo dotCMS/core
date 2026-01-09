@@ -185,6 +185,34 @@ export const CLICKABLE_ELEMENTS_SELECTOR = 'a, button';
 export const IMPRESSION_SESSION_KEY = 'dot_analytics_impressions';
 
 /**
- * CSS class selector for trackable contentlets
+ * Window property key for analytics active state
+ * Used to track if analytics is initialized and active
  */
-export const ANALYTICS_CONTENTLET_CLASS = 'dotcms-analytics-contentlet';
+export const ANALYTICS_WINDOWS_ACTIVE_KEY = '__dotAnalyticsActive__';
+
+/**
+ * Window property key for analytics cleanup function
+ * Used to store the cleanup function for analytics instance
+ */
+export const ANALYTICS_WINDOWS_CLEANUP_KEY = '__dotAnalyticsCleanup__';
+
+/**
+ * CSS class selector for contentlet elements
+ *
+ * @important This constant is intentionally duplicated in @dotcms/react SDK
+ * (core-web/libs/sdk/react/src/lib/next/components/Contentlet/Contentlet.tsx).
+ * Both constants MUST have the same value ('dotcms-contentlet') for analytics
+ * tracking to work correctly with React-rendered contentlets.
+ *
+ * This duplication is intentional to maintain SDK independence:
+ * - @dotcms/analytics can be used standalone without React
+ * - @dotcms/react can be used without analytics
+ * - When both are used together, they must share the same class name
+ *
+ * If you need to change this value, you MUST update it in both locations:
+ * 1. This file (analytics SDK)
+ * 2. Contentlet.tsx in React SDK
+ *
+ * @see core-web/libs/sdk/react/src/lib/next/components/Contentlet/Contentlet.tsx
+ */
+export const CONTENTLET_CLASS = 'dotcms-contentlet';
