@@ -638,18 +638,9 @@ export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUs
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
- * @param {boolean} isFeatureFlagEnabled - Whether the lock toggle feature is enabled
  * @return {boolean} True if page is considered locked based on feature flag
  */
-export function computeIsPageLocked(
-    page: DotCMSPage,
-    currentUser: CurrentUser,
-    isFeatureFlagEnabled: boolean
-): boolean {
-    if (isFeatureFlagEnabled) {
-        return !!page?.locked;
-    }
-
+export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
     // This is the legacy behavior, only show "locked" button if it is locked by another user
     const isLocked = isPageLockedByOtherUser(page, currentUser);
     return isLocked;
@@ -692,7 +683,7 @@ export function computeCanEditPage(
     }
 
     // Legacy behavior: user can access to Draft mode (edit) if page is not locked by another user
-    const isLocked = computeIsPageLocked(page, currentUser, isFeatureFlagEnabled);
+    const isLocked = computeIsPageLocked(page, currentUser);
     // If the page is locked, the user cannot access to Draft mode (edit)
     return !isLocked;
 }
