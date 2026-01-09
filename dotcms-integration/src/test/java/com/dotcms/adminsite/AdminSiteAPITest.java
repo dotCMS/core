@@ -219,7 +219,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
         // Given: Request with admin domain
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getHeader("host")).thenReturn("admin.dotcms.com:8080");
-        when(mockRequest.getAttribute(AdminSiteAPI.ADMIN_SITE_REQUEST_HEADERS)).thenReturn(null);
+        when(mockRequest.getAttribute(AdminSiteAPI._ADMIN_SITE_HOST_REQUESTED)).thenReturn(null);
 
         // When/Then
         Assert.assertTrue(adminSiteAPI.isAdminSite(mockRequest));
@@ -227,7 +227,7 @@ public class AdminSiteAPITest extends IntegrationTestBase {
         // Given: Request with non-admin domain
         mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getHeader("host")).thenReturn("www.example.com");
-        when(mockRequest.getAttribute(AdminSiteAPI.ADMIN_SITE_REQUEST_HEADERS)).thenReturn(null);
+        when(mockRequest.getAttribute(AdminSiteAPI._ADMIN_SITE_HOST_REQUESTED)).thenReturn(null);
 
         // When/Then
         Assert.assertFalse(adminSiteAPI.isAdminSite(mockRequest));
@@ -235,17 +235,24 @@ public class AdminSiteAPITest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link AdminSiteAPI#isAdminSite(HttpServletRequest)} Given Scenario: HttpServletRequest already
-     * validated (has ADMIN_SITE_REQUEST_HEADERS attribute) ExpectedResult: Returns true immediately without checking
-     * host
+     * validated (has _ADMIN_SITE_HOST_REQUESTED attribute) ExpectedResult: Returns cached value immediately without
+     * checking host
      */
     @Test
     public void test_isAdminSite_with_already_validated_request() {
-        // Given: Request already validated
+        // Given: Request already validated as admin site
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
-        when(mockRequest.getAttribute(AdminSiteAPI.ADMIN_SITE_REQUEST_HEADERS)).thenReturn("validated");
+        when(mockRequest.getAttribute(AdminSiteAPI._ADMIN_SITE_HOST_REQUESTED)).thenReturn(true);
 
-        // When/Then: Should return true regardless of host
+        // When/Then: Should return cached true value regardless of host
         Assert.assertTrue(adminSiteAPI.isAdminSite(mockRequest));
+
+        // Given: Request already validated as non-admin site
+        mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getAttribute(AdminSiteAPI._ADMIN_SITE_HOST_REQUESTED)).thenReturn(false);
+
+        // When/Then: Should return cached false value regardless of host
+        Assert.assertFalse(adminSiteAPI.isAdminSite(mockRequest));
     }
 
     /**

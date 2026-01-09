@@ -9,7 +9,10 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -65,30 +68,57 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             tmpHeaders = new String[0];
         }
 
-        Map<String, String> headers = new HashMap<>(tmpHeaders.length);
-        for (int i = 0; i < tmpHeaders.length; i++) {
-            headers.put(tmpHeaders[i], tmpHeaders[++i]);
+        Map<String, String> headers = new HashMap<>(tmpHeaders.length / 2);
+        for (int i = 0; i + 1 < tmpHeaders.length; i += 2) {
+            headers.put(tmpHeaders[i], tmpHeaders[i + 1]);
         }
         return Collections.unmodifiableMap(headers);
     }
 
     @Override
     public boolean isAdminSiteUri(@Nonnull HttpServletRequest request) {
-
-        String uri = request.getRequestURI().toLowerCase();
-
+        String uri = normalizeUri(request.getRequestURI());
         return isAdminSiteUri(uri);
     }
 
     @Override
     public boolean isAdminSiteUri(@Nonnull String uri) {
-        final String lowerUri = uri.toLowerCase();
+        final String normalizedUri = normalizeUri(uri);
         for (String test : getAdminUris()) {
-            if (lowerUri.startsWith(test)) {
+            if (normalizedUri.startsWith(test)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Normalizes a URI to prevent bypass attacks via URL encoding or path traversal. - Decodes URL-encoded characters
+     * (e.g., %64 -> d) - Normalizes path traversal sequences (e.g., /foo/../bar -> /bar) - Converts to lowercase for
+     * case-insensitive matching
+     *
+     * @param uri the URI to normalize
+     * @return the normalized, lowercase URI
+     */
+    String normalizeUri(String uri) {
+        if (uri == null || uri.isEmpty()) {
+            return "";
+        }
+
+        // Decode URL-encoded characters (e.g., %2F -> /, %64 -> d)
+        String decoded = Try.of(() -> URLDecoder.decode(uri, StandardCharsets.UTF_8))
+                .getOrElse(uri);
+
+        // Normalize path traversal (e.g., /foo/../bar -> /bar, /foo/./bar -> /foo/bar)
+        String normalized = Try.of(() -> new URI(decoded).normalize().getPath())
+                .getOrElse(decoded);
+
+        // Ensure we have a valid result
+        if (normalized == null || normalized.isEmpty()) {
+            normalized = decoded;
+        }
+
+        return normalized.toLowerCase();
     }
 
 
@@ -113,17 +143,20 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
                 ? request.getHeader("host").toLowerCase()
                 : "local.dotcms.site";
 
-        host = host.contains(":") ? host.substring(0, host.indexOf(":")) : host;
+        // strip port
+
         if (isAdminSite(host)) {
             request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, true);
             return true;
         }
+
         request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, false);
         return false;
     }
 
     @Override
     public boolean isAdminSite(@Nonnull String site) {
+        site = site.contains(":") ? site.substring(0, site.indexOf(":")) : site;
         final String lowerSite = site.toLowerCase();
         for (String test : getAdminDomains()) {
             if (lowerSite.endsWith(test)) {
@@ -148,8 +181,9 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
     // Tracks the last logged URL to avoid duplicate log messages
-    private volatile String lastLoggedAdminSiteUrl = null;
-    private volatile boolean notConfiguredWarningLogged = false;
+    private final Object logLock = new Object();
+    private String lastLoggedAdminSiteUrl = null;
+    private boolean notConfiguredWarningLogged = false;
 
     /**
      * calculates the admin site url based on config properties.
@@ -157,20 +191,26 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
      * @return
      */
     String _baseAdminSiteDomain() {
-        if (!isAdminSiteConfigured()) {
-            if (!notConfiguredWarningLogged) {
-                Logger.warn(AdminSiteAPI.class,
-                        "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
-                notConfiguredWarningLogged = true;
+        synchronized (logLock) {
+            if (!isAdminSiteConfigured()) {
+                if (!notConfiguredWarningLogged) {
+                    Logger.warn(AdminSiteAPI.class,
+                            "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
+                    notConfiguredWarningLogged = true;
+                }
+            } else {
+                // Reset the warning flag if it becomes configured
+                notConfiguredWarningLogged = false;
             }
-        } else {
-            // Reset the warning flag if it becomes configured
-            notConfiguredWarningLogged = false;
         }
         HttpServletRequest req = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         String oldHost = req != null && UtilMethods.isSet(req.getHeader("host"))
                 ? req.getHeader("host").toLowerCase()
-                : APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL();
+                : Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL()).getOrNull();
+
+        if (oldHost == null) {
+            oldHost = "https://local.dotcms.site:8443";
+        }
 
         String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, oldHost);
 
@@ -184,28 +224,33 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             adminSiteUrl = "https://" + adminSiteUrl;
         }
 
-        if (adminSiteUrl.lastIndexOf("/") > 10) {
-            Logger.info(AdminSiteAPI.class,
-                    "ADMIN_SITE_URL should not include a path, e.g it should be set to https://www.yoursite.com, not https://www.yoursite.com/dotAdmin. Removing the path or uri after the domain/port");
-            while (adminSiteUrl.lastIndexOf("/") > 9) {
-                adminSiteUrl = adminSiteUrl.substring(0, adminSiteUrl.lastIndexOf("/") - 1);
+        // Remove any path from the URL (keep only protocol://host:port)
+        int protocolEnd = adminSiteUrl.indexOf("://");
+        if (protocolEnd > 0) {
+            int pathStart = adminSiteUrl.indexOf("/", protocolEnd + 3);
+            if (pathStart > 0) {
+                Logger.info(AdminSiteAPI.class,
+                        "ADMIN_SITE_URL should not include a path, e.g it should be set to https://www.yoursite.com, not https://www.yoursite.com/dotAdmin. Removing the path or uri after the domain/port");
+                adminSiteUrl = adminSiteUrl.substring(0, pathStart);
             }
         }
 
         // Only log when the URL actually changes
-        if (!adminSiteUrl.equals(lastLoggedAdminSiteUrl)) {
-            Logger.info(AdminSiteAPI.class, "*********************");
-            Logger.info(AdminSiteAPI.class, "* Setting ADMIN_SITE_URL to " + adminSiteUrl);
-            Logger.info(AdminSiteAPI.class,
-                    "* - this url will be used to build internal links back to your dotCMS administrative instance.");
-            Logger.info(AdminSiteAPI.class, "*********************");
-            lastLoggedAdminSiteUrl = adminSiteUrl;
+        synchronized (logLock) {
+            if (!adminSiteUrl.equals(lastLoggedAdminSiteUrl)) {
+                Logger.info(AdminSiteAPI.class, "*********************");
+                Logger.info(AdminSiteAPI.class, "* Setting ADMIN_SITE_URL to " + adminSiteUrl);
+                Logger.info(AdminSiteAPI.class,
+                        "* - this url will be used to build internal links back to your dotCMS administrative instance.");
+                Logger.info(AdminSiteAPI.class, "*********************");
+                lastLoggedAdminSiteUrl = adminSiteUrl;
+            }
         }
-        return lastLoggedAdminSiteUrl;
+        return adminSiteUrl;
 
     }
 
-    public String[] getAdminUris() {
+    String[] getAdminUris() {
         return (String[]) getConfig().computeIfAbsent(ADMIN_SITE_REQUEST_URIS, k -> _adminUris());
     }
 
@@ -231,7 +276,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
 
-    public String[] getAdminDomains() {
+    String[] getAdminDomains() {
         final String adminSiteUrl = getAdminSiteUrl();
         return (String[]) getConfig().computeIfAbsent(ADMIN_SITE_REQUEST_DOMAINS, k -> _adminDomains(adminSiteUrl));
     }

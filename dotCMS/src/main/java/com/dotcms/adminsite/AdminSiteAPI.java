@@ -72,6 +72,7 @@ public interface AdminSiteAPI {
     String[] _ADMIN_SITE_REQUEST_URIS_DEFAULT = {
             "/html/",
             "/admin/",
+            "/dwr/",
             "/c/",
             "/servlets/",
             "/categoriesservlet/",
@@ -79,6 +80,7 @@ public interface AdminSiteAPI {
             "/dotajaxdirector",
             "/dotscheduledjobs",
             "/dotadmin/",
+            "/api/v1/appconfiguration",
             "/jsontags/",
             "/edit/",
             "/servlet/"};
