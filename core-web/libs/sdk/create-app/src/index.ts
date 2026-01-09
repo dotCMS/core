@@ -6,6 +6,8 @@ import { execa } from 'execa';
 import ora from 'ora';
 import { Result, Ok, Err } from 'ts-results';
 
+import path from 'path';
+
 import { DotCMSApi } from './api';
 import {
     askCloudOrLocalInstance,
@@ -184,11 +186,11 @@ program
             }
 
             spinner.succeed('Project setup completed successfully.');
-
+            const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
             switch (selectedFramework) {
                 case 'nextjs': {
                     finalStepsForNextjs({
-                        projectName: projectName,
+                        projectPath: relativePath,
                         token: dotcmsToken.val,
                         siteId: demoSite.val.entity.identifier,
                         urlDotCMSInstance: urlDotcmsInstance
@@ -197,7 +199,7 @@ program
                 }
                 case 'angular': {
                     finalStepsForAngularAndAngularSSR({
-                        projectName: projectName,
+                        projectPath: relativePath,
                         token: dotcmsToken.val,
                         siteId: demoSite.val.entity.identifier,
                         urlDotCMSInstance: urlDotcmsInstance
@@ -206,7 +208,7 @@ program
                 }
                 case 'angular-ssr': {
                     finalStepsForAngularAndAngularSSR({
-                        projectName: projectName,
+                        projectPath: relativePath,
                         token: dotcmsToken.val,
                         siteId: demoSite.val.entity.identifier,
                         urlDotCMSInstance: urlDotcmsInstance
@@ -215,7 +217,7 @@ program
                 }
                 case 'astro': {
                     finalStepsForAstro({
-                        projectName: projectName,
+                        projectPath: relativePath,
                         token: dotcmsToken.val,
                         siteId: demoSite.val.entity.identifier,
                         urlDotCMSInstance: urlDotcmsInstance
@@ -265,7 +267,7 @@ program
         const ran = await runDockerCompose({ directory: finalDirectory });
         if (!ran.ok) {
             spinner.fail(
-                'Failed to start dotCMS Ensure Docker is running and ports 8082, 8443, 9200, and 9600 are free.'
+                'Failed to start dotCMS ensure docker is running and ports 8082, 8443, 9200, and 9600 are free.'
             );
             return;
         }
@@ -328,10 +330,11 @@ program
         }
 
         spinner.succeed('Project setup completed successfully.');
+        const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
         switch (selectedFramework) {
             case 'nextjs': {
                 finalStepsForNextjs({
-                    projectName: projectName,
+                    projectPath: relativePath,
                     token: dotcmsToken.val,
                     siteId: demoSite.val.entity.identifier,
                     urlDotCMSInstance: 'http://localhost:8082'
@@ -340,7 +343,7 @@ program
             }
             case 'angular': {
                 finalStepsForAngularAndAngularSSR({
-                    projectName: projectName,
+                    projectPath: relativePath,
                     token: dotcmsToken.val,
                     siteId: demoSite.val.entity.identifier,
                     urlDotCMSInstance: 'http://localhost:8082'
@@ -349,7 +352,7 @@ program
             }
             case 'angular-ssr': {
                 finalStepsForAngularAndAngularSSR({
-                    projectName: projectName,
+                    projectPath: relativePath,
                     token: dotcmsToken.val,
                     siteId: demoSite.val.entity.identifier,
                     urlDotCMSInstance: 'http://localhost:8082'
@@ -358,7 +361,7 @@ program
             }
             case 'astro': {
                 finalStepsForAstro({
-                    projectName: projectName,
+                    projectPath: relativePath,
                     token: dotcmsToken.val,
                     siteId: demoSite.val.entity.identifier,
                     urlDotCMSInstance: 'http://localhost:8082'
