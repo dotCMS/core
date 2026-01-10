@@ -17,66 +17,26 @@ export type StyleEditorFieldType = 'input' | 'dropdown' | 'radio' | 'checkboxGro
  * Determines the type of input control and the expected value type:
  * - `'text'`: Standard text input for string values (e.g., font names, color codes)
  * - `'number'`: Numeric input for number values (e.g., font sizes, dimensions)
- *
- * The input type is used in conjunction with `StyleEditorInputField` to ensure
- * type safety between the input type and the default value.
  */
 export type StyleEditorFieldInputType = 'text' | 'number';
 
 /**
- * Helper type that maps input types to their corresponding default value types.
- *
- * This conditional type ensures type safety between `inputType` and `defaultValue`:
- * - When `T` is `'number'`, the mapped type is `number`
- * - When `T` is `'text'`, the mapped type is `string`
- *
- * Used by `StyleEditorInputFieldConfig` to enforce the correct default value type
- * based on the input type.
- */
-export type StyleEditorInputValueType<T extends StyleEditorFieldInputType> = T extends 'number'
-    ? number
-    : string;
-
-/**
- * Configuration type for creating input fields with type-safe default values.
- *
- * This generic type ensures that the `defaultValue` type matches the `inputType`:
- * - When `inputType` is `'number'`, `defaultValue` must be a `number`
- * - When `inputType` is `'text'`, `defaultValue` must be a `string`
+ * Configuration type for creating input fields.
  *
  * This type is used by `styleEditorField.input()` to provide compile-time
- * type checking and prevent mismatched input types and default values.
+ * type checking for input field definitions.
  *
  * @typeParam T - The input type ('text' or 'number')
- *
- * @example
- * ```typescript
- * // Valid: number inputType with number defaultValue
- * const config: StyleEditorInputFieldConfig<'number'> = {
- *   label: 'Font Size',
- *   inputType: 'number',
- *   defaultValue: 16 // ✓ Correct: number
- * };
- *
- * // TypeScript error: string not assignable to number
- * const invalid: StyleEditorInputFieldConfig<'number'> = {
- *   label: 'Font Size',
- *   inputType: 'number',
- *   defaultValue: '16' // ✗ Error: Type 'string' is not assignable to type 'number'
- * };
- * ```
  */
 export interface StyleEditorInputFieldConfig<T extends StyleEditorFieldInputType> {
     /** The unique identifier for this field */
     id: string;
     /** The label text displayed to users for this field */
     label: string;
-    /** The input type that determines the value type ('text' for strings, 'number' for numbers) */
+    /** The input type ('text' for strings, 'number' for numbers) */
     inputType: T;
     /** Optional placeholder text shown when the input is empty */
     placeholder?: string;
-    /** Optional default value (type is enforced based on inputType: number for 'number', string for 'text') */
-    defaultValue?: StyleEditorInputValueType<T>;
 }
 
 /**
@@ -134,8 +94,7 @@ export type StyleEditorOption = StyleEditorOptionObject;
  * Helper type that extracts the union of all option values from an array of options.
  *
  * This type extracts the `value` property from each option object and creates
- * a union type of all possible values. This enables type-safe `defaultValue`
- * that can only be one of the option values when used with `as const`.
+ * a union type of all possible values.
  *
  * **Note:** For full type safety and autocomplete, use `as const` when defining options:
  * ```typescript
@@ -223,44 +182,39 @@ export type StyleEditorRadioOptionValues<T extends readonly StyleEditorRadioOpti
 export type StyleEditorRadioOption = string | StyleEditorRadioOptionObject;
 
 /**
- * Checkbox option object with label, key identifier, and default boolean value.
+ * Checkbox option object with label and key identifier.
  *
  * Unlike dropdown and radio options where `value` represents the actual value,
- * checkbox options use `key` as the identifier and `value` as the default checked state (boolean).
- * This distinction makes it clear that the boolean is the actual value, not just an identifier.
+ * checkbox options use `key` as the identifier. The checked state is managed
+ * by the form system and is not stored in the option definition.
  *
  * @property label - Display label shown to users
- * @property key - Unique identifier/key used in the defaultValue object
- * @property value - Default checked state (true or false)
+ * @property key - Unique identifier/key used for this checkbox option
  *
  * @example
  * ```typescript
  * const checkboxOption: StyleEditorCheckboxOption = {
  *   label: 'Underline',
- *   key: 'underline',
- *   value: true
+ *   key: 'underline'
  * };
  * ```
  */
 export interface StyleEditorCheckboxOption {
     /** Display label shown to users */
     label: string;
-    /** Unique identifier/key used in the defaultValue object */
+    /** Unique identifier/key used for this checkbox option */
     key: string;
-    /** Default checked state (true = checked by default, false = unchecked by default) */
-    value: boolean;
 }
 
 /**
- * Default value type for checkbox group fields.
+ * Checkbox group value type.
  *
  * A record mapping option keys to their boolean checked state.
- * This is derived automatically from checkbox options during normalization.
  * Keys match the `key` property from checkbox options, values indicate whether the option is checked.
  *
  * @example
  * ```typescript
- * const defaultState: StyleEditorCheckboxDefaultValue = {
+ * const checkboxState: StyleEditorCheckboxDefaultValue = {
  *   'underline': true,
  *   'overline': false,
  *   'line-through': false
@@ -290,44 +244,29 @@ export interface StyleEditorBaseField {
 }
 
 /**
- * Input field definition with type-safe defaultValue based on inputType.
+ * Input field definition.
  *
- * This is a discriminated union type that ensures type safety between
- * the `inputType` and `defaultValue` properties. TypeScript will enforce
- * that the `defaultValue` type matches the `inputType`:
- * - When `inputType` is `'number'`, `defaultValue` must be a `number`
- * - When `inputType` is `'text'`, `defaultValue` must be a `string`
- *
- * This type safety prevents runtime errors and ensures that numeric inputs
- * receive numeric values and text inputs receive string values.
+ * Supports both text and number input types for different value types.
  *
  * @example
  * ```typescript
- * // Number input with number defaultValue
+ * // Number input
  * const numberField: StyleEditorInputField = {
  *   type: 'input',
+ *   id: 'font-size',
  *   label: 'Font Size',
  *   inputType: 'number',
- *   defaultValue: 16, // TypeScript ensures this is a number
  *   placeholder: 'Enter font size'
  * };
  *
- * // Text input with string defaultValue
+ * // Text input
  * const textField: StyleEditorInputField = {
  *   type: 'input',
+ *   id: 'font-name',
  *   label: 'Font Name',
  *   inputType: 'text',
- *   defaultValue: 'Arial', // TypeScript ensures this is a string
  *   placeholder: 'Enter font name'
  * };
- *
- * // TypeScript error: type mismatch
- * // const invalid: StyleEditorInputField = {
- * //   type: 'input',
- * //   label: 'Size',
- * //   inputType: 'number',
- * //   defaultValue: '16' // Error: string not assignable to number
- * // };
  * ```
  */
 export type StyleEditorInputField =
@@ -338,8 +277,6 @@ export type StyleEditorInputField =
           inputType: 'number';
           /** Optional placeholder text shown when the input is empty */
           placeholder?: string;
-          /** Optional default value (must be a number when inputType is 'number') */
-          defaultValue?: number;
       })
     | (StyleEditorBaseField & {
           /** Discriminator: must be 'input' */
@@ -348,8 +285,6 @@ export type StyleEditorInputField =
           inputType: 'text';
           /** Optional placeholder text shown when the input is empty */
           placeholder?: string;
-          /** Optional default value (must be a string when inputType is 'text') */
-          defaultValue?: string;
       });
 
 /**
@@ -359,40 +294,38 @@ export type StyleEditorInputField =
  * Options can be provided as simple strings or as objects with
  * separate label and value properties for more flexibility.
  *
- * **Type Safety Tip:** For autocomplete on `defaultValue`, use `as const` when defining options:
+ * **Best Practice:** Use `as const` when defining options for better type safety:
  * ```typescript
- * const options = [
- *   { label: 'The one', value: 'one' },
- *   { label: 'The two', value: 'two' }
+ * const OPTIONS = [
+ *   { label: '18', value: '18px' },
+ *   { label: '24', value: '24px' }
  * ] as const;
  *
  * styleEditorField.dropdown({
- *   options,
- *   defaultValue: 'one' // ✓ Autocomplete works! TypeScript knows 'one' | 'two'
- * })
+ *   id: 'size',
+ *   label: 'Size',
+ *   options: OPTIONS
+ * });
  * ```
  *
  * @property type - Must be 'dropdown'
- * @property options - Array of selectable options. Can be strings or objects with label/value
- * @property defaultValue - Optional default selected value (must match one of the option values)
+ * @property options - Array of selectable options. Can be strings or objects with label/value. Use `as const` for best type safety.
  *
  * @example
  * ```typescript
  * const dropdownField: StyleEditorDropdownField = {
  *   type: 'dropdown',
+ *   id: 'font-family',
  *   label: 'Font Family',
- *   options: ['Arial', 'Helvetica', { label: 'Times New Roman', value: 'times' }],
- *   defaultValue: 'Arial'
+ *   options: ['Arial', 'Helvetica', { label: 'Times New Roman', value: 'times' }]
  * };
  * ```
  */
 export interface StyleEditorDropdownField extends StyleEditorBaseField {
     /** Discriminator: must be 'dropdown' */
     type: 'dropdown';
-    /** Array of selectable options. Can be strings or objects with label and value properties */
-    options: StyleEditorOption[];
-    /** Optional default selected value (must match one of the option values) */
-    defaultValue?: string;
+    /** Array of selectable options. Can be strings or objects with label and value properties. Accepts readonly arrays (use `as const` for best type safety). */
+    options: readonly StyleEditorOption[];
 }
 
 /**
@@ -407,63 +340,32 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
  * - `columns: 1` (default): Single column list layout
  * - `columns: 2`: Two-column grid layout, ideal for visual options with images
  *
- * **Type Safety Tip:** For autocomplete on `defaultValue`, use `as const` when defining options:
+ * **Best Practice:** Use `as const` when defining options for better type safety:
  * ```typescript
- * const options = [
- *   { label: 'The one', value: 'one' },
- *   { label: 'The two', value: 'two' }
+ * const RADIO_OPTIONS = [
+ *   { label: 'Left', value: 'left' },
+ *   { label: 'Right', value: 'right' }
  * ] as const;
  *
  * styleEditorField.radio({
- *   id: 'my-field',
- *   label: 'Select option',
- *   options,
- *   defaultValue: 'one' // ✓ Autocomplete works! TypeScript knows 'one' | 'two'
- *   // defaultValue: 'three' // ✗ TypeScript error: not assignable
- * })
- * ```
- *
- * Without `as const`, the function still works but won't provide autocomplete:
- * ```typescript
- * styleEditorField.radio({
- *   id: 'my-field',
- *   label: 'Select option',
- *   options: [
- *     { label: 'The one', value: 'one' },
- *     { label: 'The two', value: 'two' }
- *   ],
- *   defaultValue: 'one' // Works, but no autocomplete
- * })
+ *   id: 'layout',
+ *   label: 'Layout',
+ *   options: RADIO_OPTIONS
+ * });
  * ```
  *
  * @property type - Must be 'radio'
- * @property options - Array of selectable options. Can be strings or objects with label, value, and optional image properties
- * @property defaultValue - Optional default selected value (must match one of the option values)
+ * @property options - Array of selectable options. Can be strings or objects with label, value, and optional image properties. Use `as const` for best type safety.
  * @property columns - Optional number of columns for layout (1 or 2). Defaults to 1
  *
  * @example
  * ```typescript
- * // With type safety - use 'as const' for autocomplete
- * const options = [
- *   { label: 'The one', value: 'one' },
- *   { label: 'The two', value: 'two' }
- * ] as const;
- *
- * const radioField: StyleEditorRadioField = {
- *   type: 'radio',
- *   id: 'my-field',
- *   label: 'Select option',
- *   options,
- *   defaultValue: 'one' // ✓ Autocomplete works!
- * };
- *
  * // Single column layout (default)
  * const alignmentField: StyleEditorRadioField = {
  *   type: 'radio',
  *   id: 'alignment',
  *   label: 'Alignment',
- *   options: ['Left', 'Center', 'Right'],
- *   defaultValue: 'Left'
+ *   options: ['Left', 'Center', 'Right']
  * };
  *
  * // Two-column grid layout with images
@@ -485,8 +387,7 @@ export interface StyleEditorDropdownField extends StyleEditorBaseField {
  *     },
  *     { label: 'Center', value: 'center' },
  *     { label: 'Overlap', value: 'overlap' }
- *   ],
- *   defaultValue: 'right'
+ *   ]
  * };
  * ```
  */
@@ -497,10 +398,9 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
      * Array of selectable options. Can be:
      * - Simple strings (used as both label and value)
      * - Objects with label, value, and optional imageURL for visual options
+     * Accepts readonly arrays (use `as const` for best type safety).
      */
-    options: StyleEditorRadioOption[];
-    /** Optional default selected value (must match one of the option values) */
-    defaultValue?: string;
+    options: readonly StyleEditorRadioOption[];
     /**
      * Number of columns to display options in.
      * - `1`: Single column list layout (default)
@@ -513,16 +413,15 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
  * Checkbox group field definition for multiple-value selection.
  *
  * Allows users to select multiple options simultaneously. Each option
- * can be independently checked or unchecked. The default checked state
- * is defined directly in each option's `value` property (boolean).
+ * can be independently checked or unchecked. The checked state is managed
+ * by the form system and is not stored in the option definition.
  *
  * **Key Differences from Other Field Types:**
  * - Uses `key` instead of `value` for the identifier (to avoid confusion)
- * - Uses `value` for the default boolean checked state (the actual value)
- * - No separate `defaultValue` property - defaults are embedded in options
+ * - Checked state is managed by the form system, not stored in the option definition
  *
  * @property type - Must be 'checkboxGroup'
- * @property options - Array of checkbox options with label, key, and value (boolean)
+ * @property options - Array of checkbox options with label and key
  *
  * @example
  * ```typescript
@@ -531,11 +430,10 @@ export interface StyleEditorRadioField extends StyleEditorBaseField {
  *   id: 'text-decoration',
  *   label: 'Text Decoration',
  *   options: [
- *     { label: 'Underline', key: 'underline', value: true },
- *     { label: 'Overline', key: 'overline', value: false },
- *     { label: 'Line Through', key: 'line-through', value: false }
+ *     { label: 'Underline', key: 'underline' },
+ *     { label: 'Overline', key: 'overline' },
+ *     { label: 'Line Through', key: 'line-through' }
  *   ]
- *   // No defaultValue needed - it's derived from options during normalization
  * };
  * ```
  */
@@ -545,8 +443,7 @@ export interface StyleEditorCheckboxGroupField extends StyleEditorBaseField {
     /**
      * Array of checkbox options. Each option contains:
      * - `label`: Display text shown to users
-     * - `key`: Unique identifier used in the normalized defaultValue object
-     * - `value`: Default checked state (true = checked, false = unchecked)
+     * - `key`: Unique identifier for this checkbox option
      */
     options: StyleEditorCheckboxOption[];
 }
@@ -571,7 +468,7 @@ export interface StyleEditorCheckboxGroupField extends StyleEditorBaseField {
  * @example
  * ```typescript
  * const fields: StyleEditorField[] = [
- *   { type: 'input', id: 'font-size', label: 'Font Size', inputType: 'number', defaultValue: 16 },
+ *   { type: 'input', id: 'font-size', label: 'Font Size', inputType: 'number' },
  *   { type: 'dropdown', id: 'font-family', label: 'Font Family', options: ['Arial', 'Helvetica'] },
  *   { type: 'radio', id: 'theme', label: 'Theme', options: ['Light', 'Dark'] },
  *   {
@@ -616,9 +513,9 @@ export type StyleEditorField =
  * const section: StyleEditorSection = {
  *   title: 'Typography',
  *   fields: [
- *     { type: 'input', label: 'Font Size', inputType: 'number', defaultValue: 16 },
- *     { type: 'dropdown', label: 'Font Family', options: ['Arial', 'Helvetica'] },
- *     { type: 'radio', label: 'Alignment', options: ['Left', 'Center', 'Right'] }
+ *     { type: 'input', id: 'font-size', label: 'Font Size', inputType: 'number' },
+ *     { type: 'dropdown', id: 'font-family', label: 'Font Family', options: ['Arial', 'Helvetica'] },
+ *     { type: 'radio', id: 'alignment', label: 'Alignment', options: ['Left', 'Center', 'Right'] }
  *   ]
  * };
  * ```
@@ -656,16 +553,16 @@ export interface StyleEditorSection {
  *     {
  *       title: 'Typography',
  *       fields: [
- *         { type: 'input', label: 'Font Size', inputType: 'number', defaultValue: 16 },
- *         { type: 'dropdown', label: 'Font Family', options: ['Arial', 'Helvetica'] },
- *         { type: 'radio', label: 'Alignment', options: ['Left', 'Center', 'Right'] }
+ *         { type: 'input', id: 'font-size', label: 'Font Size', inputType: 'number' },
+ *         { type: 'dropdown', id: 'font-family', label: 'Font Family', options: ['Arial', 'Helvetica'] },
+ *         { type: 'radio', id: 'alignment', label: 'Alignment', options: ['Left', 'Center', 'Right'] }
  *       ]
  *     },
  *     {
  *       title: 'Colors',
  *       fields: [
- *         { type: 'input', label: 'Primary Color', inputType: 'text', defaultValue: '#000000' },
- *         { type: 'input', label: 'Secondary Color', inputType: 'text', defaultValue: '#FFFFFF' }
+ *         { type: 'input', id: 'primary-color', label: 'Primary Color', inputType: 'text' },
+ *         { type: 'input', id: 'secondary-color', label: 'Secondary Color', inputType: 'text' }
  *       ]
  *     }
  *   ]
@@ -697,10 +594,10 @@ export interface StyleEditorForm {
  * This interface is used by `StyleEditorFieldSchema` to define the `config` property.
  *
  * **Note:** All properties are optional since different field types use different subsets:
- * - Input fields use: `inputType`, `placeholder`, `defaultValue`
- * - Dropdown fields use: `options`, `defaultValue`
- * - Radio fields use: `options`, `columns`, `defaultValue`
- * - Checkbox fields use: `options`, `defaultValue` (derived from option values during normalization)
+ * - Input fields use: `inputType`, `placeholder`
+ * - Dropdown fields use: `options`
+ * - Radio fields use: `options`, `columns`
+ * - Checkbox fields use: `options`
  */
 export interface StyleEditorFieldSchemaConfig {
     /** Optional input type for input fields ('text' or 'number') */
@@ -713,13 +610,6 @@ export interface StyleEditorFieldSchemaConfig {
      * Uses `StyleEditorRadioOptionObject` as the superset that supports all option properties.
      */
     options?: StyleEditorRadioOptionObject[];
-    /**
-     * Optional default value. Type depends on field type:
-     * - Input fields: string or number
-     * - Switch fields: boolean
-     * - Checkbox groups: StyleEditorCheckboxDefaultValue
-     */
-    defaultValue?: string | number | boolean | StyleEditorCheckboxDefaultValue;
     /**
      * Number of columns to display options in (for radio fields).
      * - `1`: Single column list layout (default)
@@ -739,7 +629,7 @@ export interface StyleEditorFieldSchemaConfig {
  * - Type-specific properties (like `inputType`, `options`, `placeholder`) are moved into `config`
  * - String options are normalized to `{ label, value }` objects
  * - Radio field image properties (`imageURL`) are preserved in option objects
- * - The `type` and `label` remain at the top level for easy access
+ * - The `type`, `id`, and `label` remain at the top level for easy access
  *
  * @property type - The field type identifier (discriminator for field types)
  * @property label - The human-readable label displayed for this field
@@ -781,8 +671,8 @@ export interface StyleEditorFieldSchema {
  *   fields: [
  *     // Single column containing all fields
  *     [
- *       { type: 'input', label: 'Font Size', config: { inputType: 'number', defaultValue: 16 } },
- *       { type: 'dropdown', label: 'Font Family', config: { options: [...] } }
+ *       { type: 'input', id: 'font-size', label: 'Font Size', config: { inputType: 'number' } },
+ *       { type: 'dropdown', id: 'font-family', label: 'Font Family', config: { options: [...] } }
  *     ]
  *   ]
  * };
@@ -823,8 +713,8 @@ export interface StyleEditorSectionSchema {
  *       fields: [
  *         // Single column containing all fields
  *         [
- *           { type: 'input', label: 'Font Size', config: { inputType: 'number', defaultValue: 16 } },
- *           { type: 'dropdown', label: 'Font Family', config: { options: [{ label: 'Arial', value: 'Arial' }] } }
+ *           { type: 'input', id: 'font-size', label: 'Font Size', config: { inputType: 'number' } },
+ *           { type: 'dropdown', id: 'font-family', label: 'Font Family', config: { options: [{ label: 'Arial', value: 'Arial' }] } }
  *         ]
  *       ]
  *     },
@@ -832,7 +722,7 @@ export interface StyleEditorSectionSchema {
  *       title: 'Colors',
  *       fields: [
  *         [
- *           { type: 'input', label: 'Primary Color', config: { inputType: 'text', defaultValue: '#000000' } }
+ *           { type: 'input', id: 'primary-color', label: 'Primary Color', config: { inputType: 'text' } }
  *         ]
  *       ]
  *     }
