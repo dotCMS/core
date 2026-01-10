@@ -706,6 +706,42 @@ export function mapContainerStructureToDotContainerMap(
 }
 
 /**
+ * Returns a global "set-like" record of all unique `contentTypeVar` values found in the given
+ * page asset containers object.
+ *
+ * - Scans only `containerStructures[*].contentTypeVar`
+ * - Skips missing/empty values
+ * - Does not normalize
+ */
+export function getContentTypeVarRecord(
+    containers: DotCMSPageAssetContainers | null | undefined
+): Record<string, true> {
+    const out: Record<string, true> = {};
+
+    if (!containers) {
+        return out;
+    }
+
+    for (const key in containers) {
+        const containerEntry = containers[key];
+        const structures = containerEntry?.containerStructures;
+
+        if (!Array.isArray(structures) || structures.length === 0) {
+            continue;
+        }
+
+        for (let i = 0; i < structures.length; i++) {
+            const contentTypeVar = structures[i]?.contentTypeVar;
+            if (typeof contentTypeVar === 'string' && contentTypeVar.length > 0) {
+                out[contentTypeVar] = true;
+            }
+        }
+    }
+
+    return out;
+}
+
+/**
  * Map the containerStructure to an array
  *
  * @private
