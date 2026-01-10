@@ -126,7 +126,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
                     "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND language_id = ?)";
-    private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PARENTS_AND_RELATIONS =
+    private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE =
             SELECT_ALL + "WHERE parent1 = ? AND style_properties IS NOT NULL";
 
     @WrapInTransaction
@@ -686,9 +686,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Set<String> originalContentletIds = new HashSet<>();
         final DotConnect db = new DotConnect();
 
-        // preserve style properties if feature flag is disabled and there are style properties to preserve
+        // Preserves already existing styles if Style Editor is disabled
         final boolean isStyleEditorEnabled = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
         if (!isStyleEditorEnabled) {
+            // Delete incoming styles (DB is the only source of truth)
+            multiTrees.forEach(mTree -> mTree.setStyleProperties(null));
+            // Restore existing styles from DB
             preserveStylesBeforeSaving(pageId, multiTrees);
         }
 
@@ -1582,7 +1585,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     /**
      * Restores the style properties for a list of MultiTree objects by looking up
      * their existing values in the database.
-     * * This prevents style data loss when overwriting existing records. It matches
+     * This prevents style data loss when overwriting existing records. It matches
      * records based on the composite key of Container + Contentlet.
      *
      * @param pageId      The identifier of the page being processed.
@@ -1601,7 +1604,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         // Create a "Lookup Map" from the DB multiTrees.
         // Key: Unique combination of Container + Contentlet
-        // Value: Contentlet styleProperties of the Contentlet
+        // Value: Contentlet styleProperties
         final Map<String, Map<String, Object>> dbStyleMap = multiTreesFromDB.stream()
                 .collect(Collectors.toMap(
                         mt -> mt.getContainer() + "_" + mt.getContentlet(),
@@ -1621,9 +1624,16 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         }
     }
 
+    /**
+     * Fetches the style properties from the database for a given page.
+     *
+     * @param pageId The ID of the page to fetch the style properties from.
+     * @return The list of MultiTree objects with the style properties.
+     * @throws DotDataException If there is an issue retrieving data from the DB.
+     */
     protected List<MultiTree> fetchStylesFromDB(String pageId) throws DotDataException {
         final DotConnect db = new DotConnect()
-                .setSQL(SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PARENTS_AND_RELATIONS)
+                .setSQL(SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE)
                 .addParam(pageId);
         return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
     }
