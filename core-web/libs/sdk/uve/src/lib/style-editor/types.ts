@@ -179,7 +179,7 @@ export type StyleEditorRadioOptionValues<T extends readonly StyleEditorRadioOpti
  * };
  * ```
  */
-export type StyleEditorRadioOption = string | StyleEditorRadioOptionObject;
+export type StyleEditorRadioOption = StyleEditorRadioOptionObject;
 
 /**
  * Checkbox option object with label and key identifier.
