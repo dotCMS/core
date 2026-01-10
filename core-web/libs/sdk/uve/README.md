@@ -30,6 +30,20 @@ With `@dotcms/uve`, framework SDKs are able to:
     -   [`updateNavigation()`](#updatenavigationpathname)
     -   [`reorderMenu()`](#reordermenuconfig)
     -   [`sendMessageToUVE()`](#sendmessagetouvemessage)
+-   [Style Editor](#style-editor)
+    -   [What is the Style Editor?](#what-is-the-style-editor)
+    -   [Quick Start](#quick-start)
+    -   [`defineStyleEditorSchema()`](#definestyleeditorschemaform)
+    -   [Field Types](#field-types)
+        -   [`styleEditorField.input()`](#styleeditorfieldinputconfig)
+        -   [`styleEditorField.dropdown()`](#styleeditorfielddropdownconfig)
+        -   [`styleEditorField.radio()`](#styleditorfieldradioconfig)
+        -   [`styleEditorField.checkboxGroup()`](#styleeditorfieldcheckboxgroupconfig)
+    -   [`registerStyleEditorSchemas()`](#registerstyleeditorschemasschemas)
+    -   [`useStyleEditorSchemas()` (React Hook)](#usestyleeditorschemasschemas-react-hook)
+    -   [Accessing Style Values](#accessing-style-values)
+    -   [Best Practices](#best-practices)
+    -   [Complete Example](#complete-example)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
@@ -472,6 +486,1135 @@ sendMessageToUVE({
 | `GET_PAGE_DATA`                    | ---                                                           |
 | `CLIENT_READY`                     | ---                                                           |
 | `EDIT_CONTENTLET`                  | `DotCMSBasicContentlet`                                       |
+
+## Style Editor
+
+### What is the Style Editor?
+
+The Style Editor is a powerful feature that enables content authors and developers to define dynamic, real-time editable properties for contentlets within the Universal Visual Editor (UVE). This allows for live customization of component appearance, layout, typography, colors, and any other configurable aspects without requiring code changes or page reloads.
+
+**Key Benefits:**
+
+-   **Real-Time Visual Editing**: Modify component styles and see changes instantly in the editor
+-   **Content-Specific Customization**: Different content types can have unique style schemas
+-   **Developer-Controlled**: Developers define which properties are editable and how they're presented
+-   **Flexible Configuration**: Support for text inputs, dropdowns, radio buttons, and checkbox groups
+-   **Type-Safe**: Full TypeScript support with type inference for option values
+
+**Use Cases:**
+
+-   Adjust typography (font size, family, weight)
+-   Configure layouts (grid columns, alignment, spacing)
+-   Customize colors and themes
+-   Toggle component features (borders, shadows, decorations)
+-   Control responsive behavior
+-   Modify animation settings
+
+### Quick Start
+
+**1. Install the required packages:**
+
+```bash
+npm install @dotcms/uve@latest
+npm install @dotcms/types@latest --save-dev
+```
+
+**2. Define a style editor schema:**
+
+```typescript
+import { defineStyleEditorSchema, styleEditorField } from '@dotcms/uve';
+
+const mySchema = defineStyleEditorSchema({
+    contentType: 'BlogPost',
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                styleEditorField.dropdown({
+                    id: 'font-size',
+                    label: 'Font Size',
+                    options: [
+                        { label: 'Small (14px)', value: '14px' },
+                        { label: 'Medium (16px)', value: '16px' },
+                        { label: 'Large (18px)', value: '18px' }
+                    ]
+                })
+            ]
+        }
+    ]
+});
+```
+
+**3. Register the schema:**
+
+**Using React:**
+
+```typescript
+import { useStyleEditorSchemas } from '@dotcms/react';
+
+function MyComponent() {
+    useStyleEditorSchemas([mySchema]);
+
+    return <div>Your component content</div>;
+}
+```
+
+**Using vanilla JavaScript:**
+
+```typescript
+import { registerStyleEditorSchemas } from '@dotcms/uve';
+
+registerStyleEditorSchemas([mySchema]);
+```
+
+### `defineStyleEditorSchema(form)`
+
+`defineStyleEditorSchema` creates a normalized style editor schema that UVE can process. It validates your form definition and converts it into the format expected by the Universal Visual Editor.
+
+| Input  | Type               | Required | Description                                            |
+| ------ | ------------------ | -------- | ------------------------------------------------------ |
+| `form` | `StyleEditorForm` | ✅       | The form definition with content type, sections, and fields |
+
+**Returns:** `StyleEditorFormSchema` - A normalized schema ready for registration with UVE
+
+#### StyleEditorForm Structure
+
+```typescript
+interface StyleEditorForm {
+    contentType: string; // The content type identifier
+    sections: StyleEditorSection[]; // Array of form sections
+}
+
+interface StyleEditorSection {
+    title: string; // Section heading displayed in the editor
+    fields: StyleEditorField[]; // Array of field definitions
+}
+```
+
+#### Usage
+
+```typescript
+import { defineStyleEditorSchema, styleEditorField } from '@dotcms/uve';
+
+const schema = defineStyleEditorSchema({
+    contentType: 'Activity',
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                styleEditorField.input({
+                    id: 'heading-size',
+                    label: 'Heading Size',
+                    inputType: 'number',
+                    placeholder: '24'
+                }),
+                styleEditorField.dropdown({
+                    id: 'font-family',
+                    label: 'Font Family',
+                    options: ['Arial', 'Helvetica', 'Georgia']
+                })
+            ]
+        },
+        {
+            title: 'Layout',
+            fields: [
+                styleEditorField.radio({
+                    id: 'alignment',
+                    label: 'Text Alignment',
+                    options: ['Left', 'Center', 'Right']
+                })
+            ]
+        }
+    ]
+});
+```
+
+**⚠️ Important Notes:**
+
+-   Each field must have a unique `id` within the schema
+-   The `contentType` must match the content type in your dotCMS instance
+-   Schemas are only processed when UVE is in EDIT mode
+
+### Field Types
+
+The Style Editor supports four field types, each designed for specific use cases. Use the `styleEditorField` factory functions to create type-safe field definitions.
+
+#### `styleEditorField.input(config)`
+
+Creates a text or number input field for free-form entry.
+
+**Configuration:**
+
+```typescript
+interface StyleEditorInputFieldConfig {
+    id: string; // Unique identifier
+    label: string; // Display label
+    inputType: 'text' | 'number'; // Input type
+    placeholder?: string; // Optional placeholder text
+}
+```
+
+**Use Cases:**
+
+-   Custom values (e.g., font sizes, margins, colors)
+-   Numeric settings (e.g., animation duration, opacity)
+-   Text values (e.g., CSS class names, custom IDs)
+
+**Examples:**
+
+```typescript
+// Number input for pixel values
+styleEditorField.input({
+    id: 'padding-top',
+    label: 'Top Padding (px)',
+    inputType: 'number',
+    placeholder: '16'
+});
+
+// Text input for custom CSS
+styleEditorField.input({
+    id: 'custom-class',
+    label: 'Custom CSS Class',
+    inputType: 'text',
+    placeholder: 'my-custom-style'
+});
+
+// Number input with decimal values
+styleEditorField.input({
+    id: 'opacity',
+    label: 'Opacity',
+    inputType: 'number',
+    placeholder: '1.0'
+});
+```
+
+#### `styleEditorField.dropdown(config)`
+
+Creates a dropdown (select) field with predefined options. Users can select one value from the list.
+
+**Configuration:**
+
+```typescript
+interface StyleEditorDropdownField {
+    id: string; // Unique identifier
+    label: string; // Display label
+    options: StyleEditorOption[]; // Array of options
+}
+
+type StyleEditorOption = { label: string; value: string };
+```
+
+**Use Cases:**
+
+-   Predefined sizes (e.g., small, medium, large)
+-   Font families or style presets
+-   Color themes
+-   Any single-choice selection from a list
+
+**Examples:**
+
+```typescript
+// Font size options
+const FONT_SIZES = [
+    { label: 'Extra Small (12px)', value: '12px' },
+    { label: 'Small (14px)', value: '14px' },
+    { label: 'Medium (16px)', value: '16px' },
+    { label: 'Large (18px)', value: '18px' },
+    { label: 'Extra Large (24px)', value: '24px' }
+];
+
+styleEditorField.dropdown({
+    id: 'font-size',
+    label: 'Font Size',
+    options: FONT_SIZES
+});
+
+// Theme selection
+styleEditorField.dropdown({
+    id: 'theme',
+    label: 'Color Theme',
+    options: [
+        { label: 'Light Theme', value: 'light' },
+        { label: 'Dark Theme', value: 'dark' },
+        { label: 'High Contrast', value: 'high-contrast' }
+    ]
+});
+```
+
+
+#### `styleEditorField.radio(config)`
+
+Creates a radio button group for single-choice selection. Optionally supports images for visual selection.
+
+**Configuration:**
+
+```typescript
+interface StyleEditorRadioField {
+    id: string; // Unique identifier
+    label: string; // Display label
+    options: StyleEditorRadioOption[]; // Array of options
+    columns?: 1 | 2; // Layout: 1 or 2 columns (default: 1)
+}
+
+type StyleEditorRadioOption = {
+    label: string;
+    value: string;
+    imageURL?: string; // Optional preview image
+};
+```
+
+**Use Cases:**
+
+-   Layout selection with visual previews
+-   Alignment options (left, center, right)
+-   Style variants with images
+-   Any single-choice where visual feedback is helpful
+
+**Examples:**
+
+```typescript
+// Simple text options
+styleEditorField.radio({
+    id: 'text-align',
+    label: 'Text Alignment',
+    options: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+        { label: 'Justify', value: 'justify' }
+    ]
+});
+
+// Two-column layout with images
+const LAYOUT_OPTIONS = [
+    {
+        label: 'Left Sidebar',
+        value: 'left',
+        imageURL: 'https://example.com/layouts/left-sidebar.png'
+    },
+    {
+        label: 'Right Sidebar',
+        value: 'right',
+        imageURL: 'https://example.com/layouts/right-sidebar.png'
+    },
+    {
+        label: 'Full Width',
+        value: 'full',
+        imageURL: 'https://example.com/layouts/full-width.png'
+    },
+    {
+        label: 'Split View',
+        value: 'split',
+        imageURL: 'https://example.com/layouts/split-view.png'
+    }
+];
+
+styleEditorField.radio({
+    id: 'page-layout',
+    label: 'Page Layout',
+    columns: 2, // Display in 2-column grid
+    options: LAYOUT_OPTIONS
+});
+
+// Font weight selection
+styleEditorField.radio({
+    id: 'font-weight',
+    label: 'Font Weight',
+    options: [
+        { label: 'Normal', value: '400' },
+        { label: 'Medium', value: '500' },
+        { label: 'Semi-Bold', value: '600' },
+        { label: 'Bold', value: '700' }
+    ]
+});
+```
+
+**💡 Image Guidelines:**
+
+-   Use clear, recognizable preview images
+-   Recommended size: 200x150px or similar aspect ratio
+-   Use consistent image dimensions within a radio group
+-   Images should clearly differentiate between options
+
+#### `styleEditorField.checkboxGroup(config)`
+
+Creates a group of checkboxes for multi-selection. Each checkbox returns a boolean value (checked/unchecked).
+
+**Configuration:**
+
+```typescript
+interface StyleEditorCheckboxGroupField {
+    id: string; // Unique identifier for the group
+    label: string; // Display label for the group
+    options: StyleEditorCheckboxOption[]; // Array of checkbox options
+}
+
+interface StyleEditorCheckboxOption {
+    label: string; // Display text for the checkbox
+    key: string; // Unique identifier (NOT 'value')
+}
+```
+
+**⚠️ Important:** Checkbox options use `key` instead of `value` because the actual value is boolean (true/false).
+
+**Use Cases:**
+
+-   Text decorations (bold, italic, underline)
+-   Feature toggles (enable shadows, borders, animations)
+-   Multiple style attributes
+-   Any multi-select boolean options
+
+**Examples:**
+
+```typescript
+// Typography settings
+styleEditorField.checkboxGroup({
+    id: 'text-style',
+    label: 'Text Style',
+    options: [
+        { label: 'Bold', key: 'bold' },
+        { label: 'Italic', key: 'italic' },
+        { label: 'Underline', key: 'underline' },
+        { label: 'Strikethrough', key: 'strikethrough' }
+    ]
+});
+
+// Component features
+styleEditorField.checkboxGroup({
+    id: 'component-features',
+    label: 'Component Features',
+    options: [
+        { label: 'Show Shadow', key: 'shadow' },
+        { label: 'Show Border', key: 'border' },
+        { label: 'Enable Animation', key: 'animate' },
+        { label: 'Rounded Corners', key: 'rounded' }
+    ]
+});
+
+// Responsive behavior
+styleEditorField.checkboxGroup({
+    id: 'responsive',
+    label: 'Responsive Options',
+    options: [
+        { label: 'Hide on Mobile', key: 'hide-mobile' },
+        { label: 'Hide on Tablet', key: 'hide-tablet' },
+        { label: 'Full Width on Mobile', key: 'full-width-mobile' }
+    ]
+});
+```
+
+**Return Value Structure:**
+
+```typescript
+// Example return value when checkboxes are checked
+{
+  "bold": true,
+  "italic": false,
+  "underline": true,
+  "strikethrough": false
+}
+```
+
+### `registerStyleEditorSchemas(schemas)`
+
+`registerStyleEditorSchemas` registers one or more style editor schemas with UVE. This function should be called during your component initialization to make the schemas available in the editor.
+
+| Input     | Type                        | Required | Description                                      |
+| --------- | --------------------------- | -------- | ------------------------------------------------ |
+| `schemas` | `StyleEditorFormSchema[]` | ✅       | Array of normalized schemas from `defineStyleEditorSchema` |
+
+**Returns:** `void`
+
+**Behavior:**
+
+-   Only registers schemas when UVE is in **EDIT** mode
+-   Silently returns if UVE is not in EDIT mode
+-   Validates that each schema has a `contentType` property
+-   Logs a warning and skips schemas without `contentType`
+-   Sends validated schemas to UVE via internal messaging
+
+#### Usage
+
+```typescript
+import { defineStyleEditorSchema, styleEditorField, registerStyleEditorSchemas } from '@dotcms/uve';
+
+// Create schemas
+const blogSchema = defineStyleEditorSchema({
+    contentType: 'BlogPost',
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                styleEditorField.dropdown({
+                    id: 'font-size',
+                    label: 'Font Size',
+                    options: ['14px', '16px', '18px']
+                })
+            ]
+        }
+    ]
+});
+
+const activitySchema = defineStyleEditorSchema({
+    contentType: 'Activity',
+    sections: [
+        {
+            title: 'Layout',
+            fields: [
+                styleEditorField.radio({
+                    id: 'layout',
+                    label: 'Layout',
+                    options: ['Left', 'Right', 'Center']
+                })
+            ]
+        }
+    ]
+});
+
+// Register multiple schemas at once
+registerStyleEditorSchemas([blogSchema, activitySchema]);
+```
+
+**⚠️ Important Notes:**
+
+-   Call this function after UVE initialization (`initUVE`)
+-   Schemas are only processed in EDIT mode
+-   Missing `contentType` will cause the schema to be skipped
+-   You can register multiple schemas for different content types
+
+### `useStyleEditorSchemas(schemas)` (React Hook)
+
+**Available in:** `@dotcms/react` package
+
+`useStyleEditorSchemas` is a React hook that simplifies schema registration by automatically handling the component lifecycle. It registers schemas when the component mounts and re-registers if the schemas array reference changes.
+
+| Input    | Type                        | Required | Description                     |
+| -------- | --------------------------- | -------- | ------------------------------- |
+| `schemas` | `StyleEditorFormSchema[]` | ✅       | Array of normalized form schemas |
+
+**Returns:** `void`
+
+**Behavior:**
+
+-   Registers schemas on component mount
+-   Re-registers when the `schemas` array reference changes
+-   Internally calls `registerStyleEditorSchemas()`
+-   Safe to call in multiple components
+
+#### Usage
+
+```typescript
+import { useStyleEditorSchemas } from '@dotcms/react';
+import { defineStyleEditorSchema, styleEditorField } from '@dotcms/uve';
+
+function BlogPostEditor() {
+    // Define schemas
+    const schemas = [
+        defineStyleEditorSchema({
+            contentType: 'BlogPost',
+            sections: [
+                {
+                    title: 'Typography',
+                    fields: [
+                        styleEditorField.dropdown({
+                            id: 'font-size',
+                            label: 'Font Size',
+                            options: [
+                                { label: '14px', value: '14px' },
+                                { label: '16px', value: '16px' },
+                                { label: '18px', value: '18px' },
+                                { label: '24px', value: '24px' }
+                            ]
+                        }),
+                        styleEditorField.radio({
+                            id: 'font-weight',
+                            label: 'Font Weight',
+                            options: [
+                                { label: 'Normal', value: 'normal' },
+                                { label: 'Bold', value: 'bold' }
+                            ]
+                        })
+                    ]
+                }
+            ]
+        })
+    ];
+
+    // Register schemas automatically
+    useStyleEditorSchemas(schemas);
+
+    return (
+        <div>
+            <h1>Blog Post Editor</h1>
+            {/* Your component content */}
+        </div>
+    );
+}
+```
+
+**💡 Performance Tip:** For better performance in components that re-render frequently, you can optionally use `useMemo` to prevent re-creating the schema on every render:
+
+```typescript
+import { useMemo } from 'react';
+
+function BlogPostEditor() {
+    const schemas = useMemo(
+        () => [
+            defineStyleEditorSchema({
+                /* schema definition */
+            })
+        ],
+        [] // Empty deps = create once
+    );
+
+    useStyleEditorSchemas(schemas);
+    return <div>Content</div>;
+}
+```
+
+### Accessing Style Values
+
+Style Editor values are managed internally by UVE and passed to your components through the `styleProperties` attribute. This attribute is available in your contentlet component props.
+
+#### In React Components
+
+When rendering contentlets, style properties are accessed through the `styleProperties` prop:
+
+```typescript
+import { DotCMSContentlet } from '@dotcms/types';
+
+interface ActivityProps {
+    contentlet: DotCMSContentlet;
+    styleProperties?: Record<string, any>;
+}
+
+function Activity(props: ActivityProps) {
+    const { title, description, styleProperties } = props; // Contentlet information
+
+    // Access style values using dot notation or bracket notation
+    const fontSize = styleProperties?.['font-size'];
+    const textAlign = styleProperties?.text;
+    const layout = styleProperties?.layout;
+
+    return (
+        <div style={{ fontSize, textAlign }}>
+            <h1>{title}</h1>
+            <p>{description}</p>
+        </div>
+    );
+}
+```
+
+#### Value Types by Field Type
+
+**Input Field:**
+
+```typescript
+// Returns: string (text) or number (number input)
+const fontSize: string = '16px';
+const padding: number = 24;
+```
+
+**Dropdown Field:**
+
+```typescript
+// Returns: string (the selected value)
+const theme: string = 'light';
+const fontFamily: string = 'Arial';
+```
+
+**Radio Field:**
+
+```typescript
+// Returns: string (the selected value)
+const layout: string = 'left';
+const alignment: string = 'center';
+```
+
+**Checkbox Group:**
+
+```typescript
+// Returns: Record<string, boolean> (object with key-value pairs)
+const textStyles: Record<string, boolean> = {
+    bold: true,
+    italic: false,
+    underline: true,
+    strikethrough: false
+};
+
+// Access individual values
+if (textStyles.bold) {
+    // Apply bold styling
+}
+```
+
+#### Applying Style Values
+
+Use the style values to conditionally render styles, classes, or component variants:
+
+```typescript
+function BlogPost(props) {
+    const { title, body, styleProperties } = props;
+
+    // Example: Apply dynamic font size
+    const fontSize = styleProperties?.['font-size'] || '16px';
+
+    // Example: Apply layout classes
+    const layout = styleProperties?.layout || 'default';
+    const layoutClass = `layout-${layout}`;
+
+    // Example: Apply checkbox group values
+    const textStyles = styleProperties?.['text-style'] || {};
+    const textStyleClasses = [
+        textStyles.bold ? 'font-bold' : '',
+        textStyles.italic ? 'font-italic' : '',
+        textStyles.underline ? 'text-underline' : ''
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return (
+        <div className={`${layoutClass} ${textStyleClasses}`} style={{ fontSize }}>
+            <h1>{title}</h1>
+            <p>{body}</p>
+        </div>
+    );
+}
+```
+
+**💡 Note:** The `styleProperties` prop is automatically passed to your contentlet components by the framework SDK when UVE is active and style schemas are registered.
+
+### Best Practices
+
+#### 1. Use Meaningful IDs and Labels
+
+```typescript
+// ✅ Good: Clear, descriptive IDs and labels
+styleEditorField.dropdown({
+    id: 'heading-font-size',
+    label: 'Heading Font Size',
+    options: [
+        { label: 'Small (18px)', value: '18px' },
+        { label: 'Medium (24px)', value: '24px' },
+        { label: 'Large (32px)', value: '32px' }
+    ]
+});
+
+// ❌ Bad: Vague IDs and labels
+styleEditorField.dropdown({
+    id: 'size',
+    label: 'Size',
+    options: ['18px', '24px', '32px']
+});
+```
+
+#### 2. Group Related Fields in Sections
+
+```typescript
+// ✅ Good: Logical grouping by functionality
+defineStyleEditorSchema({
+    contentType: 'BlogPost',
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                /* font-related fields */
+            ]
+        },
+        {
+            title: 'Layout',
+            fields: [
+                /* layout-related fields */
+            ]
+        },
+        {
+            title: 'Colors',
+            fields: [
+                /* color-related fields */
+            ]
+        }
+    ]
+});
+
+// ❌ Bad: All fields in one section
+defineStyleEditorSchema({
+    contentType: 'BlogPost',
+    sections: [
+        {
+            title: 'Settings',
+            fields: [
+                /* all fields mixed together */
+            ]
+        }
+    ]
+});
+```
+
+#### 3. Provide Clear Option Labels
+
+```typescript
+// ✅ Good: Descriptive labels with context
+styleEditorField.dropdown({
+    id: 'font-size',
+    label: 'Font Size',
+    options: [
+        { label: 'Extra Small (12px)', value: '12px' },
+        { label: 'Small (14px)', value: '14px' },
+        { label: 'Medium (16px)', value: '16px' },
+        { label: 'Large (18px)', value: '18px' }
+    ]
+});
+
+// ❌ Bad: Unclear labels
+styleEditorField.dropdown({
+    id: 'font-size',
+    label: 'Font Size',
+    options: ['XS', 'S', 'M', 'L']
+});
+```
+
+#### 4. Use Appropriate Field Types
+
+```typescript
+// ✅ Good: Radio with images for visual layouts
+styleEditorField.radio({
+    id: 'page-layout',
+    label: 'Layout',
+    columns: 2,
+    options: [
+        { label: 'Left', value: 'left', imageURL: '...' },
+        { label: 'Right', value: 'right', imageURL: '...' }
+    ]
+});
+
+// ✅ Good: Dropdown for text-only options
+styleEditorField.dropdown({
+    id: 'font-family',
+    label: 'Font',
+    options: ['Arial', 'Georgia', 'Verdana']
+});
+
+// ✅ Good: Checkbox group for boolean flags
+styleEditorField.checkboxGroup({
+    id: 'text-decorations',
+    label: 'Text Decorations',
+    options: [
+        { label: 'Bold', key: 'bold' },
+        { label: 'Italic', key: 'italic' }
+    ]
+});
+```
+
+#### 5. Validate Content Type Matching
+
+```typescript
+// ✅ Good: Content type matches your dotCMS content type
+defineStyleEditorSchema({
+    contentType: 'BlogPost', // Matches content type in dotCMS
+    sections: [
+        /* ... */
+    ]
+});
+
+// ❌ Bad: Typo or mismatch
+defineStyleEditorSchema({
+    contentType: 'blog-post', // Won't match 'BlogPost' in dotCMS
+    sections: [
+        /* ... */
+    ]
+});
+```
+
+#### 6. Provide Sensible Defaults
+
+When using style properties, always provide fallback defaults:
+
+```typescript
+// ✅ Good: Fallback values prevent errors
+const fontSize = styleProperties?.['font-size'] || '16px';
+const layout = styleProperties?.layout || 'default';
+const textStyles = styleProperties?.['text-style'] || {};
+
+// ❌ Bad: No fallbacks (could cause errors)
+const fontSize = styleProperties?.['font-size'];
+const layout = styleProperties?.layout;
+```
+
+### Complete Example
+
+Here's a comprehensive example demonstrating all Style Editor features:
+
+```typescript
+import { useStyleEditorSchemas } from '@dotcms/react';
+import { defineStyleEditorSchema, styleEditorField } from '@dotcms/uve';
+
+export function BlogPostStyleEditor() {
+    // Define option constants
+    const FONT_SIZES = [
+        { label: 'Extra Small (12px)', value: '12px' },
+        { label: 'Small (14px)', value: '14px' },
+        { label: 'Medium (16px)', value: '16px' },
+        { label: 'Large (18px)', value: '18px' },
+        { label: 'Extra Large (24px)', value: '24px' },
+        { label: 'Huge (32px)', value: '32px' }
+    ];
+
+    const FONT_FAMILIES = [
+        { label: 'Arial', value: 'arial' },
+        { label: 'Georgia', value: 'georgia' },
+        { label: 'Helvetica', value: 'helvetica' },
+        { label: 'Times New Roman', value: 'times' },
+        { label: 'Verdana', value: 'verdana' },
+        { label: 'Courier New', value: 'courier' }
+    ];
+
+    const LAYOUT_OPTIONS = [
+        {
+            label: 'Left Sidebar',
+            value: 'sidebar-left',
+            imageURL: 'https://example.com/layouts/sidebar-left.png'
+        },
+        {
+            label: 'Right Sidebar',
+            value: 'sidebar-right',
+            imageURL: 'https://example.com/layouts/sidebar-right.png'
+        },
+        {
+            label: 'Full Width',
+            value: 'full-width',
+            imageURL: 'https://example.com/layouts/full-width.png'
+        },
+        {
+            label: 'Centered',
+            value: 'centered',
+            imageURL: 'https://example.com/layouts/centered.png'
+        }
+    ];
+
+    const COLOR_THEMES = [
+        { label: 'Light Theme', value: 'light' },
+        { label: 'Dark Theme', value: 'dark' },
+        { label: 'High Contrast', value: 'high-contrast' },
+        { label: 'Sepia', value: 'sepia' }
+    ];
+
+    // Define schema (optionally use useMemo to prevent re-creation on every render)
+    const schemas = [
+            defineStyleEditorSchema({
+                contentType: 'BlogPost',
+                sections: [
+                    {
+                        title: 'Typography',
+                        fields: [
+                            styleEditorField.dropdown({
+                                id: 'heading-font-size',
+                                label: 'Heading Font Size',
+                                options: FONT_SIZES
+                            }),
+                            styleEditorField.dropdown({
+                                id: 'body-font-size',
+                                label: 'Body Font Size',
+                                options: FONT_SIZES.slice(0, 4) // Only smaller sizes
+                            }),
+                            styleEditorField.dropdown({
+                                id: 'font-family',
+                                label: 'Font Family',
+                                options: FONT_FAMILIES
+                            }),
+                            styleEditorField.input({
+                                id: 'line-height',
+                                label: 'Line Height',
+                                inputType: 'number',
+                                placeholder: '1.5'
+                            }),
+                            styleEditorField.checkboxGroup({
+                                id: 'text-style',
+                                label: 'Text Style',
+                                options: [
+                                    { label: 'Bold Headings', key: 'bold-headings' },
+                                    { label: 'Italic Quotes', key: 'italic-quotes' },
+                                    { label: 'Underline Links', key: 'underline-links' }
+                                ]
+                            })
+                        ]
+                    },
+                    {
+                        title: 'Layout',
+                        fields: [
+                            styleEditorField.radio({
+                                id: 'page-layout',
+                                label: 'Page Layout',
+                                columns: 2,
+                                options: LAYOUT_OPTIONS
+                            }),
+                            styleEditorField.radio({
+                                id: 'content-width',
+                                label: 'Content Width',
+                                options: [
+                                    { label: 'Narrow (800px)', value: '800px' },
+                                    { label: 'Medium (1000px)', value: '1000px' },
+                                    { label: 'Wide (1200px)', value: '1200px' },
+                                    { label: 'Extra Wide (1400px)', value: '1400px' }
+                                ]
+                            }),
+                            styleEditorField.input({
+                                id: 'section-spacing',
+                                label: 'Section Spacing (px)',
+                                inputType: 'number',
+                                placeholder: '40'
+                            })
+                        ]
+                    },
+                    {
+                        title: 'Colors & Theme',
+                        fields: [
+                            styleEditorField.dropdown({
+                                id: 'color-theme',
+                                label: 'Color Theme',
+                                options: COLOR_THEMES
+                            }),
+                            styleEditorField.input({
+                                id: 'primary-color',
+                                label: 'Primary Color',
+                                inputType: 'text',
+                                placeholder: '#007bff'
+                            }),
+                            styleEditorField.input({
+                                id: 'secondary-color',
+                                label: 'Secondary Color',
+                                inputType: 'text',
+                                placeholder: '#6c757d'
+                            }),
+                            styleEditorField.input({
+                                id: 'background-color',
+                                label: 'Background Color',
+                                inputType: 'text',
+                                placeholder: '#ffffff'
+                            })
+                        ]
+                    },
+                    {
+                        title: 'Component Features',
+                        fields: [
+                            styleEditorField.checkboxGroup({
+                                id: 'features',
+                                label: 'Enable Features',
+                                options: [
+                                    { label: 'Drop Shadow', key: 'shadow' },
+                                    { label: 'Border', key: 'border' },
+                                    { label: 'Rounded Corners', key: 'rounded' },
+                                    { label: 'Smooth Animations', key: 'animate' },
+                                    { label: 'Hover Effects', key: 'hover-effects' }
+                                ]
+                            }),
+                            styleEditorField.checkboxGroup({
+                                id: 'responsive',
+                                label: 'Responsive Options',
+                                options: [
+                                    { label: 'Hide on Mobile', key: 'hide-mobile' },
+                                    { label: 'Stack on Tablet', key: 'stack-tablet' },
+                                    {
+                                        label: 'Full Width on Mobile',
+                                        key: 'full-width-mobile'
+                                    }
+                                ]
+                            })
+                        ]
+                    }
+                ]
+            })
+        ];
+
+    // Register schemas with UVE
+    useStyleEditorSchemas(schemas);
+
+    return (
+        <div>
+            <h1>Blog Post Style Editor</h1>
+            <p>Style editor schema is registered and available in UVE edit mode.</p>
+        </div>
+    );
+}
+
+// Example: Using style properties in a component
+export function BlogPostRenderer(props) {
+    const { title, body, styleProperties } = props;
+
+    // Extract style values with defaults
+    const headingSize = styleProperties?.['heading-font-size'] || '24px';
+    const bodySize = styleProperties?.['body-font-size'] || '16px';
+    const fontFamily = styleProperties?.['font-family'] || 'arial';
+    const lineHeight = styleProperties?.['line-height'] || '1.5';
+    const layout = styleProperties?.['page-layout'] || 'full-width';
+    const contentWidth = styleProperties?.['content-width'] || '1000px';
+    const sectionSpacing = styleProperties?.['section-spacing'] || 40;
+    const theme = styleProperties?.['color-theme'] || 'light';
+    const primaryColor = styleProperties?.['primary-color'] || '#007bff';
+    const backgroundColor = styleProperties?.['background-color'] || '#ffffff';
+
+    // Extract checkbox group values
+    const textStyle = styleProperties?.['text-style'] || {};
+    const features = styleProperties?.features || {};
+    const responsive = styleProperties?.responsive || {};
+
+    // Build CSS classes based on values
+    const containerClasses = [
+        `layout-${layout}`,
+        `theme-${theme}`,
+        features.shadow ? 'has-shadow' : '',
+        features.border ? 'has-border' : '',
+        features.rounded ? 'has-rounded' : '',
+        features.animate ? 'has-animations' : '',
+        responsive['hide-mobile'] ? 'hide-mobile' : '',
+        responsive['stack-tablet'] ? 'stack-tablet' : ''
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return (
+        <div
+            className={containerClasses}
+            style={{
+                fontFamily,
+                lineHeight,
+                backgroundColor,
+                maxWidth: contentWidth,
+                paddingTop: `${sectionSpacing}px`,
+                paddingBottom: `${sectionSpacing}px`
+            }}
+        >
+            <h1
+                style={{
+                    fontSize: headingSize,
+                    fontWeight: textStyle['bold-headings'] ? 'bold' : 'normal',
+                    color: primaryColor
+                }}
+            >
+                {title}
+            </h1>
+
+            <div
+                style={{
+                    fontSize: bodySize
+                }}
+            >
+                {body}
+            </div>
+        </div>
+    );
+}
+```
+
+**This example demonstrates:**
+
+-   ✅ Organized option constants
+-   ✅ Logical section grouping (Typography, Layout, Colors, Features)
+-   ✅ All four field types (input, dropdown, radio, checkboxGroup)
+-   ✅ Visual layout selection with images
+-   ✅ Checkbox groups for boolean flags
+-   ✅ Clear, descriptive labels
+-   ✅ Safe value extraction with defaults using `styleProperties`
+-   ✅ Dynamic styling based on style values
 
 ## Troubleshooting
 
