@@ -26,7 +26,7 @@
          support new version default in environments/environment.properties and can be changed for local developer in
         environments/dev/user-dev.properties -->
         <!--suppress UnresolvedMavenProperty -->
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
