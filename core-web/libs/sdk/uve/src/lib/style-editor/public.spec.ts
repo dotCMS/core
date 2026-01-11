@@ -123,7 +123,11 @@ describe('styleEditorField', () => {
             const config = {
                 id: 'alignment',
                 label: 'Alignment',
-                options: ['Left', 'Center', 'Right']
+                options: [
+                    { label: 'Left', value: 'left' },
+                    { label: 'Center', value: 'center' },
+                    { label: 'Right', value: 'right' }
+                ]
             };
 
             const result = styleEditorField.radio(config);
@@ -133,7 +137,11 @@ describe('styleEditorField', () => {
                 ...config
             });
             expect(result.type).toBe('radio');
-            expect(result.options).toEqual(['Left', 'Center', 'Right']);
+            expect(result.options).toEqual([
+                { label: 'Left', value: 'left' },
+                { label: 'Center', value: 'center' },
+                { label: 'Right', value: 'right' }
+            ]);
         });
 
         it('should create a radio field with object options', () => {
@@ -187,16 +195,15 @@ describe('styleEditorField', () => {
                         value: 'light',
                         imageURL: 'https://example.com/light-theme.png'
                     },
-                    { label: 'Dark', value: 'dark' },
-                    'Auto'
+                    { label: 'Dark', value: 'dark' }
                 ]
             };
 
             const result = styleEditorField.radio(config);
 
-            expect(result.options).toHaveLength(3);
+            expect(result.options).toHaveLength(2);
             expect(result.options[0]).toHaveProperty('imageURL');
-            expect(result.options[2]).toBe('Auto');
+            expect(result.options[1]).toEqual({ label: 'Dark', value: 'dark' });
         });
 
         it('should handle options with only imageURL', () => {
