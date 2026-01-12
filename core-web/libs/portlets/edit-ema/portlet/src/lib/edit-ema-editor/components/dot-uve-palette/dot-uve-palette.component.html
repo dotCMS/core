@@ -1,30 +1,55 @@
-<p-tabs [value]="$activeTab()" (valueChange)="handleTabChange($event)">
-    <p-tablist>
-        <p-tab [value]="TABS_MAP.CONTENT_TYPES">
-            <div class="tab-header" pTooltip="Content types" tooltipPosition="bottom">
-                <i class="pi pi-stop"></i>
+<p-tabs
+    [value]="$activeTab()"
+    (valueChange)="handleTabChange($event)"
+    [pt]="tabsPt"
+    [unstyled]="true">
+    <p-tablist
+        class="shrink-0 p-0 [&_.p-tablist-content]:w-full [&_.p-tablist-tab-list]:flex [&_.p-tablist-tab-list]:w-full [&_.p-tablist-tab-list]:list-none [&_.p-tablist-tab-list]:p-0 [&_.p-tablist-tab-list]:m-0 [&_.p-tablist-tab-list]:border-0 [&_.p-tablist-tab-list]:bg-transparent [&_.p-tablist-active-bar]:hidden">
+        <p-tab
+            [value]="TABS_MAP.CONTENT_TYPES"
+            class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
+            <div
+                class="flex flex-1 h-full items-center justify-center"
+                pTooltip="Content types"
+                tooltipPosition="bottom">
+                <i class="pi pi-stop text-[14px] text-current"></i>
             </div>
         </p-tab>
-        <p-tab [value]="TABS_MAP.WIDGETS">
-            <div class="tab-header" pTooltip="Widgets" tooltipPosition="bottom">
-                <i class="pi pi-th-large"></i>
+        <p-tab
+            [value]="TABS_MAP.WIDGETS"
+            class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
+            <div
+                class="flex flex-1 h-full items-center justify-center"
+                pTooltip="Widgets"
+                tooltipPosition="bottom">
+                <i class="pi pi-th-large text-[14px] text-current"></i>
             </div>
         </p-tab>
-        <p-tab [value]="TABS_MAP.FAVORITES">
-            <div class="tab-header" pTooltip="Favorites" tooltipPosition="bottom">
-                <i class="pi pi-star"></i>
+        <p-tab
+            [value]="TABS_MAP.FAVORITES"
+            class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
+            <div
+                class="flex flex-1 h-full items-center justify-center"
+                pTooltip="Favorites"
+                tooltipPosition="bottom">
+                <i class="pi pi-star text-[14px] text-current"></i>
             </div>
         </p-tab>
         @if ($showStyleEditorTab()) {
-            <p-tab [value]="TABS_MAP.STYLE_EDITOR">
-                <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
-                    <i class="pi pi-palette"></i>
+            <p-tab
+                [value]="TABS_MAP.STYLE_EDITOR"
+                class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
+                <div
+                    class="flex flex-1 h-full items-center justify-center"
+                    pTooltip="Style Editor"
+                    tooltipPosition="bottom">
+                    <i class="pi pi-palette text-[14px] text-current"></i>
                 </div>
             </p-tab>
         }
     </p-tablist>
-    <p-tabpanels>
-        <p-tabpanel [value]="TABS_MAP.CONTENT_TYPES">
+    <p-tabpanels [unstyled]="true" class="flex-1 min-h-0 overflow-hidden">
+        <p-tabpanel [value]="TABS_MAP.CONTENT_TYPES" class="h-full min-h-0 overflow-hidden">
             <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
             creating triple renders and triple requests to the server. -->
             @if ($activeTab() === TABS_MAP.CONTENT_TYPES) {
@@ -34,7 +59,7 @@
                     [pagePath]="$pagePath()" />
             }
         </p-tabpanel>
-        <p-tabpanel [value]="TABS_MAP.WIDGETS">
+        <p-tabpanel [value]="TABS_MAP.WIDGETS" class="h-full min-h-0 overflow-hidden">
             @if ($activeTab() === TABS_MAP.WIDGETS) {
                 <dot-uve-palette-list
                     [listType]="DotUVEPaletteListTypes.WIDGET"
@@ -42,7 +67,7 @@
                     [pagePath]="$pagePath()" />
             }
         </p-tabpanel>
-        <p-tabpanel [value]="TABS_MAP.FAVORITES">
+        <p-tabpanel [value]="TABS_MAP.FAVORITES" class="h-full min-h-0 overflow-hidden">
             @if ($activeTab() === TABS_MAP.FAVORITES) {
                 <dot-uve-palette-list
                     [listType]="DotUVEPaletteListTypes.FAVORITES"

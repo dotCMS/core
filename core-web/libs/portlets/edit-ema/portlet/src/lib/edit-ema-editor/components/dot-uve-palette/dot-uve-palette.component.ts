@@ -33,6 +33,13 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 })
 export class DotUvePaletteComponent {
     /**
+     * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full min-h-0 flex flex-col' }
+    };
+
+    /**
      * Absolute path of the page currently being edited.
      */
     $pagePath = input.required<string>({ alias: 'pagePath' });
