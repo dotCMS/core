@@ -4576,7 +4576,52 @@
 							"response": []
 						},
 						{
-							"name": "Save Content With Basic Styles Copy",
+							"name": "Turn ON Style Editor",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/system-table",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"system-table",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Save Content With Basic Styles",
 							"event": [
 								{
 									"listen": "test",
@@ -4647,51 +4692,6 @@
 									]
 								},
 								"description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
-							},
-							"response": []
-						},
-						{
-							"name": "Turn ON Style Editor",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											""
-										],
-										"type": "text/javascript",
-										"packages": {},
-										"requests": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/system-table",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"system-table",
-										""
-									]
-								}
 							},
 							"response": []
 						},
@@ -6103,7 +6103,7 @@
 					"response": []
 				},
 				{
-					"name": "RequestVanityURLBaseType_ReturnsAllFields Copy",
+					"name": "RequestVanityURLBaseType_ReturnsAllFields",
 					"event": [
 						{
 							"listen": "test",
@@ -9442,7 +9442,7 @@
 			"name": "Cats",
 			"item": [
 				{
-					"name": "No value for cats field should return empty list Copy",
+					"name": "No value for cats field should return empty list",
 					"item": [
 						{
 							"name": "pre_ImportBundleWithContext",
