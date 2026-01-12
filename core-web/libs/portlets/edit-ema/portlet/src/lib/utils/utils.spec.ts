@@ -12,6 +12,7 @@ import {
     getBaseHrefFromPageURI,
     injectBaseTag,
     computeIsPageLocked,
+    isPageLockedByOtherUser,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
@@ -866,81 +867,79 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computeIsPageLocked', () => {
-        describe('with legacy behavior (feature flag disabled)', () => {
-            it('should return false when the page is unlocked', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: false,
-                    lockedBy: '123',
-                    userId: '123'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(false);
+    describe('isPageLockedByOtherUser', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
             });
 
-            it('should return false when the page is locked and is the same user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '123'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(false);
-            });
-
-            it('should return true when the page is locked and is not the same user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '456'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(true);
-            });
+            expect(result).toBe(false);
         });
 
-        describe('with new behavior (feature flag enabled)', () => {
-            it('should return false when the page is unlocked', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: false,
-                    lockedBy: '123',
-                    userId: '123'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, true);
-
-                expect(result).toBe(false);
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
             });
 
-            it('should return true when the page is locked by current user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '123'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, true);
+            expect(result).toBe(false);
+        });
 
-                expect(result).toBe(true);
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
             });
 
-            it('should return true when the page is locked by another user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '456'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, true);
+            expect(result).toBe(true);
+        });
+    });
 
-                expect(result).toBe(true);
+    describe('computeIsPageLocked', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
             });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(true);
         });
     });
 
