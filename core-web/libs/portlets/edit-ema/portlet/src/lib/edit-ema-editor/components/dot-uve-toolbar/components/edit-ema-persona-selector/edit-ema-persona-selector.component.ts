@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -40,7 +39,6 @@ interface PersonaSelector {
 @Component({
     selector: 'dot-edit-ema-persona-selector',
     imports: [
-        NgClass,
         ButtonModule,
         AvatarModule,
         PopoverModule,
@@ -75,6 +73,42 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     @Output() despersonalize: EventEmitter<
         DotCMSViewAsPersona & { pageId: string; selected: boolean }
     > = new EventEmitter();
+
+    /**
+     * PrimeNG v20+ friendly styling (avoid deprecated styleClass inputs) using Tailwind + PT.
+     */
+    readonly personaPopoverPt = {
+        content: { class: '!p-2' }
+    };
+
+    readonly personaListboxPt = {
+        root: { class: '!border-0 !shadow-none' },
+        listContainer: { class: 'max-h-80 overflow-auto' },
+        list: { class: '!p-0' },
+        option: { class: '!p-0 rounded-md hover:bg-gray-50 focus:bg-gray-50' }
+    };
+
+    readonly personaAvatarPt = {
+        root: { class: 'h-7 w-7 shrink-0' },
+        label: { class: 'text-sm' }
+    };
+
+    readonly personaAvatarSelectedPt = {
+        root: { class: 'h-6 w-6 shrink-0' },
+        label: { class: 'text-sm' }
+    };
+
+    readonly personaChipPt = {
+        root: { class: 'rounded-full bg-gray-100 text-gray-800 text-xs px-2 py-1 gap-1' },
+        removeIcon: { class: 'text-gray-500 hover:text-gray-700' },
+        label: { class: 'leading-4' }
+    };
+
+    get personaButtonStyleClass(): string {
+        const base = 'gap-2 rounded-md px-2 !no-underline hover:!no-underline focus:!no-underline';
+        const isDefaultPersona = this.value?.identifier === 'modes.persona.no.persona';
+        return isDefaultPersona ? base : `${base} bg-blue-50 text-blue-700`;
+    }
 
     protected photo = '';
     ngOnChanges(changes: SimpleChanges): void {

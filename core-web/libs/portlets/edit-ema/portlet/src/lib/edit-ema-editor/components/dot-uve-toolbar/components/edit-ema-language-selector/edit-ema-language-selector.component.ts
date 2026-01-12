@@ -51,6 +51,18 @@ export class EditEmaLanguageSelectorComponent {
         };
     });
 
+    /**
+     * Popover PT to match PrimeNG default padded popover look (the `edit-ema-selector`
+     * styleClass is used elsewhere to *remove* padding globally).
+     */
+    readonly languagePopoverPt = {
+        content: { class: '!p-2' }
+    };
+
+    readonly languageListboxPt = {
+        root: { class: '!border-0 !shadow-none' }
+    };
+
     constructor() {
         // Sync input signal to model signal when language changes from parent
         effect(() => {
