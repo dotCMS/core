@@ -101,6 +101,15 @@ export class DotUveToolbarComponent {
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.palette.open;
 
+    /**
+     * Popover passthrough styles for the "Copy URLs" popover.
+     * Keeps the popover compact and prevents long URLs from stretching the overlay.
+     */
+    readonly copyUrlPopoverPt = {
+        root: { class: 'w-full max-w-[25rem]' },
+        content: { class: '!p-3' }
+    };
+
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
         {

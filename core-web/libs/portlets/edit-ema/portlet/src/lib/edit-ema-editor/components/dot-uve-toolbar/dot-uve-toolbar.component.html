@@ -28,20 +28,26 @@
             <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
             <p-button
                 (click)="op.toggle($event)"
+                [text]="true"
+                [rounded]="true"
                 [pTooltip]="'editpage.header.copy' | dm"
                 tooltipPosition="bottom"
                 icon="pi pi-copy"
-                [text]="true"
                 size="small"
-                [rounded]="true"
                 data-testId="uve-toolbar-copy-url">
-                <p-popover #op>
-                    <div class="url-list">
+                <p-popover #op [pt]="copyUrlPopoverPt">
+                    <div class="flex flex-col divide-y divide-gray-200">
                         @for (url of $pageURLS(); track url.value) {
-                            <div class="url-item">
-                                <span class="url-label">{{ url.label | dm }}:</span>
-                                <div class="url-value">
-                                    <a [href]="url.value" target="_blank" rel="noreferrer noopener">
+                            <div class="flex flex-col gap-1 py-2 first:pt-0 last:pb-0">
+                                <span class="text-sm font-semibold text-gray-900">
+                                    {{ url.label | dm }}:
+                                </span>
+                                <div class="flex min-w-0 items-center gap-2">
+                                    <a
+                                        class="block min-w-0 flex-1 truncate text-sm text-gray-900 !no-underline hover:underline"
+                                        [href]="url.value"
+                                        target="_blank"
+                                        rel="noreferrer noopener">
                                         {{ url.value }}
                                     </a>
                                     <p-button
@@ -49,6 +55,7 @@
                                         [text]="true"
                                         size="small"
                                         [rounded]="true"
+                                        styleClass="shrink-0"
                                         (cdkCopyToClipboardCopied)="triggerCopyToast()"
                                         [cdkCopyToClipboard]="url.value"
                                         data-testId="copy-url-button" />
@@ -63,7 +70,7 @@
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="p-button-text p-button-sm p-button-rounded-md no-underline"
+                class="p-button-text p-button-sm p-button-rounded-md !no-underline"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">
