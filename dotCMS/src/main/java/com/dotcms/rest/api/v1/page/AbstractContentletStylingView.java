@@ -1,9 +1,12 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.annotations.Nullable;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import java.util.Map;
 import org.immutables.value.Value;
 
@@ -37,10 +40,12 @@ public interface AbstractContentletStylingView {
     String contentletId();
 
     @JsonProperty("styleProperties")
+    @Nullable
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(
             description = "Styles defined for the Contentlet",
             example = "{\"color\": \"#FF0000\", \"margin\": \"10px\"}",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            requiredMode = RequiredMode.NOT_REQUIRED
     )
     Map<String, Object> styleProperties();
 }

@@ -55,6 +55,7 @@ import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -232,7 +233,7 @@ public class PageResourceHelper implements Serializable {
     }
 
     /**
-     * Validates the style properties during the saving process.
+     * Validates the style properties for a given contentlet and container during the saving process.
      * @param stylePropertiesMap The map of style properties.
      * @param contentIds The list of contentlet ids.
      * @param containerId The id of the container.
@@ -279,10 +280,11 @@ public class PageResourceHelper implements Serializable {
                             .contentletId(multiTree.getContentlet())
                             .uuid(multiTree.getRelationType());
 
-                    // Add Style properties if present
-                    final Map<String, Object> styleProperties = multiTree.getStyleProperties();
-                    if (styleProperties != null && !styleProperties.isEmpty()) {
-                        builder.putAllStyleProperties(styleProperties);
+                    // Include style properties in the response if Style Editor FF is enabled
+                    final boolean isStyleEditorEnabled = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
+                    if (isStyleEditorEnabled) {
+                        final Map<String, Object> styleProperties = multiTree.getStyleProperties();
+                        builder.putAllStyleProperties(styleProperties != null ? styleProperties : new HashMap<>());
                     }
 
                     return builder.build();
