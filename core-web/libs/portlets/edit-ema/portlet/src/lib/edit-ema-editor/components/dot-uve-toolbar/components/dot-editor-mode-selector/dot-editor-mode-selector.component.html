@@ -1,4 +1,10 @@
-<p-menu #menu [popup]="true" [model]="$menuItems()" [pt]="menuPt" data-testId="more-menu">
+<p-menu
+    #menu
+    [popup]="true"
+    [model]="$menuItems()"
+    [pt]="menuPt"
+    appendTo="body"
+    data-testId="more-menu">
     <ng-template pTemplate="item" let-item>
         <button
             pRipple
