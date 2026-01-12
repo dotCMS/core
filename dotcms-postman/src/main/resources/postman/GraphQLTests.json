@@ -4585,7 +4585,9 @@
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
-											""
+											"",
+											"// Wait for cache to invalidate",
+											"setTimeout(function(){}, 5000);"
 										],
 										"type": "text/javascript",
 										"packages": {},
@@ -4643,10 +4645,10 @@
 											"pm.test(\"Contentlet_1 has correct styleProperties\", function () {",
 											"    const first = json.entity.find(item => item.contentletId === contentlet1);",
 											"    pm.expect(first).to.exist;",
-											"    pm.expect(first.styleProperties).to.be.an(\"object\");",
-											"    pm.expect(first.styleProperties.width).to.eql(\"100px\");",
-											"    pm.expect(first.styleProperties.color).to.eql(\"#FF0000\");",
-											"    pm.expect(first.styleProperties.margin).to.eql(\"10px\");",
+											"    pm.expect(first.dotStyleProperties).to.be.an(\"object\");",
+											"    pm.expect(first.dotStyleProperties.width).to.eql(\"100px\");",
+											"    pm.expect(first.dotStyleProperties.color).to.eql(\"#FF0000\");",
+											"    pm.expect(first.dotStyleProperties.margin).to.eql(\"10px\");",
 											"});"
 										],
 										"type": "text/javascript",
@@ -4757,10 +4759,10 @@
 											"",
 											"// Checking Style Values as a top level field",
 											"pm.test(\"Top level Styles have correct width\", function () {",
-											"    pm.expect(targetContentlet.styleProperties).to.not.be.null;",
-											"    pm.expect(targetContentlet.styleProperties.width).to.eql('100px');",
-											"    pm.expect(targetContentlet.styleProperties.color).to.eql('#FF0000');",
-											"    pm.expect(targetContentlet.styleProperties.margin).to.eql('10px');",
+											"    pm.expect(targetContentlet.dotStyleProperties).to.not.be.null;",
+											"    pm.expect(targetContentlet.dotStyleProperties.width).to.eql('100px');",
+											"    pm.expect(targetContentlet.dotStyleProperties.color).to.eql('#FF0000');",
+											"    pm.expect(targetContentlet.dotStyleProperties.margin).to.eql('10px');",
 											"});"
 										],
 										"type": "text/javascript",
@@ -4780,7 +4782,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"styleProperties\")\n          styleProperties\n        }\n      }\n    }\n  }\n}\n",
+										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"dotStyleProperties\")\n          dotStyleProperties\n        }\n      }\n    }\n  }\n}\n",
 										"variables": "{\n  \"url\": \"{{pageUrl}}\"\n}"
 									}
 								},
