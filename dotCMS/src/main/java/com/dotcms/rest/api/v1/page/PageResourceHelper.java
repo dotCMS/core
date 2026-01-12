@@ -154,7 +154,7 @@ public class PageResourceHelper implements Serializable {
      * @throws BadRequestException if style validation fails
      */
     @WrapInTransaction
-    public List<ContentletStylingView> saveContent(final String pageId,
+    public List<ContentView> saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
             final Language language, String variantName) throws DotDataException {
 
@@ -272,10 +272,10 @@ public class PageResourceHelper implements Serializable {
      * @return A list of the saved Contentlets with the containerId, uuid, contentletId and
      * styleProperties.
      */
-    private List<ContentletStylingView> buildSaveContentResponse(List<MultiTree> savedMultiTrees) {
+    private List<ContentView> buildSaveContentResponse(List<MultiTree> savedMultiTrees) {
         return savedMultiTrees.stream()
                 .map(multiTree -> {
-                    ContentletStylingView.Builder builder = ContentletStylingView.builder()
+                    ContentView.Builder builder = ContentView.builder()
                             .containerId(multiTree.getContainer())
                             .contentletId(multiTree.getContentlet())
                             .uuid(multiTree.getRelationType());

@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.annotations.Nullable;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -12,10 +13,10 @@ import org.immutables.value.Value;
 
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
 @Value.Immutable
-@JsonSerialize(as = ContentletStylingView.class)
-@JsonDeserialize(as = ContentletStylingView.class)
+@JsonSerialize(as = ContentView.class)
+@JsonDeserialize(as = ContentView.class)
 @Schema(description = "Contentlet with Styles info")
-public interface AbstractContentletStylingView {
+public interface AbstractContentView {
 
     @JsonProperty("containerId")
     @Schema(
@@ -39,7 +40,7 @@ public interface AbstractContentletStylingView {
     )
     String contentletId();
 
-    @JsonProperty("styleProperties")
+    @JsonProperty(Contentlet.STYLE_PROPERTIES_KEY)
     @Nullable
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Schema(
