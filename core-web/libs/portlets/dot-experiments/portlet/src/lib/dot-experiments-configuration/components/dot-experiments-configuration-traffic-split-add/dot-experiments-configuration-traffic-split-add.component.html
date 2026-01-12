@@ -2,7 +2,7 @@
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}"></dot-sidebar-header>
+            dotTitle="{{ 'experiments.configure.traffic.split.title' | dm }}" />
         <div class="experiment-traffic-split__form-wrapper flex flex-column">
             <form
                 [formGroup]="form"
@@ -17,11 +17,11 @@
                         (click)="splitVariantsEvenly()"
                         [label]="'experiments.configure.traffic.split.evenly' | dm"
                         [value]="splitEvenly"
-                        formControlName="type"></p-radioButton>
+                        formControlName="type" />
                     <p-radioButton
                         [label]="'experiments.configure.traffic.split.custom' | dm"
                         [value]="customPercentages"
-                        formControlName="type"></p-radioButton>
+                        formControlName="type" />
                 </div>
                 <div class="experiment-traffic-split__variants">
                     <header class="experiment-traffic-split__variants-header">
@@ -46,7 +46,7 @@
                                         [min]="0"
                                         class="experiment-traffic-split__variants-weight p-inputtext-sm"
                                         formControlName="weight"
-                                        mode="decimal"></p-inputNumber>
+                                        mode="decimal" />
                                 } @else {
                                     <span
                                         class="experiment-traffic-split__variants-weight"

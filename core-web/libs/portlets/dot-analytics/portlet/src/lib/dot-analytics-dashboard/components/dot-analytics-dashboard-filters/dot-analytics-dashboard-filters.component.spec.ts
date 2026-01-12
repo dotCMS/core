@@ -150,11 +150,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
             spectator.component.$customDateRange.set(customDateRange);
             spectator.component.onChangeCustomDateRange();
 
-            expect(changeFiltersSpy).toHaveBeenCalledWith({
-                time_range: TIME_RANGE_OPTIONS.custom,
-                from: '2024-01-01',
-                to: '2024-01-31'
-            });
+            expect(changeFiltersSpy).toHaveBeenCalledWith(['2024-01-01', '2024-01-31']);
         });
 
         it('should not emit custom date range when custom date range is selected with incomplete date range', () => {
@@ -187,9 +183,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
                 originalEvent: createFakeEvent('change')
             });
 
-            expect(changeFiltersSpy).toHaveBeenCalledWith({
-                time_range: TIME_RANGE_OPTIONS.last7days
-            });
+            expect(changeFiltersSpy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.last7days);
         });
 
         it('should not emit when time range is a custom date range', () => {
