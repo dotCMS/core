@@ -3,7 +3,7 @@
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }">
-    <p-header>
+    <ng-template pTemplate="header">
         <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar />
         <div class="dot-apps-card__label-container">
             <span class="dot-apps-card__name">{{ app.name }}</span>
@@ -23,7 +23,7 @@
                     size="18" />
             }
         </div>
-    </p-header>
+    </ng-template>
     <p>
         <markdown>{{ app.description }}</markdown>
     </p>

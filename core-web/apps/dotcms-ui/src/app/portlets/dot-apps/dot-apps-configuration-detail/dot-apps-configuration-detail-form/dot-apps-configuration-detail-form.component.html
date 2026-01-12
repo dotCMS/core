@@ -47,8 +47,8 @@
                         [id]="field.name"
                         [formControlName]="field.name"
                         #inputTextarea
-                        pInputTextarea
-                        autoResize="autoResize"></textarea>
+                        pTextarea
+                        [autoResize]="true"></textarea>
                     <span class="p-field-hint">
                         <markdown>{{ field.hint }}</markdown>
                     </span>

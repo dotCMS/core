@@ -18,24 +18,33 @@
 
         <p-button
             (click)="exportConfiguration($event, site)"
-            styleClass="p-button-text p-button-rounded p-button-sm"
+            [text]="true"
+            [rounded]="true"
+            size="small"
             icon="pi pi-download"
             data-testId="export" />
         <p-button
             (click)="editConfigurationSite($event, site)"
-            styleClass="p-button-text p-button-rounded p-button-sm"
+            [text]="true"
+            [rounded]="true"
+            size="small"
             icon="pi pi-pencil"
             data-testId="edit" />
         <p-button
             (click)="confirmDelete($event, site)"
-            styleClass="p-button-text p-button-rounded p-button-danger p-button-sm"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            severity="danger"
             icon="pi pi-trash"
             data-testId="delete" />
     </div>
 } @else {
     <p-button
         (click)="editConfigurationSite($event, site)"
-        styleClass="p-button-text p-button-rounded p-button-sm"
+        [text]="true"
+        [rounded]="true"
+        size="small"
         icon="pi pi-plus"
         data-testId="add" />
 }

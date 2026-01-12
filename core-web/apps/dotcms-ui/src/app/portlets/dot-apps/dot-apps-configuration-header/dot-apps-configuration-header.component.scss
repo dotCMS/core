@@ -13,14 +13,9 @@
     position: sticky;
     top: 0;
     z-index: 1;
+    gap: spacing.$spacing-4;
 
-    p-avatar {
-        align-self: baseline;
-        border-radius: 50%;
-        box-shadow: shadows.$shadow-s;
-        cursor: pointer;
-        margin: 0 spacing.$spacing-4 0 spacing.$spacing-4;
-    }
+    padding: spacing.$spacing-4;
 }
 
 .dot-apps-configuration__data {

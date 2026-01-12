@@ -4,23 +4,22 @@
         [header]="dialogHeaderKey | dm"
         [modal]="true"
         [style]="{ width: '26rem' }"
-        styleClass="p-fluid"
-        appendTo="body"
+        [appendTo]="'body'"
+        class="p-fluid"
         (visibleChange)="closeExportDialog()">
         <form class="form" [formGroup]="form" novalidate>
             @switch (action) {
                 @case ('Export') {
                     <div class="field">
                         <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
-                        <input
+                        <p-password
                             [placeholder]="'apps.confirmation.export.password.label' | dm"
-                            id="export-password"
+                            inputId="export-password"
                             dotAutofocus
-                            pPassword
                             autocomplete="new-password"
                             formControlName="password"
-                            name="export-password"
-                            type="password" />
+                            [feedback]="false"
+                            [toggleMask]="true" />
                     </div>
                 }
                 @case ('Import') {
@@ -35,14 +34,13 @@
                     </div>
                     <div class="field">
                         <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
-                        <input
+                        <p-password
                             [placeholder]="'apps.confirmation.import.password.label' | dm"
-                            id="import-password"
+                            inputId="import-password"
                             autocomplete="new-password"
                             formControlName="password"
-                            name="import-password"
-                            pInputText
-                            type="password" />
+                            [feedback]="false"
+                            [toggleMask]="true" />
                     </div>
                     <input type="hidden" name="fileHidden" formControlName="importFile" />
                     <!-- Validation Field -->
@@ -60,14 +58,14 @@
                         [disabled]="dialogActions.cancel.disabled"
                         severity="secondary"
                         (click)="dialogActions.cancel.action()"
-                        data-testId="dotDialogCancelAction"></p-button>
+                        data-testId="dotDialogCancelAction" />
                 }
                 @if (dialogActions.accept) {
                     <p-button
                         [label]="dialogActions.accept.label"
                         [disabled]="dialogActions.accept.disabled"
                         (click)="dialogActions.accept.action()"
-                        data-testId="dotDialogAcceptAction"></p-button>
+                        data-testId="dotDialogAcceptAction" />
                 }
             </ng-template>
         }
