@@ -20,9 +20,9 @@
             dotAvatar />
     }
 </p-button>
-<p-popover #op [pt]="personaPopoverPt" appendTo="body" data-testId="persona-op">
+<p-popover #op [pt]="personaPopoverPt" data-testId="persona-op">
     <p-listbox
-        (onChange)="onSelect($event); op.toggle($event)"
+        (onChange)="onSelect($event); op.hide()"
         [options]="$personas().items"
         [pt]="personaListboxPt"
         #listbox
@@ -48,7 +48,7 @@
                         [pt]="personaChipPt"
                         (onRemove)="
                             onRemove($event, persona, value.identifier === persona.identifier);
-                            op.toggle($event)
+                            op.hide()
                         "
                         data-testId="persona-chip" />
                 }
