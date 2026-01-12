@@ -28,6 +28,14 @@ export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
 
     /**
+     * PrimeNG Menu passthrough (PT) to tune layout using Tailwind classes.
+     * Keeps Prime styles, but tightens padding/width to match our toolbar dropdown design.
+     */
+    readonly menuPt = {
+        root: { class: 'min-w-[260px] px-2' }
+    } as const;
+
+    /**
      * Determines whether to show the "Draft" mode option in the mode selector.
      *
      * With feature flag enabled: Always show draft mode (user can toggle lock)

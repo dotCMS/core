@@ -2,7 +2,7 @@
 @let live = $isLiveMode();
 @let runningExperiment = $toolbar().runningExperiment;
 
-<p-toolbar styleClass="uve-toolbar">
+<p-toolbar>
     <ng-template #start>
         <div class="flex items-center gap-1" [ngClass]="{ 'p-0': preview || live }">
             @if ($isEditMode()) {

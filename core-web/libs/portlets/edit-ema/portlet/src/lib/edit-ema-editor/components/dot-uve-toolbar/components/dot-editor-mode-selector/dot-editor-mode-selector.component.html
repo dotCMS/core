@@ -1,23 +1,34 @@
+<p-menu #menu [popup]="true" [model]="$menuItems()" [pt]="menuPt" data-testId="more-menu">
+    <ng-template pTemplate="item" let-item>
+        <button
+            pRipple
+            type="button"
+            class="group flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+            (click)="onModeChange(item.id)"
+            [ngClass]="{
+                'bg-gray-100': item.id === $currentMode(),
+                'hover:bg-gray-50': item.id !== $currentMode()
+            }"
+            role="menuitem"
+            [attr.aria-current]="item.id === $currentMode() ? 'page' : null"
+            [attr.data-testId]="item.id + '-menu-item'">
+            <span class="flex min-w-0 flex-col">
+                <span class="text-sm font-semibold leading-5 text-gray-900">
+                    {{ item.label | dm }}
+                </span>
+                <span class="mt-0.5 text-xs leading-4 text-gray-600">
+                    {{ item.description | dm }}
+                </span>
+            </span>
+        </button>
+    </ng-template>
+</p-menu>
+
 <p-button
     icon="pi pi-angle-down"
     iconPos="right"
+    size="small"
     [label]="$currentModeLabel() | dm"
     [outlined]="true"
-    size="small"
-    styleClass="p-2 mode-selector"
     (click)="menu.toggle($event)"
     data-testId="more-button" />
-
-<p-menu #menu [popup]="true" styleClass="more-menu" [model]="$menuItems()" data-testId="more-menu">
-    <ng-template pTemplate="item" let-item>
-        <a
-            pRipple
-            class="flex flex-col p-menuitem-link menu-item items-start"
-            [ngClass]="{ 'menu-item--active': item.id === $currentMode() }"
-            (click)="onModeChange(item.id)"
-            [attr.data-testId]="item.id + '-menu-item'">
-            <span class="menu-item__label">{{ item.label | dm }}</span>
-            <span class="menu-item__description">{{ item.description | dm }}</span>
-        </a>
-    </ng-template>
-</p-menu>
