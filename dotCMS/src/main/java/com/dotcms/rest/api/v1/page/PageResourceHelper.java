@@ -494,11 +494,11 @@ public class PageResourceHelper implements Serializable {
         final Template oldTemplate = this.templateAPI.findWorkingTemplate(page.getTemplateId(), user, false);
 
         final Template saveTemplate;
-        final boolean useByAnotherPage = this.templateAPI.getPages(page.getTemplateId()).stream()
-                .anyMatch(pageVersion -> !page.getIdentifier().equals(pageVersion.getIdentifier()) ||
-                        !((HTMLPageAsset) page).getVariantId().equals(pageVersion.getVariantName()));
 
-        if (!useByAnotherPage && !oldTemplate.getIdentifier().equals(Template.SYSTEM_TEMPLATE)) {
+        final boolean isAnonymousTemplate = oldTemplate.isAnonymous();
+
+        if (isAnonymousTemplate) {
+            // Template is already a custom page layout, modify
             saveTemplate = oldTemplate;
         } else {
             saveTemplate = new Template();
