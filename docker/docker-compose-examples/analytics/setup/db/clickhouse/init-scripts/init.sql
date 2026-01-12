@@ -410,7 +410,7 @@ SELECT
     context_site_id,
     conversion.conversion_name as conversion_name,
     count(*) AS events_count,
-    count(DISTINCT identifier, title) AS conversion_count,
+    count(DISTINCT conversion_time) AS conversion_count,
     max(conversion._timestamp) as last_timestamp,
     max(conversion.conversion_time) as last_conversion_time
 FROM clickhouse_test_db.events e

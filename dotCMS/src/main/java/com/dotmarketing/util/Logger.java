@@ -17,17 +17,16 @@ import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.velocity.servlet.VelocityServlet;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.velocity.servlet.VelocityServlet;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * @author David Torres
@@ -210,6 +209,32 @@ public class Logger {
     public static void warnEveryAndDebug(final Class cl, final String message, final Throwable ex,
                     final int warnEveryMillis) {
         warnEveryAndDebug(cl.getName(), message, ex, warnEveryMillis);
+    }
+
+    /**
+     * this method will print the message at WARN level every millis set and print the message plus whole stack trace if
+     * at DEGUG level
+     *
+     * @param cl
+     * @param message
+     * @param warnEveryMillis
+     */
+    public static void warnEvery(final Class cl, final String messageKey, final String message,
+            final int warnEveryMillis) {
+
+        if (UtilMethods.isEmpty(messageKey)) {
+            return;
+        }
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+
+        final Long hash = Long.valueOf(Objects.hashCode(messageKey.intern()));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, true);
+            logger.warn(message + " (log every " + warnEveryMillis + "ms)");
+        }
+
     }
 
 
