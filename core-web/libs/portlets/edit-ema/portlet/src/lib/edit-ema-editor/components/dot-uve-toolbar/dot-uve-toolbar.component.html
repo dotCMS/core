@@ -4,7 +4,7 @@
 
 <p-toolbar styleClass="uve-toolbar">
     <div class="p-toolbar-group-start" [ngClass]="{ 'p-0': preview || live }">
-        @if ($isEditMode()) {
+        @if ($isEditMode() && $canEditPage()) {
             <button
                 pButton
                 type="button"
