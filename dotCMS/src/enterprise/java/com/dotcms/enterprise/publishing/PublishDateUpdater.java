@@ -47,15 +47,17 @@
 
 package com.dotcms.enterprise.publishing;
 
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -89,7 +91,7 @@ public class PublishDateUpdater {
                 .stream()
                 .map(contentTypeMap -> contentTypeMap.get("velocity_var_name"))
                 .filter(Objects::nonNull)
-                .map(velocityVarBameObject -> velocityVarBameObject.toString())
+                .map(Object::toString)
                 .collect(Collectors.toList());
     }
 
@@ -230,32 +232,29 @@ public class PublishDateUpdater {
         }
     }
 
-    @WrapInTransaction
     public static void updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
         updatePublishExpireDates(fireTime, null);
     }
 
-    @WrapInTransaction
     public static void updatePublishExpireDates(final Date fireTime, final Date previousFireTime) throws DotDataException, DotSecurityException {
 
 	    if(LicenseUtil.getLevel()< LicenseLevel.PROFESSIONAL.level){
 	        return;
 	    }
 
-        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        try {
+            final List<String> contentTypeVariableWithPublishField = getContentTypeVariableWithPublishField();
 
-        final List<String> contentTypeVariableWithPublishField = getContentTypeVariableWithPublishField();
+            // Extract configuration properties - All related to PUBLISH_JOB_QUEUE functionality
+            final int searchBatchSize = Config.getIntProperty("PUBLISH_JOB_QUEUE_SEARCH_BATCH_SIZE", 500);
+            final int transactionBatchSize = Config.getIntProperty("PUBLISH_JOB_QUEUE_TRANSACTION_BATCH_SIZE", 100);
 
         if (!contentTypeVariableWithPublishField.isEmpty()) {
             final String luceneQueryToPublish = getPublishLuceneQuery(fireTime, contentTypeVariableWithPublishField);
 
-            final List<Contentlet> contentletToPublish = APILocator.getContentletAPI()
-                    .search(luceneQueryToPublish, 0, 0,
-                            null, systemUser, false);
-
-            // Use provided previousFireTime if available (from JobExecutionContext), 
+            // Use provided previousFireTime if available (from JobExecutionContext),
             // otherwise calculate it from cron expression
-            // 
+            //
             // FALLBACK SCENARIOS (when previousFireTime is null):
             // 1. First run: JobExecutionContext.getPreviousFireTime() returns null on first execution (legitimate)
             // 2. Tests: Tests don't have JobExecutionContext, so they use the calculation fallback (legitimate)
@@ -265,51 +264,43 @@ public class PublishDateUpdater {
             // NOTE: The calculation fallback should be reliable. If getPreviousJobRunTime() returns null
             // in normal scenarios (not first run), that indicates a bug. However, when null is returned,
             // shouldPublishContent() defaults to publishing content, which is a safe fallback behavior.
+
+            //The Following flag allows to byPass The shouldPublishContent check and force publication of everything
+            final boolean includeAllPastContent = Config.getBooleanProperty("PUBLISH_JOB_QUEUE_INCLUDE_ALL_PAST_CONTENT",
+                    false);
+
             Date previousJobRunTime = previousFireTime;
-            
+
             // Validate previousFireTime if provided (should be before fireTime)
             if (previousJobRunTime != null && !previousJobRunTime.before(fireTime)) {
                 Logger.warn(PublishDateUpdater.class,
-                        "Invalid previousFireTime (" + previousJobRunTime + 
-                        ") is not before fireTime (" + fireTime + 
+                        "Invalid previousFireTime (" + previousJobRunTime +
+                        ") is not before fireTime (" + fireTime +
                         "). Falling back to calculation.");
                 previousJobRunTime = null;
             }
-            
+
             // If not provided or invalid, calculate it from cron expression
             if (previousJobRunTime == null) {
                 previousJobRunTime = getPreviousJobRunTime(fireTime);
             }
 
-            for (final Contentlet contentlet : contentletToPublish) {
-                try {
-                    if (shouldPublishContent(contentlet,  previousJobRunTime)) {
-                        APILocator.getContentletAPI().publish(contentlet, systemUser, false);
-                    } else {
-                        Logger.debug(PublishDateUpdater.class,
-                                "Skipping publish for contentlet " + contentlet.getIdentifier() +
-                                " - content was already auto-published and manually unpublished");
-                    }
-                } catch (Exception e) {
-                    Logger.debug(PublishDateUpdater.class,
-                            "content failed to publish: " + e.getMessage());
-                }
-            }
+            //This method fires both operations publish + unpublish using batches
+            processPublishContentInBatch(luceneQueryToPublish, includeAllPastContent, previousJobRunTime,
+                    searchBatchSize, transactionBatchSize);
         }
 
         final String luceneQueryToUnPublish = getExpireLuceneQuery(fireTime);
 
-        final List<Contentlet> contentletToUnPublish = APILocator.getContentletAPI().search(luceneQueryToUnPublish,
-                0, 0, null, systemUser, false);
-
-
-        for(final Contentlet contentlet : contentletToUnPublish) {
-            try {
-                APILocator.getContentletAPI().unpublish(contentlet, systemUser, false);
-            }
-            catch(Exception e){
-                Logger.debug(PublishDateUpdater.class, "content failed to unpublish: " +  e.getMessage());
-            }
+            processUnpublishContentInBatch(luceneQueryToUnPublish, searchBatchSize, transactionBatchSize);
+        } catch (DotDataException e) {
+            Logger.error(PublishDateUpdater.class,
+                    "Error processing publish/unpublish dates: " + e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            Logger.error(PublishDateUpdater.class,
+                    "Unexpected error processing publish/unpublish dates: " + e.getMessage(), e);
+            throw new DotDataException("Failed to process publish/unpublish dates", e);
         }
     }
 
@@ -332,6 +323,218 @@ public class PublishDateUpdater {
         return String.format(luceneQueryTemplate, parameters );
     }
 
+    /**
+     * Functional interface for content processing operations (publish/unpublish).
+     * Allows for flexible delegation of specific content operations while maintaining
+     * common pagination and transaction management logic.
+     */
+    private interface ContentProcessor {
+        /**
+         * Process a single contentlet.
+         *
+         * @param contentlet The contentlet to process
+         * @param contentletAPI The ContentletAPI instance
+         * @param systemUser The system user for the operation
+         * @return true if the contentlet was processed, false if it was skipped
+         * @throws Exception if processing fails
+         */
+        boolean process(Contentlet contentlet, ContentletAPI contentletAPI, User systemUser) throws Exception;
 
+        /**
+         * Get the name of this operation for logging purposes.
+         *
+         * @return The operation name (e.g., "publish", "unpublish")
+         */
+        String getOperationName();
+    }
+
+    /**
+     * Generic method to process content using pagination to avoid loading large collections into memory.
+     * Uses indexCount to determine total records and processes content in search batches.
+     * Commits transactions every N records as configured by transactionBatchSize parameter.
+     *
+     * @param luceneQuery The lucene query to search for content
+     * @param searchBatchSize The batch size for search operations
+     * @param transactionBatchSize The batch size for transaction commits
+     * @param processor The content processor that provides operation logic and name
+     */
+    private static void processContentInBatch(final String luceneQuery,
+                                                   final int searchBatchSize,
+                                                   final int transactionBatchSize,
+                                                   final ContentProcessor processor) throws DotDataException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final String operationName = processor.getOperationName();
+
+        try {
+            // Get total count using indexCount
+            final long totalRecords = contentletAPI.indexCount(luceneQuery, systemUser, false);
+            Logger.info(PublishDateUpdater.class,
+                    String.format("Found %d contentlets to %s. Processing in search batches of %d with transaction commits every %d records",
+                            totalRecords, operationName, searchBatchSize, transactionBatchSize));
+
+            if (totalRecords == 0) {
+                Logger.info(PublishDateUpdater.class, String.format("No contentlets found to %s", operationName));
+                return;
+            }
+
+            int offset = 0;
+            int totalProcessed = 0;
+            int transactionProcessed = 0;
+            boolean transactionStarted = false;
+
+            HibernateUtil.startTransaction();
+            transactionStarted = true;
+
+            while (offset < totalRecords) {
+                // Search for contentlets in batches
+                final List<Contentlet> contentletBatch = contentletAPI.search(
+                        luceneQuery, searchBatchSize, offset, null, systemUser, false);
+
+                if (contentletBatch.isEmpty()) {
+                    break;
+                }
+
+                Logger.debug(PublishDateUpdater.class,
+                        String.format("Processing search batch %d-%d of %d total records for %s",
+                                offset, offset + contentletBatch.size(), totalRecords, operationName));
+
+                // Process each contentlet in the current batch
+                for (final Contentlet contentlet : contentletBatch) {
+                    try {
+                        // Delegate to the processor function
+                        final boolean processed = processor.process(contentlet, contentletAPI, systemUser);
+                        if (processed) {
+                            totalProcessed++;
+                            transactionProcessed++;
+                        }
+
+                        // Commit every transactionBatchSize processed records
+                        if (transactionProcessed >= transactionBatchSize) {
+                            Logger.debug(PublishDateUpdater.class,
+                                    String.format("Committing transaction after processing %d contentlets (total: %d) for %s",
+                                            transactionProcessed, totalProcessed, operationName));
+                            HibernateUtil.closeAndCommitTransaction();
+                            transactionStarted = false;
+                            transactionProcessed = 0;
+
+                            // Start new transaction if there are more records to process
+                            if (totalProcessed < totalRecords) {
+                                HibernateUtil.startTransaction();
+                                transactionStarted = true;
+                            }
+                        }
+                    } catch (Exception e) {
+                        Logger.error(PublishDateUpdater.class,
+                                String.format("Content failed to %s: %s - %s", operationName, contentlet.getIdentifier(), e.getMessage()), e);
+                    }
+                }
+
+                offset += searchBatchSize;
+            }
+
+            // Commit any remaining records
+            if (transactionStarted && transactionProcessed > 0) {
+                Logger.debug(PublishDateUpdater.class,
+                        String.format("Committing final transaction with %d remaining contentlets for %s", transactionProcessed, operationName));
+                HibernateUtil.closeAndCommitTransaction();
+                transactionStarted = false;
+            }
+
+            Logger.info(PublishDateUpdater.class,
+                    String.format("Successfully processed %d of %d contentlets for %s", totalProcessed, totalRecords, operationName));
+
+        } catch (DotHibernateException e) {
+            Logger.error(PublishDateUpdater.class,
+                    String.format("Transaction error while processing %s content with pagination: %s", operationName, e.getMessage()), e);
+            throw new DotDataException(String.format("Transaction error during %s processing", operationName), e);
+        } catch (Exception e) {
+            Logger.error(PublishDateUpdater.class,
+                    String.format("Unexpected error while processing %s content with pagination: %s", operationName, e.getMessage()), e);
+            throw new DotDataException(String.format("Unexpected error during %s processing", operationName), e);
+        }
+    }
+
+    /**
+     * Content processor implementation for publish operations.
+     */
+    private static class PublishContentProcessor implements ContentProcessor {
+        private final boolean includeAllPastContent;
+        private final Date previousJobRunTime;
+
+        public PublishContentProcessor(final boolean includeAllPastContent, final Date previousJobRunTime) {
+            this.includeAllPastContent = includeAllPastContent;
+            this.previousJobRunTime = previousJobRunTime;
+        }
+
+        @Override
+        public boolean process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
+            if (includeAllPastContent || shouldPublishContent(contentlet, previousJobRunTime)) {
+                contentletAPI.publish(contentlet, systemUser, false);
+                return true; // contentlet was processed
+            } else {
+                Logger.debug(PublishDateUpdater.class,
+                        "Skipping publish for contentlet " + contentlet.getIdentifier() +
+                        " - content was already auto-published and manually unpublished");
+                return false; // contentlet was skipped
+            }
+        }
+
+        @Override
+        public String getOperationName() {
+            return "publish";
+        }
+    }
+
+    /**
+     * Content processor implementation for unpublish operations.
+     */
+    private static class UnpublishContentProcessor implements ContentProcessor {
+        @Override
+        public boolean process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
+            contentletAPI.unpublish(contentlet, systemUser, false);
+            return true; // contentlet was always processed for unpublish (no conditional logic)
+        }
+
+        @Override
+        public String getOperationName() {
+            return "unpublish";
+        }
+    }
+
+    /**
+     * Processes publish content using pagination via the generic processContentWithPagination method.
+     *
+     * @param luceneQuery The lucene query to search for content to publish
+     * @param includeAllPastContent Whether to include all past content
+     * @param previousJobRunTime Previous job run time for content validation
+     * @param searchBatchSize The batch size for search operations
+     * @param transactionBatchSize The batch size for transaction commits
+     */
+    private static void processPublishContentInBatch(final String luceneQuery,
+                                                           final boolean includeAllPastContent,
+                                                           final Date previousJobRunTime,
+                                                           final int searchBatchSize,
+                                                           final int transactionBatchSize) throws DotDataException {
+        //Build and pass a delegate to deal with the Publish Operation
+        final ContentProcessor publishProcessor = new PublishContentProcessor(includeAllPastContent, previousJobRunTime);
+        processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, publishProcessor);
+    }
+
+    /**
+     * Processes unpublish content using pagination via the generic processContentWithPagination method.
+     *
+     * @param luceneQuery The lucene query to search for content to unpublish
+     * @param searchBatchSize The batch size for search operations
+     * @param transactionBatchSize The batch size for transaction commits
+     */
+    private static void processUnpublishContentInBatch(final String luceneQuery,
+                                                            final int searchBatchSize,
+                                                            final int transactionBatchSize) throws DotDataException {
+        //Pass a delegate to deal with Unpublish Operation
+        final ContentProcessor unpublishProcessor = new UnpublishContentProcessor();
+        processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, unpublishProcessor);
+    }
 
 }
