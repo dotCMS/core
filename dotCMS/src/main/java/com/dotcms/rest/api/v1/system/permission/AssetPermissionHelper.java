@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.system.permission;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -15,6 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -27,6 +31,7 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -382,5 +387,325 @@ public class AssetPermissionHelper {
         }
 
         return getScopeFromPermissionType(asset.getPermissionType());
+    }
+
+    // ========================================================================
+    // UPDATE ASSET PERMISSIONS METHODS
+    // ========================================================================
+
+    /**
+     * Validates the update request form and asset ID.
+     *
+     * @param assetId Asset identifier
+     * @param form    Permission update form
+     * @throws BadRequestException  If validation fails
+     * @throws DotDataException     If role lookup fails
+     */
+    private void validateUpdateRequest(final String assetId,
+                                       final UpdateAssetPermissionsForm form)
+            throws DotDataException {
+
+        if (!UtilMethods.isSet(assetId)) {
+            throw new BadRequestException("Asset ID is required");
+        }
+
+        if (form == null || form.getPermissions() == null || form.getPermissions().isEmpty()) {
+            throw new BadRequestException("permissions list is required");
+        }
+
+        for (final RolePermissionForm roleForm : form.getPermissions()) {
+            // Validate role ID is provided
+            if (!UtilMethods.isSet(roleForm.getRoleId())) {
+                throw new BadRequestException("roleId is required for each permission entry");
+            }
+
+            // Validate role exists
+            final Role role = roleAPI.loadRoleById(roleForm.getRoleId());
+            if (role == null) {
+                throw new BadRequestException(String.format(
+                    "Invalid role id: %s", roleForm.getRoleId()));
+            }
+
+            // Individual permission validation is handled by Jackson enum deserialization
+            // No manual validation needed for Set<PermissionAPI.Type>
+
+            // Validate inheritable scope names (permission types validated by Jackson)
+            if (roleForm.getInheritable() != null) {
+                for (final String scope : roleForm.getInheritable().keySet()) {
+                    if (!PermissionConversionUtils.isValidScope(scope)) {
+                        throw new BadRequestException(String.format(
+                            "Invalid permission scope: %s", scope));
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds Permission objects from the update form.
+     *
+     * @param form  Permission update form
+     * @param asset Target asset
+     * @return List of Permission objects to save
+     */
+    private List<Permission> buildPermissionsFromForm(final UpdateAssetPermissionsForm form,
+                                                       final Permissionable asset) {
+
+        final List<Permission> permissions = new ArrayList<>();
+        final String assetPermissionId = asset.getPermissionId();
+
+        for (final RolePermissionForm roleForm : form.getPermissions()) {
+            final String roleId = roleForm.getRoleId();
+
+            // Build individual permissions
+            if (roleForm.getIndividual() != null && !roleForm.getIndividual().isEmpty()) {
+                final int permissionBits = PermissionConversionUtils.convertTypesToBits(
+                    roleForm.getIndividual());
+                permissions.add(new Permission(
+                    PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                    assetPermissionId,
+                    roleId,
+                    permissionBits,
+                    true
+                ));
+            }
+
+            // Build inheritable permissions (only for parent permissionables)
+            if (asset.isParentPermissionable() && roleForm.getInheritable() != null) {
+                for (final Map.Entry<String, Set<PermissionAPI.Type>> entry : roleForm.getInheritable().entrySet()) {
+                    final String scopeName = entry.getKey();
+                    final Set<PermissionAPI.Type> scopePermissions = entry.getValue();
+
+                    if (scopePermissions == null || scopePermissions.isEmpty()) {
+                        continue;
+                    }
+
+                    final String permissionType = PermissionConversionUtils.convertScopeToPermissionType(scopeName);
+                    final int permissionBits = PermissionConversionUtils.convertTypesToBits(scopePermissions);
+
+                    permissions.add(new Permission(
+                        permissionType,
+                        assetPermissionId,
+                        roleId,
+                        permissionBits,
+                        true
+                    ));
+                }
+            }
+        }
+
+        return permissions;
+    }
+
+    /**
+     * Updates permissions for an asset based on the provided form.
+     * Automatically breaks inheritance if the asset is currently inheriting.
+     *
+     * @param assetId  Asset identifier (inode or identifier)
+     * @param form     Permission update form with role permissions
+     * @param cascade  If true, triggers async cascade job (query parameter)
+     * @param user     Requesting user (must be admin)
+     * @return UpdateAssetPermissionsView containing message, permissionCount, inheritanceBroken, and asset
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    public UpdateAssetPermissionsView updateAssetPermissions(final String assetId,
+                                                              final UpdateAssetPermissionsForm form,
+                                                              final boolean cascade,
+                                                              final User user)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "updateAssetPermissions - assetId: %s, cascade: %s, user: %s",
+            assetId, cascade, user.getUserId()));
+
+        // 1. Validate request
+        validateUpdateRequest(assetId, form);
+
+        // 2. Resolve asset
+        final Permissionable asset = resolveAsset(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException("Asset not found: " + assetId);
+        }
+
+        // 3. Check user has EDIT_PERMISSIONS on asset
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+        if (!canEditPermissions) {
+            throw new DotSecurityException(String.format(
+                "User does not have EDIT_PERMISSIONS permission on asset: %s", assetId));
+        }
+
+        // 4. Check if asset is currently inheriting (for response flag)
+        final boolean wasInheriting = permissionAPI.isInheritingPermissions(asset);
+
+        // 5. Break inheritance if currently inheriting
+        if (wasInheriting) {
+            Logger.debug(this, () -> String.format(
+                "Breaking permission inheritance for asset: %s", assetId));
+            final Permissionable parent = permissionAPI.findParentPermissionable(asset);
+            if (parent != null) {
+                permissionAPI.permissionIndividually(parent, asset, user);
+            }
+        }
+
+        // 6. Build Permission objects from form
+        final List<Permission> permissionsToSave = buildPermissionsFromForm(form, asset);
+
+        // 7. Save permissions
+        if (!permissionsToSave.isEmpty()) {
+            permissionAPI.save(permissionsToSave, asset, user, false);
+        }
+
+        // 8. Handle cascade if requested and asset is a parent permissionable
+        final List<String> cascadeWarnings = new ArrayList<>();
+        if (cascade && asset.isParentPermissionable()) {
+            Logger.info(this, () -> String.format(
+                "Triggering cascade permissions job for asset: %s", assetId));
+            // Trigger cascade for each role in the form
+            for (final RolePermissionForm roleForm : form.getPermissions()) {
+                try {
+                    final Role role = roleAPI.loadRoleById(roleForm.getRoleId());
+                    if (role != null) {
+                        CascadePermissionsJob.triggerJobImmediately(asset, role);
+                    }
+                } catch (Exception e) {
+                    final String warning = String.format(
+                        "Failed to trigger cascade for role %s: %s",
+                        roleForm.getRoleId(), e.getMessage());
+                    Logger.warn(this, warning);
+                    cascadeWarnings.add(warning);
+                }
+            }
+        }
+
+        // 9. Build and return response
+        if (cascadeWarnings.isEmpty()) {
+            Logger.info(this, () -> String.format(
+                "Successfully updated permissions for asset: %s", assetId));
+        } else {
+            Logger.warn(this, () -> String.format(
+                "Permissions saved for asset: %s, but %d cascade job(s) failed to trigger",
+                assetId, cascadeWarnings.size()));
+        }
+
+        return buildUpdateResponse(asset, user, wasInheriting, permissionsToSave.size(), cascadeWarnings);
+    }
+
+    /**
+     * Builds the typed response view for the update operation.
+     *
+     * @param asset             Updated asset
+     * @param user              Requesting user
+     * @param inheritanceBroken Whether inheritance was broken during this operation
+     * @param permissionCount   Number of permissions saved
+     * @param cascadeWarnings   Warnings from cascade operations that partially failed
+     * @return UpdateAssetPermissionsView with message, permissionCount, inheritanceBroken, cascadeWarnings, and asset
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     */
+    private UpdateAssetPermissionsView buildUpdateResponse(final Permissionable asset,
+                                                            final User user,
+                                                            final boolean inheritanceBroken,
+                                                            final int permissionCount,
+                                                            final List<String> cascadeWarnings)
+            throws DotDataException, DotSecurityException {
+
+        // Use existing method to get asset metadata
+        final AssetMetadata metadata = getAssetMetadata(asset, user);
+
+        // Use existing method to get role permissions
+        final List<RolePermissionView> rolePermissions = buildRolePermissions(asset, user);
+
+        // Build typed AssetPermissionsView from metadata and permissions
+        final AssetPermissionsView assetView = AssetPermissionsView.builder()
+            .assetId(metadata.assetId())
+            .assetType(metadata.assetType())
+            .inheritanceMode(metadata.inheritanceMode())
+            .isParentPermissionable(metadata.isParentPermissionable())
+            .canEditPermissions(metadata.canEditPermissions())
+            .canEdit(metadata.canEdit())
+            .parentAssetId(metadata.parentAssetId())
+            .permissions(rolePermissions)
+            .build();
+
+        // Return typed response view
+        return UpdateAssetPermissionsView.builder()
+            .message("Permissions saved successfully")
+            .permissionCount(permissionCount)
+            .inheritanceBroken(inheritanceBroken)
+            .cascadeWarnings(cascadeWarnings.isEmpty() ? Optional.empty() : Optional.of(cascadeWarnings))
+            .asset(assetView)
+            .build();
+    }
+
+    // ========================================================================
+    // RESET ASSET PERMISSIONS METHODS
+    // ========================================================================
+
+    /**
+     * Resets permissions for an asset to inherit from its parent.
+     * Removes all individual permissions from the asset, making it inherit permissions.
+     *
+     * @param assetId Asset identifier (inode or identifier)
+     * @param user    Requesting user (must be admin)
+     * @return ResetAssetPermissionsView containing message, assetId, and previousPermissionCount
+     * @throws DotDataException     If there's an error accessing data
+     * @throws DotSecurityException If security validation fails
+     * @throws NotFoundInDbException If asset is not found
+     * @throws ConflictException    If asset already inherits permissions (409)
+     */
+    public ResetAssetPermissionsView resetAssetPermissions(final String assetId, final User user)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "resetAssetPermissions - assetId: %s, user: %s", assetId, user.getUserId()));
+
+        // 1. Validate asset ID
+        if (!UtilMethods.isSet(assetId)) {
+            throw new IllegalArgumentException("Asset ID is required");
+        }
+
+        // 2. Resolve asset
+        final Permissionable asset = resolveAsset(assetId);
+        if (asset == null) {
+            throw new NotFoundInDbException("asset does not exist");
+        }
+
+        // 3. Check user has EDIT_PERMISSIONS on asset
+        final boolean canEditPermissions = permissionAPI.doesUserHavePermission(
+            asset, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false);
+        if (!canEditPermissions) {
+            throw new DotSecurityException(String.format(
+                "User does not have EDIT_PERMISSIONS permission on asset: %s", assetId));
+        }
+
+        // 4. Check if asset is already inheriting - return 409 Conflict
+        if (permissionAPI.isInheritingPermissions(asset)) {
+            Logger.debug(this, () -> String.format(
+                "Asset already inherits permissions: %s", assetId));
+            throw new ConflictException("Asset already inherits permissions from parent");
+        }
+
+        // 5. Get count of individual permissions before removal
+        final List<Permission> individualPermissions = permissionAPI.getPermissions(asset, true, true);
+        final int previousPermissionCount = individualPermissions.size();
+
+        Logger.debug(this, () -> String.format(
+            "Removing %d individual permissions from asset: %s", previousPermissionCount, assetId));
+
+        // 6. Remove all individual permissions - asset will now inherit
+        permissionAPI.removePermissions(asset);
+
+        // 7. Build and return response
+        Logger.info(this, () -> String.format(
+            "Successfully reset permissions for asset: %s (removed %d permissions)",
+            assetId, previousPermissionCount));
+
+        return ResetAssetPermissionsView.builder()
+                .message("Individual permissions removed. Asset now inherits from parent.")
+                .assetId(assetId)
+                .previousPermissionCount(previousPermissionCount)
+                .build();
     }
 }
