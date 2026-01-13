@@ -11,8 +11,8 @@ import {
 import {
     DEFAULT_PER_PAGE,
     DotCMSPaletteContentType,
-    DotPaletteSortOption,
     DotPaletteListStatus,
+    DotPaletteSortOption,
     DotPaletteViewMode,
     DotUVEPaletteListTypes
 } from '../models';
@@ -437,3 +437,51 @@ export const EMPTY_MESSAGES = {
         message: 'uve.palette.empty.state.widgets.message'
     }
 };
+
+/**
+ * Filters out null and undefined values from an object recursively.
+ *
+ * Recursively processes nested objects (like checkbox groups) to remove null/undefined values.
+ * Preserves valid values including false, 0, empty strings, and empty arrays as they are
+ * meaningful values in form contexts.
+ *
+ * @param obj - The object to filter
+ * @returns A new object with null/undefined values removed, maintaining the structure of nested objects
+ *
+ * @example
+ * ```typescript
+ * const filtered = filterFormValues({
+ *   name: 'John',
+ *   age: null,
+ *   active: false,
+ *   tags: { tag1: true, tag2: null }
+ * });
+ * // Returns: { name: 'John', active: false, tags: { tag1: true } }
+ * ```
+ */
+export function filterFormValues<T extends Record<string, unknown>>(obj: T): Partial<T> {
+    const filtered: Partial<T> = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+        // Skip null and undefined values (but keep empty strings, false, 0, etc.)
+        if (value === null || value === undefined) {
+            continue;
+        }
+
+        // Handle nested objects (like checkbox groups)
+        if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+            const filteredNested = filterFormValues(value as Record<string, unknown>);
+            // Only include nested object if it has at least one property
+            // (empty objects are filtered out)
+            if (Object.keys(filteredNested).length > 0) {
+                filtered[key as keyof T] = filteredNested as T[keyof T];
+            }
+        } else {
+            // Include non-null, non-undefined primitive values and arrays
+            // This includes false, 0, empty strings, etc. as they are valid values
+            filtered[key as keyof T] = value as T[keyof T];
+        }
+    }
+
+    return filtered;
+}
