@@ -36,7 +36,7 @@ if [ -d "$COMPOSE_DIR" ]; then
   # Check dotCMS readiness
   echo -e "${BLUE}Checking dotCMS availability...${NC}"
 
-  max_attempts=10
+  max_attempts=60
   attempt=0
   dotcms_ready=false
 

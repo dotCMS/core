@@ -21,22 +21,11 @@ The Codespaces environment includes:
 
 There are three ways to create a Codespace:
 
-**Option A: From GitHub Web UI**
+**From GitHub Web UI**
 1. Navigate to the repository on github.com
 2. Click the green "Code" button
 3. Select "Codespaces" tab
 4. Click "Create codespace on [branch-name]"
-
-**Option B: Using GitHub CLI**
-```bash
-gh codespace create --repo dotCMS/core
-```
-
-**Option C: From VS Code**
-1. Install the "GitHub Codespaces" extension
-2. Press `Cmd/Ctrl + Shift + P`
-3. Select "Codespaces: Create New Codespace"
-4. Choose the repository
 
 ### 2. Wait for Initialization
 
@@ -101,13 +90,10 @@ This approach allows you to make changes to the code and rebuild modules without
 
 1. **Make your code changes** in the Codespace editor
 
-2. **Build only the changed module:**
+2. **Build:**
    ```bash
-   # For core changes (fastest)
-   ./mvnw install -pl :dotcms-core -DskipTests
-
-   # For core + dependencies
-   ./mvnw install -pl :dotcms-core --am -DskipTests
+   # Builds the project without running tests, useful for quick iterations
+   ./mvnw -DskipTests clean install
    ```
 
 3. **Copy the updated JAR to the running container:**
