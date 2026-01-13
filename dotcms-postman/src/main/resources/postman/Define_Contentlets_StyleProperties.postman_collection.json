@@ -423,6 +423,56 @@
       "name": "Defining Contentlet Styles",
       "item": [
         {
+          "name": "Turn ON Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Save Content With Basic Styles",
           "event": [
             {
@@ -453,10 +503,10 @@
                   "pm.test(\"First entry has correct styleProperties\", function () {",
                   "    const first = json.entity.find(item => item.contentletId === contentlet1);",
                   "    pm.expect(first).to.exist;",
-                  "    pm.expect(first.styleProperties).to.be.an(\"object\");",
-                  "    pm.expect(first.styleProperties.width).to.eql(\"100px\");",
-                  "    pm.expect(first.styleProperties.color).to.eql(\"#FF0000\");",
-                  "    pm.expect(first.styleProperties.margin).to.eql(\"10px\");",
+                  "    pm.expect(first.dotStyleProperties).to.be.an(\"object\");",
+                  "    pm.expect(first.dotStyleProperties.width).to.eql(\"100px\");",
+                  "    pm.expect(first.dotStyleProperties.color).to.eql(\"#FF0000\");",
+                  "    pm.expect(first.dotStyleProperties.margin).to.eql(\"10px\");",
                   "});",
                   "",
                   "// ============================",
@@ -465,7 +515,7 @@
                   "pm.test(\"Second entry has no style properties\", function () {",
                   "    const second = json.entity.find(item => item.contentletId === contentlet2);",
                   "    pm.expect(second).to.exist;",
-                  "    pm.expect(second.styleProperties).to.eql({});",
+                  "    pm.expect(second.dotStyleProperties).to.eql({});",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -537,12 +587,12 @@
                   "pm.test(`Validate ${contentlet1} has correct styleProperties`, function () {",
                   "    const contentlet = entity.find(item => item.contentletId === contentlet1);",
                   "    pm.expect(contentlet).to.exist;",
-                  "    pm.expect(contentlet.styleProperties).to.be.an(\"object\");",
-                  "    pm.expect(contentlet.styleProperties.height).to.eql(300);",
-                  "    pm.expect(contentlet.styleProperties.visible).to.be.true;",
+                  "    pm.expect(contentlet.dotStyleProperties).to.be.an(\"object\");",
+                  "    pm.expect(contentlet.dotStyleProperties.height).to.eql(300);",
+                  "    pm.expect(contentlet.dotStyleProperties.visible).to.be.true;",
                   "",
                   "    // Deep styleProperties object",
-                  "    const styleLayout = contentlet.styleProperties.layout;",
+                  "    const styleLayout = contentlet.dotStyleProperties.layout;",
                   "    pm.expect(styleLayout).to.be.an(\"object\");",
                   "    pm.expect(styleLayout.display).to.eql(\"flex\");",
                   "    pm.expect(styleLayout.gap).to.eql(16);",
@@ -711,7 +761,7 @@
                   "    const systemContainer = json.entity.find(item => item.containerId === \"SYSTEM_CONTAINER\");",
                   "    pm.expect(systemContainer).to.exist;",
                   "    pm.expect(systemContainer.contentletId).to.eql(contentlet1);",
-                  "    pm.expect(systemContainer.styleProperties.width).to.eql(\"100px\");",
+                  "    pm.expect(systemContainer.dotStyleProperties.width).to.eql(\"100px\");",
                   "});",
                   "",
                   "// ============================",
@@ -721,7 +771,7 @@
                   "    const customContainer = json.entity.find(item => item.containerId === CUSTOM_CONTAINER);",
                   "    pm.expect(customContainer).to.exist;",
                   "    pm.expect(customContainer.contentletId).to.eql(contentlet1);",
-                  "    pm.expect(customContainer.styleProperties.color).to.eql(\"#FF0000\");",
+                  "    pm.expect(customContainer.dotStyleProperties.color).to.eql(\"#FF0000\");",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -767,6 +817,56 @@
               ]
             },
             "description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+          },
+          "response": []
+        },
+        {
+          "name": "Turn OFF Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is disabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR Deleted');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"key\":\"FEATURE_FLAG_UVE_STYLE_EDITOR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/_delete",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "_delete"
+              ]
+            }
           },
           "response": []
         }
@@ -964,7 +1064,7 @@
                   "    // filter by contentlet",
                   "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
                   "    pm.expect(contentlet).to.exist;",
-                  "    pm.expect(contentlet.styleProperties.color).to.eql(\"#FF0000\");",
+                  "    pm.expect(contentlet.dotStyleProperties.color).to.eql(\"#FF0000\");",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -1028,7 +1128,7 @@
                   "    // filter by contentlet",
                   "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
                   "    pm.expect(contentlet).to.exist;",
-                  "    pm.expect(contentlet.styleProperties.width).to.eql(\"100px\");",
+                  "    pm.expect(contentlet.dotStyleProperties.width).to.eql(\"100px\");",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -1142,7 +1242,7 @@
                   "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
                   "    pm.expect(contentlet).to.exist;",
                   "    // Validate that styles are not present",
-                  "    pm.expect(contentlet.styleProperties).to.be.undefined;",
+                  "    pm.expect(contentlet.dotStyleProperties).to.be.undefined;",
                   "});"
                 ],
                 "type": "text/javascript",
@@ -1186,6 +1286,687 @@
         }
       ],
       "description": "### Retrieve Contentlet Styles:\n\nTest that the Contentlets have specific Styles defined when the feature flag `FEATURE_FLAG_UVE_STYLE_EDITOR` is enabled.\n\n- Turn ON `FEATURE_FLAG_UVE_STYLE_EDITOR` to allow the visualization of the Style Properties.\n    \n- Save the **same** **Contentlet** in the **same** **Container** but in **different** **Pages**\n    \n    - `Contentlet 1` in the `SYSTEM_CONTAINER` **Container**, inside the **Page**`testPageStyles_1`\n        \n    - `Contentlet 1` in the `SYSTEM_CONTAINER` **Container**, inside the **Page**`testPageStyles_2`\n        \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_1` **Page** have the \"color = #FF0000\" Style.\n    \n- Validate that the **Contentlet** `Contentlet 1` within the `testPageStyles_2` **Page** have the \"width = 100px\" Style.\n    \n- Turn OFF `FEATURE_FLAG_UVE_STYLE_EDITOR`\n    \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field"
+    },
+    {
+      "name": "Persist Contentlet Styles",
+      "item": [
+        {
+          "name": "Turn ON Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Content With Styles FF On",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"No errors returned\", function () {",
+                  "    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate first merged entry",
+                  "// ============================",
+                  "pm.test(\"First entry has correct styleProperties\", function () {",
+                  "    const first = json.entity.find(item => item.contentletId === contentlet1);",
+                  "    pm.expect(first).to.exist;",
+                  "    pm.expect(first.dotStyleProperties).to.be.an(\"object\");",
+                  "    pm.expect(first.dotStyleProperties.width).to.eql(\"100px\");",
+                  "    pm.expect(first.dotStyleProperties.color).to.eql(\"#FF0000\");",
+                  "    pm.expect(first.dotStyleProperties.margin).to.eql(\"10px\");",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate second merged entry",
+                  "// ============================",
+                  "pm.test(\"Second entry has no style properties\", function () {",
+                  "    const second = json.entity.find(item => item.contentletId === contentlet2);",
+                  "    pm.expect(second).to.exist;",
+                  "    pm.expect(second.dotStyleProperties).to.eql({});",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\",\n            \"{{Contentlet_2}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+          },
+          "response": []
+        },
+        {
+          "name": "Turn OFF Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is disabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR Deleted');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"key\":\"FEATURE_FLAG_UVE_STYLE_EDITOR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/_delete",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "_delete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Content Styles FF Off",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"No errors returned\", function () {",
+                  "    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate first merged entry",
+                  "// ============================",
+                  "pm.test(\"Contentlet_1 entry has correct styleProperties\", function () {",
+                  "    const first = json.entity.find(item => item.contentletId === contentlet1);",
+                  "    pm.expect(first).to.exist;",
+                  "    pm.expect(first.dotStyleProperties).to.be.undefined;",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate second merged entry",
+                  "// ============================",
+                  "pm.test(\"Second entry has no style properties\", function () {",
+                  "    const second = json.entity.find(item => item.contentletId === contentlet2);",
+                  "    pm.expect(second).to.exist;",
+                  "    pm.expect(second.dotStyleProperties).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\",\n            \"{{Contentlet_2}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+          },
+          "response": []
+        },
+        {
+          "name": "Styles NOT Present FF Off",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 has NOT styleProperties\", function () {",
+                  "    // filter by container",
+                  "    const entity = pm.response.json().entity;",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "    // filter by contentlet",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    pm.expect(contentlet.dotStyleProperties).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_2 has NOT styleProperties\", function () {",
+                  "    // filter by container",
+                  "    const entity = pm.response.json().entity;",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "    // filter by contentlet",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet2);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    pm.expect(contentlet.dotStyleProperties).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Turn ON Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                ""
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Persisted Styles FF On",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 persists its styleProperties\", function () {",
+                  "    // filter by container",
+                  "    const entity = pm.response.json().entity;",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "    // filter by contentlet",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    // Validate that styles defined with FF on are present",
+                  "    pm.expect(contentlet.dotStyleProperties.width).to.eql(\"100px\");",
+                  "    pm.expect(contentlet.dotStyleProperties.color).to.eql(\"#FF0000\");",
+                  "    pm.expect(contentlet.dotStyleProperties.margin).to.eql(\"10px\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Styles FF On (empty)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const contentlet2 = pm.collectionVariables.get(\"Contentlet_2\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"No errors returned\", function () {",
+                  "    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate first merged entry",
+                  "// ============================",
+                  "pm.test(\"First entry has no styleProperties\", function () {",
+                  "    const first = json.entity.find(item => item.contentletId === contentlet1);",
+                  "    pm.expect(first).to.exist;",
+                  "    pm.expect(first.dotStyleProperties).to.eql({});",
+                  "});",
+                  "",
+                  "// ============================",
+                  "// Validate second merged entry",
+                  "// ============================",
+                  "pm.test(\"Second entry has no style properties\", function () {",
+                  "    const second = json.entity.find(item => item.contentletId === contentlet2);",
+                  "    pm.expect(second).to.exist;",
+                  "    pm.expect(second.dotStyleProperties).to.eql({});",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\",\n            \"{{Contentlet_2}}\"\n        ]\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+          },
+          "response": []
+        },
+        {
+          "name": "Styles NOT Present FF On",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 styleProperties were deleted\", function () {",
+                  "    // filter by container",
+                  "    const entity = pm.response.json().entity;",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "    // filter by contentlet",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    // Validate that styles defined with FF on are NOT present",
+                  "    pm.expect(contentlet.dotStyleProperties).to.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Turn OFF Style Editor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is disabled\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity).to.exist;",
+                  "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR Deleted');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"key\":\"FEATURE_FLAG_UVE_STYLE_EDITOR\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/_delete",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "_delete"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "### Persist Contentlet Styles:\n\nTest that ensures Contentlets have the Styles defined when the feature flag `FEATURE_FLAG_UVE_STYLE_EDITOR` is enabled.\n\nIf the **FF is OFF** even if I **send** or not **styles** in the content definition it **won't affect** the **styles** that I **defined** when the FF **was ON**\n\n- Turn **ON** `FEATURE_FLAG_UVE_STYLE_EDITOR` to allow the visualization of the Style Properties.\n    \n    - Save Styles with **FF ON**\n        \n        - `Contentlet 1` has Styles `{width, color, margin}`.\n            \n        - `Contentlet 2` doesn't have Styles defined.\n            \n- Turn **OFF** `FEATURE_FLAG_UVE_STYLE_EDITOR`\n    \n    - Save Styles with **FF OFF**\n        \n        - `Contentlet 1` send Styles in the request, but `styleProperties` field is not present in the response.\n            \n        - `Contentlet 2` doesn't define Styles in the request, and`styleProperties` field is not present in the response.\n            \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field.\n        \n- Turn **ON** `FEATURE_FLAG_UVE_STYLE_EDITOR.`\n    \n    - Get **Contentlet** `Contentlet 1` have `styleProperties = {width, color, margin}`.\n        \n    - Delete the Styles for the `Contentlet 1` and `Contentlet 2` by sending `styleProperties = {}`\n        \n    - Get **Contentlet** `Contentlet 1` does not contain `styleProperties` field.\n        \n- Turn **OFF** `FEATURE_FLAG_UVE_STYLE_EDITOR`"
     }
   ],
   "auth": {

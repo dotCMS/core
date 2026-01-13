@@ -93,6 +93,7 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -329,89 +330,98 @@ public class PageResourceTest {
      */
     @Test
     public void test_addContent_with_styleProperties() throws Exception {
-        // Create a page with container
-        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
-        final HTMLPageAsset testPage = pageRenderTest.getPage();
-        final Container container = pageRenderTest.getFirstContainer();
+        // Save the original feature flag value
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
 
-        // Create contentlet
-        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
-        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
-        final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
-                .languageId(1)
-                .folder(APILocator.getFolderAPI().findSystemFolder())
-                .host(host)
-                .setProperty("title", "Test Content with Style Properties")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
-                .nextPersisted();
+        try {
+            // Enable the Style Editor feature flag
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+            final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+            final HTMLPageAsset testPage = pageRenderTest.getPage();
+            final Container container = pageRenderTest.getFirstContainer();
 
-        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        APILocator.getContentletAPI().publish(contentlet, user, false);
+            // Create contentlet
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                    .languageId(1)
+                    .folder(APILocator.getFolderAPI().findSystemFolder())
+                    .host(host)
+                    .setProperty("title", "Test Content with Style Properties")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersisted();
 
-        // Prepare styleProperties
-        final Map<String, Object> styleProperties = new HashMap<>();
-        styleProperties.put("backgroundColor", "red");
-        styleProperties.put("fontSize", "16px");
-        styleProperties.put("padding", "10px");
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            APILocator.getContentletAPI().publish(contentlet, user, false);
 
-        // Create ContainerEntry with styleProperties
-        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
-        final String containerUUID = UUIDGenerator.generateUuid();
-        final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
-        stylePropertiesMap.put(contentlet.getIdentifier(), styleProperties);
+            // Prepare styleProperties
+            final Map<String, Object> styleProperties = new HashMap<>();
+            styleProperties.put("backgroundColor", "red");
+            styleProperties.put("fontSize", "16px");
+            styleProperties.put("padding", "10px");
 
-        final PageContainerForm.ContainerEntry containerEntry =
-                new PageContainerForm.ContainerEntry(
-                        null,
-                        container.getIdentifier(),
-                        containerUUID,
-                        list(contentlet.getIdentifier()),
-                        stylePropertiesMap
-                );
+            // Create ContainerEntry with styleProperties
+            final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
+            final String containerUUID = UUIDGenerator.generateUuid();
+            final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
+            stylePropertiesMap.put(contentlet.getIdentifier(), styleProperties);
 
-        entries.add(containerEntry);
-        final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+            final PageContainerForm.ContainerEntry containerEntry =
+                    new PageContainerForm.ContainerEntry(
+                            null,
+                            container.getIdentifier(),
+                            containerUUID,
+                            list(contentlet.getIdentifier()),
+                            stylePropertiesMap
+                    );
 
-        // Save content with styleProperties
-        final Response addContentResponse = this.pageResourceWithHelper.addContent(
-                request,
-                response,
-                testPage.getIdentifier(),
-                VariantAPI.DEFAULT_VARIANT.name(),
-                pageContainerForm
-        );
+            entries.add(containerEntry);
+            final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
 
-        // Verify response is successful
-        assertNotNull(addContentResponse);
-        assertEquals(200, addContentResponse.getStatus());
+            // Save content with styleProperties
+            final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name(),
+                    pageContainerForm
+            );
 
-        // Retrieve MultiTree and verify styleProperties are saved
-        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
-        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+            // Verify response is successful
+            assertNotNull(addContentResponse);
+            assertEquals(200, addContentResponse.getStatus());
 
-        assertNotNull("MultiTrees should not be null", multiTrees);
-        assertFalse("MultiTrees should not be empty", multiTrees.isEmpty());
+            // Retrieve MultiTree and verify styleProperties are saved
+            final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+            final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
 
-        // Find the MultiTree for our contentlet
-        final Optional<MultiTree> multiTreeOpt = multiTrees.stream()
-                .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
-                .findFirst();
+            assertNotNull("MultiTrees should not be null", multiTrees);
+            assertFalse("MultiTrees should not be empty", multiTrees.isEmpty());
 
-        assertTrue("MultiTree for the contentlet should exist", multiTreeOpt.isPresent());
+            // Find the MultiTree for our contentlet
+            final Optional<MultiTree> multiTreeOpt = multiTrees.stream()
+                    .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                    .findFirst();
 
-        final MultiTree multiTree = multiTreeOpt.get();
-        final Map<String, Object> savedStyleProperties = multiTree.getStyleProperties();
+            assertTrue("MultiTree for the contentlet should exist", multiTreeOpt.isPresent());
 
-        // Verify styleProperties were saved correctly
-        assertNotNull("StyleProperties should not be null", savedStyleProperties);
-        assertFalse("StyleProperties should not be empty", savedStyleProperties.isEmpty());
-        assertEquals("backgroundColor should match", "red", savedStyleProperties.get("backgroundColor"));
-        assertEquals("fontSize should match", "16px", savedStyleProperties.get("fontSize"));
-        assertEquals("padding should match", "10px", savedStyleProperties.get("padding"));
+            final MultiTree multiTree = multiTreeOpt.get();
+            final Map<String, Object> savedStyleProperties = multiTree.getStyleProperties();
 
-        Logger.info(this, "StyleProperties saved successfully: " + savedStyleProperties);
+            // Verify styleProperties were saved correctly
+            assertNotNull("StyleProperties should not be null", savedStyleProperties);
+            assertFalse("StyleProperties should not be empty", savedStyleProperties.isEmpty());
+            assertEquals("backgroundColor should match", "red", savedStyleProperties.get("backgroundColor"));
+            assertEquals("fontSize should match", "16px", savedStyleProperties.get("fontSize"));
+            assertEquals("padding should match", "10px", savedStyleProperties.get("padding"));
+
+            Logger.info(this, "StyleProperties saved successfully: " + savedStyleProperties);
+        } finally {
+            // Restore the original feature flag value
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFeatureFlagValue);
+        }
     }
 
     /**

@@ -813,10 +813,10 @@ public class PageResource {
             this.validateContainerEntries(pageContainerForm.getContainerEntries());
 
             // Save content and Get the saved contentlets
-            final List<ContentletStylingView> savedContent = pageResourceHelper.saveContent(
+            final List<ContentView> savedContent = pageResourceHelper.saveContent(
                     pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
 
-            return Response.ok(new ResponseEntityContentletStylingView(savedContent)).build();
+            return Response.ok(new ResponseEntityContentView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
             final String errorMsg = String.format("HTMLPageAssetNotFoundException on PageResource.addContent, pageId: %s: ",
                     pageId);
@@ -891,7 +891,7 @@ public class PageResource {
             data.contentIds.addAll(containerEntry.getContentIds());
 
             // Merge styles. Duplicated keys overwrite previous ones (last one wins)
-            final Map<String, Map<String, Object>> incomingStyles = Optional.ofNullable(
+            final Map<String, Map<String, Object>> incomingStyles = Optional.of(
                     containerEntry.getStylePropertiesMap()).orElse(Collections.emptyMap());
 
             data.stylePropertiesMap.putAll(incomingStyles);
