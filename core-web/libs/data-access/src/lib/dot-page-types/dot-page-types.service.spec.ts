@@ -30,7 +30,7 @@ describe('DotPageTypesService', () => {
         const key = 'key1';
         expect(service).toBeTruthy();
 
-        service.getPages(key).subscribe((response) => {
+        service.getPageContentTypes(key).subscribe((response) => {
             expect(response).toEqual(fakeResponse.entity);
         });
         const req = httpMock.expectOne(`/api/v1/page/types?filter=${key}`);
