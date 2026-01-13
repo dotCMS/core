@@ -17,11 +17,11 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import {
     DotAlertConfirmService,
+    DotAppsService,
     DotMessageService,
     DotRouterService,
     PaginatorService
 } from '@dotcms/data-access';
-import { DotAppsService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {

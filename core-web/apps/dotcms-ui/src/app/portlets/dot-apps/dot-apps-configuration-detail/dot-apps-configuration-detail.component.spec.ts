@@ -11,8 +11,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 
-import { DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { DotAppsService } from '@dotcms/data-access';
+import { DotAppsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import {
     DotAvatarDirective,

@@ -10,8 +10,7 @@ import { By } from '@angular/platform-browser';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAppsService } from '@dotcms/data-access';
+import { DotAppsService, DotMessageService } from '@dotcms/data-access';
 import {
     DotApp,
     DotAppsExportConfiguration,

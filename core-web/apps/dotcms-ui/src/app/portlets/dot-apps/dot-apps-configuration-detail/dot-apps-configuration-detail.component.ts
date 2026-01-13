@@ -5,8 +5,7 @@ import { ButtonModule } from 'primeng/button';
 
 import { pluck, take } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { DotAppsService } from '@dotcms/data-access';
+import { DotAppsService, DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
 

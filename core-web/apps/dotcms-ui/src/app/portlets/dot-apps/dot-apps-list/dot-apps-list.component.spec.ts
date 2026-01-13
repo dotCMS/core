@@ -13,8 +13,7 @@ import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { DotAppsService } from '@dotcms/data-access';
+import { DotAppsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotAvatarDirective, DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 import {

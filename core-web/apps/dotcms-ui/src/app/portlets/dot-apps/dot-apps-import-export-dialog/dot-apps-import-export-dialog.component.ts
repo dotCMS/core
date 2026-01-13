@@ -27,8 +27,7 @@ import { PasswordModule } from 'primeng/password';
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotAppsService } from '@dotcms/data-access';
+import { DotAppsService, DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
     DotApp,
