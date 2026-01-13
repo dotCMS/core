@@ -1,0 +1,160 @@
+{
+  "name": "dotCMS Development Environment",
+
+  // Use a base Ubuntu image with development tools
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+
+  // Forward ports for dotCMS, OpenSearch, PostgreSQL, and Debug
+  "forwardPorts": [
+    8082,   // dotCMS HTTP
+    8443,   // dotCMS HTTPS
+    9200,   // OpenSearch REST API
+    9600,   // OpenSearch Performance Analyzer
+    5432,   // PostgreSQL (for direct DB access if needed)
+    5005    // Java Debug Port (JDWP)
+  ],
+
+  // Port attributes for better UX
+  "portsAttributes": {
+    "8082": {
+      "label": "dotCMS HTTP",
+      "onAutoForward": "notify",
+      "protocol": "http"
+    },
+    "8443": {
+      "label": "dotCMS HTTPS",
+      "onAutoForward": "notify",
+      "protocol": "https"
+    },
+    "9200": {
+      "label": "OpenSearch API",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "9600": {
+      "label": "OpenSearch Performance",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    },
+    "5005": {
+      "label": "Java Debug (JDWP)",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Features to add to the dev container
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "jdkDistro": "tem",
+      "installMaven": "true"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20",
+      "nodeGypDependencies": true,
+      "nvmVersion": "latest"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest",
+      "ppa": true
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "1000",
+      "userGid": "1000"
+    }
+  },
+
+  // VS Code customizations
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        // Java development
+        "vscjava.vscode-java-pack",
+        "vscjava.vscode-maven",
+        "vscjava.vscode-java-debug",
+        "vscjava.vscode-java-test",
+
+        // Web development
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "angular.ng-template",
+
+        // Docker & Docker Compose
+        "ms-azuretools.vscode-docker",
+
+        // Git
+        "eamodio.gitlens",
+
+        // REST API testing
+        "humao.rest-client",
+
+        // YAML support
+        "redhat.vscode-yaml",
+
+        // Additional useful extensions
+        "streetsidesoftware.code-spell-checker",
+        "EditorConfig.EditorConfig"
+      ],
+      "settings": {
+        "java.configuration.runtimes": [
+          {
+            "name": "JavaSE-21",
+            "path": "/usr/local/sdkman/candidates/java/current",
+            "default": true
+          }
+        ],
+        "java.jdt.ls.java.home": "/usr/local/sdkman/candidates/java/current",
+        "maven.executable.path": "mvn",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        },
+        "files.eol": "\n",
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  },
+
+  // Mount the Docker socket to access the host's Docker daemon
+  "mounts": [
+    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+  ],
+
+  // Post-create command to set up the environment and start services
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  // Post-start command to show helpful information
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
+  // Environment variables
+  "remoteEnv": {
+    "JAVA_HOME": "/usr/local/sdkman/candidates/java/current",
+    "MAVEN_HOME": "/usr/share/maven",
+    "PATH": "${containerEnv:PATH}:/usr/local/sdkman/candidates/java/current/bin"
+  },
+
+  // Run as vscode user (non-root)
+  "remoteUser": "vscode",
+
+  // Container environment variables
+  "containerEnv": {
+    "DOCKER_BUILDKIT": "1",
+    "COMPOSE_DOCKER_CLI_BUILD": "1"
+  }
+}
