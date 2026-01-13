@@ -6,8 +6,8 @@
 :host {
     border-right: 1px solid colors.$color-palette-gray-200;
     position: relative;
-    background: colors.$color-palette-surface-light; // #F9FAFB
+    background: colors.$color-palette-surface-light;
     width: 18.75rem;
-    height: 100%; // Ensure the component takes full height
-    min-height: 0; // Allow shrinking
+    height: 100%;
+    min-height: 0;
 }

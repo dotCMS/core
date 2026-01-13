@@ -1,54 +1,17 @@
-<p-tabs
-    [value]="$activeTab()"
-    (valueChange)="handleTabChange($event)"
-    [pt]="tabsPt"
-    [unstyled]="true">
-    <p-tablist
-        class="shrink-0 p-0 [&_.p-tablist-content]:w-full [&_.p-tablist-tab-list]:flex [&_.p-tablist-tab-list]:w-full [&_.p-tablist-tab-list]:list-none [&_.p-tablist-tab-list]:p-0 [&_.p-tablist-tab-list]:m-0 [&_.p-tablist-tab-list]:border-0 [&_.p-tablist-tab-list]:bg-transparent [&_.p-tablist-active-bar]:hidden">
-        <p-tab
-            [value]="TABS_MAP.CONTENT_TYPES"
-            class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
-            <div
-                class="flex flex-1 h-full items-center justify-center"
-                pTooltip="Content types"
-                tooltipPosition="bottom">
-                <i class="pi pi-stop text-[14px] text-current"></i>
-            </div>
-        </p-tab>
-        <p-tab
-            [value]="TABS_MAP.WIDGETS"
-            class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
-            <div
-                class="flex flex-1 h-full items-center justify-center"
-                pTooltip="Widgets"
-                tooltipPosition="bottom">
-                <i class="pi pi-th-large text-[14px] text-current"></i>
-            </div>
-        </p-tab>
-        <p-tab
-            [value]="TABS_MAP.FAVORITES"
-            class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
-            <div
-                class="flex flex-1 h-full items-center justify-center"
-                pTooltip="Favorites"
-                tooltipPosition="bottom">
-                <i class="pi pi-star text-[14px] text-current"></i>
-            </div>
-        </p-tab>
-        @if ($showStyleEditorTab()) {
-            <p-tab
-                [value]="TABS_MAP.STYLE_EDITOR"
-                class="h-[70px] flex-1 flex items-center justify-center p-0 m-0 border-b-2 border-transparent text-gray-600 data-[p-active=true]:border-[var(--color-palette-primary-500)] data-[p-active=true]:text-gray-800">
+<p-tabs (valueChange)="handleTabChange($event)" [value]="$activeTab()" [pt]="tabsPt">
+    <p-tablist class="shrink-0 p-0 w-full">
+        @for (tab of $tabHeaders(); track tab.value) {
+            <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="tab.value">
                 <div
                     class="flex flex-1 h-full items-center justify-center"
-                    pTooltip="Style Editor"
+                    [pTooltip]="tab.tooltip"
                     tooltipPosition="bottom">
-                    <i class="pi pi-palette text-[14px] text-current"></i>
+                    <i class="pi" [ngClass]="tab.icon"></i>
                 </div>
             </p-tab>
         }
     </p-tablist>
-    <p-tabpanels [unstyled]="true" class="flex-1 min-h-0 overflow-hidden">
+    <p-tabpanels class="flex-1 min-h-0 overflow-hidden">
         <p-tabpanel [value]="TABS_MAP.CONTENT_TYPES" class="h-full min-h-0 overflow-hidden">
             <!-- Without this constrain, primeng is instanciating the component even if the tab is not active.
             creating triple renders and triple requests to the server. -->
