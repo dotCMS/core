@@ -26,7 +26,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.glassfish.jersey.internal.util.Base64;
+import com.liferay.util.Base64;
 import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -1030,6 +1030,44 @@ public class PermissionResourceIntegrationTest {
         }
     }
 
+    // ==================== PermissionConversionUtils Tests ====================
+
+    /**
+     * Tests PermissionConversionUtils conversion methods for permission bits,
+     * names, and scope mappings used by the REST API.
+     */
+    @Test
+    public void test_PermissionConversionUtils_conversions() {
+        // Test bits to names
+        int bits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH;
+        List<String> names = PermissionConversionUtils.convertBitsToPermissionNames(bits);
+        assertEquals(3, names.size());
+        assertTrue(names.contains("READ"));
+        assertTrue(names.contains("WRITE"));
+        assertTrue(names.contains("PUBLISH"));
+
+        // Test names to bits (case-insensitive)
+        assertEquals(PermissionAPI.PERMISSION_READ,
+            PermissionConversionUtils.convertPermissionNamesToBits(List.of("read")));
+
+        // Test scope validation
+        assertTrue(PermissionConversionUtils.isValidScope("HOST"));
+        assertTrue(PermissionConversionUtils.isValidScope("folder"));  // case-insensitive
+        assertFalse(PermissionConversionUtils.isValidScope("INVALID"));
+
+        // Test scope to permission type
+        assertEquals(Folder.class.getCanonicalName(),
+            PermissionConversionUtils.convertScopeToPermissionType("FOLDER"));
+        assertEquals(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+            PermissionConversionUtils.convertScopeToPermissionType("INDIVIDUAL"));
+
+        // Test roundtrip
+        int originalBits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE;
+        List<String> converted = PermissionConversionUtils.convertBitsToPermissionNames(originalBits);
+        int roundtripBits = PermissionConversionUtils.convertPermissionNamesToBits(converted);
+        assertEquals(originalBits, roundtripBits);
+    }
+
     // ========================================================================
     // RESET ASSET PERMISSIONS TESTS
     // ========================================================================
@@ -1150,44 +1188,6 @@ public class PermissionResourceIntegrationTest {
                 response,
                 ""
         );
-    }
-
-    // ==================== PermissionConversionUtils Tests ====================
-
-    /**
-     * Tests PermissionConversionUtils conversion methods for permission bits,
-     * names, and scope mappings used by the REST API.
-     */
-    @Test
-    public void test_PermissionConversionUtils_conversions() {
-        // Test bits to names
-        int bits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH;
-        List<String> names = PermissionConversionUtils.convertBitsToPermissionNames(bits);
-        assertEquals(3, names.size());
-        assertTrue(names.contains("READ"));
-        assertTrue(names.contains("WRITE"));
-        assertTrue(names.contains("PUBLISH"));
-
-        // Test names to bits (case-insensitive)
-        assertEquals(PermissionAPI.PERMISSION_READ,
-            PermissionConversionUtils.convertPermissionNamesToBits(List.of("read")));
-
-        // Test scope validation
-        assertTrue(PermissionConversionUtils.isValidScope("HOST"));
-        assertTrue(PermissionConversionUtils.isValidScope("folder"));  // case-insensitive
-        assertFalse(PermissionConversionUtils.isValidScope("INVALID"));
-
-        // Test scope to permission type
-        assertEquals(Folder.class.getCanonicalName(),
-            PermissionConversionUtils.convertScopeToPermissionType("FOLDER"));
-        assertEquals(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-            PermissionConversionUtils.convertScopeToPermissionType("INDIVIDUAL"));
-
-        // Test roundtrip
-        int originalBits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE;
-        List<String> converted = PermissionConversionUtils.convertBitsToPermissionNames(originalBits);
-        int roundtripBits = PermissionConversionUtils.convertPermissionNamesToBits(converted);
-        assertEquals(originalBits, roundtripBits);
     }
 
     // ========================================================================
