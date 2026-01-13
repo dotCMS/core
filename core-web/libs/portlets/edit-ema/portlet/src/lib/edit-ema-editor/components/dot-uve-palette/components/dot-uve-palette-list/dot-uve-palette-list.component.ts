@@ -211,9 +211,12 @@ export class DotUvePaletteListComponent implements OnInit {
             ? 'grid-cols-1 auto-rows-[4rem]'
             : 'grid-cols-2 auto-rows-[6.875rem]';
         const overflowY = isLoading ? 'overflow-y-hidden' : 'overflow-y-auto';
-        const placeItems = isEmpty ? 'place-items-center' : 'place-items-start';
 
-        return `${base} ${layout} ${overflowY} ${placeItems}`;
+        if (isEmpty) {
+            return 'grid flex-1 min-h-0 overflow-x-hidden gap-3 pb-2 place-items-center';
+        }
+
+        return `${base} ${layout} ${overflowY}`;
     });
 
     /**
