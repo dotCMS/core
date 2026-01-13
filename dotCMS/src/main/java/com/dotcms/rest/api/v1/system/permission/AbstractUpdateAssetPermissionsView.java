@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.immutables.value.Value;
 
+import java.util.List;
+import java.util.Optional;
+
 /**
  * Immutable view for the update asset permissions operation result.
  * Contains the result of saving permissions for multiple roles on an asset.
@@ -77,4 +80,19 @@ public interface AbstractUpdateAssetPermissionsView {
         requiredMode = Schema.RequiredMode.REQUIRED
     )
     AssetPermissionsView asset();
+
+    /**
+     * Gets any warnings from cascade operations that partially failed.
+     * Present only when cascade was requested and some jobs failed to trigger.
+     *
+     * @return Optional list of cascade warning messages
+     */
+    @JsonProperty("cascadeWarnings")
+    @Schema(
+        description = "Warnings from cascade operations that partially failed. " +
+                     "Present only when cascade was requested and some role cascades failed.",
+        example = "[\"Failed to trigger cascade for role xyz123: Connection timeout\"]",
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED
+    )
+    Optional<List<String>> cascadeWarnings();
 }

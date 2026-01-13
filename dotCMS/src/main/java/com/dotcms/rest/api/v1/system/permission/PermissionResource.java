@@ -831,7 +831,7 @@ public class PermissionResource {
 
         // Verify user is admin
         if (!user.isAdmin()) {
-            Logger.warn(this, String.format(
+            Logger.error(this, String.format(
                 "Non-admin user %s attempted to update permissions for asset: %s",
                 user.getUserId(), assetId));
             throw new DotSecurityException("Only admin users can update asset permissions");
@@ -848,5 +848,86 @@ public class PermissionResource {
             "Successfully updated permissions for asset: %s", assetId));
 
         return new ResponseEntityUpdatePermissionsView(result);
+    }
+
+    /**
+     * Resets permissions for a specific asset to inherit from its parent.
+     * This operation removes all individual permissions from the asset, making it
+     * inherit permissions from its parent in the hierarchy.
+     *
+     * @param request  HTTP servlet request
+     * @param response HTTP servlet response
+     * @param assetId  Asset identifier (inode or identifier)
+     * @return ResponseEntityResetPermissionsView containing operation result
+     * @throws DotDataException     If there's an error accessing permission data
+     * @throws DotSecurityException If security validation fails
+     */
+    @Operation(
+        summary = "Reset asset permissions to inherited",
+        description = "Removes all individual permissions from an asset, making it inherit " +
+                     "permissions from its parent in the hierarchy. Only admin users can " +
+                     "access this endpoint. Returns 409 Conflict if the asset already inherits."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Permissions reset successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityResetPermissionsView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid asset ID",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user is not admin",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Asset not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "409",
+                    description = "Conflict - asset already inherits permissions from parent",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @PUT
+    @Path("/{assetId}/_reset")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityResetPermissionsView resetAssetPermissions(
+            final @Context HttpServletRequest request,
+            final @Context HttpServletResponse response,
+            @Parameter(description = "Asset identifier (inode or identifier)", required = true)
+            final @PathParam("assetId") String assetId)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "resetAssetPermissions called - assetId: %s", assetId));
+
+        // Initialize request context with authentication
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        // Verify user is admin
+        if (!user.isAdmin()) {
+            Logger.error(this, String.format(
+                "Non-admin user %s attempted to reset permissions for asset: %s",
+                user.getUserId(), assetId));
+            throw new DotSecurityException("Only admin users can reset asset permissions");
+        }
+
+        // Delegate to helper for business logic
+        final ResetAssetPermissionsView result = assetPermissionHelper.resetAssetPermissions(
+            assetId, user);
+
+        Logger.info(this, () -> String.format(
+            "Successfully reset permissions for asset: %s", assetId));
+
+        return new ResponseEntityResetPermissionsView(result);
     }
 }
