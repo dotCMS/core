@@ -4,6 +4,9 @@
   // Use a base Ubuntu image with development tools
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
 
+  // REQUIRED for docker-in-docker
+  "privileged": true,
+
   // Forward ports for dotCMS, OpenSearch, PostgreSQL, and Debug
   "forwardPorts": [
     8082,   // dotCMS HTTP
@@ -62,11 +65,7 @@
       "version": "latest",
       "ppa": true
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "moby": true,
-      "dockerComposeVersion": "v2"
-    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
     "ghcr.io/devcontainers/features/github-cli:1": {
       "version": "latest"
     },
@@ -122,11 +121,6 @@
       }
     }
   },
-
-  // Mount the Docker socket to access the host's Docker daemon
-  "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-  ],
 
   // Post-create command to set up the environment and start services
   "postCreateCommand": "bash .devcontainer/setup.sh",
