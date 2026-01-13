@@ -1,6 +1,4 @@
 @let displayedApps = state.displayedApps;
-@let importExportDialogAction = state.importExportDialogAction;
-@let showDialog = state.showDialog;
 
 <dot-portlet-base>
     <div class="dot-apps__container">
@@ -18,14 +16,14 @@
                     </a>
                 </div>
                 <button
-                    (click)="confirmImportExport('Import')"
+                    (click)="openImportDialog()"
                     [label]="'apps.confirmation.import.button' | dm"
                     class="dot-apps-configuration__action_import_button"
                     pButton
                     link
                     icon="pi pi-upload"></button>
                 <button
-                    (click)="confirmImportExport('Export')"
+                    (click)="openExportDialog()"
                     [label]="'apps.confirmation.export.all.button' | dm"
                     [disabled]="!isExportButtonDisabled()"
                     class="dot-apps-configuration__action_export_button"
@@ -41,10 +39,6 @@
         </div>
     </div>
 
-    <dot-apps-import-export-dialog
-        (resolved)="reloadAppsData()"
-        (shutdown)="onClosedDialog()"
-        [action]="importExportDialogAction()"
-        [show]="showDialog()"
-        #importExportDialog />
+    <!-- Dialog is now managed by store, no inputs needed -->
+    <dot-apps-import-export-dialog />
 </dot-portlet-base>

@@ -1,7 +1,7 @@
 @let app = $app();
 
 <p-card
-    (click)="$actionFired.emit(app.key)"
+    (click)="actionFired.emit(app.key)"
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }">

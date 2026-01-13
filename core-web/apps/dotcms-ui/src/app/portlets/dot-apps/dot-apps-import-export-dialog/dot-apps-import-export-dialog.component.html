@@ -1,14 +1,14 @@
-@if (show) {
+@if (visible()) {
     <p-dialog
-        [(visible)]="show"
-        [header]="dialogHeaderKey | dm"
+        [visible]="visible()"
+        [header]="dialogHeaderKey() | dm"
         [modal]="true"
         [style]="{ width: '26rem' }"
         [appendTo]="'body'"
         class="p-fluid"
-        (visibleChange)="closeExportDialog()">
+        (visibleChange)="closeDialog()">
         <form class="form" [formGroup]="form" novalidate>
-            @switch (action) {
+            @switch (action()) {
                 @case ('Export') {
                     <div class="field">
                         <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
@@ -26,7 +26,7 @@
                     <div class="field">
                         <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
                         <input
-                            (change)="onFileChange($event.target.files)"
+                            (change)="onFileChange($any($event.target).files)"
                             id="import-file"
                             #importFile
                             type="file"
@@ -43,12 +43,13 @@
                             [toggleMask]="true" />
                     </div>
                     <input type="hidden" name="fileHidden" formControlName="importFile" />
-                    <!-- Validation Field -->
                 }
             }
 
             <!-- Error Message Display -->
-            <span>{{ errorMessage }}</span>
+            @if (errorMessage()) {
+                <span class="text-red-500">{{ errorMessage() }}</span>
+            }
         </form>
         @if (dialogActions) {
             <ng-template #footer>
@@ -64,6 +65,7 @@
                     <p-button
                         [label]="dialogActions.accept.label"
                         [disabled]="dialogActions.accept.disabled"
+                        [loading]="isLoading()"
                         (click)="dialogActions.accept.action()"
                         data-testId="dotDialogAcceptAction" />
                 }

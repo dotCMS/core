@@ -18,13 +18,11 @@ import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotAppsImportExportDialogStore } from '../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
 
 interface DotAppsListState {
     allApps: DotApp[];
     displayedApps: DotApp[];
-    canAccessPortlet: boolean;
-    importExportDialogAction: string;
-    showDialog: boolean;
 }
 
 @Component({
@@ -36,33 +34,36 @@ interface DotAppsListState {
         ButtonModule,
         DotAppsCardComponent,
         DotAppsImportExportDialogComponent,
-
         DotPortletBaseComponent,
         DotMessagePipe
     ]
 })
 export class DotAppsListComponent implements AfterViewInit {
-    private route = inject(ActivatedRoute);
-    private dotRouterService = inject(DotRouterService);
-    private dotAppsService = inject(DotAppsService);
-    private destroyRef = inject(DestroyRef);
+    readonly #route = inject(ActivatedRoute);
+    readonly #dotRouterService = inject(DotRouterService);
+    readonly #dotAppsService = inject(DotAppsService);
+    readonly #destroyRef = inject(DestroyRef);
+    readonly #dialogStore = inject(DotAppsImportExportDialogStore);
 
-    searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
-    importExportDialog = viewChild<DotAppsImportExportDialogComponent>('importExportDialog');
+    readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
-    state = signalState<DotAppsListState>({
+    readonly state = signalState<DotAppsListState>({
         allApps: [],
-        displayedApps: [],
-        canAccessPortlet: false,
-        importExportDialogAction: '',
-        showDialog: false
+        displayedApps: []
     });
 
+    constructor() {
+        // Subscribe to import success to reload apps data
+        this.#dialogStore.importSuccess$
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => this.reloadAppsData());
+    }
+
     ngAfterViewInit(): void {
-        this.route.data
+        this.#route.data
             .pipe(
                 map((data) => data['dotAppsListResolverData']),
-                takeUntilDestroyed(this.destroyRef)
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((apps: DotApp[]) => {
                 this.initAppsState(apps);
@@ -71,42 +72,28 @@ export class DotAppsListComponent implements AfterViewInit {
 
     /**
      * Redirects to apps configuration listing page
-     *
-     * @param string key
-     * @memberof DotAppsListComponent
      */
     goToApp(key: string): void {
-        this.dotRouterService.goToAppsConfiguration(key);
+        this.#dotRouterService.goToAppsConfiguration(key);
     }
 
     /**
-     * Opens the Import/Export dialog for all configurations
-     *
-     * @memberof DotAppsConfigurationComponent
+     * Opens the Import dialog
      */
-    confirmImportExport(action: string): void {
-        patchState(this.state, {
-            importExportDialogAction: action,
-            showDialog: true
-        });
+    openImportDialog(): void {
+        this.#dialogStore.openImport();
     }
 
     /**
-     * Updates dialog show/hide state
-     *
-     * @memberof DotAppsConfigurationComponent
+     * Opens the Export dialog for all configurations
      */
-    onClosedDialog(): void {
-        patchState(this.state, {
-            showDialog: false
-        });
+    openExportDialog(): void {
+        // For export all, we don't pass an app - the store handles this
+        this.#dialogStore.openExport(null as unknown as DotApp);
     }
 
     /**
      * Checks if export button is disabled based on existing configurations
-     *
-     * @returns {boolean}
-     * @memberof DotAppsListComponent
      */
     isExportButtonDisabled(): boolean {
         return this.state.allApps().filter((app: DotApp) => app.configurationsCount).length > 0;
@@ -114,11 +101,9 @@ export class DotAppsListComponent implements AfterViewInit {
 
     /**
      * Reloads data of all apps configuration listing to update the UI
-     *
-     * @memberof DotAppsListComponent
      */
     reloadAppsData(): void {
-        this.dotAppsService
+        this.#dotAppsService
             .get()
             .pipe(take(1))
             .subscribe((apps: DotApp[]) => {
@@ -136,17 +121,20 @@ export class DotAppsListComponent implements AfterViewInit {
     }
 
     private attachFilterEvents(): void {
-        observableFromEvent(this.searchInput().nativeElement, 'keyup')
-            .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
+        const searchInputEl = this.searchInput();
+        if (!searchInputEl) return;
+
+        observableFromEvent(searchInputEl.nativeElement, 'keyup')
+            .pipe(debounceTime(500), takeUntilDestroyed(this.#destroyRef))
             .subscribe((keyboardEvent: Event) => {
-                this.filterApps(keyboardEvent.target['value']);
+                this.filterApps((keyboardEvent.target as HTMLInputElement).value);
             });
 
-        this.searchInput().nativeElement.focus();
+        searchInputEl.nativeElement.focus();
     }
 
     private filterApps(searchCriteria?: string): void {
-        this.dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
+        this.#dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
             patchState(this.state, {
                 displayedApps: apps
             });

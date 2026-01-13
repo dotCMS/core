@@ -19,7 +19,6 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
     DotSafeHtmlPipe
@@ -27,7 +26,6 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
-
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {

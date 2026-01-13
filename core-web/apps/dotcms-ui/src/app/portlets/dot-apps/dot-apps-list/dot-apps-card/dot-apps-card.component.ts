@@ -29,5 +29,5 @@ import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 })
 export class DotAppsCardComponent {
     $app = input.required<DotApp>({ alias: 'app' });
-    $actionFired = output<string>();
+    actionFired = output<string>();
 }

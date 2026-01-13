@@ -12,7 +12,7 @@
                     type="text" />
                 <div>
                     <button
-                        (click)="confirmExport()"
+                        (click)="openExportDialog()"
                         [label]="'apps.confirmation.export.all.button' | dm"
                         [disabled]="!apps.configurationsCount"
                         pButton
@@ -31,7 +31,7 @@
             <dot-apps-configuration-list
                 (loadData)="loadData($event)"
                 (edit)="gotoConfiguration($event)"
-                (export)="confirmExport($event)"
+                (export)="openExportDialog($event)"
                 (delete)="deleteConfiguration($event)"
                 [siteConfigurations]="apps.sites"
                 [hideLoadDataButton]="hideLoadDataButton"
@@ -40,10 +40,5 @@
     </div>
 </div>
 
-<dot-apps-import-export-dialog
-    (shutdown)="onClosedDialog()"
-    [app]="apps"
-    [site]="siteSelected"
-    [action]="importExportDialogAction"
-    [show]="showDialog"
-    #importExportDialog />
+<!-- Dialog is now managed by store -->
+<dot-apps-import-export-dialog />

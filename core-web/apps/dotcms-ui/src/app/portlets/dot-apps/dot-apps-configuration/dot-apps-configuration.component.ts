@@ -11,18 +11,19 @@ import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
+    DotAppsService,
     DotMessageService,
     DotRouterService,
-    PaginatorService,
-    DotAppsService
+    PaginatorService
 } from '@dotcms/data-access';
-import { dialogAction, DotApp, DotAppsSite } from '@dotcms/dotcms-models';
+import { DotApp, DotAppsSite } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotAppsImportExportDialogStore } from '../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
 
 @Component({
     selector: 'dot-apps-configuration',
@@ -38,20 +39,18 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
     ]
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
-    private dotAlertConfirmService = inject(DotAlertConfirmService);
-    private dotAppsService = inject(DotAppsService);
-    private dotMessageService = inject(DotMessageService);
-    private dotRouterService = inject(DotRouterService);
-    private route = inject(ActivatedRoute);
+    readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
+    readonly #dotAppsService = inject(DotAppsService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotRouterService = inject(DotRouterService);
+    readonly #route = inject(ActivatedRoute);
+    readonly #dialogStore = inject(DotAppsImportExportDialogStore);
+
     paginationService = inject(PaginatorService);
 
     @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
-    @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
-    apps: DotApp;
-    siteSelected: DotAppsSite;
-    importExportDialogAction = dialogAction.EXPORT;
-    showDialog = false;
 
+    apps: DotApp;
     hideLoadDataButton: boolean;
     paginationPerPage = 40;
     totalRecords: number;
@@ -59,7 +58,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
-        this.route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
+        this.#route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
             this.apps = app;
             this.apps.sites = [];
         });
@@ -67,7 +66,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
         observableFromEvent(this.searchInput.nativeElement, 'keyup')
             .pipe(debounceTime(500), takeUntil(this.destroy$))
             .subscribe((keyboardEvent: Event) => {
-                this.filterConfigurations(keyboardEvent.target['value']);
+                this.filterConfigurations((keyboardEvent.target as HTMLInputElement).value);
             });
 
         this.paginationService.url = `v1/apps/${this.apps.key}`;
@@ -87,16 +86,13 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
 
     /**
      * Loads data through pagination service
-     *
-     * @param LazyLoadEvent event
-     * @memberof DotAppsConfigurationComponent
      */
     loadData(event?: LazyLoadEvent): void {
         this.paginationService
             .getWithOffset((event && event.first) || 0)
             .pipe(take(1))
             .subscribe((apps: DotApp[]) => {
-                const app = [].concat(apps)[0];
+                const app = ([] as DotApp[]).concat(apps)[0];
                 this.apps.sites = event ? this.apps.sites.concat(app.sites) : app.sites;
                 this.apps.configurationsCount = app.configurationsCount;
                 this.totalRecords = this.paginationService.totalRecords;
@@ -106,52 +102,30 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
 
     /**
      * Redirects to create/edit configuration site page
-     *
-     * @param DotAppsSites site
-     * @memberof DotAppsConfigurationComponent
      */
     gotoConfiguration(site: DotAppsSite): void {
-        this.dotRouterService.goToUpdateAppsConfiguration(this.apps.key, site);
-    }
-
-    /**
-     * Updates dialog show/hide state
-     *
-     * @memberof DotAppsConfigurationComponent
-     */
-    onClosedDialog(): void {
-        this.showDialog = false;
+        this.#dotRouterService.goToUpdateAppsConfiguration(this.apps.key, site);
     }
 
     /**
      * Redirects to app configuration listing page
-     *
-     * @param string key
-     * @memberof DotAppsConfigurationComponent
      */
     goToApps(key: string): void {
-        this.dotRouterService.gotoPortlet(`/apps/${key}`);
+        this.#dotRouterService.gotoPortlet(`/apps/${key}`);
     }
 
     /**
-     * Opens the dialog and set Export actions based on a single/all sites
-     *
-     * @param DotAppsSites [site]
-     * @memberof DotAppsConfigurationComponent
+     * Opens the export dialog
      */
-    confirmExport(site?: DotAppsSite): void {
-        this.importExportDialog.show = true;
-        this.siteSelected = site;
+    openExportDialog(site?: DotAppsSite): void {
+        this.#dialogStore.openExport(this.apps, site);
     }
 
     /**
-     * Display confirmation dialog to delete a specific configuration
-     *
-     * @param DotAppsSites site
-     * @memberof DotAppsConfigurationComponent
+     * Delete a specific configuration
      */
     deleteConfiguration(site: DotAppsSite): void {
-        this.dotAppsService
+        this.#dotAppsService
             .deleteConfiguration(this.apps.key, site.id)
             .pipe(take(1))
             .subscribe(() => {
@@ -162,13 +136,11 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
 
     /**
      * Display confirmation dialog to delete all configurations
-     *
-     * @memberof DotAppsConfigurationComponent
      */
     deleteAllConfigurations(): void {
-        this.dotAlertConfirmService.confirm({
+        this.#dotAlertConfirmService.confirm({
             accept: () => {
-                this.dotAppsService
+                this.#dotAppsService
                     .deleteAllConfigurations(this.apps.key)
                     .pipe(take(1))
                     .subscribe(() => {
@@ -179,10 +151,10 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
             reject: () => {
                 //
             },
-            header: this.dotMessageService.get('apps.confirmation.title'),
-            message: this.dotMessageService.get('apps.confirmation.delete.all.message'),
+            header: this.#dotMessageService.get('apps.confirmation.title'),
+            message: this.#dotMessageService.get('apps.confirmation.delete.all.message'),
             footerLabel: {
-                accept: this.dotMessageService.get('apps.confirmation.accept')
+                accept: this.#dotMessageService.get('apps.confirmation.accept')
             }
         });
     }
