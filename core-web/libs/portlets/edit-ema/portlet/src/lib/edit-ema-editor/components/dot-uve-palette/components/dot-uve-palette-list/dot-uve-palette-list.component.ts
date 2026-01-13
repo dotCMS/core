@@ -202,6 +202,20 @@ export class DotUvePaletteListComponent implements OnInit {
         return EMPTY_MESSAGES[this.$type()];
     });
 
+    protected readonly $gridContainerClass = computed(() => {
+        const isEmpty = this.$isEmpty();
+        const isLoading = this.$isLoading();
+        const showListLayout = this.$showListLayout();
+        const base = 'grid flex-1 min-h-0 overflow-x-hidden gap-3 pb-2';
+        const layout = showListLayout
+            ? 'grid-cols-1 auto-rows-[4rem]'
+            : 'grid-cols-2 auto-rows-[6.875rem]';
+        const overflowY = isLoading ? 'overflow-y-hidden' : 'overflow-y-auto';
+        const placeItems = isEmpty ? 'place-items-center' : 'place-items-start';
+
+        return `${base} ${layout} ${overflowY} ${placeItems}`;
+    });
+
     /**
      * Updates controls visibility whenever the current view changes between content types and contentlets.
      *

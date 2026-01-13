@@ -1,30 +1,32 @@
-<div class="dot-uve-palette-list__controls">
+<div class="flex items-center gap-2 pb-4 shrink-0">
     @if ($isContentletsView()) {
         <p-button
             data-testid="back-to-content-types-button"
             icon="pi pi-chevron-left"
-            styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
             (onClick)="onBackToContentTypes()" />
     }
 
     @if (!$shouldHideControls()) {
-        <p-iconField iconPosition="left" [style]="{ width: '100%' }">
-            <p-inputIcon styleClass="pi pi-search" />
+        <p-iconField iconPosition="left">
+            <p-inputIcon class="pi pi-search" />
             <input
                 pInputText
                 data-testid="palette-search-input"
-                styleClass="input-text-sm"
                 [formControl]="searchControl"
                 [placeholder]="'search' | dm"
-                [style]="{ width: '100%' }" />
+                class="w-full" />
         </p-iconField>
 
         @if ($isContentTypesView()) {
             @let actionBtn = $actionButton();
             <p-button
-                styleClass="options-menu-button"
+                [pt]="{
+                    icon: {
+                        class: 'rotate-90'
+                    }
+                }"
                 [attr.data-testid]="actionBtn.testId"
                 [icon]="actionBtn.icon"
                 [text]="true"
@@ -33,10 +35,7 @@
         }
     }
 </div>
-<div
-    class="dot-uve-palette-list__grid"
-    [class.dot-uve-palette-list__grid--list]="$showListLayout()"
-    [class.dot-uve-palette-list__grid--loading]="$isLoading()">
+<div [class]="$gridContainerClass()">
     @if ($isLoading()) {
         <ng-container *ngTemplateOutlet="loadingTemplate" />
     } @else if ($isEmpty()) {
@@ -56,15 +55,18 @@
 
 <!-- Empty State Template -->
 <ng-template #emptyStateTemplate>
-    <div class="dot-uve-palette-list__empty">
-        <div class="dot-uve-palette-list__empty-icon">
-            <i [class]="$emptyState().icon"></i>
+    <div
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full bg-gray-100 p-6">
+            <i class="text-[70px] font-normal text-gray-500" [class]="$emptyState().icon"></i>
         </div>
-        <div>
-            <span class="dot-uve-palette-list__empty-title">{{ $emptyState().title | dm }}</span>
+        <div class="space-y-2">
+            <div class="text-sm font-bold leading-[150%] text-gray-900">
+                {{ $emptyState().title | dm }}
+            </div>
             <p
                 data-testid="empty-state-message"
-                class="dot-uve-palette-list__empty-text"
+                class="m-0 text-sm leading-6 text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
                 [innerHTML]="$emptyState().message | dm"
                 (click)="onEmptyStateClick($event)"></p>
         </div>
