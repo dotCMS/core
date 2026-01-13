@@ -34,6 +34,20 @@ fi
 
 echo -e "${GREEN}✓ Docker is available${NC}"
 
+echo "Waiting for Docker daemon..."
+for i in {1..60}; do
+  if docker info >/dev/null 2>&1; then
+    echo "✓ Docker is ready"
+    break
+  fi
+  sleep 1
+done
+
+if ! docker info >/dev/null 2>&1; then
+  echo "✗ Docker daemon not ready after waiting."
+  exit 1
+fi
+
 # Verify docker-compose is available
 echo -e "${BLUE}Checking Docker Compose availability...${NC}"
 if ! command_exists docker-compose && ! docker compose version >/dev/null 2>&1; then
