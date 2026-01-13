@@ -25,12 +25,13 @@
                 @case ('Import') {
                     <div class="field">
                         <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
-                        <input
-                            (change)="onFileChange($any($event.target).files)"
-                            id="import-file"
-                            #importFile
-                            type="file"
-                            dotAutofocus />
+                        <p-fileupload
+                            mode="basic"
+                            [chooseLabel]="'dot.common.choose' | dm"
+                            chooseIcon="pi pi-upload"
+                            accept=".tar.gz,.export"
+                            (onSelect)="onFileSelect($event)"
+                            (onClear)="onFileClear()" />
                     </div>
                     <div class="field">
                         <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>

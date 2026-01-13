@@ -1,4 +1,4 @@
-import { Component, effect, ElementRef, inject, viewChild } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
@@ -9,6 +9,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { FileUploadModule, FileSelectEvent } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
@@ -26,6 +27,7 @@ import { DotAppsImportExportDialogStore } from './store/dot-apps-import-export-d
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
+        FileUploadModule,
         InputTextModule,
         PasswordModule,
         DotAutofocusDirective,
@@ -38,8 +40,6 @@ export class DotAppsImportExportDialogComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #fb = inject(UntypedFormBuilder);
 
-    readonly importFile = viewChild<ElementRef<HTMLInputElement>>('importFile');
-
     // Store selectors
     readonly visible = this.#store.visible;
     readonly action = this.#store.action;
@@ -49,6 +49,7 @@ export class DotAppsImportExportDialogComponent {
 
     form: UntypedFormGroup;
     dialogActions: DotDialogActions;
+    #selectedFile: File | null = null;
 
     // Effect to react to action changes to setup the form
     actionsEffect = effect(() => {
@@ -63,18 +64,26 @@ export class DotAppsImportExportDialogComponent {
      */
     closeDialog(): void {
         this.form?.reset();
+        this.#selectedFile = null;
         this.#store.close();
     }
 
     /**
-     * Updates form control value for inputFile field
+     * Handles file selection from FileUpload component
      */
-    onFileChange(files: FileList | null): void {
-        if (files && files[0]) {
-            this.form.controls['importFile'].setValue(files[0].name);
-        } else {
-            this.form.controls['importFile'].setValue('');
+    onFileSelect(event: FileSelectEvent): void {
+        if (event.files && event.files[0]) {
+            this.#selectedFile = event.files[0];
+            this.form.controls['importFile'].setValue(event.files[0].name);
         }
+    }
+
+    /**
+     * Handles file removal/clear from FileUpload component
+     */
+    onFileClear(): void {
+        this.#selectedFile = null;
+        this.form.controls['importFile'].setValue('');
     }
 
     /**
@@ -127,10 +136,9 @@ export class DotAppsImportExportDialogComponent {
         this.dialogActions = {
             accept: {
                 action: () => {
-                    const importFileEl = this.importFile();
-                    if (importFileEl) {
+                    if (this.#selectedFile) {
                         this.#store.importConfiguration({
-                            file: importFileEl?.nativeElement.files[0],
+                            file: this.#selectedFile,
                             json: { password: this.form.value.password }
                         });
                     }

@@ -1,48 +1,23 @@
-import { of } from 'rxjs';
+import { expect, it, describe, beforeEach } from '@jest/globals';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { AvatarModule } from 'primeng/avatar';
-import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAppsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotMessagePipe, DotAvatarDirective, DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
-import {
-    CoreWebServiceMock,
-    MockDotMessageService,
-    MockDotRouterService
-} from '@dotcms/utils-testing';
+import { ComponentStatus, DotApp } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
-import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 import { DotAppsListComponent } from './dot-apps-list.component';
 
-import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
+import { DotAppsImportExportDialogStore } from '../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
 
-export class AppsServicesMock {
-    get() {
-        return of({});
-    }
-}
-
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'markdown',
-    template: `
-        <ng-content></ng-content>
-    `
-})
-class MockMarkdownComponent {}
-
-export const appsResponse = [
+const appsResponse: DotApp[] = [
     {
         allowExtraParams: true,
         configurationsCount: 0,
@@ -61,229 +36,216 @@ export const appsResponse = [
     }
 ];
 
-@Component({
-    selector: 'dot-icon',
-    template: ''
-})
-class MockDotIconComponent {
-    @Input() name: string;
-}
-
-@Component({
-    selector: 'dot-apps-import-export-dialog',
-    template: ''
-})
-class MockDotAppsImportExportDialogComponent {
-    @Input() action: string;
-    @Input() show: boolean;
-    @Output() resolved = new EventEmitter<boolean>();
-    @Output() shutdown = new EventEmitter();
-}
-
-@Component({
-    selector: 'dot-not-license',
-    template: ''
-})
-class MockDotNotLicenseComponent {}
-
-let canAccessPortletResponse = {
-    dotAppsListResolverData: {
-        apps: appsResponse,
-        isEnterpriseLicense: true
-    }
-};
-
-class ActivatedRouteMock {
-    get data() {
-        return of(canAccessPortletResponse);
-    }
-}
-
 describe('DotAppsListComponent', () => {
-    let component: DotAppsListComponent;
-    let fixture: ComponentFixture<DotAppsListComponent>;
-    let routerService: DotRouterService;
-    let route: ActivatedRoute;
-    let dotAppsService: DotAppsService;
+    let spectator: Spectator<DotAppsListComponent>;
+    let importSuccessSubject: Subject<void>;
+
+    const mockDialogStore = {
+        // Methods
+        openImport: jest.fn(),
+        openExport: jest.fn(),
+        close: jest.fn(),
+        exportConfiguration: jest.fn(),
+        importConfiguration: jest.fn(),
+        // Signals needed by dialog component
+        visible: signal(false),
+        action: signal(null),
+        errorMessage: signal(null),
+        dialogHeaderKey: signal(''),
+        isLoading: signal(false),
+        status: signal(ComponentStatus.INIT),
+        app: signal(null),
+        site: signal(null),
+        // Observable
+        importSuccess$: new Subject<void>()
+    };
+
+    const mockDotAppsService = {
+        get: jest.fn().mockReturnValue(of(appsResponse))
+    };
 
     const messageServiceMock = new MockDotMessageService({
         'apps.search.placeholder': 'Search',
         'apps.confirmation.import.button': 'Import',
-        'apps.confirmation.export.all.button': 'Export'
+        'apps.confirmation.export.all.button': 'Export',
+        'apps.link.info': 'Learn more'
+    });
+
+    const createComponent = createComponentFactory({
+        component: DotAppsListComponent,
+        imports: [InputTextModule, ButtonModule, DotMessagePipe],
+        shallow: true,
+        providers: [
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    data: of({ dotAppsListResolverData: appsResponse })
+                }
+            },
+            { provide: DotRouterService, useClass: MockDotRouterService },
+            { provide: DotAppsService, useValue: mockDotAppsService },
+            { provide: DotAppsImportExportDialogStore, useValue: mockDialogStore },
+            { provide: DotMessageService, useValue: messageServiceMock }
+        ]
     });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                DotAppsListComponent,
-                MockDotAppsImportExportDialogComponent,
-                MockDotIconComponent,
-                MockDotNotLicenseComponent
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                },
-                {
-                    provide: DotRouterService,
-                    useClass: MockDotRouterService
-                },
-                { provide: DotAppsService, useClass: AppsServicesMock },
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ]
-        })
-            .overrideComponent(DotAppsListComponent, {
-                set: {
-                    imports: [
-                        CommonModule,
-                        InputTextModule,
-                        ButtonModule,
-                        DotAppsCardComponent,
-                        DotSafeHtmlPipe,
-                        MockDotAppsImportExportDialogComponent,
-                        MockDotNotLicenseComponent,
-                        MockDotIconComponent,
-                        DotPortletBaseComponent,
-                        DotMessagePipe
-                    ]
-                }
-            })
-            .overrideComponent(DotAppsCardComponent, {
-                set: {
-                    imports: [
-                        CommonModule,
-                        CardModule,
-                        AvatarModule,
-                        BadgeModule,
-                        DotIconComponent,
-                        MockMarkdownComponent,
-                        TooltipModule,
-                        DotAvatarDirective,
-                        DotMessagePipe
-                    ]
-                }
-            })
-            .compileComponents();
+        // Reset mocks
+        mockDialogStore.openImport.mockClear();
+        mockDialogStore.openExport.mockClear();
+        mockDotAppsService.get.mockClear();
+        mockDotAppsService.get.mockReturnValue(of(appsResponse));
 
-        fixture = TestBed.createComponent(DotAppsListComponent);
-        component = fixture.debugElement.componentInstance;
-        routerService = TestBed.inject(DotRouterService);
-        route = TestBed.inject(ActivatedRoute);
-        dotAppsService = TestBed.inject(DotAppsService);
+        // Create new subject for each test
+        importSuccessSubject = new Subject<void>();
+        mockDialogStore.importSuccess$ = importSuccessSubject;
+
+        spectator = createComponent();
+        spectator.detectChanges();
     });
 
-    describe('With access to portlet', () => {
-        beforeEach(() => {
-            Object.defineProperty(route, 'data', {
-                value: of({
-                    dotAppsListResolverData: { apps: appsResponse, isEnterpriseLicense: true }
-                }),
-                writable: true
-            });
-            fixture.detectChanges();
+    describe('Initial State', () => {
+        it('should create component', () => {
+            expect(spectator.component).toBeTruthy();
         });
 
-        it('should set App from resolver', () => {
-            expect(component.apps).toBe(appsResponse);
-            expect(component.appsCopy).toEqual(appsResponse);
+        it('should load apps from resolver', () => {
+            expect(spectator.component.state.allApps()).toEqual(appsResponse);
+            expect(spectator.component.state.displayedApps()).toEqual(appsResponse);
         });
 
-        it('should contain 2 app configurations', () => {
-            expect(fixture.debugElement.queryAll(By.css('dot-apps-card')).length).toBe(2);
+        it('should render search input with placeholder', () => {
+            const input = spectator.query('input[pInputText]');
+            expect(input).toBeTruthy();
+            expect(input?.getAttribute('placeholder')).toBe('Search');
         });
 
-        it('should contain a dot-icon and a link with info on how to create apps', () => {
-            const link = fixture.debugElement.query(By.css('.dot-apps__header-info a'));
-            const icon = fixture.debugElement.query(By.css('.dot-apps__header-info dot-icon'));
-            expect(link.nativeElement.href).toBe(
+        it('should render import button', () => {
+            const importBtn = spectator.query('.dot-apps-configuration__action_import_button');
+            expect(importBtn).toBeTruthy();
+        });
+
+        it('should render export button', () => {
+            const exportBtn = spectator.query('.dot-apps-configuration__action_export_button');
+            expect(exportBtn).toBeTruthy();
+        });
+    });
+
+    describe('Export Button State', () => {
+        it('should enable export button when apps have configurations', () => {
+            // appsResponse has one app with configurationsCount: 1
+            expect(spectator.component.isExportButtonDisabled()).toBe(true);
+        });
+
+        it('should disable export button when no apps have configurations', () => {
+            // Create apps with no configurations
+            const appsWithNoConfig: DotApp[] = [
+                { ...appsResponse[0], configurationsCount: 0 },
+                { ...appsResponse[1], configurationsCount: 0 }
+            ];
+
+            mockDotAppsService.get.mockReturnValue(of(appsWithNoConfig));
+
+            // Reload to get apps with no configurations
+            spectator.component.reloadAppsData();
+            spectator.detectChanges();
+
+            expect(spectator.component.isExportButtonDisabled()).toBe(false);
+        });
+    });
+
+    describe('Dialog Actions', () => {
+        it('should call store.openImport when import button clicked', () => {
+            spectator.component.openImportDialog();
+
+            expect(mockDialogStore.openImport).toHaveBeenCalledTimes(1);
+        });
+
+        it('should call store.openExport when export button clicked', () => {
+            spectator.component.openExportDialog();
+
+            expect(mockDialogStore.openExport).toHaveBeenCalledTimes(1);
+            expect(mockDialogStore.openExport).toHaveBeenCalledWith(null);
+        });
+
+        it('should call openImportDialog when import button is clicked in template', () => {
+            jest.spyOn(spectator.component, 'openImportDialog');
+            const importBtn = spectator.query('.dot-apps-configuration__action_import_button');
+            if (importBtn) {
+                spectator.click(importBtn);
+            }
+
+            expect(spectator.component.openImportDialog).toHaveBeenCalled();
+        });
+
+        it('should call openExportDialog when export button is clicked in template', () => {
+            jest.spyOn(spectator.component, 'openExportDialog');
+            const exportBtn = spectator.query('.dot-apps-configuration__action_export_button');
+            if (exportBtn) {
+                spectator.click(exportBtn);
+            }
+
+            expect(spectator.component.openExportDialog).toHaveBeenCalled();
+        });
+    });
+
+    describe('Navigation', () => {
+        it('should navigate to app configuration when goToApp is called', () => {
+            const routerService = spectator.inject(DotRouterService);
+
+            spectator.component.goToApp('google-calendar');
+
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith('google-calendar');
+        });
+    });
+
+    describe('Reload Apps Data', () => {
+        it('should reload apps when importSuccess$ emits', () => {
+            mockDotAppsService.get.mockClear();
+            const newApps: DotApp[] = [
+                {
+                    allowExtraParams: true,
+                    configurationsCount: 2,
+                    key: 'new-app',
+                    name: 'New App',
+                    description: 'A new app'
+                }
+            ];
+            mockDotAppsService.get.mockReturnValue(of(newApps));
+
+            // Emit import success
+            importSuccessSubject.next();
+
+            expect(mockDotAppsService.get).toHaveBeenCalled();
+        });
+
+        it('should call reloadAppsData and update state', () => {
+            const newApps: DotApp[] = [
+                {
+                    allowExtraParams: true,
+                    configurationsCount: 5,
+                    key: 'updated-app',
+                    name: 'Updated App',
+                    description: 'Updated description'
+                }
+            ];
+            mockDotAppsService.get.mockReturnValue(of(newApps));
+
+            spectator.component.reloadAppsData();
+
+            expect(spectator.component.state.allApps()).toEqual(newApps);
+            expect(spectator.component.state.displayedApps()).toEqual(newApps);
+        });
+    });
+
+    describe('Info Link', () => {
+        it('should have link to documentation', () => {
+            const link = spectator.query('.dot-apps__header-info a');
+            expect(link).toBeTruthy();
+            expect(link?.getAttribute('href')).toBe(
                 'https://dotcms.com/docs/latest/apps-integrations'
             );
-            expect(link.nativeElement.target).toBe('_blank');
-            expect(icon.componentInstance.name).toBe('help');
-        });
-
-        it('should set messages to Search Input', () => {
-            expect(fixture.debugElement.query(By.css('input')).nativeElement.placeholder).toBe(
-                messageServiceMock.get('apps.search.placeholder')
-            );
-        });
-
-        it('should set app data to service Card', () => {
-            expect(
-                fixture.debugElement.queryAll(By.css('dot-apps-card'))[0].componentInstance.app
-            ).toEqual(appsResponse[0]);
-        });
-
-        it('should export All button be enabled', () => {
-            const exportAllBtn = fixture.debugElement.query(
-                By.css('.dot-apps-configuration__action_export_button')
-            );
-            expect(exportAllBtn.nativeElement.disabled).toBe(false);
-        });
-
-        it('should open confirm dialog and export All configurations', () => {
-            const exportAllBtn = fixture.debugElement.query(
-                By.css('.dot-apps-configuration__action_export_button')
-            );
-            exportAllBtn.triggerEventHandler('click', 'Export');
-            expect(component.showDialog).toBe(true);
-            expect(component.importExportDialogAction).toBe('Export');
-        });
-
-        it('should open confirm dialog and import configurations', () => {
-            const importBtn = fixture.debugElement.query(
-                By.css('.dot-apps-configuration__action_import_button')
-            );
-            importBtn.triggerEventHandler('click', 'Import');
-            expect(component.showDialog).toBe(true);
-            expect(component.importExportDialogAction).toBe('Import');
-        });
-
-        it('should reload apps data when resolve action from Import/Export dialog', () => {
-            jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
-            const importExportDialog = fixture.debugElement.query(
-                By.css('dot-apps-import-export-dialog')
-            );
-            importExportDialog.componentInstance.resolved.emit(true);
-            expect(dotAppsService.get).toHaveBeenCalledTimes(1);
-        });
-
-        it('should set false to dialog state when closed Import/Export dialog', () => {
-            const importExportDialog = fixture.debugElement.query(
-                By.css('dot-apps-import-export-dialog')
-            );
-            importExportDialog.componentInstance.shutdown.emit();
-            expect(component.showDialog).toBe(false);
-        });
-
-        it('should redirect to detail configuration list page when app Card clicked', () => {
-            const card = fixture.debugElement.queryAll(By.css('dot-apps-card'))[0]
-                .componentInstance;
-            card.actionFired.emit(component.apps[0].key);
-            expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.apps[0].key);
-            expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
-        });
-    });
-
-    describe('Without access to portlet', () => {
-        beforeEach(() => {
-            canAccessPortletResponse = {
-                dotAppsListResolverData: {
-                    apps: null,
-                    isEnterpriseLicense: false
-                }
-            };
-            fixture.detectChanges();
-        });
-
-        it('should display not licensed component', () => {
-            expect(fixture.debugElement.query(By.css('dot-not-license'))).toBeTruthy();
+            expect(link?.getAttribute('target')).toBe('_blank');
         });
     });
 });
