@@ -35,7 +35,16 @@
         }
     }
 </div>
-<div [class]="$gridContainerClass()">
+<div
+    class="grid flex-1 min-h-0 overflow-x-hidden gap-4 pt-3 pb-3"
+    [ngClass]="{
+        'place-items-center overflow-hidden grid-cols-1': $isEmpty(),
+        'grid-cols-2 auto-rows-[6.875rem] overflow-y-auto':
+            !$showListLayout() && !$isEmpty() && !$isLoading(),
+        'grid-cols-1 auto-rows-[4rem] overflow-y-auto':
+            $showListLayout() && !$isEmpty() && !$isLoading(),
+        'overflow-y-hidden': $isLoading() && !$isEmpty()
+    }">
     @if ($isLoading()) {
         <ng-container *ngTemplateOutlet="loadingTemplate" />
     } @else if ($isEmpty()) {

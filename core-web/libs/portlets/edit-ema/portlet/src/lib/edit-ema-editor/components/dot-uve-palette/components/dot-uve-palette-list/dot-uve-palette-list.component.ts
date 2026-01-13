@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { NgTemplateOutlet } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -84,6 +84,7 @@ const DEBOUNCE_TIME = 300;
 @Component({
     selector: 'dot-uve-palette-list',
     imports: [
+        NgClass,
         NgTemplateOutlet,
         ReactiveFormsModule,
         DotUVEPaletteContenttypeComponent,
@@ -200,23 +201,6 @@ export class DotUvePaletteListComponent implements OnInit {
         }
 
         return EMPTY_MESSAGES[this.$type()];
-    });
-
-    protected readonly $gridContainerClass = computed(() => {
-        const isEmpty = this.$isEmpty();
-        const isLoading = this.$isLoading();
-        const showListLayout = this.$showListLayout() || isEmpty;
-        const base = 'grid flex-1 min-h-0 overflow-x-hidden gap-3 pb-2';
-        const layout = showListLayout
-            ? 'grid-cols-1 auto-rows-[4rem]'
-            : 'grid-cols-2 auto-rows-[6.875rem]';
-        const overflowY = isLoading ? 'overflow-y-hidden' : 'overflow-y-auto';
-
-        if (isEmpty) {
-            return 'grid flex-1 min-h-0 overflow-x-hidden gap-3 pb-2 place-items-center';
-        }
-
-        return `${base} ${layout} ${overflowY}`;
     });
 
     /**

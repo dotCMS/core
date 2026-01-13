@@ -20,8 +20,8 @@ import { DotPaletteViewMode } from '../../models';
     host: {
         '[attr.data-type]': '"content-type"',
         '[attr.draggable]': 'true',
-        '[class.list-view]': '$isListView()',
-        '[attr.data-item]': '$dataItem()'
+        '[attr.data-item]': '$dataItem()',
+        '[class]': '$hostClass()'
     }
 })
 export class DotUVEPaletteContenttypeComponent {
@@ -32,6 +32,18 @@ export class DotUVEPaletteContenttypeComponent {
     readonly contextMenu = output<MouseEvent>();
 
     readonly $isListView = computed(() => this.$view() === 'list');
+    readonly $hostClass = computed(() => {
+        const base =
+            'group flex w-full items-center border border-gray-200 bg-white text-gray-900 h-auto' +
+            'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm ' +
+            'rounded-md';
+
+        const grid = 'px-2 justify-center';
+        const list = 'h-16 px-2 justify-between gap-2';
+
+        return `${base} ${this.$isListView() ? list : grid}`;
+    });
+
     readonly $dataItem = computed(() => {
         const contentType = this.$contentType();
 
