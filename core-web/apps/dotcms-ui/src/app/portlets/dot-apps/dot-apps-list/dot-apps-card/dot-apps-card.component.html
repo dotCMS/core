@@ -1,5 +1,7 @@
+@let app = $app();
+
 <p-card
-    (click)="actionFired.emit(app.key)"
+    (click)="$actionFired.emit(app.key)"
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }">
@@ -16,12 +18,11 @@
                     }}
                 </span>
                 @if (app.sitesWithWarnings) {
-                    <dot-icon
-                        name="warning"
-                        pTooltip="{{
+                    <i
+                        class="pi pi-exclamation-triangle text-lg"
+                        [pTooltip]="
                             app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
-                        }}"
-                        size="18" />
+                        "></i>
                 }
             </div>
         </div>
