@@ -2,7 +2,7 @@
 
 <!-- Drag handle -->
 <div
-    class="opacity-0 transition-opacity group-hover:opacity-100 text-gray-300 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-4 h-4">
+    class="opacity-0 transition-opacity group-hover:opacity-100 text-gray-400 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-4 h-4 :hover:text-gray-500">
     <i class="pi pi-ellipsis-v text-[14px]"></i>
     <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
 </div>
@@ -29,5 +29,5 @@
     class="opacity-0 transition-opacity cursor-pointer group-hover:opacity-100 text-gray-300 hover:text-gray-500"
     (click)="onSelectContentType.emit(contentType.variable)"
     [attr.aria-label]="'Open ' + contentType.name">
-    <i class="pi pi-chevron-right text-[14px] text-gray-300 group-hover:text-gray-400"></i>
+    <i class="pi pi-chevron-right text-[14px] text-gray-400 group-hover:text-gray-500"></i>
 </button>
