@@ -9,6 +9,8 @@ import {
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { DotPaletteViewMode } from '../../models';
+
 @Component({
     selector: 'dot-uve-palette-contenttype',
     imports: [],
@@ -23,7 +25,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     }
 })
 export class DotUVEPaletteContenttypeComponent {
-    $view = input<'grid grid-cols-12 gap-4' | 'list'>('grid grid-cols-12 gap-4', { alias: 'view' });
+    $view = input<DotPaletteViewMode>('grid', { alias: 'view' });
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
     readonly onSelectContentType = output<string>();

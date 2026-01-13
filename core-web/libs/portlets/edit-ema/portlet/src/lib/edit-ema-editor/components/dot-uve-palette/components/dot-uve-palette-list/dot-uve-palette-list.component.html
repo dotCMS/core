@@ -107,17 +107,19 @@
         [currentPageReportTemplate]="'uve.palette.pagination.template' | dm" />
 }
 
-<p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" styleClass="options-menu-popup">
-    <ng-template pTemplate="submenuheader" let-item>
+<p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body">
+    <ng-template #submenuheader let-item>
         <span>{{ item.label | dm }}</span>
     </ng-template>
-    <ng-template pTemplate="item" let-item>
-        <a class="p-ripple p-element p-menuitem-link">
-            <span class="p-menuitem-text">{{ item.label | dm }}</span>
-        </a>
+    <ng-template #item let-item>
+        <span
+            class="inline-block cursor-pointer p-2 pl-5 w-full"
+            [class.bg-gray-100]="item.isActive">
+            {{ item.label | dm }}
+        </span>
     </ng-template>
 </p-menu>
 
-<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
+<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" />
 
 <dot-favorite-selector #favoritesPanel />

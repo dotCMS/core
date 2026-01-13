@@ -205,7 +205,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $gridContainerClass = computed(() => {
         const isEmpty = this.$isEmpty();
         const isLoading = this.$isLoading();
-        const showListLayout = this.$showListLayout();
+        const showListLayout = this.$showListLayout() || isEmpty;
         const base = 'grid flex-1 min-h-0 overflow-x-hidden gap-3 pb-2';
         const layout = showListLayout
             ? 'grid-cols-1 auto-rows-[4rem]'

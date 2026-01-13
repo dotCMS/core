@@ -11,31 +11,4 @@
     height: 100%;
     overflow: hidden;
     min-height: 0;
-
-    p-paginator {
-        flex-shrink: 0;
-    }
-
-    // PrimeNG component overrides
-    ::ng-deep {
-        // Paginator styling
-        .p-paginator {
-            background: transparent;
-        }
-    }
-}
-
-::ng-deep {
-    // Options menu popup positioning
-    .options-menu-popup.p-menu {
-        transform: translateX(-100%);
-        margin-left: 2.5rem;
-
-        // Active menu item styling
-        .p-menu-list {
-            .active-menu-item {
-                background-color: colors.$color-palette-primary-200;
-            }
-        }
-    }
 }
