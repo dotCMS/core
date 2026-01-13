@@ -62,7 +62,7 @@
       "version": "latest",
       "ppa": true
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+    "ghcr.io/devcontainers/features/docker-in-docker:1": {
       "version": "latest",
       "moby": true,
       "dockerComposeVersion": "v2"

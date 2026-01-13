@@ -1,5 +1,4 @@
 #!/bin/bash
-
 set -e
 
 # Colors for output
@@ -15,93 +14,92 @@ echo -e "${BLUE}  Setting up dotCMS Development Environment${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-# Function to check if command exists
 command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
-# Verify Docker is available
+# Detect workspace root
+if [ -d "/workspaces" ]; then
+  WORKSPACE_ROOT=$(find /workspaces -maxdepth 1 -type d -name "*" ! -path /workspaces | head -n 1)
+else
+  WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+fi
+
+if [ -z "$WORKSPACE_ROOT" ]; then
+  WORKSPACE_ROOT="$(pwd)"
+fi
+
+echo -e "${BLUE}Workspace root:${NC} ${WORKSPACE_ROOT}"
+
+# Verify Docker is installed
 echo -e "${BLUE}Checking Docker availability...${NC}"
 if ! command_exists docker; then
-  echo -e "${RED}✗ Docker not found. Please ensure Docker is properly installed.${NC}"
+  echo -e "${RED}✗ Docker not found in PATH.${NC}"
   exit 1
 fi
 
-if ! docker info >/dev/null 2>&1; then
-  echo -e "${RED}✗ Cannot connect to Docker daemon. Please check Docker setup.${NC}"
-  exit 1
-fi
-
-echo -e "${GREEN}✓ Docker is available${NC}"
-
-echo "Waiting for Docker daemon..."
+# Wait for Docker daemon
+echo -e "${BLUE}Waiting for Docker daemon...${NC}"
 for i in {1..60}; do
   if docker info >/dev/null 2>&1; then
-    echo "✓ Docker is ready"
+    echo -e "${GREEN}✓ Docker daemon is ready${NC}"
     break
   fi
   sleep 1
 done
 
 if ! docker info >/dev/null 2>&1; then
-  echo "✗ Docker daemon not ready after waiting."
+  echo -e "${RED}✗ Cannot connect to Docker daemon after waiting.${NC}"
+  echo -e "${YELLOW}Tip:${NC} If you're using docker-in-docker, ensure the feature is enabled in devcontainer.json."
   exit 1
 fi
 
-# Verify docker-compose is available
-echo -e "${BLUE}Checking Docker Compose availability...${NC}"
-if ! command_exists docker-compose && ! docker compose version >/dev/null 2>&1; then
-  echo -e "${RED}✗ Docker Compose not found. Please ensure Docker Compose is installed.${NC}"
-  exit 1
-fi
-
-echo -e "${GREEN}✓ Docker Compose is available${NC}"
-
-# Navigate to the docker-compose directory
-# Detect workspace root (works with both local and Codespaces paths)
-if [ -d "/workspaces" ]; then
-  # In Codespaces
-  WORKSPACE_ROOT=$(find /workspaces -maxdepth 1 -type d -name "*" ! -path /workspaces | head -n 1)
+# Pick compose command
+COMPOSE=""
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker compose"
+elif command_exists docker-compose; then
+  COMPOSE="docker-compose"
 else
-  # Local development - get git root
-  WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-fi
-
-COMPOSE_DIR="$WORKSPACE_ROOT/docker/docker-compose-examples/single-node-demo-site"
-
-if [ ! -f "$COMPOSE_DIR/docker-compose.yml" ]; then
-  echo -e "${RED}✗ docker-compose.yml not found at $COMPOSE_DIR${NC}"
+  echo -e "${RED}✗ Docker Compose not found.${NC}"
   exit 1
 fi
+
+echo -e "${GREEN}✓ Using compose command:${NC} ${COMPOSE}"
+
+# Find compose file (root preferred)
+COMPOSE_FILE=""
+if [ -f "${WORKSPACE_ROOT}/docker-compose.yml" ]; then
+  COMPOSE_FILE="${WORKSPACE_ROOT}/docker-compose.yml"
+elif [ -f "${WORKSPACE_ROOT}/compose.yml" ]; then
+  COMPOSE_FILE="${WORKSPACE_ROOT}/compose.yml"
+else
+  echo -e "${RED}✗ No docker-compose.yml or compose.yml found in repo root:${NC} ${WORKSPACE_ROOT}"
+  echo -e "${YELLOW}If your compose is in a subfolder, update this script to point there.${NC}"
+  exit 1
+fi
+
+echo -e "${BLUE}Compose file:${NC} ${COMPOSE_FILE}"
+cd "${WORKSPACE_ROOT}"
 
 echo ""
 echo -e "${BLUE}Starting dotCMS services...${NC}"
-echo -e "${YELLOW}This may take 5-10 minutes on first startup${NC}"
+echo -e "${YELLOW}This may take several minutes on first startup${NC}"
 echo ""
 
-cd "$COMPOSE_DIR"
+# Pull + up
+${COMPOSE} -f "${COMPOSE_FILE}" pull
+${COMPOSE} -f "${COMPOSE_FILE}" up -d
 
-# Pull images first to show progress
-echo -e "${BLUE}Pulling Docker images...${NC}"
-docker-compose pull
-
-# Start services in background
-echo -e "${BLUE}Starting services...${NC}"
-docker-compose up -d
-
-# Wait a moment for containers to start
-sleep 5
-
-# Show status
 echo ""
-echo -e "${GREEN}✓ Services started successfully!${NC}"
+echo -e "${GREEN}✓ Services started (containers launching)${NC}"
 echo ""
 echo -e "${BLUE}Container Status:${NC}"
-docker-compose ps
+${COMPOSE} -f "${COMPOSE_FILE}" ps
 
 echo ""
-echo -e "${YELLOW}Note: dotCMS needs 3-5 minutes to fully initialize.${NC}"
-echo -e "${YELLOW}You can monitor progress with: docker logs -f dotcms${NC}"
+echo -e "${YELLOW}Note:${NC} dotCMS can take a few minutes to fully initialize."
+echo -e "${YELLOW}Monitor with:${NC} ${COMPOSE} -f ${COMPOSE_FILE} logs -f --tail=200 dotcms"
 echo ""
 echo -e "${GREEN}Setup complete!${NC}"
 echo ""
