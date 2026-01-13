@@ -21,6 +21,7 @@ import {
     DotRouterService,
     PaginatorService
 } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
@@ -30,13 +31,12 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
-import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotAppsConfigurationResolver } from '../services/dot-apps-configuration-resolver/dot-apps-configuration-resolver.service';
 
 const messages = {
     'apps.key': 'Key',

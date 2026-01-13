@@ -14,6 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotAvatarDirective, DotIconComponent, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
@@ -25,7 +26,6 @@ import {
 import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 import { DotAppsListComponent } from './dot-apps-list.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 export class AppsServicesMock {

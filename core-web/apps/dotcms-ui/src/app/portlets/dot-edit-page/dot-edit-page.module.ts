@@ -11,7 +11,8 @@ import {
     DotPageLayoutService,
     DotPageRenderService,
     DotPageStateService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotAppsService
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
@@ -24,7 +25,6 @@ import { dotEditPageRoutes } from './dot-edit-page.routes';
 import { DotEditLayoutComponent } from './layout/dot-edit-layout/dot-edit-layout.component';
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
 
-import { DotAppsService } from '../../api/services/dot-apps/dot-apps.service';
 import { DotDirectivesModule } from '../../shared/dot-directives.module';
 import { DotFeatureFlagResolver } from '../shared/resolvers/dot-feature-flag-resolver.service';
 

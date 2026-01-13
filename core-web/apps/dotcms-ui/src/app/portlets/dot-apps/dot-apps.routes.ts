@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { DotAppsConfigurationResolver } from './dot-apps-configuration/dot-apps-configuration-resolver.service';
-import { DotAppsConfigurationComponent } from './dot-apps-configuration/dot-apps-configuration.component';
-import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail/dot-apps-configuration-detail-resolver.service';
-import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail/dot-apps-configuration-detail.component';
-import { DotAppsListResolver } from './dot-apps-list/dot-apps-list-resolver.service';
-import { DotAppsListComponent } from './dot-apps-list/dot-apps-list.component';
+import { DotAppsService } from '@dotcms/data-access';
 
-import { DotAppsService } from '../../api/services/dot-apps/dot-apps.service';
+import { DotAppsConfigurationComponent } from './dot-apps-configuration/dot-apps-configuration.component';
+import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail/dot-apps-configuration-detail.component';
+import { DotAppsListComponent } from './dot-apps-list/dot-apps-list.component';
+import { DotAppsConfigurationDetailResolver } from './services/dot-apps-configuration-detail-resolver/dot-apps-configuration-detail-resolver.service';
+import { DotAppsConfigurationResolver } from './services/dot-apps-configuration-resolver/dot-apps-configuration-resolver.service';
+import { DotAppsListResolver } from './services/dot-apps-list-resolver/dot-apps-list-resolver.service';
 
 export const dotAppsRoutes: Routes = [
     {

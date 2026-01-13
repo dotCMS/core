@@ -3,27 +3,22 @@
 import { of as observableOf, of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot } from '@angular/router';
 
-import { DotLicenseService } from '@dotcms/data-access';
+import { DotAppsService, DotLicenseService } from '@dotcms/data-access';
+import { DotApp } from '@dotcms/dotcms-models';
 
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
-import { appsResponse, AppsServicesMock } from './dot-apps-list.component.spec';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { appsResponse, AppsServicesMock } from '../../dot-apps-list/dot-apps-list.component.spec';
 
 class DotLicenseServicesMock {
     canAccessEnterprisePortlet(_url: string) {
-        of(true);
+        return of(true);
     }
 }
 
-const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
-
-const routerStateSnapshotMock = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-routerStateSnapshotMock.url = '/apps';
+const activatedRouteSnapshotMock: any = {};
 
 describe('DotAppsListResolver', () => {
     let dotLicenseServices: DotLicenseService;
@@ -53,14 +48,9 @@ describe('DotAppsListResolver', () => {
         );
         jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
 
-        dotAppsListResolver
-            .resolve(activatedRouteSnapshotMock, routerStateSnapshotMock)
-            .subscribe((resolverData: any) => {
-                expect(resolverData).toEqual({
-                    apps: appsResponse,
-                    isEnterpriseLicense: true
-                });
-            });
+        dotAppsListResolver.resolve(activatedRouteSnapshotMock).subscribe((apps: DotApp[]) => {
+            expect(apps).toEqual(appsResponse);
+        });
         expect(dotLicenseServices.canAccessEnterprisePortlet).toHaveBeenCalledWith('/apps');
         expect(dotLicenseServices.canAccessEnterprisePortlet).toHaveBeenCalledTimes(1);
     });

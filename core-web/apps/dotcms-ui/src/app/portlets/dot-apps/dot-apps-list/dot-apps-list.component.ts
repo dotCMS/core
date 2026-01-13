@@ -1,22 +1,31 @@
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { patchState, signalState } from '@ngrx/signals';
+import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, AfterViewInit, inject, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, map, take } from 'rxjs/operators';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { DotApp, DotAppsListResolverData } from '@dotcms/dotcms-models';
-import { DotIconComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
+import { DotAppsService, DotRouterService } from '@dotcms/data-access';
+import { DotApp } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+
+interface DotAppsListState {
+    allApps: DotApp[];
+    displayedApps: DotApp[];
+    canAccessPortlet: boolean;
+    importExportDialogAction: string;
+    showDialog: boolean;
+}
 
 @Component({
     selector: 'dot-apps-list',
@@ -27,42 +36,37 @@ import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-di
         ButtonModule,
         DotAppsCardComponent,
         DotAppsImportExportDialogComponent,
-        DotNotLicenseComponent,
-        DotIconComponent,
+
         DotPortletBaseComponent,
         DotMessagePipe
     ]
 })
-export class DotAppsListComponent implements OnInit, OnDestroy {
+export class DotAppsListComponent implements AfterViewInit {
     private route = inject(ActivatedRoute);
     private dotRouterService = inject(DotRouterService);
     private dotAppsService = inject(DotAppsService);
+    private destroyRef = inject(DestroyRef);
 
-    @ViewChild('searchInput') searchInput: ElementRef;
-    @ViewChild('importExportDialog') importExportDialog: DotAppsImportExportDialogComponent;
-    apps: DotApp[];
-    appsCopy: DotApp[];
-    canAccessPortlet: boolean;
-    importExportDialogAction: string;
-    showDialog = false;
+    searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+    importExportDialog = viewChild<DotAppsImportExportDialogComponent>('importExportDialog');
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    state = signalState<DotAppsListState>({
+        allApps: [],
+        displayedApps: [],
+        canAccessPortlet: false,
+        importExportDialogAction: '',
+        showDialog: false
+    });
 
-    ngOnInit() {
+    ngAfterViewInit(): void {
         this.route.data
-            .pipe(pluck('dotAppsListResolverData'), takeUntil(this.destroy$))
-            .subscribe((resolverData: DotAppsListResolverData) => {
-                if (resolverData.isEnterpriseLicense) {
-                    this.getApps(resolverData.apps);
-                }
-
-                this.canAccessPortlet = resolverData.isEnterpriseLicense;
+            .pipe(
+                map((data) => data['dotAppsListResolverData']),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((apps: DotApp[]) => {
+                this.initAppsState(apps);
             });
-    }
-
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
     }
 
     /**
@@ -81,8 +85,10 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      * @memberof DotAppsConfigurationComponent
      */
     confirmImportExport(action: string): void {
-        this.showDialog = true;
-        this.importExportDialogAction = action;
+        patchState(this.state, {
+            importExportDialogAction: action,
+            showDialog: true
+        });
     }
 
     /**
@@ -91,7 +97,9 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      * @memberof DotAppsConfigurationComponent
      */
     onClosedDialog(): void {
-        this.showDialog = false;
+        patchState(this.state, {
+            showDialog: false
+        });
     }
 
     /**
@@ -101,7 +109,7 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
      * @memberof DotAppsListComponent
      */
     isExportButtonDisabled(): boolean {
-        return this.apps.filter((app: DotApp) => app.configurationsCount).length > 0;
+        return this.state.allApps().filter((app: DotApp) => app.configurationsCount).length > 0;
     }
 
     /**
@@ -114,31 +122,34 @@ export class DotAppsListComponent implements OnInit, OnDestroy {
             .get()
             .pipe(take(1))
             .subscribe((apps: DotApp[]) => {
-                this.getApps(apps);
+                this.initAppsState(apps);
             });
     }
 
-    private getApps(apps: DotApp[]): void {
-        this.apps = apps;
-        this.appsCopy = structuredClone(apps);
-        setTimeout(() => {
-            this.attachFilterEvents();
-        }, 0);
+    private initAppsState(apps: DotApp[]): void {
+        patchState(this.state, {
+            allApps: apps,
+            displayedApps: apps
+        });
+
+        this.attachFilterEvents();
     }
 
     private attachFilterEvents(): void {
-        observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500), takeUntil(this.destroy$))
+        observableFromEvent(this.searchInput().nativeElement, 'keyup')
+            .pipe(debounceTime(500), takeUntilDestroyed(this.destroyRef))
             .subscribe((keyboardEvent: Event) => {
                 this.filterApps(keyboardEvent.target['value']);
             });
 
-        this.searchInput.nativeElement.focus();
+        this.searchInput().nativeElement.focus();
     }
 
     private filterApps(searchCriteria?: string): void {
         this.dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
-            this.appsCopy = apps;
+            patchState(this.state, {
+                displayedApps: apps
+            });
         });
     }
 }

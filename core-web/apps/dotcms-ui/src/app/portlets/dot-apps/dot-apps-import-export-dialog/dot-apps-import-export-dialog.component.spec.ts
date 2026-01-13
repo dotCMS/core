@@ -11,6 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/data-access';
 import {
     DotApp,
     DotAppsExportConfiguration,
@@ -28,7 +29,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsImportExportDialogComponent } from './dot-apps-import-export-dialog.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 export class DotAppsServiceMock {
     exportConfiguration(_configuration: DotAppsExportConfiguration): Promise<string> {

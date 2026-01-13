@@ -28,6 +28,7 @@ import { PasswordModule } from 'primeng/password';
 import { take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/data-access';
 import {
     dialogAction,
     DotApp,
@@ -38,7 +39,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 
 @Component({
     selector: 'dot-apps-import-export-dialog',

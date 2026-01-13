@@ -3,25 +3,27 @@
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }">
-    <ng-template pTemplate="header">
-        <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar />
-        <div class="dot-apps-card__label-container">
-            <span class="dot-apps-card__name">{{ app.name }}</span>
-            <span class="dot-apps-card__configurations">
-                {{
-                    app.configurationsCount
-                        ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
-                        : ('apps.no.configurations' | dm)
-                }}
-            </span>
-            @if (app.sitesWithWarnings) {
-                <dot-icon
-                    name="warning"
-                    pTooltip="{{
-                        app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
-                    }}"
-                    size="18" />
-            }
+    <ng-template #header>
+        <div class="dot-apps-card__header-container">
+            <p-avatar [image]="app.iconUrl" [label]="app.name" size="large" dotAvatar />
+            <div class="dot-apps-card__label-container">
+                <span class="dot-apps-card__name">{{ app.name }}</span>
+                <span class="dot-apps-card__configurations">
+                    {{
+                        app.configurationsCount
+                            ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
+                            : ('apps.no.configurations' | dm)
+                    }}
+                </span>
+                @if (app.sitesWithWarnings) {
+                    <dot-icon
+                        name="warning"
+                        pTooltip="{{
+                            app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
+                        }}"
+                        size="18" />
+                }
+            </div>
         </div>
     </ng-template>
     <p>

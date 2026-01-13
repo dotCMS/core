@@ -51,7 +51,7 @@
             <span>{{ errorMessage }}</span>
         </form>
         @if (dialogActions) {
-            <ng-template pTemplate="footer">
+            <ng-template #footer>
                 @if (dialogActions.cancel) {
                     <p-button
                         [label]="dialogActions.cancel.label"

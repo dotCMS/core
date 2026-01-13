@@ -6,12 +6,12 @@ import { ButtonModule } from 'primeng/button';
 import { pluck, take } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form/dot-apps-configuration-detail-form.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 

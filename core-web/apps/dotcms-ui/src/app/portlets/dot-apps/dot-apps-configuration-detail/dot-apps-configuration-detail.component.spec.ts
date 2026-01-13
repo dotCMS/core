@@ -12,6 +12,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotAppsService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import {
     DotAvatarDirective,
@@ -21,13 +22,12 @@ import {
 } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
-import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
+import { DotAppsConfigurationDetailResolver } from '../services/dot-apps-configuration-detail-resolver/dot-apps-configuration-detail-resolver.service';
 
 const messages = {
     'apps.key': 'Key',
