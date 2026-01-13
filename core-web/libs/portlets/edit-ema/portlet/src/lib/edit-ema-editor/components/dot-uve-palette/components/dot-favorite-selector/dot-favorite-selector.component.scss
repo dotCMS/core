@@ -1,18 +1,1 @@
 @use "variables" as *;
-
-.footer {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
-    font-size: 0.875rem;
-    color: var(--text-color-secondary);
-}
-
-::ng-deep {
-    .favorite-selector-overlaypanel {
-        .p-overlaypanel-content {
-            padding: 0;
-        }
-    }
-}

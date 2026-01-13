@@ -1,4 +1,4 @@
-<p-popover styleClass="favorite-selector-overlaypanel" (onHide)="onHide()">
+<p-popover [unstyled]="true" (onHide)="onHide()">
     <p-listbox
         optionLabel="name"
         dataKey="id"
@@ -20,7 +20,7 @@
         </ng-template>
         <ng-template pTemplate="footer">
             @if ($fetchingItems()) {
-                <div class="footer">
+                <div class="flex items-center gap-2 px-1 py-4 text-[var(--text-color-secondary)]">
                     <i class="pi pi-spin pi-spinner"></i>
                     <span>{{ 'uve.palette.favorite.search.state.label' | dm }}</span>
                 </div>
