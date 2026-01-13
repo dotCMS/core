@@ -10947,6 +10947,49 @@ paths:
       summary: Update asset permissions
       tags:
       - Permissions
+  /v1/permissions/{assetId}/_reset:
+    put:
+      description: "Removes all individual permissions from an asset, making it inherit\
+        \ permissions from its parent in the hierarchy. Only admin users can access\
+        \ this endpoint. Returns 409 Conflict if the asset already inherits."
+      operationId: resetAssetPermissions
+      parameters:
+      - description: Asset identifier (inode or identifier)
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityResetPermissionsView"
+          description: Permissions reset successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid asset ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user is not admin
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - asset already inherits permissions from parent
+      summary: Reset asset permissions to inherited
+      tags:
+      - Permissions
   /v1/personalization/pagepersonas:
     post:
       description: Copies the current content associated to page containers with default
@@ -24283,6 +24326,27 @@ components:
           type: array
           items:
             type: string
+    ResetAssetPermissionsView:
+      type: object
+      properties:
+        assetId:
+          type: string
+          description: The identifier of the asset whose permissions were reset
+          example: abc123-def456
+        message:
+          type: string
+          description: Success message describing the operation result
+          example: Individual permissions removed. Asset now inherits from parent.
+        previousPermissionCount:
+          type: integer
+          format: int32
+          description: Number of individual permissions that were removed during the
+            reset operation
+          example: 5
+      required:
+      - assetId
+      - message
+      - previousPermissionCount
     ResetPasswordForm:
       type: object
       properties:
@@ -25191,6 +25255,29 @@ components:
           type: array
           items:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityResetPermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ResetAssetPermissionsView"
         errors:
           type: array
           items:
@@ -28027,6 +28114,18 @@ components:
       properties:
         asset:
           $ref: "#/components/schemas/AssetPermissionsView"
+        cascadeWarnings:
+          type: array
+          description: Warnings from cascade operations that partially failed. Present
+            only when cascade was requested and some role cascades failed.
+          example:
+          - "Failed to trigger cascade for role xyz123: Connection timeout"
+          items:
+            type: string
+            description: Warnings from cascade operations that partially failed. Present
+              only when cascade was requested and some role cascades failed.
+            example: "[\"Failed to trigger cascade for role xyz123: Connection timeout\"\
+              ]"
         inheritanceBroken:
           type: boolean
           description: Whether permission inheritance was broken during this operation.
