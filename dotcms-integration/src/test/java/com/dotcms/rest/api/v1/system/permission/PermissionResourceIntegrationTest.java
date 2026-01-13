@@ -6,6 +6,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -483,12 +485,10 @@ public class PermissionResourceIntegrationTest {
 
         try {
             form.checkValid();
-            // Note: With enum types, null values may be filtered by Jackson or cause
-            // NullPointerException during bit conversion. The test validates the form
-            // handles this gracefully.
-        } catch (BadRequestException | NullPointerException e) {
-            // Either form validation catches it or the conversion throws NPE
-            // Both are acceptable outcomes for null enum values
+            fail("Should have thrown BadRequestException for null permission level");
+        } catch (BadRequestException e) {
+            assertTrue("Error message should mention null permission level",
+                    e.getResponse().getEntity().toString().contains("cannot be null"));
         }
     }
 
@@ -1041,5 +1041,127 @@ public class PermissionResourceIntegrationTest {
         List<String> converted = PermissionConversionUtils.convertBitsToPermissionNames(originalBits);
         int roundtripBits = PermissionConversionUtils.convertPermissionNamesToBits(converted);
         assertEquals(originalBits, roundtripBits);
+    }
+
+    // ========================================================================
+    // RESET ASSET PERMISSIONS TESTS
+    // ========================================================================
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Reset permissions on a folder with individual permissions
+     * ExpectedResult: Permissions reset successfully, folder now inherits
+     */
+    @Test
+    public void test_resetAssetPermissions_success() throws DotDataException, DotSecurityException {
+        // Create parent and child folder
+        final Folder resetParentFolder = new FolderDataGen().site(testHost).nextPersisted();
+        final Folder resetChildFolder = new FolderDataGen().parent(resetParentFolder).nextPersisted();
+
+        // Create a test role and add individual permissions to child folder
+        final Role resetTestRole = new RoleDataGen().nextPersisted();
+        final RolePermissionForm rolePermissionForm = new RolePermissionForm(
+                resetTestRole.getId(),
+                EnumSet.of(PermissionAPI.Type.READ, PermissionAPI.Type.WRITE),
+                null
+        );
+        final UpdateAssetPermissionsForm form = new UpdateAssetPermissionsForm(
+                List.of(rolePermissionForm)
+        );
+
+        HttpServletRequest request = mockRequest();
+
+        // First, set individual permissions on child folder
+        resource.updateAssetPermissions(
+                request,
+                response,
+                resetChildFolder.getInode(),
+                false,
+                form
+        );
+
+        // Verify child has individual permissions
+        assertFalse("Child folder should have individual permissions",
+                APILocator.getPermissionAPI().isInheritingPermissions(resetChildFolder));
+
+        // Now reset the permissions
+        final ResponseEntityResetPermissionsView responseView = resource.resetAssetPermissions(
+                request,
+                response,
+                resetChildFolder.getInode()
+        );
+
+        // Verify response
+        assertNotNull("Response should not be null", responseView);
+        final ResetAssetPermissionsView entity = responseView.getEntity();
+        assertNotNull("Entity should not be null", entity);
+
+        // Verify response fields
+        assertEquals("Individual permissions removed. Asset now inherits from parent.",
+                entity.message());
+        assertEquals(resetChildFolder.getInode(), entity.assetId());
+        assertTrue("previousPermissionCount should be >= 0",
+                entity.previousPermissionCount() >= 0);
+
+        // Verify folder is now inheriting
+        assertTrue("Child folder should now inherit permissions",
+                APILocator.getPermissionAPI().isInheritingPermissions(resetChildFolder));
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Asset ID does not exist
+     * ExpectedResult: NotFoundInDbException is thrown
+     */
+    @Test(expected = com.dotcms.contenttype.exception.NotFoundInDbException.class)
+    public void test_resetAssetPermissions_assetNotFound_throws404() throws DotDataException, DotSecurityException {
+        HttpServletRequest request = mockRequest();
+        // Call with non-existent asset ID
+        resource.resetAssetPermissions(
+                request,
+                response,
+                "non-existent-asset-id-67890"
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Asset already inherits permissions
+     * ExpectedResult: ConflictException is thrown (409 Conflict)
+     */
+    @Test(expected = ConflictException.class)
+    public void test_resetAssetPermissions_alreadyInheriting_throws409() throws DotDataException, DotSecurityException {
+        // Create parent and child folder (child inherits by default)
+        final Folder resetParentFolder2 = new FolderDataGen().site(testHost).nextPersisted();
+        final Folder resetChildFolder2 = new FolderDataGen().parent(resetParentFolder2).nextPersisted();
+
+        // Verify child is inheriting
+        assertTrue("Child folder should initially inherit permissions",
+                APILocator.getPermissionAPI().isInheritingPermissions(resetChildFolder2));
+
+        HttpServletRequest request = mockRequest();
+
+        // Try to reset - should throw ConflictException since already inheriting
+        resource.resetAssetPermissions(
+                request,
+                response,
+                resetChildFolder2.getInode()
+        );
+    }
+
+    /**
+     * Method to test: resetAssetPermissions in the PermissionResource
+     * Given Scenario: Reset with empty/null asset ID
+     * ExpectedResult: IllegalArgumentException is thrown
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void test_resetAssetPermissions_emptyAssetId_throws400() throws DotDataException, DotSecurityException {
+        HttpServletRequest request = mockRequest();
+        // Call with empty asset ID - should throw IllegalArgumentException
+        resource.resetAssetPermissions(
+                request,
+                response,
+                ""
+        );
     }
 }
