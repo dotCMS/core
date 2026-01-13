@@ -649,7 +649,7 @@ Creates a text or number input field for free-form entry.
 interface StyleEditorInputFieldConfig {
     id: string; // Unique identifier
     label: string; // Display label
-    inputType: 'text' | 'number'; // Input type
+    inputType: StyleEditorFieldInputType; // Input type
     placeholder?: string; // Optional placeholder text
 }
 ```
