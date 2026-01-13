@@ -12,18 +12,9 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -31,13 +22,11 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -52,18 +41,6 @@ import javax.inject.Named;
  */
 @ApplicationScoped
 public class PermissionSaveHelper {
-
-    /**
-     * Maps permission names to their corresponding permission bits.
-     * Uses functional approach for clean mapping of permission names to bit operations.
-     */
-    private static final Map<String, Function<Integer, Integer>> PERMISSION_MAPPERS = Map.of(
-        "READ", bits -> bits | PermissionAPI.PERMISSION_READ,
-        "WRITE", bits -> bits | PermissionAPI.PERMISSION_WRITE,
-        "PUBLISH", bits -> bits | PermissionAPI.PERMISSION_PUBLISH,
-        "EDIT_PERMISSIONS", bits -> bits | PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-        "CAN_ADD_CHILDREN", bits -> bits | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
-    );
 
     private final PermissionAPI permissionAPI;
     private final HostAPI hostAPI;
@@ -116,85 +93,13 @@ public class PermissionSaveHelper {
      * @return Set of permission level names
      */
     public Set<String> getAvailablePermissionLevels() {
-        return new HashSet<>(convertBitsToPermissionNames(
+        return new HashSet<>(PermissionConversionUtils.convertBitsToPermissionNames(
             PermissionAPI.PERMISSION_READ |
             PermissionAPI.PERMISSION_WRITE |
             PermissionAPI.PERMISSION_PUBLISH |
             PermissionAPI.PERMISSION_EDIT_PERMISSIONS |
             PermissionAPI.PERMISSION_CAN_ADD_CHILDREN
         ));
-    }
-
-    /**
-     * Converts permission bit mask to list of permission names.
-     *
-     * @param permissionBits The permission bit mask
-     * @return List of permission names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
-     */
-    public List<String> convertBitsToPermissionNames(final int permissionBits) {
-        final List<String> permissions = new ArrayList<>();
-
-        if ((permissionBits & PermissionAPI.PERMISSION_READ) > 0) {
-            permissions.add("READ");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_WRITE) > 0) {
-            permissions.add("WRITE");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_PUBLISH) > 0) {
-            permissions.add("PUBLISH");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_EDIT_PERMISSIONS) > 0) {
-            permissions.add("EDIT_PERMISSIONS");
-        }
-        if ((permissionBits & PermissionAPI.PERMISSION_CAN_ADD_CHILDREN) > 0) {
-            permissions.add("CAN_ADD_CHILDREN");
-        }
-
-        return permissions;
-    }
-
-    /**
-     * Converts permission level names to permission bit mask.
-     * Inverse operation of convertBitsToPermissionNames().
-     *
-     * @param permissionNames Collection of permission names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN)
-     * @return Combined permission bit mask
-     */
-    public int convertPermissionNamesToBits(final Collection<String> permissionNames) {
-        if (permissionNames == null || permissionNames.isEmpty()) {
-            return 0;
-        }
-
-        int permissionBits = 0;
-
-        for (final String permissionName : permissionNames) {
-            final String upperName = permissionName.toUpperCase();
-            final Function<Integer, Integer> mapper = PERMISSION_MAPPERS.get(upperName);
-
-            if (mapper != null) {
-                permissionBits = mapper.apply(permissionBits);
-            } else {
-                Logger.warn(this, "Unknown permission name: " + permissionName);
-            }
-        }
-
-        return permissionBits;
-    }
-
-    /**
-     * Gets the Permission type string for a given scope name.
-     * Maps from REST API scope names (UPPERCASE) to Permission type class names.
-     *
-     * @param scopeName The scope name from API (UPPERCASE like "HOST", "FOLDER", "INDIVIDUAL")
-     * @return Permission type class name or INDIVIDUAL constant
-     */
-    public String getPermissionTypeForScope(final String scopeName) {
-        final PermissionAPI.Scope scope = PermissionAPI.Scope.fromName(scopeName);
-        if (scope == null) {
-            Logger.warn(this, "Unknown permission scope: " + scopeName);
-            return scopeName;
-        }
-        return scope.getPermissionType();
     }
 
     /**
@@ -293,7 +198,7 @@ public class PermissionSaveHelper {
                 continue;
             }
 
-            final String permissionType = getPermissionTypeForScope(scope);
+            final String permissionType = PermissionConversionUtils.convertScopeToPermissionType(scope);
             final Permission permission = new Permission(
                 permissionType,
                 asset.getPermissionId(),
@@ -417,26 +322,14 @@ public class PermissionSaveHelper {
 
         return permissions.stream()
             .collect(Collectors.groupingBy(
-                p -> getModernPermissionType(p.getType()),
+                p -> PermissionConversionUtils.getModernPermissionType(p.getType()),
                 Collectors.mapping(
-                    p -> convertBitsToPermissionNames(p.getPermission()),
+                    p -> PermissionConversionUtils.convertBitsToPermissionNames(p.getPermission()),
                     Collectors.flatMapping(List::stream,
                         Collectors.toSet()
                     )
                 )
             ));
-    }
-
-    /**
-     * Maps permission type class names to API type constants.
-     */
-    private String getModernPermissionType(final String permissionType) {
-        final PermissionAPI.Scope scope = PermissionAPI.Scope.fromPermissionType(permissionType);
-        if (scope != null) {
-            return scope.name();
-        }
-        Logger.debug(this, "Unknown permission type: " + permissionType);
-        return permissionType.toUpperCase();
     }
 
     // ========== GET User Permissions Methods ==========
