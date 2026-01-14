@@ -21,6 +21,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 
+import { DotAppsImportExportDialogComponent } from '../../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 import { DotAppsImportExportDialogStore } from '../../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-detail/components/dot-apps-configuration-header/dot-apps-configuration-header.component';
 
@@ -33,6 +34,7 @@ import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-d
         ButtonModule,
         DotAppsConfigurationHeaderComponent,
         DotAppsConfigurationListComponent,
+        DotAppsImportExportDialogComponent,
         DotMessagePipe
     ]
 })

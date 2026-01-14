@@ -17,6 +17,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotAppsCardComponent } from './dot-apps-card/dot-apps-card.component';
 
 import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
+import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 import { DotAppsImportExportDialogStore } from '../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
 
 interface DotAppsListState {
@@ -32,6 +33,7 @@ interface DotAppsListState {
         InputTextModule,
         ButtonModule,
         DotAppsCardComponent,
+        DotAppsImportExportDialogComponent,
         DotPortletBaseComponent,
         DotMessagePipe
     ]
