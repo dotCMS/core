@@ -1,40 +1,30 @@
-<p-menu
-    #menu
-    [popup]="true"
-    [model]="$menuItems()"
-    [pt]="menuPt"
-    appendTo="body"
-    data-testId="more-menu">
-    <ng-template pTemplate="item" let-item>
-        <button
-            pRipple
-            type="button"
-            class="group flex w-full items-start justify-between gap-3 rounded-md px-3 py-2 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-            (click)="onModeChange(item.id)"
-            [ngClass]="{
-                'bg-gray-100': item.id === $currentMode(),
-                'hover:bg-gray-50': item.id !== $currentMode()
-            }"
-            role="menuitem"
-            [attr.aria-current]="item.id === $currentMode() ? 'page' : null"
-            [attr.data-testId]="item.id + '-menu-item'">
+<p-select
+    [options]="$menuItems()"
+    [(ngModel)]="selectedModeModel"
+    [pt]="dropdownIconStyle"
+    (onChange)="onModeOptionChange($event.value)"
+    optionLabel="label"
+    dataKey="id"
+    size="small"
+    data-testId="more-button">
+    <ng-template #selectedItem let-selectedOption>
+        <span class="flex min-w-0 flex-col">
+            <span class="text-sm leading-5 text-[var(--color-palette-primary-500)]">
+                {{ selectedOption.label }}
+            </span>
+        </span>
+    </ng-template>
+
+    <ng-template #item let-item>
+        <div class="w-full" [attr.data-testId]="item.id + '-menu-item'">
             <span class="flex min-w-0 flex-col">
                 <span class="text-sm font-semibold leading-5 text-gray-900">
-                    {{ item.label | dm }}
+                    {{ item.label }}
                 </span>
                 <span class="mt-0.5 text-xs leading-4 text-gray-600">
-                    {{ item.description | dm }}
+                    {{ item.description }}
                 </span>
             </span>
-        </button>
+        </div>
     </ng-template>
-</p-menu>
-
-<p-button
-    icon="pi pi-angle-down"
-    iconPos="right"
-    size="small"
-    [label]="$currentModeLabel() | dm"
-    [outlined]="true"
-    (click)="menu.toggle($event)"
-    data-testId="more-button" />
+</p-select>
