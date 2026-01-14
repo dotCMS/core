@@ -1027,4 +1027,119 @@ public class PermissionResource {
 
         return new ResponseEntityRolePermissionsView(rolePermissionsView);
     }
+
+    /**
+     * Updates permissions for a specific role on an asset (host or folder).
+     * Automatically breaks permission inheritance if the asset currently inherits from parent.
+     *
+     * <p>Request semantics:
+     * <ul>
+     *   <li>PUT replaces all permissions for this role on the asset</li>
+     *   <li>Omitting a scope preserves existing permissions for that scope (hybrid model)</li>
+     *   <li>Empty array [] removes permissions for that scope</li>
+     *   <li>Implicit inheritance break if asset currently inherits</li>
+     * </ul>
+     *
+     * @param request   HTTP servlet request
+     * @param response  HTTP servlet response
+     * @param roleId    Role identifier
+     * @param assetId   Asset identifier (Host ID, Host Name, or Folder ID)
+     * @param cascade   If true, triggers async job to cascade permissions to descendants
+     * @param form      Permission update form with scope-to-permissions map
+     * @return ResponseEntityUpdateRolePermissionsView containing role info and updated asset
+     * @throws DotDataException     If there's an error accessing permission data
+     * @throws DotSecurityException If security validation fails
+     */
+    @Operation(
+        summary = "Update role permissions on asset",
+        description = "Updates permissions for a specific role on a host or folder. " +
+                     "Automatically breaks permission inheritance if the asset currently inherits. " +
+                     "Only admin users can access this endpoint. " +
+                     "Omitting a scope preserves existing permissions; empty array removes permissions."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Permissions updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityUpdateRolePermissionsView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - invalid permission level or scope",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user lacks EDIT_PERMISSIONS on asset or is not admin",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Role or asset not found",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "500",
+                    description = "Failed to update permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @PUT
+    @Path("/role/{roleId}/asset/{assetId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_JSON})
+    public ResponseEntityUpdateRolePermissionsView updateRolePermissions(
+            final @Context HttpServletRequest request,
+            final @Context HttpServletResponse response,
+            @Parameter(description = "Role identifier", required = true)
+            final @PathParam("roleId") String roleId,
+            @Parameter(description = "Asset identifier (Host ID, Host Name, or Folder ID)", required = true)
+            final @PathParam("assetId") String assetId,
+            @Parameter(description = "If true, cascades permissions to all child assets", required = false)
+            final @QueryParam("cascade") @DefaultValue("false") boolean cascade,
+            @RequestBody(description = "Permission data by scope", required = true,
+                        content = @Content(schema = @Schema(implementation = UpdateRolePermissionsForm.class)))
+            final UpdateRolePermissionsForm form)
+            throws DotDataException, DotSecurityException {
+
+        Logger.debug(this, () -> String.format(
+            "updateRolePermissions called - roleId: %s, assetId: %s, cascade: %s",
+            roleId, assetId, cascade));
+
+        // Validate parameters (matching updateUserPermissions pattern)
+        if (!UtilMethods.isSet(roleId)) {
+            throw new BadRequestException("Role ID is required");
+        }
+        if (!UtilMethods.isSet(assetId)) {
+            throw new BadRequestException("Asset ID is required");
+        }
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        // Validate form data
+        form.checkValid();
+
+        // Initialize request context with authentication
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        // Verify user is admin
+        if (!user.isAdmin()) {
+            Logger.warn(this, String.format(
+                "Non-admin user %s attempted to update role permissions for role: %s on asset: %s",
+                user.getUserId(), roleId, assetId));
+            throw new DotSecurityException("Only admin users can update role permissions");
+        }
+
+        // Delegate to helper for business logic
+        final UpdateRolePermissionsView result = assetPermissionHelper.updateRolePermissions(
+            roleId, assetId, form, cascade, user);
+
+        Logger.info(this, () -> String.format(
+            "Successfully updated permissions for role: %s on asset: %s", roleId, assetId));
+
+        return new ResponseEntityUpdateRolePermissionsView(result);
+    }
 }
