@@ -13,7 +13,7 @@ ARG USER_GID="65001"
 ARG USER_GROUP="dotcms"
 ARG USER_NAME="dotcms"
 ARG DEV_REQUEST_TOKEN
-ARG PG_VERSION=16
+ARG PG_VERSION=18
 ENV PG_VERSION=${PG_VERSION}
 RUN groupadd -f -g $USER_GID $USER_GROUP
 # Creating default non-user
@@ -36,7 +36,7 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
     tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
-    vim libarchive-tools postgresql-common
+    vim libarchive-tools postgresql-common libmimalloc2.0
 
 
 
@@ -67,11 +67,6 @@ RUN chown -R dotcms.dotcms /usr/share/opensearch/config
 COPY entrypoint.sh /
 RUN chmod 755 /entrypoint.sh
 
-## This file is used to request a dev license from dotCMS
-COPY license-request.sh /
-RUN chmod 755 /license-request.sh
-RUN bash -x /license-request.sh
-RUN rm /license-request.sh
 
 FROM scratch
 COPY --from=dev-env-builder  / /

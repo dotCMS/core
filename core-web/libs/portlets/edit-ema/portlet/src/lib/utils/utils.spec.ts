@@ -1,6 +1,11 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSViewAsPersona,
+    UVE_MODE
+} from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -11,10 +16,12 @@ import {
     SDK_EDITOR_SCRIPT_SOURCE,
     getBaseHrefFromPageURI,
     injectBaseTag,
+    isPageLockedByOtherUser,
     computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
+    getContentTypeVarRecord,
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
@@ -197,6 +204,70 @@ describe('utils functions', () => {
                     origin: 'https://example.com'
                 })
             ).toBe(html);
+        });
+    });
+
+    describe('getContentTypeVarRecord', () => {
+        it('should return empty record for undefined containers', () => {
+            expect(getContentTypeVarRecord(undefined)).toEqual({});
+        });
+
+        it('should return empty record for null containers', () => {
+            expect(getContentTypeVarRecord(null)).toEqual({});
+        });
+
+        it('should return empty record when containerStructures is missing or empty', () => {
+            const containers = {
+                a: { containerStructures: [] },
+                b: {}
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({});
+        });
+
+        it('should collect unique contentTypeVar values across all containers/structures', () => {
+            const containers = {
+                a: {
+                    containerStructures: [{ contentTypeVar: 'Blog' }, { contentTypeVar: 'Banner' }]
+                },
+                b: {
+                    containerStructures: [
+                        { contentTypeVar: 'Blog' }, // duplicate
+                        { contentTypeVar: 'News' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({
+                Blog: true,
+                Banner: true,
+                News: true
+            });
+        });
+
+        it('should skip non-string and empty string contentTypeVar values', () => {
+            const containers = {
+                a: {
+                    containerStructures: [
+                        { contentTypeVar: '' },
+                        { contentTypeVar: null },
+                        { contentTypeVar: undefined },
+                        { contentTypeVar: 123 },
+                        { contentTypeVar: 'Valid' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Valid: true });
+        });
+
+        it('should not normalize case', () => {
+            const containers = {
+                a: { containerStructures: [{ contentTypeVar: 'Blog' }] },
+                b: { containerStructures: [{ contentTypeVar: 'blog' }] }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Blog: true, blog: true });
         });
     });
 
@@ -866,81 +937,79 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computeIsPageLocked', () => {
-        describe('with legacy behavior (feature flag disabled)', () => {
-            it('should return false when the page is unlocked', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: false,
-                    lockedBy: '123',
-                    userId: '123'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(false);
+    describe('isPageLockedByOtherUser', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
             });
 
-            it('should return false when the page is locked and is the same user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '123'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(false);
-            });
-
-            it('should return true when the page is locked and is not the same user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '456'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(true);
-            });
+            expect(result).toBe(false);
         });
 
-        describe('with new behavior (feature flag enabled)', () => {
-            it('should return false when the page is unlocked', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: false,
-                    lockedBy: '123',
-                    userId: '123'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, true);
-
-                expect(result).toBe(false);
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
             });
 
-            it('should return true when the page is locked by current user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '123'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, true);
+            expect(result).toBe(false);
+        });
 
-                expect(result).toBe(true);
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
             });
 
-            it('should return true when the page is locked by another user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '456'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, true);
+            expect(result).toBe(true);
+        });
+    });
 
-                expect(result).toBe(true);
+    describe('computeIsPageLocked', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
             });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(true);
         });
     });
 

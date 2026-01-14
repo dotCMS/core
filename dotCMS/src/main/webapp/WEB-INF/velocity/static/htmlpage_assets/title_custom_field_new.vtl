@@ -9,6 +9,7 @@
 
 		titleBox.addEventListener('blur', () => {
 			const currentTitleValue = titleBox.value;
+			titleField.setValue(currentTitleValue);
 
 			const urlValue = urlField.getValue() || '';
 			if(urlValue.trim() === ''){
