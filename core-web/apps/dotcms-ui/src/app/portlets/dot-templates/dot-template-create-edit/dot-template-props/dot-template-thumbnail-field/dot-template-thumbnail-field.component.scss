@@ -25,8 +25,21 @@ dot-binary-file {
 
         button {
             all: unset;
-            @extend #main-primary-severity;
             background-color: colors.$color-palette-primary;
+
+            &:hover {
+                background-color: colors.$color-palette-primary-600;
+            }
+
+            &:active {
+                background-color: colors.$color-palette-primary-700;
+            }
+
+            &:focus {
+                background-color: colors.$color-palette-primary;
+                @extend #form-field-focus;
+            }
+
             display: block;
             height: common3.$field-height-md;
             font-size: fonts.$font-size-md;

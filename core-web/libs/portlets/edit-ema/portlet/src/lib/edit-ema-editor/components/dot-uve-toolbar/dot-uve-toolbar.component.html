@@ -33,7 +33,6 @@
                 [pTooltip]="'editpage.header.copy' | dm"
                 tooltipPosition="bottom"
                 icon="pi pi-copy"
-                size="small"
                 data-testId="uve-toolbar-copy-url">
                 <p-popover #op [pt]="copyUrlPopoverPt">
                     <div class="flex flex-col divide-y divide-gray-200">
@@ -44,8 +43,8 @@
                                 </span>
                                 <div class="flex min-w-0 items-center gap-2">
                                     <a
-                                        class="block min-w-0 flex-1 truncate text-sm text-gray-900 !no-underline hover:underline"
                                         [href]="url.value"
+                                        class="block min-w-0 flex-1 truncate text-sm text-gray-900 !no-underline hover:underline"
                                         target="_blank"
                                         rel="noreferrer noopener">
                                         {{ url.value }}
@@ -53,7 +52,6 @@
                                     <p-button
                                         icon="pi pi-copy"
                                         [text]="true"
-                                        size="small"
                                         [rounded]="true"
                                         styleClass="shrink-0"
                                         (cdkCopyToClipboardCopied)="triggerCopyToast()"

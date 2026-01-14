@@ -4,7 +4,6 @@
         [pTooltip]="device.name | dm"
         tooltipPosition="bottom"
         [text]="true"
-        size="small"
         [rounded]="true"
         [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
         (click)="onDeviceSelect(device)"
@@ -13,7 +12,6 @@
 
 <p-button
     [text]="true"
-    size="small"
     [rounded]="true"
     styleClass="orientation"
     [disabled]="$disableOrientation()"
@@ -42,8 +40,6 @@
         [label]="$moreButtonLabel() | dm"
         [class.active]="$isMoreButtonActive()"
         [text]="true"
-        size="small"
-        styleClass="p-2"
         (click)="menu.toggle($event)"
         data-testId="more-button" />
 
