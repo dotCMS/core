@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.publishing;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -11,24 +12,23 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.time.Duration;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.UUID;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Integration test for PublishDateUpdater functionality.
@@ -43,6 +43,9 @@ public class PublishDateUpdaterIntegrationTest {
     // Test configuration - smaller batches for testing
     private static final int TEST_SEARCH_BATCH_SIZE = 3;
     private static final int TEST_TRANSACTION_BATCH_SIZE = 2;
+
+    // Unique identifiers for this test run
+    private static final String TEST_UNIQUE_ID = "PDUpdTest_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 4);
 
     // Store original config values for restoration
     private static String originalSearchBatchSize;
@@ -77,85 +80,105 @@ public class PublishDateUpdaterIntegrationTest {
             Config.setProperty("PUBLISH_JOB_QUEUE_TRANSACTION_BATCH_SIZE", originalTransactionBatchSize);
         }
 
-        // Clean up test content type
+        // Clean up test content type and associated content
         if (contentType != null) {
             try {
+                // First, try to delete any remaining contentlets of this type
+                final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+                final String deleteContentletsQuery = "+contentType:" + contentType.variable();
+
+                try {
+                    final long contentletCount = contentletAPI.indexCount(deleteContentletsQuery, systemUser, false);
+                    if (contentletCount > 0) {
+                        Logger.info(PublishDateUpdaterIntegrationTest.class,
+                                "Found " + contentletCount + " contentlets to clean up for content type: " + contentType.variable());
+
+                        final java.util.List<Contentlet> contentletsToDelete = contentletAPI.search(
+                                deleteContentletsQuery, 100, 0, null, systemUser, false);
+
+                        for (Contentlet contentlet : contentletsToDelete) {
+                            try {
+                                // Unpublish if published
+                                if (contentlet.isLive()) {
+                                    contentletAPI.unpublish(contentlet, systemUser, false);
+                                }
+                                // Archive the contentlet
+                                contentletAPI.archive(contentlet, systemUser, false);
+                                // Delete the contentlet
+                                contentletAPI.delete(contentlet, systemUser, false);
+                            } catch (Exception contentletDeleteException) {
+                                Logger.warn(PublishDateUpdaterIntegrationTest.class,
+                                        "Could not delete contentlet " + contentlet.getIdentifier() + ": " +
+                                                contentletDeleteException.getMessage());
+                            }
+                        }
+                    }
+                } catch (Exception contentSearchException) {
+                    Logger.warn(PublishDateUpdaterIntegrationTest.class,
+                            "Could not search for contentlets to clean up: " + contentSearchException.getMessage());
+                }
+
+                // Now delete the content type
                 APILocator.getContentTypeAPI(systemUser).delete(contentType);
+                Logger.info(PublishDateUpdaterIntegrationTest.class,
+                        "Successfully cleaned up test content type: " + contentType.variable());
+
             } catch (Exception e) {
                 Logger.warn(PublishDateUpdaterIntegrationTest.class,
-                        "Could not clean up test content type: " + e.getMessage());
+                        "Could not clean up test content type " + contentType.variable() + ": " + e.getMessage());
             }
         }
     }
 
     /**
+     * This Test covers the <b>Unpublish</b> Operation
      * Test Method: {@link PublishDateUpdater#updatePublishExpireDates(Date, Date)}
-     * When: Multiple contentlets are scheduled to publish and unpublish
-     * Should: Process content in batches, commit transactions properly, and persist changes to database
+     * When: Multiple contentlets are scheduled to unpublish (expire)
+     * Should: Process content in batches, commit transactions properly, and persist unpublish changes to database
      */
     @Test
-    public void test_updatePublishExpireDates_shouldCommitBatchesAndPersistToDatabase()
+    public void testUnpublishOperationShouldExpireContentAndCommitToDatabase()
             throws DotDataException, DotSecurityException {
 
         final Date now = new Date();
         final Calendar cal = Calendar.getInstance();
         cal.setTime(now);
 
-        // Create publish times: some in the past (should publish), some in future (should not publish)
-        cal.add(Calendar.MINUTE, -10);
-        final Date pastPublishDate = cal.getTime();
+        // Create publish and expire times for unpublish test
+        cal.setTime(now);
+        final Date currentPublishDate = cal.getTime();
 
         cal.setTime(now);
-        cal.add(Calendar.MINUTE, 10);
-        final Date futurePublishDate = cal.getTime();
+        cal.add(Calendar.SECOND, 10);  // Very short expire date for content that will be unpublished soon
+        final Date nearFutureExpireDate = cal.getTime();
 
-        // Create expire times: some in the past (should unpublish), some in future (should not unpublish)
-        cal.setTime(now);
-        cal.add(Calendar.MINUTE, -5);
-        final Date pastExpireDate = cal.getTime();
-
-        cal.setTime(now);
-        cal.add(Calendar.MINUTE, 15);
-        final Date futureExpireDate = cal.getTime();
-
-        // Create test content - enough to test multiple batches
-        final Contentlet[] contentToPublish = createTestContent(5, pastPublishDate, futureExpireDate);
-        final Contentlet[] contentToUnpublish = createPublishedTestContent(3, pastPublishDate, pastExpireDate);
-
-        // Verify initial state - content to publish should be unpublished
-        for (Contentlet content : contentToPublish) {
-            assertFalse("Content should initially be unpublished",
-                    contentletAPI.isLive(content));
-        }
+        // Create published content that will be unpublished
+        final Contentlet[] contentToUnpublish = createPublishedTestContent(3, currentPublishDate, nearFutureExpireDate);
 
         // Verify initial state - content to unpublish should be published
         for (Contentlet content : contentToUnpublish) {
             assertTrue("Content should initially be published",
-                    contentletAPI.isLive(content));
+                    content.isLive());
         }
 
-        // Calculate previous fire time (1 minute ago)
-        cal.setTime(now);
-        cal.add(Calendar.MINUTE, -1);
-        final Date previousFireTime = cal.getTime();
+        // Wait for the content to expire
+        await("Waiting for content to expire").atMost(Duration.ofSeconds(29)).until(() ->
+                new Date().after(nearFutureExpireDate));
 
-        // Execute the method under test
-        PublishDateUpdater.updatePublishExpireDates(now, previousFireTime);
+        // Now create fire time that is after the expire date
+        final Date futureFireTime = new Date(); // Current time, which should be after nearFutureExpireDate
 
-        // Verify publish operations were committed to database
-        int publishedCount = 0;
-        for (Contentlet content : contentToPublish) {
-            // Refresh from database to verify persistence
-            Contentlet refreshedContent = contentletAPI.findContentletByIdentifier(
-                    content.getIdentifier(), true, content.getLanguageId(), systemUser, false);
+        cal.setTime(nearFutureExpireDate);
+        cal.add(Calendar.MILLISECOND, -100); // Previous fire time should be before the expire date
+        final Date unpublishPreviousFireTime = cal.getTime();
 
-            if (refreshedContent != null && contentletAPI.isLive(refreshedContent)) {
-                publishedCount++;
-            }
-        }
+        // Execute the method to test unpublishing
+        PublishDateUpdater.PublishDateUpdaterResult unpublishResult =
+                PublishDateUpdater.updatePublishExpireDates(futureFireTime, unpublishPreviousFireTime);
 
-        assertEquals("All eligible content should have been published and committed",
-                contentToPublish.length, publishedCount);
+        // Verify the result object contains expected unpublished count
+        assertTrue("Result should show unpublished count", unpublishResult.getUnpublishedCount() >= contentToUnpublish.length );
+        assertTrue("Processing time should be positive", unpublishResult.getTotalProcessingTimeMs() > 0);
 
         // Verify unpublish operations were committed to database
         int unpublishedCount = 0;
@@ -165,7 +188,7 @@ public class PublishDateUpdaterIntegrationTest {
                 Contentlet refreshedContent = contentletAPI.findContentletByIdentifier(
                         content.getIdentifier(), true, content.getLanguageId(), systemUser, false);
 
-                if (refreshedContent == null || !contentletAPI.isLive(refreshedContent)) {
+                if (refreshedContent == null || !refreshedContent.isLive()) {
                     unpublishedCount++;
                 }
             } catch (Exception e) {
@@ -178,65 +201,87 @@ public class PublishDateUpdaterIntegrationTest {
                 contentToUnpublish.length, unpublishedCount);
 
         Logger.info(this.getClass(),
-                String.format("Successfully processed %d publish and %d unpublish operations in batches",
-                        publishedCount, unpublishedCount));
+                String.format("Successfully processed %d unpublish operations in batches - Result: %s",
+                        unpublishedCount, unpublishResult));
     }
 
     /**
+     * This Test covers the <b>Publish</b> Operation specifically
      * Test Method: {@link PublishDateUpdater#updatePublishExpireDates(Date, Date)}
-     * When: Processing large number of contentlets with small batch sizes
-     * Should: Handle multiple transaction commits without data loss
+     * When: Multiple contentlets are scheduled to publish
+     * Should: Process content in batches, commit transactions properly, and persist publish changes to database
      */
     @Test
-    public void test_updatePublishExpireDates_shouldHandleMultipleTransactionCommitsCorrectly()
+    public void testPublishOperationShouldPublishContentAndCommitToDatabase()
             throws DotDataException, DotSecurityException {
 
         final Date now = new Date();
         final Calendar cal = Calendar.getInstance();
         cal.setTime(now);
 
-        // Create content that should all be published (past publish date, future expire)
-        cal.add(Calendar.MINUTE, -30);
-        final Date pastPublishDate = cal.getTime();
-
+        // Create publish date for content that should be published
         cal.setTime(now);
-        cal.add(Calendar.MINUTE, 60);
-        final Date futureExpireDate = cal.getTime();
+        final Date publishDate = cal.getTime();
 
-        // Create more content than our transaction batch size to force multiple commits
-        final int contentCount = TEST_TRANSACTION_BATCH_SIZE * 3 + 1; // 7 items with batch size 2
-        final Contentlet[] testContent = createTestContent(contentCount, pastPublishDate, futureExpireDate);
+        // Create expire date very far in the future (optional but safe)
+        cal.setTime(now);
+        cal.add(Calendar.YEAR, 1);  // Expire date 1 year in the future
+        final Date farFutureExpireDate = cal.getTime();
 
-        // Verify initial state
-        for (Contentlet content : testContent) {
+        // Create unpublished content that will be published
+        final Contentlet[] contentToPublish = createTestContent(5, publishDate,
+                farFutureExpireDate);
+
+
+
+        // Verify initial state - content to publish should be unpublished
+        for (Contentlet content : contentToPublish) {
             assertFalse("Content should initially be unpublished",
-                    contentletAPI.isLive(content));
+                    content.isLive());
         }
 
+        // Create fire time and previous fire time
+        // Current time for execution
+
         cal.setTime(now);
-        cal.add(Calendar.MINUTE, -1);
+        cal.add(Calendar.MINUTE, -1); // Previous fire time should be before current time
         final Date previousFireTime = cal.getTime();
 
-        // Execute the method under test
-        PublishDateUpdater.updatePublishExpireDates(now, previousFireTime);
+        //fire time should be slightly earlier than publishDate
+        cal.setTime(publishDate);
+        final Date fireTime = cal.getTime();
 
-        // Verify all content was processed and committed across multiple transactions
+        // Execute the method to test publishing
+        PublishDateUpdater.PublishDateUpdaterResult publishResult =
+                PublishDateUpdater.updatePublishExpireDates(fireTime, previousFireTime);
+
+        // Verify the result object contains expected published count
+        assertTrue("Result should show published count",
+                publishResult.getPublishedCount() >= contentToPublish.length );
+        assertEquals("Result should show no unpublished count for publish operation", 0,
+                publishResult.getUnpublishedCount());
+        assertTrue("Processing time should be positive",
+                publishResult.getTotalProcessingTimeMs() > 0);
+
+        // Verify publish operations were committed to database
         int publishedCount = 0;
-        for (Contentlet content : testContent) {
+        for (Contentlet content : contentToPublish) {
+            // Refresh from database to verify persistence
             Contentlet refreshedContent = contentletAPI.findContentletByIdentifier(
                     content.getIdentifier(), true, content.getLanguageId(), systemUser, false);
 
-            if (refreshedContent != null && contentletAPI.isLive(refreshedContent)) {
+            if (refreshedContent != null && refreshedContent.isLive()) {
                 publishedCount++;
             }
         }
 
-        assertEquals("All content should be published despite multiple transaction commits",
-                contentCount, publishedCount);
+        assertEquals("All eligible content should have been published and committed",
+                contentToPublish.length, publishedCount);
 
         Logger.info(this.getClass(),
-                String.format("Successfully processed %d items across multiple transaction batches of size %d",
-                        publishedCount, TEST_TRANSACTION_BATCH_SIZE));
+                String.format(
+                        "Successfully processed %d publish operations in batches - Result: %s",
+                        publishedCount, publishResult));
     }
 
     /**
@@ -253,19 +298,21 @@ public class PublishDateUpdaterIntegrationTest {
                 .type(DateTimeField.class)
                 .name("Publish Date")
                 .velocityVarName("publishDate")
+                .defaultValue(null)
                 .next();
 
         final Field expireDateField = new FieldDataGen()
                 .type(DateTimeField.class)
                 .name("Expire Date")
                 .velocityVarName("expireDate")
+                .defaultValue(null)
                 .next();
 
         contentType = new ContentTypeDataGen()
-                .name("PublishDateUpdaterTest")
-                .velocityVarName("publishDateUpdaterTest")
-                .publishDateVar("publishDate")
-                .expireDateVar("expireDate")
+                .name(TEST_UNIQUE_ID)
+                .velocityVarName("pdUpdTest" + System.currentTimeMillis())
+                .publishDateFieldVarName("publishDate")
+                .expireDateFieldVarName("expireDate")
                 .field(titleField)
                 .field(publishDateField)
                 .field(expireDateField)
@@ -279,8 +326,10 @@ public class PublishDateUpdaterIntegrationTest {
         Contentlet[] contentlets = new Contentlet[count];
 
         for (int i = 0; i < count; i++) {
+            final String uniqueTitle = "Test-Content " + i + "_" + UUID.randomUUID().toString().substring(0, 8);
             contentlets[i] = new ContentletDataGen(contentType.id())
-                    .setProperty("title", "Test Content " + i)
+                    .setPolicy(IndexPolicy.FORCE)
+                    .setProperty("title", uniqueTitle)
                     .setProperty("publishDate", publishDate)
                     .setProperty("expireDate", expireDate)
                     .nextPersisted();
@@ -297,8 +346,10 @@ public class PublishDateUpdaterIntegrationTest {
         Contentlet[] contentlets = new Contentlet[count];
 
         for (int i = 0; i < count; i++) {
+            final String uniqueTitle = "Published Test Content " + i + "_" + UUID.randomUUID().toString().substring(0, 8);
             Contentlet unpublishedContent = new ContentletDataGen(contentType.id())
-                    .setProperty("title", "Published Test Content " + i)
+                    .setPolicy(IndexPolicy.FORCE)
+                    .setProperty("title", uniqueTitle)
                     .setProperty("publishDate", publishDate)
                     .setProperty("expireDate", expireDate)
                     .nextPersisted();
