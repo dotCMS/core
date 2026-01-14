@@ -74,27 +74,26 @@
                 [href]="$apiURL()">
                 <span pButtonLabel>API</span>
             </a>
-            @if (preview || live) {
-                @if ($devices()?.length) {
-                    <dot-uve-device-selector
-                        [devices]="$devices()"
-                        data-testId="uve-toolbar-device-selector" />
-                }
-            } @else {
-                @if ($urlContentMap(); as urlContentMap) {
-                    <p-button
-                        (click)="editUrlContentMap.emit(urlContentMap)"
-                        [pTooltip]="
-                            'editpage.toolbar.edit.url.map.content'
-                                | dm: [urlContentMap.contentType]
-                        "
-                        tooltipPosition="bottom"
-                        icon="pi pi-pencil"
-                        [text]="true"
-                        size="small"
-                        [rounded]="true"
-                        data-testId="edit-url-content-map" />
-                }
+
+            @if ($showDeviceSelector()) {
+                <dot-uve-device-selector
+                    [devices]="$devices()"
+                    data-testId="uve-toolbar-device-selector" />
+            }
+
+            @if ($showUrlContentMap()) {
+                @let urlContentMap = $urlContentMap();
+                <p-button
+                    (click)="editUrlContentMap.emit(urlContentMap)"
+                    [pTooltip]="
+                        'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
+                    "
+                    tooltipPosition="bottom"
+                    icon="pi pi-pencil"
+                    [text]="true"
+                    size="small"
+                    [rounded]="true"
+                    data-testId="edit-url-content-map" />
             }
         </div>
     </ng-template>

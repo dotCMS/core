@@ -125,6 +125,16 @@ export class DotUveToolbarComponent {
         return previewDate;
     });
 
+    protected readonly $showDeviceSelector = computed(() => {
+        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        return !isEditMode && this.$devices()?.length > 0;
+    });
+
+    protected readonly $showUrlContentMap = computed(() => {
+        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        return isEditMode && this.$urlContentMap();
+    });
+
     readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
         const params = this.$pageParams();
         const siteId = this.#store.pageAPIResponse()?.site?.identifier;
