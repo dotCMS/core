@@ -217,7 +217,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
-        <glowroot.version>0.14.0-beta.3</glowroot.version>
+        <glowroot.version>0.14.4</glowroot.version>
         <jmeter.test.skip>true</jmeter.test.skip>
     </properties>
 
