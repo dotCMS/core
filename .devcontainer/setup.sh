@@ -1,12 +1,11 @@
 #!/bin/bash
 set -e
 
-# Colors for output
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 echo ""
 echo -e "${BLUE}========================================${NC}"
@@ -14,19 +13,14 @@ echo -e "${BLUE}  Setting up dotCMS Development Environment${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo ""
 
-command_exists() {
-  command -v "$1" >/dev/null 2>&1
-}
+command_exists() { command -v "$1" >/dev/null 2>&1; }
 
-# Detect workspace root
-if [ -d "/workspaces" ]; then
-  WORKSPACE_ROOT=$(find /workspaces -maxdepth 1 -type d -name "*" ! -path /workspaces | head -n 1)
+# ✅ Always use git to find repo root (works in Codespaces)
+if git rev-parse --show-toplevel >/dev/null 2>&1; then
+  WORKSPACE_ROOT="$(git rev-parse --show-toplevel)"
 else
-  WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-fi
-
-if [ -z "$WORKSPACE_ROOT" ]; then
-  WORKSPACE_ROOT="$(pwd)"
+  echo -e "${RED}✗ Not inside a git repository. Cannot locate workspace root.${NC}"
+  exit 1
 fi
 
 echo -e "${BLUE}Workspace root:${NC} ${WORKSPACE_ROOT}"
@@ -40,7 +34,7 @@ fi
 
 # Wait for Docker daemon
 echo -e "${BLUE}Waiting for Docker daemon...${NC}"
-for i in {1..60}; do
+for i in {1..90}; do
   if docker info >/dev/null 2>&1; then
     echo -e "${GREEN}✓ Docker daemon is ready${NC}"
     break
@@ -50,12 +44,11 @@ done
 
 if ! docker info >/dev/null 2>&1; then
   echo -e "${RED}✗ Cannot connect to Docker daemon after waiting.${NC}"
-  echo -e "${YELLOW}Tip:${NC} If you're using docker-in-docker, ensure the feature is enabled in devcontainer.json."
+  echo -e "${YELLOW}Tip:${NC} If you're using docker-in-docker, ensure devcontainer.json has \"privileged\": true and you are NOT mounting /var/run/docker.sock."
   exit 1
 fi
 
 # Pick compose command
-COMPOSE=""
 if docker compose version >/dev/null 2>&1; then
   COMPOSE="docker compose"
 elif command_exists docker-compose; then
@@ -64,30 +57,25 @@ else
   echo -e "${RED}✗ Docker Compose not found.${NC}"
   exit 1
 fi
-
 echo -e "${GREEN}✓ Using compose command:${NC} ${COMPOSE}"
 
-# Find compose file (root preferred)
-COMPOSE_FILE=""
-if [ -f "${WORKSPACE_ROOT}/docker-compose.yml" ]; then
-  COMPOSE_FILE="${WORKSPACE_ROOT}/docker-compose.yml"
-elif [ -f "${WORKSPACE_ROOT}/compose.yml" ]; then
-  COMPOSE_FILE="${WORKSPACE_ROOT}/compose.yml"
-else
-  echo -e "${RED}✗ No docker-compose.yml or compose.yml found in repo root:${NC} ${WORKSPACE_ROOT}"
-  echo -e "${YELLOW}If your compose is in a subfolder, update this script to point there.${NC}"
+# ✅ Compose is in subfolder
+COMPOSE_DIR="${WORKSPACE_ROOT}/docker/docker-compose-examples/single-node-demo-site"
+COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
+
+if [ ! -f "${COMPOSE_FILE}" ]; then
+  echo -e "${RED}✗ Compose file not found:${NC} ${COMPOSE_FILE}"
   exit 1
 fi
 
 echo -e "${BLUE}Compose file:${NC} ${COMPOSE_FILE}"
-cd "${WORKSPACE_ROOT}"
+cd "${COMPOSE_DIR}"
 
 echo ""
 echo -e "${BLUE}Starting dotCMS services...${NC}"
 echo -e "${YELLOW}This may take several minutes on first startup${NC}"
 echo ""
 
-# Pull + up
 ${COMPOSE} -f "${COMPOSE_FILE}" pull
 ${COMPOSE} -f "${COMPOSE_FILE}" up -d
 
