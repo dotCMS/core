@@ -68,7 +68,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -271,7 +270,7 @@ public class PublishDateUpdater {
             // shouldPublishContent() defaults to publishing content, which is a safe fallback behavior.
 
             //The Following flag allows to byPass The shouldPublishContent check and force publication of everything
-            final boolean includeAllPastContent = Config.getBooleanProperty("PUBLISH_JOB_QUEUE_INCLUDE_ALL_PAST_CONTENT",
+            final boolean forcePublishAllContent = Config.getBooleanProperty("PUBLISH_JOB_QUEUE_INCLUDE_ALL_PAST_CONTENT",
                     false);
 
             Date previousJobRunTime = previousFireTime;
@@ -291,7 +290,7 @@ public class PublishDateUpdater {
             }
 
             //This method fires both operations publish + unpublish using batches
-            totalPublishedCount = processPublishContentInBatch(luceneQueryToPublish, includeAllPastContent, previousJobRunTime,
+            totalPublishedCount = processPublishContentInBatch(luceneQueryToPublish, forcePublishAllContent, previousJobRunTime,
                     searchBatchSize, transactionBatchSize);
         }
 
@@ -406,16 +405,18 @@ public class PublishDateUpdater {
      * common pagination and transaction management logic.
      */
     private interface ContentProcessor {
+
+        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
         /**
          * Process a single contentlet.
          *
          * @param contentlet The contentlet to process
-         * @param contentletAPI The ContentletAPI instance
          * @param systemUser The system user for the operation
          * @return true if the contentlet was processed, false if it was skipped
          * @throws Exception if processing fails
          */
-        void process(Contentlet contentlet, ContentletAPI contentletAPI, User systemUser) throws Exception;
+        void process(Contentlet contentlet, User systemUser) throws Exception;
 
         /**
          * Get the name of this operation for logging purposes.
@@ -446,45 +447,19 @@ public class PublishDateUpdater {
         final String operationName = processor.getOperationName();
 
         try {
-            // Phase 1: Get all identifiers first to avoid pagination issues when content state changes
+            // Phase 1: Get all allInodes first to avoid pagination issues when content state changes
             Logger.debug(PublishDateUpdater.class,
-                    String.format("Phase 1: Collecting all identifiers for %s operation using query: %s", operationName, luceneQuery));
+                    String.format("Phase 1: Collecting all allInodes for %s operation using query: %s", operationName, luceneQuery));
 
-            final List<String> allIdentifiers = new ArrayList<>();
-            int collectOffset = 0;
-
-            while (true) {
-                // Get contentlets to extract their identifiers
-                final List<Contentlet> contentletBatch = contentletAPI.search(
-                        luceneQuery, searchBatchSize, collectOffset, null, systemUser, false);
-
-                if (contentletBatch.isEmpty()) {
-                    break; // No more records to collect
-                }
-
-                // Extract identifiers from this batch
-                for (final Contentlet contentlet : contentletBatch) {
-                    allIdentifiers.add(contentlet.getIdentifier());
-                }
-
-                collectOffset += contentletBatch.size();
-
-                Logger.debug(PublishDateUpdater.class,
-                        String.format("Collected %d identifiers so far for %s operation", allIdentifiers.size(), operationName));
-            }
-
-            Logger.info(PublishDateUpdater.class,
-                    String.format("Phase 1 complete: Found %d contentlet identifiers to %s", allIdentifiers.size(), operationName));
-
-            if (allIdentifiers.isEmpty()) {
-                Logger.debug(PublishDateUpdater.class, String.format("No contentlets found to %s", operationName));
-                return 0;
-            }
+            final List<String> allInodes = contentletAPI.search(luceneQuery, 0, 0,
+                            null, systemUser, false)
+                    .stream().map(Contentlet::getInode)
+                    .collect(Collectors.toList());
 
             // Phase 2: Process contentlets by identifier in batches
             Logger.debug(PublishDateUpdater.class,
                     String.format("Phase 2: Processing %d contentlets in batches of %d with transaction commits every %d records for %s",
-                            allIdentifiers.size(), searchBatchSize, transactionBatchSize, operationName));
+                            allInodes.size(), searchBatchSize, transactionBatchSize, operationName));
 
             int totalProcessed = 0;
             int transactionProcessed = 0;
@@ -494,30 +469,31 @@ public class PublishDateUpdater {
             HibernateUtil.startTransaction();
             transactionStarted = true;
 
-            while (currentIndex < allIdentifiers.size()) {
+            //First we collect all the inodes to be able to collect batches from the index to perform the operation
+            //We use inodes to have an initial inventory of everything that will be processed and still be able to use batches
+            while (currentIndex < allInodes.size()) {
                 // Calculate batch end index
-                final int batchEnd = Math.min(currentIndex + searchBatchSize, allIdentifiers.size());
-                final List<String> batchIdentifiers = allIdentifiers.subList(currentIndex, batchEnd);
+                final int batchEnd = Math.min(currentIndex + searchBatchSize, allInodes.size());
+                final List<String> inodes = allInodes.subList(currentIndex, batchEnd);
 
                 Logger.debug(PublishDateUpdater.class,
-                        String.format("Processing identifier batch %d-%d of %d total identifiers for %s",
-                                currentIndex, batchEnd, allIdentifiers.size(), operationName));
+                        String.format("Processing identifier batch %d-%d of %d total allInodes for %s",
+                                currentIndex, batchEnd, allInodes.size(), operationName));
 
                 // Process each identifier in the current batch
-                for (final String identifier : batchIdentifiers) {
+                for (final String inode : inodes) {
                     try {
-                        // Fetch fresh contentlet by identifier
-                        final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
-                                identifier, false);
+                        // Fetch fresh contentlet by inode
+                        final Contentlet contentlet = contentletAPI.find(inode, systemUser, false);
 
                         if (contentlet == null) {
                             Logger.warn(PublishDateUpdater.class,
-                                    String.format("Contentlet with identifier %s not found, skipping %s operation", identifier, operationName));
+                                    String.format("Contentlet with ionde %s not found, skipping %s operation", inode, operationName));
                             continue;
                         }
 
                         // Delegate to the processor function
-                        processor.process(contentlet, contentletAPI, systemUser);
+                        processor.process(contentlet, systemUser);
                         totalProcessed++;
                         transactionProcessed++;
 
@@ -531,14 +507,14 @@ public class PublishDateUpdater {
                             transactionProcessed = 0;
 
                             // Start new transaction if there are more records to process
-                            if (currentIndex + searchBatchSize < allIdentifiers.size()) {
+                            if (currentIndex + searchBatchSize < allInodes.size()) {
                                 HibernateUtil.startTransaction();
                                 transactionStarted = true;
                             }
                         }
                     } catch (Exception e) {
                         Logger.error(PublishDateUpdater.class,
-                                String.format("Content failed to %s: %s - %s", operationName, identifier, e.getMessage()), e);
+                                String.format("Content failed to %s: %s - %s", operationName, inode, e.getMessage()), e);
                     }
                 }
 
@@ -553,7 +529,7 @@ public class PublishDateUpdater {
             }
 
             Logger.info(PublishDateUpdater.class,
-                    String.format("Successfully processed %d of %d contentlets for %s", totalProcessed, allIdentifiers.size(), operationName));
+                    String.format("Successfully processed %d of %d contentlets for %s", totalProcessed, allInodes.size(), operationName));
 
             return totalProcessed;
 
@@ -571,18 +547,20 @@ public class PublishDateUpdater {
     /**
      * Content processor implementation for publish operations.
      */
-    private static class PublishContentProcessor implements ContentProcessor {
-        private final boolean includeAllPastContent;
+    private static class Publisher implements ContentProcessor {
+        private final boolean forcePublishing;
         private final Date previousJobRunTime;
 
-        public PublishContentProcessor(final boolean includeAllPastContent, final Date previousJobRunTime) {
-            this.includeAllPastContent = includeAllPastContent;
+        public Publisher(final boolean forcePublishing, final Date previousJobRunTime) {
+            this.forcePublishing = forcePublishing;
             this.previousJobRunTime = previousJobRunTime;
         }
 
         @Override
-        public void process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
-            if (includeAllPastContent || shouldPublishContent(contentlet, previousJobRunTime)) {
+        public void process(final Contentlet contentlet, final User systemUser) throws Exception {
+            //This Point is where we decide if the content should get published or skipped
+            //But We can always force the publish operation though
+            if (forcePublishing || shouldPublishContent(contentlet, previousJobRunTime)) {
                 contentletAPI.publish(contentlet, systemUser, false);
             } else {
                 Logger.debug(PublishDateUpdater.class,
@@ -600,9 +578,9 @@ public class PublishDateUpdater {
     /**
      * Content processor implementation for unpublish operations.
      */
-    private static class UnpublishContentProcessor implements ContentProcessor {
+    private static class Unpublisher implements ContentProcessor {
         @Override
-        public void process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
+        public void process(final Contentlet contentlet, final User systemUser) throws Exception {
             contentletAPI.unpublish(contentlet, systemUser, false);
         }
 
@@ -616,19 +594,19 @@ public class PublishDateUpdater {
      * Processes publish content using pagination via the generic processContentWithPagination method.
      *
      * @param luceneQuery The lucene query to search for content to publish
-     * @param includeAllPastContent Whether to include all past content
+     * @param forcePublishAllContent Whether to include all past content
      * @param previousJobRunTime Previous job run time for content validation
      * @param searchBatchSize The batch size for search operations
      * @param transactionBatchSize The batch size for transaction commits
      * @return The number of contentlets actually published
      */
     private static int processPublishContentInBatch(final String luceneQuery,
-                                                           final boolean includeAllPastContent,
+                                                           final boolean forcePublishAllContent,
                                                            final Date previousJobRunTime,
                                                            final int searchBatchSize,
                                                            final int transactionBatchSize) throws DotDataException {
         //Build and pass a delegate to deal with the Publish Operation
-        final ContentProcessor publishProcessor = new PublishContentProcessor(includeAllPastContent, previousJobRunTime);
+        final ContentProcessor publishProcessor = new Publisher(forcePublishAllContent, previousJobRunTime);
         return processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, publishProcessor);
     }
 
@@ -644,7 +622,7 @@ public class PublishDateUpdater {
                                                             final int searchBatchSize,
                                                             final int transactionBatchSize) throws DotDataException {
         //Pass a delegate to deal with Unpublish Operation
-        final ContentProcessor unpublishProcessor = new UnpublishContentProcessor();
+        final ContentProcessor unpublishProcessor = new Unpublisher();
         return processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, unpublishProcessor);
     }
 
