@@ -54,7 +54,9 @@
                             </div>
                         </ng-template>
                         <div class="dot-step">
-                            <div class="dot-step__video"></div>
+                            @if (step.videoPath) {
+                                <div class="dot-step__video"></div>
+                            }
                             @if (step.description) {
                                 <markdown class="dot-step__description" [data]="step.description" />
                             }

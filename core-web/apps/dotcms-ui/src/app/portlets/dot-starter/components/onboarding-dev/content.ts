@@ -360,6 +360,7 @@ Watch your Next.js app update instantly!`
             {
                 number: 3,
                 title: `You Did It! Now what's next`,
+                videoPath: `videopath`,
                 description:
                     'Congratulations! You have successfully built a Headless Next.js app with full visual editing capabilities. You now have a workflow where developers build components in React, and editors manage content visually.Now it is time to build our custom component.'
             }

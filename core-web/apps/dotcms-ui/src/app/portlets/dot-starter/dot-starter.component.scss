@@ -42,8 +42,8 @@
 }
 
 .heading {
-    font-weight: 500;
-    font-size: 40px;
+    font-weight: bold;
+    font-size: 50px;
     line-height: 24px;
     letter-spacing: -0.31px;
     text-align: center;
@@ -51,6 +51,7 @@
 
 .paragraph {
     font-weight: 400;
+    color: #424242;
     font-size: 18px;
     line-height: 28px;
     letter-spacing: -0.44px;
@@ -58,10 +59,13 @@
 }
 
 .card-heading {
-    font-weight: 400;
+    font-weight: 600;
     font-size: 16px;
-    leading-trim: NONE;
     line-height: 24px;
     letter-spacing: -0.31px;
     text-align: center;
+}
+.card-paragraph {
+    font-size: 14px;
+    color: #424242;
 }

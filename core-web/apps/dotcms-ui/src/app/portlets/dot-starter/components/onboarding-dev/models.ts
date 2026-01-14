@@ -11,6 +11,7 @@ interface OnboardingStep {
     number: number;
     title: string;
     description: string;
+    videoPath?: string;
     substeps?: OnboardingSubstep[];
 }
 
