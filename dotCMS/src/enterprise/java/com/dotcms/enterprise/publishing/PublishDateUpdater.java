@@ -47,6 +47,9 @@
 
 package com.dotcms.enterprise.publishing;
 
+import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
+
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -64,16 +67,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import graphql.VisibleForTesting;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
-
 import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
+import org.apache.commons.lang3.StringUtils;
+import org.quartz.CronExpression;
 
 
 public class PublishDateUpdater {
@@ -455,6 +455,14 @@ public class PublishDateUpdater {
                             null, systemUser, false)
                     .stream().map(Contentlet::getInode)
                     .collect(Collectors.toList());
+
+            Logger.info(PublishDateUpdater.class,
+                    String.format("Phase 1 complete: Found %d contentlet inodes to %s", allInodes.size(), operationName));
+
+            if (allInodes.isEmpty()) {
+                Logger.debug(PublishDateUpdater.class, String.format("No contentlets found to %s", operationName));
+                return 0;
+            }
 
             // Phase 2: Process contentlets by identifier in batches
             Logger.debug(PublishDateUpdater.class,
