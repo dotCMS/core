@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -13,51 +14,70 @@ echo -e "${GREEN}  dotCMS Development Environment Status ${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 
-# Change to docker-compose directory
-# Detect workspace root (works with both local and Codespaces paths)
-if [ -d "/workspaces" ]; then
-  # In Codespaces
-  WORKSPACE_ROOT=$(find /workspaces -maxdepth 1 -type d -name "*" ! -path /workspaces | head -n 1)
+command_exists() { command -v "$1" >/dev/null 2>&1; }
+
+# 1) Repo root (same strategy as setup.sh)
+if git rev-parse --show-toplevel >/dev/null 2>&1; then
+  WORKSPACE_ROOT="$(git rev-parse --show-toplevel)"
 else
-  # Local development - get git root
-  WORKSPACE_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  echo -e "${RED}✗ Not inside a git repository. Cannot locate workspace root.${NC}"
+  exit 1
 fi
 
-COMPOSE_DIR="$WORKSPACE_ROOT/docker/docker-compose-examples/single-node-demo-site"
+# 2) Compose location (same as setup.sh)
+COMPOSE_DIR="${WORKSPACE_ROOT}/docker/docker-compose-examples/single-node-demo-site"
+COMPOSE_FILE="${COMPOSE_DIR}/docker-compose.yml"
 
-if [ -d "$COMPOSE_DIR" ]; then
-  cd "$COMPOSE_DIR"
+if [ ! -f "${COMPOSE_FILE}" ]; then
+  echo -e "${RED}✗ Compose file not found:${NC} ${COMPOSE_FILE}"
+  exit 1
+fi
 
-  # Check if services are running
-  echo -e "${BLUE}Service Status:${NC}"
-  docker-compose ps
-  echo ""
-
-  # Check dotCMS readiness
-  echo -e "${BLUE}Checking dotCMS availability...${NC}"
-
-  max_attempts=60
-  attempt=0
-  dotcms_ready=false
-
-  while [ $attempt -lt $max_attempts ]; do
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8082 2>/dev/null | grep -q "200\|302"; then
-      echo -e "${GREEN}✓ dotCMS is ready and responding!${NC}"
-      dotcms_ready=true
-      break
-    else
-      sleep 3
-      attempt=$((attempt + 1))
-    fi
-  done
-
-  if [ "$dotcms_ready" = false ]; then
-    echo -e "${YELLOW}⚠ dotCMS is still initializing...${NC}"
-    echo -e "${YELLOW}  This is normal on first startup (5-10 minutes total)${NC}"
-    echo -e "${YELLOW}  Monitor progress with: docker logs -f dotcms${NC}"
-  fi
+# 3) Compose command (prefer docker compose v2)
+if docker compose version >/dev/null 2>&1; then
+  COMPOSE="docker compose"
+elif command_exists docker-compose; then
+  COMPOSE="docker-compose"
 else
-  echo -e "${RED}✗ Docker compose directory not found${NC}"
+  echo -e "${RED}✗ Docker Compose not found.${NC}"
+  exit 1
+fi
+
+# 4) Docker ready check (quick)
+if ! docker info >/dev/null 2>&1; then
+  echo -e "${YELLOW}⚠ Docker daemon not reachable yet.${NC}"
+  echo -e "${YELLOW}  Try:${NC} docker info"
+  exit 0
+fi
+
+cd "${COMPOSE_DIR}"
+
+echo -e "${BLUE}Compose directory:${NC} ${COMPOSE_DIR}"
+echo -e "${BLUE}Service Status:${NC}"
+${COMPOSE} -f "${COMPOSE_FILE}" ps
+echo ""
+
+# 5) dotCMS readiness check
+echo -e "${BLUE}Checking dotCMS availability on http://localhost:8082 ...${NC}"
+max_attempts=60
+attempt=0
+dotcms_ready=false
+last_code=""
+
+while [ $attempt -lt $max_attempts ]; do
+  last_code="$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8082 || true)"
+  if echo "$last_code" | grep -Eq "200|302|301"; then
+    echo -e "${GREEN}✓ dotCMS is responding (HTTP ${last_code})${NC}"
+    dotcms_ready=true
+    break
+  fi
+  sleep 3
+  attempt=$((attempt + 1))
+done
+
+if [ "$dotcms_ready" = false ]; then
+  echo -e "${YELLOW}⚠ dotCMS is still initializing (last HTTP code: ${last_code})${NC}"
+  echo -e "${YELLOW}  Monitor progress with:${NC} ${COMPOSE} -f ${COMPOSE_FILE} logs -f --tail=200 dotcms"
 fi
 
 echo ""
@@ -84,21 +104,12 @@ echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Quick Commands:${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}  Development:${NC}"
-echo -e "    ./mvnw clean install -DskipTests    # Full build"
-echo -e "    ./mvnw install -pl :dotcms-core -DskipTests  # Quick core build"
-echo -e "    just build                          # Full build (if just is available)"
-echo ""
-echo -e "${GREEN}  Testing:${NC}"
-echo -e "    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTest"
-echo -e "    ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false"
-echo ""
 echo -e "${GREEN}  Docker Management:${NC}"
-echo -e "    docker logs -f dotcms               # View dotCMS logs"
-echo -e "    docker logs -f db                   # View PostgreSQL logs"
-echo -e "    docker logs -f opensearch           # View OpenSearch logs"
-echo -e "    cd $COMPOSE_DIR && docker-compose restart"
-echo -e "    cd $COMPOSE_DIR && docker-compose down"
+echo -e "    ${COMPOSE} -f ${COMPOSE_FILE} logs -f --tail=200 dotcms"
+echo -e "    ${COMPOSE} -f ${COMPOSE_FILE} logs -f --tail=200 opensearch"
+echo -e "    ${COMPOSE} -f ${COMPOSE_FILE} logs -f --tail=200 db"
+echo -e "    ${COMPOSE} -f ${COMPOSE_FILE} restart"
+echo -e "    ${COMPOSE} -f ${COMPOSE_FILE} down"
 echo ""
 echo -e "${GREEN}Happy coding! 🚀${NC}"
 echo ""
