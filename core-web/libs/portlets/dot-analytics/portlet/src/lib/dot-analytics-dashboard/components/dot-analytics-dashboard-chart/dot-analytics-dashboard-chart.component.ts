@@ -333,7 +333,7 @@ export class DotAnalyticsDashboardChartComponent {
                 },
                 y1: {
                     type: 'linear',
-                    display: true,
+                    display: false,
                     position: 'right',
                     beginAtZero: true,
                     grid: { drawOnChartArea: false },

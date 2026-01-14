@@ -33,3 +33,14 @@ export const DASHBOARD_TAB_LIST: DashboardTabConfig[] = [
     { id: DASHBOARD_TABS.pageview, label: 'analytics.dashboard.tabs.pageview' },
     { id: DASHBOARD_TABS.conversions, label: 'analytics.dashboard.tabs.conversions' }
 ];
+
+/**
+ * Chart color palette
+ */
+export const CHART_COLORS = {
+    primary: '#3B82F6',
+    primaryBackground: 'rgba(59, 130, 246, 0.1)',
+    secondary: '#10B981',
+    secondaryBackground: 'rgba(16, 185, 129, 0.1)',
+    gray: '#E5E7EB'
+};
