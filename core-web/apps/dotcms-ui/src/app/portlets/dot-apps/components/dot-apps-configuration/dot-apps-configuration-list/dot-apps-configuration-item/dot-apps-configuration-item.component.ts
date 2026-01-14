@@ -7,7 +7,7 @@ import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAppsSite } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
+import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-apps-configuration-item',

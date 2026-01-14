@@ -9,10 +9,10 @@ import { DotAppsService, DotRouterService } from '@dotcms/data-access';
 import { DotApp, DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form/dot-apps-configuration-detail-form.component';
+import { DotAppsConfigurationDetailFormComponent } from './components/dot-apps-configuration-detail-form/dot-apps-configuration-detail-form.component';
+import { DotAppsConfigurationHeaderComponent } from './components/dot-apps-configuration-header/dot-apps-configuration-header.component';
 
-import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
+import { DotKeyValue } from '../../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 @Component({
     selector: 'dot-apps-configuration-detail',

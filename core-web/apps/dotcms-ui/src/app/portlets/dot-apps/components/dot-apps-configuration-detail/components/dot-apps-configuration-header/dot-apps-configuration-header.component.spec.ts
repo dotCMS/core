@@ -14,7 +14,7 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
-import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
+import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

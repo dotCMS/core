@@ -2,8 +2,8 @@ import { Routes } from '@angular/router';
 
 import { DotAppsService } from '@dotcms/data-access';
 
-import { DotAppsConfigurationComponent } from './dot-apps-configuration/dot-apps-configuration.component';
-import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail/dot-apps-configuration-detail.component';
+import { DotAppsConfigurationComponent } from './components/dot-apps-configuration/dot-apps-configuration.component';
+import { DotAppsConfigurationDetailComponent } from './components/dot-apps-configuration-detail/dot-apps-configuration-detail.component';
 import { DotAppsListComponent } from './dot-apps-list/dot-apps-list.component';
 import { DotAppsConfigurationDetailResolver } from './services/dot-apps-configuration-detail-resolver/dot-apps-configuration-detail-resolver.service';
 import { DotAppsConfigurationResolver } from './services/dot-apps-configuration-resolver/dot-apps-configuration-resolver.service';

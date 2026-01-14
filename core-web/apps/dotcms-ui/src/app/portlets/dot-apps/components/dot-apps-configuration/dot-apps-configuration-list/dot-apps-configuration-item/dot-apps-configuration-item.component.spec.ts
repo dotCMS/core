@@ -13,7 +13,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item.component';
 
-import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
+import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 const messages = {
     'apps.key': 'Key',

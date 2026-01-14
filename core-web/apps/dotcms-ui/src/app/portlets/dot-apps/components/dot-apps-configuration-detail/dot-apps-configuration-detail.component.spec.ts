@@ -21,12 +21,12 @@ import {
 } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
+import { DotAppsConfigurationHeaderComponent } from './components/dot-apps-configuration-header/dot-apps-configuration-header.component';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 
-import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
-import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
-import { DotAppsConfigurationDetailResolver } from '../services/dot-apps-configuration-detail-resolver/dot-apps-configuration-detail-resolver.service';
+import { DotKeyValue } from '../../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
+import { DotCopyLinkComponent } from '../../../../view/components/dot-copy-link/dot-copy-link.component';
+import { DotAppsConfigurationDetailResolver } from '../../services/dot-apps-configuration-detail-resolver/dot-apps-configuration-detail-resolver.service';
 
 const messages = {
     'apps.key': 'Key',

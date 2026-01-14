@@ -33,10 +33,10 @@ import {
 import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 
-import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
-import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
-import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
-import { DotAppsConfigurationResolver } from '../services/dot-apps-configuration-resolver/dot-apps-configuration-resolver.service';
+import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
+import { DotAppsImportExportDialogComponent } from '../../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotAppsConfigurationResolver } from '../../services/dot-apps-configuration-resolver/dot-apps-configuration-resolver.service';
+import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-detail/components/dot-apps-configuration-header/dot-apps-configuration-header.component';
 
 const messages = {
     'apps.key': 'Key',
