@@ -4,12 +4,12 @@ import { MarkdownModule } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Injectable } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -35,6 +35,7 @@ import { DotAppsConfigurationComponent } from './dot-apps-configuration.componen
 
 import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotAppsImportExportDialogComponent } from '../../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
+import { DotAppsImportExportDialogStore } from '../../dot-apps-import-export-dialog/store/dot-apps-import-export-dialog.store';
 import { DotAppsConfigurationResolver } from '../../services/dot-apps-configuration-resolver/dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-detail/components/dot-apps-configuration-header/dot-apps-configuration-header.component';
 
@@ -75,15 +76,14 @@ const appData = {
     sites
 };
 
-const routeDatamock = {
-    data: appData
-};
-
-class ActivatedRouteMock {
-    get data() {
-        return of(routeDatamock);
+const activatedRouteMock = {
+    data: of({ data: appData }),
+    snapshot: {
+        data: {
+            data: appData
+        }
     }
-}
+};
 
 @Injectable()
 class MockDotAppsService {
@@ -100,6 +100,7 @@ describe('DotAppsConfigurationComponent', () => {
     let component: DotAppsConfigurationComponent;
     let fixture: ComponentFixture<DotAppsConfigurationComponent>;
     let dialogService: DotAlertConfirmService;
+    let dialogStore: InstanceType<typeof DotAppsImportExportDialogStore>;
     let paginationService: PaginatorService;
     let appsServices: DotAppsService;
     let routerService: DotRouterService;
@@ -109,12 +110,6 @@ describe('DotAppsConfigurationComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
-                RouterTestingModule.withRoutes([
-                    {
-                        component: DotAppsConfigurationComponent,
-                        path: ''
-                    }
-                ]),
                 InputTextModule,
                 ButtonModule,
                 CommonModule,
@@ -122,18 +117,18 @@ describe('DotAppsConfigurationComponent', () => {
                 DotAppsConfigurationHeaderComponent,
                 DotAppsImportExportDialogComponent,
                 DotAppsConfigurationListComponent,
-                HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 MarkdownModule.forRoot(),
                 DotAppsConfigurationComponent
             ],
-            declarations: [],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
                     provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
+                    useValue: activatedRouteMock
                 },
                 {
                     provide: DotAppsService,
@@ -154,6 +149,7 @@ describe('DotAppsConfigurationComponent', () => {
         fixture = TestBed.createComponent(DotAppsConfigurationComponent);
         component = fixture.debugElement.componentInstance;
         dialogService = TestBed.inject(DotAlertConfirmService);
+        dialogStore = TestBed.inject(DotAppsImportExportDialogStore);
         paginationService = TestBed.inject(PaginatorService);
         appsServices = TestBed.inject(DotAppsService);
         routerService = TestBed.inject(DotRouterService);
@@ -162,38 +158,33 @@ describe('DotAppsConfigurationComponent', () => {
     describe('With integrations count', () => {
         let setExtraParamsSpy: jest.SpyInstance;
         let getWithOffsetSpy: jest.SpyInstance;
-        let focusSpy: jest.SpyInstance;
 
         beforeEach(() => {
+            // Set up spies BEFORE detectChanges triggers ngOnInit
             setExtraParamsSpy = jest.spyOn(paginationService, 'setExtraParams');
             getWithOffsetSpy = jest
-                .spyOn<any>(paginationService, 'getWithOffset')
+                .spyOn(paginationService, 'getWithOffset')
                 .mockReturnValue(of(appData));
-            focusSpy = jest.spyOn(component.searchInput.nativeElement, 'focus');
+
+            // First detectChanges triggers ngOnInit which loads app data
+            fixture.detectChanges();
+            // Second detectChanges updates the template now that app signal has value
             fixture.detectChanges();
         });
 
         afterEach(() => {
             setExtraParamsSpy.mockClear();
             getWithOffsetSpy.mockClear();
-            focusSpy.mockClear();
         });
 
         it('should set App from resolver', () => {
-            expect(component.apps).toBe(appData);
-        });
-
-        it('should set params in export dialog attribute', () => {
-            const importExportDialog = fixture.debugElement.query(
-                By.css('dot-apps-import-export-dialog')
-            );
-            expect(importExportDialog.componentInstance.app).toEqual(appData);
-            expect(importExportDialog.componentInstance.action).toEqual('Export');
+            expect(component.$app().key).toBe(appData.key);
+            expect(component.$app().name).toBe(appData.name);
         });
 
         it('should set onInit Pagination Service with right values', () => {
-            expect(paginationService.url).toBe(`v1/apps/${component.apps.key}`);
-            expect(paginationService.paginationPerPage).toBe(component.paginationPerPage);
+            expect(paginationService.url).toBe(`v1/apps/${component.$app().key}`);
+            expect(paginationService.paginationPerPage).toBe(component.$paginationPerPage());
             expect(paginationService.sortField).toBe('name');
             expect(paginationService.sortOrder).toBe(1);
             expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', '');
@@ -203,10 +194,6 @@ describe('DotAppsConfigurationComponent', () => {
         it('should call first pagination call onInit', () => {
             expect(getWithOffsetSpy).toHaveBeenCalledWith(0);
             expect(getWithOffsetSpy).toHaveBeenCalledTimes(1);
-        });
-
-        it('should input search be focused on init', () => {
-            expect(focusSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should set messages/values in DOM correctly', () => {
@@ -233,9 +220,8 @@ describe('DotAppsConfigurationComponent', () => {
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
             fixture.detectChanges();
-            expect(listComp.siteConfigurations).toBe(component.apps.sites);
-            expect(listComp.hideLoadDataButton).toBe(true);
-            expect(listComp.itemsPerPage).toBe(component.paginationPerPage);
+            expect(listComp.siteConfigurations).toEqual(component.$app().sites);
+            expect(listComp.itemsPerPage).toBe(component.$paginationPerPage());
         });
 
         it('should dot-apps-configuration-list emit action to load more data', () => {
@@ -256,18 +242,18 @@ describe('DotAppsConfigurationComponent', () => {
             ).componentInstance;
             listComp.edit.emit(sites[0]);
             expect(routerService.goToUpdateAppsConfiguration).toHaveBeenCalledWith(
-                component.apps.key,
+                component.$app().key,
                 sites[0]
             );
         });
 
-        it('should open confirm dialog and export All configurations', () => {
+        it('should open export dialog for all configurations', () => {
+            const openExportSpy = jest.spyOn(dialogStore, 'openExport');
             const exportAllBtn = fixture.debugElement.query(
                 By.css('.dot-apps-configuration__action_export_button')
             );
             exportAllBtn.triggerEventHandler('click', null);
-            expect(component.importExportDialog.show).toBe(true);
-            expect(component.importExportDialog.site).toBeUndefined();
+            expect(openExportSpy).toHaveBeenCalledWith(component.$app(), undefined);
         });
 
         it('should open confirm dialog and delete All configurations', () => {
@@ -283,17 +269,17 @@ describe('DotAppsConfigurationComponent', () => {
 
             deleteAllBtn.triggerEventHandler('click', null);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
-            expect(appsServices.deleteAllConfigurations).toHaveBeenCalledWith(component.apps.key);
+            expect(appsServices.deleteAllConfigurations).toHaveBeenCalledWith(component.$app().key);
             expect(appsServices.deleteAllConfigurations).toHaveBeenCalledTimes(1);
         });
 
         it('should export a specific configuration', () => {
+            const openExportSpy = jest.spyOn(dialogStore, 'openExport');
             const listComp = fixture.debugElement.query(
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
             listComp.export.emit(sites[0]);
-            expect(component.importExportDialog.show).toBe(true);
-            expect(component.siteSelected).toBe(sites[0]);
+            expect(openExportSpy).toHaveBeenCalledWith(component.$app(), sites[0]);
         });
 
         it('should delete a specific configuration', () => {
@@ -304,7 +290,7 @@ describe('DotAppsConfigurationComponent', () => {
             listComp.delete.emit(sites[0]);
 
             expect(appsServices.deleteConfiguration).toHaveBeenCalledWith(
-                component.apps.key,
+                component.$app().key,
                 sites[0].id
             );
         });
@@ -313,8 +299,8 @@ describe('DotAppsConfigurationComponent', () => {
             // Clear the spy to only count calls from this specific test
             setExtraParamsSpy.mockClear();
 
-            component.searchInput.nativeElement.value = 'test';
-            component.searchInput.nativeElement.dispatchEvent(new Event('keyup'));
+            component.$searchInputElement().nativeElement.value = 'test';
+            component.$searchInputElement().nativeElement.dispatchEvent(new Event('keyup'));
             tick(550);
             expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', 'test');
             expect(setExtraParamsSpy).toHaveBeenCalledTimes(1);

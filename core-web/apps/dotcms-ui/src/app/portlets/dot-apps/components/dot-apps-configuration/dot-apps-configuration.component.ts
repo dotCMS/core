@@ -1,13 +1,24 @@
-import { fromEvent as observableFromEvent, Subject } from 'rxjs';
+import { patchState, signalState } from '@ngrx/signals';
+import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import {
+    AfterViewInit,
+    Component,
+    DestroyRef,
+    ElementRef,
+    OnInit,
+    computed,
+    inject,
+    viewChild
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, pluck, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -38,50 +49,67 @@ import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-d
         DotMessagePipe
     ]
 })
-export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
+export class DotAppsConfigurationComponent implements OnInit, AfterViewInit {
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     readonly #dotAppsService = inject(DotAppsService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #route = inject(ActivatedRoute);
     readonly #dialogStore = inject(DotAppsImportExportDialogStore);
-
+    readonly #destroyRef = inject(DestroyRef);
     paginationService = inject(PaginatorService);
 
-    @ViewChild('searchInput', { static: true }) searchInput: ElementRef;
+    $searchInputElement = viewChild<ElementRef<HTMLInputElement>>('searchInput');
 
-    apps: DotApp;
-    hideLoadDataButton: boolean;
-    paginationPerPage = 40;
-    totalRecords: number;
+    $state = signalState({
+        app: null,
+        paginationPerPage: 40,
+        totalRecords: 0
+    });
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    readonly $app = computed(() => this.$state().app);
+    readonly $paginationPerPage = computed(() => this.$state().paginationPerPage);
+    readonly $totalRecords = computed(() => this.$state().totalRecords);
+
+    readonly $showMoreData = computed(() => {
+        const app = this.$app();
+        if (!app?.sites?.length) {
+            return false;
+        }
+
+        return this.$totalRecords() / app.sites.length > 1;
+    });
 
     ngOnInit() {
         this.#route.data.pipe(pluck('data'), take(1)).subscribe((app: DotApp) => {
-            this.apps = app;
-            this.apps.sites = [];
-        });
-
-        observableFromEvent(this.searchInput.nativeElement, 'keyup')
-            .pipe(debounceTime(500), takeUntil(this.destroy$))
-            .subscribe((keyboardEvent: Event) => {
-                this.filterConfigurations((keyboardEvent.target as HTMLInputElement).value);
+            patchState(this.$state, {
+                app: {
+                    ...app,
+                    sites: []
+                }
             });
 
-        this.paginationService.url = `v1/apps/${this.apps.key}`;
-        this.paginationService.paginationPerPage = this.paginationPerPage;
-        this.paginationService.sortField = 'name';
-        this.paginationService.setExtraParams('filter', '');
-        this.paginationService.sortOrder = 1;
-        this.loadData();
-
-        this.searchInput.nativeElement.focus();
+            // Initialize pagination after app data is available
+            this.paginationService.url = `v1/apps/${app.key}`;
+            this.paginationService.paginationPerPage = this.$paginationPerPage();
+            this.paginationService.sortField = 'name';
+            this.paginationService.setExtraParams('filter', '');
+            this.paginationService.sortOrder = 1;
+            this.loadData();
+        });
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+    ngAfterViewInit() {
+        const searchInput = this.$searchInputElement();
+        if (searchInput) {
+            observableFromEvent(searchInput.nativeElement, 'keyup')
+                .pipe(debounceTime(500), takeUntilDestroyed(this.#destroyRef))
+                .subscribe((keyboardEvent: Event) => {
+                    this.filterConfigurations((keyboardEvent.target as HTMLInputElement).value);
+                });
+
+            searchInput.nativeElement.focus();
+        }
     }
 
     /**
@@ -91,12 +119,15 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
         this.paginationService
             .getWithOffset((event && event.first) || 0)
             .pipe(take(1))
-            .subscribe((apps: DotApp[]) => {
-                const app = ([] as DotApp[]).concat(apps)[0];
-                this.apps.sites = event ? this.apps.sites.concat(app.sites) : app.sites;
-                this.apps.configurationsCount = app.configurationsCount;
-                this.totalRecords = this.paginationService.totalRecords;
-                this.hideLoadDataButton = !this.isThereMoreData(this.apps.sites.length);
+            .subscribe((app: DotApp) => {
+                patchState(this.$state, {
+                    app: {
+                        ...app,
+                        sites: event ? this.$state().app.sites.concat(app.sites) : app.sites,
+                        configurationsCount: app.configurationsCount
+                    },
+                    totalRecords: this.paginationService.totalRecords
+                });
             });
     }
 
@@ -104,7 +135,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * Redirects to create/edit configuration site page
      */
     gotoConfiguration(site: DotAppsSite): void {
-        this.#dotRouterService.goToUpdateAppsConfiguration(this.apps.key, site);
+        this.#dotRouterService.goToUpdateAppsConfiguration(this.$app().key, site);
     }
 
     /**
@@ -118,7 +149,7 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      * Opens the export dialog
      */
     openExportDialog(site?: DotAppsSite): void {
-        this.#dialogStore.openExport(this.apps, site);
+        this.#dialogStore.openExport(this.$app(), site);
     }
 
     /**
@@ -126,10 +157,15 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
      */
     deleteConfiguration(site: DotAppsSite): void {
         this.#dotAppsService
-            .deleteConfiguration(this.apps.key, site.id)
+            .deleteConfiguration(this.$app().key, site.id)
             .pipe(take(1))
             .subscribe(() => {
-                this.apps.sites = [];
+                patchState(this.$state, {
+                    app: {
+                        ...this.$app(),
+                        sites: []
+                    }
+                });
                 this.loadData();
             });
     }
@@ -141,10 +177,15 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
         this.#dotAlertConfirmService.confirm({
             accept: () => {
                 this.#dotAppsService
-                    .deleteAllConfigurations(this.apps.key)
+                    .deleteAllConfigurations(this.$app().key)
                     .pipe(take(1))
                     .subscribe(() => {
-                        this.apps.sites = [];
+                        patchState(this.$state, {
+                            app: {
+                                ...this.$app(),
+                                sites: []
+                            }
+                        });
                         this.loadData();
                     });
             },
@@ -157,10 +198,6 @@ export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
                 accept: this.#dotMessageService.get('apps.confirmation.accept')
             }
         });
-    }
-
-    private isThereMoreData(index: number): boolean {
-        return this.totalRecords / index > 1;
     }
 
     private filterConfigurations(searchCriteria?: string): void {

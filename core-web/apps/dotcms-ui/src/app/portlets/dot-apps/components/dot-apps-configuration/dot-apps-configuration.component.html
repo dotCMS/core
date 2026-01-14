@@ -1,6 +1,9 @@
+@let app = $state.app();
+@let paginationPerPage = $state.paginationPerPage();
+
 <div class="dot-apps-configuration__container">
-    @if (apps) {
-        <dot-apps-configuration-header [app]="apps" />
+    @if (app) {
+        <dot-apps-configuration-header [app]="app" />
     }
     <div class="dot-apps-configuration__body">
         <div>
@@ -14,7 +17,7 @@
                     <button
                         (click)="openExportDialog()"
                         [label]="'apps.confirmation.export.all.button' | dm"
-                        [disabled]="!apps.configurationsCount"
+                        [disabled]="!app.configurationsCount"
                         pButton
                         link
                         icon="pi pi-download"
@@ -22,7 +25,7 @@
                     <button
                         (click)="deleteAllConfigurations()"
                         [label]="'apps.confirmation.delete.all.button' | dm"
-                        [disabled]="!apps.configurationsCount"
+                        [disabled]="!app.configurationsCount"
                         pButton
                         link
                         icon="pi pi-trash"></button>
@@ -33,8 +36,8 @@
                 (edit)="gotoConfiguration($event)"
                 (export)="openExportDialog($event)"
                 (delete)="deleteConfiguration($event)"
-                [siteConfigurations]="apps.sites"
-                [hideLoadDataButton]="hideLoadDataButton"
+                [siteConfigurations]="app.sites"
+                [hideLoadDataButton]="!$showMoreData()"
                 [itemsPerPage]="paginationPerPage" />
         </div>
     </div>
