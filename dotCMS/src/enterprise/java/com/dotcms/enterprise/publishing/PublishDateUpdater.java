@@ -68,6 +68,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -232,15 +233,19 @@ public class PublishDateUpdater {
         }
     }
 
-    public static void updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
-        updatePublishExpireDates(fireTime, null);
+    public static PublishDateUpdaterResult updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
+        return updatePublishExpireDates(fireTime, null);
     }
 
-    public static void updatePublishExpireDates(final Date fireTime, final Date previousFireTime) throws DotDataException, DotSecurityException {
+    public static PublishDateUpdaterResult updatePublishExpireDates(final Date fireTime, final Date previousFireTime) throws DotDataException, DotSecurityException {
 
 	    if(LicenseUtil.getLevel()< LicenseLevel.PROFESSIONAL.level){
-	        return;
+	        return new PublishDateUpdaterResult(0, 0, 0, fireTime);
 	    }
+
+        final long startTime = System.currentTimeMillis();
+        int totalPublishedCount = 0;
+        int totalUnpublishedCount = 0;
 
         try {
             final List<String> contentTypeVariableWithPublishField = getContentTypeVariableWithPublishField();
@@ -286,13 +291,13 @@ public class PublishDateUpdater {
             }
 
             //This method fires both operations publish + unpublish using batches
-            processPublishContentInBatch(luceneQueryToPublish, includeAllPastContent, previousJobRunTime,
+            totalPublishedCount = processPublishContentInBatch(luceneQueryToPublish, includeAllPastContent, previousJobRunTime,
                     searchBatchSize, transactionBatchSize);
         }
 
         final String luceneQueryToUnPublish = getExpireLuceneQuery(fireTime);
 
-            processUnpublishContentInBatch(luceneQueryToUnPublish, searchBatchSize, transactionBatchSize);
+            totalUnpublishedCount = processUnpublishContentInBatch(luceneQueryToUnPublish, searchBatchSize, transactionBatchSize);
         } catch (DotDataException e) {
             Logger.error(PublishDateUpdater.class,
                     "Error processing publish/unpublish dates: " + e.getMessage(), e);
@@ -302,6 +307,15 @@ public class PublishDateUpdater {
                     "Unexpected error processing publish/unpublish dates: " + e.getMessage(), e);
             throw new DotDataException("Failed to process publish/unpublish dates", e);
         }
+
+        final long totalProcessingTime = System.currentTimeMillis() - startTime;
+        final PublishDateUpdaterResult result = new PublishDateUpdaterResult(
+                totalPublishedCount, totalUnpublishedCount, totalProcessingTime, fireTime);
+
+        Logger.info(PublishDateUpdater.class,
+                String.format("Publish/unpublish operation completed: %s", result));
+
+        return result;
     }
 
     public static String getPublishLuceneQuery(final Date date,
@@ -324,6 +338,69 @@ public class PublishDateUpdater {
     }
 
     /**
+     * Result object containing summary information about the publish/unpublish operation.
+     */
+    public static class PublishDateUpdaterResult {
+        private final int publishedCount;
+        private final int unpublishedCount;
+        private final long totalProcessingTimeMs;
+        private final Date executionDate;
+
+        public PublishDateUpdaterResult(int publishedCount, int unpublishedCount, long totalProcessingTimeMs, Date executionDate) {
+            this.publishedCount = publishedCount;
+            this.unpublishedCount = unpublishedCount;
+            this.totalProcessingTimeMs = totalProcessingTimeMs;
+            this.executionDate = executionDate;
+        }
+
+        /**
+         * Get the number of contentlets that were published.
+         * @return Number of published contentlets
+         */
+        public int getPublishedCount() {
+            return publishedCount;
+        }
+
+        /**
+         * Get the number of contentlets that were unpublished.
+         * @return Number of unpublished contentlets
+         */
+        public int getUnpublishedCount() {
+            return unpublishedCount;
+        }
+
+        /**
+         * Get the total number of contentlets processed (published + unpublished).
+         * @return Total number of processed contentlets
+         */
+        public int getTotalProcessedCount() {
+            return publishedCount + unpublishedCount;
+        }
+
+        /**
+         * Get the total processing time in milliseconds.
+         * @return Processing time in milliseconds
+         */
+        public long getTotalProcessingTimeMs() {
+            return totalProcessingTimeMs;
+        }
+
+        /**
+         * Get the execution date when the operation was performed.
+         * @return Execution date
+         */
+        public Date getExecutionDate() {
+            return new Date(executionDate.getTime()); // Return defensive copy
+        }
+
+        @Override
+        public String toString() {
+            return String.format("PublishDateUpdaterResult{published=%d, unpublished=%d, total=%d, timeMs=%d, date=%s}",
+                    publishedCount, unpublishedCount, getTotalProcessedCount(), totalProcessingTimeMs, executionDate);
+        }
+    }
+
+    /**
      * Functional interface for content processing operations (publish/unpublish).
      * Allows for flexible delegation of specific content operations while maintaining
      * common pagination and transaction management logic.
@@ -338,7 +415,7 @@ public class PublishDateUpdater {
          * @return true if the contentlet was processed, false if it was skipped
          * @throws Exception if processing fails
          */
-        boolean process(Contentlet contentlet, ContentletAPI contentletAPI, User systemUser) throws Exception;
+        void process(Contentlet contentlet, ContentletAPI contentletAPI, User systemUser) throws Exception;
 
         /**
          * Get the name of this operation for logging purposes.
@@ -357,8 +434,9 @@ public class PublishDateUpdater {
      * @param searchBatchSize The batch size for search operations
      * @param transactionBatchSize The batch size for transaction commits
      * @param processor The content processor that provides operation logic and name
+     * @return The number of contentlets actually processed (not skipped)
      */
-    private static void processContentInBatch(final String luceneQuery,
+    private static int processContentInBatch(final String luceneQuery,
                                                    final int searchBatchSize,
                                                    final int transactionBatchSize,
                                                    final ContentProcessor processor) throws DotDataException {
@@ -368,47 +446,80 @@ public class PublishDateUpdater {
         final String operationName = processor.getOperationName();
 
         try {
-            // Get total count using indexCount
-            final long totalRecords = contentletAPI.indexCount(luceneQuery, systemUser, false);
-            Logger.info(PublishDateUpdater.class,
-                    String.format("Found %d contentlets to %s. Processing in search batches of %d with transaction commits every %d records",
-                            totalRecords, operationName, searchBatchSize, transactionBatchSize));
+            // Phase 1: Get all identifiers first to avoid pagination issues when content state changes
+            Logger.debug(PublishDateUpdater.class,
+                    String.format("Phase 1: Collecting all identifiers for %s operation using query: %s", operationName, luceneQuery));
 
-            if (totalRecords == 0) {
-                Logger.info(PublishDateUpdater.class, String.format("No contentlets found to %s", operationName));
-                return;
+            final List<String> allIdentifiers = new ArrayList<>();
+            int collectOffset = 0;
+
+            while (true) {
+                // Get contentlets to extract their identifiers
+                final List<Contentlet> contentletBatch = contentletAPI.search(
+                        luceneQuery, searchBatchSize, collectOffset, null, systemUser, false);
+
+                if (contentletBatch.isEmpty()) {
+                    break; // No more records to collect
+                }
+
+                // Extract identifiers from this batch
+                for (final Contentlet contentlet : contentletBatch) {
+                    allIdentifiers.add(contentlet.getIdentifier());
+                }
+
+                collectOffset += contentletBatch.size();
+
+                Logger.debug(PublishDateUpdater.class,
+                        String.format("Collected %d identifiers so far for %s operation", allIdentifiers.size(), operationName));
             }
 
-            int offset = 0;
+            Logger.info(PublishDateUpdater.class,
+                    String.format("Phase 1 complete: Found %d contentlet identifiers to %s", allIdentifiers.size(), operationName));
+
+            if (allIdentifiers.isEmpty()) {
+                Logger.debug(PublishDateUpdater.class, String.format("No contentlets found to %s", operationName));
+                return 0;
+            }
+
+            // Phase 2: Process contentlets by identifier in batches
+            Logger.debug(PublishDateUpdater.class,
+                    String.format("Phase 2: Processing %d contentlets in batches of %d with transaction commits every %d records for %s",
+                            allIdentifiers.size(), searchBatchSize, transactionBatchSize, operationName));
+
             int totalProcessed = 0;
             int transactionProcessed = 0;
-            boolean transactionStarted = false;
+            boolean transactionStarted;
+            int currentIndex = 0;
 
             HibernateUtil.startTransaction();
             transactionStarted = true;
 
-            while (offset < totalRecords) {
-                // Search for contentlets in batches
-                final List<Contentlet> contentletBatch = contentletAPI.search(
-                        luceneQuery, searchBatchSize, offset, null, systemUser, false);
-
-                if (contentletBatch.isEmpty()) {
-                    break;
-                }
+            while (currentIndex < allIdentifiers.size()) {
+                // Calculate batch end index
+                final int batchEnd = Math.min(currentIndex + searchBatchSize, allIdentifiers.size());
+                final List<String> batchIdentifiers = allIdentifiers.subList(currentIndex, batchEnd);
 
                 Logger.debug(PublishDateUpdater.class,
-                        String.format("Processing search batch %d-%d of %d total records for %s",
-                                offset, offset + contentletBatch.size(), totalRecords, operationName));
+                        String.format("Processing identifier batch %d-%d of %d total identifiers for %s",
+                                currentIndex, batchEnd, allIdentifiers.size(), operationName));
 
-                // Process each contentlet in the current batch
-                for (final Contentlet contentlet : contentletBatch) {
+                // Process each identifier in the current batch
+                for (final String identifier : batchIdentifiers) {
                     try {
-                        // Delegate to the processor function
-                        final boolean processed = processor.process(contentlet, contentletAPI, systemUser);
-                        if (processed) {
-                            totalProcessed++;
-                            transactionProcessed++;
+                        // Fetch fresh contentlet by identifier
+                        final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                                identifier, false);
+
+                        if (contentlet == null) {
+                            Logger.warn(PublishDateUpdater.class,
+                                    String.format("Contentlet with identifier %s not found, skipping %s operation", identifier, operationName));
+                            continue;
                         }
+
+                        // Delegate to the processor function
+                        processor.process(contentlet, contentletAPI, systemUser);
+                        totalProcessed++;
+                        transactionProcessed++;
 
                         // Commit every transactionBatchSize processed records
                         if (transactionProcessed >= transactionBatchSize) {
@@ -420,18 +531,18 @@ public class PublishDateUpdater {
                             transactionProcessed = 0;
 
                             // Start new transaction if there are more records to process
-                            if (totalProcessed < totalRecords) {
+                            if (currentIndex + searchBatchSize < allIdentifiers.size()) {
                                 HibernateUtil.startTransaction();
                                 transactionStarted = true;
                             }
                         }
                     } catch (Exception e) {
                         Logger.error(PublishDateUpdater.class,
-                                String.format("Content failed to %s: %s - %s", operationName, contentlet.getIdentifier(), e.getMessage()), e);
+                                String.format("Content failed to %s: %s - %s", operationName, identifier, e.getMessage()), e);
                     }
                 }
 
-                offset += searchBatchSize;
+                currentIndex = batchEnd;
             }
 
             // Commit any remaining records
@@ -439,11 +550,12 @@ public class PublishDateUpdater {
                 Logger.debug(PublishDateUpdater.class,
                         String.format("Committing final transaction with %d remaining contentlets for %s", transactionProcessed, operationName));
                 HibernateUtil.closeAndCommitTransaction();
-                transactionStarted = false;
             }
 
             Logger.info(PublishDateUpdater.class,
-                    String.format("Successfully processed %d of %d contentlets for %s", totalProcessed, totalRecords, operationName));
+                    String.format("Successfully processed %d of %d contentlets for %s", totalProcessed, allIdentifiers.size(), operationName));
+
+            return totalProcessed;
 
         } catch (DotHibernateException e) {
             Logger.error(PublishDateUpdater.class,
@@ -469,15 +581,13 @@ public class PublishDateUpdater {
         }
 
         @Override
-        public boolean process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
+        public void process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
             if (includeAllPastContent || shouldPublishContent(contentlet, previousJobRunTime)) {
                 contentletAPI.publish(contentlet, systemUser, false);
-                return true; // contentlet was processed
             } else {
                 Logger.debug(PublishDateUpdater.class,
                         "Skipping publish for contentlet " + contentlet.getIdentifier() +
                         " - content was already auto-published and manually unpublished");
-                return false; // contentlet was skipped
             }
         }
 
@@ -492,9 +602,8 @@ public class PublishDateUpdater {
      */
     private static class UnpublishContentProcessor implements ContentProcessor {
         @Override
-        public boolean process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
+        public void process(final Contentlet contentlet, final ContentletAPI contentletAPI, final User systemUser) throws Exception {
             contentletAPI.unpublish(contentlet, systemUser, false);
-            return true; // contentlet was always processed for unpublish (no conditional logic)
         }
 
         @Override
@@ -511,15 +620,16 @@ public class PublishDateUpdater {
      * @param previousJobRunTime Previous job run time for content validation
      * @param searchBatchSize The batch size for search operations
      * @param transactionBatchSize The batch size for transaction commits
+     * @return The number of contentlets actually published
      */
-    private static void processPublishContentInBatch(final String luceneQuery,
+    private static int processPublishContentInBatch(final String luceneQuery,
                                                            final boolean includeAllPastContent,
                                                            final Date previousJobRunTime,
                                                            final int searchBatchSize,
                                                            final int transactionBatchSize) throws DotDataException {
         //Build and pass a delegate to deal with the Publish Operation
         final ContentProcessor publishProcessor = new PublishContentProcessor(includeAllPastContent, previousJobRunTime);
-        processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, publishProcessor);
+        return processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, publishProcessor);
     }
 
     /**
@@ -528,13 +638,14 @@ public class PublishDateUpdater {
      * @param luceneQuery The lucene query to search for content to unpublish
      * @param searchBatchSize The batch size for search operations
      * @param transactionBatchSize The batch size for transaction commits
+     * @return The number of contentlets actually unpublished
      */
-    private static void processUnpublishContentInBatch(final String luceneQuery,
+    private static int processUnpublishContentInBatch(final String luceneQuery,
                                                             final int searchBatchSize,
                                                             final int transactionBatchSize) throws DotDataException {
         //Pass a delegate to deal with Unpublish Operation
         final ContentProcessor unpublishProcessor = new UnpublishContentProcessor();
-        processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, unpublishProcessor);
+        return processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, unpublishProcessor);
     }
 
 }
