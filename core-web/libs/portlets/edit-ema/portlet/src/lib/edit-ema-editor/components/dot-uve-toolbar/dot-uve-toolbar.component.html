@@ -53,7 +53,7 @@
                                         icon="pi pi-copy"
                                         [text]="true"
                                         [rounded]="true"
-                                        styleClass="shrink-0"
+                                        class="shrink-0"
                                         (cdkCopyToClipboardCopied)="triggerCopyToast()"
                                         [cdkCopyToClipboard]="url.value"
                                         data-testId="copy-url-button" />
@@ -68,7 +68,7 @@
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="p-button-text p-button-sm p-button-rounded-md !no-underline"
+                class="p-button-text p-button-sm p-button-rounded !no-underline"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">
@@ -102,18 +102,19 @@
     <ng-template #center>
         @if (live && !$socialMedia()) {
             <div class="flex items-center gap-1">
-                <p-datePicker
-                    inputStyleClass="p-inputtext-sm"
+                <p-datepicker
+                    size="small"
+                    dataType="date"
                     [ngModel]="$previewDate()"
                     (ngModelChange)="fetchPageOnDate($event)"
+                    [minDate]="$MIN_DATE()"
                     [showTime]="true"
                     [hourFormat]="'12'"
-                    dataType="date"
-                    [minDate]="$MIN_DATE()"
                     [readonlyInput]="true"
                     data-testId="uve-toolbar-calendar" />
                 <p-button
-                    class="uve-toolbar-chips"
+                    size="small"
+                    [outlined]="true"
                     [label]="'Today' | dm"
                     alt="Page Day"
                     (click)="fetchPageOnDate()"
