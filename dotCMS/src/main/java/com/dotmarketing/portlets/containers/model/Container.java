@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.containers.model;
 
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
@@ -43,9 +45,6 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 
 	public static final String SYSTEM_CONTAINER = "SYSTEM_CONTAINER";
 
-    /*
-     * Convenience access 
-     */
     public static final String LEGACY_RELATION_TYPE = MultiTree.LEGACY_RELATION_TYPE;
 
 	private static final long serialVersionUID = 1L;
@@ -325,6 +324,10 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 		return host.getHostname();
 	}
 
+
+	public String getVariant(){
+		return "DEFAULT";
+	}
 
 	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
