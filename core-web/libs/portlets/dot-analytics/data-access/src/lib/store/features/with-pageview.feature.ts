@@ -28,7 +28,7 @@ import {
 } from '../../types';
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
-    createEmptyPageViewEntity,
+    createEmptyAnalyticsEntity,
     createInitialRequestState,
     determineGranularityForTimeRange,
     fillMissingDates,
@@ -272,11 +272,11 @@ export function withPageview() {
 
                             return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
                                 map((entities) =>
-                                    fillMissingDates(
+                                    fillMissingDates<PageViewTimeLineEntity>(
                                         entities,
                                         timeRange,
                                         granularity,
-                                        createEmptyPageViewEntity
+                                        createEmptyAnalyticsEntity
                                     )
                                 ),
                                 tapResponse(

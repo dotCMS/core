@@ -4,8 +4,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
     aggregateTotalConversions,
-    createEmptyConversionTrendEntity,
-    createEmptyPageViewEntity,
+    createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
     determineGranularityForTimeRange,
@@ -19,6 +18,8 @@ import {
     transformPageViewTimeLineData,
     transformTopPagesTableData
 } from './analytics-data.utils';
+
+import { CHART_COLORS } from '../../constants';
 
 import type {
     Granularity,
@@ -361,7 +362,7 @@ describe('Analytics Data Utils', () => {
                 expect(result.datasets[0].label).toBe(
                     'analytics.charts.pageviews-timeline.dataset-label'
                 );
-                expect(result.datasets[0].borderColor).toBe('#3B82F6');
+                expect(result.datasets[0].borderColor).toBe(CHART_COLORS.primary);
                 expect(result.datasets[0].cubicInterpolationMode).toBe('monotone');
             });
 
@@ -720,7 +721,7 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toEqual(['No Data']);
                 expect(result.datasets[0].data).toEqual([1]);
-                expect(result.datasets[0].backgroundColor).toEqual(['#E5E7EB']);
+                expect(result.datasets[0].backgroundColor).toEqual([CHART_COLORS.gray]);
             });
 
             it('should group by browser and device type correctly', () => {
@@ -959,7 +960,7 @@ describe('Analytics Data Utils', () => {
                     null as unknown as PageViewTimeLineEntity[],
                     ['2024-01-01', '2024-01-03'],
                     'day',
-                    createEmptyPageViewEntity
+                    createEmptyAnalyticsEntity
                 );
 
                 expect(result).toEqual([]);
@@ -970,18 +971,18 @@ describe('Analytics Data Utils', () => {
                     {} as unknown as PageViewTimeLineEntity[],
                     ['2024-01-01', '2024-01-03'],
                     'day',
-                    createEmptyPageViewEntity
+                    createEmptyAnalyticsEntity
                 );
 
                 expect(result).toEqual([]);
             });
 
             it('should fill all dates in range when data is empty', () => {
-                const result = fillMissingDates(
+                const result = fillMissingDates<PageViewTimeLineEntity>(
                     [],
                     ['2024-01-01', '2024-01-03'],
                     'day',
-                    createEmptyPageViewEntity
+                    createEmptyAnalyticsEntity
                 );
 
                 // Should create 3 days worth of empty data
@@ -992,11 +993,11 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should return correct number of entries for date range', () => {
-                const result = fillMissingDates(
+                const result = fillMissingDates<PageViewTimeLineEntity>(
                     [],
                     ['2024-01-01', '2024-01-05'],
                     'day',
-                    createEmptyPageViewEntity
+                    createEmptyAnalyticsEntity
                 );
 
                 // 5 days: Jan 1, 2, 3, 4, 5
@@ -1052,21 +1053,12 @@ describe('Analytics Data Utils', () => {
         const testDate = new Date('2024-01-15T12:00:00.000Z');
         const testDateKey = testDate.toISOString();
 
-        describe('createEmptyPageViewEntity', () => {
+        describe('createEmptyAnalyticsEntity', () => {
             it('should create entity with correct structure', () => {
-                const result = createEmptyPageViewEntity(testDate, testDateKey);
-
-                expect(result).toEqual({
-                    'EventSummary.day': testDateKey,
-                    'EventSummary.day.day': '2024-01-15',
-                    'EventSummary.totalEvents': '0'
-                });
-            });
-        });
-
-        describe('createEmptyConversionTrendEntity', () => {
-            it('should create entity with correct structure', () => {
-                const result = createEmptyConversionTrendEntity(testDate, testDateKey);
+                const result = createEmptyAnalyticsEntity<PageViewTimeLineEntity>(
+                    testDate,
+                    testDateKey
+                );
 
                 expect(result).toEqual({
                     'EventSummary.day': testDateKey,

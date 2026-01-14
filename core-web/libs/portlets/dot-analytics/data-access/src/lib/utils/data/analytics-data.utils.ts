@@ -12,7 +12,7 @@ import {
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
+import { CHART_COLORS, TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
 import {
     ChartData,
     ChartDataset,
@@ -210,8 +210,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 {
                     label: 'analytics.charts.pageviews-timeline.dataset-label',
                     data: [],
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: CHART_COLORS.primary,
+                    backgroundColor: CHART_COLORS.primaryBackground,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -248,8 +248,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             {
                 label: 'analytics.charts.pageviews-timeline.dataset-label',
                 data: chartData,
-                borderColor: '#3B82F6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: CHART_COLORS.primary,
+                backgroundColor: CHART_COLORS.primaryBackground,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -291,8 +291,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
                 {
                     label: 'analytics.charts.conversion-trend.dataset-label',
                     data: [],
-                    borderColor: '#10B981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderColor: CHART_COLORS.secondary,
+                    backgroundColor: CHART_COLORS.secondaryBackground,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -327,8 +327,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
             {
                 label: 'analytics.charts.conversion-trend.dataset-label',
                 data: chartData,
-                borderColor: '#10B981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderColor: CHART_COLORS.secondary,
+                backgroundColor: CHART_COLORS.secondaryBackground,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -338,9 +338,9 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
                 pointRadius: chartData.map((value) => (value === 0 ? 4 : 0)),
                 pointHoverRadius: chartData.map((value) => (value === 0 ? 6 : 4)),
                 pointBackgroundColor: chartData.map((value) =>
-                    value === 0 ? '#10B981' : 'rgba(16, 185, 129, 0.1)'
+                    value === 0 ? CHART_COLORS.secondary : CHART_COLORS.secondaryBackground
                 ),
-                pointBorderColor: '#10B981'
+                pointBorderColor: CHART_COLORS.secondary
             } as ConversionTrendChartDataset
         ]
     };
@@ -373,14 +373,14 @@ export const transformTrafficVsConversionsData = (
                     data: [],
                     borderWidth: 0,
                     borderRadius: 6,
-                    backgroundColor: '#3B82F6',
+                    backgroundColor: CHART_COLORS.primary,
                     order: 2
                 },
                 {
                     type: 'line',
                     label: 'analytics.charts.conversions',
                     data: [],
-                    borderColor: '#10B981',
+                    borderColor: CHART_COLORS.secondary,
                     borderWidth: 2,
                     fill: false,
                     tension: 0.4,
@@ -425,14 +425,14 @@ export const transformTrafficVsConversionsData = (
                 data: visitorsData,
                 borderWidth: 0,
                 borderRadius: 6,
-                backgroundColor: '#3B82F6',
+                backgroundColor: CHART_COLORS.primary,
                 order: 2
             },
             {
                 type: 'line',
                 label: 'analytics.charts.conversions',
                 data: conversionsData,
-                borderColor: '#10B981',
+                borderColor: CHART_COLORS.secondary,
                 borderWidth: 2,
                 fill: false,
                 tension: 0.4,
@@ -535,7 +535,7 @@ export const transformDeviceBrowsersData = (
                 {
                     label: 'analytics.charts.device-breakdown.dataset-label',
                     data: [1],
-                    backgroundColor: ['#E5E7EB']
+                    backgroundColor: [CHART_COLORS.gray]
                 }
             ]
         };
@@ -546,13 +546,13 @@ export const transformDeviceBrowsersData = (
 
     // Enhanced color palette for browser + device combinations
     const colorPalette = [
-        '#3B82F6', // Chrome Desktop - Blue
+        CHART_COLORS.primary, // Chrome Desktop - Blue
         '#1E40AF', // Chrome Mobile - Dark Blue
         '#60A5FA', // Chrome Tablet - Light Blue
         '#8B5CF6', // Safari Desktop - Purple
         '#6D28D9', // Safari Mobile - Dark Purple
         '#A78BFA', // Safari Tablet - Light Purple
-        '#10B981', // Firefox Desktop - Green
+        CHART_COLORS.secondary, // Firefox Desktop - Green
         '#047857', // Firefox Mobile - Dark Green
         '#34D399', // Firefox Tablet - Light Green
         '#F59E0B', // Edge Desktop - Orange
@@ -592,25 +592,18 @@ type TimelineEntity = {
 type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
 
 /**
- * Factory for PageViewTimeLineEntity and ConversionTrendEntity (same structure)
+ * Generic factory for TimelineEntity types.
+ * Used for PageViewTimeLineEntity and ConversionTrendEntity which share the same structure.
  */
-export const createEmptyPageViewEntity = (date: Date, dateKey: string): PageViewTimeLineEntity => ({
-    'EventSummary.day': dateKey,
-    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
-    'EventSummary.totalEvents': '0'
-});
-
-/**
- * Factory for ConversionTrendEntity
- */
-export const createEmptyConversionTrendEntity = (
+export const createEmptyAnalyticsEntity = <T extends TimelineEntity>(
     date: Date,
     dateKey: string
-): ConversionTrendEntity => ({
-    'EventSummary.day': dateKey,
-    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
-    'EventSummary.totalEvents': '0'
-});
+): T =>
+    ({
+        'EventSummary.day': dateKey,
+        'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+        'EventSummary.totalEvents': '0'
+    }) as unknown as T;
 
 /**
  * Factory for TrafficVsConversionsEntity

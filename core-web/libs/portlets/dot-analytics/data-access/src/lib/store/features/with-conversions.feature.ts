@@ -27,7 +27,7 @@ import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     aggregateTotalConversions,
     ConversionTrendEntity,
-    createEmptyConversionTrendEntity,
+    createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
     determineGranularityForTimeRange,
@@ -184,11 +184,11 @@ export function withConversions() {
 
                             return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
                                 map((entities) =>
-                                    fillMissingDates(
+                                    fillMissingDates<ConversionTrendEntity>(
                                         entities,
                                         timeRange,
                                         granularity,
-                                        createEmptyConversionTrendEntity
+                                        createEmptyAnalyticsEntity
                                     )
                                 ),
                                 tapResponse(
