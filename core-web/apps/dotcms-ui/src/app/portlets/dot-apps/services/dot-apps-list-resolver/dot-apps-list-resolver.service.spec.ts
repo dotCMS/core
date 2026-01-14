@@ -10,7 +10,7 @@ import { DotApp } from '@dotcms/dotcms-models';
 
 import { DotAppsListResolver } from './dot-apps-list-resolver.service';
 
-import { appsResponse, AppsServicesMock } from '../../dot-apps-list/dot-apps-list.component.spec';
+import { appsResponse } from '../../shared/mocks';
 
 class DotLicenseServicesMock {
     canAccessEnterprisePortlet(_url: string) {
@@ -30,7 +30,10 @@ describe('DotAppsListResolver', () => {
             providers: [
                 DotAppsListResolver,
                 { provide: DotLicenseService, useClass: DotLicenseServicesMock },
-                { provide: DotAppsService, useClass: AppsServicesMock },
+                {
+                    provide: DotAppsService,
+                    useValue: { get: jest.fn().mockReturnValue(of(appsResponse)) }
+                },
                 {
                     provide: ActivatedRouteSnapshot,
                     useValue: activatedRouteSnapshotMock
