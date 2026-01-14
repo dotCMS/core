@@ -12,7 +12,6 @@ import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
@@ -146,7 +145,7 @@ public class PageResourceHelper implements Serializable {
      *
      * @param pageId           The Identifier of the HTML Page whose contents are being updated.
      * @param containerEntries The list of Containers and Contentlets in the form of
-     *                         {@link PageContainerForm.ContainerEntry} objects.
+     *                         {@link ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
      * @throws DotDataException An error occurred when interacting with the data source.
      * @param variantName      The variant name
@@ -160,7 +159,7 @@ public class PageResourceHelper implements Serializable {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
 
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final List<String> contentIds = containerEntry.getContentIds();
             final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?

@@ -825,10 +825,9 @@ public class PageResource {
         }
     }
 
-    protected void validateContainerEntries(final List<PageContainerForm.ContainerEntry> containerEntries) {
-
+    protected void validateContainerEntries(final List<ContainerEntry> containerEntries) {
         final Map<String, Set<String>> containerContentTypesMap = new HashMap<>();
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final ContainerEntry containerEntry : containerEntries) {
 
             final String containerId = containerEntry.getContainerId();
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
@@ -872,7 +871,7 @@ public class PageResource {
      * @param containerEntries List
      * @return List
      */
-    private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
+    private List<ContainerEntry> reduce(final List<ContainerEntry> containerEntries) {
         // Helper class to hold both contentIds and styleProperties during reduction
         class ContainerData {
             final Set<String> contentIds = new LinkedHashSet<>();
@@ -881,7 +880,7 @@ public class PageResource {
 
         final Map<MultiKey, ContainerData> containerEntryMap = new HashMap<>();
 
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final ContainerEntry containerEntry : containerEntries) {
             // containerEntryMap key: personaTag + containerId + containerUUID
             final MultiKey key = new MultiKey(containerEntry.getPersonaTag(),
                     containerEntry.getContainerId(), containerEntry.getContainerUUID());
@@ -898,7 +897,7 @@ public class PageResource {
         }
 
         return containerEntryMap.entrySet().stream()
-                .map(entry -> new PageContainerForm.ContainerEntry(
+                .map(entry -> new ContainerEntry(
                         (String) entry.getKey().getKeys()[0],
                         (String) entry.getKey().getKeys()[1],
                         (String) entry.getKey().getKeys()[2],
