@@ -270,7 +270,7 @@ public class PublishDateUpdater {
             // shouldPublishContent() defaults to publishing content, which is a safe fallback behavior.
 
             //The Following flag allows to byPass The shouldPublishContent check and force publication of everything
-            final boolean forcePublishAllContent = Config.getBooleanProperty("PUBLISH_JOB_QUEUE_INCLUDE_ALL_PAST_CONTENT",
+            final boolean forcePublishAllContent = Config.getBooleanProperty("PUBLISH_JOB_QUEUE_FORCE_INCLUDE_PAST_CONTENT",
                     false);
 
             Date previousJobRunTime = previousFireTime;
