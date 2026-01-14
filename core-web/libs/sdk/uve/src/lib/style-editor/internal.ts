@@ -1,13 +1,12 @@
 import {
-    StyleEditorFieldSchema,
-    StyleEditorFormSchema,
-    StyleEditorSectionSchema,
+    StyleEditorCheckboxOption,
     StyleEditorField,
-    StyleEditorForm,
-    StyleEditorSection,
     StyleEditorFieldInputType,
-    StyleEditorCheckboxDefaultValue,
-    StyleEditorCheckboxOption
+    StyleEditorFieldSchema,
+    StyleEditorForm,
+    StyleEditorFormSchema,
+    StyleEditorSection,
+    StyleEditorSectionSchema
 } from './types';
 
 /**
@@ -18,13 +17,11 @@ import {
  * This transformation ensures consistency in the schema format sent to UVE.
  *
  * **Field Type Handling:**
- * - **Input fields**: Extracts `inputType`, `placeholder`, and `defaultValue` into config
- * - **Dropdown fields**: Normalizes options (strings become `{ label, value }` objects),
- *   extracts `placeholder` and `defaultValue` into config
+ * - **Input fields**: Extracts `inputType` and `placeholder` into config
+ * - **Dropdown fields**: Normalizes options (strings become `{ label, value }` objects)
  * - **Radio fields**: Normalizes options (preserves image properties like `imageURL`, `width`, `height`),
- *   extracts `defaultValue` into config
- * - **Checkbox group fields**: Normalizes options and derives `defaultValue` from option values
- *   (creates Record<string, boolean> mapping option keys to their boolean values)
+ *   extracts `columns` into config
+ * - **Checkbox group fields**: Normalizes options (converts to format expected by UVE)
  *
  * @experimental This method is experimental and may be subject to change.
  *
@@ -36,15 +33,16 @@ import {
  * // Input field normalization
  * normalizeField({
  *   type: 'input',
+ *   id: 'font-size',
  *   label: 'Font Size',
  *   inputType: 'number',
- *   defaultValue: 16,
  *   placeholder: 'Enter size'
  * })
  * // Returns: {
  * //   type: 'input',
+ * //   id: 'font-size',
  * //   label: 'Font Size',
- * //   config: { inputType: 'number', defaultValue: 16, placeholder: 'Enter size' }
+ * //   config: { inputType: 'number', placeholder: 'Enter size' }
  * // }
  *
  * // Dropdown field with string options normalization
@@ -73,11 +71,6 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
     if (field.type === 'input') {
         config.inputType = field.inputType as unknown as StyleEditorFieldInputType;
         config.placeholder = field.placeholder as unknown as string;
-        config.defaultValue = field.defaultValue as unknown as
-            | string
-            | number
-            | boolean
-            | StyleEditorCheckboxDefaultValue;
     }
 
     if (field.type === 'dropdown' || field.type === 'radio') {
@@ -85,7 +78,6 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
         config.options = field.options.map((opt) =>
             typeof opt === 'string' ? { label: opt, value: opt } : opt
         );
-        config.defaultValue = field.defaultValue;
 
         // Handle radio-specific properties
         if (field.type === 'radio') {
@@ -95,17 +87,11 @@ function normalizeField(field: StyleEditorField): StyleEditorFieldSchema {
 
     if (field.type === 'checkboxGroup') {
         // Normalize checkbox options - convert to format expected by UVE
-        // Options already have label, key, and value (boolean)
+        // Options have label and key - convert key to 'value' for UVE format
         config.options = field.options.map((opt: StyleEditorCheckboxOption) => ({
             label: opt.label,
             value: opt.key // UVE expects 'value' to be the key identifier
         }));
-
-        // Derive defaultValue from options - map key to boolean value
-        config.defaultValue = field.options.reduce((acc, opt: StyleEditorCheckboxOption) => {
-            acc[opt.key] = opt.value;
-            return acc;
-        }, {} as StyleEditorCheckboxDefaultValue);
     }
 
     return { ...base, config };
@@ -196,14 +182,14 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
  *     {
  *       title: 'Typography',
  *       fields: [
- *         { type: 'input', label: 'Font Size', inputType: 'number', defaultValue: 16 },
- *         { type: 'dropdown', label: 'Font Family', options: ['Arial', 'Helvetica'] }
+ *         { type: 'input', id: 'font-size', label: 'Font Size', inputType: 'number' },
+ *         { type: 'dropdown', id: 'font-family', label: 'Font Family', options: ['Arial', 'Helvetica'] }
  *       ]
  *     },
  *     {
  *       title: 'Colors',
  *       fields: [
- *         { type: 'input', label: 'Primary Color', inputType: 'text', defaultValue: '#000000' }
+ *         { type: 'input', id: 'primary-color', label: 'Primary Color', inputType: 'text' }
  *       ]
  *     }
  *   ]
@@ -215,8 +201,8 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
  * //       title: 'Typography',
  * //       fields: [
  * //         [
- * //           { type: 'input', label: 'Font Size', config: { inputType: 'number', defaultValue: 16 } },
- * //           { type: 'dropdown', label: 'Font Family', config: { options: [...] } }
+ * //           { type: 'input', id: 'font-size', label: 'Font Size', config: { inputType: 'number' } },
+ * //           { type: 'dropdown', id: 'font-family', label: 'Font Family', config: { options: [...] } }
  * //         ]
  * //       ]
  * //     },
@@ -224,7 +210,7 @@ function normalizeSection(section: StyleEditorSection): StyleEditorSectionSchema
  * //       title: 'Colors',
  * //       fields: [
  * //         [
- * //           { type: 'input', label: 'Primary Color', config: { inputType: 'text', defaultValue: '#000000' } }
+ * //           { type: 'input', id: 'primary-color', label: 'Primary Color', config: { inputType: 'text' } }
  * //         ]
  * //       ]
  * //     }
