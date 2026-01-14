@@ -310,6 +310,22 @@ public class Container extends WebAsset implements Serializable, ManifestItem {
 	}
 
 
+	public String getHostId() throws DotDataException {
+		Host host = (Host)	getParentPermissionable();
+		return host.getIdentifier();
+	}
+
+
+
+
+	public String getHostName() throws DotDataException {
+		Host host = (Host)	getParentPermissionable();
+
+
+		return host.getHostname();
+	}
+
+
 	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 
