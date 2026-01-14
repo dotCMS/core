@@ -1,53 +1,22 @@
 {
-  "version": "0.2.0",
+  "version": "2.0.0",
   "configurations": [
     {
       "type": "java",
-      "name": "Attach to dotCMS (Remote Debug)",
+      "name": "Debug dotCMS (Docker)",
       "request": "attach",
       "hostName": "localhost",
       "port": 5005,
-      "projectName": "dotcms-core",
-      "timeout": 30000
+      "projectName": "dotcms-core"
     },
     {
       "type": "java",
-      "name": "Attach to dotCMS (Suspended - Long Timeout)",
+      "name": "Debug dotCMS (Suspended)",
       "request": "attach",
       "hostName": "localhost",
       "port": 5005,
       "projectName": "dotcms-core",
       "timeout": 300000
-    },
-    {
-      "type": "java",
-      "name": "Debug Integration Test",
-      "request": "launch",
-      "mainClass": "",
-      "projectName": "dotcms-integration",
-      "vmArgs": "-Xmx2g -Dcoreit.test.skip=false",
-      "args": "",
-      "console": "integratedTerminal"
-    },
-    {
-      "type": "java",
-      "name": "Debug Core Test",
-      "request": "launch",
-      "mainClass": "",
-      "projectName": "dotcms-core",
-      "vmArgs": "-Xmx2g",
-      "args": "",
-      "console": "integratedTerminal"
-    },
-    {
-      "type": "java",
-      "name": "Debug Postman Test",
-      "request": "launch",
-      "mainClass": "",
-      "projectName": "dotcms-postman",
-      "vmArgs": "-Xmx2g -Dpostman.test.skip=false",
-      "args": "",
-      "console": "integratedTerminal"
     }
   ]
 }
