@@ -17,6 +17,8 @@ import {
 const DEFAULT_LABEL_NAME_INDEX = 'label';
 const DEFAULT_VALUE_NAME_INDEX = 'value';
 
+const DEFAULT_HOST_NAME = 'SYSTEM_HOST';
+
 /**
  * Directive to set an element's options from dotCMS's containers
  *
@@ -134,7 +136,7 @@ export class DotContainerOptionsDirective implements OnInit {
         [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
     } {
         return options.reduce((acc, option) => {
-            const { hostname } = option.value.parentPermissionable;
+            const hostname = option.value.hostName || DEFAULT_HOST_NAME;
 
             if (!acc[hostname]) {
                 acc[hostname] = { items: [] };
