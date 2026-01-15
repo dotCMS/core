@@ -1,23 +1,15 @@
-
-    <p-button
-        (click)="op.toggle($event)"
-        [label]="value.name"
-        [text]="true"
-        size="small"
-        data-testId="persona-button">
-        @if (value?.identifier !== 'modes.persona.no.persona') {
-            <p-avatar
-                [text]="value?.name"
-                [image]="photo"
-                shape="circle"
-                dotAvatar />
-        } @else {
-            <p-avatar
-                [text]="'modes.persona.no.persona' | dm"
-                shape="circle"
-                dotAvatar />
-        }
-    </p-button>
+<p-button
+    (click)="op.toggle($event)"
+    [label]="value.name"
+    [text]="true"
+    size="small"
+    data-testId="persona-button">
+    @if (value?.identifier !== 'modes.persona.no.persona') {
+        <p-avatar [text]="value?.name" [image]="photo" shape="circle" dotAvatar />
+    } @else {
+        <p-avatar [text]="'modes.persona.no.persona' | dm" shape="circle" dotAvatar />
+    }
+</p-button>
 <p-popover #op data-testId="persona-op" [unstyled]="true" [appendTo]="'body'">
     <p-listbox
         size="small"
