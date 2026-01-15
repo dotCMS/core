@@ -7,11 +7,11 @@ import {
     Component,
     computed,
     DestroyRef,
+    DOCUMENT,
     effect,
     inject,
     OnInit,
-    output,
-    DOCUMENT
+    output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {

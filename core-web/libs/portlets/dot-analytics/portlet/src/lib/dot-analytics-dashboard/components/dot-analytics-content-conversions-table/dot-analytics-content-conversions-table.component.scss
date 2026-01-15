@@ -77,3 +77,52 @@
     font-family: monospace;
     line-height: 1.2;
 }
+
+// Column filter styling
+::ng-deep {
+    // Reduce filter icon size and align with sort icon
+    .p-column-filter-menu-button {
+        width: 1.5rem;
+        height: 1.5rem;
+        color: var(--gray-700);
+        vertical-align: middle;
+
+        &:hover {
+            color: var(--gray-900);
+            background: transparent;
+        }
+
+        .p-icon {
+            width: 0.75rem;
+            height: 0.75rem;
+        }
+    }
+
+    // Filter menu container styling
+    .p-column-filter-overlay {
+        padding: $spacing-3;
+        min-width: 180px;
+        background-color: $white;
+        border: 1px solid $color-palette-gray-200;
+        border-radius: $border-radius-md;
+        box-shadow:
+            0 4px 6px -1px rgb(0 0 0 / 10%),
+            0 2px 4px -1px rgb(0 0 0 / 6%);
+
+        .p-column-filter-constraint {
+            padding: 0;
+            border: none;
+        }
+
+        // Gap between input and buttons
+        .p-column-filter-buttonbar {
+            margin-top: $spacing-3;
+            gap: $spacing-2;
+        }
+
+        // MultiSelect inside filter
+        .p-multiselect {
+            width: 100%;
+        }
+    }
+}

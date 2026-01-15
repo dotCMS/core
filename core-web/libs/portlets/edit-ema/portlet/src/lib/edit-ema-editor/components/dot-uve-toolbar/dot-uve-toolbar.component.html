@@ -5,7 +5,7 @@
 <p-toolbar styleClass="uve-toolbar">
     <ng-template #start>
         <div class="flex items-center gap-1" [ngClass]="{ 'p-0': preview || live }">
-            @if ($isEditMode()) {
+            @if ($isEditMode() && $canEditPage()) {
                 <p-button
                     [text]="true"
                     size="small"
