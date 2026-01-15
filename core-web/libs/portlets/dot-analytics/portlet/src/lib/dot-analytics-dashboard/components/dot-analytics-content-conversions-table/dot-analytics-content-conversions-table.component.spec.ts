@@ -143,4 +143,25 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
             expect(headers.length).toBe(5);
         });
     });
+
+    describe('getTagSeverity', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    data: mockData,
+                    status: ComponentStatus.LOADED
+                } as unknown
+            });
+        });
+
+        it.each([
+            ['conversion', 'success'],
+            ['content_click', 'info'],
+            ['content_impression', 'warn'],
+            ['unknown_event', 'secondary'],
+            ['', 'secondary']
+        ])("should return '%s' severity for '%s' event type", (eventType, expectedSeverity) => {
+            expect(spectator.component['getTagSeverity'](eventType)).toBe(expectedSeverity);
+        });
+    });
 });
