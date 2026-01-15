@@ -1,15 +1,15 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { AppRulesComponent, RuleEngineModule } from '@dotcms/dot-rules';
 import { ApiRoot } from '@dotcms/dotcms-js';
-import { portletHaveLicenseResolver } from '@dotcms/ui';
+
+import { DotRulesComponent } from './app/dot-rules.component';
+import { RuleEngineModule } from './rule-engine.module';
 
 const routes: Routes = [
     {
-        component: AppRulesComponent,
-        path: '',
-        resolve: { haveLicense: portletHaveLicenseResolver }
+        component: DotRulesComponent,
+        path: ''
     }
 ];
 
@@ -17,6 +17,6 @@ const routes: Routes = [
     imports: [RuleEngineModule, RouterModule.forChild(routes)],
     declarations: [],
     providers: [ApiRoot],
-    exports: [AppRulesComponent]
+    exports: [DotRulesComponent]
 })
 export class DotRulesModule {}

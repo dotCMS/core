@@ -1,0 +1,124 @@
+<form>
+    <div flex layout="row" class="cw-condition-component-body">
+        @for (input of _inputs; track input) {
+            @if (input.type === 'spacer') {
+                <div flex class="cw-input cw-input-placeholder">&nbsp;</div>
+            }
+            @if (input.type === 'dropdown') {
+                <p-select
+                    (onChange)="onDropdownChange(input, $event.value)"
+                    [ngModel]="input.value"
+                    [options]="input.options$ | async"
+                    [style]="{ width: '100%' }"
+                    [required]="input.required"
+                    [placeholder]="input.placeholder | async"
+                    [editable]="input.allowAdditions"
+                    [filter]="true"
+                    [class.cw-comparator-selector]="input.name === 'comparison'"
+                    [class.cw-last]="islast"
+                    [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                    flex
+                    class="cw-input"
+                    appendTo="body" />
+            }
+            @if (input.type === 'restDropdown') {
+                <div
+                    [class.cw-last]="islast"
+                    flex
+                    layout-fill
+                    layout="column"
+                    class="cw-input">
+                    @if (input.maxSelections > 1) {
+                        <p-multiSelect
+                            (onChange)="onRestDropdownChange(input, $event.value)"
+                            [ngModel]="input.modelValue"
+                            [options]="input.options$ | async"
+                            [style]="{ width: '100%' }"
+                            [placeholder]="input.placeholder | async"
+                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [class.cw-comparator-selector]="input.name === 'comparison'"
+                            [class.cw-last]="islast"
+                            flex
+                            class="cw-input"
+                            appendTo="body"
+                            #rdInputMulti="ngModel" />
+                        @if (
+                            rdInputMulti.touched &&
+                            !rdInputMulti.valid &&
+                            (input.argIndex === null || input.argIndex < _rhArgCount)
+                        ) {
+                            <div flex="50" class="name cw-warn basic label">
+                                {{ getErrorMessage(input) }}
+                            </div>
+                        }
+                    } @else {
+                        <p-select
+                            (onChange)="onRestDropdownChange(input, $event.value)"
+                            [ngModel]="input.value"
+                            [options]="input.options$ | async"
+                            [style]="{ width: '100%' }"
+                            [required]="input.required"
+                            [placeholder]="input.placeholder | async"
+                            [editable]="input.allowAdditions"
+                            [filter]="true"
+                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [class.cw-comparator-selector]="input.name === 'comparison'"
+                            [class.cw-last]="islast"
+                            flex
+                            class="cw-input"
+                            appendTo="body"
+                            #rdInputSingle="ngModel" />
+                        @if (
+                            rdInputSingle.touched &&
+                            !rdInputSingle.valid &&
+                            (input.argIndex === null || input.argIndex < _rhArgCount)
+                        ) {
+                            <div flex="50" class="name cw-warn basic label">
+                                {{ getErrorMessage(input) }}
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            @if (input.type === 'text' || input.type === 'number') {
+                <div
+                    [class.cw-last]="islast"
+                    flex
+                    layout-fill
+                    layout="column"
+                    class="cw-input">
+                    <input
+                        (blur)="onBlur(input)"
+                        [placeholder]="input.placeholder | async"
+                        [formControl]="input.control"
+                        [type]="input.type"
+                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                        pInputText
+                        #fInput="ngForm" />
+                    @if (
+                        fInput.touched &&
+                        !fInput.valid &&
+                        (input.argIndex === null || input.argIndex < _rhArgCount)
+                    ) {
+                        <div flex="50" class="name cw-warn basic label">
+                            {{ getErrorMessage(input) }}
+                        </div>
+                    }
+                </div>
+            }
+            @if (input.type === 'datetime') {
+                <p-datePicker
+                    (onSelect)="onDateChange(input, $event)"
+                    [ngModel]="getDateModelValue(input)"
+                    [showTime]="true"
+                    [showButtonBar]="true"
+                    [class.cw-last]="islast"
+                    [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                    hourFormat="12"
+                    flex
+                    layout-fill
+                    class="cw-input" />
+            }
+        }
+    </div>
+</form>

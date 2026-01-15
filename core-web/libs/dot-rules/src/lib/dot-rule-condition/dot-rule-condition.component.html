@@ -1,0 +1,52 @@
+<div flex layout="row" class="cw-condition cw-entry">
+    <div class="cw-btn-group cw-condition-toggle">
+        @if (index !== 0) {
+            <button
+                (click)="toggleOperator()"
+                [label]="condition.operator"
+                pButton
+                class="p-button-secondary"
+                aria-label="Swap And/Or"></button>
+        }
+    </div>
+    <p-select
+        (onChange)="onTypeChange($event.value)"
+        [ngModel]="condition.type?.key"
+        [options]="typeDropdownOptions$ | async"
+        [style]="{ width: '100%' }"
+        [placeholder]="conditionTypePlaceholder"
+        [filter]="true"
+        flex="25"
+        class="cw-type-dropdown"
+        appendTo="body" />
+    <div flex="75" class="cw-condition-row-main">
+        @switch (condition.type?.key) {
+            @case ('NoSelection') {
+                <div class="cw-condition-component"></div>
+            }
+            @case ('VisitorsGeolocationConditionlet') {
+                <dot-visitors-location-container
+                    (parameterValuesChange)="onParameterValuesChange($event)"
+                    [componentInstance]="condition" />
+            }
+            @default {
+                <dot-serverside-condition
+                    (parameterValueChange)="onParameterValueChange($event)"
+                    [componentInstance]="condition"
+                    class="cw-condition-component" />
+            }
+        }
+    </div>
+</div>
+<div class="cw-btn-group cw-delete-btn">
+    <div class="ui basic icon buttons">
+        <button
+            (click)="onDeleteConditionClicked()"
+            [disabled]="!condition.isPersisted()"
+            pButton
+            type="button"
+            icon="pi pi-trash"
+            class="p-button-rounded p-button-danger p-button-text"
+            aria-label="Delete Condition"></button>
+    </div>
+</div>

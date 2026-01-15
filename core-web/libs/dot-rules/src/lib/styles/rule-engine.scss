@@ -58,7 +58,7 @@ $finder-s-input: ".ui.input input";
     flex-grow: 1;
     min-height: 100%;
 
-    cw-rule-engine {
+    dot-rule-engine {
         box-shadow: $shadow-m;
         padding: $spacing-3 $spacing-4;
         flex-grow: 1;
@@ -261,14 +261,11 @@ $finder-s-input: ".ui.input input";
                 z-index: 4;
             }
 
-            p-inputSwitch {
+            p-toggleSwitch {
                 margin: 4px 15px 0 0;
             }
         }
 
-        .cw-type-dropdown {
-            max-height: 2em;
-        }
         .cw-input-label-right {
             margin-left: 0.25em;
         }
@@ -347,10 +344,6 @@ $finder-s-input: ".ui.input input";
 
         .cw-condition-component-body {
             margin-left: 1em;
-        }
-
-        cw-toggle-input.cw-input {
-            margin-top: 0.75em;
         }
 
         .cw-condition-row,
@@ -520,10 +513,6 @@ $finder-s-input: ".ui.input input";
             text-align: right;
             color: lightgray;
         }
-    }
-
-    cw-modal-dialog .ui.dimmer {
-        background-color: $color-palette-black-op-50;
     }
 
     .cw-rule-engine__empty {

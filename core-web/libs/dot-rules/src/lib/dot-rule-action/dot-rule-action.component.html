@@ -1,0 +1,30 @@
+<div flex layout="row" class="cw-rule-action cw-entry">
+    <div flex="25" layout="row" class="cw-row-start-area">
+        <p-select
+            (onChange)="onTypeChange($event.value)"
+            [ngModel]="action.type?.key"
+            [options]="typeDropdownOptions$ | async"
+            [style]="{ width: '100%' }"
+            [placeholder]="actionTypePlaceholder"
+            [filter]="true"
+            flex
+            class="cw-type-dropdown"
+            appendTo="body" />
+    </div>
+    <dot-serverside-condition
+        (parameterValueChange)="onParameterValueChange($event)"
+        [componentInstance]="action"
+        flex="75"
+        class="cw-condition-component" />
+    <div class="cw-btn-group cw-delete-btn">
+        <div class="ui basic icon buttons">
+            <button
+                (click)="onDeleteRuleActionClicked()"
+                [disabled]="!action.isPersisted()"
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-rounded p-button-danger p-button-text"></button>
+        </div>
+    </div>
+</div>
