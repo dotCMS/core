@@ -116,9 +116,7 @@ describe('SearchableDropdownComponent', () => {
                 id: i,
                 label: `site-${i}`,
                 name: `site-${i}`,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             };
         }
 
@@ -252,7 +250,7 @@ describe('SearchableDropdownComponent', () => {
 
     it('should render a string array of properties in p-dataview', () => {
         hostComp.data = data;
-        hostComp.labelPropertyName = ['name', 'parentPermissionable.hostname'];
+        hostComp.labelPropertyName = ['name', 'hostName'];
 
         hostFixture.detectChanges();
 
@@ -350,9 +348,7 @@ describe('SearchableDropdownComponent', () => {
                     id: 1,
                     label: `label`,
                     name: `label`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    },
+                    hostName: 'demo.dotcms.com',
                     default: true
                 }
             ];
@@ -372,9 +368,7 @@ describe('SearchableDropdownComponent', () => {
                     id: 1,
                     label: `label`,
                     name: `label`,
-                    parentPermissionable: {
-                        hostname: 'demo.dotcms.com'
-                    },
+                    hostName: 'demo.dotcms.com',
                     default: false
                 }
             ];
@@ -504,9 +498,7 @@ describe('SearchableDropdownComponent', () => {
                 id: i,
                 label: `site-${i}`,
                 name: `site-${i}`,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             };
         }
 

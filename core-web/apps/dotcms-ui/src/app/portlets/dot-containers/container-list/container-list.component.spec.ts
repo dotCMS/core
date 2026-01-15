@@ -83,9 +83,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Published',
         live: true,
         name: 'movie',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'movie',
@@ -100,9 +98,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Unpublish',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -117,9 +113,7 @@ const containersMock: DotContainer[] = [
         identifier: '123Archived',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -134,9 +128,7 @@ const containersMock: DotContainer[] = [
         identifier: 'SYSTEM_CONTAINER',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: null,
         source: CONTAINER_SOURCE.DB,
         title: 'test',
@@ -151,9 +143,7 @@ const containersMock: DotContainer[] = [
         identifier: 'FILE_CONTAINER',
         live: false,
         name: 'test',
-        parentPermissionable: {
-            hostname: 'default'
-        },
+        hostName: 'default',
         path: '//demo.dotcms.com/application/containers/default/',
         pathName: '//demo.dotcms.com/application/containers/default/',
         source: CONTAINER_SOURCE.FILE,
