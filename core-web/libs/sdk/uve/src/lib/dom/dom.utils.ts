@@ -318,6 +318,8 @@ export const getContainersData = (
     const acceptTypes =
         containerStructures?.map((structure) => structure.contentTypeVar).join(',') ?? '';
 
+    // TODO: Check if the variantId is needed and we need to find another way to get it.
+    // Since the parentPermissionable is not available after: https://github.com/dotCMS/core/pull/32890
     const variantId = container?.parentPermissionable?.variantId;
     const maxContentlets = container?.maxContentlets ?? 0;
     const path = container?.path;
