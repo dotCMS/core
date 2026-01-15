@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, FormGroup } from '@angular/forms';
 
+import { StyleEditorProperties } from '@dotcms/types';
 import {
     StyleEditorCheckboxDefaultValue,
     StyleEditorFieldSchema,
@@ -9,7 +10,6 @@ import {
 } from '@dotcms/uve';
 
 import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../../shared/consts';
-import { StyleEditorProperties } from '../../../../../../shared/models';
 
 /**
  * Service responsible for building reactive forms from style editor schemas.

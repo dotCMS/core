@@ -186,7 +186,7 @@ describe('DotUveStyleEditorFormComponent', () => {
                     inode: 'test-inode',
                     title: 'Test',
                     contentType: 'test-content-type',
-                    styleProperties
+                    dotStyleProperties: styleProperties
                 },
                 container: {
                     acceptTypes: 'test',

@@ -1,6 +1,6 @@
 @if ($form() && $sections()) {
     <form [formGroup]="$form()!" class="uve-style-editor-form">
-        <p-accordion [multiple]="true" class="uve-accordion">
+        <p-accordion [multiple]="true" class="uve-accordion" [activeIndex]="$activeTabIndices()">
             @for (section of $sections(); track section.title) {
                 <p-accordionTab [header]="section.title" class="uve-accordion-tab">
                     <div class="form-fields">
