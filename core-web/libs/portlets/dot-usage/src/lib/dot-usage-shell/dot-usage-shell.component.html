@@ -1,21 +1,19 @@
-<p-message severity="info" data-testid="analytics-message">
-    <ng-template pTemplate="content">
-        <div class="flex align-items-center justify-content-between gap-2 w-full">
-            <div class="flex align-items-center gap-2">
-                <i class="pi pi-info-circle"></i>
-                <span data-testid="message-content">
-                    {{ 'analytics.feature.state' | dm }}
-                    <b>{{ 'development' | dm }}</b>
-                </span>
-            </div>
+<p-message severity="info" data-testid="analytics-message" [pt]="{ text: { class: 'w-full' } }">
+    <div class="flex items-center justify-between gap-2 w-full">
+        <div class="flex items-center gap-2">
+            <i class="text-gray-900 pi pi-info-circle"></i>
+            <span data-testid="message-content" class="text-gray-900 text-sm">
+                {{ 'analytics.feature.state' | dm }}
+                <b>{{ 'development' | dm }}</b>
+            </span>
         </div>
-    </ng-template>
+    </div>
 </p-message>
 
-<p-toolbar>
-    <div class="p-toolbar-group-start">
+<p-toolbar class="block mb-6">
+    <div class="p-toolbar-group-start text-sm">
         @if (lastUpdated()) {
-            <span class="text-color-secondary">
+            <span class="text-gray-600">
                 {{ 'usage.dashboard.lastUpdated' | dm }}:
                 {{ lastUpdated()! | date: 'short' }}
             </span>
@@ -35,33 +33,37 @@
     </div>
 </p-toolbar>
 
-<div class="mx-auto" style="max-width: 50rem">
+<div class="mx-auto max-w-[50rem]">
     <!-- Loading State -->
     @if (loading()) {
         <div
-            class="flex flex-column gap-6"
+            class="flex flex-col gap-6"
             role="status"
             aria-live="polite"
             [attr.aria-busy]="loading()">
-            <span class="visually-hidden">
+            <span class="sr-only">
                 {{ 'usage.dashboard.loading' | dm }}
             </span>
             <!-- Site Metrics: 3 cards -->
             <div>
-                <h2>
-                    <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
+                <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
+                    <p-skeleton class="block" width="10rem" height="1.5rem"></p-skeleton>
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2, 3]; track i) {
-                        <p-card class="flex-1">
+                        <p-card
+                            [pt]="{
+                                root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
+                                header: {class: 'px-4 pt-4 pb-0'},
+                            }">
                             <ng-template pTemplate="header">
-                                <h3>
-                                    <p-skeleton width="60%"></p-skeleton>
+                                <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                    <p-skeleton class="block" width="60%"></p-skeleton>
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton width="80%" height="3rem"></p-skeleton>
+                                    <p-skeleton class="block" width="80%" height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
                         </p-card>
@@ -71,20 +73,24 @@
 
             <!-- System Configuration: 3 cards -->
             <div>
-                <h2>
-                    <p-skeleton width="12rem" height="1.5rem"></p-skeleton>
+                <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
+                    <p-skeleton class="block" width="12rem" height="1.5rem"></p-skeleton>
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2, 3]; track i) {
-                        <p-card class="flex-1">
+                        <p-card
+                            [pt]="{
+                                root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
+                                header: {class: 'px-4 pt-4 pb-0'},
+                            }">
                             <ng-template pTemplate="header">
-                                <h3>
-                                    <p-skeleton width="60%"></p-skeleton>
+                                <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                    <p-skeleton class="block" width="60%"></p-skeleton>
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton width="80%" height="3rem"></p-skeleton>
+                                    <p-skeleton class="block" width="80%" height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
                         </p-card>
@@ -94,20 +100,24 @@
 
             <!-- User Activity: 2 cards -->
             <div>
-                <h2>
-                    <p-skeleton width="10rem" height="1.5rem"></p-skeleton>
+                <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
+                    <p-skeleton class="block" width="10rem" height="1.5rem"></p-skeleton>
                 </h2>
                 <div class="flex gap-3">
                     @for (i of [1, 2]; track i) {
-                        <p-card class="flex-1">
+                        <p-card
+                            [pt]="{
+                                root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
+                                header: {class: 'px-4 pt-4 pb-0'},
+                            }">
                             <ng-template pTemplate="header">
-                                <h3>
-                                    <p-skeleton width="60%"></p-skeleton>
+                                <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                    <p-skeleton class="block" width="60%"></p-skeleton>
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton width="80%" height="3rem"></p-skeleton>
+                                    <p-skeleton class="block" width="80%" height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
                         </p-card>
@@ -119,9 +129,13 @@
 
     <!-- Error State -->
     @if (error() && !loading()) {
-        <p-card>
+        <p-card
+            [pt]="{
+                root: { class: 'border-[1px] border-gray-300 rounded-2xl' },
+                header: {class: 'px-4 pt-4 pb-0'},
+            }">
             <ng-template pTemplate="header">
-                <h3 class="flex align-items-center gap-2">
+                <h3 class="flex items-center gap-2 text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                     <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
                     <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
                 </h3>
@@ -148,11 +162,11 @@
 
     <!-- Dashboard Content -->
     @if (hasData() && !loading()) {
-        <div class="flex flex-column gap-6">
+        <div class="flex flex-col gap-6">
             @for (category of getCategories(); track category) {
                 @if (getCategoryMetrics(category); as categoryMetrics) {
                     <div>
-                        <h2>{{ getCategoryTitleKey(category) | dm }}</h2>
+                        <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">{{ getCategoryTitleKey(category) | dm }}</h2>
                         <div class="flex gap-3">
                             @for (
                                 metricEntry of categoryMetrics | keyvalue;
@@ -160,18 +174,22 @@
                             ) {
                                 @if (metricEntry.value; as metricData) {
                                     <p-card
-                                        class="flex-1"
                                         [attr.data-testid]="
                                             category + '-' + metricEntry.key + '-card'
-                                        ">
+                                        "
+                                        [pt]="{
+                                            root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
+                                            header: {class: 'px-4 pt-4 pb-0'},
+                                        
+                                        }">
                                         <ng-template pTemplate="header">
-                                            <h3>
+                                            <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                                                 {{ metricData.displayLabel | dm }}
                                             </h3>
                                         </ng-template>
                                         <ng-template pTemplate="body">
                                             <p
-                                                class="metric-value"
+                                                class="m-0 text-4xl text-center"
                                                 [class.metric-value--text]="
                                                     isStringValue(metricData.value)
                                                 ">

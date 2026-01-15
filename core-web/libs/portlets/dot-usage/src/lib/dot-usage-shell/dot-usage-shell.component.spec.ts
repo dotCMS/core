@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { of, throwError, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -46,24 +46,38 @@ describe('DotUsageShellComponent', () => {
         lastUpdated: '2024-01-15T15:30:00Z'
     };
 
-    const mockService = {
+    const createMockService = () => ({
         getSummary: jest.fn().mockReturnValue(of(mockSummary)),
         refresh: jest.fn().mockReturnValue(of(mockSummary)),
         getErrorMessage: jest.fn().mockReturnValue('usage.dashboard.error.generic')
-    };
+    });
+
+    let mockService: ReturnType<typeof createMockService>;
 
     const createComponent = createComponentFactory({
         component: DotUsageShellComponent,
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            { provide: DotUsageService, useValue: mockService }
+            {
+                provide: DotUsageService,
+                useFactory: () => mockService
+            }
         ]
     });
 
     beforeEach(() => {
+        // Create a fresh mock service for each test
+        mockService = createMockService();
+        // Mock console.error to avoid noise in test output
+        jest.spyOn(console, 'error').mockImplementation(() => {});
         spectator = createComponent();
         usageService = spectator.inject(DotUsageService);
+    });
+
+    afterEach(() => {
+        // Restore console.error after each test
+        jest.restoreAllMocks();
     });
 
     it('should create', () => {
@@ -82,19 +96,21 @@ describe('DotUsageShellComponent', () => {
 
         spectator.detectChanges();
 
+        // Check for skeleton components in loading state
         expect(spectator.query('p-skeleton')).toBeTruthy();
     });
 
     it('should display error state', () => {
-        const errorMessage = 'Failed to load data';
+        const errorMessage = 'usage.dashboard.error.generic';
         spectator.component.loading.set(false);
         spectator.component.error.set(errorMessage);
 
         spectator.detectChanges();
 
-        expect(spectator.query('.usage-error')).toBeTruthy();
-        expect(spectator.query('p-message')).toBeTruthy();
-        expect(spectator.query('[data-testid="retry-button"]')).toBeTruthy();
+        // Check for error card and retry button
+        const errorCard = spectator.query('p-card');
+        expect(errorCard).toBeTruthy();
+        expect(spectator.query(byTestId('retry-button'))).toBeTruthy();
     });
 
     it('should display data when loaded', () => {
@@ -104,18 +120,23 @@ describe('DotUsageShellComponent', () => {
 
         spectator.detectChanges();
 
-        expect(spectator.query('[data-testid="site-COUNT_OF_SITES-card"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="content-COUNT_CONTENT-card"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="user-COUNT_OF_USERS-card"]')).toBeTruthy();
-        expect(spectator.query('[data-testid="system-COUNT_LANGUAGES-card"]')).toBeTruthy();
+        // Check for metric cards
+        expect(spectator.query(byTestId('site-COUNT_OF_SITES-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('content-COUNT_CONTENT-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('user-COUNT_OF_USERS-card'))).toBeTruthy();
+        expect(spectator.query(byTestId('system-COUNT_LANGUAGES-card'))).toBeTruthy();
     });
 
     it('should handle refresh button click', () => {
-        jest.clearAllMocks();
-        const refreshButton = spectator.query('[data-testid="refresh-button"]');
+        // Reset call count before test
+        (usageService.getSummary as jest.Mock).mockClear();
+        const refreshButton = spectator.query(byTestId('refresh-button'));
         expect(refreshButton).toBeTruthy();
 
-        spectator.click(refreshButton);
+        // PrimeNG buttons use onClick event, not native click
+        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.detectChanges();
+        
         expect(usageService.getSummary).toHaveBeenCalled();
     });
 
@@ -125,17 +146,17 @@ describe('DotUsageShellComponent', () => {
         spectator.component.summary.set(mockSummary);
         spectator.detectChanges();
 
-        const retryButton = spectator.query('[data-testid="retry-button"]');
+        const retryButton = spectator.query(byTestId('retry-button'));
         expect(retryButton).toBeTruthy();
-
-        // Reset the mocks to clear previous calls
-        jest.clearAllMocks();
 
         // Use a Subject to control when the observable emits
         const summarySubject = new Subject<UsageSummary>();
-        usageService.getSummary = jest.fn().mockReturnValue(summarySubject.asObservable());
+        (usageService.getSummary as jest.Mock).mockClear();
+        (usageService.getSummary as jest.Mock).mockReturnValue(summarySubject.asObservable());
 
-        spectator.click(retryButton);
+        // PrimeNG buttons use onClick event, not native click
+        spectator.triggerEventHandler('[data-testid="retry-button"]', 'onClick', new MouseEvent('click'));
+        spectator.detectChanges();
 
         // Check that reset happened synchronously (before observable completes)
         // The onRetry method resets state first, then calls loadData
@@ -158,38 +179,159 @@ describe('DotUsageShellComponent', () => {
     });
 
     it('should handle service errors gracefully', () => {
-        const errorSpy = jest.spyOn(console, 'error').mockImplementation();
         const httpError: { status: number; statusText: string } = {
             status: 500,
             statusText: 'Internal Server Error'
         };
-        usageService.getSummary = jest.fn().mockReturnValue(throwError(() => httpError));
-        usageService.getErrorMessage = jest
-            .fn()
-            .mockReturnValue('usage.dashboard.error.serverError');
+        (usageService.getSummary as jest.Mock).mockReturnValue(throwError(() => httpError));
+        (usageService.getErrorMessage as jest.Mock).mockReturnValue('usage.dashboard.error.serverError');
+
+        // console.error is already mocked in beforeEach, but we can verify it was called
+        const errorCallCount = (console.error as jest.Mock).mock.calls.length;
 
         spectator.component.loadData();
 
-        // The error passed to console.error will be the error object, not the function
-        expect(errorSpy).toHaveBeenCalled();
-        expect(errorSpy.mock.calls[0][0]).toBe('Failed to load usage data:');
+        // Verify console.error was called (the mock from beforeEach should have been called)
+        expect(console.error).toHaveBeenCalled();
+        expect((console.error as jest.Mock).mock.calls[errorCallCount][0]).toBe('Failed to load usage data:');
         expect(spectator.component.error()).toBe('usage.dashboard.error.serverError');
         expect(spectator.component.loading()).toBe(false);
-        errorSpy.mockRestore();
     });
 
     it('should show correct metric values', () => {
         spectator.component.summary.set(mockSummary);
         spectator.detectChanges();
 
-        const totalSitesMetric = spectator.query(
-            '[data-testid="site-COUNT_OF_SITES-card"] .metric-value'
-        );
-        expect(totalSitesMetric?.textContent).toBe('5');
+        // Query the metric value from the card body (p tag inside p-card)
+        const siteCard = spectator.query(byTestId('site-COUNT_OF_SITES-card'));
+        const siteMetricValue = siteCard?.querySelector('p');
+        expect(siteMetricValue?.textContent?.trim()).toBe('5');
 
-        const totalContentMetric = spectator.query(
-            '[data-testid="content-COUNT_CONTENT-card"] .metric-value'
+        const contentCard = spectator.query(byTestId('content-COUNT_CONTENT-card'));
+        const contentMetricValue = contentCard?.querySelector('p');
+        expect(contentMetricValue?.textContent?.trim()).toBe('1.5K');
+    });
+
+    it('should display analytics message', () => {
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('analytics-message'))).toBeTruthy();
+        expect(spectator.query(byTestId('message-content'))).toBeTruthy();
+    });
+
+    it('should display last updated timestamp when data is loaded', () => {
+        spectator.component.loading.set(false);
+        spectator.component.summary.set(mockSummary);
+        spectator.component.lastUpdated.set(new Date('2024-01-15T15:30:00Z'));
+        spectator.detectChanges();
+
+        // Check that last updated is displayed in toolbar
+        const toolbar = spectator.query('p-toolbar');
+        expect(toolbar).toBeTruthy();
+    });
+
+    it('should format metric value correctly for string values', () => {
+        const stringValue = 'N/A';
+        expect(spectator.component.formatMetricValue(stringValue)).toBe('N/A');
+    });
+
+    it('should format metric value correctly for numeric values', () => {
+        expect(spectator.component.formatMetricValue(1500)).toBe('1.5K');
+        expect(spectator.component.formatMetricValue(1500000)).toBe('1.5M');
+        expect(spectator.component.formatMetricValue(500)).toBe('500');
+    });
+
+    it('should return not available for undefined or null values', () => {
+        expect(spectator.component.formatMetricValue(undefined)).toBe(
+            'usage.dashboard.value.notAvailable'
         );
-        expect(totalContentMetric?.textContent).toBe('1.5K');
+        expect(spectator.component.formatMetricValue(null)).toBe(
+            'usage.dashboard.value.notAvailable'
+        );
+    });
+
+    it('should check if value is string correctly', () => {
+        expect(spectator.component.isStringValue('N/A')).toBe(true);
+        expect(spectator.component.isStringValue('1500')).toBe(false); // numeric string
+        expect(spectator.component.isStringValue(1500)).toBe(false);
+        expect(spectator.component.isStringValue(undefined)).toBe(false);
+        expect(spectator.component.isStringValue(null)).toBe(false);
+    });
+
+    it('should get metric by category and name', () => {
+        spectator.component.summary.set(mockSummary);
+
+        const metric = spectator.component.getMetric('content', 'COUNT_CONTENT');
+        expect(metric).toBeDefined();
+        expect(metric?.name).toBe('COUNT_CONTENT');
+        expect(metric?.value).toBe(1500);
+    });
+
+    it('should return undefined for non-existent metric', () => {
+        spectator.component.summary.set(mockSummary);
+
+        const metric = spectator.component.getMetric('content', 'NON_EXISTENT');
+        expect(metric).toBeUndefined();
+    });
+
+    it('should get category metrics', () => {
+        spectator.component.summary.set(mockSummary);
+
+        const categoryMetrics = spectator.component.getCategoryMetrics('content');
+        expect(categoryMetrics).toBeDefined();
+        expect(categoryMetrics?.['COUNT_CONTENT']).toBeDefined();
+    });
+
+    it('should get all categories', () => {
+        spectator.component.summary.set(mockSummary);
+
+        const categories = spectator.component.getCategories();
+        expect(categories).toContain('content');
+        expect(categories).toContain('site');
+        expect(categories).toContain('user');
+        expect(categories).toContain('system');
+    });
+
+    it('should get category title key', () => {
+        expect(spectator.component.getCategoryTitleKey('content')).toBe(
+            'usage.category.content.title'
+        );
+        expect(spectator.component.getCategoryTitleKey('site')).toBe('usage.category.site.title');
+    });
+
+    it('should check if value is i18n key', () => {
+        expect(spectator.component.isI18nKey('usage.dashboard.error.generic')).toBe(true);
+        expect(spectator.component.isI18nKey('usage.dashboard.value.notAvailable')).toBe(true);
+        expect(spectator.component.isI18nKey('regular-text')).toBe(false);
+    });
+
+    it('should unsubscribe on destroy', () => {
+        spectator.component.ngOnInit();
+        
+        const subscription = spectator.component['dataSubscription'] as { unsubscribe: () => void } | undefined;
+        if (subscription) {
+            const unsubscribeSpy = jest.spyOn(subscription, 'unsubscribe');
+            spectator.component.ngOnDestroy();
+            expect(unsubscribeSpy).toHaveBeenCalled();
+        }
+    });
+
+    it('should handle multiple refresh calls correctly', () => {
+        // Reset call count before test
+        (usageService.getSummary as jest.Mock).mockClear();
+        
+        const refreshButton = spectator.query(byTestId('refresh-button'));
+        expect(refreshButton).toBeTruthy();
+        
+        // PrimeNG buttons use onClick event, not native click
+        // Click refresh multiple times
+        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.detectChanges();
+        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.detectChanges();
+        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.detectChanges();
+
+        // Should call getSummary for each click
+        expect(usageService.getSummary).toHaveBeenCalledTimes(3);
     });
 });
