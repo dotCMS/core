@@ -4821,4 +4821,36 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#find(String, User, boolean)}
+     * Given Scenario: Create an HTML Page with a specific URL
+     * Expected Result: When calling find() on the HTML Page, the URL should be 
+     *                  correctly populated from identifier.asset_name, not from 
+     *                  the Content Type's defaultValue
+     */
+    @Test
+    public void test_find_HTMLPage_URL_ShouldBePopulatedFromIdentifier() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String expectedUrl = "test-page-url-" + System.currentTimeMillis();
+        
+        final HTMLPageAsset htmlPage = new HTMLPageDataGen(host, template)
+                .pageURL(expectedUrl)
+                .nextPersisted();
+        
+        assertNotNull(htmlPage.getInode());
+        
+        CacheLocator.getContentletCache().remove(htmlPage.getInode());
+        
+        final Contentlet foundContentlet = APILocator.getContentletAPI()
+                .find(htmlPage.getInode(), APILocator.systemUser(), false);
+        
+        assertNotNull(foundContentlet);
+        final String actualUrl = foundContentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+        assertEquals("URL should be populated from identifier.asset_name", expectedUrl, actualUrl);
+        
+        final Identifier identifier = APILocator.getIdentifierAPI().find(foundContentlet);
+        assertEquals("URL should match identifier.asset_name", identifier.getAssetName(), actualUrl);
+    }
+
 }
