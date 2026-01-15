@@ -48,14 +48,13 @@
 package com.dotcms.enterprise.publishing;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.publishExpireESDateTimeFormat;
-
-import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -451,10 +450,8 @@ public class PublishDateUpdater {
             Logger.debug(PublishDateUpdater.class,
                     String.format("Phase 1: Collecting all allInodes for %s operation using query: %s", operationName, luceneQuery));
 
-            final List<String> allInodes = contentletAPI.search(luceneQuery, 0, 0,
-                            null, systemUser, false)
-                    .stream().map(Contentlet::getInode)
-                    .collect(Collectors.toList());
+            final List<String> allInodes = contentletAPI.searchIndex(luceneQuery, 0, 0, null,
+                    systemUser, false).stream().map(ContentletSearch::getInode).collect(Collectors.toList());
 
             Logger.info(PublishDateUpdater.class,
                     String.format("Phase 1 complete: Found %d contentlet inodes to %s", allInodes.size(), operationName));
