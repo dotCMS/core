@@ -7,7 +7,7 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject
+    inject, OnChanges
 } from '@angular/core';
 import { UntypedFormControl, FormsModule } from '@angular/forms';
 
@@ -55,7 +55,7 @@ const UNITS = {
     providers: [DecimalPipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotVisitorsLocationComponent {
+export class DotVisitorsLocationComponent implements OnChanges {
     decimalPipe = inject(DecimalPipe);
     private loggerService = inject(LoggerService);
 

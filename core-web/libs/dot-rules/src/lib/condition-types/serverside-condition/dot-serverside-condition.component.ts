@@ -7,7 +7,7 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject
+    inject, OnChanges
 } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
@@ -46,7 +46,7 @@ import { Verify } from '../../services/validation/Verify';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotServersideConditionComponent {
+export class DotServersideConditionComponent implements OnChanges {
     private loggerService = inject(LoggerService);
     private coreWebService = inject(CoreWebService);
 

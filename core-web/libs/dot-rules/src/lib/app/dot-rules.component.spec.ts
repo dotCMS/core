@@ -3,6 +3,7 @@ import { TestBed, waitForAsync } from '@angular/core/testing';
 import { LoginService } from '@dotcms/dotcms-js';
 
 import { DotRulesComponent } from './dot-rules.component';
+
 import { DotRuleEngineContainerComponent } from '../dot-rule-engine-container/dot-rule-engine-container.component';
 
 describe('DotRulesComponent', () => {

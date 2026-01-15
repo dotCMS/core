@@ -8,7 +8,7 @@ import {
     Input,
     Output,
     ChangeDetectionStrategy,
-    inject
+    inject, OnChanges
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -19,11 +19,11 @@ import {
     FormsModule
 } from '@angular/forms';
 
+import { MenuItem } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { MenuItem } from 'primeng/api';
 import { SelectModule } from 'primeng/select';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
@@ -85,7 +85,7 @@ const I8N_BASE = 'api.sites.ruleengine';
     ],
     changeDetection: ChangeDetectionStrategy.Default
 })
-export class DotRuleComponent {
+export class DotRuleComponent implements OnChanges {
     private _user = inject(UserModel);
     elementRef = inject(ElementRef);
     resources = inject(I18nService);
@@ -261,7 +261,7 @@ export class DotRuleComponent {
     ngOnChanges(change): void {
         if (change.rule) {
             const rule = this.rule;
-            const ctrl: UntypedFormControl = <UntypedFormControl>this.formModel.controls['name'];
+            const ctrl: UntypedFormControl = <UntypedFormControl> this.formModel.controls['name'];
             ctrl.patchValue(this.rule.name, {});
 
             ctrl.valueChanges.pipe(debounceTime(250)).subscribe((name: string) => {
