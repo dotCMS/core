@@ -57,7 +57,7 @@ export function updateStylePropertiesInGraphQL(
 
     contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
         if (contentlet?.identifier === contentletId) {
-            contentlet.styleProperties = styleProperties;
+            contentlet.dotStyleProperties = styleProperties;
         }
     });
 
@@ -97,5 +97,5 @@ export function extractStylePropertiesFromGraphQL(
         (c: DotCMSBasicContentlet) => c?.identifier === contentletId
     );
 
-    return contentlet?.styleProperties || null;
+    return contentlet?.dotStyleProperties || null;
 }

@@ -378,7 +378,7 @@ export interface DotCMSBasicContentlet {
     widgetTitle?: string;
     onNumberOfPages?: string;
     __icon__?: string;
-    styleProperties?: Record<string, unknown>;
+    dotStyleProperties?: Record<string, unknown>;
     _map?: Record<string, unknown>;
 }
 
