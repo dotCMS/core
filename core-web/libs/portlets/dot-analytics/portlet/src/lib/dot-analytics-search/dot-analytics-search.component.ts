@@ -30,7 +30,6 @@ import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTION
     ],
     providers: [DotAnalyticsSearchStore, DotAnalyticsSearchService],
     templateUrl: './dot-analytics-search.component.html',
-    // styleUrl: './dot-analytics-search.component.scss',
     host: { class: 'w-full h-full overflow-auto bg-white flex flex-col p-4 md:p-6 gap-4' }
 })
 export default class DotAnalyticsSearchComponent {

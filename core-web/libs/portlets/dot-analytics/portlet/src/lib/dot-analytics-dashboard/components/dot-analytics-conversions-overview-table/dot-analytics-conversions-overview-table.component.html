@@ -67,9 +67,7 @@
             <ng-template pTemplate="body" let-row>
                 <tr>
                     <td>
-                        <p-tag
-                            [value]="row['Conversion.conversionName']"
-                            class="bg-blue-50 border border-blue-200 rounded-sm text-blue-700 text-xs font-semibold py-0 px-2" />
+                        <p-tag [value]="row['Conversion.conversionName']" />
                     </td>
                     <td class="text-right text-primary font-semibold">
                         {{ row['Conversion.totalConversion'] | number }}
@@ -89,7 +87,6 @@
                                         <span class="text-black truncate">{{ content.title }}</span>
                                         <p-chip
                                             [label]="(content.conversions | number) || '0'"
-                                            class="bg-gray-100 text-gray-700 text-xs font-semibold py-0.5 px-1 h-auto"
                                             pTooltip="Conversions"
                                             tooltipPosition="top" />
                                     </div>

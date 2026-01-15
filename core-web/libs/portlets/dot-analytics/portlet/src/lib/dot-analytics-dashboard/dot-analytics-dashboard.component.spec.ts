@@ -2,12 +2,11 @@ import {
     byTestId,
     createRoutingFactory,
     mockProvider,
-    SpectatorRouting,
-    SpyObject
+    SpectatorRouting
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { MessageModule } from 'primeng/message';
 
@@ -37,7 +36,6 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotAnalyticsDashboardComponent', () => {
     let spectator: SpectatorRouting<DotAnalyticsDashboardComponent>;
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
-    let router: SpyObject<Router>;
 
     const defaultLocalStorageMock = {
         getItem: jest.fn().mockReturnValue(true), // Por defecto, el banner está oculto
@@ -86,7 +84,9 @@ describe('DotAnalyticsDashboardComponent', () => {
             // p-tabs renders all panels in DOM, so we need to check only active panel
             const activePanels = spectator.queryAll('p-tabpanel');
             const firstPanel = activePanels[0];
-            const metricCards = firstPanel?.querySelectorAll('[data-testid="analytics-metric-card"]');
+            const metricCards = firstPanel?.querySelectorAll(
+                '[data-testid="analytics-metric-card"]'
+            );
             expect(metricCards?.length).toBe(3);
         });
 

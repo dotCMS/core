@@ -2,7 +2,7 @@
 <div class="flex gap-3 flex-wrap max-lg:flex-col">
     @for (metric of $metricsData(); track metric.name) {
         <dot-analytics-dashboard-metrics
-            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full "
+            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full"
             [name]="metric.name"
             [value]="metric.value || 0"
             [subtitle]="metric.subtitle || ''"
@@ -15,8 +15,7 @@
 <!-- Charts Section -->
 <div class="flex gap-3">
     <!-- Line Chart -->
-    <div
-        class="flex-1 min-w-0 ">
+    <div class="flex-1 min-w-0">
         <dot-analytics-dashboard-chart
             [title]="'analytics.charts.pageviews-timeline.title' | dm"
             type="line"
@@ -29,8 +28,7 @@
 <!-- Table and Pie Chart Section -->
 <div class="flex gap-3 items-stretch max-lg:flex-col">
     <!-- Pie Chart -->
-    <div
-        class="w-[450px] shrink-0 max-lg:w-full max-lg:shrink ">
+    <div class="w-[450px] shrink-0 max-lg:w-full max-lg:shrink">
         <dot-analytics-dashboard-chart
             [title]="'analytics.charts.device-breakdown.title' | dm"
             type="pie"
@@ -40,8 +38,7 @@
     </div>
 
     <!-- Table -->
-    <div
-        class="flex-1 min-w-0 max-lg:w-full max-lg:min-w-0 ">
+    <div class="flex-1 min-w-0 max-lg:w-full max-lg:min-w-0">
         <dot-analytics-dashboard-table
             [tableState]="$topPagesTable()"
             data-testid="analytics-table" />

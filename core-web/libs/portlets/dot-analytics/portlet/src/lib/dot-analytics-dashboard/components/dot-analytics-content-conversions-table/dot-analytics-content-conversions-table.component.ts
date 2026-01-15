@@ -48,4 +48,17 @@ export default class DotAnalyticsContentConversionsTableComponent {
 
         return status === ComponentStatus.LOADED && (!data || data.length === 0);
     });
+
+    /**
+     * Get the PrimeNG tag severity based on event type
+     */
+    protected getTagSeverity(eventType: string): 'success' | 'info' | 'warn' | 'secondary' {
+        const severityMap: Record<string, 'success' | 'info' | 'warn' | 'secondary'> = {
+            conversion: 'success',
+            content_click: 'info',
+            content_impression: 'warn'
+        };
+
+        return severityMap[eventType] || 'secondary';
+    }
 }
