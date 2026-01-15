@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { Component, ElementRef, input, output, viewChild } from '@angular/core';
 
 import { LazyLoadEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -13,19 +13,19 @@ import { DotAppsConfigurationItemComponent } from './dot-apps-configuration-item
     selector: 'dot-apps-configuration-list',
     templateUrl: './dot-apps-configuration-list.component.html',
     styleUrls: ['./dot-apps-configuration-list.component.scss'],
-    imports: [CommonModule, ButtonModule, DotAppsConfigurationItemComponent, DotMessagePipe]
+    imports: [NgClass, ButtonModule, DotAppsConfigurationItemComponent, DotMessagePipe]
 })
 export class DotAppsConfigurationListComponent {
-    @ViewChild('searchInput') searchInput: ElementRef;
+    searchInput = viewChild<ElementRef>('searchInput');
 
-    @Input() hideLoadDataButton: boolean;
-    @Input() itemsPerPage: number;
-    @Input() siteConfigurations: DotAppsSite[];
+    hideLoadDataButton = input<boolean>();
+    itemsPerPage = input<number>();
+    siteConfigurations = input<DotAppsSite[]>();
 
-    @Output() loadData = new EventEmitter<LazyLoadEvent>();
-    @Output() edit = new EventEmitter<DotAppsSite>();
-    @Output() export = new EventEmitter<DotAppsSite>();
-    @Output() delete = new EventEmitter<DotAppsSite>();
+    loadData = output<LazyLoadEvent>();
+    edit = output<DotAppsSite>();
+    export = output<DotAppsSite>();
+    delete = output<DotAppsSite>();
 
     /**
      * Emits action to load next configuration page
@@ -33,6 +33,6 @@ export class DotAppsConfigurationListComponent {
      * @memberof DotAppsConfigurationListComponent
      */
     loadNext() {
-        this.loadData.emit({ first: this.siteConfigurations.length, rows: this.itemsPerPage });
+        this.loadData.emit({ first: this.siteConfigurations().length, rows: this.itemsPerPage() });
     }
 }

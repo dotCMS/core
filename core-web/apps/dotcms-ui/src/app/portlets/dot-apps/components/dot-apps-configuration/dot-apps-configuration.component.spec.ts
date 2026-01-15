@@ -107,70 +107,68 @@ describe('DotAppsConfigurationComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                InputTextModule,
-                ButtonModule,
-                CommonModule,
-                DotActionButtonComponent,
-                DotAppsConfigurationHeaderComponent,
-                DotAppsImportExportDialogComponent,
-                DotAppsConfigurationListComponent,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                MarkdownModule.forRoot(),
-                DotAppsConfigurationComponent
-            ],
-            providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
-                { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: ActivatedRoute,
-                    useValue: activatedRouteMock
-                },
-                {
-                    provide: DotAppsService,
-                    useClass: MockDotAppsService
-                },
-                {
-                    provide: DotRouterService,
-                    useClass: MockDotRouterService
-                },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotAppsConfigurationResolver,
-                PaginatorService,
-                DotAlertConfirmService,
-                ConfirmationService
-            ]
-        });
-
-        fixture = TestBed.createComponent(DotAppsConfigurationComponent);
-        component = fixture.debugElement.componentInstance;
-        dialogService = TestBed.inject(DotAlertConfirmService);
-        dialogStore = TestBed.inject(DotAppsImportExportDialogStore);
-        paginationService = TestBed.inject(PaginatorService);
-        appsServices = TestBed.inject(DotAppsService);
-        routerService = TestBed.inject(DotRouterService);
-    }));
-
     describe('With integrations count', () => {
         let setExtraParamsSpy: jest.SpyInstance;
         let getWithOffsetSpy: jest.SpyInstance;
 
-        beforeEach(() => {
-            // Set up spies BEFORE detectChanges triggers ngOnInit
+        beforeEach(waitForAsync(() => {
+            TestBed.configureTestingModule({
+                imports: [
+                    InputTextModule,
+                    ButtonModule,
+                    CommonModule,
+                    DotActionButtonComponent,
+                    DotAppsConfigurationHeaderComponent,
+                    DotAppsImportExportDialogComponent,
+                    DotAppsConfigurationListComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe,
+                    MarkdownModule.forRoot(),
+                    DotAppsConfigurationComponent
+                ],
+                providers: [
+                    provideHttpClient(),
+                    provideHttpClientTesting(),
+                    { provide: DotMessageService, useValue: messageServiceMock },
+                    {
+                        provide: ActivatedRoute,
+                        useValue: activatedRouteMock
+                    },
+                    {
+                        provide: DotAppsService,
+                        useClass: MockDotAppsService
+                    },
+                    {
+                        provide: DotRouterService,
+                        useClass: MockDotRouterService
+                    },
+                    { provide: CoreWebService, useClass: CoreWebServiceMock },
+                    DotAppsConfigurationResolver,
+                    PaginatorService,
+                    DotAlertConfirmService,
+                    ConfirmationService
+                ]
+            });
+
+            // Inject services and set up spies BEFORE creating component
+            paginationService = TestBed.inject(PaginatorService);
             setExtraParamsSpy = jest.spyOn(paginationService, 'setExtraParams');
             getWithOffsetSpy = jest
                 .spyOn(paginationService, 'getWithOffset')
                 .mockReturnValue(of(appData));
 
-            // First detectChanges triggers ngOnInit which loads app data
+            // Now create the component - ngOnInit will have spies in place
+            fixture = TestBed.createComponent(DotAppsConfigurationComponent);
+            component = fixture.debugElement.componentInstance;
+            dialogService = TestBed.inject(DotAlertConfirmService);
+            dialogStore = TestBed.inject(DotAppsImportExportDialogStore);
+            appsServices = TestBed.inject(DotAppsService);
+            routerService = TestBed.inject(DotRouterService);
+
+            // Trigger ngOnInit and template rendering
             fixture.detectChanges();
-            // Second detectChanges updates the template now that app signal has value
             fixture.detectChanges();
-        });
+        }));
 
         afterEach(() => {
             setExtraParamsSpy.mockClear();
@@ -220,8 +218,8 @@ describe('DotAppsConfigurationComponent', () => {
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
             fixture.detectChanges();
-            expect(listComp.siteConfigurations).toEqual(component.$app().sites);
-            expect(listComp.itemsPerPage).toBe(component.$paginationPerPage());
+            expect(listComp.siteConfigurations()).toEqual(component.$app().sites);
+            expect(listComp.itemsPerPage()).toBe(component.$paginationPerPage());
         });
 
         it('should dot-apps-configuration-list emit action to load more data', () => {

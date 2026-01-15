@@ -101,12 +101,6 @@ const routeDatamock = {
     data: appData
 };
 
-class ActivatedRouteMock {
-    get data() {
-        return {};
-    }
-}
-
 @Injectable()
 class MockDotAppsService {
     saveSiteConfiguration(
@@ -120,7 +114,8 @@ class MockDotAppsService {
 
 @Component({
     selector: 'dot-key-value-ng',
-    template: ''
+    template: '',
+    standalone: true
 })
 class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
@@ -131,7 +126,8 @@ class MockDotKeyValueComponent {
 
 @Component({
     selector: 'dot-apps-configuration-detail-form',
-    template: ''
+    template: '',
+    standalone: true
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
@@ -145,102 +141,98 @@ class MockDotAppsConfigurationDetailFormComponent {
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `
+    `,
+    standalone: true
 })
 class MockMarkdownComponent {}
 
-describe('DotAppsConfigurationDetailComponent', () => {
-    let component: DotAppsConfigurationDetailComponent;
-    let fixture: ComponentFixture<DotAppsConfigurationDetailComponent>;
-    let appsServices: DotAppsService;
-    let activatedRoute: ActivatedRoute;
-    let routerService: DotRouterService;
+const messageServiceMock = new MockDotMessageService(messages);
 
-    const messageServiceMock = new MockDotMessageService(messages);
-
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                DotAppsConfigurationDetailComponent,
-                RouterTestingModule.withRoutes([
-                    {
-                        component: DotAppsConfigurationDetailComponent,
-                        path: ''
-                    }
-                ]),
-                ButtonModule,
-                CommonModule,
-                DotCopyButtonComponent,
-                DotAppsConfigurationHeaderComponent,
-                DotSafeHtmlPipe,
-                DotMessagePipe,
-                MockDotKeyValueComponent,
-                MockDotAppsConfigurationDetailFormComponent,
-                MockMarkdownComponent
-            ],
-            declarations: [],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
+function configureTestingModule(routeData: unknown) {
+    return TestBed.configureTestingModule({
+        imports: [
+            DotAppsConfigurationDetailComponent,
+            RouterTestingModule.withRoutes([
                 {
-                    provide: ActivatedRoute,
-                    useClass: ActivatedRouteMock
-                },
-                {
-                    provide: DotAppsService,
-                    useClass: MockDotAppsService
-                },
-                {
-                    provide: DotRouterService,
-                    useClass: MockDotRouterService
-                },
-                MarkdownService,
-                DotAppsConfigurationDetailResolver
-            ]
+                    component: DotAppsConfigurationDetailComponent,
+                    path: ''
+                }
+            ]),
+            ButtonModule,
+            CommonModule,
+            DotCopyButtonComponent,
+            DotAppsConfigurationHeaderComponent,
+            DotSafeHtmlPipe,
+            DotMessagePipe,
+            MockDotKeyValueComponent,
+            MockDotAppsConfigurationDetailFormComponent,
+            MockMarkdownComponent
+        ],
+        declarations: [],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            {
+                provide: ActivatedRoute,
+                useValue: { data: of(routeData) }
+            },
+            {
+                provide: DotAppsService,
+                useClass: MockDotAppsService
+            },
+            {
+                provide: DotRouterService,
+                useClass: MockDotRouterService
+            },
+            MarkdownService,
+            DotAppsConfigurationDetailResolver
+        ]
+    })
+        .overrideComponent(DotAppsConfigurationDetailComponent, {
+            set: {
+                imports: [
+                    CommonModule,
+                    ButtonModule,
+                    DotAppsConfigurationHeaderComponent,
+                    DotCopyButtonComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe,
+                    MockDotKeyValueComponent,
+                    MockDotAppsConfigurationDetailFormComponent
+                ]
+            }
         })
-            .overrideComponent(DotAppsConfigurationDetailComponent, {
-                set: {
-                    imports: [
-                        CommonModule,
-                        ButtonModule,
-                        DotAppsConfigurationHeaderComponent,
-                        DotCopyButtonComponent,
-                        DotSafeHtmlPipe,
-                        DotMessagePipe,
-                        MockDotKeyValueComponent,
-                        MockDotAppsConfigurationDetailFormComponent
-                    ]
-                }
-            })
-            .overrideComponent(DotAppsConfigurationHeaderComponent, {
-                set: {
-                    imports: [
-                        CommonModule,
-                        AvatarModule,
-                        MockMarkdownComponent,
-                        DotAvatarDirective,
-                        DotCopyLinkComponent,
-                        DotSafeHtmlPipe,
-                        DotMessagePipe
-                    ]
-                }
-            });
-
-        fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
-        component = fixture.debugElement.componentInstance;
-        appsServices = TestBed.inject(DotAppsService);
-        routerService = TestBed.inject(DotRouterService);
-        activatedRoute = TestBed.inject(ActivatedRoute);
-        jest.spyOn(appsServices, 'saveSiteConfiguration');
-    }));
-
-    describe('Without dynamic params', () => {
-        beforeEach(() => {
-            Object.defineProperty(activatedRoute, 'data', {
-                value: of(routeDatamock),
-                writable: true
-            });
-            fixture.detectChanges();
+        .overrideComponent(DotAppsConfigurationHeaderComponent, {
+            set: {
+                imports: [
+                    CommonModule,
+                    AvatarModule,
+                    MockMarkdownComponent,
+                    DotAvatarDirective,
+                    DotCopyLinkComponent,
+                    DotSafeHtmlPipe,
+                    DotMessagePipe
+                ]
+            }
         });
+}
+
+describe('DotAppsConfigurationDetailComponent', () => {
+    describe('Without dynamic params', () => {
+        let component: DotAppsConfigurationDetailComponent;
+        let fixture: ComponentFixture<DotAppsConfigurationDetailComponent>;
+        let appsServices: DotAppsService;
+        let routerService: DotRouterService;
+
+        beforeEach(waitForAsync(() => {
+            configureTestingModule(routeDatamock);
+
+            fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
+            component = fixture.debugElement.componentInstance;
+            appsServices = TestBed.inject(DotAppsService);
+            routerService = TestBed.inject(DotRouterService);
+            jest.spyOn(appsServices, 'saveSiteConfiguration');
+            fixture.detectChanges();
+        }));
 
         it('should set App from resolver', () => {
             expect(component.apps).toBe(appData);
@@ -346,37 +338,46 @@ describe('DotAppsConfigurationDetailComponent', () => {
     });
 
     describe('With dynamic variables', () => {
-        beforeEach(() => {
-            const sitesDynamic = structuredClone(sites);
-            sitesDynamic[0].secrets = [
-                ...sites[0].secrets,
-                {
-                    dynamic: true,
-                    name: 'custom',
-                    hidden: false,
-                    hint: 'dynamic variable',
-                    label: '',
-                    required: false,
-                    type: 'STRING',
-                    value: 'test',
-                    hasEnvVar: false,
-                    envShow: true,
-                    hasEnvVarValue: false
-                }
-            ];
-            const mockRoute = { data: {} };
-            mockRoute.data = {
+        let component: DotAppsConfigurationDetailComponent;
+        let fixture: ComponentFixture<DotAppsConfigurationDetailComponent>;
+        let appsServices: DotAppsService;
+
+        const sitesDynamic = structuredClone(sites);
+        sitesDynamic[0].secrets = [
+            ...sites[0].secrets,
+            {
+                dynamic: true,
+                name: 'custom',
+                hidden: false,
+                hint: 'dynamic variable',
+                label: '',
+                required: false,
+                type: 'STRING',
+                value: 'test',
+                hasEnvVar: false,
+                envShow: true,
+                hasEnvVarValue: false
+            }
+        ];
+
+        const dynamicRouteData = {
+            data: {
                 ...appData,
                 allowExtraParams: true,
                 sites: sitesDynamic
-            };
-            Object.defineProperty(activatedRoute, 'data', {
-                value: of(mockRoute),
-                writable: true
-            });
+            }
+        };
 
+        beforeEach(waitForAsync(() => {
+            TestBed.resetTestingModule();
+            configureTestingModule(dynamicRouteData);
+
+            fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
+            component = fixture.debugElement.componentInstance;
+            appsServices = TestBed.inject(DotAppsService);
+            jest.spyOn(appsServices, 'saveSiteConfiguration');
             fixture.detectChanges();
-        });
+        }));
 
         it('should show DotKeyValue component with right values', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));

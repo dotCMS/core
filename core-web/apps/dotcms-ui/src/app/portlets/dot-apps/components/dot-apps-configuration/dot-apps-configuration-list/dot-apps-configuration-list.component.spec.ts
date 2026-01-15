@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -39,7 +39,7 @@ describe('DotAppsConfigurationListComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
-                CommonModule,
+                NgClass,
                 ButtonModule,
                 DotAppsConfigurationItemComponent,
                 HttpClientTestingModule,
@@ -57,21 +57,22 @@ describe('DotAppsConfigurationListComponent', () => {
 
         fixture = TestBed.createComponent(DotAppsConfigurationListComponent);
         component = fixture.debugElement.componentInstance;
-        component.itemsPerPage = 40;
-        component.siteConfigurations = sites;
+        fixture.componentRef.setInput('itemsPerPage', 40);
+        fixture.componentRef.setInput('siteConfigurations', sites);
     }));
 
     describe('With more data to load', () => {
         beforeEach(() => {
-            component.hideLoadDataButton = false;
+            fixture.componentRef.setInput('hideLoadDataButton', false);
             fixture.detectChanges();
         });
 
         it('should set messages/values in DOM correctly', () => {
             expect(
-                fixture.debugElement.queryAll(By.css('dot-apps-configuration-item'))[0]
-                    .componentInstance.site
-            ).toBe(component.siteConfigurations[0]);
+                fixture.debugElement
+                    .queryAll(By.css('dot-apps-configuration-item'))[0]
+                    .componentInstance.site()
+            ).toBe(component.siteConfigurations()[0]);
             expect(
                 fixture.debugElement
                     .query(By.css('.dot-apps-configuration-list__show-more'))
@@ -124,15 +125,15 @@ describe('DotAppsConfigurationListComponent', () => {
 
             loadMore.triggerEventHandler('click', {});
             expect(component.loadData.emit).toHaveBeenCalledWith({
-                first: component.siteConfigurations.length,
-                rows: component.itemsPerPage
+                first: component.siteConfigurations().length,
+                rows: component.itemsPerPage()
             });
         });
     });
 
     describe('With no more data to load', () => {
         beforeEach(() => {
-            component.hideLoadDataButton = true;
+            fixture.componentRef.setInput('hideLoadDataButton', true);
             fixture.detectChanges();
         });
 

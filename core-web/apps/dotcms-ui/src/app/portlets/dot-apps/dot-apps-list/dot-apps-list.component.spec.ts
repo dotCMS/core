@@ -1,5 +1,6 @@
 import { expect, it, describe, beforeEach } from '@jest/globals';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MarkdownModule } from 'ngx-markdown';
 import { of, Subject } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -55,7 +56,7 @@ describe('DotAppsListComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAppsListComponent,
-        imports: [InputTextModule, ButtonModule, DotMessagePipe],
+        imports: [InputTextModule, ButtonModule, DotMessagePipe, MarkdownModule.forRoot()],
         shallow: true,
         providers: [
             {

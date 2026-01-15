@@ -1,4 +1,4 @@
-import { Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core';
+import { Component, HostListener, inject, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -19,16 +19,16 @@ export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);
     private dotAlertConfirmService = inject(DotAlertConfirmService);
 
-    @Input() site: DotAppsSite;
+    site = input<DotAppsSite>();
 
-    @Output() edit = new EventEmitter<DotAppsSite>();
-    @Output() export = new EventEmitter<DotAppsSite>();
-    @Output() delete = new EventEmitter<DotAppsSite>();
+    edit = output<DotAppsSite>();
+    export = output<DotAppsSite>();
+    delete = output<DotAppsSite>();
 
     @HostListener('click', ['$event'])
     public onClick(event: MouseEvent): void {
         event.stopPropagation();
-        this.edit.emit(this.site);
+        this.edit.emit(this.site());
     }
 
     /**
@@ -59,21 +59,20 @@ export class DotAppsConfigurationItemComponent {
      * Display confirmation dialog to delete a specific configuration
      *
      * @param MouseEvent $event
-     * @param DotAppsSites site
      * @memberof DotAppsConfigurationItemComponent
      */
-    confirmDelete($event: MouseEvent, site: DotAppsSite): void {
+    confirmDelete($event: MouseEvent): void {
         $event.stopPropagation();
         this.dotAlertConfirmService.confirm({
             accept: () => {
-                this.delete.emit(site);
+                this.delete.emit(this.site());
             },
             reject: () => {
                 //
             },
             header: this.dotMessageService.get('apps.confirmation.title'),
             message: `${this.dotMessageService.get('apps.confirmation.delete.message')} <b>${
-                site.name
+                this.site().name
             }</b> ?`,
             footerLabel: {
                 accept: this.dotMessageService.get('apps.confirmation.accept')

@@ -77,7 +77,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     describe('With configuration', () => {
         beforeEach(() => {
-            component.site = sites[0];
+            fixture.componentRef.setInput('site', sites[0]);
             fixture.detectChanges();
         });
 
@@ -96,7 +96,9 @@ describe('DotAppsConfigurationItemComponent', () => {
         });
 
         it('should have 3 icon buttons for export, delete and edit', () => {
-            const buttons = fixture.debugElement.queryAll(By.css('p-button'));
+            const buttons = fixture.debugElement.queryAll(
+                By.css('.dot-apps-configuration-list__host-configured p-button')
+            );
             expect(buttons.length).toBe(3);
             expect(buttons[0].componentInstance.icon).toBe('pi pi-download');
             expect(buttons[1].componentInstance.icon).toBe('pi pi-pencil');
@@ -105,8 +107,8 @@ describe('DotAppsConfigurationItemComponent', () => {
 
         it('should DotCopy with right properties', () => {
             const dotCopy = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
-            expect(dotCopy.label).toBe(component.site.id);
-            expect(dotCopy.copy).toBe(component.site.id);
+            expect(dotCopy.label).toBe(component.site().id);
+            expect(dotCopy.copy).toBe(component.site().id);
         });
 
         it('should have warning icon', () => {
@@ -184,7 +186,7 @@ describe('DotAppsConfigurationItemComponent', () => {
 
     describe('With No configuration', () => {
         beforeEach(() => {
-            component.site = sites[1];
+            fixture.componentRef.setInput('site', sites[1]);
             fixture.detectChanges();
         });
 

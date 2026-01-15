@@ -1,50 +1,52 @@
-<div class="dot-apps-configuration-list__name">
-    {{ site.name }}
-</div>
+@if (site(); as site) {
+    <div class="dot-apps-configuration-list__name">
+        {{ site.name }}
+    </div>
 
-<div class="dot-apps-configuration-list__host-key">
-    {{ 'apps.key' | dm }}
-    <dot-copy-link (click)="$event.stopPropagation()" [copy]="site.id" [label]="site.id" />
-</div>
+    <div class="dot-apps-configuration-list__host-key">
+        {{ 'apps.key' | dm }}
+        <dot-copy-link (click)="$event.stopPropagation()" [copy]="site.id" [label]="site.id" />
+    </div>
 
-@if (site.configured) {
-    <div class="dot-apps-configuration-list__host-configured">
-        @if (site.secretsWithWarnings) {
-            <i
-                class="pi pi-exclamation-triangle host-configured__warning-icon"
-                pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
-                data-testId="warning"></i>
-        }
+    @if (site.configured) {
+        <div class="dot-apps-configuration-list__host-configured">
+            @if (site.secretsWithWarnings) {
+                <i
+                    class="pi pi-exclamation-triangle host-configured__warning-icon"
+                    pTooltip="{{ site.secretsWithWarnings + ' ' + ('apps.invalid.secrets' | dm) }}"
+                    data-testId="warning"></i>
+            }
 
-        <p-button
-            (click)="exportConfiguration($event, site)"
-            [text]="true"
-            [rounded]="true"
-            size="small"
-            icon="pi pi-download"
-            data-testId="export" />
+            <p-button
+                (click)="exportConfiguration($event, site)"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                icon="pi pi-download"
+                data-testId="export" />
+            <p-button
+                (click)="editConfigurationSite($event, site)"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                icon="pi pi-pencil"
+                data-testId="edit" />
+            <p-button
+                (click)="confirmDelete($event)"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                severity="danger"
+                icon="pi pi-trash"
+                data-testId="delete" />
+        </div>
+    } @else {
         <p-button
             (click)="editConfigurationSite($event, site)"
             [text]="true"
             [rounded]="true"
             size="small"
-            icon="pi pi-pencil"
-            data-testId="edit" />
-        <p-button
-            (click)="confirmDelete($event, site)"
-            [text]="true"
-            [rounded]="true"
-            size="small"
-            severity="danger"
-            icon="pi pi-trash"
-            data-testId="delete" />
-    </div>
-} @else {
-    <p-button
-        (click)="editConfigurationSite($event, site)"
-        [text]="true"
-        [rounded]="true"
-        size="small"
-        icon="pi pi-plus"
-        data-testId="add" />
+            icon="pi pi-plus"
+            data-testId="add" />
+    }
 }

@@ -7,9 +7,10 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, ParamMap } from '@angular/router';
 
-import { DotSystemConfigService, DotAppsService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotSystemConfigService, DotAppsService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 
@@ -46,6 +47,10 @@ describe('DotAppsConfigurationResolver', () => {
                 {
                     provide: DotSystemConfigService,
                     useValue: { getSystemConfig: () => of({}) }
+                },
+                {
+                    provide: DotCurrentUserService,
+                    useClass: DotCurrentUserServiceMock
                 },
                 GlobalStore,
                 provideHttpClient(),

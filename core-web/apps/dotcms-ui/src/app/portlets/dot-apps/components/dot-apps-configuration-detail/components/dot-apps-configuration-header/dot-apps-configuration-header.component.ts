@@ -1,7 +1,7 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
-import { CommonModule } from '@angular/common';
-import { Component, Input, inject } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { Component, inject, input, signal } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 
@@ -16,7 +16,7 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
     templateUrl: './dot-apps-configuration-header.component.html',
     styleUrls: ['./dot-apps-configuration-header.component.scss'],
     imports: [
-        CommonModule,
+        NgClass,
         AvatarModule,
         MarkdownComponent,
         DotAvatarDirective,
@@ -27,9 +27,9 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
 export class DotAppsConfigurationHeaderComponent {
     private dotRouterService = inject(DotRouterService);
 
-    showMore: boolean;
+    showMore = signal(false);
 
-    @Input() app: DotApp;
+    app = input<DotApp>();
 
     /**
      * Redirects to app configuration listing page
@@ -40,5 +40,9 @@ export class DotAppsConfigurationHeaderComponent {
     goToApps(key: string): void {
         this.dotRouterService.gotoPortlet(`/apps/${key}`);
         this.dotRouterService.goToAppsConfiguration(key);
+    }
+
+    toggleShowMore(): void {
+        this.showMore.update((value) => !value);
     }
 }

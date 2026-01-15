@@ -1,43 +1,45 @@
-<p-avatar
-    (click)="goToApps(app.key)"
-    [image]="app.iconUrl"
-    [label]="app.name"
-    size="xlarge"
-    dotAvatar />
+@if (app(); as app) {
+    <p-avatar
+        (click)="goToApps(app.key)"
+        [image]="app.iconUrl"
+        [label]="app.name"
+        size="xlarge"
+        dotAvatar />
 
-<div class="dot-apps-configuration__data">
-    <header>
-        <h3 (click)="goToApps(app.key)" class="dot-apps-configuration__service-name">
-            {{ app.name }}
-        </h3>
-        <div class="dot-apps-configuration__service-key">
-            {{ 'apps.key' | dm }}
-            <dot-copy-link [copy]="app.key" [label]="app.key" />
+    <div class="dot-apps-configuration__data">
+        <header>
+            <h3 (click)="goToApps(app.key)" class="dot-apps-configuration__service-name">
+                {{ app.name }}
+            </h3>
+            <div class="dot-apps-configuration__service-key">
+                {{ 'apps.key' | dm }}
+                <dot-copy-link [copy]="app.key" [label]="app.key" />
+            </div>
+        </header>
+        <span class="dot-apps-configuration__configurations">
+            {{
+                app.configurationsCount
+                    ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
+                    : ('apps.no.configurations' | dm)
+            }}
+        </span>
+        <div
+            [ngClass]="{
+                'dot-apps-configuration__description__show-more': showMore()
+            }"
+            class="dot-apps-configuration__description">
+            <markdown>{{ app.description }}</markdown>
+            @if (app.description.length > 270) {
+                <a
+                    (click)="toggleShowMore()"
+                    class="dot-apps-configuration__description__link_show-more">
+                    {{
+                        showMore()
+                            ? ('apps.confirmation.description.show.less' | dm)
+                            : ('apps.confirmation.description.show.more' | dm)
+                    }}
+                </a>
+            }
         </div>
-    </header>
-    <span class="dot-apps-configuration__configurations">
-        {{
-            app.configurationsCount
-                ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
-                : ('apps.no.configurations' | dm)
-        }}
-    </span>
-    <div
-        [ngClass]="{
-            'dot-apps-configuration__description__show-more': showMore
-        }"
-        class="dot-apps-configuration__description">
-        <markdown>{{ app.description }}</markdown>
-        @if (app.description.length > 270) {
-            <a
-                (click)="showMore = !showMore"
-                class="dot-apps-configuration__description__link_show-more">
-                {{
-                    showMore
-                        ? ('apps.confirmation.description.show.less' | dm)
-                        : ('apps.confirmation.description.show.more' | dm)
-                }}
-            </a>
-        }
     </div>
-</div>
+}

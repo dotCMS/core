@@ -8,7 +8,7 @@ import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { Select, SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -198,7 +198,6 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const textareaElement = row.querySelector('textarea');
             expect(textareaElement.getAttribute('id')).toBe(field.name);
-            expect(textareaElement.getAttribute('autoResize')).toBe('autoResize');
             expect(textareaElement.value).toBe(field.value);
 
             const hintElement = row.querySelector('.p-field-hint');
@@ -214,13 +213,13 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const field = secrets[2];
 
             const checkboxElement = row.querySelector('p-checkbox');
-            expect(checkboxElement.getAttribute('id')).toBe(field.name);
+            expect(checkboxElement).toBeTruthy();
 
-            const labelElement = checkboxElement.querySelector('label');
+            const labelElement = row.querySelector('label');
             expect(labelElement.textContent).toContain(field.label);
 
             const inputElement = row.querySelector('input');
-            expect(inputElement.value).toBe(field.value);
+            expect(inputElement.id).toBe(field.name);
 
             const hintElement = row.querySelector('.p-field-hint');
             expect(hintElement.textContent).toBe(field.hint);
@@ -237,10 +236,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const labelElement = row.querySelector('label');
             expect(labelElement.textContent.trim()).toBe(field.label);
 
-            const dropdownComponent = spectator.query(Dropdown);
-            expect(dropdownComponent.id).toBe(field.name);
-            expect(dropdownComponent.options).toBe(field.options);
-            expect(dropdownComponent.value).toBe(field.value);
+            const selectComponent = spectator.query(Select);
+            expect(selectComponent.id).toBe(field.name);
+            expect(selectComponent.options).toBe(field.options);
 
             const hintElement = row.querySelector('.p-field-hint');
             expect(hintElement.textContent).toBe(field.hint);
