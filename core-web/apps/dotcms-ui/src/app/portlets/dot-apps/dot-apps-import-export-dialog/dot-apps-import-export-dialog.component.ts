@@ -1,17 +1,4 @@
-import { Subject } from 'rxjs';
-
-import {
-    Component,
-    ElementRef,
-    EventEmitter,
-    Input,
-    OnChanges,
-    OnDestroy,
-    Output,
-    SimpleChanges,
-    ViewChild,
-    inject
-} from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
@@ -22,23 +9,15 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
+import { FileUploadModule, FileSelectEvent } from 'primeng/fileupload';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { take, takeUntil } from 'rxjs/operators';
-
 import { DotMessageService } from '@dotcms/data-access';
-import {
-    dialogAction,
-    DotApp,
-    DotAppsExportConfiguration,
-    DotAppsImportConfiguration,
-    DotAppsSite,
-    DotDialogActions
-} from '@dotcms/dotcms-models';
+import { dialogAction, DotDialogActions } from '@dotcms/dotcms-models';
 import { DotAutofocusDirective, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
-import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotAppsImportExportDialogStore } from './store/dot-apps-import-export-dialog.store';
 
 @Component({
     selector: 'dot-apps-import-export-dialog',
@@ -48,6 +27,7 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
+        FileUploadModule,
         InputTextModule,
         PasswordModule,
         DotAutofocusDirective,
@@ -55,88 +35,80 @@ import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service'
         DotMessagePipe
     ]
 })
-export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
-    private dotAppsService = inject(DotAppsService);
-    private dotMessageService = inject(DotMessageService);
-    private fb = inject(UntypedFormBuilder);
+export class DotAppsImportExportDialogComponent {
+    readonly #store = inject(DotAppsImportExportDialogStore);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #fb = inject(UntypedFormBuilder);
 
-    @ViewChild('importFile') importFile: ElementRef;
-    @Input() action?: string;
-    @Input() app?: DotApp;
-    @Input() site?: DotAppsSite;
-    @Input() show? = false;
-    @Output() resolved: EventEmitter<boolean> = new EventEmitter();
-    @Output() shutdown: EventEmitter<boolean> = new EventEmitter();
+    // Store selectors
+    readonly visible = this.#store.visible;
+    readonly action = this.#store.action;
+    readonly errorMessage = this.#store.errorMessage;
+    readonly dialogHeaderKey = this.#store.dialogHeaderKey;
+    readonly isLoading = this.#store.isLoading;
 
     form: UntypedFormGroup;
     dialogActions: DotDialogActions;
-    errorMessage: string;
-    dialogHeaderKey = '';
+    #selectedFile: File | null = null;
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    // Effect to react to action changes to setup the form
+    actionsEffect = effect(() => {
+        const action = this.action();
+        if (action) {
+            this.setDialogForm(action);
+        }
+    });
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes?.action?.currentValue) {
-            this.setDialogForm(changes.action.currentValue);
+    /**
+     * Close the dialog
+     */
+    closeDialog(): void {
+        this.form?.reset();
+        this.#selectedFile = null;
+        this.#store.close();
+    }
+
+    /**
+     * Handles file selection from FileUpload component
+     */
+    onFileSelect(event: FileSelectEvent): void {
+        if (event.files && event.files[0]) {
+            this.#selectedFile = event.files[0];
+            this.form.controls['importFile'].setValue(event.files[0].name);
         }
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
     /**
-     * Close the dialog and clear the form
-     *
-     * @memberof DotAppsConfigurationComponent
+     * Handles file removal/clear from FileUpload component
      */
-    closeExportDialog(): void {
-        this.errorMessage = '';
-        this.form.reset();
-        this.site = null;
-        this.show = false;
-        this.shutdown.emit();
-    }
-
-    /**
-     * Updates form control value for inputFile field
-     *
-     * @param { File[] } files
-     * @memberof DotAppsConfigurationComponent
-     */
-    onFileChange(files: File[]) {
-        this.form.controls['importFile'].setValue(files[0] ? files[0].name : '');
+    onFileClear(): void {
+        this.#selectedFile = null;
+        this.form.controls['importFile'].setValue('');
     }
 
     /**
      * Sets dialog form based on action Import/Export
-     *
-     * @param { dialogAction } action
-     * @memberof DotAppsConfigurationComponent
      */
-    setDialogForm(action: dialogAction): void {
+    private setDialogForm(action: dialogAction): void {
         if (action === dialogAction.EXPORT) {
-            this.dialogHeaderKey = 'apps.confirmation.export.header';
-            this.form = this.fb.group({
+            this.form = this.#fb.group({
                 password: new UntypedFormControl('', Validators.required)
             });
             this.setExportDialogActions();
         } else if (action === dialogAction.IMPORT) {
-            this.dialogHeaderKey = 'apps.confirmation.import.header';
-            this.form = this.fb.group({
+            this.form = this.#fb.group({
                 password: new UntypedFormControl('', Validators.required),
                 importFile: new UntypedFormControl('', Validators.required)
             });
             this.setImportDialogActions();
         }
 
-        this.form.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.form.valueChanges.subscribe(() => {
             this.dialogActions = {
                 ...this.dialogActions,
                 accept: {
                     ...this.dialogActions.accept,
-                    disabled: !this.form.valid
+                    disabled: !this.form.valid || this.isLoading()
                 }
             };
         });
@@ -146,34 +118,15 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
         this.dialogActions = {
             accept: {
                 action: () => {
-                    const requestConfiguration: DotAppsExportConfiguration = {
-                        password: this.form.value.password,
-                        exportAll: this.app ? false : true,
-                        appKeysBySite: this.site
-                            ? { [this.site.id]: [this.app.key] }
-                            : this.getAllKeySitesConfig()
-                    };
-
-                    this.dotAppsService
-                        .exportConfiguration(requestConfiguration)
-                        .then((errorMsg: string) => {
-                            if (errorMsg) {
-                                this.errorMessage =
-                                    this.dotMessageService.get('apps.confirmation.export.error') +
-                                    ': ' +
-                                    errorMsg;
-                            } else {
-                                this.closeExportDialog();
-                            }
-                        });
+                    this.#store.exportConfiguration({ password: this.form.value.password });
                 },
-                label: this.dotMessageService.get('dot.common.dialog.accept'),
+                label: this.#dotMessageService.get('dot.common.dialog.accept'),
                 disabled: true
             },
             cancel: {
-                label: this.dotMessageService.get('dot.common.dialog.reject'),
+                label: this.#dotMessageService.get('dot.common.dialog.reject'),
                 action: () => {
-                    this.closeExportDialog();
+                    this.closeDialog();
                 }
             }
         };
@@ -183,43 +136,22 @@ export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy 
         this.dialogActions = {
             accept: {
                 action: () => {
-                    const requestConfiguration: DotAppsImportConfiguration = {
-                        file: this.importFile.nativeElement.files[0],
-                        json: { password: this.form.value.password }
-                    };
-
-                    this.dotAppsService
-                        .importConfiguration(requestConfiguration)
-                        .pipe(take(1))
-                        .subscribe((status: string) => {
-                            if (status !== '400') {
-                                this.resolved.emit(true);
-                                this.closeExportDialog();
-                            }
+                    if (this.#selectedFile) {
+                        this.#store.importConfiguration({
+                            file: this.#selectedFile,
+                            json: { password: this.form.value.password }
                         });
+                    }
                 },
-                label: this.dotMessageService.get('dot.common.dialog.accept'),
+                label: this.#dotMessageService.get('dot.common.dialog.accept'),
                 disabled: true
             },
             cancel: {
-                label: this.dotMessageService.get('dot.common.dialog.reject'),
+                label: this.#dotMessageService.get('dot.common.dialog.reject'),
                 action: () => {
-                    this.closeExportDialog();
+                    this.closeDialog();
                 }
             }
         };
-    }
-
-    private getAllKeySitesConfig(): { [key: string]: string[] } {
-        const keySitesConf = {};
-        if (this.app) {
-            this.app.sites.forEach((site: DotAppsSite) => {
-                if (site.configured) {
-                    keySitesConf[site.id] = [this.app.key];
-                }
-            });
-        }
-
-        return keySitesConf;
     }
 }
