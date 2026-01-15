@@ -29,6 +29,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { UVE_MODE } from '@dotcms/types';
+import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -42,7 +43,6 @@ import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
@@ -209,7 +209,7 @@ describe('DotUveToolbarComponent', () => {
             MockComponent(DotEmaBookmarksComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaPersonaSelectorComponent),
-            MockComponent(EditEmaLanguageSelectorComponent),
+            MockComponent(DotLanguageSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotUveDeviceSelectorComponent),
             MockComponent(DotEditorModeSelectorComponent)
@@ -744,7 +744,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call loadPageAsset when language is selected and exists that page translated', () => {
                 const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
+                spectator.triggerEventHandler(DotLanguageSelectorComponent, 'onChange', 1);
 
                 expect(spyLoadPageAsset).toHaveBeenCalled();
             });
@@ -752,7 +752,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
                 const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+                spectator.triggerEventHandler(DotLanguageSelectorComponent, 'onChange', 2);
                 spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });

@@ -28,7 +28,7 @@ import { map } from 'rxjs/operators';
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -37,7 +37,6 @@ import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-e
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
@@ -66,8 +65,8 @@ import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../
         DotToggleLockButtonComponent,
         DotUveDeviceSelectorComponent,
         DotUveWorkflowActionsComponent,
-        EditEmaLanguageSelectorComponent,
-        EditEmaPersonaSelectorComponent
+        EditEmaPersonaSelectorComponent,
+        DotLanguageSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
@@ -76,7 +75,7 @@ import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../
 })
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
-    $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
+    $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
     @Output() editUrlContentMap = new EventEmitter<DotCMSURLContentMap>();
@@ -332,7 +331,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector()?.resetModel(this.$toolbar().currentLanguage);
+                this.$languageSelector()?.value.set(this.$toolbar().currentLanguage);
             }
         });
     }

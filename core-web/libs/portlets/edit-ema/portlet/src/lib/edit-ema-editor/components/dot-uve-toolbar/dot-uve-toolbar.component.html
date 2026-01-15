@@ -131,10 +131,9 @@
                     [runningExperiment]="runningExperiment"
                     data-testId="uve-toolbar-running-experiment" />
             }
-            <dot-edit-ema-language-selector
-                #languageSelector
-                (selected)="onLanguageSelected($event)"
-                [language]="$toolbar().currentLanguage"
+            <dot-language-selector
+                [value]="$toolbar().currentLanguage"
+                (onChange)="onLanguageSelected($event)"
                 data-testId="uve-toolbar-language-selector" />
 
             <dot-edit-ema-persona-selector
