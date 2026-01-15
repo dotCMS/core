@@ -1,41 +1,28 @@
-<div class="analytics-dashboard flex flex-col" data-testid="analytics-dashboard">
+<div class="w-full h-full overflow-auto" data-testid="analytics-dashboard">
     <!-- Development Status Banner -->
     @if ($showMessage()) {
-        <p-message severity="info" data-testid="analytics-message">
-            <ng-template pTemplate="content">
-                <div class="flex items-center justify-between gap-2 w-full">
-                    <div class="flex items-center gap-2">
-                        <i class="pi pi-info-circle"></i>
-                        <span data-testid="message-content">
-                            {{ 'analytics.feature.state' | dm }}
-                            <b>{{ 'development' | dm }}</b>
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button
-                            pButton
-                            class="p-button-text p-button-rounded p-button-sm p-button-icon-only"
-                            type="button"
-                            icon="pi pi-times"
-                            data-testid="close-message"
-                            (click)="onCloseMessage()"></button>
-                    </div>
-                </div>
-            </ng-template>
+        <p-message
+            severity="info"
+            icon="pi pi-info-circle"
+            [closable]="true"
+            (onClose)="onCloseMessage()"
+            data-testid="analytics-message">
+            <span data-testid="message-content">
+                {{ 'analytics.feature.state' | dm }}
+                <b>{{ 'development' | dm }}</b>
+            </span>
         </p-message>
     }
 
     <!-- Filters Row -->
-    <div class="analytics-dashboard__filters-row">
-        <div class="analytics-dashboard__filters-container flex justify-between items-center">
+    <div class="w-full bg-gray-100 border-b border-gray-300 py-3 px-4">
+        <div class="max-w-full flex justify-between items-center">
             <dot-analytics-dashboard-filters
-                class="analytics-dashboard__filters"
                 [timeRange]="store.timeRange()"
                 (changeFilters)="onTimeRangeChange($event)"
                 data-testid="analytics-filters" />
 
             <p-button
-                class="analytics-dashboard__refresh-button"
                 [label]="'analytics.dashboard.refresh.button' | dm"
                 [rounded]="false"
                 severity="primary"
@@ -46,7 +33,7 @@
     </div>
 
     <!-- Dashboard Content - Tabs -->
-    <div class="analytics-dashboard__dashboard-row">
+    <div class="bg-white px-4">
         <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
             <p-tablist>
                 @for (tab of tabs; track tab.id) {

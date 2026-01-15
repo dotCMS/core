@@ -1,0 +1,58 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/shadows";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
+@use "variables" as *;
+
+:host {
+    background: colors.$color-palette-gray-200;
+    box-shadow: shadows.$shadow-m;
+    display: flex;
+    height: 100%;
+    padding: spacing.$spacing-4;
+}
+
+.dot-apps-configuration-detail__header {
+    background-color: colors.$white;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.dot-apps-configuration-detail-actions button:last-child {
+    margin-left: spacing.$spacing-1;
+}
+
+.dot-apps-configuration-detail__body {
+    flex-grow: 1;
+}
+
+.dot-apps-configuration-detail__host-name {
+    border-bottom: 1px solid colors.$color-palette-gray-300;
+    color: colors.$black;
+    display: flex;
+    justify-content: space-between;
+    font-size: fonts.$font-size-lmd;
+    font-weight: fonts.$font-weight-semi-bold;
+    padding: spacing.$spacing-3;
+
+    span {
+        align-items: center;
+        display: inline-flex;
+    }
+}
+
+.dot-apps-configuration-detail__form-content {
+    margin: spacing.$spacing-4;
+}
+
+.dot-apps-configuration-detail__container {
+    background-color: colors.$white;
+    box-shadow: shadows.$shadow-m;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    width: 100%;
+    font-size: fonts.$font-size-md;
+}

@@ -2,6 +2,7 @@ import { MenuItem } from 'primeng/api';
 
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     ESContent
@@ -9,8 +10,9 @@ import {
 
 import {
     DEFAULT_PER_PAGE,
-    DotPaletteSortOption,
+    DotCMSPaletteContentType,
     DotPaletteListStatus,
+    DotPaletteSortOption,
     DotPaletteViewMode,
     DotUVEPaletteListTypes
 } from '../models';
@@ -44,7 +46,7 @@ export const EMPTY_PAGINATION = {
  * Used when an error occurs during content types fetch.
  */
 export const EMPTY_CONTENTTYPE_RESPONSE = {
-    contenttypes: [] as DotCMSContentType[],
+    contenttypes: [] as DotCMSPaletteContentType[],
     pagination: EMPTY_PAGINATION
 };
 
@@ -165,6 +167,42 @@ export function getPaletteState(
     return elements.length > 0 ? DotPaletteListStatus.LOADED : DotPaletteListStatus.EMPTY;
 }
 
+function sortContentTypesByName<T extends Pick<DotCMSContentType, 'name'>>(contentTypes: T[]): T[] {
+    return contentTypes.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function isAllowedFavoriteContentType({
+    contentType,
+    allowedContentTypes
+}: {
+    contentType: DotCMSContentType;
+    allowedContentTypes?: Record<string, true>;
+}): boolean {
+    if (!allowedContentTypes || Object.keys(allowedContentTypes).length === 0) {
+        // By UX rule: if we don't have an allowed map, everything is disabled
+        return false;
+    }
+
+    return (
+        allowedContentTypes[contentType.variable] === true ||
+        contentType.baseType === DotCMSBaseTypesContentTypes.WIDGET
+    );
+}
+
+function markDisabledFavorites({
+    contentTypes,
+    allowedContentTypes
+}: {
+    contentTypes: DotCMSPaletteContentType[];
+    allowedContentTypes?: Record<string, true>;
+}): DotCMSPaletteContentType[] {
+    return contentTypes.map((ct) =>
+        isAllowedFavoriteContentType({ contentType: ct, allowedContentTypes })
+            ? ct
+            : { ...ct, disabled: true }
+    );
+}
+
 /**
  * Filters content types by search term, sorts them alphabetically by name,
  * applies pagination, and builds a response object with pagination metadata.
@@ -197,27 +235,34 @@ export function getPaletteState(
 export function buildPaletteFavorite({
     contentTypes,
     filter = '',
-    page = 1
+    page = 1,
+    allowedContentTypes
 }: {
-    contentTypes: DotCMSContentType[];
+    contentTypes: DotCMSPaletteContentType[];
     filter?: string;
     page?: number;
+    allowedContentTypes?: Record<string, true>;
 }): {
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSPaletteContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
     status: DotPaletteListStatus;
 } {
-    // Filter and sort all content types
-    const filteredContentTypes = contentTypes.filter(
-        (ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase())
+    // Filter + sort (A→Z) to keep pagination stable
+    const filteredContentTypes = sortContentTypesByName(
+        contentTypes.filter((ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase()))
     );
-    filteredContentTypes.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Calculate pagination slice
     const totalEntries = filteredContentTypes.length;
     const startIndex = (page - 1) * DEFAULT_PER_PAGE;
     const endIndex = page * DEFAULT_PER_PAGE;
-    const contenttypes = filteredContentTypes.slice(startIndex, endIndex);
+    const pageContentTypes = filteredContentTypes.slice(startIndex, endIndex);
+
+    // Favorites are stored locally, so we need to mark which are not allowed on this page.
+    // `allowedContentTypes` comes from containerStructures[*].contentTypeVar and matches contentType.variable.
+    const contenttypes = markDisabledFavorites({
+        contentTypes: pageContentTypes,
+        allowedContentTypes
+    });
 
     const pagination = {
         currentPage: page,
@@ -387,3 +432,51 @@ export const EMPTY_MESSAGES = {
         message: 'uve.palette.empty.state.widgets.message'
     }
 };
+
+/**
+ * Filters out null and undefined values from an object recursively.
+ *
+ * Recursively processes nested objects (like checkbox groups) to remove null/undefined values.
+ * Preserves valid values including false, 0, empty strings, and empty arrays as they are
+ * meaningful values in form contexts.
+ *
+ * @param obj - The object to filter
+ * @returns A new object with null/undefined values removed, maintaining the structure of nested objects
+ *
+ * @example
+ * ```typescript
+ * const filtered = filterFormValues({
+ *   name: 'John',
+ *   age: null,
+ *   active: false,
+ *   tags: { tag1: true, tag2: null }
+ * });
+ * // Returns: { name: 'John', active: false, tags: { tag1: true } }
+ * ```
+ */
+export function filterFormValues<T extends Record<string, unknown>>(obj: T): Partial<T> {
+    const filtered: Partial<T> = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+        // Skip null and undefined values (but keep empty strings, false, 0, etc.)
+        if (value === null || value === undefined) {
+            continue;
+        }
+
+        // Handle nested objects (like checkbox groups)
+        if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+            const filteredNested = filterFormValues(value as Record<string, unknown>);
+            // Only include nested object if it has at least one property
+            // (empty objects are filtered out)
+            if (Object.keys(filteredNested).length > 0) {
+                filtered[key as keyof T] = filteredNested as T[keyof T];
+            }
+        } else {
+            // Include non-null, non-undefined primitive values and arrays
+            // This includes false, 0, empty strings, etc. as they are valid values
+            filtered[key as keyof T] = value as T[keyof T];
+        }
+    }
+
+    return filtered;
+}

@@ -99,6 +99,7 @@ export class DotUveToolbarComponent {
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.palette.open;
+    readonly $canEditPage = this.#store.$canEditPage;
 
     /**
      * Popover passthrough styles for the "Copy URLs" popover.

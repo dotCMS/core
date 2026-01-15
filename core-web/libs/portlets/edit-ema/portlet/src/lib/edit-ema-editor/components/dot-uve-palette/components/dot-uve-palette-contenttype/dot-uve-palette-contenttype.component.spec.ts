@@ -1,10 +1,16 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
+import { By } from '@angular/platform-browser';
 
+import { Tooltip } from 'primeng/tooltip';
+
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotUVEPaletteContenttypeComponent } from './dot-uve-palette-contenttype.component';
+
+import { DotCMSPaletteContentType } from '../../models';
 
 @Component({
     selector: 'dot-test-host',
@@ -49,7 +55,16 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     const createHost = createHostFactory({
         component: DotUVEPaletteContenttypeComponent,
         host: TestHostComponent,
-        imports: [DotUVEPaletteContenttypeComponent]
+        imports: [DotUVEPaletteContenttypeComponent],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: {
+                    // Keep it deterministic for tests: return the key as-is
+                    get: jest.fn((key: string) => key)
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -216,6 +231,46 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             expect(chevronIcon).toBeTruthy();
             expect(chevronIcon).toHaveClass('pi');
             expect(chevronIcon).toHaveClass('pi-chevron-right');
+        });
+    });
+
+    describe('Tooltip behavior', () => {
+        it('should enable tooltip when contentType is disabled', () => {
+            const disabledContentType: DotCMSPaletteContentType = {
+                ...spectator.hostComponent.contentType,
+                disabled: true
+            };
+
+            spectator.setHostInput({
+                contentType: disabledContentType as unknown as DotCMSContentType
+            });
+            spectator.detectChanges();
+
+            const contentDebugEl = spectator.fixture.debugElement.query(By.css('.content'));
+            const tooltip = contentDebugEl.injector.get(Tooltip);
+
+            expect(tooltip).toBeTruthy();
+            expect(tooltip.disabled).toBe(false);
+            expect(tooltip.content).toBe('uve.palette.item.disabled.tooltip');
+        });
+
+        it('should disable tooltip when contentType is not disabled', () => {
+            const enabledContentType: DotCMSPaletteContentType = {
+                ...spectator.hostComponent.contentType,
+                disabled: false
+            };
+
+            spectator.setHostInput({
+                contentType: enabledContentType as unknown as DotCMSContentType
+            });
+            spectator.detectChanges();
+
+            const contentDebugEl = spectator.fixture.debugElement.query(By.css('.content'));
+            const tooltip = contentDebugEl.injector.get(Tooltip);
+
+            expect(tooltip).toBeTruthy();
+            expect(tooltip.disabled).toBe(true);
+            expect(tooltip.content).toBe('uve.palette.item.disabled.tooltip');
         });
     });
 

@@ -4,6 +4,7 @@ title: "[FEATURE] "
 labels: []
 type: feature
 assignees: []
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown

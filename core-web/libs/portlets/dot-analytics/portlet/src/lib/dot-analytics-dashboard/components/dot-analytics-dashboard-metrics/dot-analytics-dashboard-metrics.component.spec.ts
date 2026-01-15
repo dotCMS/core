@@ -1,7 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -12,7 +10,6 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardMetricsComponent,
-        imports: [NoopAnimationsModule],
         mocks: [DotMessageService]
     });
 
@@ -145,7 +142,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
             // Act & Assert
             const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
-            const errorMessage = spectator.query('.state-message');
+            const errorMessage = spectator.query('dot-analytics-state-message');
             const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
 
@@ -280,7 +277,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.detectChanges();
 
             const emptyIcon = spectator.query('.pi.pi-info-circle');
-            const emptyMessage = spectator.query('.state-message');
+            const emptyMessage = spectator.query('dot-analytics-state-message');
 
             expect(emptyIcon).toExist();
             expect(emptyMessage).toExist();
@@ -305,7 +302,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.detectChanges();
 
             const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
-            const errorMessage = spectator.query('.state-message');
+            const errorMessage = spectator.query('dot-analytics-state-message');
 
             expect(errorIcon).toExist();
             expect(errorIcon).toHaveClass('text-gray-400');

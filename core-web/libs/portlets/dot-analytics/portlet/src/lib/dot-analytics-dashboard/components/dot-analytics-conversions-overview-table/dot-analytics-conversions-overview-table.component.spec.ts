@@ -1,7 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { ConversionsOverviewEntity } from '@dotcms/portlets/dot-analytics/data-access';
@@ -12,7 +10,6 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
     let spectator: Spectator<DotAnalyticsConversionsOverviewTableComponent>;
     const createComponent = createComponentFactory({
         component: DotAnalyticsConversionsOverviewTableComponent,
-        imports: [NoopAnimationsModule],
         mocks: [DotMessageService]
     });
 
@@ -66,7 +63,7 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
         it('should display loading skeleton when isLoading is true', () => {
             expect(spectator.query(byTestId('conversions-overview-loading'))).toBeTruthy();
-            expect(spectator.queryAll('.skeleton-cell').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('.bg-gray-200').length).toBeGreaterThan(0);
         });
 
         it('should not display table when loading', () => {
@@ -147,7 +144,7 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
         it('should display top attributed content items', () => {
             const firstRow = spectator.queryAll('p-table tbody tr')[0];
             const lastCell = firstRow.querySelectorAll('td')[3]; // Top Attributed Content column
-            const contentItems = lastCell.querySelectorAll('.attributed-content-item');
+            const contentItems = lastCell.querySelectorAll('.flex.items-center.justify-between');
 
             expect(contentItems.length).toBe(mockData[0]['Conversion.topAttributedContent'].length);
         });

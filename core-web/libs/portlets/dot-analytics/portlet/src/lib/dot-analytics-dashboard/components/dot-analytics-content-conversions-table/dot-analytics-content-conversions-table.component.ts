@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { CardModule } from 'primeng/card';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
@@ -20,19 +22,32 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     selector: 'dot-analytics-content-conversions-table',
     imports: [
         CommonModule,
+        FormsModule,
         CardModule,
+        MultiSelectModule,
         TableModule,
         TagModule,
         DotAnalyticsStateMessageComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-content-conversions-table.component.html',
-    styleUrl: './dot-analytics-content-conversions-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export default class DotAnalyticsContentConversionsTableComponent {
     readonly $data = input.required<ContentConversionRow[]>({ alias: 'data' });
     readonly $status = input.required<ComponentStatus>({ alias: 'status' });
+
+    /** Extract unique event types from data for filter options */
+    protected readonly $eventTypeOptions = linkedSignal(() => {
+        const data = this.$data();
+        if (!data || data.length === 0) {
+            return [];
+        }
+
+        const uniqueTypes = [...new Set(data.map((row) => row.eventType))];
+
+        return uniqueTypes.map((type) => ({ label: type, value: type }));
+    });
 
     // Computed states based on status and data
     protected readonly $isLoading = computed(() => {
@@ -49,4 +64,17 @@ export default class DotAnalyticsContentConversionsTableComponent {
 
         return status === ComponentStatus.LOADED && (!data || data.length === 0);
     });
+
+    /**
+     * Get the PrimeNG tag severity based on event type
+     */
+    protected getTagSeverity(eventType: string): 'success' | 'info' | 'warn' | 'secondary' {
+        const severityMap: Record<string, 'success' | 'info' | 'warn' | 'secondary'> = {
+            conversion: 'success',
+            content_click: 'info',
+            content_impression: 'warn'
+        };
+
+        return severityMap[eventType] || 'secondary';
+    }
 }

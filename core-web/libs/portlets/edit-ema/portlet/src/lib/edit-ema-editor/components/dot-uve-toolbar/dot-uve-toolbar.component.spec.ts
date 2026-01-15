@@ -111,6 +111,7 @@ const baseUVEState = {
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
+    $canEditPage: signal(true),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -921,13 +922,31 @@ describe('DotUveToolbarComponent', () => {
         describe('palette toggle button', () => {
             it('should not display palette toggle button when not in edit mode', () => {
                 baseUVEState.$isEditMode.set(false);
+                baseUVEState.$canEditPage.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
             });
 
-            it('should display palette toggle button when in edit mode', () => {
+            it('should not display palette toggle button when canEditPage is false', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should not display palette toggle button when not in edit mode and canEditPage is false', () => {
+                baseUVEState.$isEditMode.set(false);
+                baseUVEState.$canEditPage.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should display palette toggle button when in edit mode and canEditPage is true', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeTruthy();
@@ -936,6 +955,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with true when palette is closed', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
@@ -948,6 +968,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with false when palette is open', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 
@@ -959,6 +980,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show close icon and hide open icon when palette is closed', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
@@ -973,6 +995,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show open icon and hide close icon when palette is open', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 

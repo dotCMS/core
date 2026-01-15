@@ -41,8 +41,8 @@ import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboar
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard-conversions-report.component.html',
-    styleUrl: './dot-analytics-dashboard-conversions-report.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'gap-4 flex flex-col' }
 })
 export default class DotAnalyticsDashboardConversionsReportComponent implements OnInit {
     readonly store = inject(DotAnalyticsDashboardStore);

@@ -32,7 +32,6 @@ import { DotMessagePipe } from '@dotcms/ui';
         ToolbarModule
     ],
     templateUrl: './dot-usage-shell.component.html',
-    styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUsageShellComponent implements OnInit, OnDestroy {

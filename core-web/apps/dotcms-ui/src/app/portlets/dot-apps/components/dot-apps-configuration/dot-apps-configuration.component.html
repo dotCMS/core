@@ -1,0 +1,47 @@
+@let app = $state.app();
+@let paginationPerPage = $state.paginationPerPage();
+
+<div class="dot-apps-configuration__container">
+    @if (app) {
+        <dot-apps-configuration-header [app]="app" />
+    }
+    <div class="dot-apps-configuration__body">
+        <div>
+            <div class="dot-apps-configuration__action_header">
+                <input
+                    [placeholder]="'apps.search.placeholder' | dm"
+                    pInputText
+                    #searchInput
+                    type="text" />
+                <div>
+                    <button
+                        (click)="openExportDialog()"
+                        [label]="'apps.confirmation.export.all.button' | dm"
+                        [disabled]="!app.configurationsCount"
+                        pButton
+                        link
+                        icon="pi pi-download"
+                        class="dot-apps-configuration__action_export_button"></button>
+                    <button
+                        (click)="deleteAllConfigurations()"
+                        [label]="'apps.confirmation.delete.all.button' | dm"
+                        [disabled]="!app.configurationsCount"
+                        pButton
+                        link
+                        icon="pi pi-trash"></button>
+                </div>
+            </div>
+            <dot-apps-configuration-list
+                (loadData)="loadData($event)"
+                (edit)="gotoConfiguration($event)"
+                (export)="openExportDialog($event)"
+                (delete)="deleteConfiguration($event)"
+                [siteConfigurations]="app.sites"
+                [hideLoadDataButton]="!$showMoreData()"
+                [itemsPerPage]="paginationPerPage" />
+        </div>
+    </div>
+</div>
+
+<!-- Dialog is now managed by store -->
+<dot-apps-import-export-dialog />

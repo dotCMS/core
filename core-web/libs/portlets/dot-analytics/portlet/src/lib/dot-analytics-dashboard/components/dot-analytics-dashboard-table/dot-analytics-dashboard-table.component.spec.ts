@@ -1,5 +1,4 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
 
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -46,21 +45,7 @@ describe('DotAnalyticsDashboardTableComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardTableComponent,
-        overrideComponents: [
-            [
-                DotAnalyticsDashboardTableComponent,
-                {
-                    remove: { imports: [CardModule, SkeletonModule, TableModule] },
-                    add: {
-                        imports: [
-                            MockModule(CardModule),
-                            MockModule(SkeletonModule),
-                            MockModule(TableModule)
-                        ]
-                    }
-                }
-            ]
-        ],
+        imports: [CardModule, SkeletonModule, TableModule],
         providers: [
             {
                 provide: DotMessageService,
@@ -295,7 +280,7 @@ describe('DotAnalyticsDashboardTableComponent', () => {
                 } as unknown
             });
 
-            const errorState = spectator.query('.table-error-state');
+            const errorState = spectator.query('dot-analytics-state-message');
             expect(errorState).toExist();
         });
 
@@ -306,7 +291,7 @@ describe('DotAnalyticsDashboardTableComponent', () => {
                 } as unknown
             });
 
-            const errorState = spectator.query('.table-error-state');
+            const errorState = spectator.query('dot-analytics-state-message');
             expect(errorState).not.toExist();
         });
 

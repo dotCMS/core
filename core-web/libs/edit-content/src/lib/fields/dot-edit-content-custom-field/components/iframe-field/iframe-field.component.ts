@@ -123,7 +123,9 @@ export class IframeFieldComponent implements OnDestroy {
             params.set('modal', 'true');
         }
 
-        return `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
+        const url = `/html/legacy_custom_field/legacy-custom-field.jsp?${params}`;
+
+        return url;
     });
 
     /**

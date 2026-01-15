@@ -32,11 +32,11 @@ describe('DotAnalyticsStateMessageComponent', () => {
         expect(iconElement).toHaveClass('pi');
         expect(iconElement).toHaveClass('pi-info-circle');
         expect(iconElement).toHaveClass('text-gray-400');
-        expect(iconElement).toHaveClass('text-4xl');
+        expect(iconElement).toHaveClass('text-4xl!');
     });
 
     it('should render the message element', () => {
-        const messageElement = spectator.query('.state-message');
+        const messageElement = spectator.query('.text-base.text-gray-800');
 
         expect(messageElement).toBeTruthy();
         expect(messageElement).toBeVisible();
@@ -59,7 +59,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
 
         expect(iconElement).toHaveClass('text-xl');
         expect(iconElement).toHaveClass('text-red-500');
-        expect(iconElement).not.toHaveClass('text-2xl');
+        expect(iconElement).not.toHaveClass('text-4xl!');
         expect(iconElement).not.toHaveClass('text-gray-400');
     });
 
@@ -72,9 +72,9 @@ describe('DotAnalyticsStateMessageComponent', () => {
     });
 
     it('should have correct component structure', () => {
-        const container = spectator.query('.flex.flex-column.justify-content-center');
+        const container = spectator.query('.flex.flex-col.justify-center');
         const iconElement = spectator.query('i');
-        const messageElement = spectator.query('.state-message');
+        const messageElement = spectator.query('.text-base.text-gray-800');
 
         expect(container).toBeTruthy();
         expect(iconElement).toBeTruthy();
