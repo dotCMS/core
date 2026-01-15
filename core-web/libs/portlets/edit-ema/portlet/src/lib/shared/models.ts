@@ -1,19 +1,10 @@
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSUVEAction, StyleEditorProperties } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
 import { DotPageApiParams } from '../services/dot-page-api.service';
-
-/**
- * Represents a map of style property keys and their corresponding values
- * for use in the style editor.
- *
- * Key is a string representing the property name,
- * value can be any type, allowing flexibility for different style values.
- */
-export type StyleEditorProperties = Record<string, unknown>;
 
 export interface MessagePipeOptions {
     message: string;

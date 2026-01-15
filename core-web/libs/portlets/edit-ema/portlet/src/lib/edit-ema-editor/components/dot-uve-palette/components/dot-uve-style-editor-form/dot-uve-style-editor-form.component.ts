@@ -88,6 +88,14 @@ export class DotUveStyleEditorFormComponent {
         }
     });
 
+    /**
+     * Computed property that returns an array of all section indices to keep all tabs open by default
+     */
+    $activeTabIndices = computed(() => {
+        const sections = this.$sections();
+        return sections.map((_, index) => index);
+    });
+
     readonly #rollbackDetectionEffect = effect(() => {
         const isRollback = this.$isRollback();
 

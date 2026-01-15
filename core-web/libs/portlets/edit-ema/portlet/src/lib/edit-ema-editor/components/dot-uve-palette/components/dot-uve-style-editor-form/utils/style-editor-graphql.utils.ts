@@ -1,6 +1,11 @@
-import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
+import {
+    DotCMSBasicContentlet,
+    DotCMSPageAsset,
+    DotCMSPageResponse,
+    StyleEditorProperties
+} from '@dotcms/types';
 
-import { ActionPayload, StyleEditorProperties } from '../../../../../../shared/models';
+import { ActionPayload } from '../../../../../../shared/models';
 
 /**
  * Type representing a GraphQL response that can be either:
