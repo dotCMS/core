@@ -4,9 +4,9 @@
 @let data = $data();
 @let eventTypeOptions = $eventTypeOptions();
 
-<p-card>
+<p-card class="border border-gray-400 rounded-xl">
     <ng-template pTemplate="header">
-        <h3 class="table-title">
+        <h3 class="text-base font-bold text-black leading-normal m-0 p-4">
             {{ 'analytics.table.content-conversions.title' | dm }}
         </h3>
     </ng-template>
@@ -16,57 +16,24 @@
         <div class="flex flex-column gap-3 p-4" data-testid="content-conversions-loading">
             @for (i of [1, 2, 3]; track i) {
                 <div class="flex gap-3">
-                    <div
-                        class="skeleton-cell flex-1"
-                        style="
-                            height: 1.5rem;
-                            background: var(--surface-200);
-                            border-radius: 4px;
-                        "></div>
-                    <div
-                        class="skeleton-cell flex-1"
-                        style="
-                            height: 1.5rem;
-                            background: var(--surface-200);
-                            border-radius: 4px;
-                        "></div>
-                    <div
-                        class="skeleton-cell"
-                        style="
-                            width: 80px;
-                            height: 1.5rem;
-                            background: var(--surface-200);
-                            border-radius: 4px;
-                        "></div>
-                    <div
-                        class="skeleton-cell"
-                        style="
-                            width: 80px;
-                            height: 1.5rem;
-                            background: var(--surface-200);
-                            border-radius: 4px;
-                        "></div>
-                    <div
-                        class="skeleton-cell"
-                        style="
-                            width: 80px;
-                            height: 1.5rem;
-                            background: var(--surface-200);
-                            border-radius: 4px;
-                        "></div>
+                    <div class="flex-1 h-6 bg-gray-200 rounded"></div>
+                    <div class="flex-1 h-6 bg-gray-200 rounded"></div>
+                    <div class="w-20 h-6 bg-gray-200 rounded"></div>
+                    <div class="w-20 h-6 bg-gray-200 rounded"></div>
+                    <div class="w-20 h-6 bg-gray-200 rounded"></div>
                 </div>
             }
         </div>
     } @else if (isError) {
         <!-- Error State -->
-        <div class="p-4" style="min-height: 200px" data-testid="content-conversions-error">
+        <div class="p-4 min-h-[200px]" data-testid="content-conversions-error">
             <dot-analytics-state-message
                 message="analytics.error.loading.content-conversions"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isEmpty) {
         <!-- Empty State -->
-        <div class="p-4" style="min-height: 200px" data-testid="content-conversions-empty">
+        <div class="p-4 min-h-[200px]" data-testid="content-conversions-empty">
             <dot-analytics-state-message
                 message="analytics.table.content-conversions.empty"
                 icon="pi-info-circle" />
@@ -75,7 +42,6 @@
         <!-- Data Table -->
         <p-table
             [value]="data"
-            styleClass="p-datatable-sm"
             [paginator]="true"
             [rows]="20"
             [rowsPerPageOptions]="[20, 50, 100]"
@@ -155,15 +121,14 @@
             <ng-template pTemplate="body" let-row>
                 <tr>
                     <td>
-                        <p-tag
-                            [value]="row.eventType"
-                            severity="secondary"
-                            [styleClass]="'event-type-badge ' + row.eventType" />
+                        <p-tag [value]="row.eventType" [severity]="getTagSeverity(row.eventType)" />
                     </td>
                     <td>
-                        <div class="content-title-cell">
-                            <div class="content-title">{{ row.title }}</div>
-                            <div class="content-identifier">{{ row.identifier }}</div>
+                        <div class="flex flex-col gap-1">
+                            <div class="text-black text-sm leading-[1.4]">{{ row.title }}</div>
+                            <div class="text-gray-600 text-xs italic font-mono leading-[1.2]">
+                                {{ row.identifier }}
+                            </div>
                         </div>
                     </td>
                     <td class="text-right">{{ row.events | number }}</td>

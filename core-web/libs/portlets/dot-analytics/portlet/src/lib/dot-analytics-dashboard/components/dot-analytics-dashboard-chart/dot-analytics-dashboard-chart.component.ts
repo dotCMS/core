@@ -48,7 +48,7 @@ const CHART_TYPE_HEIGHTS = {
     imports: [CardModule, ChartModule, SkeletonModule, DotAnalyticsStateMessageComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-chart.component.html',
-    styleUrl: './dot-analytics-dashboard-chart.component.scss'
+    host: { class: 'block w-full h-full' }
 })
 export class DotAnalyticsDashboardChartComponent {
     readonly #messageService = inject(DotMessageService);

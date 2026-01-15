@@ -31,7 +31,6 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-content-conversions-table.component.html',
-    styleUrl: './dot-analytics-content-conversions-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export default class DotAnalyticsContentConversionsTableComponent {
@@ -65,4 +64,17 @@ export default class DotAnalyticsContentConversionsTableComponent {
 
         return status === ComponentStatus.LOADED && (!data || data.length === 0);
     });
+
+    /**
+     * Get the PrimeNG tag severity based on event type
+     */
+    protected getTagSeverity(eventType: string): 'success' | 'info' | 'warn' | 'secondary' {
+        const severityMap: Record<string, 'success' | 'info' | 'warn' | 'secondary'> = {
+            conversion: 'success',
+            content_click: 'info',
+            content_impression: 'warn'
+        };
+
+        return severityMap[eventType] || 'secondary';
+    }
 }
