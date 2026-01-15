@@ -28,6 +28,27 @@
         }
     }
 
+    &.disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+
+        &:hover {
+            border-color: $color-palette-border-light;
+            background: $white;
+            box-shadow: none;
+
+            .drag-handle,
+            .chevron {
+                opacity: 0;
+            }
+        }
+
+        .drag-handle,
+        .chevron {
+            cursor: not-allowed;
+        }
+    }
+
     // Child elements
     .content {
         display: flex;

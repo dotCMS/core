@@ -7,29 +7,36 @@ import {
     output
 } from '@angular/core';
 
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { TooltipModule } from 'primeng/tooltip';
+
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotCMSPaletteContentType } from '../../models';
 
 @Component({
     selector: 'dot-uve-palette-contenttype',
-    imports: [],
+    imports: [TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-palette-contenttype.component.html',
     styleUrl: './dot-uve-palette-contenttype.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[attr.data-type]': '"content-type"',
-        '[attr.draggable]': 'true',
+        '[attr.draggable]': '$draggable()',
         '[class.list-view]': '$isListView()',
+        '[class.disabled]': '$isDisabled()',
         '[attr.data-item]': '$dataItem()'
     }
 })
 export class DotUVEPaletteContenttypeComponent {
     $view = input<'grid grid-cols-12 gap-4' | 'list'>('grid grid-cols-12 gap-4', { alias: 'view' });
-    $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+    $contentType = input.required<DotCMSPaletteContentType>({ alias: 'contentType' });
 
     readonly onSelectContentType = output<string>();
     readonly contextMenu = output<MouseEvent>();
 
     readonly $isListView = computed(() => this.$view() === 'list');
+    readonly $isDisabled = computed(() => !!this.$contentType().disabled);
+    readonly $draggable = computed(() => !this.$isDisabled());
     readonly $dataItem = computed(() => {
         const contentType = this.$contentType();
 
@@ -42,6 +49,13 @@ export class DotUVEPaletteContenttypeComponent {
             move: false
         });
     });
+
+    protected onChevronClick(contentType: DotCMSPaletteContentType) {
+        if (contentType.disabled) {
+            return;
+        }
+        this.onSelectContentType.emit(contentType.variable);
+    }
 
     @HostListener('contextmenu', ['$event'])
     protected onContextMenu(event: MouseEvent) {

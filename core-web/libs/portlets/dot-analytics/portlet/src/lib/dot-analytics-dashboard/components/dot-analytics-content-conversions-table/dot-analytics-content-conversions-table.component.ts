@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { CardModule } from 'primeng/card';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
@@ -20,7 +22,9 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     selector: 'dot-analytics-content-conversions-table',
     imports: [
         CommonModule,
+        FormsModule,
         CardModule,
+        MultiSelectModule,
         TableModule,
         TagModule,
         DotAnalyticsStateMessageComponent,
@@ -32,6 +36,18 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
 export default class DotAnalyticsContentConversionsTableComponent {
     readonly $data = input.required<ContentConversionRow[]>({ alias: 'data' });
     readonly $status = input.required<ComponentStatus>({ alias: 'status' });
+
+    /** Extract unique event types from data for filter options */
+    protected readonly $eventTypeOptions = linkedSignal(() => {
+        const data = this.$data();
+        if (!data || data.length === 0) {
+            return [];
+        }
+
+        const uniqueTypes = [...new Set(data.map((row) => row.eventType))];
+
+        return uniqueTypes.map((type) => ({ label: type, value: type }));
+    });
 
     // Computed states based on status and data
     protected readonly $isLoading = computed(() => {

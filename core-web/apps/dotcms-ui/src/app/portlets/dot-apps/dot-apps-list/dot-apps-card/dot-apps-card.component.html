@@ -1,29 +1,32 @@
+@let app = $app();
+
 <p-card
     (click)="actionFired.emit(app.key)"
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }">
-    <p-header>
-        <p-avatar [image]="app.iconUrl" [text]="app.name" size="large" dotAvatar />
-        <div class="dot-apps-card__label-container">
-            <span class="dot-apps-card__name">{{ app.name }}</span>
-            <span class="dot-apps-card__configurations">
-                {{
-                    app.configurationsCount
-                        ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
-                        : ('apps.no.configurations' | dm)
-                }}
-            </span>
-            @if (app.sitesWithWarnings) {
-                <dot-icon
-                    name="warning"
-                    pTooltip="{{
-                        app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
-                    }}"
-                    size="18" />
-            }
+    <ng-template #header>
+        <div class="dot-apps-card__header-container">
+            <p-avatar [image]="app.iconUrl" [label]="app.name" size="large" dotAvatar />
+            <div class="dot-apps-card__label-container">
+                <span class="dot-apps-card__name">{{ app.name }}</span>
+                <span class="dot-apps-card__configurations">
+                    {{
+                        app.configurationsCount
+                            ? app.configurationsCount + ' ' + ('apps.configurations' | dm)
+                            : ('apps.no.configurations' | dm)
+                    }}
+                </span>
+                @if (app.sitesWithWarnings) {
+                    <i
+                        class="pi pi-exclamation-triangle text-lg"
+                        [pTooltip]="
+                            app.sitesWithWarnings + ' ' + ('apps.invalid.configurations' | dm)
+                        "></i>
+                }
+            </div>
         </div>
-    </p-header>
+    </ng-template>
     <p>
         <markdown>{{ app.description }}</markdown>
     </p>

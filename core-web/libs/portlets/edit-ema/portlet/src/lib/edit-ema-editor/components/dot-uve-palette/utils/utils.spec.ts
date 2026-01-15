@@ -2,14 +2,20 @@ import { describe, expect, it } from '@jest/globals';
 
 import { MenuItemCommandEvent } from 'primeng/api';
 
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 
 import {
     buildContentletsQuery,
-    buildPaletteContent,
     buildESContentParams,
+    buildPaletteContent,
     buildPaletteFavorite,
     buildPaletteMenuItems,
+    filterFormValues,
     getPaletteState,
     getSortActiveClass
 } from './index';
@@ -314,6 +320,93 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.status).toBe(DotPaletteListStatus.EMPTY);
         });
 
+        it('should mark all favorites as disabled when allowedContentTypes is undefined', () => {
+            const result = buildPaletteFavorite({ contentTypes: mockContentTypes });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is empty', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: {}
+            });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark only allowed variables as enabled when allowedContentTypes is provided', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: { banner: true, blog: true }
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+
+            expect(byVariable.blog.disabled).toBeUndefined();
+            expect(byVariable.banner.disabled).toBeUndefined();
+            expect(byVariable.article.disabled).toBe(true);
+            expect(byVariable.news.disabled).toBe(true);
+            expect(byVariable.product.disabled).toBe(true);
+        });
+
+        it('should treat WIDGET baseType as allowed when allowedContentTypes is non-empty', () => {
+            const contentTypes = [
+                { id: '1', name: 'Alpha', variable: 'alpha' } as DotCMSContentType,
+                {
+                    id: '2',
+                    name: 'WidgetZ',
+                    variable: 'widgetZ',
+                    baseType: DotCMSBaseTypesContentTypes.WIDGET
+                } as DotCMSContentType,
+                { id: '3', name: 'Beta', variable: 'beta' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { alpha: true } // non-empty map is required
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+            expect(byVariable.alpha.disabled).toBeUndefined();
+            expect(byVariable.widgetZ.disabled).toBeUndefined(); // allowed because widget
+            expect(byVariable.beta.disabled).toBe(true);
+        });
+
+        it('should keep alphabetical order even when some favorites are disabled', () => {
+            const contentTypes = [
+                { id: '1', name: 'B', variable: 'b' } as DotCMSContentType,
+                { id: '2', name: 'A', variable: 'a' } as DotCMSContentType,
+                { id: '3', name: 'C', variable: 'c' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { b: true } // A and C will be disabled
+            });
+
+            expect(result.contenttypes.map((ct) => ct.name)).toEqual(['A', 'B', 'C']);
+        });
+
+        it('should not normalize variable matching (case-sensitive)', () => {
+            const contentTypes = [
+                { id: '1', name: 'Banner', variable: 'Banner' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { banner: true } // different casing
+            });
+
+            expect(result.contenttypes[0].disabled).toBe(true);
+        });
+
         it('should use default page 1 when page is not provided', () => {
             const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
@@ -596,6 +689,194 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.query).toBe(
                 `+contentType:Widget +deleted:false +variant:${DEFAULT_VARIANT_ID}`
             );
+        });
+    });
+
+    describe('filterNullAndUndefined', () => {
+        it('should filter out null values', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should filter out undefined values', () => {
+            const input = {
+                name: 'John',
+                age: undefined,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should keep false values as they are valid', () => {
+            const input = {
+                name: 'John',
+                active: false,
+                verified: false
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: false,
+                verified: false
+            });
+        });
+
+        it('should keep zero values as they are valid', () => {
+            const input = {
+                count: 0,
+                score: 0
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                count: 0,
+                score: 0
+            });
+        });
+
+        it('should keep empty strings as they are valid', () => {
+            const input = {
+                name: '',
+                description: ''
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: '',
+                description: ''
+            });
+        });
+
+        it('should recursively filter nested objects', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag2: null,
+                    tag3: false
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag3: false
+                }
+            });
+            expect(result.tags).not.toHaveProperty('tag2');
+        });
+
+        it('should filter out nested objects that become empty after filtering', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John'
+            });
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should keep arrays as they are', () => {
+            const input = {
+                items: [1, 2, 3],
+                tags: []
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                items: [1, 2, 3],
+                tags: []
+            });
+        });
+
+        it('should handle complex nested structures', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        sms: null,
+                        push: false
+                    },
+                    preferences: null
+                },
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        push: false
+                    }
+                }
+            });
+            expect(result).not.toHaveProperty('age');
+            expect(result.settings).not.toHaveProperty('preferences');
+            expect(result.settings.notifications).not.toHaveProperty('sms');
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should return empty object when all values are null or undefined', () => {
+            const input = {
+                name: null,
+                age: undefined,
+                active: null
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
+        });
+
+        it('should handle empty object', () => {
+            const input = {};
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
         });
     });
 });

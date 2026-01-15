@@ -1,0 +1,24 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
+@use "variables" as *;
+
+:host {
+    display: flex;
+    flex-direction: column;
+}
+
+dot-apps-configuration-item {
+    margin: spacing.$spacing-3 0 spacing.$spacing-4;
+    overflow: auto;
+
+    &.dot-apps-configuration-item__not-configured {
+        background-color: colors.$color-palette-gray-200;
+        color: colors.$color-palette-gray-700;
+
+        &:hover {
+            background-color: transparent;
+            color: colors.$black;
+        }
+    }
+}

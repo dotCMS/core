@@ -16,28 +16,6 @@
         box-shadow: shadows.$shadow-s;
         cursor: pointer;
     }
-
-    ::ng-deep {
-        p-card {
-            border-radius: common.$border-radius-sm;
-        }
-
-        .p-card {
-            background: colors.$white;
-            height: 100%;
-
-            .p-card-body {
-                color: colors.$color-palette-gray-700;
-
-                .p-card-content > p {
-                    line-height: 1.5rem;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                    margin: 0 spacing.$spacing-3;
-                }
-            }
-        }
-    }
 }
 
 .dot-apps-card__disabled {
@@ -81,7 +59,7 @@
     }
 }
 
-p-header {
+.dot-apps-card__header-container {
     display: flex;
     padding-top: spacing.$spacing-4;
     align-items: flex-start;

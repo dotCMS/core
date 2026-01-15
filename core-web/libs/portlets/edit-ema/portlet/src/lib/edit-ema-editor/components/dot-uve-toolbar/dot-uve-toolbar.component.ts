@@ -100,6 +100,7 @@ export class DotUveToolbarComponent {
     readonly $socialMedia = this.#store.socialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.palette.open;
+    readonly $canEditPage = this.#store.$canEditPage;
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
