@@ -9,6 +9,7 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@dotcms/analytics": "^1.2.1",
         "@dotcms/client": "latest",
         "@dotcms/experiments": "latest",
         "@dotcms/react": "latest",

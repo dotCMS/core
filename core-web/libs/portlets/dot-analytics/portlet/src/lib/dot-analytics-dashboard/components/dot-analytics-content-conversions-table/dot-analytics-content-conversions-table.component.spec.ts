@@ -1,7 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { ContentConversionRow } from '@dotcms/portlets/dot-analytics/data-access';
@@ -12,7 +10,6 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
     let spectator: Spectator<DotAnalyticsContentConversionsTableComponent>;
     const createComponent = createComponentFactory({
         component: DotAnalyticsContentConversionsTableComponent,
-        imports: [NoopAnimationsModule],
         mocks: [DotMessageService]
     });
 
@@ -47,7 +44,8 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
         it('should display loading skeleton when isLoading is true', () => {
             expect(spectator.query(byTestId('content-conversions-loading'))).toBeTruthy();
-            expect(spectator.queryAll('.skeleton-cell').length).toBeGreaterThan(0);
+            // Updated: Using Tailwind classes for skeleton (bg-gray-200 rounded)
+            expect(spectator.queryAll('.bg-gray-200').length).toBeGreaterThan(0);
         });
 
         it('should not display table when loading', () => {
@@ -123,14 +121,11 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
             // Column 0: Event Type badge
             expect(firstRowCells[0].querySelector('p-tag')).toBeTruthy();
 
-            // Column 1: Title cell contains both title and identifier
+            // Column 1: Title cell contains both title and identifier (updated selectors for Tailwind)
             const titleCell = firstRowCells[1];
-            expect(titleCell.querySelector('.content-title')?.textContent?.trim()).toBe(
-                mockData[0].title
-            );
-            expect(titleCell.querySelector('.content-identifier')?.textContent?.trim()).toBe(
-                mockData[0].identifier
-            );
+            const titleCellDivs = titleCell.querySelectorAll('div > div');
+            expect(titleCellDivs[0]?.textContent?.trim()).toBe(mockData[0].title);
+            expect(titleCellDivs[1]?.textContent?.trim()).toBe(mockData[0].identifier);
 
             // Column 2: Events count
             expect(firstRowCells[2].textContent?.trim()).toBe(mockData[0].events.toString());

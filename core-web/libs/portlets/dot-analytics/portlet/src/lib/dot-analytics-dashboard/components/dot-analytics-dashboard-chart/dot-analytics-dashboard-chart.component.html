@@ -8,35 +8,33 @@
     (type === 'pie' || type === 'doughnut') && !isLoading && !isEmpty && !isError;
 
 <p-card
-    class="h-full chart-card"
-    [class.chart-card--loading]="isLoading"
-    [class.chart-card--empty]="isEmpty"
-    [class.chart-card--error]="isError"
+    class="h-full p-4 border-gray-400 border rounded-xl"
     [class.flex]="shouldUsePieLayout"
     [class.w-full]="shouldUsePieLayout"
     data-testid="analytics-chart">
     @if (title) {
         <ng-template pTemplate="header">
-            <h3 class="chart-title">{{ title }}</h3>
+            <h3 class="text-lg font-bold text-black leading-normal m-0">{{ title }}</h3>
         </ng-template>
     }
 
     @if ($isError()) {
         <!-- Error state -->
-        <div class="chart-error flex items-center justify-center" [style.height]="height">
+        <div class="flex items-center justify-center" [style.height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.error.loading"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isLoading) {
         <!-- Loading state with skeletons -->
-        <div class="chart-loading flex items-center justify-center" [style.height]="height">
+        <div class="flex items-center justify-center" [style.height]="height">
             @if (type === 'line') {
                 <!-- Line chart skeleton -->
-                <div class="chart-skeleton chart-skeleton--line">
-                    <div class="line-chart-skeleton">
+                <div class="w-full h-full flex items-center justify-center">
+                    <div
+                        class="grid w-full h-full p-2 grid-cols-[3.125rem_1fr] grid-rows-[1fr_1.875rem] gap-2">
                         <!-- Y-axis labels skeleton -->
-                        <div class="y-axis-skeleton">
+                        <div class="flex flex-col justify-between items-end pr-1">
                             <p-skeleton height="0.75rem" width="1.875rem" class="mb-6"></p-skeleton>
                             <p-skeleton
                                 height="0.75rem"
@@ -51,19 +49,19 @@
                         </div>
 
                         <!-- Chart area skeleton -->
-                        <div class="chart-area-skeleton">
+                        <div class="relative border-l-2 border-b-2 border-gray-300">
                             <!-- Grid lines skeleton -->
-                            <div class="grid-lines-skeleton">
-                                <div class="grid-line"></div>
-                                <div class="grid-line"></div>
-                                <div class="grid-line"></div>
-                                <div class="grid-line"></div>
-                                <div class="grid-line"></div>
+                            <div class="absolute inset-0 flex flex-col justify-between py-2.5">
+                                <div class="h-px w-full bg-gray-200 opacity-60"></div>
+                                <div class="h-px w-full bg-gray-200 opacity-60"></div>
+                                <div class="h-px w-full bg-gray-200 opacity-60"></div>
+                                <div class="h-px w-full bg-gray-200 opacity-60"></div>
+                                <div class="h-px w-full bg-gray-200 opacity-60"></div>
                             </div>
                         </div>
 
                         <!-- X-axis labels skeleton -->
-                        <div class="x-axis-skeleton">
+                        <div class="flex justify-between items-start pt-1 col-start-2 row-start-2">
                             <p-skeleton height="0.75rem" width="2.5rem" />
                             <p-skeleton height="0.75rem" width="2.8125rem" />
                             <p-skeleton height="0.75rem" width="2.1875rem" />
@@ -74,28 +72,26 @@
                 </div>
             } @else if (type === 'pie' || type === 'doughnut') {
                 <!-- Pie/Doughnut chart skeleton -->
-                <div class="chart-skeleton chart-skeleton--pie">
-                    <p-skeleton shape="circle" size="21.875rem" class="mx-auto" />
+                <div class="w-full h-full flex items-center justify-center">
+                    <p-skeleton shape="circle" class="mx-auto w-50 h-50" />
                 </div>
             } @else {
                 <!-- Default chart skeleton for other types -->
-                <div class="chart-skeleton chart-skeleton--default">
-                    <p-skeleton height="100%" width="100%" />
+                <div class="w-full h-full flex items-center justify-center">
+                    <p-skeleton height="100%" width="100%" class="rounded-md" />
                 </div>
             }
         </div>
     } @else if (isEmpty) {
         <!-- Empty state -->
-        <div
-            class="chart-container chart-empty w-full flex items-center justify-center"
-            [style.height]="height">
+        <div class="w-full flex items-center justify-center" [style.height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.empty.description"
                 icon="pi-info-circle" />
         </div>
     } @else {
         <!-- Normal chart content -->
-        <div class="chart-container" [style.height]="height">
+        <div class="w-full relative" [style.height]="height">
             <p-chart
                 [type]="type"
                 [data]="$chartData()"

@@ -25,7 +25,6 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',
-    styleUrl: './dot-analytics-dashboard-metrics.component.scss',
     animations: [fadeInContent]
 })
 export class DotAnalyticsDashboardMetricsComponent {

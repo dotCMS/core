@@ -1,14 +1,14 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
-import { ButtonModule } from 'primeng/button';
-import { Dialog, DialogModule } from 'primeng/dialog';
+import { Button } from 'primeng/button';
+import { Dialog } from 'primeng/dialog';
 import { Splitter } from 'primeng/splitter';
 
 import {
@@ -28,7 +28,7 @@ describe('DotAnalyticsSearchComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsSearchComponent,
-        imports: [MockModule(MonacoEditorModule), ButtonModule, DialogModule],
+        imports: [MockModule(MonacoEditorModule), Button, Dialog, Splitter],
         componentProviders: [DotAnalyticsSearchStore, DotAnalyticsSearchService],
         declarations: [],
         mocks: [],

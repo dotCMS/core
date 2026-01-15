@@ -27,7 +27,6 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-content-conversions-table.component.html',
-    styleUrl: './dot-analytics-content-conversions-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export default class DotAnalyticsContentConversionsTableComponent {
