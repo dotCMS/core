@@ -37,6 +37,11 @@
 		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+    <filter>
+        <filter-name>AdminSiteRequestFilter</filter-name>
+        <filter-class>com.dotcms.adminsite.AdminSiteRequestFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
@@ -165,6 +170,11 @@
 		<url-pattern>*.scss</url-pattern>
 	</filter-mapping>
 
+  <filter-mapping>
+    <filter-name>AdminSiteRequestFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
 	<filter-mapping>
 			<filter-name>HttpHeaderSecurityFilter</filter-name>
 			<url-pattern>/*</url-pattern>
@@ -187,9 +197,7 @@
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
 
-	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
