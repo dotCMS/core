@@ -1,3 +1,5 @@
+@use "variables" as *;
+
 .main-container {
     background: linear-gradient(135deg, #eff6ff 0%, #fff 50%, #faf5ff 100%), #fff;
 }
@@ -42,7 +44,7 @@
 }
 
 .heading {
-    font-weight: bold;
+    font-weight: $font-weight-bold;
     font-size: 50px;
     line-height: 24px;
     letter-spacing: -0.31px;
@@ -51,21 +53,22 @@
 
 .paragraph {
     font-weight: 400;
-    color: #424242;
-    font-size: 18px;
+    color: $color-palette-gray-800;
+    font-size: $font-size-slg;
     line-height: 28px;
     letter-spacing: -0.44px;
     text-align: center;
 }
 
 .card-heading {
-    font-weight: 600;
-    font-size: 16px;
+    font-weight: $font-weight-semi-bold;
+    font-size: $font-size-lmd;
     line-height: 24px;
     letter-spacing: -0.31px;
     text-align: center;
 }
+
 .card-paragraph {
-    font-size: 14px;
-    color: #424242;
+    font-size: $font-size-md;
+    color: $color-palette-gray-800;
 }
