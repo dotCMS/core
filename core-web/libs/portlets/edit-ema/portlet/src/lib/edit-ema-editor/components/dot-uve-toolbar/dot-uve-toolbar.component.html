@@ -27,6 +27,7 @@
             <dot-editor-mode-selector data-testId="uve-toolbar-editor-mode-selector" />
             <dot-ema-bookmarks [url]="$toolbar().editor.bookmarksUrl" />
             <p-button
+                size="small"
                 (click)="op.toggle($event)"
                 [text]="true"
                 [rounded]="true"
@@ -44,7 +45,7 @@
                                 <div class="flex min-w-0 items-center gap-2">
                                     <a
                                         [href]="url.value"
-                                        class="block min-w-0 flex-1 truncate text-sm text-gray-900 !no-underline hover:underline"
+                                        class="block min-w-0 flex-1 truncate text-gray-900 !no-underline hover:underline"
                                         target="_blank"
                                         rel="noreferrer noopener">
                                         {{ url.value }}
@@ -64,6 +65,7 @@
                 </p-popover>
             </p-button>
             <a
+                size="small"
                 title="Page API URL"
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"

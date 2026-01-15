@@ -8,20 +8,18 @@
     size="small"
     data-testId="more-button">
     <ng-template #selectedItem let-selectedOption>
-        <span class="flex min-w-0 flex-col">
-            <span class="text-sm leading-5 text-[var(--color-palette-primary-500)]">
-                {{ selectedOption.label }}
-            </span>
+        <span class="leading-5 text-[var(--color-palette-primary-500)]">
+            {{ selectedOption.label }}
         </span>
     </ng-template>
 
     <ng-template #item let-item>
         <div class="w-full" [attr.data-testId]="item.id + '-menu-item'">
             <span class="flex min-w-0 flex-col">
-                <span class="text-sm font-semibold leading-5 text-gray-900">
+                <span class="font-semibold leading-5 text-gray-900">
                     {{ item.label }}
                 </span>
-                <span class="mt-0.5 text-xs leading-4 text-gray-600">
+                <span class="mt leading-4 text-gray-600">
                     {{ item.description }}
                 </span>
             </span>

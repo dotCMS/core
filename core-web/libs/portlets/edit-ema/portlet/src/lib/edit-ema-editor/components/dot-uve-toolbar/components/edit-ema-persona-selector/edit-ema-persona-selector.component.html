@@ -1,41 +1,38 @@
-<p-button
-    (click)="op.toggle($event)"
-    [label]="value.name"
-    [text]="true"
-    size="small"
-    [styleClass]="personaButtonStyleClass"
-    data-testId="persona-button">
-    @if (value?.identifier !== 'modes.persona.no.persona') {
-        <p-avatar
-            [text]="value?.name"
-            [image]="photo"
-            [pt]="personaAvatarSelectedPt"
-            shape="circle"
-            dotAvatar />
-    } @else {
-        <p-avatar
-            [text]="'modes.persona.no.persona' | dm"
-            [pt]="personaAvatarSelectedPt"
-            shape="circle"
-            dotAvatar />
-    }
-</p-button>
-<p-popover #op [pt]="personaPopoverPt" data-testId="persona-op">
+
+    <p-button
+        (click)="op.toggle($event)"
+        [label]="value.name"
+        [text]="true"
+        size="small"
+        data-testId="persona-button">
+        @if (value?.identifier !== 'modes.persona.no.persona') {
+            <p-avatar
+                [text]="value?.name"
+                [image]="photo"
+                shape="circle"
+                dotAvatar />
+        } @else {
+            <p-avatar
+                [text]="'modes.persona.no.persona' | dm"
+                shape="circle"
+                dotAvatar />
+        }
+    </p-button>
+<p-popover #op data-testId="persona-op" [unstyled]="true" [appendTo]="'body'">
     <p-listbox
+        size="small"
         (onChange)="onSelect($event); op.hide()"
         [options]="$personas().items"
-        [pt]="personaListboxPt"
         #listbox
         optionLabel="label"
         data-testId="persona-listbox"
         dataKey="identifier">
         <ng-template let-persona pTemplate="item">
-            <div class="flex w-full items-center justify-between gap-4 px-2 py-2">
+            <div class="flex w-full items-center justify-between gap-4">
                 <div class="flex min-w-0 items-center gap-2">
                     <p-avatar
                         [text]="persona.name"
                         [image]="persona.photo"
-                        [pt]="personaAvatarPt"
                         shape="circle"
                         dotAvatar />
                     <span class="truncate text-sm text-gray-900">{{ persona.name }}</span>
@@ -45,7 +42,6 @@
                         [label]="'modes.persona.personalized' | dm"
                         [removable]="true"
                         removeIcon="pi pi-times-circle"
-                        [pt]="personaChipPt"
                         (onRemove)="
                             onRemove($event, persona, value.identifier === persona.identifier);
                             op.hide()

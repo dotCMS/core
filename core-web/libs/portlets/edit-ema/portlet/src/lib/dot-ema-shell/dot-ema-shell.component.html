@@ -1,17 +1,20 @@
 @if ($shellProps()?.canRead) {
     @if ($toggleLockOptions()?.showBanner && $showBanner()) {
-        <p-message severity="warning" data-testid="message">
+        <p-message severity="warn" data-testid="message">
             <ng-template pTemplate="content">
-                <div class="flex items-center justify-between gap-2 w-full">
+                <div class="flex w-full items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
                         <i class="pi pi-info-circle"></i>
-                        <span class="lock-message" data-testid="message-content">
+                        <span class="inline leading-6" data-testid="message-content">
                             {{
                                 'uve.shell.page.locked.locked.by'
                                     | dm: [$toggleLockOptions().lockedBy]
                             }}
                             @if ($toggleLockOptions().canLock) {
-                                <button class="unlock-link" type="button" (click)="toggleLock()">
+                                <button
+                                    class="inline-flex items-center underline text-blue-600 hover:text-blue-700"
+                                    type="button"
+                                    (click)="toggleLock()">
                                     {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
                                 </button>
                                 {{
@@ -28,7 +31,6 @@
                     <p-button
                         [text]="true"
                         size="small"
-                        styleClass="clear-button"
                         type="button"
                         icon="pi pi-times"
                         data-testid="close-message"
@@ -59,11 +61,9 @@
     #dialog
     data-testId="ema-dialog" />
 <p-confirmDialog
-    [style]="{
-        width: '400px'
-    }"
+    styleClass="w-[400px]"
     key="shell-confirm-dialog"
-    rejectIcon="hidden"
-    acceptIcon="hidden"
+    rejectIcon=""
+    acceptIcon=""
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog" />

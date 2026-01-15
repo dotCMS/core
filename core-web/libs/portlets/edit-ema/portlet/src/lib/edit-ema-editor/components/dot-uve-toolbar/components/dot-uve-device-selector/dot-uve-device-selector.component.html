@@ -1,5 +1,6 @@
 @for (device of defaultDevices; track $index) {
     <p-button
+        size="small"
         [icon]="device.icon"
         [pTooltip]="device.name | dm"
         tooltipPosition="bottom"
@@ -12,15 +13,19 @@
 
 <p-button
     [text]="true"
+    size="small"
     [rounded]="true"
-    styleClass="orientation"
     [disabled]="$disableOrientation()"
     (click)="onOrientationChange()"
     data-testId="orientation">
     <!-- ROTATE THE ICON WHEN THE ORIENTATION IS LANDSCAPE -->
     <ng-template pTemplate="content">
         <svg
-            [ngClass]="$currentOrientation()"
+            class="origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+            [ngClass]="{
+                'rotate-90': $currentOrientation() === Orientation.LANDSCAPE,
+                'rotate-0': $currentOrientation() !== Orientation.LANDSCAPE
+            }"
             fill="currentColor"
             viewBox="0 0 24 24"
             width="24px"
@@ -37,6 +42,7 @@
 @if ($menuItems().length) {
     <p-button
         icon="pi pi-angle-down"
+        size="small"
         iconPos="right"
         [label]="$moreButtonLabel() | dm"
         [class.active]="$isMoreButtonActive()"

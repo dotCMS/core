@@ -93,15 +93,15 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
     describe('dom', () => {
         describe('button', () => {
-            it('should not have selected class', () => {
-                expect(button.classList.contains('selected')).toBe(false);
+            it('should render the selected persona name in the button', () => {
+                expect(button.textContent).toContain(TEST_DEFAULT_PERSONA.name);
             });
 
-            it('should have selected class', () => {
+            it('should update the button label when value changes', () => {
                 component.value = CUSTOM_PERSONA;
                 spectator.detectComponentChanges();
 
-                expect(button.classList.contains('selected')).toBe(true);
+                expect(button.textContent).toContain(CUSTOM_PERSONA.name);
             });
         });
 

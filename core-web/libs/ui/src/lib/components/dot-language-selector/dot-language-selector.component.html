@@ -20,7 +20,7 @@
     dataKey="id"
     optionLabel="label">
     <ng-template pTemplate="selectedItem" let-selectedOption>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 leading-5 text-[var(--color-palette-primary-500)]">
             <i class="pi pi-globe text-color-secondary"></i>
             <span class="truncate">
                 {{ selectedOption?.label ?? $state.pinnedOption()?.label }}

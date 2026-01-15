@@ -33,6 +33,10 @@ import { Orientation } from '../../../../../store/models';
 export class DotUveDeviceSelectorComponent implements OnInit {
     #store = inject(UVEStore);
     #messageService = inject(DotMessageService);
+
+    /** Expose enum to template for explicit orientation checks. */
+    protected readonly Orientation = Orientation;
+
     $devices = input<DotDeviceListItem[]>([], {
         alias: 'devices'
     });

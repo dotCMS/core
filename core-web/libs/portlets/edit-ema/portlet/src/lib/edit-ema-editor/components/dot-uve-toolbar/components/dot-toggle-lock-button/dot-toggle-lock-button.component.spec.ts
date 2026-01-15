@@ -92,8 +92,8 @@ describe('DotToggleLockButtonComponent', () => {
         });
 
         it('should display lock-open icon when page is unlocked', () => {
-            const icon = spectator.query('.lock-button i.pi-lock-open');
-            expect(icon).toBeTruthy();
+            const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            expect(button?.querySelector('.pi-lock-open')).toBeTruthy();
         });
 
         it('should display unlocked label when page is unlocked', () => {
@@ -101,11 +101,7 @@ describe('DotToggleLockButtonComponent', () => {
             expect(label).toBe('uve.editor.toggle.lock.button.unlocked');
         });
 
-        it('should have unlocked CSS class when page is unlocked', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            expect(button).toHaveClass('lock-button--unlocked');
-            expect(button).not.toHaveClass('lock-button--locked');
-        });
+        // Styling is handled by PrimeNG defaults; we only override locked state colors in template.
 
         it('should call store.toggleLock with correct params when clicked and unlocked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
@@ -131,8 +127,8 @@ describe('DotToggleLockButtonComponent', () => {
         });
 
         it('should display lock icon when page is locked', () => {
-            const icon = spectator.query('.lock-button i.pi-lock');
-            expect(icon).toBeTruthy();
+            const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            expect(button?.querySelector('.pi-lock')).toBeTruthy();
         });
 
         it('should display locked label when page is locked', () => {
@@ -140,11 +136,7 @@ describe('DotToggleLockButtonComponent', () => {
             expect(label).toBe('uve.editor.toggle.lock.button.locked');
         });
 
-        it('should have locked CSS class when page is locked', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            expect(button).toHaveClass('lock-button--locked');
-            expect(button).not.toHaveClass('lock-button--unlocked');
-        });
+        // Styling is handled by PrimeNG defaults; we only override locked state colors in template.
 
         it('should call store.toggleLock with correct params when clicked and locked', () => {
             const button = spectator.query(byTestId('toggle-lock-button'));
@@ -170,8 +162,8 @@ describe('DotToggleLockButtonComponent', () => {
         });
 
         it('should display lock icon', () => {
-            const icon = spectator.query('.lock-button i.pi-lock');
-            expect(icon).toBeTruthy();
+            const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            expect(button?.querySelector('.pi-lock')).toBeTruthy();
         });
 
         it('should call store.toggleLock with isLockedByCurrentUser=false when clicked', () => {
