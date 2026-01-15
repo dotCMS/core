@@ -1,4 +1,4 @@
-import { ContentSearchService } from './search';
+import { ContentSearchService, type SearchForm } from './search';
 
 import { mockFetch } from '../test-setup';
 
@@ -62,7 +62,7 @@ describe('ContentSearchService', () => {
             };
             mockFetch.mockResolvedValue(mockResponse);
 
-            const params = {
+            const params: SearchForm = {
                 assetPath: '//SiteName/',
                 includeSystemHost: true,
                 filters: { text: 'footer', filterFolders: true },
@@ -73,7 +73,7 @@ describe('ContentSearchService', () => {
                 archived: false,
                 showFolders: false
             };
-            const result = await service.search(params as any);
+            const result = await service.search(params);
 
             expect(mockFetch).toHaveBeenCalledTimes(1);
             const [url, options] = mockFetch.mock.calls[0];
@@ -87,7 +87,7 @@ describe('ContentSearchService', () => {
         });
 
         it('should handle invalid drive search parameters', async () => {
-            const invalidParams = { assetPath: 123 } as any;
+            const invalidParams = { assetPath: 123 } as unknown as SearchForm;
             await expect(service.search(invalidParams)).rejects.toThrow(
                 'Invalid drive search parameters'
             );
@@ -99,7 +99,7 @@ describe('ContentSearchService', () => {
             };
             mockFetch.mockResolvedValue(mockResponse);
 
-            const params = {
+            const params: SearchForm = {
                 assetPath: '//SiteName/',
                 includeSystemHost: true,
                 filters: { text: 'footer', filterFolders: true },
@@ -111,16 +111,14 @@ describe('ContentSearchService', () => {
                 showFolders: false
             };
 
-            await expect(service.search(params as any)).rejects.toThrow(
-                'Invalid drive search response'
-            );
+            await expect(service.search(params)).rejects.toThrow('Invalid drive search response');
         });
 
         it('should propagate fetch errors', async () => {
             const error = new Error('Network error');
             mockFetch.mockRejectedValue(error);
 
-            const params = {
+            const params: SearchForm = {
                 assetPath: '//SiteName/',
                 includeSystemHost: true,
                 filters: { text: 'footer', filterFolders: true },
@@ -132,7 +130,7 @@ describe('ContentSearchService', () => {
                 showFolders: false
             };
 
-            await expect(service.search(params as any)).rejects.toThrow('Network error');
+            await expect(service.search(params)).rejects.toThrow('Network error');
         });
     });
 });
