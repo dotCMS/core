@@ -1,0 +1,66 @@
+{
+  "folders": [
+    {
+      "name": "🟣 core",
+      "path": ".",
+    },
+    {
+      "name": "🅰️ core-web",
+      "path": "./core-web"
+    },
+    {
+      "name": "📘 example-angular",
+      "path": "./examples/angular"
+    },
+    {
+      "name": "📗 example-angular-ssr",
+      "path": "./examples/angular-ssr"
+    },
+    {
+      "name": "📙 example-astro",
+      "path": "./examples/astro"
+    },
+    {
+      "name": "📕 example-nextjs",
+      "path": "./examples/nextjs"
+    },
+    {
+      "name": "📔 example-vuejs",
+      "path": "./examples/vuejs"
+    }
+  ],
+  "settings": {
+    // Global workspace settings (apply to all folders)
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/target": true,
+      "**/.nx": true,
+      // Hide folders that have their own workspace roots
+      "core-web": true,
+      "examples": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/target": true,
+      "**/dist": true
+    },
+    // Editor settings
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "angular.enable-strict-mode-prompt": false,
+    // Java Language Server Memory: 4GB for 16GB RAM machines (Cursor may auto-increase this)
+    "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx4G -Xms100m -Xlog:disable",
+    // CRITICAL: Disable ALL automatic builds - use Maven CLI ONLY!
+    "java.autobuild.enabled": false,
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": true,
+    "java.configuration.updateBuildConfiguration": "disabled",
+    "java.maven.downloadSources": false,
+    "java.maven.updateSnapshots": false,
+    "java.compile.nullAnalysis.mode": "disabled"
+  }
+}

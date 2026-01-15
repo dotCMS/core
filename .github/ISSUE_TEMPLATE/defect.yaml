@@ -4,6 +4,7 @@ title: "[DEFECT] "
 labels: ["Triage","OKR : Customer Support"]
 type: bug
 assignees: []
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown
@@ -67,5 +68,17 @@ body:
         - High - Major functionality broken
         - Medium - Some functionality impacted
         - Low - Minor issue or cosmetic
+    validations:
+      required: true
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Related Freshdesk tickets and Slack channels
+      placeholder: |
+        - [Freshdesk ticket #XXXXX](url)
+        - [Slack channel #XXXXX](url)
+        - Or enter "NA" if no Freshdesk ticket exists
     validations:
       required: true

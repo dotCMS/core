@@ -6,8 +6,11 @@ import { execa } from 'execa';
 import ora from 'ora';
 import { Result, Ok, Err } from 'ts-results';
 
+import path from 'path';
+
 import { DotCMSApi } from './api';
 import {
+    askCloudOrLocalInstance,
     askDirectory,
     askDotcmsCloudUrl,
     askFramework,
@@ -15,11 +18,14 @@ import {
     askUserNameForDotcmsCloud,
     prepareDirectory
 } from './asks';
-import { DOTCMS_HEALTH_API, DOTCMS_HOST, DOTCMS_USER } from './constants';
+import { DOTCMS_HEALTH_API, DOTCMS_USER } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import {
     fetchWithRetry,
+    finalStepsForAngularAndAngularSSR,
+    finalStepsForAstro,
+    finalStepsForNextjs,
     getDotcmsApisByBaseUrl,
     getPortByFramework,
     getUVEConfigValue
@@ -52,12 +58,7 @@ program
 
     .action(async (projectName: string, options) => {
         // <-- Add beta notice here
-        console.log(chalk.bgYellow.black(' ⚠️  Beta Version Notice  ⚠️ '));
-        console.log(
-            chalk.yellow(
-                'This CLI is currently in beta. Features may change and some bugs may be present.\n'
-            )
-        );
+        console.log(chalk.bgGrey.white('\n\n ℹ️  Beta: Features may change \n'));
 
         const { dir, directory } = options;
         const { url } = options;
@@ -67,6 +68,8 @@ program
 
         let directoryInput: string;
         let finalDirectory: string;
+        let isCloudInstanceSelected: boolean;
+        let selectedFramework: string;
 
         if (dir === undefined && directory === undefined) {
             directoryInput = await askDirectory();
@@ -76,29 +79,29 @@ program
             finalDirectory = await prepareDirectory(directoryInput, projectName);
         }
 
-        let selectedFramework: string;
-
         if (framework === undefined && f === undefined) {
             selectedFramework = await askFramework();
         } else {
             selectedFramework = framework || f;
         }
-
-        const isCloudInstanceSelected: boolean = options.local === undefined;
+        if (options.local === undefined) {
+            isCloudInstanceSelected = await askCloudOrLocalInstance();
+        } else {
+            isCloudInstanceSelected = !JSON.parse(options.local);
+        }
 
         if (isCloudInstanceSelected) {
-            let urlDotcmsInstance: string;
-            let userNameDotCmsInstance: string;
-            let passwordDotCmsInstance: string;
+            const urlDotcmsInstance = url === undefined ? await askDotcmsCloudUrl() : url;
 
-            if (url === undefined) await askDotcmsCloudUrl();
-            else urlDotcmsInstance = url;
+            const userNameDotCmsInstance =
+                user === undefined && username === undefined
+                    ? await askUserNameForDotcmsCloud()
+                    : user || username;
 
-            if (user === undefined && username === undefined) await askUserNameForDotcmsCloud();
-            else userNameDotCmsInstance = user || username;
-
-            if (pass === undefined && password === undefined) await askPasswordForDotcmsCloud();
-            else passwordDotCmsInstance = pass || password;
+            const passwordDotCmsInstance =
+                pass === undefined && password === undefined
+                    ? await askPasswordForDotcmsCloud()
+                    : pass || password;
 
             const spinner = ora(`Scaffolding ${selectedFramework} application ...`).start();
 
@@ -121,7 +124,10 @@ program
 
             spinner.start('Verifying if dotCMS is running...');
 
-            const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL);
+            const checkIfDotcmsIsRunning = await isDotcmsRunning(
+                `DotCMS is not running on the provided url ${urlDotcmsInstance}.Please make sure you have typed the correct url`,
+                healthApiURL
+            );
 
             if (!checkIfDotcmsIsRunning) {
                 spinner.fail(
@@ -180,35 +186,45 @@ program
             }
 
             spinner.succeed('Project setup completed successfully.');
-
-            console.log('\n');
-            console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
-
-            // ENV BLOCK — nicely spaced + grouped
-            console.log(chalk.white('──────────────────────────────────────────────'));
-            console.log(chalk.white('🌐  Host (site):      ') + chalk.green(urlDotcmsInstance));
-            console.log(
-                chalk.white('🏷️  Site ID:          ') + chalk.green(demoSite.val.entity.identifier)
-            );
-            console.log(chalk.white('🔐  API Token:        ') + chalk.green(dotcmsToken.val));
-            console.log(chalk.white('──────────────────────────────────────────────\n'));
-
-            // INSTALL DEPENDENCIES
-            console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
-            console.log(chalk.white(`$ cd ${finalDirectory}`));
-            console.log(chalk.white('$ npm install\n'));
-
-            // START DEV SERVER
-            console.log(chalk.blueBright('💻 Start your frontend development server:'));
-            console.log(chalk.white('$ npm run dev\n'));
-
-            // FINAL MESSAGE
-            console.log(
-                chalk.greenBright(
-                    "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
-                )
-            );
-
+            const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
+            switch (selectedFramework) {
+                case 'nextjs': {
+                    finalStepsForNextjs({
+                        projectPath: relativePath,
+                        token: dotcmsToken.val,
+                        siteId: demoSite.val.entity.identifier,
+                        urlDotCMSInstance: urlDotcmsInstance
+                    });
+                    break;
+                }
+                case 'angular': {
+                    finalStepsForAngularAndAngularSSR({
+                        projectPath: relativePath,
+                        token: dotcmsToken.val,
+                        siteId: demoSite.val.entity.identifier,
+                        urlDotCMSInstance: urlDotcmsInstance
+                    });
+                    break;
+                }
+                case 'angular-ssr': {
+                    finalStepsForAngularAndAngularSSR({
+                        projectPath: relativePath,
+                        token: dotcmsToken.val,
+                        siteId: demoSite.val.entity.identifier,
+                        urlDotCMSInstance: urlDotcmsInstance
+                    });
+                    break;
+                }
+                case 'astro': {
+                    finalStepsForAstro({
+                        projectPath: relativePath,
+                        token: dotcmsToken.val,
+                        siteId: demoSite.val.entity.identifier,
+                        urlDotCMSInstance: urlDotcmsInstance
+                    });
+                    break;
+                }
+            }
             return;
         }
 
@@ -251,7 +267,7 @@ program
         const ran = await runDockerCompose({ directory: finalDirectory });
         if (!ran.ok) {
             spinner.fail(
-                'Failed to start dotCMS with Docker Compose.Please make sure docker is installed and running.'
+                'Failed to start dotCMS ensure docker is running and ports 8082, 8443, 9200, and 9600 are free.'
             );
             return;
         }
@@ -260,7 +276,9 @@ program
 
         spinner.start('Verifying if dotCMS is running...');
 
-        const checkIfDotcmsIsRunning = await isDotcmsRunning();
+        const checkIfDotcmsIsRunning = await isDotcmsRunning(
+            'Failed to start dotCMS.Ensure Docker is running and ports 8082, 8443, 9200, and 9600 are free'
+        );
 
         if (!checkIfDotcmsIsRunning) {
             spinner.fail('dotCMS is not running. Please check the docker containers.');
@@ -312,35 +330,45 @@ program
         }
 
         spinner.succeed('Project setup completed successfully.');
-
-        // ADD FINAL INSTRUCTIONS
-        console.log('\n');
-        console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
-
-        // ENV BLOCK — nicely spaced + grouped
-        console.log(chalk.white('──────────────────────────────────────────────'));
-        console.log(chalk.white('🌐  Host (site):      ') + chalk.green(DOTCMS_HOST));
-        console.log(
-            chalk.white('🏷️  Site ID:          ') + chalk.green(demoSite.val.entity.identifier)
-        );
-        console.log(chalk.white('🔐  API Token:        ') + chalk.green(dotcmsToken.val));
-        console.log(chalk.white('──────────────────────────────────────────────\n'));
-
-        // INSTALL DEPENDENCIES
-        console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
-        console.log(chalk.white(`$ cd ${finalDirectory}`));
-        console.log(chalk.white('$ npm install\n'));
-
-        // START DEV SERVER
-        console.log(chalk.blueBright('💻 Start your frontend development server:'));
-        console.log(chalk.white('$ npm run dev\n'));
-
-        // FINAL MESSAGE
-        console.log(
-            chalk.greenBright(
-                "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
-            )
-        );
+        const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
+        switch (selectedFramework) {
+            case 'nextjs': {
+                finalStepsForNextjs({
+                    projectPath: relativePath,
+                    token: dotcmsToken.val,
+                    siteId: demoSite.val.entity.identifier,
+                    urlDotCMSInstance: 'http://localhost:8082'
+                });
+                break;
+            }
+            case 'angular': {
+                finalStepsForAngularAndAngularSSR({
+                    projectPath: relativePath,
+                    token: dotcmsToken.val,
+                    siteId: demoSite.val.entity.identifier,
+                    urlDotCMSInstance: 'http://localhost:8082'
+                });
+                break;
+            }
+            case 'angular-ssr': {
+                finalStepsForAngularAndAngularSSR({
+                    projectPath: relativePath,
+                    token: dotcmsToken.val,
+                    siteId: demoSite.val.entity.identifier,
+                    urlDotCMSInstance: 'http://localhost:8082'
+                });
+                break;
+            }
+            case 'astro': {
+                finalStepsForAstro({
+                    projectPath: relativePath,
+                    token: dotcmsToken.val,
+                    siteId: demoSite.val.entity.identifier,
+                    urlDotCMSInstance: 'http://localhost:8082'
+                });
+                break;
+            }
+        }
     });
 
 export async function createApp() {
@@ -410,7 +438,7 @@ async function runDockerCompose({
     }
 }
 
-async function isDotcmsRunning(url?: string): Promise<boolean> {
+async function isDotcmsRunning(errorMessage: string, url?: string): Promise<boolean> {
     try {
         // console.log(chalk.cyan("Waiting for DotCMS to be up ...."));
         const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, 20, 5000);
@@ -419,13 +447,8 @@ async function isDotcmsRunning(url?: string): Promise<boolean> {
             return true;
         }
         return false;
-    } catch (err) {
-        console.log(
-            chalk.red(
-                '❌ Failed to run docker-compose. Please make sure if docker is installed and running inside your machine.',
-                +JSON.stringify(err)
-            )
-        );
+    } catch {
+        console.log(chalk.red('❌' + errorMessage));
         return false;
     }
 }

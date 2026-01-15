@@ -155,7 +155,10 @@ export function onContentletHovered(callback: UVEEventHandler) {
             contentType: foundElement.dataset?.['dotType'],
             baseType: foundElement.dataset?.['dotBasetype'],
             widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
-            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages']
+            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages'],
+            ...(foundElement.dataset?.['dotStyleProperties'] && {
+                styleProperties: JSON.parse(foundElement.dataset['dotStyleProperties'])
+            })
         };
 
         const vtlFiles = findDotCMSVTLData(foundElement);

@@ -1,5 +1,5 @@
 import { InferInputSignals } from '@ngneat/spectator';
-import { createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { HttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
@@ -15,6 +15,7 @@ import { StyleEditorFormSchema } from '@dotcms/uve';
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const createMockSchema = (): StyleEditorFormSchema => ({
@@ -28,8 +29,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                     label: 'Font Size',
                     type: 'input',
                     config: {
-                        inputType: 'number',
-                        defaultValue: 16
+                        inputType: 'number'
                     }
                 },
                 {
@@ -40,8 +40,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Arial', value: 'Arial' },
                             { label: 'Helvetica', value: 'Helvetica' }
-                        ],
-                        defaultValue: 'Arial'
+                        ]
                     }
                 }
             ]
@@ -57,11 +56,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Underline', value: 'underline' },
                             { label: 'Overline', value: 'overline' }
-                        ],
-                        defaultValue: {
-                            underline: true,
-                            overline: false
-                        }
+                        ]
                     }
                 },
                 {
@@ -72,8 +67,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Left', value: 'left' },
                             { label: 'Right', value: 'right' }
-                        ],
-                        defaultValue: 'left'
+                        ]
                     }
                 }
             ]
@@ -83,6 +77,10 @@ const createMockSchema = (): StyleEditorFormSchema => ({
 
 describe('DotUveStyleEditorFormComponent', () => {
     let spectator: Spectator<DotUveStyleEditorFormComponent>;
+    let mockUveStore: {
+        currentIndex: ReturnType<typeof signal<number>>;
+        activeContentlet: ReturnType<typeof signal<ActionPayload | null>>;
+    };
 
     const createComponent = createComponentFactory({
         component: DotUveStyleEditorFormComponent,
@@ -95,14 +93,17 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockProvider(MessageService),
             {
                 provide: UVEStore,
-                useValue: {
-                    currentIndex: signal(0)
-                }
+                useFactory: () => mockUveStore
             }
         ]
     });
 
     beforeEach(() => {
+        mockUveStore = {
+            currentIndex: signal(0),
+            activeContentlet: signal(null)
+        };
+
         spectator = createComponent({
             props: {
                 // This is a workaround to pass an input with alias.
@@ -144,70 +145,6 @@ describe('DotUveStyleEditorFormComponent', () => {
         });
     });
 
-    describe('form controls', () => {
-        it('should create form controls for input field', () => {
-            const form = spectator.component.$form();
-            expect(form).toBeTruthy();
-
-            const fontSizeControl = form?.get('font-size');
-            expect(fontSizeControl).toBeTruthy();
-            expect(fontSizeControl?.value).toBe(16);
-        });
-
-        it('should create form controls for dropdown field', () => {
-            const form = spectator.component.$form();
-            const fontFamilyControl = form?.get('font-family');
-            expect(fontFamilyControl).toBeTruthy();
-            expect(fontFamilyControl?.value).toBe('Arial');
-        });
-
-        it('should create form group for checkboxGroup field', () => {
-            const form = spectator.component.$form();
-            const textDecorationGroup = form?.get('text-decoration') as FormGroup;
-            expect(textDecorationGroup).toBeTruthy();
-            expect(textDecorationGroup).toBeInstanceOf(FormGroup);
-
-            const underlineControl = textDecorationGroup.get('underline');
-            const overlineControl = textDecorationGroup.get('overline');
-            expect(underlineControl?.value).toBe(true);
-            expect(overlineControl?.value).toBe(false);
-        });
-
-        it('should create form controls for radio field', () => {
-            const form = spectator.component.$form();
-            const alignmentControl = form?.get('alignment');
-            expect(alignmentControl).toBeTruthy();
-            expect(alignmentControl?.value).toBe('left');
-        });
-    });
-
-    describe('default values', () => {
-        it('should use defaultValue for input field when provided', () => {
-            const form = spectator.component.$form();
-            const fontSizeControl = form?.get('font-size');
-            expect(fontSizeControl?.value).toBe(16);
-        });
-
-        it('should use defaultValue for dropdown field when provided', () => {
-            const form = spectator.component.$form();
-            const fontFamilyControl = form?.get('font-family');
-            expect(fontFamilyControl?.value).toBe('Arial');
-        });
-
-        it('should use defaultValue for checkboxGroup field when provided', () => {
-            const form = spectator.component.$form();
-            const textDecorationGroup = form?.get('text-decoration') as FormGroup;
-            expect(textDecorationGroup.get('underline')?.value).toBe(true);
-            expect(textDecorationGroup.get('overline')?.value).toBe(false);
-        });
-
-        it('should use defaultValue for radio field when provided', () => {
-            const form = spectator.component.$form();
-            const alignmentControl = form?.get('alignment');
-            expect(alignmentControl?.value).toBe('left');
-        });
-    });
-
     describe('field rendering', () => {
         it('should render input field component', () => {
             const inputField = spectator.query('dot-uve-style-editor-field-input');
@@ -230,38 +167,56 @@ describe('DotUveStyleEditorFormComponent', () => {
         });
     });
 
-    // TODO: Remove skip when we have the styleProperties in PageAPI response and remove the untracked in $reloadSchemaEffect.
-    xdescribe('schema changes', () => {
-        it('should rebuild form when schema changes', () => {
-            const initialForm = spectator.component.$form();
-
-            const newSchema: StyleEditorFormSchema = {
-                contentType: 'new-content-type',
-                sections: [
-                    {
-                        title: 'New Section',
-                        fields: [
-                            {
-                                id: 'new-field',
-                                label: 'New Field',
-                                type: 'input',
-                                config: {
-                                    inputType: 'text',
-                                    defaultValue: 'test'
-                                }
-                            }
-                        ]
-                    }
-                ]
+    describe('initial values from contentlet styleProperties', () => {
+        it('should use styleProperties from activeContentlet when available', () => {
+            const styleProperties = {
+                'font-size': 20,
+                'font-family': 'Helvetica',
+                'text-decoration': {
+                    underline: false,
+                    overline: true
+                },
+                alignment: 'right'
             };
 
-            spectator.setInput('schema', newSchema);
+            // Set activeContentlet BEFORE creating component
+            mockUveStore.activeContentlet.set({
+                contentlet: {
+                    identifier: 'test-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'test-content-type',
+                    styleProperties
+                },
+                container: {
+                    acceptTypes: 'test',
+                    identifier: 'test-container',
+                    maxContentlets: 1,
+                    variantId: 'test-variant',
+                    uuid: 'test-uuid'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'test-page'
+            });
+
+            // Create a NEW component instance with the schema already set
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
             spectator.detectChanges();
 
-            const newForm = spectator.component.$form();
-            expect(newForm).toBeTruthy();
-            expect(newForm).not.toBe(initialForm);
-            expect(newForm?.get('new-field')?.value).toBe('test');
+            const form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(20);
+            expect(form?.get('font-family')?.value).toBe('Helvetica');
+            expect(form?.get('alignment')?.value).toBe('right');
+
+            const textDecorationGroup = form?.get('text-decoration') as FormGroup;
+            expect(textDecorationGroup.get('underline')?.value).toBe(false);
+            expect(textDecorationGroup.get('overline')?.value).toBe(true);
         });
     });
 });

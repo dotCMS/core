@@ -1,18 +1,17 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
     computed,
     DestroyRef,
+    DOCUMENT,
     effect,
     inject,
     OnInit,
-    output,
-    DOCUMENT
+    output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -96,7 +95,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         TabViewModule,
         DotWorkflowActionsComponent,
         TabViewInsertDirective,
-        NgTemplateOutlet,
         DotMessagePipe,
         InputSwitchModule,
         FormsModule,

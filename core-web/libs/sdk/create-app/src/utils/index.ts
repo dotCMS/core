@@ -1,4 +1,5 @@
 import axios from 'axios';
+import chalk from 'chalk';
 import fs from 'fs-extra';
 
 import https from 'https';
@@ -73,4 +74,168 @@ export function downloadFile(url: string, dest: string): Promise<void> {
                 reject(err);
             });
     });
+}
+
+export function finalStepsForNextjs({
+    projectPath,
+    urlDotCMSInstance,
+    siteId,
+    token
+}: {
+    projectPath: string;
+    urlDotCMSInstance: string;
+    siteId: string;
+    token: string;
+}) {
+    console.log('\n');
+    console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+
+    console.log(chalk.white('🪜  Steps:\n'));
+    console.log(chalk.white('1- cd ') + chalk.green(projectPath));
+    console.log(
+        chalk.white('2- Create a new file with the name ') +
+            chalk.green('.env') +
+            ' and paste the following:\n'
+    );
+
+    // ENV BLOCK — nicely spaced + grouped
+    console.log(chalk.white('──────────────────────────────────────────────'));
+    console.log(chalk.white(getEnvVariablesForNextJS(urlDotCMSInstance, siteId, token)));
+    console.log(chalk.white('──────────────────────────────────────────────\n'));
+
+    // INSTALL DEPENDENCIES
+    console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
+    console.log(chalk.white('$ npm install\n'));
+
+    // START DEV SERVER
+    console.log(chalk.blueBright('💻 Start your frontend development server:'));
+    console.log(chalk.white('$ npm run dev\n'));
+
+    console.log(
+        chalk.greenBright(
+            "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
+        )
+    );
+}
+
+export function finalStepsForAstro({
+    projectPath,
+    urlDotCMSInstance,
+    siteId,
+    token
+}: {
+    projectPath: string;
+    urlDotCMSInstance: string;
+    siteId: string;
+    token: string;
+}) {
+    console.log('\n');
+    console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+
+    console.log(chalk.white('🪜  Steps:\n'));
+    console.log(chalk.white('1- cd ') + chalk.green(projectPath));
+    console.log(
+        chalk.white('2- Create a new file with the name ') +
+            chalk.green('.env') +
+            ' and paste the following:\n'
+    );
+
+    // ENV BLOCK — nicely spaced + grouped
+    console.log(chalk.white('──────────────────────────────────────────────'));
+    console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
+    console.log();
+
+    console.log(chalk.white('──────────────────────────────────────────────\n'));
+
+    // INSTALL DEPENDENCIES
+    console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
+    console.log(chalk.white('$ npm install\n'));
+
+    // START DEV SERVER
+    console.log(chalk.blueBright('💻 Start your frontend development server:'));
+    console.log(chalk.white('$ npm run dev\n'));
+
+    console.log(
+        chalk.greenBright(
+            "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
+        )
+    );
+}
+
+export function finalStepsForAngularAndAngularSSR({
+    projectPath,
+    urlDotCMSInstance,
+    siteId,
+    token
+}: {
+    projectPath: string;
+    urlDotCMSInstance: string;
+    siteId: string;
+    token: string;
+}) {
+    console.log('\n');
+    console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+
+    console.log(chalk.white('🪜  Steps:\n'));
+    console.log(chalk.white('1- cd ') + chalk.green(projectPath) + '/src/environments');
+    console.log(
+        chalk.white(
+            '2- Replace the content of the file ' +
+                chalk.green('environment.ts') +
+                ' and ' +
+                chalk.green('environment.development.ts') +
+                ' with the following:'
+        )
+    );
+
+    // ENV BLOCK — nicely spaced + grouped
+    console.log(chalk.white('──────────────────────────────────────────────'));
+    console.log(chalk.white(getEnvVariablesForAngular(urlDotCMSInstance, siteId, token)));
+    console.log(chalk.white('──────────────────────────────────────────────\n'));
+
+    // INSTALL DEPENDENCIES
+    console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
+    console.log(chalk.white('$ npm install\n'));
+
+    // START DEV SERVER
+    console.log(chalk.blueBright('💻 Start your frontend development server:'));
+    console.log(chalk.white('$ ng serve\n'));
+    console.log(
+        chalk.greenBright(
+            "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
+        )
+    );
+}
+
+function getEnvVariablesForNextJS(host: string, siteId: string, token: string) {
+    return `
+        NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=${token}
+        NEXT_PUBLIC_DOTCMS_HOST=${host}
+        NEXT_PUBLIC_DOTCMS_SITE_ID=${siteId}
+        NEXT_PUBLIC_DOTCMS_MODE='production'
+        NODE_TLS_REJECT_UNAUTHORIZED=0
+    `;
+}
+
+function getEnvVariablesForAstro(host: string, siteId: string, token: string) {
+    return `
+        PUBLIC_DOTCMS_AUTH_TOKEN=${token}
+        PUBLIC_DOTCMS_HOST=${host}
+        PUBLIC_DOTCMS_SITE_ID=${siteId}
+        PUBLIC_EXPERIMENTS_API_KEY=analytic-api-key-from-dotcms-portlet
+        PUBLIC_EXPERIMENTS_DEBUG=true
+        # If your local dotcms instance is running in https, this setting allows Node.js to connect to servers with invalid SSL certificates.
+        # For testing purposes only.
+        NODE_TLS_REJECT_UNAUTHORIZED=0
+    `;
+}
+
+function getEnvVariablesForAngular(host: string, siteId: string, token: string) {
+    return `
+    export const environment = {
+        dotcmsUrl: ${host},
+        authToken: ${token},
+        siteId: ${siteId},
+    };
+    `;
 }
