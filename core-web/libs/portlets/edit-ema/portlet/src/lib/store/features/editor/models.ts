@@ -12,7 +12,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import { ContentletPayload } from '../../../shared/models';
+import { ActionPayload } from '../../../shared/models';
 import { Orientation, PageType } from '../../models';
 
 export interface EditorState {
@@ -21,7 +21,7 @@ export interface EditorState {
     styleSchemas: StyleEditorFormSchema[];
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    activeContentlet?: ContentletPayload;
+    activeContentlet?: ActionPayload;
     contentArea?: ContentletArea;
     palette: {
         open: boolean;

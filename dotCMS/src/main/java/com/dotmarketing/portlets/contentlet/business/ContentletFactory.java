@@ -1,8 +1,10 @@
-package com.dotmarketing.portlets.contentlet.business; 
+package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.transform.TransformerLocator;
@@ -21,15 +23,14 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.SearchHits;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.search.SearchHits;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -59,6 +60,7 @@ public abstract class ContentletFactory {
 	 */
 	protected abstract List<Contentlet> findAllCurrent(int offset, int limit) throws DotDataException;
 
+    @RequestCost(Price.CONTENT_FROM_DB)
     public Optional<Contentlet> findInDb(final String inode, final String variant) {
         try {
             if (inode != null) {

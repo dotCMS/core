@@ -174,6 +174,8 @@ export function withLoad(deps: WithLoadDeps) {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
+                                            store.addHistory({ pageAsset });
+
                                             patchState(store, {
                                                 page: pageAsset?.page,
                                                 site: pageAsset?.site,

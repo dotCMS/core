@@ -273,7 +273,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.click(paletteButton);
 
                 expect(hostComponent.onSelectContent).toHaveBeenCalledWith(
-                    MOCK_CONTENTLET_AREA.payload.contentlet
+                    MOCK_CONTENTLET_AREA.payload
                 );
             });
         });

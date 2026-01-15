@@ -6,9 +6,9 @@ import {
     EventEmitter,
     inject,
     Output,
-    viewChild,
     Signal,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -24,7 +24,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { map } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotLanguage, DotDeviceListItem, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotDeviceListItem, DotExperimentStatus, DotLanguage } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -34,8 +34,8 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import {
-    DotUveDeviceSelectorComponent,
-    DeviceSelectorChange
+    DeviceSelectorChange,
+    DotUveDeviceSelectorComponent
 } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
@@ -127,9 +127,8 @@ export class DotUveToolbarComponent {
         return this.#store.view().socialMedia;
     }
     readonly $urlContentMap = this.#store.$urlContentMap;
-    get $isPaletteOpen() {
-        return this.#store.editor().panels.palette.open;
-    }
+    readonly $isPaletteOpen = this.#store.editor().panels.palette.open;
+    readonly $canEditPage = this.#store.$canEditPageContent();
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),

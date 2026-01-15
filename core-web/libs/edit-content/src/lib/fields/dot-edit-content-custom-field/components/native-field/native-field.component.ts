@@ -3,18 +3,18 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     inject,
     input,
-    viewChild,
-    computed,
     NgZone,
-    OnInit,
-    signal,
     OnDestroy,
-    SecurityContext
+    OnInit,
+    SecurityContext,
+    signal,
+    viewChild
 } from '@angular/core';
-import { ControlContainer, ReactiveFormsModule, FormGroupDirective } from '@angular/forms';
+import { ControlContainer, FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -22,7 +22,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
@@ -207,6 +207,11 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
 
         const hostElement = this.$container().nativeElement;
 
+        // If the container is already mounted, do nothing
+        if (hostElement.innerHTML.length > 0) {
+            return;
+        }
+
         // 1. Clean up previous style elements
         this.#styleElements.forEach((styleElement) => {
             if (styleElement.parentNode) {
@@ -304,6 +309,17 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             }
         });
         this.#styleElements = [];
+
+        // Clean up hostElement completely
+        const hostElement = this.$container()?.nativeElement;
+        if (hostElement) {
+            // Remove all child nodes
+            while (hostElement.firstChild) {
+                hostElement.removeChild(hostElement.firstChild);
+            }
+            // Clear innerHTML to ensure everything is removed
+            hostElement.innerHTML = '';
+        }
 
         if (this.#formBridge) {
             this.#formBridge.destroy();

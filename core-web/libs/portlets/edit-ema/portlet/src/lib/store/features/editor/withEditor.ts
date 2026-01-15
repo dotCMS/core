@@ -32,11 +32,12 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    mapContainerStructureToArrayOfContainers,
-    getPersonalization,
     areContainersEquals,
-    sanitizeURL,
-    getFullPageURL
+    getContentTypeVarRecord,
+    getFullPageURL,
+    getPersonalization,
+    mapContainerStructureToArrayOfContainers,
+    sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
@@ -78,6 +79,9 @@ export function withEditor() {
 
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
+                $allowedContentTypes: computed<Record<string, true>>(() => {
+                    return getContentTypeVarRecord(pageEntity()?.containers);
+                }),
                 $showContentletControls: computed<boolean>(() => {
                     const editor = store.editor();
                     const contentletPosition = editor.contentArea;
@@ -86,12 +90,11 @@ export function withEditor() {
 
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
-                $styleSchema: computed<StyleEditorFormSchema | undefined>(() => {
-                    const editor = store.editor();
-                    const contentlet = editor.activeContentlet;
-                    const styleSchemas = editor.styleSchemas;
+                $styleSchema: computed<StyleEditorFormSchema>(() => {
+                    const activeContentlet = store.activeContentlet();
+                    const styleSchemas = store.styleSchemas();
                     const contentSchema = styleSchemas.find(
-                        (schema) => schema.contentType === contentlet?.contentType
+                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
                     );
                     return contentSchema;
                 }),
@@ -269,7 +272,7 @@ export function withEditor() {
                         }
                     });
                 },
-                setActiveContentlet(contentlet: ContentletPayload) {
+                setActiveContentlet(contentlet: ActionPayload) {
                     const editor = store.editor();
                     patchState(store, {
                         editor: {

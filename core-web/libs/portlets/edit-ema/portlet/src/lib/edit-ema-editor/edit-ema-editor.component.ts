@@ -4,20 +4,21 @@ import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
+    DestroyRef,
     ElementRef,
     OnDestroy,
     OnInit,
-    AfterViewInit,
     ViewChild,
     WritableSignal,
+    computed,
     effect,
     inject,
     signal,
-    untracked,
-    computed
+    untracked
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -44,8 +45,8 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
-    DotCMSContentlet,
     DotCMSClazzes,
+    DotCMSContentlet,
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
@@ -75,7 +76,7 @@ import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-too
 import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem } from './components/ema-page-dropzone/types';
-import { parseFieldValues, getQuickEditFields } from './utils';
+import { getQuickEditFields, parseFieldValues } from './utils';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
@@ -83,6 +84,7 @@ import { DotPageApiService } from '../services/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveBridgeService } from '../services/dot-uve-bridge/dot-uve-bridge.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
+import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { CONTAINER_INSERT_ERROR, EDITOR_STATE, NG_CUSTOM_EVENTS, PALETTE_CLASSES, UVE_STATUS } from '../shared/enums';
 import {
@@ -232,6 +234,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly bridgeService = inject(DotUveBridgeService);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
+    private readonly iframeMessenger = inject(UveIframeMessengerService);
+    readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     #iframeResizeObserver: ResizeObserver | null = null;
 
@@ -441,6 +445,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             { name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS },
             this.host
         );
+        this.iframeMessenger.requestBounds();
     });
 
 
@@ -880,6 +885,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         },
                         this.host
                     );
+                    // TODO: Looks like we don't need this anymore
+                    // this.iframeMessenger.reloadPage();
                 }
 
                 const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
@@ -963,6 +970,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     },
                     this.host
                 );
+                // TODO: Looks like we don't need this anymore
+                // this.iframeMessenger.reloadPage();
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -1026,6 +1035,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             this.host
         );
+        // TODO: Looks like we don't need this anymore
+        // this.iframeMessenger.sendPageData(this.#clientPayload());
     }
 
     private handleDuplicatedContentlet() {
@@ -1450,8 +1461,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.resetContentletArea();
     }
 
-    protected handleSelectContent(contentlet: ContentletPayload): void {
-        this.uveStore.setActiveContentlet(contentlet);
+    protected handleSelectContent(contentletActionPayload: ActionPayload): void {
+        this.uveStore.setActiveContentlet(contentletActionPayload);
     }
 
     protected togglePalette(): void {

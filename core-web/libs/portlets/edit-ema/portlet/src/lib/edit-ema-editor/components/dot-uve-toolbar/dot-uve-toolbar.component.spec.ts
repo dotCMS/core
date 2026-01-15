@@ -1,10 +1,10 @@
-import { expect, describe, it } from '@jest/globals';
-import { byTestId, mockProvider, Spectator, createComponentFactory } from '@ngneat/spectator/jest';
+import { describe, expect, it } from '@jest/globals';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal, computed } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -51,10 +51,10 @@ import {
 import { UVEStore } from '../../../store/dot-uve.store';
 import { Orientation, PageType } from '../../../store/models';
 import {
-    getFullPageURL,
-    createFavoritePagesURL,
-    sanitizeURL,
     convertLocalTimeToUTC,
+    createFavoritePagesURL,
+    getFullPageURL,
+    sanitizeURL,
 } from '../../../utils';
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
@@ -869,7 +869,6 @@ describe('DotUveToolbarComponent', () => {
                 expect(spy).toHaveBeenCalledWith('test-inode-other', true, false);
             });
         });
-
     });
 
     describe('preview', () => {

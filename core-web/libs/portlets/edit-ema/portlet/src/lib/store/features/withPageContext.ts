@@ -222,7 +222,7 @@ export function withPageContext() {
 
                 // ============ Permission Signals ============
                 const $isPageLocked = computed(() => {
-                    return computeIsPageLocked(page(), currentUser(), $isLockFeatureEnabled());
+                    return computeIsPageLocked(page(), currentUser());
                 });
 
                 const $hasAccessToEditMode = computed(() => {
