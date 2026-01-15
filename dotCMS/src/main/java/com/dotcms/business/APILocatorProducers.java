@@ -2,6 +2,7 @@ package com.dotcms.business;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -28,6 +29,11 @@ public class APILocatorProducers {
    @Produces
    public PermissionAPI getPermissionAPI() {
       return APILocator.getPermissionAPI();
+   }
+
+   @Produces
+   public RoleAPI getRoleAPI() {
+      return APILocator.getRoleAPI();
    }
 
    @Produces

@@ -37,7 +37,7 @@ class RouterMock {
 
     url = '';
 
-    currentNavigation() {
+    getCurrentNavigation() {
         return this._currentNavigation;
     }
 

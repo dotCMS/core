@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
@@ -51,6 +52,7 @@ import org.junit.runners.Suite;
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
+        RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         AppsAPIImplTest.class,

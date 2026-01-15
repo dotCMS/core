@@ -15,7 +15,9 @@ import {
     DotCMSContentTypeLayoutRow,
     DotCMSTempFile,
     DotCMSWorkflowStatus,
-    FeaturedFlags
+    FeaturedFlags,
+    TreeNodeItem,
+    CustomTreeNode
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -23,10 +25,6 @@ import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot
 import { DISABLED_WYSIWYG_FIELD } from '../models/disabledWYSIWYG.constant';
 import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { DotFormData } from '../models/dot-edit-content-form.interface';
-import {
-    CustomTreeNode,
-    TreeNodeItem
-} from '../models/dot-edit-content-host-folder-field.interface';
 import { DotWorkflowState } from '../models/dot-edit-content.model';
 
 /* FIELDS MOCK BY TYPE */

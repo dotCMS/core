@@ -155,6 +155,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
   public static final String DONT_VALIDATE_ME = "_dont_validate_me";
   public static final String DISABLE_WORKFLOW = "__disable_workflow__";
   public static final String VALIDATE_EMPTY_FILE = "_validateEmptyFile_";
+  public static final String STYLE_PROPERTIES_KEY = "dotStyleProperties";
 
   // means the contentlet is being used on unit test mode.
   // this is only for unit test. do not use on production.

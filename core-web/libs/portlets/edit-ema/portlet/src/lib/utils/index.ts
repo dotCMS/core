@@ -88,6 +88,33 @@ export function escapeHtmlAttributeValue(value: string): string {
 }
 
 /**
+ * Returns the resolved (absolute) href from a click target.
+ *
+ * - If the click happens on an `<a>`, returns `a.href`
+ * - If the click happens inside an `<a>` (e.g. `<img>` inside `<a>`), returns `closest('a').href`
+ *
+ * IMPORTANT: Uses the resolved `href` (respects `<base>`) rather than `getAttribute('href')`.
+ *
+ * This helper is intentionally tolerant of test doubles (plain objects) that expose `href` and `closest`.
+ */
+export function getHrefFromClickTarget(target: EventTarget | null): string | null {
+    const maybeTarget = target as unknown as {
+        href?: string | null;
+        closest?: (selector: string) => { href?: string | null } | null;
+    } | null;
+
+    if (!maybeTarget) {
+        return null;
+    }
+
+    if (maybeTarget.href) {
+        return maybeTarget.href;
+    }
+
+    return maybeTarget.closest?.('a')?.href ?? null;
+}
+
+/**
  * Ensure the rendered HTML has a `<base>` tag so relative links resolve properly inside iframes.
  *
  * If a `<base>` tag already exists, this is a no-op.
@@ -611,18 +638,9 @@ export function isPageLockedByOtherUser(page: DotCMSPage, currentUser: CurrentUs
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
- * @param {boolean} isFeatureFlagEnabled - Whether the lock toggle feature is enabled
  * @return {boolean} True if page is considered locked based on feature flag
  */
-export function computeIsPageLocked(
-    page: DotCMSPage,
-    currentUser: CurrentUser,
-    isFeatureFlagEnabled: boolean
-): boolean {
-    if (isFeatureFlagEnabled) {
-        return !!page?.locked;
-    }
-
+export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser): boolean {
     // This is the legacy behavior, only show "locked" button if it is locked by another user
     const isLocked = isPageLockedByOtherUser(page, currentUser);
     return isLocked;
@@ -665,7 +683,7 @@ export function computeCanEditPage(
     }
 
     // Legacy behavior: user can access to Draft mode (edit) if page is not locked by another user
-    const isLocked = computeIsPageLocked(page, currentUser, isFeatureFlagEnabled);
+    const isLocked = computeIsPageLocked(page, currentUser);
     // If the page is locked, the user cannot access to Draft mode (edit)
     return !isLocked;
 }
@@ -685,6 +703,42 @@ export function mapContainerStructureToDotContainerMap(
 
         return acc;
     }, {});
+}
+
+/**
+ * Returns a global "set-like" record of all unique `contentTypeVar` values found in the given
+ * page asset containers object.
+ *
+ * - Scans only `containerStructures[*].contentTypeVar`
+ * - Skips missing/empty values
+ * - Does not normalize
+ */
+export function getContentTypeVarRecord(
+    containers: DotCMSPageAssetContainers | null | undefined
+): Record<string, true> {
+    const out: Record<string, true> = {};
+
+    if (!containers) {
+        return out;
+    }
+
+    for (const key in containers) {
+        const containerEntry = containers[key];
+        const structures = containerEntry?.containerStructures;
+
+        if (!Array.isArray(structures) || structures.length === 0) {
+            continue;
+        }
+
+        for (let i = 0; i < structures.length; i++) {
+            const contentTypeVar = structures[i]?.contentTypeVar;
+            if (typeof contentTypeVar === 'string' && contentTypeVar.length > 0) {
+                out[contentTypeVar] = true;
+            }
+        }
+    }
+
+    return out;
 }
 
 /**

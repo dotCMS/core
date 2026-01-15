@@ -55,7 +55,6 @@ import {
     DotCMSURLContentMap,
     DotCMSUVEAction
 } from '@dotcms/types';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -77,6 +76,7 @@ import {
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../services/dot-page-api.service';
+import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, IFRAME_SCROLL_ZONE, PERSONA_KEY } from '../shared/consts';
 import {
@@ -89,7 +89,6 @@ import {
 import {
     ActionPayload,
     ClientData,
-    ContentletPayload,
     DeletePayload,
     DialogAction,
     InsertPayloadFromDelete,
@@ -109,6 +108,7 @@ import {
     createReorderMenuURL,
     deleteContentletFromContainer,
     getDragItemData,
+    getHrefFromClickTarget,
     getTargetUrl,
     injectBaseTag,
     insertContentletInContainer,
@@ -179,6 +179,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly dotPageApiService = inject(DotPageApiService);
+    private readonly iframeMessenger = inject(UveIframeMessengerService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     #iframeResizeObserver: ResizeObserver | null = null;
@@ -243,10 +244,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.contentWindow?.postMessage(
-            { name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS },
-            this.host
-        );
+        this.iframeMessenger.requestBounds();
     });
 
     ngOnInit(): void {
@@ -259,6 +257,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     ngAfterViewInit(): void {
         this.#setupContentletAreaReset();
+        // Initialize iframe messenger with the iframe window
+        this.iframeMessenger.setIframeWindow(this.contentWindow);
     }
 
     /**
@@ -268,8 +268,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const target = e.target as HTMLAnchorElement;
-        const href = target.href || target.closest('a')?.getAttribute('href');
+        const href = getHrefFromClickTarget(e.target);
         const isInlineEditing = this.uveStore.state() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
@@ -354,12 +353,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 }
 
                 this.uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-                this.contentWindow?.postMessage(
-                    {
-                        name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
-                    },
-                    this.host
-                );
+                this.iframeMessenger.requestBounds();
 
                 if (dragItem) {
                     return;
@@ -427,10 +421,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 this.uveStore.updateEditorScrollDragState();
 
-                this.contentWindow?.postMessage(
-                    { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME, direction },
-                    this.host
-                );
+                this.iframeMessenger.scrollInsideIframe(direction);
             });
 
         fromEvent(this.window, 'dragleave')
@@ -496,6 +487,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof EditEmaEditorComponent
      */
     onIframePageLoad() {
+        // Update iframe window reference in case it changed
+        this.iframeMessenger.setIframeWindow(this.contentWindow);
+
         if (!this.uveStore.isTraditionalPage()) {
             return;
         }
@@ -585,7 +579,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof EditEmaEditorComponent
      */
     private inyectCodeToVTL(html: string): string {
-        const url = this.uveStore.pageAPIResponse()?.page?.pageURI;
+        const url = this.uveStore.pageAPIResponse()?.page?.pageURI ?? '';
         const origin = this.window.location.origin;
         const fileWithBase = injectBaseTag({ html, url, origin });
         const fileWithScript = this.addEditorPageScript(fileWithBase);
@@ -822,12 +816,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 }
 
                 if (clientAction === DotCMSUVEAction.EDIT_CONTENTLET) {
-                    this.contentWindow?.postMessage(
-                        {
-                            name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
-                        },
-                        this.host
-                    );
+                    this.iframeMessenger.reloadPage();
                 }
 
                 const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
@@ -905,12 +894,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 // This is a temporary solution to "reload" the content by reloading the window
                 // we should change this with a new SDK reload strategy
-                this.contentWindow?.postMessage(
-                    {
-                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
-                    },
-                    this.host
-                );
+                this.iframeMessenger.reloadPage();
             },
             [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -1039,12 +1023,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         };
 
                         if (!this.uveStore.isTraditionalPage()) {
-                            const message = {
-                                name: __DOTCMS_UVE_EVENT__.UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS,
-                                payload: data
-                            };
-
-                            this.contentWindow?.postMessage(message, this.host);
+                            this.iframeMessenger.copyContentletInlineEditingSuccess(data);
 
                             return;
                         }
@@ -1160,13 +1139,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof DotEmaComponent
      */
     reloadIframeContent() {
-        this.iframe?.nativeElement?.contentWindow?.postMessage(
-            {
-                name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA,
-                payload: this.#clientPayload()
-            },
-            this.host
-        );
+        this.iframeMessenger.sendPageData(this.#clientPayload());
     }
 
     private handleDuplicatedContentlet() {
@@ -1631,8 +1604,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.uveStore.resetContentletArea();
     }
 
-    protected handleSelectContent(contentlet: ContentletPayload): void {
-        this.uveStore.setActiveContentlet(contentlet);
+    protected handleSelectContent(contentletActionPayload: ActionPayload): void {
+        this.uveStore.setActiveContentlet(contentletActionPayload);
     }
 
     /**

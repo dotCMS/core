@@ -13,6 +13,7 @@ import { DotCMSPageAsset } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVEState } from '../../models';
+import { withTimeMachine } from '../timeMachine/withTimeMachine';
 
 /**
  * Client configuration state
@@ -54,6 +55,11 @@ export function withClient() {
             state: type<UVEState>()
         },
         withState<ClientConfigState>(clientState),
+        // Add time machine to track graphqlResponse history for optimistic updates
+        withTimeMachine<ClientConfigState['graphqlResponse']>({
+            maxHistory: 50, // Reasonable limit for style editor undo
+            deepClone: true // Important: graphqlResponse has nested objects
+        }),
         withMethods((store) => {
             return {
                 setIsClientReady: (isClientReady: boolean) => {
@@ -71,8 +77,39 @@ export function withClient() {
                 setGraphqlResponse: (graphqlResponse) => {
                     patchState(store, { graphqlResponse });
                 },
+                /**
+                 * Sets graphqlResponse optimistically by saving current state to history first.
+                 * Used for optimistic updates that can be rolled back on failure.
+                 *
+                 * @param graphqlResponse - The new graphql response to set
+                 */
+                setGraphqlResponseOptimistic: (
+                    graphqlResponse: ClientConfigState['graphqlResponse']
+                ) => {
+                    const currentResponse = store.graphqlResponse();
+                    // Save snapshot before updating (for optimistic updates rollback)
+                    if (currentResponse) {
+                        store.addHistory(currentResponse);
+                    }
+                    patchState(store, { graphqlResponse });
+                },
+                /**
+                 * Rolls back to the previous graphqlResponse state.
+                 * Used when an optimistic update fails.
+                 *
+                 * @returns true if rollback was successful, false if no history available
+                 */
+                rollbackGraphqlResponse: (): boolean => {
+                    const previousState = store.undo();
+                    if (previousState !== null) {
+                        patchState(store, { graphqlResponse: previousState });
+                        return true;
+                    }
+                    return false;
+                },
                 resetClientConfiguration: () => {
                     patchState(store, { ...clientState });
+                    store.clearHistory();
                 }
             };
         }),
