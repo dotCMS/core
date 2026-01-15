@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotcms.content.index.VersionedIndicesAPITest;
 import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
@@ -57,9 +58,10 @@ import org.junit.runners.Suite;
         ContentDriveHelperContentletAPIComparisonTest.class,
         AppsAPIImplTest.class,
         Task251103AddStylePropertiesColumnInMultiTreeTest.class,
-        Task251212AddVersionColumnIndicesTableTest.class,
         StoryBlockValidationTest.class,
-        StoryBlockUtilTest.class
+        StoryBlockUtilTest.class,
+        VersionedIndicesAPITest.class,
+        Task251212AddVersionColumnIndicesTableTest.class
 })
 
 public class MainSuite3a {
