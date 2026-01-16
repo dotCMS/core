@@ -12,7 +12,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotCMSPaletteContentType, DotPaletteViewMode} from '../../models';
+import { DotCMSPaletteContentType, DotPaletteViewMode } from '../../models';
 
 @Component({
     selector: 'dot-uve-palette-contenttype',
@@ -25,7 +25,7 @@ import { DotCMSPaletteContentType, DotPaletteViewMode} from '../../models';
         '[attr.draggable]': '$draggable()',
         '[attr.data-item]': '$dataItem()',
         '[class]': '$hostClass()',
-        '[class.disabled]': '$isDisabled()',
+        '[class.disabled]': '$isDisabled()'
     }
 })
 export class DotUVEPaletteContenttypeComponent {

@@ -3,7 +3,11 @@
 <!-- Drag handle -->
 <div
     class="drag-handle opacity-0 transition-opacity text-gray-400 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-8 h-8 rounded hover:text-gray-500 hover:bg-black/5"
-    [ngClass]="contentType.disabled ? 'cursor-not-allowed pointer-events-none opacity-0' : 'group-hover:opacity-100'">
+    [ngClass]="
+        contentType.disabled
+            ? 'cursor-not-allowed pointer-events-none opacity-0'
+            : 'group-hover:opacity-100'
+    ">
     <i class="pi pi-ellipsis-v text-[14px]"></i>
     <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
 </div>
@@ -30,7 +34,11 @@
 <button
     type="button"
     class="chevron opacity-0 transition-opacity text-gray-300 hover:text-gray-500 flex items-center justify-center w-8 h-8 rounded hover:bg-black/5"
-    [ngClass]="contentType.disabled ? 'cursor-not-allowed opacity-0 pointer-events-none' : 'cursor-pointer group-hover:opacity-100'"
+    [ngClass]="
+        contentType.disabled
+            ? 'cursor-not-allowed opacity-0 pointer-events-none'
+            : 'cursor-pointer group-hover:opacity-100'
+    "
     (click)="onChevronClick(contentType)"
     [disabled]="contentType.disabled"
     [attr.aria-label]="'Open ' + contentType.name">
