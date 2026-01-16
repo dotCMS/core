@@ -310,7 +310,7 @@ public class PublishDateUpdater {
         final PublishDateUpdaterResult result = new PublishDateUpdaterResult(
                 totalPublishedCount, totalUnpublishedCount, totalProcessingTime, fireTime);
 
-        Logger.info(PublishDateUpdater.class,
+        Logger.debug(PublishDateUpdater.class,
                 String.format("Publish/unpublish operation completed: %s", result));
 
         return result;
@@ -446,24 +446,19 @@ public class PublishDateUpdater {
         final String operationName = processor.getOperationName();
 
         try {
-            // Phase 1: Get all allInodes first to avoid pagination issues when content state changes
-            Logger.debug(PublishDateUpdater.class,
-                    String.format("Phase 1: Collecting all allInodes for %s operation using query: %s", operationName, luceneQuery));
-
             final List<String> allInodes = contentletAPI.searchIndex(luceneQuery, 0, 0, null,
                     systemUser, false).stream().map(ContentletSearch::getInode).collect(Collectors.toList());
 
-            Logger.info(PublishDateUpdater.class,
-                    String.format("Phase 1 complete: Found %d contentlet inodes to %s", allInodes.size(), operationName));
+            Logger.debug(PublishDateUpdater.class,
+                    String.format("Found %d contentlet inodes to %s", allInodes.size(), operationName));
 
             if (allInodes.isEmpty()) {
                 Logger.debug(PublishDateUpdater.class, String.format("No contentlets found to %s", operationName));
                 return 0;
             }
-
-            // Phase 2: Process contentlets by identifier in batches
+            
             Logger.debug(PublishDateUpdater.class,
-                    String.format("Phase 2: Processing %d contentlets in batches of %d with transaction commits every %d records for %s",
+                    String.format("Processing %d contentlets in batches of %d with transaction commits every %d records for %s",
                             allInodes.size(), searchBatchSize, transactionBatchSize, operationName));
 
             int totalProcessed = 0;
@@ -493,7 +488,7 @@ public class PublishDateUpdater {
 
                         if (contentlet == null) {
                             Logger.warn(PublishDateUpdater.class,
-                                    String.format("Contentlet with ionde %s not found, skipping %s operation", inode, operationName));
+                                    String.format("Contentlet with inode %s not found, skipping %s operation", inode, operationName));
                             continue;
                         }
 
