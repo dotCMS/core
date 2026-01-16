@@ -4,7 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, signal } from '@angular/core';
+import { Component, DebugElement, EventEmitter, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -53,6 +53,7 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import {
     getFullPageURL,
@@ -61,6 +62,20 @@ import {
     convertLocalTimeToUTC,
     createFullURL
 } from '../../../utils';
+
+/**
+ * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
+ * which uses Angular's signal-based `viewChild()` and can crash when mocked.
+ */
+@Component({
+    selector: 'dot-language-selector',
+    template: '',
+    standalone: true
+})
+class StubDotLanguageSelectorComponent {
+    value: unknown;
+    onChange = new EventEmitter<number>();
+}
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
 jest.mock('../../../utils', () => ({
@@ -73,7 +88,7 @@ jest.mock('../../../utils', () => ({
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
-const params = HEADLESS_BASE_QUERY_PARAMS;
+const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
@@ -196,6 +211,19 @@ describe('DotUveToolbarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
+        overrideComponents: [
+            [
+                DotUveToolbarComponent,
+                {
+                    remove: {
+                        imports: [DotLanguageSelectorComponent]
+                    },
+                    add: {
+                        imports: [StubDotLanguageSelectorComponent]
+                    }
+                }
+            ]
+        ],
         imports: [
             HttpClientTestingModule,
             // PrimeNG modules - import actual modules to prevent ng-mocks from auto-mocking them
@@ -210,7 +238,6 @@ describe('DotUveToolbarComponent', () => {
             MockComponent(DotEmaBookmarksComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaPersonaSelectorComponent),
-            MockComponent(DotLanguageSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotUveDeviceSelectorComponent),
             MockComponent(DotEditorModeSelectorComponent)
@@ -308,10 +335,13 @@ describe('DotUveToolbarComponent', () => {
                 const contentlet = {
                     identifier: '123',
                     inode: '456',
-                    title: 'My super awesome blog post'
+                    title: 'My super awesome blog post',
+                    contentType: 'Blog'
                 };
                 const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
 
+                // The edit URL content map button is only rendered in EDIT mode and when the map exists
+                baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
                 baseUVEState.$urlContentMap.set(contentlet);
                 spectator.detectChanges();
 
@@ -745,7 +775,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call loadPageAsset when language is selected and exists that page translated', () => {
                 const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
 
-                spectator.triggerEventHandler(DotLanguageSelectorComponent, 'onChange', 1);
+                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 1);
 
                 expect(spyLoadPageAsset).toHaveBeenCalled();
             });
@@ -753,7 +783,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
                 const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
-                spectator.triggerEventHandler(DotLanguageSelectorComponent, 'onChange', 2);
+                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 2);
                 spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
@@ -802,9 +832,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.classList.contains('lock-button--unlocked')).toBe(true);
-                expect(button.classList.contains('lock-button--locked')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.querySelector('.pi-lock-open')).toBeTruthy();
+                expect(button.querySelector('.pi-lock')).toBeNull();
             });
 
             it('should display locked state when page is locked by current user', () => {
@@ -819,9 +850,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.classList.contains('lock-button--locked')).toBe(true);
-                expect(button.classList.contains('lock-button--unlocked')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.querySelector('.pi-lock')).toBeTruthy();
+                expect(button.querySelector('.pi-lock-open')).toBeNull();
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
@@ -877,8 +909,9 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.lockLoading.set(true);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.hasAttribute('disabled')).toBe(true);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
+                expect(nativeButton?.disabled).toBe(true);
             });
 
             it('should enable button when lock operation is not loading', () => {
@@ -894,8 +927,9 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.lockLoading.set(false);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.hasAttribute('disabled')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
+                expect(nativeButton?.disabled).toBe(false);
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {

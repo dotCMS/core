@@ -110,12 +110,14 @@ describe('EditEmaPersonaSelectorComponent', () => {
         });
 
         it('should have p-listbox hidden', () => {
-            expect(spectator.query(byTestId('persona-listbox'))).toBeNull();
+            // Popover content is appended to <body>, not the component fixture.
+            expect(document.querySelector('[data-testid="persona-listbox"]')).toBeNull();
         });
 
         it('should show p-listbox on button click', () => {
             spectator.click(button);
-            expect(spectator.query(byTestId('persona-listbox'))).not.toBeNull();
+            spectator.detectChanges();
+            expect(document.querySelector('[data-testid="persona-listbox"]')).not.toBeNull();
         });
 
         it('should set the value to the listbox', () => {
@@ -124,8 +126,9 @@ describe('EditEmaPersonaSelectorComponent', () => {
 
         it('should add the chip to the personalized persona', () => {
             spectator.click(button);
+            spectator.detectChanges();
 
-            const chip = spectator.query(byTestId('persona-chip'));
+            const chip = document.querySelector('[data-testid="persona-chip"]');
 
             expect(chip).not.toBeNull();
         });
@@ -138,8 +141,9 @@ describe('EditEmaPersonaSelectorComponent', () => {
             });
 
             spectator.click(button);
+            spectator.detectChanges();
 
-            expect(spectator.query(byTestId('persona-paginator'))).not.toBeNull();
+            expect(document.querySelector('[data-testid="persona-paginator"]')).not.toBeNull();
         });
 
         it('should not show a paginator when there are less than 10 personas', () => {
@@ -150,8 +154,9 @@ describe('EditEmaPersonaSelectorComponent', () => {
             });
 
             spectator.click(button);
+            spectator.detectChanges();
 
-            expect(spectator.query(byTestId('persona-paginator'))).toBeNull();
+            expect(document.querySelector('[data-testid="persona-paginator"]')).toBeNull();
         });
     });
 

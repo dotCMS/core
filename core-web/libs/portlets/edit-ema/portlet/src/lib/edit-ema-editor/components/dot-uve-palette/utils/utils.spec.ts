@@ -24,40 +24,40 @@ import { DotPaletteListStatus } from '../models';
 
 describe('Dot UVE Palette Utils', () => {
     describe('getSortActiveClass', () => {
-        it('should return "active-menu-item" when both orderby and direction match', () => {
+        it('should return true when both orderby and direction match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'name' as const, direction: 'ASC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('active-menu-item');
+            expect(result).toBe(true);
         });
 
-        it('should return empty string when orderby does not match', () => {
+        it('should return false when orderby does not match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'usage' as const, direction: 'ASC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('');
+            expect(result).toBe(false);
         });
 
-        it('should return empty string when direction does not match', () => {
+        it('should return false when direction does not match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'name' as const, direction: 'DESC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('');
+            expect(result).toBe(false);
         });
 
-        it('should return empty string when both orderby and direction do not match', () => {
+        it('should return false when both orderby and direction do not match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'usage' as const, direction: 'DESC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('');
+            expect(result).toBe(false);
         });
     });
 
@@ -150,7 +150,7 @@ describe('Dot UVE Palette Utils', () => {
             expect(viewItems[1].label).toBe('uve.palette.menu.view.option.list');
         });
 
-        it('should set active class for current sort option', () => {
+        it('should mark the current sort option as active', () => {
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
@@ -161,12 +161,12 @@ describe('Dot UVE Palette Utils', () => {
             const result = buildPaletteMenuItems(mockCallbacks);
             const sortItems = result[0].items;
 
-            expect(sortItems[0].styleClass).toBe(''); // popular (usage ASC) not active
-            expect(sortItems[1].styleClass).toBe('active-menu-item'); // name ASC is active
-            expect(sortItems[2].styleClass).toBe(''); // name DESC not active
+            expect(sortItems[0].isActive).toBe(false); // popular (usage ASC) not active
+            expect(sortItems[1].isActive).toBe(true); // name ASC is active
+            expect(sortItems[2].isActive).toBe(false); // name DESC not active
         });
 
-        it('should set active class for current view mode', () => {
+        it('should mark the current view mode as active', () => {
             const mockCallbacks = {
                 viewMode: 'list' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
@@ -177,8 +177,8 @@ describe('Dot UVE Palette Utils', () => {
             const result = buildPaletteMenuItems(mockCallbacks);
             const viewItems = result[1].items;
 
-            expect(viewItems[0].styleClass).toBe(''); // grid not active
-            expect(viewItems[1].styleClass).toBe('active-menu-item'); // list is active
+            expect(viewItems[0].isActive).toBe(false); // grid not active
+            expect(viewItems[1].isActive).toBe(true); // list is active
         });
 
         it('should call onSortSelect when sort command is executed', () => {

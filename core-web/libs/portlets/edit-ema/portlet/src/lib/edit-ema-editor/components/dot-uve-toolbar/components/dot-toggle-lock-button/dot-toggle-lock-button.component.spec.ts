@@ -191,13 +191,17 @@ describe('DotToggleLockButtonComponent', () => {
         });
 
         it('should disable button when loading', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            expect(button).toBeDisabled();
+            const host = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            const button = host?.querySelector('button') as HTMLButtonElement | null;
+            expect(button).toBeTruthy();
+            expect(button?.disabled).toBe(true);
         });
 
         it('should not call toggleLock when button is clicked during loading', () => {
-            const button = spectator.query(byTestId('toggle-lock-button'));
-            spectator.click(button);
+            const host = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+            const button = host?.querySelector('button') as HTMLButtonElement | null;
+            expect(button).toBeTruthy();
+            spectator.click(button as HTMLButtonElement);
 
             // Button is disabled, so click won't trigger the handler
             expect(mockToggleLock).not.toHaveBeenCalled();
