@@ -71,10 +71,7 @@ export const mockDefaultContainerWithPath: DotContainer = {
     title: 'Default Container Title',
     path: '/default/container/path',
     archived: false,
-    categoryId: 'default-category',
-    parentPermissionable: {
-        hostname: 'default-host'
-    }
+    categoryId: 'default-category'
 };
 
 export const mockDefaultContainerWithoutPath: DotContainer = {
@@ -88,10 +85,7 @@ export const mockDefaultContainerWithoutPath: DotContainer = {
     locked: false,
     title: 'Default Container Title',
     archived: false,
-    categoryId: 'default-category',
-    parentPermissionable: {
-        hostname: 'default-host'
-    }
+    categoryId: 'default-category'
 };
 
 export const mockTempContainer: DotContainer = {
@@ -106,10 +100,7 @@ export const mockTempContainer: DotContainer = {
     title: 'Temp Container Title',
     path: '/temp/container/path',
     archived: false,
-    categoryId: 'temp-category',
-    parentPermissionable: {
-        hostname: 'temp-host'
-    }
+    categoryId: 'temp-category'
 };
 
 export const CONTAINERS_DATA_MOCK = [

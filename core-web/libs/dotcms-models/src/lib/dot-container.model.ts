@@ -12,6 +12,8 @@ export interface DotContainerEntity {
 
 export interface DotContainer {
     archived?: boolean;
+    hostName?: string;
+    hostId?: string;
     categoryId?: string;
     deleted?: boolean;
     live?: boolean;
@@ -28,9 +30,6 @@ export interface DotContainer {
     preLoop?: string;
     postLoop?: string;
     code?: string;
-    parentPermissionable?: {
-        hostname: string;
-    };
     disableInteraction?: boolean;
     pathName?: string;
 }
