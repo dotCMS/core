@@ -54,16 +54,20 @@
                         <p-card
                             [pt]="{
                                 root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
-                                header: {class: 'px-4 pt-4 pb-0'},
+                                header: { class: 'px-4 pt-4 pb-0' }
                             }">
                             <ng-template pTemplate="header">
-                                <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                <h3
+                                    class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                                     <p-skeleton class="block" width="60%"></p-skeleton>
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton class="block" width="80%" height="3rem"></p-skeleton>
+                                    <p-skeleton
+                                        class="block"
+                                        width="80%"
+                                        height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
                         </p-card>
@@ -81,16 +85,20 @@
                         <p-card
                             [pt]="{
                                 root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
-                                header: {class: 'px-4 pt-4 pb-0'},
+                                header: { class: 'px-4 pt-4 pb-0' }
                             }">
                             <ng-template pTemplate="header">
-                                <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                <h3
+                                    class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                                     <p-skeleton class="block" width="60%"></p-skeleton>
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton class="block" width="80%" height="3rem"></p-skeleton>
+                                    <p-skeleton
+                                        class="block"
+                                        width="80%"
+                                        height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
                         </p-card>
@@ -108,16 +116,20 @@
                         <p-card
                             [pt]="{
                                 root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
-                                header: {class: 'px-4 pt-4 pb-0'},
+                                header: { class: 'px-4 pt-4 pb-0' }
                             }">
                             <ng-template pTemplate="header">
-                                <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                <h3
+                                    class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                                     <p-skeleton class="block" width="60%"></p-skeleton>
                                 </h3>
                             </ng-template>
                             <ng-template pTemplate="body">
                                 <p class="m-0">
-                                    <p-skeleton class="block" width="80%" height="3rem"></p-skeleton>
+                                    <p-skeleton
+                                        class="block"
+                                        width="80%"
+                                        height="3rem"></p-skeleton>
                                 </p>
                             </ng-template>
                         </p-card>
@@ -132,10 +144,11 @@
         <p-card
             [pt]="{
                 root: { class: 'border-[1px] border-gray-300 rounded-2xl' },
-                header: {class: 'px-4 pt-4 pb-0'},
+                header: { class: 'px-4 pt-4 pb-0' }
             }">
             <ng-template pTemplate="header">
-                <h3 class="flex items-center gap-2 text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                <h3
+                    class="flex items-center gap-2 text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                     <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
                     <strong>{{ 'usage.dashboard.error.title' | dm }}</strong>
                 </h3>
@@ -166,7 +179,10 @@
             @for (category of getCategories(); track category) {
                 @if (getCategoryMetrics(category); as categoryMetrics) {
                     <div>
-                        <h2 class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">{{ getCategoryTitleKey(category) | dm }}</h2>
+                        <h2
+                            class="mb-3 text-xl text-gray-900 font-bold tracking-tight leading-tight">
+                            {{ getCategoryTitleKey(category) | dm }}
+                        </h2>
                         <div class="flex gap-3">
                             @for (
                                 metricEntry of categoryMetrics | keyvalue;
@@ -178,12 +194,14 @@
                                             category + '-' + metricEntry.key + '-card'
                                         "
                                         [pt]="{
-                                            root: { class: 'flex-1 border-[1px] border-gray-300 rounded-2xl' },
-                                            header: {class: 'px-4 pt-4 pb-0'},
-                                        
+                                            root: {
+                                                class: 'flex-1 border-[1px] border-gray-300 rounded-2xl'
+                                            },
+                                            header: { class: 'px-4 pt-4 pb-0' }
                                         }">
                                         <ng-template pTemplate="header">
-                                            <h3 class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
+                                            <h3
+                                                class="text-xs text-gray-600 uppercase font-normal tracking-wider m-0 leading-4">
                                                 {{ metricData.displayLabel | dm }}
                                             </h3>
                                         </ng-template>

@@ -23,6 +23,7 @@ import { ToastModule } from 'primeng/toast';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
+    DotCurrentUserService,
     DotExperimentsService,
     DotLanguagesService,
     DotLicenseService,
@@ -46,6 +47,7 @@ import { DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     DotExperimentsServiceMock,
+    DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
     DotcmsEventsServiceMock,
@@ -163,6 +165,11 @@ const SNAPSHOT_MOCK = (
  * @param {*} mock
  */
 const overrideRouteSnashot = (activatedRoute, mock) => {
+    // If a test fails during component creation, `activatedRoute` may be unset.
+    // Avoid masking the real error with a secondary defineProperty crash.
+    if (!activatedRoute || typeof activatedRoute !== 'object') {
+        return;
+    }
     Object.defineProperty(activatedRoute, 'snapshot', {
         value: mock,
         writable: true // Allows mocking changes
@@ -218,6 +225,10 @@ describe('DotEmaShellComponent', () => {
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: () => of({})
             }),
+            {
+                provide: DotCurrentUserService,
+                useValue: new DotCurrentUserServiceMock()
+            },
             provideHttpClient(),
             provideHttpClientTesting()
         ],

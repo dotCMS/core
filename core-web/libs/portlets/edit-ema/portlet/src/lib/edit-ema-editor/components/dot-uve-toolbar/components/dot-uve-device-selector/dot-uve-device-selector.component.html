@@ -1,10 +1,10 @@
 @for (device of defaultDevices; track $index) {
     <p-button
+        size="small"
         [icon]="device.icon"
         [pTooltip]="device.name | dm"
         tooltipPosition="bottom"
         [text]="true"
-        size="small"
         [rounded]="true"
         [ngClass]="{ active: device.inode === $currentDevice()?.inode }"
         (click)="onDeviceSelect(device)"
@@ -15,13 +15,17 @@
     [text]="true"
     size="small"
     [rounded]="true"
-    styleClass="orientation"
     [disabled]="$disableOrientation()"
     (click)="onOrientationChange()"
     data-testId="orientation">
+    <!-- ROTATE THE ICON WHEN THE ORIENTATION IS LANDSCAPE -->
     <ng-template pTemplate="content">
         <svg
-            [ngClass]="$currentOrientation()"
+            class="origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+            [ngClass]="{
+                'rotate-90': $currentOrientation() === Orientation.LANDSCAPE,
+                'rotate-0': $currentOrientation() !== Orientation.LANDSCAPE
+            }"
             fill="currentColor"
             viewBox="0 0 24 24"
             width="24px"
@@ -38,31 +42,30 @@
 @if ($menuItems().length) {
     <p-button
         icon="pi pi-angle-down"
+        size="small"
         iconPos="right"
         [label]="$moreButtonLabel() | dm"
         [class.active]="$isMoreButtonActive()"
         [text]="true"
-        size="small"
-        styleClass="p-2"
         (click)="menu.toggle($event)"
         data-testId="more-button" />
 
-    <p-menu
-        #menu
-        [popup]="true"
-        styleClass="more-menu"
-        [model]="$menuItems()"
-        data-testId="more-menu">
+    <p-menu #menu [popup]="true" [model]="$menuItems()" data-testId="more-menu">
         <ng-template pTemplate="submenuheader" let-item>
-            <span class="text-primary font-bold">{{ item.label }}</span>
+            <div class="text-sm font-semibold text-gray-900">{{ item.label }}</div>
+            <div class="mt-2 border-t border-gray-200"></div>
         </ng-template>
         <ng-template pTemplate="item" let-item>
-            <a
+            <button
+                type="button"
                 pRipple
-                class="flex items-center p-menuitem-link menu-item"
-                [ngClass]="{ 'menu-item--active': item.id === activeMenuItemId() }">
-                <span>{{ item.label }}</span>
-            </a>
+                class="flex w-full items-center text-left px-4 py-3 text-sm text-gray-900 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                [ngClass]="{
+                    'bg-gray-100 font-semibold': item.id === activeMenuItemId()
+                }"
+                (click)="onMoreMenuItemClick($event, item, menu)">
+                <span class="truncate">{{ item.label }}</span>
+            </button>
         </ng-template>
     </p-menu>
 }

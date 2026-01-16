@@ -1,40 +1,33 @@
 <p-button
     (click)="op.toggle($event)"
     [label]="value.name"
-    [ngClass]="{ selected: value.identifier !== 'modes.persona.no.persona' }"
     [text]="true"
     size="small"
     data-testId="persona-button">
     @if (value?.identifier !== 'modes.persona.no.persona') {
-        <p-avatar
-            [text]="value?.name"
-            [image]="photo"
-            styleClass="ema-persona__avatar-selected"
-            dotAvatar />
+        <p-avatar [text]="value?.name" [image]="photo" shape="circle" dotAvatar />
     } @else {
-        <p-avatar
-            [text]="'modes.persona.no.persona' | dm"
-            styleClass="ema-persona__avatar-selected"
-            dotAvatar />
+        <p-avatar [text]="'modes.persona.no.persona' | dm" shape="circle" dotAvatar />
     }
 </p-button>
-<p-popover #op styleClass="edit-ema-selector" data-testId="persona-op">
+<p-popover #op data-testId="persona-op" [unstyled]="true" [appendTo]="'body'">
     <p-listbox
-        (onChange)="onSelect($event); op.toggle($event)"
+        size="small"
+        (onChange)="onSelect($event); op.hide()"
         [options]="$personas().items"
         #listbox
         optionLabel="label"
         data-testId="persona-listbox"
         dataKey="identifier">
         <ng-template let-persona pTemplate="item">
-            <div class="flex w-full gap-6 items-center justify-between">
-                <div class="flex gap-2 items-center">
+            <div class="flex w-full items-center justify-between gap-4">
+                <div class="flex min-w-0 items-center gap-2">
                     <p-avatar
                         [text]="persona.name"
                         [image]="persona.photo"
-                        styleClass="ema-persona__avatar"
+                        shape="circle"
                         dotAvatar />
-                    <span>{{ persona.name }}</span>
+                    <span class="truncate text-sm text-gray-900">{{ persona.name }}</span>
                 </div>
                 @if (persona.personalized) {
                     <p-chip
@@ -43,9 +36,8 @@
                         removeIcon="pi pi-times-circle"
                         (onRemove)="
                             onRemove($event, persona, value.identifier === persona.identifier);
-                            op.toggle($event)
+                            op.hide()
                         "
-                        styleClass="p-chip-sm"
                         data-testId="persona-chip" />
                 }
             </div>

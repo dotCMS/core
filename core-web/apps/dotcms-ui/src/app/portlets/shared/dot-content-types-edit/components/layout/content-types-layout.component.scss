@@ -22,46 +22,6 @@ $top-height: (
 
         .content-type__fields-sidebar {
             background-color: colors.$white;
-
-            .p-splitbutton {
-                border-bottom: solid 1px colors.$color-palette-gray-300;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 2.8125rem; // 45px
-
-                &:hover {
-                    background-color: $bg-hover;
-                }
-
-                .p-splitbutton-defaultbutton,
-                .p-splitbutton-menubutton {
-                    padding: spacing.$spacing-2 spacing.$spacing-3;
-                    background: none;
-                    color: fonts.$font-color-base;
-
-                    .pi {
-                        color: fonts.$font-color-base;
-                        font-size: fonts.$font-size-md;
-                    }
-                }
-
-                .p-splitbutton-defaultbutton {
-                    .p-button-label {
-                        text-align: left;
-                        text-transform: none;
-                        font-weight: normal;
-                        color: fonts.$font-color-base;
-                    }
-
-                    .p-button-icon-left {
-                        color: colors.$color-palette-gray-700;
-                        width: 1.125rem;
-                        font-size: fonts.$font-size-md;
-                        margin-right: spacing.$spacing-3;
-                    }
-                }
-            }
         }
     }
 

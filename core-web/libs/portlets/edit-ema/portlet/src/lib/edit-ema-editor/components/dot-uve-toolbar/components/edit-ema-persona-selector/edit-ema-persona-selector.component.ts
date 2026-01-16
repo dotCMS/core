@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -40,7 +39,6 @@ interface PersonaSelector {
 @Component({
     selector: 'dot-edit-ema-persona-selector',
     imports: [
-        NgClass,
         ButtonModule,
         AvatarModule,
         PopoverModule,
