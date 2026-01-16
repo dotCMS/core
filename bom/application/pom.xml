@@ -15,17 +15,18 @@
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
+        <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <swagger.version>2.2.34</swagger.version>
-        <bytebuddy.version>1.14.15</bytebuddy.version>
+        <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
         <bouncy-castle.version>1.70</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
         <jackson.version>2.17.2</jackson.version>
-        <jersey.version>2.28</jersey.version>
-        <graalvm.version>22.3.3</graalvm.version>
+        <jersey.version>2.47</jersey.version>
+        <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
+
     </properties>
     <dependencyManagement>
 
@@ -1592,12 +1593,12 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>5.12.0</version>
+                <version>5.20.0</version>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-junit-jupiter</artifactId>
-                <version>5.12.0</version>
+                <version>5.20.0</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -1634,21 +1635,23 @@
 
             <!-- Graalvm Js Engine -->
             <dependency>
-                <groupId>org.graalvm.sdk</groupId>
-                <artifactId>graal-sdk</artifactId>
-                <version>${graalvm.version}</version>
+                <groupId>org.graalvm.polyglot</groupId>
+                <artifactId>polyglot</artifactId>
+                <version>${graalvm.polyglot.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.graalvm.js</groupId>
+                <groupId>org.graalvm.polyglot</groupId>
+                <!-- Select language: js, ruby, python, java, llvm, wasm, languages -->
                 <artifactId>js</artifactId>
-                <version>${graalvm.version}</version>
+                <version>${graalvm.polyglot.version}</version>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.graalvm.js</groupId>
                 <artifactId>js-scriptengine</artifactId>
-                <version>${graalvm.version}</version>
-            </dependency>
+                <version>${graalvm.polyglot.version}</version>
 
+            </dependency>
             <!-- AI -->
             <dependency>
                 <groupId>com.knuddels</groupId>
