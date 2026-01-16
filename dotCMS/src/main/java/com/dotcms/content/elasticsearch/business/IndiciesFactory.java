@@ -17,6 +17,10 @@ import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.PropertyUtils;
 
+/**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ */
+@Deprecated(forRemoval = true)
 public class IndiciesFactory {
 
 
