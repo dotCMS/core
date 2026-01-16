@@ -14,9 +14,10 @@ import {
 import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { environment } from '../environments/environment';
+
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDotCMSImageLoader('http://localhost:8080'),
+    provideDotCMSImageLoader(environment.dotcmsUrl),
     provideDotCMSClient({
       dotcmsUrl: environment.dotcmsUrl,
       authToken: environment.authToken,
