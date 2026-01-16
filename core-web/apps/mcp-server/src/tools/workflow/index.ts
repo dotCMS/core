@@ -24,7 +24,7 @@ export function registerWorkflowTools(server: McpServer) {
             inputSchema: z.object({
                 content: ContentCreateParamsSchema,
                 comments: z.string().optional()
-            }).shape
+            }) as any
         },
         contentSaveHandler
     );
@@ -41,7 +41,7 @@ export function registerWorkflowTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: ContentActionParamsSchema.shape
+            inputSchema: ContentActionParamsSchema as any
         },
         contentActionHandler
     );

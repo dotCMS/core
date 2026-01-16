@@ -18,7 +18,7 @@ export function registerSearchTools(server: McpServer) {
                 title: 'Search Content',
                 readOnlyHint: true
             },
-            inputSchema: SearchFormSchema.shape
+            inputSchema: SearchFormSchema as any
         },
         contentSearchHandler
     );

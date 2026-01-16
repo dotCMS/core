@@ -22,7 +22,7 @@ export function registerContentTypeTools(server: McpServer) {
                 title: 'List Content Types',
                 readOnlyHint: true
             },
-            inputSchema: ContentTypeListParamsSchema.shape
+            inputSchema: ContentTypeListParamsSchema as any
         },
         contentTypeListHandler
     );
@@ -41,7 +41,7 @@ export function registerContentTypeTools(server: McpServer) {
             },
             inputSchema: z.object({
                 contentType: ContentTypeCreateParamsSchema
-            }).shape
+            }) as any
         },
         contentTypeCreateHandler
     );

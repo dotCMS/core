@@ -64,7 +64,7 @@ export function registerExampleTools(server: McpServer) {
                 openWorldHint: true
             },
 
-            inputSchema: ExampleToolInputSchema.shape
+            inputSchema: ExampleToolInputSchema as any
         },
         exampleToolHandler
     );
