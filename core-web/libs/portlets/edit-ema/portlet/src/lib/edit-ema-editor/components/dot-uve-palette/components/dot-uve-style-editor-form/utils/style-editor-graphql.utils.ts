@@ -1,4 +1,9 @@
-import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
+import {
+    DotCMSBasicContentlet,
+    DotCMSPageAsset,
+    DotCMSPageResponse,
+    StyleEditorProperties
+} from '@dotcms/types';
 
 import { ActionPayload } from '../../../../../../shared/models';
 
@@ -34,7 +39,7 @@ function extractPageAsset(response: GraphQLResponse): DotCMSPageAsset {
 export function updateStylePropertiesInGraphQL(
     graphqlResponse: GraphQLResponse,
     payload: ActionPayload,
-    styleProperties: Record<string, unknown>
+    styleProperties: StyleEditorProperties
 ): GraphQLResponse {
     const pageAsset = extractPageAsset(graphqlResponse);
     const containerId = payload.container.identifier;
@@ -57,7 +62,7 @@ export function updateStylePropertiesInGraphQL(
 
     contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
         if (contentlet?.identifier === contentletId) {
-            contentlet.styleProperties = styleProperties;
+            contentlet.dotStyleProperties = styleProperties;
         }
     });
 
@@ -75,7 +80,7 @@ export function updateStylePropertiesInGraphQL(
 export function extractStylePropertiesFromGraphQL(
     graphqlResponse: GraphQLResponse,
     payload: ActionPayload
-): Record<string, unknown> | null {
+): StyleEditorProperties | null {
     const pageAsset = extractPageAsset(graphqlResponse);
     const containerId = payload.container.identifier;
     const contentletId = payload.contentlet.identifier;
@@ -97,5 +102,5 @@ export function extractStylePropertiesFromGraphQL(
         (c: DotCMSBasicContentlet) => c?.identifier === contentletId
     );
 
-    return contentlet?.styleProperties || null;
+    return contentlet?.dotStyleProperties || null;
 }
