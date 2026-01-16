@@ -13,7 +13,6 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
     imports: [],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-uve-palette-contentlet.component.html',
-    styleUrl: './dot-uve-palette-contentlet.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[attr.data-type]': '"contentlet"',

@@ -70,7 +70,6 @@ import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
-    styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {

@@ -24,7 +24,6 @@ import { Orientation } from '../../../../../store/models';
     selector: 'dot-uve-device-selector',
     imports: [ButtonModule, TooltipModule, DotMessagePipe, NgClass, MenuModule],
     templateUrl: './dot-uve-device-selector.component.html',
-    styleUrl: './dot-uve-device-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'flex items-center gap-1 p-0'

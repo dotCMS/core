@@ -18,7 +18,6 @@ import { DotCMSPaletteContentType, DotPaletteViewMode } from '../../models';
     selector: 'dot-uve-palette-contenttype',
     imports: [NgClass, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-palette-contenttype.component.html',
-    styleUrl: './dot-uve-palette-contenttype.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[attr.data-type]': '"content-type"',

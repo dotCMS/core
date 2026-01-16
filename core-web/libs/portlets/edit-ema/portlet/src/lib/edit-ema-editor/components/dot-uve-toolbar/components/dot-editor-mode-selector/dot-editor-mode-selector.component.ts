@@ -27,7 +27,6 @@ interface EditorModeOption {
     selector: 'dot-editor-mode-selector',
     imports: [SelectModule, FormsModule],
     templateUrl: './dot-editor-mode-selector.component.html',
-    styleUrl: './dot-editor-mode-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditorModeSelectorComponent implements OnInit {
