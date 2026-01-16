@@ -70,9 +70,7 @@ describe('ContainerSelectorComponent', () => {
                 name: 'Container 1',
                 type: 'Container',
                 source: CONTAINER_SOURCE.DB,
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             },
             {
                 categoryId: '40204d-c380-439f-a6d0-97d8sdeed57e',
@@ -83,9 +81,7 @@ describe('ContainerSelectorComponent', () => {
                 type: 'Container',
                 source: CONTAINER_SOURCE.FILE,
                 path: 'container/path',
-                parentPermissionable: {
-                    hostname: 'demo.dotcms.com'
-                }
+                hostName: 'demo.dotcms.com'
             }
         ];
 
@@ -108,10 +104,7 @@ describe('ContainerSelectorComponent', () => {
         const searchableComponent = searchable.componentInstance as SearchableDropdownComponent;
 
         // Verify component properties directly
-        expect(searchableComponent.labelPropertyName).toEqual([
-            'name',
-            'parentPermissionable.hostname'
-        ]);
+        expect(searchableComponent.labelPropertyName).toEqual(['name', 'hostName']);
         expect(searchableComponent.multiple).toBe(true);
         expect(searchableComponent.pageLinkSize).toBe(5);
         expect(searchableComponent.persistentPlaceholder).toBeTruthy();

@@ -20286,6 +20286,10 @@ components:
         getiDate:
           type: string
           format: date-time
+        hostId:
+          type: string
+        hostName:
+          type: string
         idate:
           type: string
           format: date-time
@@ -20343,6 +20347,8 @@ components:
           type: string
         useDiv:
           type: boolean
+        variant:
+          type: string
         versionId:
           type: string
         versionType:
