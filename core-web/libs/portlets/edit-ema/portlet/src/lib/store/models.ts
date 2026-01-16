@@ -8,14 +8,14 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
-    DotCMSPage,
-    DotCMSSite,
-    DotCMSViewAs,
-    DotCMSTemplate,
     DotCMSLayout,
-    DotCMSURLContentMap,
+    DotCMSPage,
     DotCMSPageAssetContainers,
-    DotCMSVanityUrl
+    DotCMSSite,
+    DotCMSTemplate,
+    DotCMSURLContentMap,
+    DotCMSVanityUrl,
+    DotCMSViewAs
 } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
@@ -26,8 +26,8 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { UVE_STATUS, EDITOR_STATE } from '../shared/enums';
-import { ClientData, ContentletPayload, DotPageAssetParams } from '../shared/models';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
+import { ActionPayload, ClientData, DotPageAssetParams } from '../shared/models';
 
 /**
  * Page type classification enum
@@ -56,7 +56,7 @@ export interface EditorUIState {
     state: EDITOR_STATE;
 
     // Contentlet management
-    activeContentlet: ContentletPayload | null;
+    activeContentlet: ActionPayload | null;
     contentArea: ContentletArea | null;
 
     /**

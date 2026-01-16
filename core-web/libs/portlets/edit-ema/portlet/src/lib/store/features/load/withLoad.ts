@@ -43,6 +43,7 @@ export interface WithLoadDeps {
     graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
     $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
     setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    addHistory: (state: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
 }
 
 /**
@@ -174,7 +175,7 @@ export function withLoad(deps: WithLoadDeps) {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            store.addHistory({ pageAsset });
+                                            deps.addHistory({ pageAsset });
 
                                             patchState(store, {
                                                 page: pageAsset?.page,

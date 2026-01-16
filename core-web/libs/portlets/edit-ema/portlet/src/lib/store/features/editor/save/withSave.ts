@@ -24,6 +24,8 @@ export interface WithSaveDeps {
     graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
     $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
     setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    rollbackGraphqlResponse: () => boolean;
+    $customGraphqlResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; graphqlRequest: { query: string; variables: Record<string, string> } } | null>;
 }
 
 /**
@@ -208,7 +210,7 @@ export function withSave(deps: WithSaveDeps) {
                                 console.error('Error saving style properties:', error);
 
                                 // Rollback the optimistic update
-                                const rolledBack = store.rollbackGraphqlResponse();
+                                const rolledBack = deps.rollbackGraphqlResponse();
 
                                 if (!rolledBack) {
                                     console.error(
@@ -219,7 +221,7 @@ export function withSave(deps: WithSaveDeps) {
                                 }
 
                                 // Update iframe with rolled back state
-                                const rolledBackResponse = store.$customGraphqlResponse();
+                                const rolledBackResponse = deps.$customGraphqlResponse();
                                 if (rolledBackResponse) {
                                     iframeMessenger.sendPageData(rolledBackResponse);
                                 }

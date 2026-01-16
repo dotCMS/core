@@ -16,7 +16,7 @@ import { withTrack } from './features/track/withTrack';
 import { withPageContext } from './features/withPageContext';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { withZoom } from './features/zoom/withZoom';
-import { TranslateProps, UVEState, Orientation, PageType } from './models';
+import { Orientation, PageType, TranslateProps, UVEState } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
@@ -81,7 +81,7 @@ export const UVEStore = signalStore(
 
     // ---- Core State Features (no dependencies) ----
     withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
-    withClient(),                     // Client config (independent)
+    withFeature(() => withClient()), // Client config (exposes timeMachine methods)
     withWorkflow(),                   // Workflow state (independent)
     withTrack(),                      // Tracking (independent)
 
@@ -94,7 +94,8 @@ export const UVEStore = signalStore(
         getWorkflowActions: (inode: string) => store.getWorkflowActions(inode),
         graphqlRequest: () => store.graphqlRequest(),
         $graphqlWithParams: store.$graphqlWithParams,
-        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response),
+        addHistory: (state) => store.addHistory(state)
     })),  // Load methods (depends on client, workflow)
 
     // ---- Core Store Methods ----
@@ -144,7 +145,9 @@ export const UVEStore = signalStore(
     withFeature((store) => withSave({
         graphqlRequest: () => store.graphqlRequest(),
         $graphqlWithParams: store.$graphqlWithParams,
-        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response),
+        rollbackGraphqlResponse: () => store.rollbackGraphqlResponse(),
+        $customGraphqlResponse: store.$customGraphqlResponse
     })),  // Save methods (depends on client)
     withFeature((store) => withLock({
         reloadCurrentPage: () => store.reloadCurrentPage()

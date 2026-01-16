@@ -80,7 +80,7 @@ export function withEditor() {
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
                 $allowedContentTypes: computed<Record<string, true>>(() => {
-                    return getContentTypeVarRecord(pageEntity()?.containers);
+                    return getContentTypeVarRecord(store.containers());
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const editor = store.editor();
@@ -91,8 +91,8 @@ export function withEditor() {
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
-                    const activeContentlet = store.activeContentlet();
-                    const styleSchemas = store.styleSchemas();
+                    const activeContentlet = store.editor().activeContentlet;
+                    const styleSchemas = store.editor().styleSchemas;
                     const contentSchema = styleSchemas.find(
                         (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
                     );
