@@ -222,7 +222,7 @@
         button {
             border-radius: common3.$border-radius-sm;
 
-            @extend #text-primary-severity;
+            @extend #text-primary-severity !optional;
         }
     }
 
