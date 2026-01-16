@@ -235,4 +235,38 @@ public class AiModelConfigFactory {
 
         return modelConfigCatalog.getAllEmbeddingModelSummaries();
     }
+
+    /**
+     * Invalidates all cached AI model configurations for a specific site.
+     * This should be called when the AI app configuration changes.
+     *
+     * @param siteId the site identifier
+     */
+    public void invalidateCacheForSite(final String siteId) {
+        Logger.info(this, "Invalidating AI model config cache for site: " + siteId);
+
+        // Clear the catalog cache
+        this.aiModelConfigCatalogMap.remove(siteId);
+
+        // Clear system cache entries for this site
+        final SystemCache systemCache = CacheLocator.getSystemCache();
+        //systemCache.removeGroup("ai_model_config" + siteId);
+        systemCache.clearCache();
+    }
+
+    /**
+     * Invalidates all cached AI model configurations across all sites.
+     * Useful for development or when the default configuration template changes.
+     */
+    public void invalidateAllCaches() {
+        Logger.info(this, "Invalidating all AI model config caches");
+
+        // Clear the catalog cache
+        this.aiModelConfigCatalogMap.clear();
+
+        // Clear all system cache entries
+        final SystemCache systemCache = CacheLocator.getSystemCache();
+        //systemCache.flushGroup("ai_model_config");
+        systemCache.clearCache();
+    }
 }

@@ -626,7 +626,7 @@ const doSearchChatJsonDebounced = async () => {
 
     const prefs = preferences();
     prefs.searchQuery = formData.prompt.trim();
-    prefs.lastIndex = formData.indexName.trim();
+    prefs.lastIndex = formData.indexName ? formData.indexName.trim() : '';
     savePreferences(prefs);
     if (responseType === "search") {
         doSearch(formData)

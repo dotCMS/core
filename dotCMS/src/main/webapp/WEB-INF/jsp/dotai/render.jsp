@@ -70,7 +70,7 @@
         refreshConfigs().then(() => {
             writeConfigTable();
 
-            console.log("Calling writeModelToDropdown....");
+            console.log("Calling fetchNewAIConfiguration....");
             const modelName = document.getElementById("modelName");
             let options = modelName.getElementsByTagName('option');
             for (let i = options.length - 1; i >= 1; i--) {
@@ -87,6 +87,7 @@
                 document.getElementById("openAIKeyWarn").style.display = "block";
             }
 
+            console.log("Calling fetchNewAIEmbeddingConfiguration....");
             const modelEmbeddingName = document.getElementById("embeddingModelName");
             let embedOptions = modelEmbeddingName.getElementsByTagName('option');
             for (let i = embedOptions.length - 1; i >= 1; i--) {
