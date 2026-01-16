@@ -1,7 +1,8 @@
 import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
-import { signal } from '@angular/core';
+
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { signal } from '@angular/core';
 
 import { DotPageAssetLayoutRow, DotPageAssetLayoutColumn, DotCMSLayout } from '@dotcms/types';
 
