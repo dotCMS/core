@@ -4,9 +4,8 @@ export const STORAGE_KEY = 'dotcmsDeveloperOnboarding';
 
 export const getOnboardingContent = (selectedFramework: SupportedFrameworks): OnboardingContent => {
     return {
-        title: 'Build Your First dotCMS Headless Application',
-        description:
-            'Choose a framework and configuration. The dotCMS CLI bootstraps your app, configures authentication, and enables visual editing in one minute',
+        title: 'Start with dotCMS headless development in minutes',
+        description: '',
         steps: [
             {
                 number: 1,

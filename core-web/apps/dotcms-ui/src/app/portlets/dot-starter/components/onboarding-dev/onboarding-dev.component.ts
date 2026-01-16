@@ -16,18 +16,20 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
 import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { TabViewModule } from 'primeng/tabview';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ButtonCopyComponent } from '@dotcms/ui';
 
 import { getOnboardingContent, STORAGE_KEY } from './content';
-import { OnboardingFramework, OnboardingSubstep, SupportedFrameworks } from './models';
+import { OnboardingFramework, SupportedFrameworks } from './models';
 import { state } from './store';
 
 @Component({
@@ -47,7 +49,9 @@ import { state } from './store';
         RadioButtonModule,
         RouterModule,
         TagModule,
-        TooltipModule
+        TooltipModule,
+        TabViewModule,
+        AvatarModule
     ]
 })
 export class DotOnboardingDevComponent implements OnInit {
@@ -57,6 +61,8 @@ export class DotOnboardingDevComponent implements OnInit {
 
     selectedFramework: SupportedFrameworks = 'nextjs';
     content = getOnboardingContent(this.selectedFramework);
+    cliCommand = `npx @dotcms/create-app my-dotcms-app --directory=. --framework=${this.selectedFramework} --url=${window.location.origin} `;
+
     frameworks: OnboardingFramework[] = [
         {
             id: 'nextjs',
@@ -110,12 +116,11 @@ export class DotOnboardingDevComponent implements OnInit {
         this.loadProgress();
     }
 
-    formatSubstep(substep: OnboardingSubstep): string {
-        const language = substep.language || '';
-
-        return `\`\`\`${language}
-${substep.code}
-\`\`\``;
+    formatSubstep(): string {
+        const command = `\`\`\`
+${this.cliCommand}
+`;
+        return command;
     }
 
     activeIndexChange(newIndex: number) {
@@ -203,9 +208,9 @@ ${substep.code}
         this.eventEmitter.emit('reset-user-profile');
     }
 
-    public changeSelectedFramework(event: Event): void {
-        const value: SupportedFrameworks = (event.target as HTMLInputElement)
-            .value as SupportedFrameworks;
-        this.content = getOnboardingContent(value);
+    public changeSelectedFramework(index: number): void {
+        this.content = getOnboardingContent(this.frameworks[index].id as SupportedFrameworks);
+        this.selectedFramework = this.frameworks[index].id as SupportedFrameworks;
+        this.cliCommand = `npx @dotcms/create-app my-dotcms-app --directory=. --framework=${this.selectedFramework} --url=${window.location.origin}`;
     }
 }
