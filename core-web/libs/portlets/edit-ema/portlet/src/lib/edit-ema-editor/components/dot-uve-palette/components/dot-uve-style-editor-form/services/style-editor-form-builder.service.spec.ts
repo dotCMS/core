@@ -16,8 +16,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                     label: 'Font Size',
                     type: 'input',
                     config: {
-                        inputType: 'number',
-                        defaultValue: 16
+                        inputType: 'number'
                     }
                 },
                 {
@@ -28,8 +27,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Arial', value: 'Arial' },
                             { label: 'Helvetica', value: 'Helvetica' }
-                        ],
-                        defaultValue: 'Arial'
+                        ]
                     }
                 }
             ]
@@ -45,11 +43,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Underline', value: 'underline' },
                             { label: 'Overline', value: 'overline' }
-                        ],
-                        defaultValue: {
-                            underline: true,
-                            overline: false
-                        }
+                        ]
                     }
                 },
                 {
@@ -60,8 +54,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Left', value: 'left' },
                             { label: 'Right', value: 'right' }
-                        ],
-                        defaultValue: 'left'
+                        ]
                     }
                 }
             ]
@@ -85,17 +78,17 @@ describe('StyleEditorFormBuilderService', () => {
     });
 
     describe('buildForm', () => {
-        it('should build form with default values when initialValues is not provided', () => {
+        it('should build form with empty values when initialValues is not provided', () => {
             const schema = createMockSchema();
             const form = service.buildForm(schema);
 
             expect(form).toBeInstanceOf(FormGroup);
-            expect(form.get('font-size')?.value).toBe(16);
-            expect(form.get('font-family')?.value).toBe('Arial');
-            expect(form.get('alignment')?.value).toBe('left');
+            expect(form.get('font-size')?.value).toBeNull();
+            expect(form.get('font-family')?.value).toBeNull();
+            expect(form.get('alignment')?.value).toBeNull();
 
             const textDecorationGroup = form.get('text-decoration') as FormGroup;
-            expect(textDecorationGroup.get('underline')?.value).toBe(true);
+            expect(textDecorationGroup.get('underline')?.value).toBe(false);
             expect(textDecorationGroup.get('overline')?.value).toBe(false);
         });
 
@@ -108,7 +101,7 @@ describe('StyleEditorFormBuilderService', () => {
             const form = service.buildForm(schema, initialValues);
 
             expect(form.get('font-size')?.value).toBe(24);
-            expect(form.get('font-family')?.value).toBe('Arial'); // Should use default
+            expect(form.get('font-family')?.value).toBeNull(); // Should be empty when no initial value
         });
 
         it('should use initial values when provided for dropdown field', () => {
@@ -120,7 +113,7 @@ describe('StyleEditorFormBuilderService', () => {
             const form = service.buildForm(schema, initialValues);
 
             expect(form.get('font-family')?.value).toBe('Helvetica');
-            expect(form.get('font-size')?.value).toBe(16); // Should use default
+            expect(form.get('font-size')?.value).toBeNull(); // Should be empty when no initial value
         });
 
         it('should use initial values when provided for radio field', () => {
@@ -173,21 +166,21 @@ describe('StyleEditorFormBuilderService', () => {
             expect(textDecorationGroup.get('overline')?.value).toBe(true);
         });
 
-        it('should use default values for fields not in initialValues', () => {
+        it('should use empty values for fields not in initialValues', () => {
             const schema = createMockSchema();
             const initialValues = {
                 'font-size': 20
-                // Other fields should use defaults
+                // Other fields should be empty
             };
 
             const form = service.buildForm(schema, initialValues);
 
             expect(form.get('font-size')?.value).toBe(20);
-            expect(form.get('font-family')?.value).toBe('Arial');
-            expect(form.get('alignment')?.value).toBe('left');
+            expect(form.get('font-family')?.value).toBeNull();
+            expect(form.get('alignment')?.value).toBeNull();
 
             const textDecorationGroup = form.get('text-decoration') as FormGroup;
-            expect(textDecorationGroup.get('underline')?.value).toBe(true);
+            expect(textDecorationGroup.get('underline')?.value).toBe(false);
             expect(textDecorationGroup.get('overline')?.value).toBe(false);
         });
 
@@ -197,26 +190,30 @@ describe('StyleEditorFormBuilderService', () => {
 
             const form = service.buildForm(schema, initialValues);
 
-            // Should use all defaults
-            expect(form.get('font-size')?.value).toBe(16);
-            expect(form.get('font-family')?.value).toBe('Arial');
-            expect(form.get('alignment')?.value).toBe('left');
+            // Should all be empty
+            expect(form.get('font-size')?.value).toBeNull();
+            expect(form.get('font-family')?.value).toBeNull();
+            expect(form.get('alignment')?.value).toBeNull();
+
+            const textDecorationGroup = form.get('text-decoration') as FormGroup;
+            expect(textDecorationGroup.get('underline')?.value).toBe(false);
+            expect(textDecorationGroup.get('overline')?.value).toBe(false);
         });
 
         it('should handle partial checkboxGroup initial values', () => {
             const schema = createMockSchema();
             const initialValues = {
                 'text-decoration': {
-                    underline: false
-                    // overline not provided, should use default
+                    underline: true
+                    // overline not provided, should be false
                 }
             };
 
             const form = service.buildForm(schema, initialValues);
             const textDecorationGroup = form.get('text-decoration') as FormGroup;
 
-            expect(textDecorationGroup.get('underline')?.value).toBe(false);
-            expect(textDecorationGroup.get('overline')?.value).toBe(false); // Default from schema
+            expect(textDecorationGroup.get('underline')?.value).toBe(true);
+            expect(textDecorationGroup.get('overline')?.value).toBe(false);
         });
     });
 });

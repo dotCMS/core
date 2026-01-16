@@ -2,15 +2,15 @@
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import {
-    getDotCMSContentletsBound,
-    computeScrollIsInBottom,
-    getContentletsInContainer,
-    getDotContainerAttributes,
-    getContainersData,
-    getDotContentletAttributes,
     combineClasses,
+    computeScrollIsInBottom,
+    findDotCMSElement,
     getColumnPositionClasses,
-    findDotCMSElement
+    getContainersData,
+    getContentletsInContainer,
+    getDotCMSContentletsBound,
+    getDotContainerAttributes,
+    getDotContentletAttributes
 } from './dom.utils';
 
 describe('getDotCMSContentletsBound', () => {
@@ -296,7 +296,7 @@ describe('getDotContentletAttributes', () => {
             title: 'Test Title',
             inode: 'test-inode',
             contentType: 'test-type',
-            styleProperties
+            dotStyleProperties: styleProperties
         } as unknown as DotCMSBasicContentlet;
 
         const result = getDotContentletAttributes(contentlet, 'test-container');
@@ -346,7 +346,7 @@ describe('getDotContentletAttributes', () => {
         const contentlet = {
             identifier: 'test-id',
             contentType: 'test-type',
-            styleProperties
+            dotStyleProperties: styleProperties
         } as unknown as DotCMSBasicContentlet;
 
         const result = getDotContentletAttributes(contentlet, 'test-container');

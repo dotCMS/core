@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
 import {
     Component,
-    input,
-    inject,
     computed,
-    signal,
-    effect,
     DestroyRef,
-    untracked,
-    linkedSignal
+    effect,
+    inject,
+    input,
+    linkedSignal,
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -35,6 +35,7 @@ import {
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
 import { UVEStore } from '../../../../../store/dot-uve.store';
+import { filterFormValues } from '../../utils';
 
 @Component({
     selector: 'dot-uve-style-editor-form',
@@ -87,6 +88,14 @@ export class DotUveStyleEditorFormComponent {
         }
     });
 
+    /**
+     * Computed property that returns an array of all section indices to keep all tabs open by default
+     */
+    $activeTabIndices = computed(() => {
+        const sections = this.$sections();
+        return sections.map((_, index) => index);
+    });
+
     readonly #rollbackDetectionEffect = effect(() => {
         const isRollback = this.$isRollback();
 
@@ -114,7 +123,7 @@ export class DotUveStyleEditorFormComponent {
         const activeContentlet = this.#uveStore.activeContentlet();
 
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
-        const initialValues = activeContentlet?.contentlet?.styleProperties;
+        const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
 
         const form = this.#formBuilder.buildForm(schema, initialValues);
         this.#form.set(form);
@@ -239,6 +248,14 @@ export class DotUveStyleEditorFormComponent {
             return;
         }
 
+        // Filter out null and undefined values before sending to API
+        const filteredFormValues = filterFormValues(formValues);
+
+        // Don't make API call if there are no values to save
+        if (Object.keys(filteredFormValues).length === 0) {
+            return;
+        }
+
         // Save current state to history BEFORE making the API call
         // This ensures that if the API call fails, we can rollback to this exact state
         const currentGraphqlResponse = this.#uveStore.graphqlResponse();
@@ -252,7 +269,7 @@ export class DotUveStyleEditorFormComponent {
             .saveStyleEditor({
                 containerIdentifier: activeContentlet.container.identifier,
                 contentletIdentifier: activeContentlet.contentlet.identifier,
-                styleProperties: formValues,
+                styleProperties: filteredFormValues,
                 pageId: activeContentlet.pageId,
                 containerUUID: activeContentlet.container.uuid
             })
