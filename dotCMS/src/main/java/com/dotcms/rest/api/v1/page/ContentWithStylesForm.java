@@ -115,14 +115,20 @@ public class ContentWithStylesForm extends Validated {
             errors.add(new ContentletStylingErrorEntity(
                     "CONTAINER_REQUIRED",
                     "containerId cannot be empty",
-                    "identifier"
+                    "identifier",
+                    null,
+                    containerId,
+                    uuid
             ));
         }
         if (!UtilMethods.isSet(uuid)) {
             errors.add(new ContentletStylingErrorEntity(
                     "CONTAINER_UUID_REQUIRED",
                     "uuid cannot be empty",
-                    "uuid"
+                    "uuid",
+                    null,
+                    containerId,
+                    uuid
             ));
         }
         if (contentletStyles.isEmpty()) {

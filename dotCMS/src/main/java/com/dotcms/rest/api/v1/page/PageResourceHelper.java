@@ -722,7 +722,7 @@ public class PageResourceHelper implements Serializable {
         if (existingMultiTrees.isEmpty()) {
             String message = String.format(
                     "There is no Content in the Page: %s to associate the style entries", pageId);
-            ContentletStylingErrorEntity.throwSingleError("NO_CONTENT_FOUND", message, null);
+            ContentletStylingErrorEntity.throwSingleError("CONTENT_NOT_FOUND", message, null);
         }
 
         // Create a lookup map for O(1) access
@@ -797,10 +797,8 @@ public class PageResourceHelper implements Serializable {
                     contentletId, pageId, containerId, containerUuid, personalization,
                     currentVariantId);
 
-            ContentletStylingErrorEntity.throwSingleError(
-                    "INVALID_CONTENTLET_REFERENCE",
-                    message,
-                    "contentletId");
+            ContentletStylingErrorEntity.throwSingleError("CONTENT_NOT_FOUND", message,
+                    null, contentletId, containerId, containerUuid);
         }
 
         // Get the new style properties for this contentlet (maybe null to clear styles)
