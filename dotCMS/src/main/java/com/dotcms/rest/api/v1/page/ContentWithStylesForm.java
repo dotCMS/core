@@ -52,7 +52,7 @@ public class ContentWithStylesForm extends Validated {
     private final Map<String, Map<String, Object>> contentletStyles;
 
     /**
-     * Constructor for Jackson deserialization. Validation is performed in {@link #checkValid()}
+     * Constructor for Jackson deserialization. Validation is performed in {@link #validate()}
      * which should be called after deserialization.
      */
     @JsonCreator

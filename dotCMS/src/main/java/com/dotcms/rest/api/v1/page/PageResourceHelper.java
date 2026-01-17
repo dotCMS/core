@@ -801,7 +801,7 @@ public class PageResourceHelper implements Serializable {
                     null, contentletId, containerId, containerUuid);
         }
 
-        // Get the new style properties for this contentlet (maybe null to clear styles)
+        // Get the new style properties for this contentlet (could be empty to clear styles)
         final Map<String, Object> newStyleProperties = contentletStylesMap.get(contentletId);
 
         // Update the MultiTree with new style properties
