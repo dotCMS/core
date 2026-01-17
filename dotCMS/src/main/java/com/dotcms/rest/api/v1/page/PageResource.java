@@ -1499,4 +1499,184 @@ public class PageResource {
         return Response.ok(new ResponseEntityView<>(languagesForPage)).build();
     }
 
+    /**
+     * Updates style properties for contentlets within containers on a specific page.
+     * This endpoint allows updating CSS/styling properties for contentlets without modifying
+     * the page structure (containers, contentlets order, or content).
+     *
+     * @param request The current HTTP servlet request
+     * @param response The current HTTP servlet response
+     * @param pageId The identifier of the HTML Page whose contentlet styles are being updated
+     * @param contentWithStylesForms List of container entries with contentlet style updates
+     * @return Response containing the list of updated contentlets with their new style properties
+     */
+    @PUT
+    @Path("/{pageId}/styles")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Operation(
+        summary = "Update contentlet styles in a page",
+        description = "Updates style properties for contentlets within containers on a specific page. " +
+                     "Only updates the styleProperties field without modifying page structure."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Contentlet styles updated successfully",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityContentView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Invalid request - empty container entries or invalid contentlet references",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user does not have EDIT permission on the page",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "404",
+                    description = "Page not found",
+                    content = @Content(mediaType = "application/json"))
+    })
+    public Response updateStyles(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Page identifier", required = true)
+            @PathParam("pageId") final String pageId,
+            @RequestBody(description = "List of containers with contentlet style updates. " +
+                                      "Each container includes its ID, UUID, and dynamic properties where " +
+                                      "contentlet IDs are keys with their style properties as values.",
+                        required = true,
+                        content = @Content(schema = @Schema(implementation = ContentWithStylesForm.class)))
+            final List<ContentWithStylesForm> contentWithStylesForms)
+            throws DotSecurityException, DotDataException {
+
+        Logger.debug(this, () -> String.format("Updating contentlet styles for page: %s", pageId));
+
+        validateContentWithStylesForms(contentWithStylesForms);
+
+        // Initialize request context
+        final InitDataObject initDataObject = new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true).init();
+
+        final User user = initDataObject.getUser();
+
+        try {
+            final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);
+
+            APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
+
+            // Reduce duplicate containers and convert to internal format (ContainerEntry)
+            final List<ContainerEntry> reducedContainerEntries = reduceStyleForms(contentWithStylesForms);
+
+            // Validate container entries (contentlets exist and are valid for their containers)
+            validateContainerEntries(reducedContainerEntries);
+
+            // Update style properties in database
+            final List<ContentView> updatedStyles =
+                pageResourceHelper.saveContentletStyles(pageId, reducedContainerEntries);
+
+            return Response.ok(new ResponseEntityContentView(updatedStyles)).build();
+
+        } catch (final HTMLPageAssetNotFoundException e) {
+            final String errorMsg = String.format("Page not found with ID: %s", pageId);
+            Logger.error(this, errorMsg, e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.NOT_FOUND);
+        }
+    }
+
+    private static void validateContentWithStylesForms(List<ContentWithStylesForm> contentWithStylesForms) {
+
+        // Include style properties in the response ONLY if Style Editor FF is enabled
+        final String styleEditorFlag = "FEATURE_FLAG_UVE_STYLE_EDITOR";
+        final boolean isStyleEditorEnabled = Config.getBooleanProperty(styleEditorFlag, false);
+
+        if (!isStyleEditorEnabled) {
+            ContentletStylingErrorEntity.throwSingleError(
+                    "FEATURE_FLAG_OFF",
+                    "Feature Flag Style Editor is not enabled",
+                    styleEditorFlag
+            );
+        }
+
+        if (contentWithStylesForms == null || contentWithStylesForms.isEmpty()) {
+            ContentletStylingErrorEntity.throwSingleError(
+                    "EMPTY_FORM",
+                    "Container entries list cannot be empty",
+                    null
+            );
+        } else {
+            // Validate all forms and collect errors for better user experience
+            final List<ContentletStylingErrorEntity> allErrors = new ArrayList<>();
+
+            for (final ContentWithStylesForm form : contentWithStylesForms) {
+                allErrors.addAll(form.validate());
+            }
+
+            // Throw all validation errors at once if any exist
+            if (!allErrors.isEmpty()) {
+                ContentletStylingErrorEntity.throwStylingBadRequest(new ArrayList<>(allErrors));
+            }
+        }
+    }
+
+    /**
+     * Reduces duplicate containers by combining their contentlet style mappings.
+     * Converts ContentWithStylesForm (REST input) to ContainerEntry (internal format).
+     * If the same container (containerId + uuid) appears multiple times, their styles are merged.
+     * When the same contentlet appears in multiple entries, the last one wins (overwrites).
+     *
+     * @param stylesForms List of style forms that may contain duplicates
+     * @return List of deduplicated ContainerEntry objects ready for processing
+     */
+    private List<ContainerEntry> reduceStyleForms(final List<ContentWithStylesForm> stylesForms) {
+        // Helper class to accumulate contentlet IDs and their styles during reduction
+        class ContainerStylesData {
+
+            final Set<String> contentletIds = new LinkedHashSet<>();
+            final Map<String, Map<String, Object>> contentletStylesMap = new HashMap<>();
+        }
+
+        // Map key: containerId|uuid → accumulated contentlet styles
+        final Map<MultiKey, ContainerStylesData> containerMap = new HashMap<>();
+
+        // Merge duplicate containers
+        for (final ContentWithStylesForm styleForm : stylesForms) {
+            // Create unique key for this container (containerId + uuid)
+            final MultiKey containerKey = new MultiKey(styleForm.getContainerId(), styleForm.getUuid());
+
+            // Get or create accumulator for this container
+            final ContainerStylesData accumulatedData = containerMap.computeIfAbsent(
+                    containerKey,
+                    k -> new ContainerStylesData()
+            );
+
+            // Collect all contentlet IDs
+            accumulatedData.contentletIds.addAll(styleForm.getContentletStyles().keySet());
+
+            // Merge styles - if same contentlet appears multiple times, last one wins
+            accumulatedData.contentletStylesMap.putAll(styleForm.getContentletStyles());
+        }
+
+        // Convert to ContainerEntry list
+        return containerMap.entrySet().stream()
+                .map(entry -> {
+                    final String containerId = (String) entry.getKey().getKeys()[0];
+                    final String containerUuid = (String) entry.getKey().getKeys()[1];
+                    final ContainerStylesData data = entry.getValue();
+
+                    return new ContainerEntry(
+                            null, // No persona tag for style updates (uses default personalization)
+                            containerId,
+                            containerUuid,
+                            new ArrayList<>(data.contentletIds),
+                            data.contentletStylesMap
+                    );
+                })
+                .collect(Collectors.toList());
+    }
+
 } // E:O:F:PageResource

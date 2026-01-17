@@ -700,4 +700,194 @@ public class PageResourceHelper implements Serializable {
         return Optional.empty();
     }
 
+    /**
+     * Updates style properties for contentlets within containers on a specific page.
+     * This method only updates the styleProperties field in existing MultiTree entries
+     * without modifying the page structure (containers, contentlets, order).
+     *
+     * @param pageId The identifier of the HTML Page whose contentlet styles are being updated.
+     * @param containerEntries The list of container entries with contentlet style updates.
+     *                        Must be already validated and reduced (deduplicated).
+     * @return A list of ContentView objects representing the updated contentlets with their new styles.
+     * @throws DotDataException If there's an error accessing or updating the database.
+     */
+    @WrapInTransaction
+    public List<ContentView> saveContentletStyles(final String pageId,
+                                                           final List<ContainerEntry> containerEntries)
+            throws DotDataException{
+
+        // Fetch all existing MultiTree entries for this page from database
+        final List<MultiTree> existingMultiTrees = multiTreeAPI.getMultiTrees(pageId);
+
+        if (existingMultiTrees.isEmpty()) {
+            String message = String.format(
+                    "There is no Content in the Page: %s to associate the style entries", pageId);
+            ContentletStylingErrorEntity.throwSingleError("NO_CONTENT_FOUND", message, null);
+        }
+
+        // Create a lookup map for O(1) access
+        // Key = unique identifier (container|uuid|contentlet|personalization|variant)
+        // Value = MultiTree object
+        final Map<String, MultiTree> multiTreeLookup = existingMultiTrees.stream()
+                .collect(Collectors.toMap(
+                    mt -> buildMultiTreeLookupKey(
+                        mt.getContainer(),
+                        mt.getRelationType(),
+                        mt.getContentlet(),
+                        mt.getPersonalization(),
+                        mt.getVariantId()
+                    ),
+                    mt -> mt,
+                    // In case of duplicate keys (shouldn't happen), keep the first one
+                    (existing, duplicate) -> existing
+                ));
+
+        // Get the current variant from the request context (fallback to DEFAULT if unavailable)
+        final String currentVariantId = Try.of(
+                        () -> WebAPILocator.getVariantWebAPI().currentVariantId())
+                .getOrElse(VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesToUpdate = new ArrayList<>();
+        final List<ContentView> responseViews = new ArrayList<>();
+
+        // Process each container entry from the request
+        for (final ContainerEntry containerEntry : containerEntries) {
+
+            final String containerId = containerEntry.getContainerId();
+            final String containerUuid = containerEntry.getContainerUUID();
+            final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())
+                    ? Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag()
+                    : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+            final Map<String, Map<String, Object>> contentletStylesMap = containerEntry.getStylePropertiesMap();
+
+            // For each contentlet in this container, update its styles
+            for (final String contentletId : containerEntry.getContentIds()) {
+                this.updateContentletStyles(pageId, contentletId, containerId, containerUuid,
+                        personalization, currentVariantId, multiTreeLookup, contentletStylesMap,
+                        multiTreesToUpdate, responseViews);
+            }
+        }
+
+        // Save all updated MultiTrees in a single batch operation
+        // todo must be an update could be light
+        multiTreeAPI.saveMultiTrees(multiTreesToUpdate);
+        Logger.info(this, String.format(
+                "Successfully updated styles for %d contentlets on page %s (variant: %s)",
+                multiTreesToUpdate.size(), pageId, currentVariantId));
+
+        return responseViews;
+    }
+
+    private void updateContentletStyles(String pageId, String contentletId, String containerId,
+            String containerUuid, String personalization, String currentVariantId,
+            Map<String, MultiTree> multiTreeLookup,
+            Map<String, Map<String, Object>> contentletStylesMap,
+            List<MultiTree> multiTreesToUpdate, List<ContentView> responseViews) {
+
+        // Build lookup key with all required fields
+        final String lookupKey = buildMultiTreeLookupKey(containerId, containerUuid,
+                contentletId, personalization, currentVariantId);
+
+        // Find the existing MultiTree entry
+        final MultiTree existingMultiTree = multiTreeLookup.get(lookupKey);
+
+        if (existingMultiTree == null) {
+            String message = String.format(
+                    "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s, variant=%s.",
+                    contentletId, pageId, containerId, containerUuid, personalization,
+                    currentVariantId);
+
+            ContentletStylingErrorEntity.throwSingleError(
+                    "INVALID_CONTENTLET_REFERENCE",
+                    message,
+                    "contentletId");
+        }
+
+        // Get the new style properties for this contentlet (maybe null to clear styles)
+        final Map<String, Object> newStyleProperties = contentletStylesMap.get(contentletId);
+
+        // Update the MultiTree with new style properties
+        existingMultiTree.setStyleProperties(newStyleProperties);
+        multiTreesToUpdate.add(existingMultiTree);
+
+        // Invalidate contentlet cache for immediate visual updates
+        invalidateContentletCache(contentletId, currentVariantId);
+
+        // Build response view for this contentlet
+        final ContentView responseView = ContentView.builder()
+                .containerId(containerId)
+                .uuid(containerUuid)
+                .contentletId(contentletId)
+                .styleProperties(newStyleProperties)
+                .build();
+
+        responseViews.add(responseView);
+    }
+
+    /**
+     * Builds a unique lookup key for a MultiTree entry.
+     * This key includes all fields necessary to uniquely identify a MultiTree record,
+     * including personalization and variant to support personas and A/B testing.
+     *
+     * @param container       The container identifier
+     * @param instanceId      The container instance UUID
+     * @param contentlet      The contentlet identifier
+     * @param personalization The personalization tag (persona)
+     * @param variantId       The variant identifier
+     * @return A unique string key combining all parameters
+     */
+    private String buildMultiTreeLookupKey(final String container, final String instanceId,
+            final String contentlet, final String personalization, final String variantId) {
+        return String.format("%s|%s|%s|%s|%s",
+            container,
+            instanceId,
+            contentlet,
+            personalization != null ? personalization : MultiTree.DOT_PERSONALIZATION_DEFAULT,
+            variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name()
+        );
+    }
+
+    /**
+     * Invalidates the cache for contentlets that had their styles updated.
+     * This ensures that the rendered HTML reflects the style changes immediately.
+     *
+     * @param contentletId Contentlet identifier that was updated
+     * @param variantId The variant identifier for the contentlets
+     */
+    private void invalidateContentletCache(final String contentletId, final String variantId) {
+        HibernateUtil.addCommitListenerNoThrow(new FlushCacheRunnable() {
+            @Override
+            public void run() {
+                try {
+                    // Try to get contentlet with current variant first
+                    Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                            contentletId, variantId);
+
+                    // Fallback to DEFAULT variant if not found in current variant
+                    if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.name()
+                            .equals(variantId)) {
+                        contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                                contentletId, VariantAPI.DEFAULT_VARIANT.name());
+                    }
+
+                    // Invalidate cache for the contentlet in edit mode
+                    if (contentlet != null) {
+                        new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                        Logger.debug(PageResourceHelper.this,
+                                String.format("Cache invalidated for contentlet: %s",
+                                        contentletId));
+                    } else {
+                        Logger.warn(PageResourceHelper.this,
+                                String.format("Contentlet not found for cache invalidation: %s",
+                                        contentletId));
+                    }
+                } catch (final DotDataException e) {
+                    Logger.warn(PageResourceHelper.this, String.format(
+                            "Could not invalidate cache for contentlet '%s': %s",
+                            contentletId, e.getMessage()));
+                }
+            }
+        });
+    }
+
 }
