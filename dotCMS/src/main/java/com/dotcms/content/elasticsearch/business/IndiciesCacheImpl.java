@@ -4,6 +4,10 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.Logger;
 
+/**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ */
+@Deprecated(forRemoval = true)
 public class IndiciesCacheImpl implements IndiciesCache {
     
     protected final DotCacheAdministrator cache;
