@@ -13,9 +13,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.constraints.NotNull;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
-import org.jetbrains.annotations.NotNull;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;

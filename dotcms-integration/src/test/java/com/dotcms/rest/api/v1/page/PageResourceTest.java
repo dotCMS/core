@@ -327,7 +327,7 @@ public class PageResourceTest {
     @Test
     public void test_addContent_with_styleProperties() throws Exception {
         // Save the original feature flag value
-        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
 
         try {
             // Enable the Style Editor feature flag

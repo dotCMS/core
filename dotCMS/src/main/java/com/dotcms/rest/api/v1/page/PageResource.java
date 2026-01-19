@@ -34,6 +34,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
@@ -1570,7 +1571,7 @@ public class PageResource {
 
         // Include style properties in the response ONLY if Style Editor FF is enabled
         final String styleEditorFlag = "FEATURE_FLAG_UVE_STYLE_EDITOR";
-        final boolean isStyleEditorEnabled = Config.getBooleanProperty(styleEditorFlag, false);
+        final boolean isStyleEditorEnabled = Config.getBooleanProperty(styleEditorFlag, true);
 
         if (!isStyleEditorEnabled) {
             ContentletStylingErrorEntity.throwSingleError(
@@ -1580,7 +1581,7 @@ public class PageResource {
             );
         }
 
-        if (contentWithStylesForms == null || contentWithStylesForms.isEmpty()) {
+        if (CollectionUtils.isEmpty(contentWithStylesForms)) {
             ContentletStylingErrorEntity.throwSingleError(
                     "EMPTY_FORM",
                     "Container entries list cannot be empty",
