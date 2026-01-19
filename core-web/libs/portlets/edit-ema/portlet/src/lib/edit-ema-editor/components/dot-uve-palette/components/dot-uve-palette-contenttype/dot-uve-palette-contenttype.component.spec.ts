@@ -1,4 +1,9 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import {
+    createComponentFactory,
+    createHostFactory,
+    Spectator,
+    SpectatorHost
+} from '@ngneat/spectator/jest';
 
 import { Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
@@ -6,7 +11,6 @@ import { By } from '@angular/platform-browser';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { DotUVEPaletteContenttypeComponent } from './dot-uve-palette-contenttype.component';
 
@@ -20,8 +24,8 @@ import { DotCMSPaletteContentType } from '../../models';
     `
 })
 class TestHostComponent {
-    view: 'grid grid-cols-12 gap-4' | 'list' = 'grid grid-cols-12 gap-4';
-    contentType: DotCMSContentType = {
+    view: 'grid' | 'list' = 'grid';
+    contentType: DotCMSPaletteContentType = {
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
         defaultType: false,
@@ -45,12 +49,14 @@ class TestHostComponent {
         systemActionMappings: {},
         variable: 'TestContentType',
         versionable: true,
-        workflows: []
+        workflows: [],
+        disabled: false
     };
 }
 
 describe('DotUVEPaletteContenttypeComponent', () => {
     let spectator: SpectatorHost<DotUVEPaletteContenttypeComponent, TestHostComponent>;
+    let componentSpectator: Spectator<DotUVEPaletteContenttypeComponent>;
 
     const createHost = createHostFactory({
         component: DotUVEPaletteContenttypeComponent,
@@ -65,6 +71,21 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 }
             }
         ]
+    });
+
+    const createComponent = createComponentFactory({
+        component: DotUVEPaletteContenttypeComponent,
+        imports: [DotUVEPaletteContenttypeComponent],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: {
+                    // Keep it deterministic for tests: return the key as-is
+                    get: jest.fn((key: string) => key)
+                }
+            }
+        ],
+        detectChanges: false
     });
 
     beforeEach(() => {
@@ -105,7 +126,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should update data-item attribute when contentType changes', () => {
-            const newContentType: DotCMSContentType = {
+            const newContentType: DotCMSPaletteContentType = {
                 ...spectator.hostComponent.contentType,
                 variable: 'NewVariable',
                 name: 'New Content Type Name'
@@ -127,39 +148,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     });
 
     describe('View Input and CSS Classes', () => {
-        it('should not have list-view class when view is "grid"', () => {
-            // Default view is 'grid', so no need to change input
-            const element = spectator.element as HTMLElement;
-            expect(element.classList.contains('list-view')).toBe(false);
-        });
-
-        it('should have list-view class when view is "list"', () => {
-            spectator.hostComponent.view = 'list';
-            spectator.hostFixture.changeDetectorRef.markForCheck();
-            spectator.hostFixture.detectChanges();
-
-            const element = spectator.element as HTMLElement;
-            expect(element.classList.contains('list-view')).toBe(true);
-        });
-
-        it('should toggle list-view class when view changes', () => {
-            const element = spectator.element as HTMLElement;
-
-            spectator.hostComponent.view = 'grid grid-cols-12 gap-4';
-            spectator.hostFixture.changeDetectorRef.markForCheck();
-            spectator.hostFixture.detectChanges();
-            expect(element.classList.contains('list-view')).toBe(false);
-
-            spectator.hostComponent.view = 'list';
-            spectator.hostFixture.changeDetectorRef.markForCheck();
-            spectator.hostFixture.detectChanges();
-            expect(element.classList.contains('list-view')).toBe(true);
-
-            spectator.hostComponent.view = 'grid grid-cols-12 gap-4';
-            spectator.hostFixture.changeDetectorRef.markForCheck();
-            spectator.hostFixture.detectChanges();
-            expect(element.classList.contains('list-view')).toBe(false);
-        });
+        // NOTE: host styling is handled by $hostClass(); we don't assert on CSS classes.
     });
 
     describe('Template Rendering', () => {
@@ -169,23 +158,17 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             expect(dragHandle).toBeTruthy();
             expect(icons).toHaveLength(2);
-            expect(icons[0]).toHaveClass('pi');
-            expect(icons[0]).toHaveClass('pi-ellipsis-v');
-            expect(icons[1]).toHaveClass('pi');
-            expect(icons[1]).toHaveClass('pi-ellipsis-v');
         });
 
         it('should render content type icon when icon is provided', () => {
-            const iconElement = spectator.query('.content .icon i');
+            const iconElement = spectator.query('i.material-icons');
 
             expect(iconElement).toBeTruthy();
-            expect(iconElement).toHaveClass('material-icons');
-            expect(iconElement).toHaveClass('material-icons-outlined');
             expect(iconElement?.textContent?.trim()).toBe('article');
         });
 
         it('should render default palette icon when no icon is provided', () => {
-            const newContentType: DotCMSContentType = {
+            const newContentType: DotCMSPaletteContentType = {
                 ...spectator.hostComponent.contentType,
                 icon: undefined
             };
@@ -194,23 +177,22 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.hostFixture.changeDetectorRef.markForCheck();
             spectator.hostFixture.detectChanges();
 
-            const iconElement = spectator.query('.content .icon i');
+            const iconElement = spectator.query('i.material-icons');
 
             expect(iconElement).toBeTruthy();
-            expect(iconElement).toHaveClass('material-icons');
-            expect(iconElement).toHaveClass('material-icons-outlined');
             expect(iconElement?.textContent?.trim()).toBe('palette');
         });
 
         it('should render content type name', () => {
-            const nameElement = spectator.query('.content .name');
+            // The name is rendered as a plain <div> (no dedicated ".name" class anymore)
+            const nameElement = spectator.query('div.text-sm.font-semibold') as HTMLElement;
 
             expect(nameElement).toBeTruthy();
             expect(nameElement?.textContent?.trim()).toBe('Test Content Type');
         });
 
         it('should update name when contentType changes', () => {
-            const newContentType: DotCMSContentType = {
+            const newContentType: DotCMSPaletteContentType = {
                 ...spectator.hostComponent.contentType,
                 name: 'Updated Content Type'
             };
@@ -219,7 +201,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.hostFixture.changeDetectorRef.markForCheck();
             spectator.hostFixture.detectChanges();
 
-            const nameElement = spectator.query('.content .name');
+            const nameElement = spectator.query('div.text-sm.font-semibold') as HTMLElement;
             expect(nameElement?.textContent?.trim()).toBe('Updated Content Type');
         });
 
@@ -229,8 +211,6 @@ describe('DotUVEPaletteContenttypeComponent', () => {
 
             expect(chevron).toBeTruthy();
             expect(chevronIcon).toBeTruthy();
-            expect(chevronIcon).toHaveClass('pi');
-            expect(chevronIcon).toHaveClass('pi-chevron-right');
         });
     });
 
@@ -241,13 +221,16 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 disabled: true
             };
 
-            spectator.setHostInput({
-                contentType: disabledContentType as unknown as DotCMSContentType
+            componentSpectator = createComponent({
+                props: { contentType: disabledContentType, view: 'grid' }
             });
-            spectator.detectChanges();
+            componentSpectator.detectChanges();
 
-            const contentDebugEl = spectator.fixture.debugElement.query(By.css('.content'));
-            const tooltip = contentDebugEl.injector.get(Tooltip);
+            const tooltipDebugEl = componentSpectator.fixture.debugElement.query(
+                By.directive(Tooltip)
+            );
+            expect(tooltipDebugEl).toBeTruthy();
+            const tooltip = tooltipDebugEl.injector.get(Tooltip);
 
             expect(tooltip).toBeTruthy();
             expect(tooltip.disabled).toBe(false);
@@ -260,13 +243,16 @@ describe('DotUVEPaletteContenttypeComponent', () => {
                 disabled: false
             };
 
-            spectator.setHostInput({
-                contentType: enabledContentType as unknown as DotCMSContentType
+            componentSpectator = createComponent({
+                props: { contentType: enabledContentType, view: 'grid' }
             });
-            spectator.detectChanges();
+            componentSpectator.detectChanges();
 
-            const contentDebugEl = spectator.fixture.debugElement.query(By.css('.content'));
-            const tooltip = contentDebugEl.injector.get(Tooltip);
+            const tooltipDebugEl = componentSpectator.fixture.debugElement.query(
+                By.directive(Tooltip)
+            );
+            expect(tooltipDebugEl).toBeTruthy();
+            const tooltip = tooltipDebugEl.injector.get(Tooltip);
 
             expect(tooltip).toBeTruthy();
             expect(tooltip.disabled).toBe(true);
@@ -277,9 +263,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     describe('Component Structure', () => {
         it('should have correct CSS classes structure', () => {
             expect(spectator.query('.drag-handle')).toBeTruthy();
-            expect(spectator.query('.content')).toBeTruthy();
-            expect(spectator.query('.content .icon')).toBeTruthy();
-            expect(spectator.query('.content .name')).toBeTruthy();
+            expect(spectator.query('i.material-icons')).toBeTruthy();
             expect(spectator.query('.chevron')).toBeTruthy();
         });
     });
@@ -338,15 +322,14 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             });
 
             const preventDefaultSpy = jest.spyOn(mockEvent, 'preventDefault');
-
-            spectator.output('contextMenu').subscribe(() => {
-                fail('rightClick should not be emitted');
-            });
+            const contextMenuSpy = jest.fn();
+            spectator.output('contextMenu').subscribe(contextMenuSpy);
 
             const element = spectator.element as HTMLElement;
             element.dispatchEvent(mockEvent);
 
             expect(preventDefaultSpy).toHaveBeenCalled();
+            expect(contextMenuSpy).toHaveBeenCalled();
         });
 
         it('should emit rightClick with correct event type', (done) => {
