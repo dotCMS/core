@@ -12,25 +12,25 @@ import {
     UserModel
 } from '@dotcms/dotcms-js';
 
-import { DotRulesComponent } from './app/dot-rules.component';
-import { DotAreaPickerDialogComponent } from './components/dot-area-picker-dialog/dot-area-picker-dialog.component';
-import { DotServersideConditionComponent } from './components/dot-serverside-condition/dot-serverside-condition.component';
-import { DotVisitorsLocationContainerComponent } from './custom-types/visitors-location/dot-visitors-location-container.component';
-import { DotVisitorsLocationComponent } from './custom-types/visitors-location/dot-visitors-location.component';
-import { DotConditionGroupComponent } from './dot-condition-group/dot-condition-group.component';
-import { DotRuleComponent } from './dot-rule/dot-rule.component';
-import { DotRuleActionComponent } from './dot-rule-action/dot-rule-action.component';
-import { DotRuleConditionComponent } from './dot-rule-condition/dot-rule-condition.component';
-import { DotRuleEngineComponent } from './dot-rule-engine/dot-rule-engine.component';
-import { DotRuleEngineContainerComponent } from './dot-rule-engine-container/dot-rule-engine-container.component';
-import { ActionService } from './services/Action';
-import { BundleService } from './services/bundle-service';
-import { ConditionService } from './services/Condition';
-import { ConditionGroupService } from './services/ConditionGroup';
-import { RuleViewService } from './services/dot-view-rule-service';
-import { GoogleMapService } from './services/GoogleMapService';
-import { RuleService } from './services/Rule';
-import { I18nService } from './services/system/locale/I18n';
+import { DotRulesComponent } from './entry/dot-rules.component';
+import { DotRuleActionComponent } from './features/actions/dot-rule-action.component';
+import { DotConditionGroupComponent } from './features/conditions/condition-group/dot-condition-group.component';
+import { DotAreaPickerDialogComponent } from './features/conditions/geolocation/dot-area-picker-dialog.component';
+import { DotVisitorsLocationContainerComponent } from './features/conditions/geolocation/dot-visitors-location-container.component';
+import { DotVisitorsLocationComponent } from './features/conditions/geolocation/dot-visitors-location.component';
+import { DotRuleConditionComponent } from './features/conditions/rule-condition/dot-rule-condition.component';
+import { DotServersideConditionComponent } from './features/conditions/serverside-condition/dot-serverside-condition.component';
+import { DotRuleComponent } from './features/rule/dot-rule.component';
+import { DotRuleEngineContainerComponent } from './features/rule-engine/dot-rule-engine-container.component';
+import { DotRuleEngineComponent } from './features/rule-engine/dot-rule-engine.component';
+import { ActionService } from './services/api/action/Action';
+import { BundleService } from './services/api/bundle/bundle-service';
+import { ConditionService } from './services/api/condition/Condition';
+import { ConditionGroupService } from './services/api/condition-group/ConditionGroup';
+import { RuleService } from './services/api/rule/Rule';
+import { I18nService } from './services/i18n/i18n.service';
+import { GoogleMapService } from './services/maps/GoogleMapService';
+import { RuleViewService } from './services/ui/dot-view-rule-service';
 
 @NgModule({
     imports: [
