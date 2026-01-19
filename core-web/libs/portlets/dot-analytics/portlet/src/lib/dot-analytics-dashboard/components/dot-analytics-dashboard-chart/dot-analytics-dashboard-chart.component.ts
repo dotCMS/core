@@ -116,8 +116,9 @@ export class DotAnalyticsDashboardChartComponent {
     readonly $customHeight = input<string | undefined>(undefined, { alias: 'height' });
 
     /**
-     * Check if chart has line datasets (for animation).
+     * Check if chart has line datasets (for reveal animation).
      * True if chart type is 'line' OR if any dataset in combo chart is type 'line'.
+     * Bar-only charts use Chart.js default animation (grow from bottom).
      */
     readonly #hasLineDatasets = computed(() => {
         const chartType = this.$type();
@@ -131,19 +132,25 @@ export class DotAnalyticsDashboardChartComponent {
 
     /**
      * Plugin for line drawing animation.
-     * Uses clip to progressively reveal the chart from left to right.
+     * Uses clip to progressively reveal line charts from left to right.
      * Runs outside Angular's zone to avoid triggering change detection on each frame.
      */
-    readonly lineDrawPlugin = [
-        createLineDrawAnimationPlugin(
-            () => ({
-                enabled: this.#hasLineDatasets() && this.$animated(),
-                duration: LINE_DRAW_ANIMATION_DURATION
-            }),
-            this.#animationState,
-            this.#ngZone
-        )
-    ];
+    readonly #lineDrawPlugin = createLineDrawAnimationPlugin(
+        () => ({
+            enabled: this.#hasLineDatasets() && this.$animated(),
+            duration: LINE_DRAW_ANIMATION_DURATION
+        }),
+        this.#animationState,
+        this.#ngZone
+    );
+
+    /**
+     * Plugins array - only includes lineDrawPlugin when chart has line datasets.
+     * Bar-only charts get empty plugins to use native Chart.js animation.
+     */
+    protected readonly $plugins = computed(() => {
+        return this.#hasLineDatasets() ? [this.#lineDrawPlugin] : [];
+    });
 
     /**
      * Auto-detect if this is a combo chart based on datasets.
@@ -193,14 +200,27 @@ export class DotAnalyticsDashboardChartComponent {
 
         // Line charts: disable built-in animation for smooth tooltip transitions
         // (same behavior as sparkline component)
+        // Bar charts: use explicit animation for grow-from-bottom effect
         const isLineChart = chartType === 'line';
+        const isBarChart = chartType === 'bar';
 
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
-            // Line charts: use CHART_ANIMATION (duration: 0) for smooth tooltip movement
-            // Other charts: use default animation
+            // Line charts: duration 0 for smooth tooltip (uses custom line draw plugin)
+            // Bar charts: grow from bottom animation
+            // Other charts: use Chart.js default
             animation: isLineChart ? CHART_ANIMATION : undefined,
+            // Bar charts: animate Y values from bottom (grow up)
+            ...(isBarChart && {
+                animations: {
+                    y: {
+                        from: (ctx: { chart: Chart }) => ctx.chart.scales['y'].getPixelForValue(0),
+                        duration: 1000,
+                        easing: 'easeOutQuart' as const
+                    }
+                }
+            }),
             // Smooth hover transitions (centralized config)
             transitions: CHART_TRANSITIONS,
             interaction: {
