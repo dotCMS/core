@@ -8,14 +8,7 @@ import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-status-filter',
-    imports: [
-        FormsModule,
-        // dotCMS
-        DotMessagePipe,
-        DotDropdownDirective,
-        // PrimeNG
-        MultiSelectModule
-    ],
+    imports: [FormsModule, DotMessagePipe, DotDropdownDirective, MultiSelectModule],
     templateUrl: './dot-experiments-status-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

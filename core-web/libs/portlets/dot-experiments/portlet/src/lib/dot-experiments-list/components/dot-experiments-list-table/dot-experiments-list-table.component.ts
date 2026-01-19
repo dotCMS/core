@@ -44,7 +44,7 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
+    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] | null | undefined = [];
 
     @Output()
     goToContainer = new EventEmitter<DotExperiment>();

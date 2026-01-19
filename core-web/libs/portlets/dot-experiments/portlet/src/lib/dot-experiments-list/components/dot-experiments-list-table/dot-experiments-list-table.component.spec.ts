@@ -161,6 +161,22 @@ describe('DotExperimentsListTableComponent', () => {
             );
         });
 
+        it('should emit action when a row is activated with keyboard (Enter)', () => {
+            jest.spyOn(spectator.component.goToContainer, 'emit');
+            const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
+                { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
+            ];
+
+            spectator.setInput('experimentGroupedByStatus', groupedExperimentByStatus);
+
+            const experimentRow = spectator.query(byTestId('experiment-row')) as HTMLElement;
+            experimentRow.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+            expect(spectator.component.goToContainer.emit).toHaveBeenCalledWith(
+                DRAFT_EXPERIMENT_MOCK
+            );
+        });
+
         describe('Actions icons', () => {
             it('should has the MenuItems rendered as action of the row', () => {
                 const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
