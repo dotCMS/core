@@ -52,7 +52,6 @@ interface CreateForm {
         DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-create.component.html',
-    styleUrls: ['./dot-experiments-create.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsCreateComponent implements OnInit {
