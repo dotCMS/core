@@ -1,14 +1,13 @@
-<div flex layout="row" class="dot-rules-geolocation dot-rules-condition-body">
+<div class="dot-rules-geolocation dot-rules-condition-body flex flex-row flex-1">
     <p-select
         (onChange)="onComparisonChange($event.value)"
         [ngModel]="$comparisonValue()"
         [options]="comparisonDropdownOptions$ | async"
         [style]="{ width: '100%' }"
         [class.dot-rules-comparator]="true"
-        flex
-        class="dot-rules-input"
+        class="dot-rules-input flex-1"
         appendTo="body" />
-    <div flex layout-fill layout="row" layout-align="start center" class="dot-rules-input">
+    <div class="dot-rules-input flex-1 w-full min-h-full flex flex-row justify-start items-center">
         <input
             [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
             [readonly]="true"
@@ -16,7 +15,7 @@
             class="dot-rules-lat-long" />
         <label class="dot-rules-label-right">{{ $preferredUnit() }}</label>
     </div>
-    <div flex layout-fill layout="row" layout-align="start center" class="dot-rules-input">
+    <div class="dot-rules-input flex-1 w-full min-h-full flex flex-row justify-start items-center">
         <label class="dot-rules-label-left">{{ $fromLabel() }}</label>
         <input
             [value]="getFormattedLatLong()"
@@ -24,7 +23,7 @@
             pInputText
             class="dot-rules-radius" />
     </div>
-    <div flex layout="column" class="dot-rules-input dot-rules-last">
+    <div class="dot-rules-input dot-rules-last flex-1 flex flex-col">
         <button
             (click)="toggleMap()"
             pButton

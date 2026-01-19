@@ -1,6 +1,6 @@
 @let condition = $condition();
 
-<div flex layout="row" class="dot-rules-condition dot-rules-entry">
+<div class="dot-rules-condition dot-rules-entry flex flex-row flex-1">
     <div class="dot-rules-btn-group dot-rules-condition-toggle">
         @if ($index() !== 0) {
             <button
@@ -18,10 +18,9 @@
         [style]="{ width: '100%' }"
         [placeholder]="$conditionTypePlaceholder()"
         [filter]="true"
-        flex="25"
-        class="dot-rules-type-dropdown"
+        class="dot-rules-type-dropdown basis-1/4 max-w-1/4"
         appendTo="body" />
-    <div flex="75" class="dot-rules-condition-main">
+    <div class="dot-rules-condition-main basis-3/4 max-w-3/4">
         @switch (condition.type?.key) {
             @case ('NoSelection') {
                 <div class="dot-rules-condition-component"></div>

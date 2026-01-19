@@ -88,7 +88,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
 @Component({
     selector: 'dot-rule-engine-container',
     templateUrl: './dot-rule-engine-container.component.html',
-    styleUrls: ['../../styles/rule-engine.scss', '../../styles/angular-material.layouts.scss'],
+    styleUrls: ['../../styles/rule-engine.scss'],
     imports: [DotRuleEngineComponent],
     encapsulation: ViewEncapsulation.None
 })
@@ -371,6 +371,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                 if (rule._ruleActions.length === 0) {
                     rule._ruleActions.push(new ActionModel(null, new ServerSideTypeModel(), 1));
                 }
+                this.refreshRules();
             });
         }
     }

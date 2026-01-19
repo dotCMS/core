@@ -1,7 +1,7 @@
 @let action = $action();
 
-<div flex layout="row" class="cw-rule-action cw-entry">
-    <div flex="25" layout="row" class="cw-row-start-area">
+<div class="dot-rules-action dot-rules-entry flex flex-row flex-1">
+    <div class="dot-rules-row-start-area basis-1/4 max-w-1/4 flex flex-row">
         <p-select
             (onChange)="onTypeChange($event.value)"
             [ngModel]="action.type?.key"
@@ -9,16 +9,14 @@
             [style]="{ width: '100%' }"
             [placeholder]="$actionTypePlaceholder()"
             [filter]="true"
-            flex
-            class="cw-type-dropdown"
+            class="dot-rules-type-dropdown flex-1"
             appendTo="body" />
     </div>
     <dot-serverside-condition
         (parameterValueChange)="onParameterValueChange($event)"
         [componentInstance]="action"
-        flex="75"
-        class="cw-condition-component" />
-    <div class="cw-btn-group cw-delete-btn">
+        class="dot-rules-action-component basis-3/4 max-w-3/4" />
+    <div class="dot-rules-btn-group dot-rules-delete-btn">
         <div class="ui basic icon buttons">
             <button
                 (click)="onDeleteRuleActionClicked()"

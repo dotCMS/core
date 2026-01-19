@@ -14,14 +14,14 @@
                 [label]="group.operator"
                 pButton
                 class="p-button-secondary p-button-sm"></button>
-            <span flex class="dot-rules-header-text">
+            <span class="dot-rules-header-text flex-1">
                 {{ getI18nLabel('inputs.group.whenFurtherConditions.label') | async }}
             </span>
         </div>
     }
-    <div flex layout="column" class="dot-rules-conditions">
+    <div class="dot-rules-conditions flex flex-col flex-1">
         @for (condition of conditions; track trackByCondition($index, condition); let i = $index) {
-            <div layout="row" class="dot-rules-condition-row">
+            <div class="dot-rules-condition-row flex flex-row">
                 <dot-rule-condition
                     (deleteCondition)="deleteCondition.emit($event)"
                     (updateConditionType)="updateConditionType.emit($event)"
@@ -31,8 +31,7 @@
                     [conditionTypes]="$conditionTypes()"
                     [conditionTypePlaceholder]="$conditionTypePlaceholder()"
                     [index]="i"
-                    flex
-                    layout="row" />
+                    class="flex-1 flex flex-row" />
                 <div class="dot-rules-btn-group dot-rules-add-btn">
                     @if (i === conditions.length - 1) {
                         <div class="ui basic icon buttons">

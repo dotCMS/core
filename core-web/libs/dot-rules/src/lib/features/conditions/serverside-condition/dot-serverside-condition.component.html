@@ -1,8 +1,8 @@
 <div class="dot-rules-serverside">
-    <div flex layout="row" class="dot-rules-condition-body">
+    <div class="dot-rules-condition-body flex flex-row flex-1">
         @for (input of inputs; track $index) {
             @if (input.type === 'spacer') {
-                <div flex class="dot-rules-input dot-rules-input-placeholder">&nbsp;</div>
+                <div class="dot-rules-input dot-rules-input-placeholder flex-1">&nbsp;</div>
             }
             @if (input.type === 'dropdown') {
                 <p-select
@@ -18,17 +18,13 @@
                     [class.dot-rules-comparator]="input.name === 'comparison'"
                     [class.dot-rules-last]="isLast"
                     [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
-                    flex
-                    class="dot-rules-input"
+                    class="dot-rules-input flex-1"
                     appendTo="body" />
             }
             @if (input.type === 'restDropdown') {
                 <div
                     [class.dot-rules-last]="isLast"
-                    flex
-                    layout-fill
-                    layout="column"
-                    class="dot-rules-input">
+                    class="dot-rules-input flex-1 w-full min-h-full flex flex-col">
                     @if (input.maxSelections > 1) {
                         <p-multiSelect
                             (onChange)="onRestDropdownChange(input, $event.value)"
@@ -42,8 +38,7 @@
                             "
                             [class.dot-rules-comparator]="input.name === 'comparison'"
                             [class.dot-rules-last]="isLast"
-                            flex
-                            class="dot-rules-input"
+                            class="dot-rules-input flex-1"
                             appendTo="body"
                             #rdInputMulti="ngModel" />
                         @if (
@@ -51,7 +46,7 @@
                             !rdInputMulti.valid &&
                             (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
-                            <div flex="50" class="name dot-rules-warn basic label">
+                            <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
                                 {{ getErrorMessage(input) }}
                             </div>
                         }
@@ -71,8 +66,7 @@
                             "
                             [class.dot-rules-comparator]="input.name === 'comparison'"
                             [class.dot-rules-last]="isLast"
-                            flex
-                            class="dot-rules-input"
+                            class="dot-rules-input flex-1"
                             appendTo="body"
                             #rdInputSingle="ngModel" />
                         @if (
@@ -80,7 +74,7 @@
                             !rdInputSingle.valid &&
                             (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
-                            <div flex="50" class="name dot-rules-warn basic label">
+                            <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
                                 {{ getErrorMessage(input) }}
                             </div>
                         }
@@ -90,10 +84,7 @@
             @if (input.type === 'text' || input.type === 'number') {
                 <div
                     [class.dot-rules-last]="isLast"
-                    flex
-                    layout-fill
-                    layout="column"
-                    class="dot-rules-input">
+                    class="dot-rules-input flex-1 w-full min-h-full flex flex-col">
                     <input
                         (blur)="onBlur(input)"
                         [placeholder]="input.placeholder | async"
@@ -107,7 +98,7 @@
                         !fInput.valid &&
                         (input.argIndex === null || input.argIndex < rightHandArgCount)
                     ) {
-                        <div flex="50" class="name dot-rules-warn basic label">
+                        <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
                             {{ getErrorMessage(input) }}
                         </div>
                     }
@@ -123,9 +114,7 @@
                     [class.dot-rules-last]="isLast"
                     [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                     hourFormat="12"
-                    flex
-                    layout-fill
-                    class="dot-rules-input"
+                    class="dot-rules-input flex-1 w-full min-h-full"
                     appendTo="body" />
             }
         }

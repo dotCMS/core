@@ -19,13 +19,13 @@
 @if (!loading && showRules) {
     <div class="dot-rules-engine">
         <div class="dot-rules-header">
-            <div flex layout="row" style="align-items: center">
+            <div class="flex flex-row flex-1 items-center">
                 <input
                     (keyup)="filterText.set($event.target.value)"
                     [value]="filterText()"
                     pInputText
                     placeholder="{{ getI18nLabel('inputs.filter.placeholder') | async }}" />
-                <div flex="2"></div>
+                <div class="flex-1"></div>
                 <button (click)="addRule()" class="dot-icon-button">
                     <i class="pi pi-plus"></i>
                 </button>

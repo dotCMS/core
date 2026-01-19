@@ -20,20 +20,15 @@
         @if (!hidden) {
             <div
                 (click)="setRuleExpandedState(!rule._expanded)"
-                class="dot-rules-header"
-                flex
-                layout="row">
+                class="dot-rules-header flex flex-row flex-1">
                 <div
-                    class="dot-rules-header-info"
-                    flex="70"
-                    layout="row"
-                    layout-align="start center">
+                    class="dot-rules-header-info flex flex-row justify-start items-center basis-[70%] max-w-[70%]">
                     <i
                         [class.pi-angle-right]="!rule._expanded"
                         [class.pi-angle-down]="rule._expanded"
                         class="dot-rules-header-arrow pi"
                         aria-hidden="true"></i>
-                    <div flex="70" layout="column">
+                    <div class="flex flex-col basis-[70%] max-w-[70%]">
                         <input
                             (click)="$event.stopPropagation()"
                             class="dot-rules-name-input"
@@ -46,8 +41,7 @@
                                 !formModel.controls['name'].touched ||
                                 formModel.controls['name'].valid
                             "
-                            class="name dot-rules-warn basic label"
-                            flex="50">
+                            class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
                             Name is required
                         </div>
                     </div>
@@ -65,16 +59,12 @@
                             [options]="fireOnOptions$ | async"
                             [style]="{ width: '150px' }"
                             [placeholder]="fireOnPlaceholder$ | async"
-                            class="dot-rules-fire-on-dropdown"
-                            flex="none"
+                            class="dot-rules-fire-on-dropdown flex-none"
                             appendTo="body" />
                     }
                 </div>
                 <div
-                    class="dot-rules-header-actions"
-                    flex="30"
-                    layout="row"
-                    layout-align="end center">
+                    class="dot-rules-header-actions flex flex-row justify-end items-center basis-[30%] max-w-[30%]">
                     <span class="dot-rules-status-text" title="{{ getStatusText() }}">
                         {{ getStatusText(30) }}
                     </span>
@@ -132,9 +122,9 @@
                     <div class="dot-rules-action-separator">
                         {{ getI18nLabel('inputs.action.firesActions') | async }}
                     </div>
-                    <div class="dot-rules-actions" flex layout="column">
+                    <div class="dot-rules-actions flex flex-col flex-1">
                         @for (ruleAction of ruleActions; track ruleAction; let i = $index) {
-                            <div class="dot-rules-action-row" layout="row">
+                            <div class="dot-rules-action-row flex flex-row">
                                 <dot-rule-action
                                     (updateRuleActionType)="onUpdateRuleActionType($event)"
                                     (updateRuleActionParameter)="
@@ -145,8 +135,7 @@
                                     [index]="i"
                                     [actionTypePlaceholder]="actionTypePlaceholder"
                                     [ruleActionTypes]="$ruleActionTypes()"
-                                    flex
-                                    layout="row" />
+                                    class="flex-1 flex flex-row" />
                                 <div class="dot-rules-btn-group dot-rules-add-btn">
                                     @if (i === ruleActions.length - 1) {
                                         <div class="ui basic icon buttons">
