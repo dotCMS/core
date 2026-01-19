@@ -15,7 +15,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = ContentView.class)
 @JsonDeserialize(as = ContentView.class)
-@Schema(description = "Contentlet with Styles info")
+@Schema(description = "Content within a Page and Styles info")
 public interface AbstractContentView {
 
     @JsonProperty("containerId")

@@ -11,7 +11,7 @@ public class ResponseEntityContentView extends ResponseEntityView<List<ContentVi
     /**
      * Constructor for contentlets with its container, page and styles information.
      *
-     * @param contentletStylingList The list of ContentletStylingView objects to be included in the response.
+     * @param contentletStylingList The list of ContentView objects with to be included in the response.
      */
     public ResponseEntityContentView(List<ContentView> contentletStylingList) {
         super(contentletStylingList);

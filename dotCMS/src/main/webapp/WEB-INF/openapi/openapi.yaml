@@ -10429,14 +10429,9 @@ paths:
                 entity:
                 - containerId: some-container-id
                   contentletId: some-contentlet-id
-                  styleProperties:
-                    color: "#FF0000"
-                    margin: 10px
-                    width: 100px
                   uuid: some-uuid
                 - containerId: other-container-id
                   contentletId: other-contentlet-id
-                  styleProperties: null
                   uuid: other-uuid
                 errors: []
                 i18nMessagesMap: {}
