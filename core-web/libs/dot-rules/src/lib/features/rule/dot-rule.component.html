@@ -11,28 +11,32 @@
             [assetIdentifier]="rule.key" />
     }
     <div
-        [class.cw-hidden]="hidden"
-        [class.cw-disabled]="!rule.enabled"
-        [class.cw-saving]="saving"
-        [class.cw-saved]="saved"
-        [class.cw-out-of-sync]="!saved && !saving"
-        class="cw-rule">
+        [class.dot-rules-hidden]="hidden"
+        [class.dot-rules-disabled]="!rule.enabled"
+        [class.dot-rules-saving]="saving"
+        [class.dot-rules-saved]="saved"
+        [class.dot-rules-out-of-sync]="!saved && !saving"
+        class="dot-rules-item">
         @if (!hidden) {
             <div
                 (click)="setRuleExpandedState(!rule._expanded)"
-                class="cw-header"
+                class="dot-rules-header"
                 flex
                 layout="row">
-                <div class="cw-header-info" flex="70" layout="row" layout-align="start center">
+                <div
+                    class="dot-rules-header-info"
+                    flex="70"
+                    layout="row"
+                    layout-align="start center">
                     <i
                         [class.pi-angle-right]="!rule._expanded"
                         [class.pi-angle-down]="rule._expanded"
-                        class="cw-header-info-arrow pi"
+                        class="dot-rules-header-arrow pi"
                         aria-hidden="true"></i>
                     <div flex="70" layout="column">
                         <input
                             (click)="$event.stopPropagation()"
-                            class="cw-rule-name-input"
+                            class="dot-rules-name-input"
                             pInputText
                             placeholder="{{ getI18nLabel('inputs.name.placeholder') | async }}"
                             formControlName="name"
@@ -42,13 +46,13 @@
                                 !formModel.controls['name'].touched ||
                                 formModel.controls['name'].valid
                             "
-                            class="name cw-warn basic label"
+                            class="name dot-rules-warn basic label"
                             flex="50">
                             Name is required
                         </div>
                     </div>
                     @if (!hideFireOn) {
-                        <span class="cw-fire-on-label">
+                        <span class="dot-rules-fire-on-label">
                             {{ getI18nLabel('inputs.fireOn.label') | async }}
                         </span>
                     }
@@ -61,13 +65,17 @@
                             [options]="fireOnOptions$ | async"
                             [style]="{ width: '150px' }"
                             [placeholder]="fireOnPlaceholder$ | async"
-                            class="cw-fire-on-dropdown"
+                            class="dot-rules-fire-on-dropdown"
                             flex="none"
                             appendTo="body" />
                     }
                 </div>
-                <div class="cw-header-actions" flex="30" layout="row" layout-align="end center">
-                    <span class="cw-rule-status-text" title="{{ getStatusText() }}">
+                <div
+                    class="dot-rules-header-actions"
+                    flex="30"
+                    layout="row"
+                    layout-align="end center">
+                    <span class="dot-rules-status-text" title="{{ getStatusText() }}">
                         {{ getStatusText(30) }}
                     </span>
                     <p-toggleSwitch
@@ -76,7 +84,7 @@
                         [ngModelOptions]="{ standalone: true }"
                         [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
                         tooltipPosition="bottom" />
-                    <div class="cw-btn-group">
+                    <div class="dot-rules-btn-group">
                         <button
                             (click)="ruleOptions.toggle($event); $event.stopPropagation()"
                             class="p-button-secondary"
@@ -104,7 +112,7 @@
             </div>
         }
         @if (rule._expanded) {
-            <div class="cw-accordion-body">
+            <div class="dot-rules-accordion-body">
                 @for (group of rule._conditionGroups; track group; let i = $index) {
                     <dot-condition-group
                         (createCondition)="onCreateCondition($event)"
@@ -120,14 +128,14 @@
                         [groupIndex]="i"
                         [conditionTypePlaceholder]="conditionTypePlaceholder" />
                 }
-                <div class="cw-action-group">
-                    <div class="cw-action-separator">
+                <div class="dot-rules-action-group">
+                    <div class="dot-rules-action-separator">
                         {{ getI18nLabel('inputs.action.firesActions') | async }}
                     </div>
-                    <div class="cw-rule-actions" flex layout="column">
+                    <div class="dot-rules-actions" flex layout="column">
                         @for (ruleAction of ruleActions; track ruleAction; let i = $index) {
-                            <div class="cw-action-row" layout="row">
-                                <cw-action
+                            <div class="dot-rules-action-row" layout="row">
+                                <dot-rule-action
                                     (updateRuleActionType)="onUpdateRuleActionType($event)"
                                     (updateRuleActionParameter)="
                                         onUpdateRuleActionParameter($event)
@@ -139,7 +147,7 @@
                                     [ruleActionTypes]="$ruleActionTypes()"
                                     flex
                                     layout="row" />
-                                <div class="cw-btn-group cw-add-btn">
+                                <div class="dot-rules-btn-group dot-rules-add-btn">
                                     @if (i === ruleActions.length - 1) {
                                         <div class="ui basic icon buttons">
                                             <button

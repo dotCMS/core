@@ -5,10 +5,10 @@
 @let isContentletHost = $isContentletHost();
 
 @if (loading) {
-    <div [class.cw-loading]="loading" class="cw-modal-glasspane"></div>
+    <div [class.dot-rules-loading]="loading" class="dot-rules-overlay"></div>
 }
 @if (!loading && globalError()?.message) {
-    <div class="ui negative message cw-message">
+    <div class="ui negative message dot-rules-message">
         <div class="header">{{ globalError().message }}</div>
         <p>{{ getI18nLabel('contact.admin.error') | async }}</p>
         @if (showCloseButton()) {
@@ -17,8 +17,8 @@
     </div>
 }
 @if (!loading && showRules) {
-    <div class="cw-rule-engine">
-        <div class="cw-header">
+    <div class="dot-rules-engine">
+        <div class="dot-rules-header">
             <div flex layout="row" style="align-items: center">
                 <input
                     (keyup)="filterText.set($event.target.value)"
@@ -30,12 +30,12 @@
                     <i class="pi pi-plus"></i>
                 </button>
             </div>
-            <div class="cw-filter-links">
+            <div class="dot-rules-filter-links">
                 <span>{{ getI18nLabel('inputs.filter.status.show.label') | async }}:</span>
                 <a
                     (click)="setFieldFilter('enabled', null)"
                     [class.active]="!isFilteringField('enabled')"
-                    class="cw-filter-link"
+                    class="dot-rules-filter-link"
                     href="javascript:void(0)">
                     {{ getI18nLabel('inputs.filter.status.all.label') | async }}
                 </a>
@@ -43,7 +43,7 @@
                 <a
                     (click)="setFieldFilter('enabled', true)"
                     [class.active]="isFilteringField('enabled', true)"
-                    class="cw-filter-link"
+                    class="dot-rules-filter-link"
                     href="javascript:void(0)">
                     {{ getI18nLabel('inputs.filter.status.active.label') | async }}
                 </a>
@@ -51,14 +51,14 @@
                 <a
                     (click)="setFieldFilter('enabled', false)"
                     [class.active]="isFilteringField('enabled', false)"
-                    class="cw-filter-link"
+                    class="dot-rules-filter-link"
                     href="javascript:void(0)">
                     {{ getI18nLabel('inputs.filter.status.inactive.label') | async }}
                 </a>
             </div>
         </div>
         @if (!rules.length) {
-            <div class="cw-rule-engine__empty">
+            <div class="dot-rules-empty">
                 <i class="pi pi-sliders-h"></i>
                 <h2>
                     {{ getI18nLabel('inputs.no.rules') | async }}

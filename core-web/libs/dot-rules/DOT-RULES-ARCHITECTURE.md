@@ -331,7 +331,6 @@ class GoogleMapService {
 - ✅ Fixed change detection issues with `refreshRules()`
 - ✅ Fixed date picker visibility bug (`argIndex` initialization)
 - ✅ Replaced Material Icons with PrimeNG Icons
-- ✅ Added `skip:test` and `skip:lint` tags to project
 - ✅ **Reorganized services structure** (full reorganization):
   - API services → `api/` (Action, Condition, ConditionGroup, Rule, bundle-service, ServerSideFieldModel)
   - Google Maps → `maps/` (GoogleMapService)
@@ -349,9 +348,23 @@ class GoogleMapService {
   - `CwAction.ts`, `CwComponent.ts` (legacy utilities)
   - `routing-private-auth-service.ts` (unused auth service)
 - ✅ No legacy flex layout directives found (already migrated)
+- ✅ **Renamed CSS classes** from `cw-*` to `dot-rules-*`:
+  - `cw-rule-engine` → `dot-rules-engine`
+  - `cw-rule` → `dot-rules-item`
+  - `cw-rule-group` → `dot-rules-group`
+  - `cw-condition-*` → `dot-rules-condition-*`
+  - `cw-action-*` → `dot-rules-action-*`
+  - `cw-header-*` → `dot-rules-header-*`
+  - `cw-input-*` → `dot-rules-input-*`
+  - `cw-btn-group` → `dot-rules-btn-group`
+  - `cw-visitors-location` → `dot-rules-geolocation`
+  - And all other `cw-*` prefixes
+- ✅ **Migrated from legacy flex-layout directives to PrimeFlex**:
+  - Removed `flex=`, `layout=`, `layout-align=`, `layout-fill` attribute directives
+  - Now using PrimeFlex utility classes: `flex`, `flex-row`, `flex-col`, `flex-1`, `items-center`, etc.
+  - Deleted legacy `angular-material.layouts.scss` (11,000+ lines)
 
 ### Pending Improvements
-- [ ] Rename CSS classes from `cw-*` to `dot-rule-*` (147 occurrences)
 - [ ] Add comprehensive unit tests
 
 ---

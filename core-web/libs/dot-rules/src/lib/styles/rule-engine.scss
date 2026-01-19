@@ -58,7 +58,7 @@ $finder-s-input: ".ui.input input";
     flex-grow: 1;
     min-height: 100%;
 
-    cw-engine {
+    dot-rule-engine {
         box-shadow: $shadow-m;
         padding: $spacing-3 $spacing-4;
         flex-grow: 1;
@@ -66,7 +66,7 @@ $finder-s-input: ".ui.input input";
         overflow: auto;
     }
 
-    .cw-message {
+    .dot-rules-message {
         &.ui.message {
             &:first-child {
                 margin: 2em 2em 1em;
@@ -74,7 +74,7 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-loading {
+    .dot-rules-loading {
         background-color: rgba(10, 10, 10, 0.35);
         width: 100%;
         height: 100%;
@@ -94,18 +94,18 @@ $finder-s-input: ".ui.input input";
         box-shadow: none;
     }
 
-    .cw-rule-status-text {
+    .dot-rules-status-text {
         margin-top: 0.2em;
         margin-right: 2em;
     }
 
-    .cw-saved {
+    .dot-rules-saved {
         .ui.checkbox input:checked ~ .box:after,
         .ui.checkbox input:checked ~ label:after {
             background-color: $color-palette-primary-one;
             border: 0.5em solid white;
         }
-        .cw-rule-status-text {
+        .dot-rules-status-text {
             opacity: 0;
             transition-property: opacity;
             transition-delay: 1s;
@@ -114,12 +114,12 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-saving {
+    .dot-rules-saving {
         .ui.checkbox input:checked ~ .box:after,
         .ui.checkbox input:checked ~ label:after {
             background-color: $background-tertiary;
         }
-        .cw-rule-status-text {
+        .dot-rules-status-text {
             opacity: 1;
             transition-property: opacity;
             transition-delay: 0s;
@@ -175,34 +175,34 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-rule-engine {
-        > .cw-header {
+    .dot-rules-engine {
+        > .dot-rules-header {
             padding-bottom: 2em;
 
-            .cw-button-add {
+            .dot-rules-btn-add {
                 background-color: $background-tertiary;
                 color: $foreground-tertiary;
             }
         }
 
-        .cw-btn-group .ui.basic.buttons .ui.button:focus {
+        .dot-rules-btn-group .ui.basic.buttons .ui.button:focus {
             border: 1px solid #96c8da;
         }
     }
 
-    .cw-warn {
+    .dot-rules-warn {
         color: $warn;
     }
 
-    .cw-hidden {
+    .dot-rules-hidden {
         display: none !important;
     }
 
-    .cw-button-link.ui.basic.black.button {
+    .dot-rules-btn-link.ui.basic.black.button {
         box-shadow: none !important;
     }
 
-    .cw-button-link.ui.basic.black.button {
+    .dot-rules-btn-link.ui.basic.black.button {
         &:focus,
         &:hover,
         &:active {
@@ -211,7 +211,7 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-filter-links {
+    .dot-rules-filter-links {
         padding: $spacing-1;
         font-size: $font-size-sm;
         color: $foreground-disabled;
@@ -225,7 +225,7 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-filter-link {
+    .dot-rules-filter-link {
         &.active {
             &:hover {
                 color: $foreground-active;
@@ -239,18 +239,18 @@ $finder-s-input: ".ui.input input";
         color: $foreground-disabled;
     }
 
-    .cw-rule {
+    .dot-rules-item {
         margin-bottom: 2em;
         border: 1px solid $background-primary;
         border-radius: 0.5em;
         background-color: #fff;
         font-size: $font-size-md;
 
-        .cw-header-actions {
+        .dot-rules-header-actions {
             margin-right: 0.5em;
             position: relative;
 
-            .cw-btn-group .ui.basic.buttons .ui.button:focus {
+            .dot-rules-btn-group .ui.basic.buttons .ui.button:focus {
                 border: none;
             }
 
@@ -266,35 +266,35 @@ $finder-s-input: ".ui.input input";
             }
         }
 
-        .cw-input-label-right {
+        .dot-rules-label-right {
             margin-left: 0.25em;
         }
-        .cw-input-label-left {
+        .dot-rules-label-left {
             margin-right: 0.25em;
         }
-        .cw-input,
-        &.cw-last {
+        .dot-rules-input,
+        &.dot-rules-last {
             margin-right: 1em;
         }
 
-        .cw-rule-name-input {
+        .dot-rules-name-input {
             margin-right: 1em;
         }
 
-        > .cw-header {
+        > .dot-rules-header {
             background-color: #fff;
             padding: 0.35em 0;
             border-top-left-radius: 0.5em;
             border-top-right-radius: 0.5em;
         }
 
-        .cw-rule-caret {
+        .dot-rules-caret {
             min-width: 1.25em;
             max-width: 1.25em;
             margin-left: 0;
         }
 
-        .cw-rule-cloud {
+        .dot-rules-cloud {
             min-width: 1em;
             max-width: 1em;
             margin-left: 0.5em;
@@ -306,83 +306,83 @@ $finder-s-input: ".ui.input input";
                 text-shadow: 1px 1px 8px black;
             }
         }
-        .cw-fire-on-label {
+        .dot-rules-fire-on-label {
             font-weight: bold;
             margin-right: 0.5em;
             min-width: 4em;
             max-width: 4em;
         }
 
-        .cw-fire-on-dropdown {
+        .dot-rules-fire-on-dropdown {
             min-width: 12em;
             max-width: 12em;
         }
 
-        .cw-btn-group {
+        .dot-rules-btn-group {
             .ui.basic {
                 background-color: white;
             }
         }
 
-        .cw-accordion-body {
+        .dot-rules-accordion-body {
             margin: 1em;
         }
 
-        .cw-action-separator {
+        .dot-rules-action-separator {
             background-color: $background-secondary-alternate;
         }
 
-        .cw-add-action-button {
+        .dot-rules-add-action-btn {
             width: 2em;
             height: 2em;
         }
 
-        .cw-comparator-selector {
+        .dot-rules-comparator {
             min-width: 10em;
             max-width: 10em;
         }
 
-        .cw-condition-component-body {
+        .dot-rules-condition-body {
             margin-left: 1em;
         }
 
-        .cw-condition-row,
-        .cw-action-row {
+        .dot-rules-condition-row,
+        .dot-rules-action-row {
             margin-bottom: 0.5em;
             min-height: 1em;
         }
 
-        .cw-action-row {
+        .dot-rules-action-row {
             // This is the width + margin of the condition toggle button
             padding-left: 6em;
         }
     }
 
-    .cw-header-info-arrow {
+    .dot-rules-header-arrow {
         font-size: $font-size-md;
         font-weight: bold;
         padding: 0.5em;
     }
 
-    .cw-condition-group-separator,
-    .cw-action-separator {
+    .dot-rules-group-separator,
+    .dot-rules-action-separator {
         padding: 0.5em 1em;
         background-color: $background-secondary;
         border-radius: 0.5em;
         width: 100%;
     }
 
-    .cw-action-group {
+    .dot-rules-action-group {
         margin-top: 1em;
     }
 
-    .cw-rule-group {
-        .cw-header-text {
+    .dot-rules-group {
+        .dot-rules-header-text {
             width: 200em;
             margin-left: 2em;
         }
 
-        .cw-group-operator {
+        .dot-rules-group-operator {
             color: $text-emphasis;
             background-color: $background-primary;
             opacity: 50;
@@ -398,36 +398,36 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-last {
+    .dot-rules-last {
         margin-right: 0;
     }
 
-    .ui.basic.button.cw-button-toggle-operator {
+    .ui.basic.button.dot-rules-btn-toggle-operator {
         width: 100%;
         margin: 0;
     }
 
-    .cw-rule-actions,
-    .cw-conditions {
+    .dot-rules-actions,
+    .dot-rules-conditions {
         padding: 0.5em 2em 0 2em;
 
-        .cw-entry {
+        .dot-rules-entry {
             > div.buttons {
                 width: 100%;
             }
         }
-        .cw-btn-group {
+        .dot-rules-btn-group {
             .ui.basic.buttons {
                 border: none;
             }
         }
 
-        .cw-add-btn {
+        .dot-rules-add-btn {
             min-width: 39px;
             height: 36px;
         }
 
-        .cw-delete-btn {
+        .dot-rules-delete-btn {
             margin-right: 0.5em;
         }
 
@@ -436,23 +436,23 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-button-add-item i {
+    .dot-rules-btn-add-item i {
         color: $color-palette-primary-one;
     }
 
-    .cw-spacer.cw-condition-operator {
+    .dot-rules-spacer.dot-rules-condition-operator {
         width: 4em;
     }
 
-    .cw-spacer.cw-add-condition {
+    .dot-rules-spacer.dot-rules-add-condition {
         width: 2.25em;
     }
 
-    .basic button.ui.cw-button-add-item:hover {
+    .basic button.ui.dot-rules-btn-add-item:hover {
         font-weight: bolder;
     }
 
-    .cw-condition-toggle {
+    .dot-rules-condition-toggle {
         min-width: 5em;
         max-width: 5em;
         margin-right: 1em;
@@ -463,36 +463,36 @@ $finder-s-input: ".ui.input input";
         }
     }
 
-    .cw-condition-buttons {
+    .dot-rules-condition-buttons {
         width: 3em;
         max-width: 3em;
     }
 
-    .cw-name-field {
+    .dot-rules-name-field {
         margin: 0.5em 2em 0.5em 2em;
     }
 
-    .cw-spacer {
-        &.cw-4em {
+    .dot-rules-spacer {
+        &.dot-rules-spacer-4 {
             width: 4em;
         }
 
-        &.cw-3em {
+        &.dot-rules-spacer-3 {
             width: 3em;
         }
-        &.cw-2em {
+        &.dot-rules-spacer-2 {
             width: 2em;
         }
     }
 
-    .ui.modal.cw-modal-dialog2 {
+    .ui.modal.dot-rules-modal-alt {
         display: block;
         margin: -103px 0 0 -200px;
         height: 600px;
         width: 400px;
     }
 
-    .ui.modal.cw-modal-dialog {
+    .ui.modal.dot-rules-modal {
         display: block;
         position: absolute;
         margin-left: auto;
@@ -502,20 +502,20 @@ $finder-s-input: ".ui.input input";
         @include transform(translate(-50%, -50%));
     }
 
-    .cw-modal-dialog .cw-dialog-body {
+    .dot-rules-modal .dot-rules-dialog-body {
         height: 100%;
         width: 100%;
     }
 
-    .cw-visitors-location {
-        .cw-latLong .ui.input input,
-        .cw-radius .ui.input input {
+    .dot-rules-geolocation {
+        .dot-rules-lat-long .ui.input input,
+        .dot-rules-radius .ui.input input {
             text-align: right;
             color: lightgray;
         }
     }
 
-    .cw-rule-engine__empty {
+    .dot-rules-empty {
         margin-top: 7em;
         text-align: center;
 

@@ -1,26 +1,30 @@
-<div flex layout="row" class="cw-visitors-location cw-condition-component-body">
+<div flex layout="row" class="dot-rules-geolocation dot-rules-condition-body">
     <p-select
         (onChange)="onComparisonChange($event.value)"
         [ngModel]="$comparisonValue()"
         [options]="comparisonDropdownOptions$ | async"
         [style]="{ width: '100%' }"
-        [class.cw-comparator-selector]="true"
+        [class.dot-rules-comparator]="true"
         flex
-        class="cw-input"
+        class="dot-rules-input"
         appendTo="body" />
-    <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
+    <div flex layout-fill layout="row" layout-align="start center" class="dot-rules-input">
         <input
             [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
             [readonly]="true"
             pInputText
-            class="cw-latLong" />
-        <label class="cw-input-label-right">{{ $preferredUnit() }}</label>
+            class="dot-rules-lat-long" />
+        <label class="dot-rules-label-right">{{ $preferredUnit() }}</label>
     </div>
-    <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-        <label class="cw-input-label-left">{{ $fromLabel() }}</label>
-        <input [value]="getFormattedLatLong()" [readonly]="true" pInputText class="cw-radius" />
+    <div flex layout-fill layout="row" layout-align="start center" class="dot-rules-input">
+        <label class="dot-rules-label-left">{{ $fromLabel() }}</label>
+        <input
+            [value]="getFormattedLatLong()"
+            [readonly]="true"
+            pInputText
+            class="dot-rules-radius" />
     </div>
-    <div flex layout="column" class="cw-input cw-last">
+    <div flex layout="column" class="dot-rules-input dot-rules-last">
         <button
             (click)="toggleMap()"
             pButton

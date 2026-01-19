@@ -9,11 +9,11 @@ import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
 import { CwError, HttpCode, LoggerService } from '@dotcms/dotcms-js';
 
 import { DotRuleEngineComponent } from './dot-rule-engine.component';
+
 import { ActionService } from '../../services/api/action/Action';
 import { BundleService, IPublishEnvironment } from '../../services/api/bundle/bundle-service';
 import { ConditionService } from '../../services/api/condition/Condition';
 import { ConditionGroupService } from '../../services/api/condition-group/ConditionGroup';
-import { RuleViewService } from '../../services/ui/dot-view-rule-service';
 import {
     RuleModel,
     RuleService,
@@ -26,6 +26,7 @@ import {
     ServerSideTypeModel
 } from '../../services/api/serverside-field/ServerSideFieldModel';
 import { ChangeEvent } from '../../services/models/event.model';
+import { RuleViewService } from '../../services/ui/dot-view-rule-service';
 
 export interface ParameterChangeEvent extends ChangeEvent {
     rule?: RuleModel;

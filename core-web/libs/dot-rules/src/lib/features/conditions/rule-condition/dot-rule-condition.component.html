@@ -1,7 +1,7 @@
 @let condition = $condition();
 
-<div flex layout="row" class="cw-condition cw-entry">
-    <div class="cw-btn-group cw-condition-toggle">
+<div flex layout="row" class="dot-rules-condition dot-rules-entry">
+    <div class="dot-rules-btn-group dot-rules-condition-toggle">
         @if ($index() !== 0) {
             <button
                 (click)="toggleOperator()"
@@ -19,12 +19,12 @@
         [placeholder]="$conditionTypePlaceholder()"
         [filter]="true"
         flex="25"
-        class="cw-type-dropdown"
+        class="dot-rules-type-dropdown"
         appendTo="body" />
-    <div flex="75" class="cw-condition-row-main">
+    <div flex="75" class="dot-rules-condition-main">
         @switch (condition.type?.key) {
             @case ('NoSelection') {
-                <div class="cw-condition-component"></div>
+                <div class="dot-rules-condition-component"></div>
             }
             @case ('VisitorsGeolocationConditionlet') {
                 <dot-visitors-location-container
@@ -35,12 +35,12 @@
                 <dot-serverside-condition
                     (parameterValueChange)="onParameterValueChange($event)"
                     [componentInstance]="condition"
-                    class="cw-condition-component" />
+                    class="dot-rules-condition-component" />
             }
         }
     </div>
 </div>
-<div class="cw-btn-group cw-delete-btn">
+<div class="dot-rules-btn-group dot-rules-delete-btn">
     <div class="ui basic icon buttons">
         <button
             (click)="onDeleteConditionClicked()"

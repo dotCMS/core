@@ -1,8 +1,8 @@
-<div class="cw-serverside-condition">
-    <div flex layout="row" class="cw-condition-component-body">
+<div class="dot-rules-serverside">
+    <div flex layout="row" class="dot-rules-condition-body">
         @for (input of inputs; track $index) {
             @if (input.type === 'spacer') {
-                <div flex class="cw-input cw-input-placeholder">&nbsp;</div>
+                <div flex class="dot-rules-input dot-rules-input-placeholder">&nbsp;</div>
             }
             @if (input.type === 'dropdown') {
                 <p-select
@@ -15,15 +15,20 @@
                     [placeholder]="input.placeholder | async"
                     [editable]="input.allowAdditions"
                     [filter]="true"
-                    [class.cw-comparator-selector]="input.name === 'comparison'"
-                    [class.cw-last]="isLast"
+                    [class.dot-rules-comparator]="input.name === 'comparison'"
+                    [class.dot-rules-last]="isLast"
                     [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                     flex
-                    class="cw-input"
+                    class="dot-rules-input"
                     appendTo="body" />
             }
             @if (input.type === 'restDropdown') {
-                <div [class.cw-last]="isLast" flex layout-fill layout="column" class="cw-input">
+                <div
+                    [class.dot-rules-last]="isLast"
+                    flex
+                    layout-fill
+                    layout="column"
+                    class="dot-rules-input">
                     @if (input.maxSelections > 1) {
                         <p-multiSelect
                             (onChange)="onRestDropdownChange(input, $event.value)"
@@ -35,10 +40,10 @@
                             [hidden]="
                                 input.argIndex !== null && input.argIndex >= rightHandArgCount
                             "
-                            [class.cw-comparator-selector]="input.name === 'comparison'"
-                            [class.cw-last]="isLast"
+                            [class.dot-rules-comparator]="input.name === 'comparison'"
+                            [class.dot-rules-last]="isLast"
                             flex
-                            class="cw-input"
+                            class="dot-rules-input"
                             appendTo="body"
                             #rdInputMulti="ngModel" />
                         @if (
@@ -46,7 +51,7 @@
                             !rdInputMulti.valid &&
                             (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
-                            <div flex="50" class="name cw-warn basic label">
+                            <div flex="50" class="name dot-rules-warn basic label">
                                 {{ getErrorMessage(input) }}
                             </div>
                         }
@@ -64,10 +69,10 @@
                             [hidden]="
                                 input.argIndex !== null && input.argIndex >= rightHandArgCount
                             "
-                            [class.cw-comparator-selector]="input.name === 'comparison'"
-                            [class.cw-last]="isLast"
+                            [class.dot-rules-comparator]="input.name === 'comparison'"
+                            [class.dot-rules-last]="isLast"
                             flex
-                            class="cw-input"
+                            class="dot-rules-input"
                             appendTo="body"
                             #rdInputSingle="ngModel" />
                         @if (
@@ -75,7 +80,7 @@
                             !rdInputSingle.valid &&
                             (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
-                            <div flex="50" class="name cw-warn basic label">
+                            <div flex="50" class="name dot-rules-warn basic label">
                                 {{ getErrorMessage(input) }}
                             </div>
                         }
@@ -83,7 +88,12 @@
                 </div>
             }
             @if (input.type === 'text' || input.type === 'number') {
-                <div [class.cw-last]="isLast" flex layout-fill layout="column" class="cw-input">
+                <div
+                    [class.dot-rules-last]="isLast"
+                    flex
+                    layout-fill
+                    layout="column"
+                    class="dot-rules-input">
                     <input
                         (blur)="onBlur(input)"
                         [placeholder]="input.placeholder | async"
@@ -97,7 +107,7 @@
                         !fInput.valid &&
                         (input.argIndex === null || input.argIndex < rightHandArgCount)
                     ) {
-                        <div flex="50" class="name cw-warn basic label">
+                        <div flex="50" class="name dot-rules-warn basic label">
                             {{ getErrorMessage(input) }}
                         </div>
                     }
@@ -110,12 +120,12 @@
                     [ngModelOptions]="{ standalone: true }"
                     [showTime]="true"
                     [showButtonBar]="true"
-                    [class.cw-last]="isLast"
+                    [class.dot-rules-last]="isLast"
                     [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                     hourFormat="12"
                     flex
                     layout-fill
-                    class="cw-input"
+                    class="dot-rules-input"
                     appendTo="body" />
             }
         }

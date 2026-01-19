@@ -1,28 +1,28 @@
 @let group = $group();
 @let conditions = group._conditions;
 
-<div class="cw-rule-group">
+<div class="dot-rules-group">
     @if ($groupIndex() === 0) {
-        <div class="cw-condition-group-separator">
+        <div class="dot-rules-group-separator">
             {{ getI18nLabel('inputs.group.whenConditions.label') | async }}
         </div>
     }
     @if ($groupIndex() !== 0) {
-        <div class="cw-condition-group-separator">
+        <div class="dot-rules-group-separator">
             <button
                 (click)="toggleGroupOperator()"
                 [label]="group.operator"
                 pButton
                 class="p-button-secondary p-button-sm"></button>
-            <span flex class="cw-header-text">
+            <span flex class="dot-rules-header-text">
                 {{ getI18nLabel('inputs.group.whenFurtherConditions.label') | async }}
             </span>
         </div>
     }
-    <div flex layout="column" class="cw-conditions">
+    <div flex layout="column" class="dot-rules-conditions">
         @for (condition of conditions; track trackByCondition($index, condition); let i = $index) {
-            <div layout="row" class="cw-condition-row">
-                <cw-condition
+            <div layout="row" class="dot-rules-condition-row">
+                <dot-rule-condition
                     (deleteCondition)="deleteCondition.emit($event)"
                     (updateConditionType)="updateConditionType.emit($event)"
                     (updateConditionParameter)="updateConditionParameter.emit($event)"
@@ -33,7 +33,7 @@
                     [index]="i"
                     flex
                     layout="row" />
-                <div class="cw-btn-group cw-add-btn">
+                <div class="dot-rules-btn-group dot-rules-add-btn">
                     @if (i === conditions.length - 1) {
                         <div class="ui basic icon buttons">
                             <button
