@@ -1,6 +1,6 @@
-import { Observable, from, of } from 'rxjs';
+import { Observable, from } from 'rxjs';
 
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, JsonPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -20,13 +20,13 @@ import {
     FormsModule
 } from '@angular/forms';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
@@ -82,7 +82,8 @@ const I8N_BASE = 'api.sites.ruleengine';
         TooltipModule,
         DotAddToBundleComponent,
         DotConditionGroupComponent,
-        DotRuleActionComponent
+        DotRuleActionComponent,
+        JsonPipe
     ],
     changeDetection: ChangeDetectionStrategy.Default
 })
@@ -97,7 +98,7 @@ export class DotRuleComponent implements OnChanges {
     @Input() rule: RuleModel;
     @Input() saved = false;
     @Input() saving = false;
-    @Input() errors: { [key: string]: any } = null;
+    @Input() errors: { [key: string]: string | Error } = null;
     @Input() ruleActions: ActionModel[] = [];
     @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
@@ -216,7 +217,7 @@ export class DotRuleComponent implements OnChanges {
                             {
                                 label: deleteRuleLabel,
                                 visible: !this.apiRoot.hideRulePushOptions,
-                                command: (event) => {
+                                command: (event: MenuItemCommandEvent) => {
                                     this.deleteRuleClicked(event.originalEvent);
                                 }
                             }
@@ -249,8 +250,8 @@ export class DotRuleComponent implements OnChanges {
         });
     }
 
-    rsrc(subkey: string, defVal = '-missing-'): any {
-        let msgObserver = this._rsrcCache[subkey];
+    rsrc(subkey: string, defVal = '-missing-'): Observable<string> {
+        let msgObserver: Observable<string> = this._rsrcCache[subkey];
         if (!msgObserver) {
             msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);
             this._rsrcCache[subkey] = msgObserver;
@@ -262,7 +263,8 @@ export class DotRuleComponent implements OnChanges {
     ngOnChanges(change): void {
         if (change.rule) {
             const rule = this.rule;
-            const ctrl: UntypedFormControl = <UntypedFormControl>this.formModel.controls['name'];
+
+            const ctrl: UntypedFormControl = this.formModel.controls['name'] as UntypedFormControl;
             ctrl.patchValue(this.rule.name, {});
 
             ctrl.valueChanges.pipe(debounceTime(250)).subscribe((name: string) => {
@@ -293,7 +295,10 @@ export class DotRuleComponent implements OnChanges {
         } else if (this.saving) {
             t = 'Saving...';
         } else if (this.errors) {
-            t = this.errors['invalid'] || this.errors['serverError'] || 'Unsaved changes...';
+            t =
+                (this.errors['invalid'] as string) ||
+                (this.errors['serverError'] as string) ||
+                'Unsaved changes...';
         }
 
         if (length) {
@@ -312,7 +317,7 @@ export class DotRuleComponent implements OnChanges {
         }
     }
 
-    setRuleEnabledState(event: any): void {
+    setRuleEnabledState(event: ToggleSwitchChangeEvent): void {
         this._updateEnabledStateDelay.emit({
             payload: { rule: this.rule, value: event.checked },
             type: RULE_UPDATE_ENABLED_STATE
@@ -421,8 +426,10 @@ export class DotRuleComponent implements OnChanges {
         });
     }
 
-    deleteRuleClicked(event: any): void {
-        let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey);
+    deleteRuleClicked(event: Event): void {
+        let noWarn =
+            this._user.suppressAlerts ||
+            ((event as KeyboardEvent)?.altKey && (event as KeyboardEvent)?.shiftKey);
         if (!noWarn) {
             noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted();
             noWarn = noWarn && this.rule._conditionGroups.length === 1;

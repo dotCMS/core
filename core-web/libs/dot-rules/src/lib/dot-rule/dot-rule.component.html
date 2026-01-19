@@ -49,6 +49,7 @@
                             (onChange)="onFireOnChange($event.value)"
                             (click)="$event.stopPropagation()"
                             [ngModel]="fireOnValue"
+                            [ngModelOptions]="{ standalone: true }"
                             [options]="fireOnOptions$ | async"
                             [style]="{ width: '150px' }"
                             [placeholder]="fireOnPlaceholder$ | async"

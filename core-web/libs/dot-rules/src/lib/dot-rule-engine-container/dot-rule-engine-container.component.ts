@@ -111,12 +111,29 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
+    /**
+     * Forces change detection by updating the rules signal with a new array reference.
+     * Use this after mutating rule/condition/action objects to trigger re-renders.
+     */
+    private refreshRules(): void {
+        this.rules.update((rules) => [...rules]);
+    }
+
     constructor() {
         this.bundleService
             .loadPublishEnvironments()
             .pipe(take(1))
             .subscribe((envs) => this.environments.set(envs));
-        this.initRules();
+
+        // Wait for condition types to be loaded before initializing rules
+        this._ruleService.conditionTypes$
+            .pipe(
+                filter((types) => types.length > 0),
+                take(1)
+            )
+            .subscribe(() => {
+                this.initRules();
+            });
 
         this._ruleService._errors$.subscribe((res) => {
             this.ruleViewService.showErrorMessage(
@@ -296,6 +313,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                             }
                         });
                     }
+                    this.refreshRules();
                 },
                 (e) => {
                     this.loggerService.error('DotRuleEngineContainerComponent', e);
@@ -318,6 +336,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                         } else {
                             rule._ruleActions.sort(this.prioritySortFn);
                         }
+                        this.refreshRules();
                     });
             }
         }

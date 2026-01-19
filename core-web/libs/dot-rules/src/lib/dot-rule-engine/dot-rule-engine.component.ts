@@ -1,12 +1,13 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnDestroy, inject } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, Output, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
-import { take, takeUntil } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 
@@ -34,7 +35,7 @@ const I8N_BASE = 'api.sites.ruleengine';
     templateUrl: './dot-rule-engine.component.html',
     imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent]
 })
-export class DotRuleEngineComponent implements OnDestroy {
+export class DotRuleEngineComponent {
     private ruleViewService = inject(RuleViewService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
 
@@ -75,27 +76,24 @@ export class DotRuleEngineComponent implements OnDestroy {
     globalError: DotRuleMessage;
     showCloseButton: boolean;
 
-    filterText: string;
-    status: string;
-    activeRules: number;
+    filterText = '';
+    status: string = null;
+    activeRules = 0;
 
-    private resources: I18nService;
-    private _rsrcCache: { [key: string]: Observable<string> };
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    private _rsrcCache: { [key: string]: Observable<string> } = {};
+
     private pushPublishTitleLabel = '';
 
-    constructor() {
-        const resources = inject(I18nService);
+    private resources = inject(I18nService);
+    private destroy$ = inject(DestroyRef);
 
-        this.resources = resources;
-        resources.get(I8N_BASE).subscribe((_rsrc) => {});
-        this.filterText = '';
-        this.rules = [];
-        this._rsrcCache = {};
-        this.status = null;
+    constructor() {
+        this.resources.get(I8N_BASE).subscribe(() => {
+            // Pre-loading i18n resources
+        });
 
         this.ruleViewService.message
-            .pipe(takeUntil(this.destroy$))
+            .pipe(takeUntilDestroyed(this.destroy$))
             .subscribe((dotRuleMessage: DotRuleMessage) => {
                 this.globalError = dotRuleMessage;
                 this.showCloseButton = dotRuleMessage.allowClose;
@@ -108,12 +106,7 @@ export class DotRuleEngineComponent implements OnDestroy {
             });
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
-    }
-
-    rsrc(subkey: string): Observable<any> {
+    rsrc(subkey: string): Observable<string> {
         let x = this._rsrcCache[subkey];
         if (!x) {
             x = this.resources.get(I8N_BASE + '.rules.' + subkey);

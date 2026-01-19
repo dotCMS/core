@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnChanges, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -26,12 +26,22 @@ import { I18nService } from '../services/system/locale/I18n';
     templateUrl: './dot-condition-group.component.html',
     imports: [AsyncPipe, ButtonModule, DotRuleConditionComponent]
 })
-export class DotConditionGroupComponent implements OnChanges {
+export class DotConditionGroupComponent {
     private loggerService = inject(LoggerService);
 
     private static I8N_BASE = 'api.sites.ruleengine.rules';
 
-    @Input() group: ConditionGroupModel;
+    $group = input<ConditionGroupModel, ConditionGroupModel>(undefined, {
+        alias: 'group',
+        transform: (value: ConditionGroupModel) => {
+            if (value && value._conditions.length === 0) {
+                value._conditions.push(new ConditionModel({ _type: new ServerSideTypeModel() }));
+            }
+
+            return value;
+        }
+    });
+
     @Input() conditionTypePlaceholder = '';
 
     @Input() groupIndex = 0;
@@ -48,21 +58,8 @@ export class DotConditionGroupComponent implements OnChanges {
     updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
     @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
 
-    private resources: I18nService;
-    private _rsrcCache: { [key: string]: Observable<string> };
-
-    constructor() {
-        const resources = inject(I18nService);
-
-        this.resources = resources;
-        this._rsrcCache = {};
-    }
-
-    ngOnChanges(changes): void {
-        if (changes.group && this.group && this.group._conditions.length === 0) {
-            this.group._conditions.push(new ConditionModel({ _type: new ServerSideTypeModel() }));
-        }
-    }
+    private resources: I18nService = inject(I18nService);
+    private _rsrcCache: { [key: string]: Observable<string> } = {};
 
     rsrc(subkey: string): Observable<string> {
         let x = this._rsrcCache[subkey];
@@ -78,7 +75,7 @@ export class DotConditionGroupComponent implements OnChanges {
         this.loggerService.info('DotConditionGroupComponent', 'onCreateCondition');
         this.createCondition.emit(<ConditionActionEvent>{
             payload: {
-                conditionGroup: this.group,
+                conditionGroup: this.$group(),
                 index: this.groupIndex,
                 type: RULE_CONDITION_CREATE
             }
@@ -87,10 +84,10 @@ export class DotConditionGroupComponent implements OnChanges {
 
     toggleGroupOperator(): void {
         // tslint:disable-next-line:prefer-const
-        const value = this.group.operator === 'AND' ? 'OR' : 'AND';
+        const value = this.$group().operator === 'AND' ? 'OR' : 'AND';
         this.updateConditionGroupOperator.emit(<ConditionActionEvent>{
             payload: {
-                conditionGroup: this.group,
+                conditionGroup: this.$group(),
                 index: this.groupIndex,
                 type: RULE_CONDITION_GROUP_UPDATE_OPERATOR,
                 value: value
@@ -98,7 +95,8 @@ export class DotConditionGroupComponent implements OnChanges {
         });
     }
 
-    trackByFn(index) {
-        return index;
+    trackByFn(index: number, condition: ConditionModel): string {
+        // Include type key to ensure re-render when type changes
+        return `${index}-${condition.key || 'new'}-${condition.type?.key || 'NoSelection'}`;
     }
 }

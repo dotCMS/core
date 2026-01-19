@@ -1,3 +1,5 @@
+@let conditions = $group()._conditions;
+
 <div class="cw-rule-group">
     @if (groupIndex === 0) {
         <div class="cw-condition-group-separator">
@@ -8,7 +10,7 @@
         <div class="cw-condition-group-separator">
             <button
                 (click)="toggleGroupOperator()"
-                [label]="group.operator"
+                [label]="$group().operator"
                 pButton
                 class="p-button-secondary p-button-sm"></button>
             <span flex class="cw-header-text">
@@ -17,7 +19,7 @@
         </div>
     }
     <div flex layout="column" class="cw-conditions">
-        @for (condition of group?._conditions; track trackByFn($index); let i = $index) {
+        @for (condition of conditions; track trackByFn($index, condition); let i = $index) {
             <div layout="row" class="cw-condition-row">
                 <dot-rule-condition
                     (deleteCondition)="deleteCondition.emit($event)"
@@ -31,7 +33,7 @@
                     flex
                     layout="row" />
                 <div class="cw-btn-group cw-add-btn">
-                    @if (i === group?._conditions.length - 1) {
+                    @if (i === conditions.length - 1) {
                         <div class="ui basic icon buttons">
                             <button
                                 (click)="onCreateCondition()"
