@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
-import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
@@ -10,6 +9,8 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { mapParamsFromEditContentlet } from '@dotcms/utils';
+
+import { DotCustomEventHandlerService } from './../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
