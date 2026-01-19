@@ -18,6 +18,74 @@
     }
 }
 
+// Table styles
+::ng-deep .platforms-table {
+    // Header styles - match other tables (use PrimeNG defaults)
+    .p-datatable-thead > tr > th {
+        color: $color-palette-gray-700;
+        font-weight: $font-weight-semi-bold;
+    }
+
+    // Body row styles
+    .p-datatable-tbody > tr > td {
+        padding: $spacing-3;
+        border-bottom: $field-border-size solid $color-palette-gray-200;
+        vertical-align: middle;
+    }
+
+    // Last row without bottom border
+    .p-datatable-tbody > tr:last-child > td {
+        border-bottom: none;
+    }
+
+    // Row background
+    .p-datatable-tbody > tr {
+        background: transparent;
+
+        &:hover {
+            background: $color-palette-gray-100;
+        }
+    }
+
+    // Views cell layout
+    .views-cell {
+        display: flex;
+        flex-direction: column;
+        gap: $spacing-0;
+    }
+
+    .views-bar-row {
+        display: flex;
+        align-items: center;
+        gap: $spacing-2;
+    }
+
+    .views-percentage {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-regular-bold;
+        color: $color-palette-gray-700;
+        min-width: 2.5rem;
+    }
+
+    .views-count {
+        font-size: $font-size-sm;
+    }
+
+    // Progress bar custom styles
+    .views-progress {
+        height: 0.5rem !important;
+        border-radius: $border-radius-md;
+        width: 10rem;
+        min-width: 6rem;
+
+        .p-progressbar-value {
+            background: $color-palette-primary-500;
+            border-radius: $border-radius-md;
+        }
+    }
+}
+
+// Skeleton styles
 .skeleton-table {
     display: flex;
     flex-direction: column;
@@ -33,6 +101,6 @@
 
     &.skeleton-header {
         padding-bottom: $spacing-2;
-        border-bottom: $field-border-size solid $color-palette-gray-300;
+        border-bottom: $field-border-size solid $color-palette-gray-200;
     }
 }

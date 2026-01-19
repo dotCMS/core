@@ -10,7 +10,7 @@
             @if (isLoading) {
                 <ng-container [ngTemplateOutlet]="skeletonTable" />
             } @else {
-                <p-table [value]="deviceData" class="p-datatable-sm">
+                <p-table [value]="deviceData" styleClass="platforms-table">
                     <ng-template pTemplate="header">
                         <tr>
                             <th>{{ 'analytics.engagement.table.headers.device' | dm }}</th>
@@ -22,17 +22,22 @@
                     </ng-template>
                     <ng-template pTemplate="body" let-device>
                         <tr>
-                            <td>{{ device.name }}</td>
+                            <td class="font-medium">{{ device.name }}</td>
                             <td>
-                                <div class="flex flex-column gap-1">
-                                    <span>
+                                <div class="views-cell">
+                                    <div class="views-bar-row">
+                                        <p-progressBar
+                                            [value]="device.percentage"
+                                            [showValue]="false"
+                                            styleClass="views-progress" />
+                                        <span class="views-percentage">
+                                            {{ device.percentage }}%
+                                        </span>
+                                    </div>
+                                    <span class="views-count text-color-secondary">
                                         {{ device.views | number }}
                                         {{ 'analytics.engagement.table.sessions-suffix' | dm }}
                                     </span>
-                                    <p-progressBar
-                                        [value]="device.percentage"
-                                        [showValue]="false"
-                                        styleClass="h-1rem" />
                                 </div>
                             </td>
                             <td class="text-right">{{ device.time }}</td>
@@ -47,7 +52,7 @@
             @if (isLoading) {
                 <ng-container [ngTemplateOutlet]="skeletonTable" />
             } @else {
-                <p-table [value]="browserData" class="p-datatable-sm">
+                <p-table [value]="browserData" styleClass="platforms-table">
                     <ng-template pTemplate="header">
                         <tr>
                             <th>{{ 'analytics.engagement.table.headers.browser' | dm }}</th>
@@ -59,17 +64,22 @@
                     </ng-template>
                     <ng-template pTemplate="body" let-browser>
                         <tr>
-                            <td>{{ browser.name }}</td>
+                            <td class="font-medium">{{ browser.name }}</td>
                             <td>
-                                <div class="flex flex-column gap-1">
-                                    <span>
+                                <div class="views-cell">
+                                    <div class="views-bar-row">
+                                        <p-progressBar
+                                            [value]="browser.percentage"
+                                            [showValue]="false"
+                                            styleClass="views-progress" />
+                                        <span class="views-percentage">
+                                            {{ browser.percentage }}%
+                                        </span>
+                                    </div>
+                                    <span class="views-count text-color-secondary">
                                         {{ browser.views | number }}
                                         {{ 'analytics.engagement.table.sessions-suffix' | dm }}
                                     </span>
-                                    <p-progressBar
-                                        [value]="browser.percentage"
-                                        [showValue]="false"
-                                        styleClass="h-1rem" />
                                 </div>
                             </td>
                             <td class="text-right">{{ browser.time }}</td>
@@ -84,7 +94,7 @@
             @if (isLoading) {
                 <ng-container [ngTemplateOutlet]="skeletonTable" />
             } @else {
-                <p-table [value]="languageData" class="p-datatable-sm">
+                <p-table [value]="languageData" styleClass="platforms-table">
                     <ng-template pTemplate="header">
                         <tr>
                             <th>{{ 'analytics.engagement.table.headers.language' | dm }}</th>
@@ -96,17 +106,20 @@
                     </ng-template>
                     <ng-template pTemplate="body" let-lang>
                         <tr>
-                            <td>{{ lang.name }}</td>
+                            <td class="font-medium">{{ lang.name }}</td>
                             <td>
-                                <div class="flex flex-column gap-1">
-                                    <span>
+                                <div class="views-cell">
+                                    <div class="views-bar-row">
+                                        <p-progressBar
+                                            [value]="lang.percentage"
+                                            [showValue]="false"
+                                            styleClass="views-progress" />
+                                        <span class="views-percentage">{{ lang.percentage }}%</span>
+                                    </div>
+                                    <span class="views-count text-color-secondary">
                                         {{ lang.views | number }}
                                         {{ 'analytics.engagement.table.sessions-suffix' | dm }}
                                     </span>
-                                    <p-progressBar
-                                        [value]="lang.percentage"
-                                        [showValue]="false"
-                                        styleClass="h-1rem" />
                                 </div>
                             </td>
                             <td class="text-right">{{ lang.time }}</td>

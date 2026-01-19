@@ -2,12 +2,12 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { AnalyticsChartColors } from '../../types';
-
 import {
     DotAnalyticsSparklineComponent,
     SparklineDataPoint
 } from './dot-analytics-sparkline.component';
+
+import { AnalyticsChartColors } from '../../types';
 
 describe('DotAnalyticsSparklineComponent', () => {
     let spectator: Spectator<DotAnalyticsSparklineComponent>;
