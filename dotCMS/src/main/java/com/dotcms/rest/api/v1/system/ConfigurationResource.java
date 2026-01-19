@@ -71,7 +71,7 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",
 							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
-                            FeatureFlagName.FEATURE_FLAG_ANALYTICS_SHOW_ENGAGEMENT_DASHBOARD }));
+                            FeatureFlagName.FEATURE_FLAG_CONTENT_ANALYTICS_SHOW_ENGAGEMENT_DASHBOARD }));
 
 
 	private boolean isOnBlackList(final String key) {
