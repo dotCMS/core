@@ -10,11 +10,11 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { map } from 'rxjs/operators';
-
 import { ButtonModule } from 'primeng/button';
 import { MessagesModule } from 'primeng/messages';
 import { TabViewModule } from 'primeng/tabview';
+
+import { map } from 'rxjs/operators';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
@@ -26,7 +26,7 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsDashboardConversionsReportComponent from './components/dot-analytics-dashboard-conversions-report/dot-analytics-dashboard-conversions-report.component';
-import DotAnalyticsDashboardEngagementComponent from './components/dot-analytics-dashboard-engagement/dot-analytics-dashboard-engagement.component';
+import DotAnalyticsDashboardEngagementReportComponent from './components/dot-analytics-dashboard-engagement-report/dot-analytics-dashboard-engagement-report.component';
 import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
 import DotAnalyticsDashboardPageviewReportComponent from './components/dot-analytics-dashboard-pageview-report/dot-analytics-dashboard-pageview-report.component';
 
@@ -42,7 +42,7 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
         DotAnalyticsDashboardFiltersComponent,
         DotAnalyticsDashboardPageviewReportComponent,
         DotAnalyticsDashboardConversionsReportComponent,
-        DotAnalyticsDashboardEngagementComponent,
+        DotAnalyticsDashboardEngagementReportComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard.component.html',

@@ -23,11 +23,11 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
 import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-analytics-sparkline.component';
 
 /**
- * DotAnalyticsDashboardEngagementComponent is a component that displays the engagement dashboard.
+ * DotAnalyticsDashboardEngagementReportComponent displays the engagement dashboard.
  * It includes the engagement rate, trend chart, and platforms table.
  */
 @Component({
-    selector: 'dot-analytics-dashboard-engagement',
+    selector: 'dot-analytics-dashboard-engagement-report',
     imports: [
         CommonModule,
         ButtonModule,
@@ -38,11 +38,11 @@ import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-a
         DotAnalyticsPlatformsTableComponent,
         DotAnalyticsSparklineComponent
     ],
-    templateUrl: './dot-analytics-dashboard-engagement.component.html',
-    styleUrl: './dot-analytics-dashboard-engagement.component.scss',
+    templateUrl: './dot-analytics-dashboard-engagement-report.component.html',
+    styleUrl: './dot-analytics-dashboard-engagement-report.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export default class DotAnalyticsDashboardEngagementComponent implements OnInit {
+export default class DotAnalyticsDashboardEngagementReportComponent implements OnInit {
     readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);

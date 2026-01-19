@@ -72,21 +72,25 @@
     </div>
 
     <!-- Row 3: Breakdown Chart + Platform Analytics -->
-    <div class="engagement-dashboard__bottom-row grid">
-        <div class="col-12 lg:col-5">
-            <dot-analytics-dashboard-chart
-                [title]="'analytics.engagement.charts.breakdown.title' | dm"
-                [type]="'doughnut'"
-                [data]="$breakdown()!"
-                [status]="status" />
+    @defer (on viewport) {
+        <div class="engagement-dashboard__bottom-row grid">
+            <div class="col-12 lg:col-5">
+                <dot-analytics-dashboard-chart
+                    [title]="'analytics.engagement.charts.breakdown.title' | dm"
+                    [type]="'doughnut'"
+                    [data]="$breakdown()!"
+                    [status]="status" />
+            </div>
+            <div class="col-12 lg:col-7">
+                <dot-analytics-platforms-table
+                    class="h-full"
+                    [platforms]="$platforms()"
+                    [status]="status" />
+            </div>
         </div>
-        <div class="col-12 lg:col-7">
-            <dot-analytics-platforms-table
-                class="h-full"
-                [platforms]="$platforms()"
-                [status]="status" />
-        </div>
-    </div>
+    } @placeholder {
+        <div style="min-height: 24rem"></div>
+    }
 </div>
 
 <!-- How it's calculated Dialog -->

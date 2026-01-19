@@ -15,15 +15,15 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import DotAnalyticsDashboardEngagementComponent from './dot-analytics-dashboard-engagement.component';
+import DotAnalyticsDashboardEngagementReportComponent from './dot-analytics-dashboard-engagement-report.component';
 
 import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-analytics-sparkline.component';
 
-describe('DotAnalyticsDashboardEngagementComponent', () => {
-    let spectator: Spectator<DotAnalyticsDashboardEngagementComponent>;
+describe('DotAnalyticsDashboardEngagementReportComponent', () => {
+    let spectator: Spectator<DotAnalyticsDashboardEngagementReportComponent>;
 
     const mockEngagementData = signal({
         status: ComponentStatus.LOADED,
@@ -40,7 +40,7 @@ describe('DotAnalyticsDashboardEngagementComponent', () => {
     };
 
     const createComponent = createComponentFactory({
-        component: DotAnalyticsDashboardEngagementComponent,
+        component: DotAnalyticsDashboardEngagementReportComponent,
         imports: [ButtonModule, DialogModule, DotMessagePipe],
         declarations: [
             MockComponent(DotAnalyticsDashboardMetricsComponent),
@@ -91,10 +91,11 @@ describe('DotAnalyticsDashboardEngagementComponent', () => {
             expect(metrics.length).toBe(4);
         });
 
-        it('should display 2 chart components (trend bar + breakdown doughnut)', () => {
+        it('should display trend bar chart (above the fold)', () => {
             spectator = createComponent();
             const charts = spectator.queryAll(DotAnalyticsDashboardChartComponent);
-            expect(charts.length).toBe(2);
+            // Only 1 chart visible initially (trend bar), breakdown doughnut is deferred
+            expect(charts.length).toBe(1);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
@@ -103,10 +104,11 @@ describe('DotAnalyticsDashboardEngagementComponent', () => {
             expect(sparklines.length).toBe(1);
         });
 
-        it('should display platforms table component', () => {
+        it('should have deferred bottom row with placeholder', () => {
             spectator = createComponent();
-            const platformsTable = spectator.query(DotAnalyticsPlatformsTableComponent);
-            expect(platformsTable).toBeTruthy();
+            // The deferred content shows a placeholder initially
+            const placeholder = spectator.query('[style*="min-height: 24rem"]');
+            expect(placeholder).toBeTruthy();
         });
     });
 
