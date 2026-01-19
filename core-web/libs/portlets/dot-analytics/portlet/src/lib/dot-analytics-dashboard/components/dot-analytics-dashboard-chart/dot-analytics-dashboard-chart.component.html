@@ -33,7 +33,7 @@
     } @else if (isLoading) {
         <!-- Loading state with skeletons -->
         <div
-            class="chart-loading flex align-items-center justify-content-center"
+            class="chart-loading flex align-items-center justify-content-center w-full"
             [style.height]="height">
             @if (type === 'line') {
                 <!-- Line chart skeleton -->
@@ -72,8 +72,17 @@
                 </div>
             } @else if (type === 'pie' || type === 'doughnut') {
                 <!-- Pie/Doughnut chart skeleton -->
-                <div class="chart-skeleton chart-skeleton--pie">
-                    <p-skeleton shape="circle" size="21.875rem" class="mx-auto" />
+                <div class="chart-skeleton chart-skeleton--pie flex flex-column">
+                    <p-skeleton
+                        [class]="'flex justify-content-center align-items-center'"
+                        shape="circle"
+                        size="21.875rem"
+                        class="mx-auto" />
+                    <p-skeleton
+                        height="0.75rem"
+                        width="8.75rem"
+                        class="mt-3"
+                        [class]="'flex justify-content-center align-items-center'" />
                 </div>
             } @else {
                 <!-- Default chart skeleton for other types -->
@@ -98,6 +107,7 @@
                 [type]="type"
                 [data]="$chartData()"
                 [options]="$chartOptions()"
+                [plugins]="lineDrawPlugin"
                 width="100%"
                 [height]="height"
                 data-testid="chart" />

@@ -19,7 +19,7 @@ import {
     transformTopPagesTableData
 } from './analytics-data.utils';
 
-import { CHART_COLORS } from '../../constants';
+import { AnalyticsChartColors } from '../../constants';
 
 import type {
     Granularity,
@@ -362,7 +362,7 @@ describe('Analytics Data Utils', () => {
                 expect(result.datasets[0].label).toBe(
                     'analytics.charts.pageviews-timeline.dataset-label'
                 );
-                expect(result.datasets[0].borderColor).toBe(CHART_COLORS.primary);
+                expect(result.datasets[0].borderColor).toBe(AnalyticsChartColors.primary.line);
                 expect(result.datasets[0].cubicInterpolationMode).toBe('monotone');
             });
 
@@ -721,7 +721,9 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toEqual(['No Data']);
                 expect(result.datasets[0].data).toEqual([1]);
-                expect(result.datasets[0].backgroundColor).toEqual([CHART_COLORS.gray]);
+                expect(result.datasets[0].backgroundColor).toEqual([
+                    AnalyticsChartColors.neutral.line
+                ]);
             });
 
             it('should group by browser and device type correctly', () => {

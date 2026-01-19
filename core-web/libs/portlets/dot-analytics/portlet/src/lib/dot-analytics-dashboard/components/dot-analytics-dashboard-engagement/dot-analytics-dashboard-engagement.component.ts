@@ -1,0 +1,80 @@
+import { CommonModule } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    OnInit,
+    signal
+} from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
+import { GlobalStore } from '@dotcms/store';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { ChartOptions } from '../../types';
+import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
+import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
+import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
+import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-analytics-sparkline.component';
+
+@Component({
+    selector: 'dot-analytics-dashboard-engagement',
+    imports: [
+        CommonModule,
+        ButtonModule,
+        DialogModule,
+        DotMessagePipe,
+        DotAnalyticsDashboardChartComponent,
+        DotAnalyticsDashboardMetricsComponent,
+        DotAnalyticsPlatformsTableComponent,
+        DotAnalyticsSparklineComponent
+    ],
+    templateUrl: './dot-analytics-dashboard-engagement.component.html',
+    styleUrl: './dot-analytics-dashboard-engagement.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export default class DotAnalyticsDashboardEngagementComponent implements OnInit {
+    readonly store = inject(DotAnalyticsDashboardStore);
+    readonly #globalStore = inject(GlobalStore);
+    readonly #messageService = inject(DotMessageService);
+
+    readonly engagementData = this.store.engagementData;
+
+    /** Controls visibility of the "How it's calculated" dialog */
+    readonly $showCalculationDialog = signal(false);
+
+    ngOnInit(): void {
+        this.#globalStore.addNewBreadcrumb({
+            label: this.#messageService.get('analytics.dashboard.tabs.engagement')
+        });
+    }
+
+    readonly $kpis = computed(() => this.engagementData().data?.kpis);
+    readonly $trend = computed(() => this.engagementData().data?.trend);
+    readonly $breakdown = computed(() => this.engagementData().data?.breakdown);
+    readonly $platforms = computed(() => this.engagementData().data?.platforms);
+    readonly $status = computed(() => this.engagementData().status ?? ComponentStatus.INIT);
+    readonly $isLoaded = computed(() => this.$status() === ComponentStatus.LOADED);
+
+    readonly sparklineOptions: Partial<ChartOptions> = {
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+        },
+        scales: {
+            x: { display: false },
+            y: { display: false }
+        },
+        elements: {
+            point: { radius: 0 },
+            line: { borderWidth: 2, tension: 0.4 }
+        },
+        maintainAspectRatio: false
+    };
+}

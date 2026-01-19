@@ -1,7 +1,7 @@
 import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
 
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CardModule } from 'primeng/card';
@@ -13,6 +13,15 @@ import { map } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
+import {
+    CHART_ANIMATION,
+    CHART_TRANSITIONS,
+    createAnimationState,
+    createLineDrawAnimationPlugin,
+    LINE_DRAW_ANIMATION_DURATION,
+    resetAnimationState,
+    TOOLTIP_STYLE
+} from '../../plugins';
 import {
     ChartData,
     ChartOptions,
@@ -27,7 +36,8 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  */
 const CHART_TYPE_HEIGHTS = {
     line: '21.875rem',
-    pie: '23.125rem'
+    pie: '23.125rem',
+    doughnut: '23.125rem'
 } as const;
 
 /**
@@ -61,6 +71,19 @@ export class DotAnalyticsDashboardChartComponent {
     /** Signal to track if we're on mobile/small screen */
     protected readonly $isMobile = toSignal(this.#isMobile$, { initialValue: false });
 
+    /** Animation state for line drawing effect */
+    #animationState = createAnimationState();
+
+    constructor() {
+        // Reset animation when status changes to trigger animation on data load
+        effect(() => {
+            const status = this.$status();
+            if (status === ComponentStatus.LOADED) {
+                resetAnimationState(this.#animationState);
+            }
+        });
+    }
+
     // Required inputs
     /** Chart type (line, pie, doughnut, bar). For combo charts, use 'bar' or 'line' as base. */
     readonly $type = input.required<ChartType>({ alias: 'type' });
@@ -72,10 +95,30 @@ export class DotAnalyticsDashboardChartComponent {
     readonly $title = input.required<string>({ alias: 'title' });
 
     /** Component status for loading/error states */
-    readonly $status = input<ComponentStatus>(ComponentStatus.LOADED, { alias: 'status' });
+    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
 
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
+
+    /** Whether to animate line charts with drawing effect */
+    readonly $animated = input<boolean>(true, { alias: 'animated' });
+
+    /** Custom height for the chart (e.g., '100%', '15rem'). If not provided, uses type-based default. */
+    readonly $customHeight = input<string | undefined>(undefined, { alias: 'height' });
+
+    /**
+     * Plugin for line drawing animation.
+     * Uses clip to progressively reveal the chart from left to right.
+     */
+    readonly lineDrawPlugin = [
+        createLineDrawAnimationPlugin(
+            () => ({
+                enabled: this.$type() === 'line' && this.$animated(),
+                duration: LINE_DRAW_ANIMATION_DURATION
+            }),
+            this.#animationState
+        )
+    ];
 
     /**
      * Auto-detect if this is a combo chart based on datasets.
@@ -92,8 +135,13 @@ export class DotAnalyticsDashboardChartComponent {
         );
     });
 
-    /** Chart height determined automatically by chart type */
+    /** Chart height - uses custom height if provided, otherwise falls back to type-based default */
     protected readonly $height = computed(() => {
+        const customHeight = this.$customHeight();
+        if (customHeight) {
+            return customHeight;
+        }
+
         const type = this.$type();
 
         return (
@@ -118,9 +166,18 @@ export class DotAnalyticsDashboardChartComponent {
         const showLegend =
             isCombo || chartType === 'pie' || chartType === 'doughnut' || hasMultipleDatasets;
 
+        // Line charts: disable built-in animation for smooth tooltip transitions
+        // (same behavior as sparkline component)
+        const isLineChart = chartType === 'line';
+
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            // Line charts: use CHART_ANIMATION (duration: 0) for smooth tooltip movement
+            // Other charts: use default animation
+            animation: isLineChart ? CHART_ANIMATION : undefined,
+            // Smooth hover transitions (centralized config)
+            transitions: CHART_TRANSITIONS,
             interaction: {
                 mode: 'index' as const,
                 intersect: false,
@@ -145,6 +202,8 @@ export class DotAnalyticsDashboardChartComponent {
                 tooltip: {
                     mode: 'index' as const,
                     intersect: false,
+                    // Centralized tooltip styling
+                    ...TOOLTIP_STYLE,
                     callbacks: {
                         label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
                             this.#getTooltipLabel(context),

@@ -1,0 +1,38 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.platforms-card {
+    height: 100%;
+
+    ::ng-deep .p-card-body {
+        padding: $spacing-3;
+    }
+
+    ::ng-deep .p-card-content {
+        padding: 0;
+    }
+}
+
+.skeleton-table {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-3;
+    padding: $spacing-2 0;
+}
+
+.skeleton-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: $spacing-3;
+    align-items: center;
+
+    &.skeleton-header {
+        padding-bottom: $spacing-2;
+        border-bottom: $field-border-size solid $color-palette-gray-300;
+    }
+}
