@@ -18,7 +18,8 @@ export function registerSearchTools(server: McpServer) {
                 title: 'Search Content',
                 readOnlyHint: true
             },
-            inputSchema: SearchFormSchema.shape
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
+            inputSchema: SearchFormSchema as any
         },
         contentSearchHandler
     );

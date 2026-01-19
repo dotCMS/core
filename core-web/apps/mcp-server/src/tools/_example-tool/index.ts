@@ -64,7 +64,8 @@ export function registerExampleTools(server: McpServer) {
                 openWorldHint: true
             },
 
-            inputSchema: ExampleToolInputSchema.shape
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
+            inputSchema: ExampleToolInputSchema as any
         },
         exampleToolHandler
     );

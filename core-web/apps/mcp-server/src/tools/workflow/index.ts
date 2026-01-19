@@ -24,7 +24,7 @@ export function registerWorkflowTools(server: McpServer) {
             inputSchema: z.object({
                 content: ContentCreateParamsSchema,
                 comments: z.string().optional()
-            }).shape
+            }) as any // eslint-disable-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs; runtime works
         },
         contentSaveHandler
     );
@@ -41,7 +41,8 @@ export function registerWorkflowTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: ContentActionParamsSchema.shape
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
+            inputSchema: ContentActionParamsSchema as any
         },
         contentActionHandler
     );

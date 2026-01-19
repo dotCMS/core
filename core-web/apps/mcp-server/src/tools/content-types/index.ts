@@ -22,7 +22,8 @@ export function registerContentTypeTools(server: McpServer) {
                 title: 'List Content Types',
                 readOnlyHint: true
             },
-            inputSchema: ContentTypeListParamsSchema.shape
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
+            inputSchema: ContentTypeListParamsSchema as any
         },
         contentTypeListHandler
     );
@@ -41,7 +42,7 @@ export function registerContentTypeTools(server: McpServer) {
             },
             inputSchema: z.object({
                 contentType: ContentTypeCreateParamsSchema
-            }).shape
+            }) as any // eslint-disable-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs; runtime works
         },
         contentTypeCreateHandler
     );
