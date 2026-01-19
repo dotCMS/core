@@ -1528,14 +1528,14 @@ public class PageResource {
 
         validateContentWithStylesForms(contentWithStylesForms);
 
-        // Initialize request context
-        final InitDataObject initDataObject = new WebResource.InitBuilder()
+        // Initialize request context with authentication
+        final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
-                .rejectWhenNoUser(true).init();
-
-        final User user = initDataObject.getUser();
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
 
         try {
             final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);

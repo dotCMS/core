@@ -102,9 +102,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
@@ -140,7 +138,6 @@ import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -327,7 +324,6 @@ public class PageResourceTest {
      * When: Add content to a page with styleProperties using the PageAPI
      * Should: Save styleProperties in the {@link MultiTree} and be retrievable
      */
-    @Ignore("Fix in the new endpoint for contentlet style definition (PR #34299)")
     @Test
     public void test_addContent_with_styleProperties() throws Exception {
         // Save the original feature flag value
@@ -362,7 +358,7 @@ public class PageResourceTest {
             styleProperties.put("fontSize", "16px");
             styleProperties.put("padding", "10px");
 
-            // Create ContainerEntry with styleProperties
+            // Create ContainerEntry
             final List<ContainerEntry> entries = new ArrayList<>();
             final String containerUUID = UUIDGenerator.generateUuid();
             final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
@@ -372,14 +368,13 @@ public class PageResourceTest {
                     null,
                     container.getIdentifier(),
                     containerUUID,
-                    list(contentlet.getIdentifier()),
-                    stylePropertiesMap
+                    list(contentlet.getIdentifier())
             );
 
             entries.add(containerEntry);
             final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
 
-            // Save content with styleProperties
+            // Save content
             final Response addContentResponse = this.pageResourceWithHelper.addContent(
                     request,
                     response,
@@ -391,6 +386,25 @@ public class PageResourceTest {
             // Verify response is successful
             assertNotNull(addContentResponse);
             assertEquals(200, addContentResponse.getStatus());
+
+            // create ContentWithStylesForm with styleProperties
+            final ContentWithStylesForm contentWithStylesForm = new ContentWithStylesForm(
+                    container.getIdentifier(),
+                    containerUUID
+            );
+            contentWithStylesForm.addContentletStyle(contentlet.getIdentifier(), styleProperties);
+
+            // Save styleProperties for the content previously created
+            final Response addContentStylesResponse = this.pageResourceWithHelper.updateStyles(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    List.of(contentWithStylesForm)
+            );
+
+            // Verify response is successful Styles definition
+            assertNotNull(addContentStylesResponse);
+            assertEquals(200, addContentStylesResponse.getStatus());
 
             // Retrieve MultiTree and verify styleProperties are saved
             final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
