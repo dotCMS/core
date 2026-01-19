@@ -90,7 +90,7 @@ var cmsfile=null;
 
 	//Date/Time fields
 	function updateDate(varName) {
-		var field = $(varName);
+		var field = document.getElementById(varName);
 		var dateValue ="";
 		var datePart=dijit.byId(varName + "Date");
 		var timePart=dijit.byId(varName + 'Time');
@@ -206,10 +206,11 @@ var cmsfile=null;
 
 	function updateAmPm(varName) {
 		var hour = dijit.byId(varName + 'Hour').value;
+		var ampmElement = document.getElementById(varName + 'AMPM');
 		if(hour > 11) {
-			$(varName + 'AMPM').update("PM");
+			ampmElement.textContent = "PM";
 		} else {
-			$(varName + 'AMPM').update("AM");
+			ampmElement.textContent = "AM";
 		}
 	}
 
