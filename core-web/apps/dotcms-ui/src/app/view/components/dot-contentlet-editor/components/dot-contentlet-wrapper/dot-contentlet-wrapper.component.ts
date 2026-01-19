@@ -1,12 +1,13 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
+    DotIframeService,
     DotMessageService,
-    DotRouterService,
-    DotIframeService
+    DotRouterService
 } from '@dotcms/data-access';
 import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
@@ -61,6 +62,8 @@ export class DotContentletWrapperComponent {
     private isContentletModified = false;
     private _appMainTitle = '';
     private readonly customEventsHandler;
+
+    private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
 
     constructor() {
         if (!this.customEventsHandler) {
@@ -176,6 +179,10 @@ export class DotContentletWrapperComponent {
     onCustomEvent($event: CustomEvent): void {
         if (this.customEventsHandler[$event.detail.name]) {
             this.customEventsHandler[$event.detail.name]($event);
+        } else {
+            // Some custom event is not handled by the customEventsHandler.
+            // Let's handle it with the dotCustomEventHandlerService.
+            this.dotCustomEventHandlerService.handle($event);
         }
 
         this.custom.emit($event);

@@ -9,6 +9,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
+import { DotCustomEventHandlerService } from '@dotcms/app/api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import {
     DotAlertConfirmService,
     DotEventsService,
@@ -20,8 +21,8 @@ import {
 import {
     CoreWebService,
     DotcmsEventsService,
-    LoginService,
     LoggerService,
+    LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
 import {
@@ -96,6 +97,12 @@ describe('DotCreateContentletComponent', () => {
                     snapshot: {
                         queryParams: {}
                     }
+                }
+            },
+            {
+                provide: DotCustomEventHandlerService,
+                useValue: {
+                    handle: jest.fn()
                 }
             }
         ],
