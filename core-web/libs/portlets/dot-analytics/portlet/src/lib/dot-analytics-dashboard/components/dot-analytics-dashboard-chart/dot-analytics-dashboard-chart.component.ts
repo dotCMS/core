@@ -116,6 +116,20 @@ export class DotAnalyticsDashboardChartComponent {
     readonly $customHeight = input<string | undefined>(undefined, { alias: 'height' });
 
     /**
+     * Check if chart has line datasets (for animation).
+     * True if chart type is 'line' OR if any dataset in combo chart is type 'line'.
+     */
+    readonly #hasLineDatasets = computed(() => {
+        const chartType = this.$type();
+        if (chartType === 'line') return true;
+
+        // Check if any dataset in combo chart is type 'line'
+        const datasets = (this.$data()?.datasets as ComboChartDataset[]) || [];
+
+        return datasets.some((ds) => ds.type === 'line');
+    });
+
+    /**
      * Plugin for line drawing animation.
      * Uses clip to progressively reveal the chart from left to right.
      * Runs outside Angular's zone to avoid triggering change detection on each frame.
@@ -123,7 +137,7 @@ export class DotAnalyticsDashboardChartComponent {
     readonly lineDrawPlugin = [
         createLineDrawAnimationPlugin(
             () => ({
-                enabled: this.$type() === 'line' && this.$animated(),
+                enabled: this.#hasLineDatasets() && this.$animated(),
                 duration: LINE_DRAW_ANIMATION_DURATION
             }),
             this.#animationState,
