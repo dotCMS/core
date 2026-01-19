@@ -710,7 +710,7 @@ public class APILocator extends Locator<APIIndex> {
 
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
-	 *
+	 * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
 	 * @return The {@link IndiciesAPI} class.
 	 */
     @Deprecated(forRemoval = true)

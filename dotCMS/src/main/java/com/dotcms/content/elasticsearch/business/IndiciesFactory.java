@@ -19,6 +19,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 
 /**
  * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
  */
 @Deprecated(forRemoval = true)
 public class IndiciesFactory {
