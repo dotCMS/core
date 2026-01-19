@@ -21,6 +21,7 @@ import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 import { LoggerService } from '@dotcms/dotcms-js';
 
 import { DotAreaPickerDialogComponent } from './dot-area-picker-dialog.component';
+
 import { GCircle } from '../../../models/gcircle.model';
 
 type DistanceUnit = 'km' | 'm' | 'mi';

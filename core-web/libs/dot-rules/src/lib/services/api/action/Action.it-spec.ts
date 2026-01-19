@@ -1,20 +1,18 @@
-import {} from 'jasmine';
+/* eslint-disable no-console */
 
 import { Observable, Subscription } from 'rxjs';
 
 import { ReflectiveInjector } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
-import { CwError } from '@dotcms/dotcms-js';
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { UserModel } from '@dotcms/dotcms-js';
+import { CwError, ApiRoot, UserModel } from '@dotcms/dotcms-js';
 
 import { ActionService } from './Action';
+
+import { I18nService } from '../../i18n/i18n.service';
 import { ConditionService } from '../condition/Condition';
 import { ConditionGroupService } from '../condition-group/ConditionGroup';
 import { RuleModel, RuleService, ActionModel } from '../rule/Rule';
-
-import { I18nService } from '../../i18n/i18n.service';
 
 const injector = ReflectiveInjector.resolveAndCreate([
     ApiRoot,
@@ -101,9 +99,7 @@ describe('Integration.api.rule-engine.ActionService', () => {
                             .allAsArray(rule.key, Object.keys(rule.ruleActions))
                             .subscribe(
                                 (actions: ActionModel[]) => {
-                                    console.log('Rule: ', rule);
-                                    console.log('Rehydrated Rule: ', rule);
-                                    console.log('Rehydrated Actions: ', actions);
+                                    // Verify rehydrated actions match expectations
                                     const rehydratedAction = actions[0];
                                     expect(
                                         rehydratedAction.getParameterValue('sessionKey')
@@ -111,9 +107,8 @@ describe('Integration.api.rule-engine.ActionService', () => {
                                     sub.unsubscribe();
                                     done();
                                 },
-                                (e) => {
-                                    console.log(e);
-                                    expect(e).toBeUndefined('Test Failed');
+                                (_e) => {
+                                    expect(_e).toBeUndefined('Test Failed');
                                 }
                             );
                     });
@@ -174,7 +169,7 @@ describe('Integration.api.rule-engine.ActionService', () => {
 
 class Gen {
     static createRules(ruleService: RuleService): Observable<RuleModel | CwError> {
-        console.log('Attempting to create rule.');
+        // Create test rule
         const rule = new RuleModel(null);
         rule.enabled = true;
         rule.name = 'TestRule-' + new Date().getTime();

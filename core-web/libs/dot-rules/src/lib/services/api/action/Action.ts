@@ -1,25 +1,37 @@
-import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { Observable } from 'rxjs';
+import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import {
+    ApiRoot,
+    CoreWebService,
     UNKNOWN_RESPONSE_ERROR,
     CwError,
     SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR,
-    CLIENTS_ONLY_MESSAGES
+    CLIENTS_ONLY_MESSAGES,
+    LoggerService,
+    HttpCode
 } from '@dotcms/dotcms-js';
-import { LoggerService } from '@dotcms/dotcms-js';
-import { HttpCode } from '@dotcms/dotcms-js';
 
 import { ActionModel } from '../rule/Rule';
 import { ServerSideTypeModel } from '../serverside-field/ServerSideFieldModel';
+
+interface ActionJson {
+    key?: string;
+    id?: string;
+    actionlet?: string;
+    priority?: number;
+    parameters?: Record<string, { value: string }>;
+    owningRule?: string;
+}
+
+interface ActionResponseJson {
+    id: string;
+}
 
 @Injectable()
 export class ActionService {
@@ -36,9 +48,9 @@ export class ActionService {
         return this._error.asObservable();
     }
 
-    static fromJson(type: ServerSideTypeModel, json: any): ActionModel {
+    static fromJson(type: ServerSideTypeModel, json: ActionJson): ActionModel {
         const ra = new ActionModel(json.key, type, json.priority);
-        Object.keys(json.parameters).forEach((key) => {
+        Object.keys(json.parameters || {}).forEach((key) => {
             const param = json.parameters[key];
             ra.setParameter(key, param.value);
         });
@@ -46,13 +58,12 @@ export class ActionService {
         return ra;
     }
 
-    static toJson(action: ActionModel): any {
-        const json: any = {};
-        json.actionlet = action.type.key;
-        json.priority = action.priority;
-        json.parameters = action.parameters;
-
-        return json;
+    static toJson(action: ActionModel): ActionJson {
+        return {
+            actionlet: action.type.key,
+            priority: action.priority,
+            parameters: action.parameters
+        };
     }
 
     constructor() {
@@ -61,18 +72,18 @@ export class ActionService {
         this._actionsEndpointUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`;
     }
 
-    makeRequest(childPath?: string): Observable<any> {
+    makeRequest(childPath?: string): Observable<ActionJson> {
         let path = this._actionsEndpointUrl;
         if (childPath) {
             path = `${path}${childPath}`;
         }
 
         return this.coreWebService
-            .request({
+            .request<ActionJson>({
                 url: path
             })
             .pipe(
-                catchError((err: any, _source: Observable<any>) => {
+                catchError((err: HttpResponse<unknown>) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.error(
                             'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
@@ -88,9 +99,9 @@ export class ActionService {
                         );
                     }
 
-                    return observableEmpty();
+                    return EMPTY;
                 })
-            );
+            ) as Observable<ActionJson>;
     }
 
     allAsArray(
@@ -125,7 +136,7 @@ export class ActionService {
         ruleActionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ActionModel> {
         return this.makeRequest(key).pipe(
-            map((json: any) => {
+            map((json: ActionJson) => {
                 json.id = key;
                 json.key = key;
 
@@ -134,7 +145,7 @@ export class ActionService {
         );
     }
 
-    createRuleAction(ruleId: string, model: ActionModel): Observable<any> {
+    createRuleAction(ruleId: string, model: ActionModel): Observable<ActionModel> {
         this.loggerService.debug('Action', 'add', model);
         if (!model.isValid()) {
             throw new Error(`This should be thrown from a checkValid function on the model,
@@ -146,15 +157,14 @@ and should provide the info needed to make the user aware of the fix.`);
         const path = this._getPath(ruleId);
 
         const add = this.coreWebService
-            .request({
+            .request<ActionResponseJson>({
                 method: 'POST',
                 body: json,
                 url: path
             })
             .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json: any = res;
-                    model.key = json.id;
+                map((res: ActionResponseJson) => {
+                    model.key = res.id;
 
                     return model;
                 })
@@ -176,13 +186,13 @@ and should provide the info needed to make the user aware of the fix.`);
             const json = ActionService.toJson(model);
             json.owningRule = ruleId;
             const save = this.coreWebService
-                .request({
+                .request<unknown>({
                     method: 'PUT',
                     body: json,
                     url: this._getPath(ruleId, model.key)
                 })
                 .pipe(
-                    map((_res: HttpResponse<any>) => {
+                    map(() => {
                         return model;
                     })
                 );
@@ -191,14 +201,14 @@ and should provide the info needed to make the user aware of the fix.`);
         }
     }
 
-    remove(ruleId, model: ActionModel): Observable<ActionModel> {
+    remove(ruleId: string, model: ActionModel): Observable<ActionModel> {
         const remove = this.coreWebService
-            .request({
+            .request<unknown>({
                 method: 'DELETE',
                 url: this._getPath(ruleId, model.key)
             })
             .pipe(
-                map((_res: HttpResponse<any>) => {
+                map(() => {
                     return model;
                 })
             );
@@ -216,12 +226,13 @@ and should provide the info needed to make the user aware of the fix.`);
     }
 
     private _catchRequestError(
-        _operation
-    ): (response: HttpResponse<any>, original: Observable<any>) => Observable<any> {
-        return (response: HttpResponse<any>): Observable<any> => {
+        _operation: string
+    ): (response: HttpResponse<{ error?: string }>) => Observable<never> {
+        return (response: HttpResponse<{ error?: string }>): Observable<never> => {
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
-                    if (response.body && response.body.indexOf('ECONNREFUSED') >= 0) {
+                    const bodyStr = JSON.stringify(response.body || '');
+                    if (bodyStr.indexOf('ECONNREFUSED') >= 0) {
                         throw new CwError(
                             NETWORK_CONNECTION_ERROR,
                             CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR]
@@ -247,7 +258,7 @@ and should provide the info needed to make the user aware of the fix.`);
                     );
 
                     this._error.next(
-                        response.body.error.replace('dotcms.api.error.forbidden: ', '')
+                        response.body?.error?.replace('dotcms.api.error.forbidden: ', '') || ''
                     );
 
                     throw new CwError(
@@ -257,7 +268,7 @@ and should provide the info needed to make the user aware of the fix.`);
                 }
             }
 
-            return null;
+            return EMPTY;
         };
     }
 }

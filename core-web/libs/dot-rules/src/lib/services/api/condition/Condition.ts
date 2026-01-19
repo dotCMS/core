@@ -1,20 +1,27 @@
-import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { Observable } from 'rxjs';
+import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { HttpCode } from '@dotcms/dotcms-js';
-import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+import { ApiRoot, HttpCode, CoreWebService, LoggerService } from '@dotcms/dotcms-js';
 
 import { ConditionGroupModel, ConditionModel, ICondition } from '../rule/Rule';
 import { ServerSideTypeModel } from '../serverside-field/ServerSideFieldModel';
 
-// tslint:disable-next-line:no-unused-variable
-// const noop = (...arg: any[]) => {};
+interface ConditionJson {
+    id?: string;
+    conditionlet?: string;
+    priority?: number;
+    operator?: string;
+    values?: Record<string, { value: string; priority?: number }>;
+    owningGroup?: string;
+}
+
+interface ConditionResponseJson {
+    id: string;
+}
 
 @Injectable()
 export class ConditionService {
@@ -34,45 +41,48 @@ export class ConditionService {
         this._baseUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`;
     }
 
-    static toJson(condition: ConditionModel): any {
-        const json: any = {};
-        json.id = condition.key;
-        json.conditionlet = condition.type.key;
-        json.priority = condition.priority;
-        json.operator = condition.operator;
-        json.values = condition.parameters;
-
-        return json;
+    static toJson(condition: ConditionModel): ConditionJson {
+        return {
+            id: condition.key,
+            conditionlet: condition.type.key,
+            priority: condition.priority,
+            operator: condition.operator,
+            values: condition.parameters
+        };
     }
 
-    static fromServerConditionTransformFn(condition: ICondition): ConditionModel {
+    static fromServerConditionTransformFn(
+        condition: ICondition,
+        loggerService?: LoggerService
+    ): ConditionModel {
         let conditionModel: ConditionModel = null;
         try {
             conditionModel = new ConditionModel(condition);
-            const values = condition['values'];
+            const values = condition['values'] as Record<
+                string,
+                { value: string; priority?: number }
+            >;
 
             Object.keys(values).forEach((key) => {
                 const x = values[key];
                 conditionModel.setParameter(key, x.value, x.priority);
-                // tslint:disable-next-line:no-console
-                console.log('ConditionService', 'setting parameter', key, x);
+                loggerService?.info('ConditionService', 'setting parameter', key, x);
             });
         } catch (e) {
-            // tslint:disable-next-line:no-console
-            console.error('Error reading Condition.', e);
+            loggerService?.error('Error reading Condition.', e);
             throw e;
         }
 
         return conditionModel;
     }
 
-    makeRequest(childPath: string): Observable<any> {
+    makeRequest(childPath: string): Observable<ICondition> {
         return this.coreWebService
-            .request({
+            .request<ICondition>({
                 url: this._baseUrl + '/' + childPath
             })
             .pipe(
-                catchError((err: any, _source: Observable<any>) => {
+                catchError((err: HttpResponse<unknown>) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.info(
                             'Could not retrieve Condition Types: URL not valid.'
@@ -87,9 +97,9 @@ export class ConditionService {
                         );
                     }
 
-                    return observableEmpty();
+                    return EMPTY;
                 })
-            );
+            ) as Observable<ICondition>;
     }
 
     listForGroup(
@@ -112,21 +122,19 @@ export class ConditionService {
         conditionId: string,
         conditionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ConditionModel> {
-        let conditionModelResult: Observable<ICondition>;
-        conditionModelResult = this.makeRequest(conditionId);
+        const conditionModelResult: Observable<ICondition> = this.makeRequest(conditionId);
 
         return conditionModelResult.pipe(
             map((entity) => {
                 entity.id = conditionId;
                 entity._type = conditionTypes ? conditionTypes[entity.conditionlet] : null;
 
-                return ConditionService.fromServerConditionTransformFn(entity);
+                return ConditionService.fromServerConditionTransformFn(entity, this.loggerService);
             })
         );
     }
 
-    add(groupId: string, model: ConditionModel): Observable<any> {
-        // this.loggerService.info("api.rule-engine.ConditionService", "add", model)
+    add(groupId: string, model: ConditionModel): Observable<ConditionModel> {
         if (!model.isValid()) {
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
@@ -135,15 +143,14 @@ export class ConditionService {
         const json = ConditionService.toJson(model);
         json.owningGroup = groupId;
         const add = this.coreWebService
-            .request({
+            .request<ConditionResponseJson>({
                 method: 'POST',
                 body: json,
                 url: this._baseUrl + '/'
             })
             .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json: any = res;
-                    model.key = json.id;
+                map((res: ConditionResponseJson) => {
+                    model.key = res.id;
 
                     return model;
                 })
@@ -166,13 +173,13 @@ export class ConditionService {
             json.owningGroup = groupId;
             const body = JSON.stringify(json);
             const save = this.coreWebService
-                .request({
+                .request<unknown>({
                     method: 'PUT',
                     body: body,
                     url: this._baseUrl + '/' + model.key
                 })
                 .pipe(
-                    map((_res: HttpResponse<any>) => {
+                    map(() => {
                         return model;
                     })
                 );
@@ -183,12 +190,12 @@ export class ConditionService {
 
     remove(model: ConditionModel): Observable<ConditionModel> {
         const remove = this.coreWebService
-            .request({
+            .request<unknown>({
                 method: 'DELETE',
                 url: this._baseUrl + '/' + model.key
             })
             .pipe(
-                map((_res: HttpResponse<any>) => {
+                map(() => {
                     return model;
                 })
             );
@@ -196,8 +203,10 @@ export class ConditionService {
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }
 
-    private _catchRequestError(operation): (any) => Observable<any> {
-        return (err: any) => {
+    private _catchRequestError(
+        operation: string
+    ): (err: HttpResponse<{ error?: string }>) => Observable<never> {
+        return (err: HttpResponse<{ error?: string }>) => {
             if (err && err.status === HttpCode.NOT_FOUND) {
                 this.loggerService.info('Could not ' + operation + ' Condition: URL not valid.');
             } else if (err) {
@@ -210,9 +219,9 @@ export class ConditionService {
                 );
             }
 
-            this._error.next(err.json().error.replace('dotcms.api.error.forbidden: ', ''));
+            this._error.next(err.body?.error?.replace('dotcms.api.error.forbidden: ', '') || '');
 
-            return observableEmpty();
+            return EMPTY;
         };
     }
 }

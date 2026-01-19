@@ -11,8 +11,6 @@ import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { DotServersideConditionComponent } from '../conditions/serverside-condition/dot-serverside-condition.component';
-import { RuleActionActionEvent } from '../rule-engine/dot-rule-engine-container.component';
 import {
     RULE_RULE_ACTION_UPDATE_TYPE,
     RULE_RULE_ACTION_UPDATE_PARAMETER,
@@ -20,6 +18,8 @@ import {
     ActionModel
 } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
+import { DotServersideConditionComponent } from '../conditions/serverside-condition/dot-serverside-condition.component';
+import { RuleActionActionEvent } from '../rule-engine/dot-rule-engine-container.component';
 
 @Component({
     selector: 'dot-rule-action',
@@ -60,7 +60,7 @@ export class DotRuleActionComponent {
         const rawOptions = Object.keys(actionTypes).map((key) => {
             const type = actionTypes[key];
             return {
-                label: type._opt.label as Observable<string>,
+                label: type._opt.label as string | Observable<string>,
                 value: type._opt.value as string
             };
         });

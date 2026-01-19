@@ -34,14 +34,6 @@ import { debounceTime, map, mergeMap, toArray, startWith, shareReplay } from 'rx
 import { UserModel, ApiRoot, LoggerService } from '@dotcms/dotcms-js';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
-import { DotConditionGroupComponent } from '../conditions/condition-group/dot-condition-group.component';
-import { DotRuleActionComponent } from '../actions/dot-rule-action.component';
-import {
-    ConditionActionEvent,
-    RuleActionActionEvent,
-    RuleActionEvent,
-    ConditionGroupActionEvent
-} from '../rule-engine/dot-rule-engine-container.component';
 import { IPublishEnvironment } from '../../services/api/bundle/bundle-service';
 import {
     RuleModel,
@@ -63,6 +55,14 @@ import {
 } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../services/i18n/i18n.service';
+import { DotRuleActionComponent } from '../actions/dot-rule-action.component';
+import { DotConditionGroupComponent } from '../conditions/condition-group/dot-condition-group.component';
+import {
+    ConditionActionEvent,
+    RuleActionActionEvent,
+    RuleActionEvent,
+    ConditionGroupActionEvent
+} from '../rule-engine/dot-rule-engine-container.component';
 
 const I18N_BASE = 'api.sites.ruleengine';
 

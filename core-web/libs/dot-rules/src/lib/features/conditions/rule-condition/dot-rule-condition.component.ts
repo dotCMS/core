@@ -87,7 +87,7 @@ export class DotRuleConditionComponent {
         const rawOptions = Object.keys(conditionTypes).map((key) => {
             const type = conditionTypes[key];
             return {
-                label: type._opt.label as Observable<string>,
+                label: type._opt.label as string | Observable<string>,
                 value: type._opt.value as string
             };
         });

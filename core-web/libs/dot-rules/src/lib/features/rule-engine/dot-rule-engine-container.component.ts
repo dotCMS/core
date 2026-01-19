@@ -394,7 +394,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     onUpdateRuleActionParameter(event: RuleActionActionEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onUpdateRuleActionParameter');
         const ruleAction = event.payload.ruleAction;
-        ruleAction.setParameter(event.payload.name, event.payload.value);
+        ruleAction.setParameter(event.payload.name, String(event.payload.value));
         this.patchAction(event.payload.rule, ruleAction);
     }
 
@@ -487,7 +487,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     onUpdateConditionParameter(event: ConditionActionEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onUpdateConditionParameter');
         const condition = event.payload.condition;
-        condition.setParameter(event.payload.name, event.payload.value);
+        condition.setParameter(event.payload.name, String(event.payload.value));
         this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
     }
 

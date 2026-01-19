@@ -221,10 +221,17 @@ export class DotServersideConditionComponent {
         this.emitParameterValue(input.name, isoValue, true);
     }
 
-    onRestDropdownChange(input: InputConfig, value: string | string[]): void {
-        const finalValue = Array.isArray(value) ? value.join(',') : value;
+    onRestDropdownChange(input: InputConfig, value: string | string[] | null): void {
+        const finalValue = Array.isArray(value) ? value.join(',') : (value ?? '');
         input.control.setValue(finalValue);
         input.control.markAsDirty();
+        input.modelValue = value ?? (input.maxSelections > 1 ? [] : '');
+
+        // Don't emit empty values for multiselect fields to prevent API validation errors
+        if (!finalValue && input.maxSelections > 1) {
+            return;
+        }
+
         this.emitParameterValue(input.name, finalValue, true);
     }
 

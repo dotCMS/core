@@ -42,8 +42,8 @@
                             appendTo="body"
                             #rdInputMulti="ngModel" />
                         @if (
-                            rdInputMulti.touched &&
-                            !rdInputMulti.valid &&
+                            (rdInputMulti.touched || input.control.touched) &&
+                            (!rdInputMulti.valid || input.control.errors) &&
                             (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
                             <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">

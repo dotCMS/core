@@ -1,16 +1,24 @@
-import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { Observable } from 'rxjs';
+import { from as observableFrom, EMPTY, Subject, Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { reduce, mergeMap, catchError, map, tap } from 'rxjs/operators';
+import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { HttpCode } from '@dotcms/dotcms-js';
-import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+import { ApiRoot, HttpCode, CoreWebService, LoggerService } from '@dotcms/dotcms-js';
 
 import { ConditionGroupModel, IConditionGroup } from '../rule/Rule';
+
+interface ConditionGroupJson {
+    id?: string;
+    operator?: string;
+    priority?: number;
+    conditions?: Record<string, boolean>;
+}
+
+interface ConditionGroupResponseJson {
+    id: string;
+}
 
 @Injectable()
 export class ConditionGroupService {
@@ -32,18 +40,19 @@ export class ConditionGroupService {
         this._baseUrl = '/api/v1/sites/' + apiRoot.siteId + '/ruleengine/rules';
     }
 
-    static toJson(conditionGroup: ConditionGroupModel): any {
-        const json: any = {};
-        json.id = conditionGroup.key;
-        json.operator = conditionGroup.operator;
-        json.priority = conditionGroup.priority;
-        json.conditions = conditionGroup.conditions;
-
-        return json;
+    static toJson(conditionGroup: ConditionGroupModel): ConditionGroupJson {
+        return {
+            id: conditionGroup.key,
+            operator: conditionGroup.operator,
+            priority: conditionGroup.priority,
+            conditions: conditionGroup.conditions
+        };
     }
 
-    static toJsonList(models: { [key: string]: ConditionGroupModel }): any {
-        const list = {};
+    static toJsonList(models: {
+        [key: string]: ConditionGroupModel;
+    }): Record<string, ConditionGroupJson> {
+        const list: Record<string, ConditionGroupJson> = {};
         Object.keys(models).forEach((key) => {
             list[key] = ConditionGroupService.toJson(models[key]);
         });
@@ -51,19 +60,18 @@ export class ConditionGroupService {
         return list;
     }
 
-    makeRequest(path: string): Observable<any> {
+    makeRequest(path: string): Observable<IConditionGroup> {
         return this.coreWebService
-            .request({
+            .request<IConditionGroup>({
                 url: path
             })
             .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json = res;
-                    this.loggerService.info('ConditionGroupService', 'makeRequest-Response', json);
+                map((res: IConditionGroup) => {
+                    this.loggerService.info('ConditionGroupService', 'makeRequest-Response', res);
 
-                    return json;
+                    return res;
                 }),
-                catchError((err: any, _source: Observable<any>) => {
+                catchError((err: HttpResponse<unknown>) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.error(
                             'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
@@ -79,9 +87,9 @@ export class ConditionGroupService {
                         );
                     }
 
-                    return observableEmpty();
+                    return EMPTY;
                 })
-            );
+            ) as Observable<IConditionGroup>;
     }
 
     all(ruleKey: string, keys: string[]): Observable<ConditionGroupModel> {
@@ -103,8 +111,9 @@ export class ConditionGroupService {
     }
 
     get(ruleKey: string, key: string): Observable<ConditionGroupModel> {
-        let result: Observable<ConditionGroupModel>;
-        result = this.makeRequest(this._getPath(ruleKey, key)).pipe(
+        const result: Observable<ConditionGroupModel> = this.makeRequest(
+            this._getPath(ruleKey, key)
+        ).pipe(
             map((json: IConditionGroup) => {
                 json.id = key;
                 this.loggerService.info(
@@ -119,7 +128,10 @@ export class ConditionGroupService {
         return result;
     }
 
-    createConditionGroup(ruleId: string, model: ConditionGroupModel): Observable<any> {
+    createConditionGroup(
+        ruleId: string,
+        model: ConditionGroupModel
+    ): Observable<ConditionGroupModel> {
         this.loggerService.info('ConditionGroupService', 'add', model);
         if (!model.isValid()) {
             throw new Error(`This should be thrown from a checkValid function on the model,
@@ -130,15 +142,14 @@ export class ConditionGroupService {
         const path = this._getPath(ruleId);
 
         const add = this.coreWebService
-            .request({
+            .request<ConditionGroupResponseJson>({
                 method: 'POST',
                 body: json,
                 url: path
             })
             .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json: any = res;
-                    model.key = json.id;
+                map((res: ConditionGroupResponseJson) => {
+                    model.key = res.id;
 
                     return model;
                 })
@@ -158,7 +169,7 @@ export class ConditionGroupService {
         }
 
         if (!model.isPersisted()) {
-            this.createConditionGroup(ruleId, model);
+            return this.createConditionGroup(ruleId, model);
         } else {
             const json = ConditionGroupService.toJson(model);
             const save = this.coreWebService
@@ -168,7 +179,7 @@ export class ConditionGroupService {
                     url: this._getPath(ruleId, model.key)
                 })
                 .pipe(
-                    tap(() => {
+                    map(() => {
                         return model;
                     })
                 );
@@ -184,7 +195,7 @@ export class ConditionGroupService {
                 url: this._getPath(ruleId, model.key)
             })
             .pipe(
-                tap(() => {
+                map(() => {
                     return model;
                 })
             );
@@ -201,8 +212,10 @@ export class ConditionGroupService {
         return p;
     }
 
-    private _catchRequestError(operation): Func {
-        return (err: any) => {
+    private _catchRequestError(
+        operation: string
+    ): (err: HttpResponse<{ error?: string }>) => Observable<never> {
+        return (err: HttpResponse<{ error?: string }>) => {
             if (err && err.status === HttpCode.NOT_FOUND) {
                 this.loggerService.info('Could not ' + operation + ' Condition: URL not valid.');
             } else if (err) {
@@ -215,11 +228,9 @@ export class ConditionGroupService {
                 );
             }
 
-            this._error.next(err.json().error.replace('dotcms.api.error.forbidden: ', ''));
+            this._error.next(err.body?.error?.replace('dotcms.api.error.forbidden: ', '') || '');
 
-            return observableEmpty();
+            return EMPTY;
         };
     }
 }
-
-type Func = (any) => Observable<any>;

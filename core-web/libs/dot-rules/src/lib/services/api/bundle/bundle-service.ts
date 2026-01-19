@@ -1,12 +1,10 @@
 import { of as observableOf, Observable, Subject } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, mergeMap } from 'rxjs/operators';
+import { mergeMap, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { ApiRoot, CoreWebService } from '@dotcms/dotcms-js';
 
 export interface IUser {
     givenName?: string;
@@ -39,11 +37,11 @@ export class BundleService {
     private _pushRuleUrl: string;
     private _environmentsAry: IPublishEnvironment[] = [];
 
-    static fromServerBundleTransformFn(data): IBundle[] {
+    static fromServerBundleTransformFn(data: { items?: IBundle[] }): IBundle[] {
         return data.items || [];
     }
 
-    static fromServerEnvironmentTransformFn(data): IPublishEnvironment[] {
+    static fromServerEnvironmentTransformFn(data: IPublishEnvironment[]): IPublishEnvironment[] {
         // Endpoint return extra empty environment
         data.shift();
 
@@ -67,10 +65,10 @@ export class BundleService {
      */
     getLoggedUser(): Observable<IUser> {
         return this.coreWebService
-            .request({
+            .request<IUser>({
                 url: this._loggedUserUrl
             })
-            .pipe(map((res: HttpResponse<any>) => <IUser>res));
+            .pipe(map((res: IUser) => res));
     }
 
     loadBundleStores(): void {
@@ -94,8 +92,8 @@ export class BundleService {
         );
     }
 
-    loadPublishEnvironments(): Observable<any> {
-        let obs: Observable<any>;
+    loadPublishEnvironments(): Observable<IPublishEnvironment[]> {
+        let obs: Observable<IPublishEnvironment[]>;
         if (this._environmentsAry.length) {
             obs = observableOf(this._environmentsAry);
         } else {
@@ -127,48 +125,42 @@ export class BundleService {
         ruleId: string,
         bundle: IBundle
     ): Observable<{ errorMessages: string[]; total: number; errors: number }> {
-        return this.coreWebService
-            .request({
-                body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                method: 'POST',
-                url: this._addToBundleUrl
-            })
-            .pipe(
-                map(
-                    (res: HttpResponse<any>) =>
-                        <{ errorMessages: string[]; total: number; errors: number }>(<unknown>res)
-                )
-            );
+        return this.coreWebService.request<{
+            errorMessages: string[];
+            total: number;
+            errors: number;
+        }>({
+            body: `assetIdentifier=${ruleId}&bundleName=${bundle.name}&bundleSelect=${bundle.id}`,
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            method: 'POST',
+            url: this._addToBundleUrl
+        }) as Observable<{ errorMessages: string[]; total: number; errors: number }>;
     }
 
     pushPublishRule(
         ruleId: string,
         environmentId: string
     ): Observable<{ errorMessages: string[]; total: number; bundleId: string; errors: number }> {
-        return this.coreWebService
-            .request({
-                body: this.getPublishRuleData(ruleId, environmentId),
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                method: 'POST',
-                url: this._pushRuleUrl
-            })
-            .pipe(
-                map(
-                    (res: HttpResponse<any>) => <
-                            {
-                                errorMessages: string[];
-                                total: number;
-                                bundleId: string;
-                                errors: number;
-                            }
-                        >(<unknown>res)
-                )
-            );
+        return this.coreWebService.request<{
+            errorMessages: string[];
+            total: number;
+            bundleId: string;
+            errors: number;
+        }>({
+            body: this.getPublishRuleData(ruleId, environmentId),
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            method: 'POST',
+            url: this._pushRuleUrl
+        }) as Observable<{
+            errorMessages: string[];
+            total: number;
+            bundleId: string;
+            errors: number;
+        }>;
     }
 
     private getFormattedDate(date: Date): string {

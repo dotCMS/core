@@ -1,18 +1,18 @@
+/* eslint-disable no-console, @typescript-eslint/no-unused-vars */
 import { Subscription, Observable } from 'rxjs';
 
 import { ReflectiveInjector } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { UserModel } from '@dotcms/dotcms-js';
-import { CwError } from '@dotcms/dotcms-js';
+import { ApiRoot, UserModel, CwError } from '@dotcms/dotcms-js';
 
-import { ActionService } from '../action/Action';
 import { ConditionService } from './Condition';
+
+import { I18nService } from '../../i18n/i18n.service';
+import { ActionService } from '../action/Action';
 import { ConditionGroupService } from '../condition-group/ConditionGroup';
 import { RuleModel, RuleService, ConditionGroupModel, ConditionModel } from '../rule/Rule';
 import { ServerSideTypeModel } from '../serverside-field/ServerSideFieldModel';
-import { I18nService } from '../../i18n/i18n.service';
 
 const injector = ReflectiveInjector.resolveAndCreate([
     ApiRoot,

@@ -64,7 +64,7 @@ export class ServerSideFieldModel extends BaseModel {
         }
     }
 
-    setParameter(key: string, value: any, priority = 1): void {
+    setParameter(key: string, value: string, priority = 1): void {
         if (this.parameterDefs[key] === undefined) {
             this.loggerService.info(
                 'Unsupported parameter: ',
@@ -134,21 +134,36 @@ export class ServerSideFieldModel extends BaseModel {
     }
 }
 
+export interface ServerSideTypeOption {
+    value: string;
+    label: string;
+}
+
+export interface ServerSideTypeJson {
+    key: string;
+    i18nKey: string;
+    parameterDefinitions?: Record<string, unknown>;
+}
+
 export class ServerSideTypeModel {
     key: string;
     priority: number;
     i18nKey: string;
     parameters: { [key: string]: ParameterDefinition };
-    _opt: any;
+    _opt: ServerSideTypeOption;
 
-    static fromJson(json: any): ServerSideTypeModel {
+    static fromJson(json: ServerSideTypeJson): ServerSideTypeModel {
         return new ServerSideTypeModel(json.key, json.i18nKey, json.parameterDefinitions);
     }
 
-    constructor(key = 'NoSelection', i18nKey: string = null, parameters: any = {}) {
+    constructor(
+        key = 'NoSelection',
+        i18nKey: string = null,
+        parameters: Record<string, unknown> = {}
+    ) {
         this.key = key ? key : 'NoSelection';
         this.i18nKey = i18nKey;
-        this.parameters = parameters;
+        this.parameters = parameters as { [key: string]: ParameterDefinition };
     }
 
     isValid(): boolean {

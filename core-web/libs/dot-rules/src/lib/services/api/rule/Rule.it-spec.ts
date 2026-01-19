@@ -1,15 +1,11 @@
+/* eslint-disable no-console, @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function, @typescript-eslint/no-explicit-any */
 import { Observable } from 'rxjs';
 
 import { ReflectiveInjector } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { UserModel } from '@dotcms/dotcms-js';
-import { CwError } from '@dotcms/dotcms-js';
+import { ApiRoot, UserModel, CwError } from '@dotcms/dotcms-js';
 
-import { ActionService } from '../action/Action';
-import { ConditionService } from '../condition/Condition';
-import { ConditionGroupService } from '../condition-group/ConditionGroup';
 import {
     RuleModel,
     RuleService,
@@ -20,8 +16,12 @@ import {
     IConditionGroup,
     ConditionGroupModel
 } from './Rule';
-import { ServerSideTypeModel } from '../serverside-field/ServerSideFieldModel';
+
 import { I18nService } from '../../i18n/i18n.service';
+import { ActionService } from '../action/Action';
+import { ConditionService } from '../condition/Condition';
+import { ConditionGroupService } from '../condition-group/ConditionGroup';
+import { ServerSideTypeModel } from '../serverside-field/ServerSideFieldModel';
 
 const injector = ReflectiveInjector.resolveAndCreate([
     ApiRoot,

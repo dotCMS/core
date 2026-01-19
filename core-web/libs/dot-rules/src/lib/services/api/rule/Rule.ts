@@ -1,6 +1,5 @@
 import { from as observableFrom, Subject, Observable, BehaviorSubject } from 'rxjs';
 
-import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, map, tap } from 'rxjs/operators';
@@ -8,12 +7,11 @@ import { mergeMap, reduce, map, tap } from 'rxjs/operators';
 
 import { CoreWebService, SiteService, CwError, ApiRoot } from '@dotcms/dotcms-js';
 
+import { I18nService } from '../../i18n/i18n.service';
 import {
     ServerSideFieldModel,
     ServerSideTypeModel
 } from '../serverside-field/ServerSideFieldModel';
-
-import { I18nService } from '../../i18n/i18n.service';
 
 export const RULE_CREATE = 'RULE_CREATE';
 
@@ -72,15 +70,15 @@ export interface IRecord {
     _saving?: boolean;
     _saved?: boolean;
     deleting?: boolean;
-    errors?: any;
-    set?(string, any): any;
+    errors?: Record<string, unknown>;
+    set?(key: string, value: unknown): unknown;
 }
 
 export interface IRuleAction extends IRecord {
     id?: string;
     priority: number;
     type?: string;
-    parameters?: { [key: string]: any };
+    parameters?: Record<string, { value: string }>;
     owningRule?: string;
     _owningRule?: RuleModel;
 }
@@ -91,7 +89,7 @@ export interface ICondition extends IRecord {
     type?: string;
     priority?: number;
     operator?: string;
-    parameters?: { [key: string]: any };
+    parameters?: Record<string, { value: string; priority?: number }>;
     _type?: ServerSideTypeModel;
 }
 
@@ -99,7 +97,7 @@ export interface IConditionGroup extends IRecord {
     id?: string;
     priority: number;
     operator: string;
-    conditions?: any;
+    conditions?: Record<string, boolean>;
 }
 
 export interface IRule extends IRecord {
@@ -117,9 +115,9 @@ export interface IRule extends IRecord {
     name?: string;
     fireOn?: string;
     enabled?: boolean;
-    conditionGroups?: any;
-    ruleActions?: any;
-    set?(string, any): IRule;
+    conditionGroups?: Record<string, unknown>;
+    ruleActions?: Record<string, boolean>;
+    set?(key: string, value: unknown): IRule;
 }
 
 export interface ParameterModel {
@@ -212,7 +210,7 @@ export class RuleModel {
     _saved = true;
     _saving = false;
     _deleting = true;
-    _errors: { [key: string]: any };
+    _errors: { [key: string]: string | Error };
 
     constructor(iRule: IRule) {
         Object.assign(this, iRule);
@@ -269,7 +267,7 @@ export class RuleService {
     _ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
     _conditionTypes: { [key: string]: ServerSideTypeModel } = {};
 
-    public _errors$: Subject<any> = new Subject();
+    public _errors$: Subject<{ message: string; response: Response }> = new Subject();
 
     protected _actionsEndpointUrl: string;
     // tslint:disable-next-line:no-unused-variable
@@ -322,7 +320,7 @@ export class RuleService {
         });
     }
 
-    static fromServerRulesTransformFn(ruleMap): RuleModel[] {
+    static fromServerRulesTransformFn(ruleMap: Record<string, IRule>): RuleModel[] {
         return Object.keys(ruleMap).map((id: string) => {
             const r: IRule = ruleMap[id];
             r.id = id;
@@ -331,15 +329,18 @@ export class RuleService {
         });
     }
 
-    static fromClientRuleTransformFn(rule: RuleModel): any {
-        const sendRule = Object.assign({}, DEFAULT_RULE, rule);
+    static fromClientRuleTransformFn(rule: RuleModel): IRule {
+        const sendRule = Object.assign({}, DEFAULT_RULE, rule) as IRule & {
+            conditionGroups: Record<string, IConditionGroup>;
+            key?: string;
+        };
         sendRule.key = rule.key;
         delete sendRule.id;
         sendRule.conditionGroups = {};
         sendRule._conditionGroups.forEach((conditionGroup: ConditionGroupModel) => {
             if (conditionGroup.key) {
-                const sendGroup = {
-                    conditions: {},
+                const sendGroup: IConditionGroup = {
+                    conditions: {} as Record<string, boolean>,
                     operator: conditionGroup.operator,
                     priority: conditionGroup.priority
                 };
@@ -349,12 +350,12 @@ export class RuleService {
                 sendRule.conditionGroups[conditionGroup.key] = sendGroup;
             }
         });
-        this.removeMeta(sendRule);
+        this.removeMeta(sendRule as unknown as Record<string, unknown>);
 
         return sendRule;
     }
 
-    static removeMeta(entity: any): void {
+    static removeMeta(entity: Record<string, unknown>): void {
         Object.keys(entity).forEach((key) => {
             if (key[0] === '_') {
                 delete entity[key];
@@ -362,7 +363,9 @@ export class RuleService {
         });
     }
 
-    static alphaSort(key): (a, b) => number {
+    static alphaSort(
+        key: string
+    ): (a: Record<string, string>, b: Record<string, string>) => number {
         return (a, b) => {
             let x;
             if (a[key] > b[key]) {
@@ -387,8 +390,8 @@ export class RuleService {
                 url: `/api/v1/sites/${siteId}${this._rulesEndpointUrl}`
             })
             .pipe(
-                map((result: HttpResponse<any>) => {
-                    body.key = result['id']; // @todo:ggranum type the POST result correctly.
+                map((result: { id: string }) => {
+                    body.key = result.id;
 
                     return <RuleModel | CwError>(
                         (<unknown>Object.assign({}, DEFAULT_RULE, body, result))
@@ -501,10 +504,11 @@ export class RuleService {
             .pipe(map(this.fromServerServersideTypesTransformFn));
     }
 
-    private fromServerServersideTypesTransformFn(typesMap): ServerSideTypeModel[] {
+    private fromServerServersideTypesTransformFn(
+        typesMap: Record<string, { i18nKey: string; parameterDefinitions: Record<string, unknown> }>
+    ): ServerSideTypeModel[] {
         const types = Object.keys(typesMap).map((key: string) => {
-            const json: any = typesMap[key];
-            json.key = key;
+            const json = { ...typesMap[key], key };
 
             return ServerSideTypeModel.fromJson(json);
         });
@@ -526,15 +530,17 @@ export class RuleService {
 
     private sendLoadRulesRequest(siteId: string): void {
         this.coreWebService
-            .request({
+            .request<Record<string, IRule>>({
                 url: `/api/v1/sites/${siteId}/ruleengine/rules`
             })
             .subscribe(
                 (ruleMap) => {
-                    this._rules = RuleService.fromServerRulesTransformFn(ruleMap);
+                    this._rules = RuleService.fromServerRulesTransformFn(
+                        ruleMap as Record<string, IRule>
+                    );
                     this._rules$.next(this.rules);
 
-                    return RuleService.fromServerRulesTransformFn(ruleMap);
+                    return RuleService.fromServerRulesTransformFn(ruleMap as Record<string, IRule>);
                 },
                 (err) => {
                     this._errors$.next(err);
@@ -558,7 +564,7 @@ export class RuleService {
 
     private actionAndConditionTypeLoader(
         requestObserver: Observable<ServerSideTypeModel[]>,
-        typeMap: any
+        typeMap: Record<string, ServerSideTypeModel>
     ): Observable<ServerSideTypeModel[]> {
         return requestObserver.pipe(
             mergeMap((types: ServerSideTypeModel[]) => {
@@ -572,12 +578,12 @@ export class RuleService {
                             })
                         );
                     }),
-                    reduce((types: any[], type: any) => {
-                        types.push(type);
+                    reduce((accTypes: ServerSideTypeModel[], type: ServerSideTypeModel) => {
+                        accTypes.push(type);
 
-                        return types;
+                        return accTypes;
                     }, []),
-                    tap((typ: any[]) => {
+                    tap((typ: ServerSideTypeModel[]) => {
                         typ = typ.sort((typeA, typeB) => {
                             return typeA._opt.label.localeCompare(typeB._opt.label);
                         });
