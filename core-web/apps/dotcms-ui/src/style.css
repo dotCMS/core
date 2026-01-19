@@ -1,6 +1,10 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
 
+:root {
+    --experiment-nav-size: 80px;
+}
+
 a {
     @apply text-primary-500 underline;
 }

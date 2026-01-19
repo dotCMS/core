@@ -52,9 +52,11 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-experiments-list.component.html',
-    styleUrls: ['./dot-experiments-list.component.scss'],
     providers: [provideComponentStore(DotExperimentsListStore)],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'h-full w-full flex flex-col pb-12'
+    }
 })
 export class DotExperimentsListComponent {
     private readonly dotExperimentsListStore = inject(DotExperimentsListStore);

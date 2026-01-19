@@ -1,13 +1,23 @@
-<div class="message__wrapper flex gap-6 flex-col w-[30rem]">
+<div class="message__wrapper flex w-full max-w-[480px] gap-6 flex-col">
     <div
-        class="message__principal-wrapper flex items-center flex-col gap-2"
+        class="message__principal-wrapper flex items-center flex-col gap-2 break-words"
         data-testid="message-principal">
         @if (configuration.icon) {
-            <i [class]="'message__icon pi ' + configuration.icon" data-testid="message-icon"></i>
+            <i
+                [class]="
+                    'message__icon pi !text-6xl p-3 text-[var(--gray-700)] ' + configuration.icon
+                "
+                data-testid="message-icon"></i>
         }
-        <h1 class="message__title" data-testid="message-title">{{ configuration.title }}</h1>
+        <h1
+            class="message__title m-0 text-center leading-[1.4] text-lg font-medium"
+            data-testid="message-title">
+            {{ configuration.title }}
+        </h1>
         @if (configuration.subtitle) {
-            <h2 class="message__subtitle" data-testid="message-subtitle">
+            <h2
+                class="message__subtitle m-0 text-center leading-[1.4] text-base font-medium text-[var(--gray-700)]"
+                data-testid="message-subtitle">
                 {{ configuration.subtitle }}
             </h2>
         }
@@ -31,7 +41,7 @@
                     <span>{{ 'dot.common.or.text' | dm }}</span>
                 }
                 <a
-                    class="message__external-link"
+                    class="message__external-link text-center text-sm font-medium"
                     data-testid="message-contact-link"
                     href="https://dotcms.com/contact-us/"
                     target="_blank">

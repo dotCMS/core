@@ -13,8 +13,10 @@ import { DotExperimentsStore } from './store/dot-experiments.store';
     imports: [RouterModule, ToastModule],
     providers: [MessageService, DotExperimentsStore, DotExperimentsService],
     templateUrl: 'dot-experiments-shell.component.html',
-    styleUrls: ['./dot-experiments-shell.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'w-full min-h-full flex bg-[var(--color-white)]'
+    }
 })
 export class DotExperimentsShellComponent implements OnInit {
     private router = inject(Router);

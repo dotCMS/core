@@ -3,9 +3,10 @@
         (goBack)="goToBrowserBack()"
         [isLoading]="vm.isLoading"
         [title]="vm.pageTitle" />
-    <div class="dot-experiment">
+    <div
+        class="dot-experiment flex flex-col w-full h-full overflow-y-auto gap-4 pt-4 pr-[calc(2rem+var(--experiment-nav-size))] pb-8 pl-8">
         @if (vm.experiments.length) {
-            <div class="dot-experiment__actions">
+            <div class="dot-experiment__actions flex justify-between">
                 <dot-experiments-status-filter
                     (switch)="selectedStatusFilter($event)"
                     [options]="statusOptionList"
