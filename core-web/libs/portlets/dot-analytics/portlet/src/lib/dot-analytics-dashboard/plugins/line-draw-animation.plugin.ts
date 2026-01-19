@@ -1,5 +1,7 @@
 import { Plugin } from 'chart.js';
 
+import { NgZone } from '@angular/core';
+
 /** Animation state interface */
 interface AnimationState {
     progress: number;
@@ -26,24 +28,29 @@ export const SPARKLINE_ANIMATION_DURATION = 1000;
  * The line is progressively revealed from left to right using canvas clipping.
  *
  * @param getOptions - Function that returns the current animation options
+ * @param animationState - Mutable state object to track animation progress
+ * @param ngZone - Optional NgZone to run animation outside Angular's change detection
  * @returns Chart.js plugin configuration
  *
  * @example
  * ```typescript
  * // In a component
+ * readonly #ngZone = inject(NgZone);
  * #animationState = createAnimationState();
  *
  * readonly lineDrawPlugin = [
  *     createLineDrawAnimationPlugin(
  *         () => ({ enabled: this.$animated(), duration: 1000 }),
- *         this.#animationState
+ *         this.#animationState,
+ *         this.#ngZone
  *     )
  * ];
  * ```
  */
 export function createLineDrawAnimationPlugin(
     getOptions: () => LineDrawAnimationOptions,
-    animationState: AnimationState
+    animationState: AnimationState,
+    ngZone?: NgZone
 ): Plugin {
     return {
         id: 'lineDrawAnimation',
@@ -95,9 +102,19 @@ export function createLineDrawAnimationPlugin(
 
             // Continue animation loop if not complete
             if (animationState.progress < 1) {
-                requestAnimationFrame(() => {
-                    chart.update('none');
-                });
+                const animationLoop = () => {
+                    requestAnimationFrame(() => {
+                        chart.update('none');
+                    });
+                };
+
+                // Run outside Angular's zone to avoid triggering change detection
+                // on every animation frame (~60 times/second)
+                if (ngZone) {
+                    ngZone.runOutsideAngular(animationLoop);
+                } else {
+                    animationLoop();
+                }
             }
         }
     };

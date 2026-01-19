@@ -17,12 +17,15 @@ import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { ChartOptions } from '../../types';
 import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-analytics-sparkline.component';
 
+/**
+ * DotAnalyticsDashboardEngagementComponent is a component that displays the engagement dashboard.
+ * It includes the engagement rate, trend chart, and platforms table.
+ */
 @Component({
     selector: 'dot-analytics-dashboard-engagement',
     imports: [
@@ -61,20 +64,4 @@ export default class DotAnalyticsDashboardEngagementComponent implements OnInit 
     readonly $platforms = computed(() => this.engagementData().data?.platforms);
     readonly $status = computed(() => this.engagementData().status ?? ComponentStatus.INIT);
     readonly $isLoaded = computed(() => this.$status() === ComponentStatus.LOADED);
-
-    readonly sparklineOptions: Partial<ChartOptions> = {
-        plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false }
-        },
-        scales: {
-            x: { display: false },
-            y: { display: false }
-        },
-        elements: {
-            point: { radius: 0 },
-            line: { borderWidth: 2, tension: 0.4 }
-        },
-        maintainAspectRatio: false
-    };
 }

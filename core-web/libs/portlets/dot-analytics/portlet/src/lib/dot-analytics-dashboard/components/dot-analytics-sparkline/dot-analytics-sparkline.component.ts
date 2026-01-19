@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, NgZone } from '@angular/core';
 
 import { ChartModule } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -67,6 +67,8 @@ export interface SparklineDataPoint {
     `
 })
 export class DotAnalyticsSparklineComponent {
+    readonly #ngZone = inject(NgZone);
+
     /** Data points for the sparkline (array of date/value objects) */
     readonly $data = input.required<SparklineDataPoint[]>({ alias: 'data' });
 
@@ -110,6 +112,7 @@ export class DotAnalyticsSparklineComponent {
 
     /**
      * Plugins for gradient fill and line drawing animation.
+     * Animation runs outside Angular's zone to avoid triggering change detection.
      */
     readonly chartPlugins = [
         // Gradient fill plugin (reusable)
@@ -120,13 +123,14 @@ export class DotAnalyticsSparklineComponent {
             }),
             hexToRgba
         ),
-        // Line drawing animation plugin (reusable)
+        // Line drawing animation plugin (reusable, runs outside zone)
         createLineDrawAnimationPlugin(
             () => ({
                 enabled: this.$animated(),
                 duration: this.$animationDuration()
             }),
-            this.#animationState
+            this.#animationState,
+            this.#ngZone
         )
     ];
 

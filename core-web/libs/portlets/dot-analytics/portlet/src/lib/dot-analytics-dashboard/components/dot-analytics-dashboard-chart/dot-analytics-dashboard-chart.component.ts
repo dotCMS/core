@@ -1,7 +1,15 @@
 import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
 
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    NgZone
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CardModule } from 'primeng/card';
@@ -63,6 +71,7 @@ const CHART_TYPE_HEIGHTS = {
 export class DotAnalyticsDashboardChartComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #breakpointObserver = inject(BreakpointObserver);
+    readonly #ngZone = inject(NgZone);
 
     readonly #isMobile$ = this.#breakpointObserver
         .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Tablet])
@@ -109,6 +118,7 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Plugin for line drawing animation.
      * Uses clip to progressively reveal the chart from left to right.
+     * Runs outside Angular's zone to avoid triggering change detection on each frame.
      */
     readonly lineDrawPlugin = [
         createLineDrawAnimationPlugin(
@@ -116,7 +126,8 @@ export class DotAnalyticsDashboardChartComponent {
                 enabled: this.$type() === 'line' && this.$animated(),
                 duration: LINE_DRAW_ANIMATION_DURATION
             }),
-            this.#animationState
+            this.#animationState,
+            this.#ngZone
         )
     ];
 

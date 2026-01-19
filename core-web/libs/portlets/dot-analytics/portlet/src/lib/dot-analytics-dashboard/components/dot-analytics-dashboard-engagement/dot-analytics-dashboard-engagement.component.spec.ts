@@ -3,10 +3,8 @@ import { MockComponent } from 'ng-mocks';
 
 import { signal } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { TableModule } from 'primeng/table';
-import { TabViewModule } from 'primeng/tabview';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -21,22 +19,33 @@ import DotAnalyticsDashboardEngagementComponent from './dot-analytics-dashboard-
 
 import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
 import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
+import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-analytics-sparkline.component';
 
 describe('DotAnalyticsDashboardEngagementComponent', () => {
     let spectator: Spectator<DotAnalyticsDashboardEngagementComponent>;
+
     const mockEngagementData = signal({
         status: ComponentStatus.LOADED,
         data: MOCK_ENGAGEMENT_DATA,
         error: null
     });
 
+    const mockGlobalStore = {
+        addNewBreadcrumb: jest.fn()
+    };
+
+    const mockMessageService = {
+        get: jest.fn().mockReturnValue('Engagement')
+    };
+
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardEngagementComponent,
-        imports: [CardModule, ProgressBarModule, TableModule, TabViewModule, DotMessagePipe],
+        imports: [ButtonModule, DialogModule, DotMessagePipe],
         declarations: [
             MockComponent(DotAnalyticsDashboardMetricsComponent),
             MockComponent(DotAnalyticsDashboardChartComponent),
+            MockComponent(DotAnalyticsPlatformsTableComponent),
             MockComponent(DotAnalyticsSparklineComponent)
         ],
         providers: [
@@ -48,46 +57,98 @@ describe('DotAnalyticsDashboardEngagementComponent', () => {
             },
             {
                 provide: GlobalStore,
-                useValue: {
-                    addNewBreadcrumb: jest.fn()
-                }
+                useValue: mockGlobalStore
             },
             {
                 provide: DotMessageService,
-                useValue: {
-                    get: jest.fn().mockReturnValue('Engagement')
-                }
+                useValue: mockMessageService
             }
         ]
     });
 
-    it('should create', () => {
-        spectator = createComponent();
-        expect(spectator.component).toBeTruthy();
+    beforeEach(() => {
+        jest.clearAllMocks();
     });
 
-    it('should display KPI metrics', () => {
-        spectator = createComponent();
-        const metrics = spectator.queryAll(DotAnalyticsDashboardMetricsComponent);
-        // 1 Engagement Rate + 3 metrics (Avg Interactions, Avg Session Time, Conversion Rate)
-        expect(metrics.length).toBe(4);
+    describe('Component Initialization', () => {
+        it('should create', () => {
+            spectator = createComponent();
+            expect(spectator.component).toBeTruthy();
+        });
+
+        it('should add breadcrumb on init', () => {
+            spectator = createComponent();
+            expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith({
+                label: 'Engagement'
+            });
+        });
     });
 
-    it('should display Charts', () => {
-        spectator = createComponent();
-        const charts = spectator.queryAll(DotAnalyticsDashboardChartComponent);
-        expect(charts.length).toBe(2);
+    describe('Dashboard Layout', () => {
+        it('should display 4 metric components (1 engagement rate + 3 KPIs)', () => {
+            spectator = createComponent();
+            const metrics = spectator.queryAll(DotAnalyticsDashboardMetricsComponent);
+            expect(metrics.length).toBe(4);
+        });
+
+        it('should display 2 chart components (trend bar + breakdown doughnut)', () => {
+            spectator = createComponent();
+            const charts = spectator.queryAll(DotAnalyticsDashboardChartComponent);
+            expect(charts.length).toBe(2);
+        });
+
+        it('should display sparkline component inside engagement rate metric', () => {
+            spectator = createComponent();
+            const sparklines = spectator.queryAll(DotAnalyticsSparklineComponent);
+            expect(sparklines.length).toBe(1);
+        });
+
+        it('should display platforms table component', () => {
+            spectator = createComponent();
+            const platformsTable = spectator.query(DotAnalyticsPlatformsTableComponent);
+            expect(platformsTable).toBeTruthy();
+        });
     });
 
-    it('should display Sparkline in Engagement Rate metric', () => {
-        spectator = createComponent();
-        const sparklines = spectator.queryAll(DotAnalyticsSparklineComponent);
-        expect(sparklines.length).toBe(1);
+    describe("How it's calculated Dialog", () => {
+        it('should have dialog hidden by default', () => {
+            spectator = createComponent();
+            expect(spectator.component.$showCalculationDialog()).toBe(false);
+        });
+
+        it('should show dialog when button is clicked', () => {
+            spectator = createComponent();
+            const button = spectator.query('button[pButton]');
+            expect(button).toBeTruthy();
+
+            spectator.click(button!);
+            expect(spectator.component.$showCalculationDialog()).toBe(true);
+        });
     });
 
-    it('should display Platform tabs', () => {
-        spectator = createComponent();
-        const tabView = spectator.query('p-tabView');
-        expect(tabView).toBeTruthy();
+    describe('Loading State', () => {
+        it('should not show "How it\'s calculated" button when loading', () => {
+            mockEngagementData.set({
+                status: ComponentStatus.LOADING,
+                data: null,
+                error: null
+            });
+
+            spectator = createComponent();
+            const button = spectator.query('button[pButton]');
+            expect(button).toBeFalsy();
+        });
+
+        it('should show "How it\'s calculated" button when loaded', () => {
+            mockEngagementData.set({
+                status: ComponentStatus.LOADED,
+                data: MOCK_ENGAGEMENT_DATA,
+                error: null
+            });
+
+            spectator = createComponent();
+            const button = spectator.query('button[pButton]');
+            expect(button).toBeTruthy();
+        });
     });
 });

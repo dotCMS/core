@@ -1,5 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -32,7 +33,14 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAnalyticsPlatformsTableComponent,
         imports: [DotMessagePipe],
-        providers: []
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: {
+                    get: (key: string) => key
+                }
+            }
+        ]
     });
 
     beforeEach(() => {
@@ -88,25 +96,34 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
     });
 
     describe('Data Display', () => {
-        it('should display device data correctly', () => {
+        it('should compute device data from platforms input', () => {
             spectator.detectChanges();
             const deviceData = spectator.component.$deviceData();
             expect(deviceData.length).toBe(3);
             expect(deviceData[0].name).toBe('Desktop');
         });
 
-        it('should display browser data correctly', () => {
+        it('should compute browser data from platforms input', () => {
             spectator.detectChanges();
             const browserData = spectator.component.$browserData();
             expect(browserData.length).toBe(3);
             expect(browserData[0].name).toBe('Chrome');
         });
 
-        it('should display language data correctly', () => {
+        it('should compute language data from platforms input', () => {
             spectator.detectChanges();
             const languageData = spectator.component.$languageData();
             expect(languageData.length).toBe(3);
             expect(languageData[0].name).toBe('English');
+        });
+
+        it('should return empty arrays when platforms is null', () => {
+            spectator.setInput('platforms', null);
+            spectator.detectChanges();
+
+            expect(spectator.component.$deviceData()).toEqual([]);
+            expect(spectator.component.$browserData()).toEqual([]);
+            expect(spectator.component.$languageData()).toEqual([]);
         });
     });
 });
