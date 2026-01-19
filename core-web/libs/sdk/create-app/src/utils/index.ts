@@ -116,10 +116,6 @@ export function finalStepsForNextjs({
     console.log(chalk.white(getEnvVariablesForNextJS(urlDotCMSInstance, siteId, token)));
     console.log(chalk.white('──────────────────────────────────────────────\n'));
 
-    // INSTALL DEPENDENCIES
-    console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
-    console.log(chalk.white('$ npm install\n'));
-
     // START DEV SERVER
     console.log(chalk.blueBright('💻 Start your frontend development server:'));
     console.log(chalk.white('$ npm run dev\n'));
@@ -159,10 +155,6 @@ export function finalStepsForAstro({
     console.log();
 
     console.log(chalk.white('──────────────────────────────────────────────\n'));
-
-    // INSTALL DEPENDENCIES
-    console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
-    console.log(chalk.white('$ npm install\n'));
 
     // START DEV SERVER
     console.log(chalk.blueBright('💻 Start your frontend development server:'));
@@ -206,10 +198,6 @@ export function finalStepsForAngularAndAngularSSR({
     console.log(chalk.white(getEnvVariablesForAngular(urlDotCMSInstance, siteId, token)));
     console.log(chalk.white('──────────────────────────────────────────────\n'));
 
-    // INSTALL DEPENDENCIES
-    console.log(chalk.magentaBright('📦 Install frontend dependencies:'));
-    console.log(chalk.white('$ npm install\n'));
-
     // START DEV SERVER
     console.log(chalk.blueBright('💻 Start your frontend development server:'));
     console.log(chalk.white('$ ng serve\n'));
@@ -225,7 +213,6 @@ function getEnvVariablesForNextJS(host: string, siteId: string, token: string) {
         NEXT_PUBLIC_DOTCMS_HOST=${host}
         NEXT_PUBLIC_DOTCMS_SITE_ID=${siteId}
         NEXT_PUBLIC_DOTCMS_MODE='production'
-        NODE_TLS_REJECT_UNAUTHORIZED=0
     `;
 }
 
@@ -236,9 +223,6 @@ function getEnvVariablesForAstro(host: string, siteId: string, token: string) {
         PUBLIC_DOTCMS_SITE_ID=${siteId}
         PUBLIC_EXPERIMENTS_API_KEY=analytic-api-key-from-dotcms-portlet
         PUBLIC_EXPERIMENTS_DEBUG=true
-        # If your local dotcms instance is running in https, this setting allows Node.js to connect to servers with invalid SSL certificates.
-        # For testing purposes only.
-        NODE_TLS_REJECT_UNAUTHORIZED=0
     `;
 }
 
