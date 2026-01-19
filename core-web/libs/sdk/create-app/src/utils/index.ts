@@ -1,8 +1,21 @@
 import axios from 'axios';
 import chalk from 'chalk';
+import { execa } from 'execa';
 import fs from 'fs-extra';
+import { Err, Ok, Result } from 'ts-results';
 
 import https from 'https';
+
+import {
+    ANGULAR_DEPENDENCIES,
+    ANGULAR_DEPENDENCIES_DEV,
+    ANGULAR_SSR_DEPENDENCIES,
+    ANGULAR_SSR_DEPENDENCIES_DEV,
+    ASTRO_DEPENDENCIES,
+    ASTRO_DEPENDENCIES_DEV,
+    NEXTJS_DEPENDENCIES,
+    NEXTJS_DEPENDENCIES_DEV
+} from '../constants';
 
 import type { SupportedFrontEndFrameworks } from '../types';
 
@@ -111,10 +124,10 @@ export function finalStepsForNextjs({
     console.log(chalk.blueBright('💻 Start your frontend development server:'));
     console.log(chalk.white('$ npm run dev\n'));
 
+    console.log(chalk.greenBright("🎉 You're all set!.\n"));
+
     console.log(
-        chalk.greenBright(
-            "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
-        )
+        chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
     );
 }
 
@@ -155,10 +168,10 @@ export function finalStepsForAstro({
     console.log(chalk.blueBright('💻 Start your frontend development server:'));
     console.log(chalk.white('$ npm run dev\n'));
 
+    console.log(chalk.greenBright("🎉 You're all set!.\n"));
+
     console.log(
-        chalk.greenBright(
-            "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
-        )
+        chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
     );
 }
 
@@ -200,10 +213,9 @@ export function finalStepsForAngularAndAngularSSR({
     // START DEV SERVER
     console.log(chalk.blueBright('💻 Start your frontend development server:'));
     console.log(chalk.white('$ ng serve\n'));
+    console.log(chalk.greenBright("🎉 You're all set!.\n"));
     console.log(
-        chalk.greenBright(
-            "🎉 You're all set! Start building your app with dotCMS + your chosen frontend framework.\n"
-        )
+        chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
     );
 }
 
@@ -238,4 +250,48 @@ function getEnvVariablesForAngular(host: string, siteId: string, token: string) 
         siteId: ${siteId},
     };
     `;
+}
+
+export async function installDependenciesForProject(
+    projectPath: string
+): Promise<Result<boolean, string>> {
+    try {
+        await execa('npm', ['install'], {
+            cwd: projectPath
+            // stdio: 'inherit', // optional: shows npm output in terminal
+        });
+
+        return Ok(true);
+    } catch {
+        return Err('Failed to install dependencies. Please make sure npm is installed');
+    }
+}
+
+export function displayDependencies(selectedFrameWork: SupportedFrontEndFrameworks): string {
+    switch (selectedFrameWork) {
+        case 'nextjs':
+            return formatDependencies(NEXTJS_DEPENDENCIES, NEXTJS_DEPENDENCIES_DEV);
+        case 'astro':
+            return formatDependencies(ASTRO_DEPENDENCIES, ASTRO_DEPENDENCIES_DEV);
+        case 'angular':
+            return formatDependencies(ANGULAR_DEPENDENCIES, ANGULAR_DEPENDENCIES_DEV);
+        case 'angular-ssr':
+            return formatDependencies(ANGULAR_SSR_DEPENDENCIES, ANGULAR_SSR_DEPENDENCIES_DEV);
+        default:
+            return '';
+    }
+}
+
+function formatDependencies(dependencies: string[], devDependencies: string[]): string {
+    const lines: string[] = [];
+
+    lines.push(chalk.white('Dependencies:'));
+    dependencies.forEach((item) => lines.push(chalk.grey(`- ${item}`)));
+
+    lines.push(''); // blank line
+
+    lines.push(chalk.white('Dev Dependencies:'));
+    devDependencies.forEach((item) => lines.push(chalk.grey(`- ${item}`)));
+
+    return lines.join('\n');
 }

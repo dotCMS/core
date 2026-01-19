@@ -22,13 +22,15 @@ import { DOTCMS_HEALTH_API, DOTCMS_USER } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import {
+    displayDependencies,
     fetchWithRetry,
     finalStepsForAngularAndAngularSSR,
     finalStepsForAstro,
     finalStepsForNextjs,
     getDotcmsApisByBaseUrl,
     getPortByFramework,
-    getUVEConfigValue
+    getUVEConfigValue,
+    installDependenciesForProject
 } from './utils';
 
 import type { SupportedFrontEndFrameworks } from './types';
@@ -58,7 +60,8 @@ program
 
     .action(async (projectName: string, options) => {
         // <-- Add beta notice here
-        console.log(chalk.bgGrey.white('\n\n ℹ️  Beta: Features may change \n'));
+        console.log(chalk.white('\nWelcome to dotCMS CLI\n'));
+        console.log(chalk.bgGrey.white('\n ℹ️  Beta: Features may change \n'));
 
         const { dir, directory } = options;
         const { url } = options;
@@ -115,7 +118,17 @@ program
                 return;
             }
 
+            // TODO need to insert here the dependices step
             spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
+            spinner.start(
+                `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
+            );
+            const result = await installDependenciesForProject(finalDirectory);
+            if (!result)
+                spinner.fail(
+                    `Failed to install dependencies.Please check if npm is installed in your system`
+                );
+            else spinner.succeed(`Installed dependencies sucessfully`);
 
             const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
             const emaConfigApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
@@ -245,6 +258,16 @@ program
         }
 
         spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
+
+        spinner.start(
+            `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
+        );
+        const result = await installDependenciesForProject(finalDirectory);
+        if (!result)
+            spinner.fail(
+                `Failed to install dependencies.Please check if npm is installed in your system`
+            );
+        else spinner.succeed(`Installed dependencies sucessfully`);
 
         spinner.start('Setting up dotCMS with Docker Compose...');
 
