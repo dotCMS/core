@@ -688,8 +688,7 @@ public class PageResource {
 
     /**
      * Updates all the contents in an HTML Page. This method is used to update changes when both adding or removing
-     * Contentlets from Containers. Also, it allows to update the style properties of the Contentlets.
-     * It takes a JSON object -- serialized as a {@link PageContainerForm} object -- in
+     * Contentlets from Containers. Also, It takes a JSON object -- serialized as a {@link PageContainerForm} object -- in
      * the following format:
      * <pre>
      *     {@code
@@ -703,16 +702,7 @@ public class PageResource {
      *                  "CONTENTLET-IDENTIFIER-2",
      *                  "CONTENTLET-IDENTIFIER-3",
      *                  "..."
-     *              ],
-     *              "styleProperties": {
-     *                  "CONTENTLET-IDENTIFIER-1": {
-     *                      "width": "100px",
-     *                      "color": "red",
-     *                  },
-     *                  "CONTENTLET-IDENTIFIER-3": {
-     *                      "fontSize": "16px"
-     *                  }
-     *              }
+     *              ]
      *          },
      *          {
      *              "identifier": "{CONTAINER-2-ID}",
@@ -723,13 +713,7 @@ public class PageResource {
      *                  "CONTENTLET-IDENTIFIER-5",
      *                  "CONTENTLET-IDENTIFIER-6",
      *                  "..."
-     *              ],
-     *              "styleProperties": {
-     *                  "CONTENTLET-IDENTIFIER-4": {
-     *                      "backgroundColor": "blue"
-     *                  },
-     *                  "..."
-     *              }
+     *              ]
      *          }
      *      ]
      *     }
@@ -758,17 +742,11 @@ public class PageResource {
                                     + "        {\n"
                                     + "            \"containerId\": \"some-container-id\",\n"
                                     + "            \"contentletId\": \"some-contentlet-id\",\n"
-                                    + "            \"styleProperties\": {\n"
-                                    + "                \"color\": \"#FF0000\",\n"
-                                    + "                \"margin\": \"10px\",\n"
-                                    + "                \"width\": \"100px\"\n"
-                                    + "            },\n"
                                     + "            \"uuid\": \"some-uuid\"\n"
                                     + "        },\n"
                                     + "        {\n"
                                     + "            \"containerId\": \"other-container-id\",\n"
                                     + "            \"contentletId\": \"other-contentlet-id\",\n"
-                                    + "            \"styleProperties\": null,\n"
                                     + "            \"uuid\": \"other-uuid\"\n"
                                     + "        }\n"
                                     + "    ],\n"
@@ -825,10 +803,9 @@ public class PageResource {
         }
     }
 
-    protected void validateContainerEntries(final List<PageContainerForm.ContainerEntry> containerEntries) {
-
+    protected void validateContainerEntries(final List<ContainerEntry> containerEntries) {
         final Map<String, Set<String>> containerContentTypesMap = new HashMap<>();
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final ContainerEntry containerEntry : containerEntries) {
 
             final String containerId = containerEntry.getContainerId();
             final Set<String> contentTypeSet    = containerContentTypesMap.computeIfAbsent(containerId,  key -> this.getContainerContentTypes(containerId));
@@ -872,38 +849,24 @@ public class PageResource {
      * @param containerEntries List
      * @return List
      */
-    private List<PageContainerForm.ContainerEntry> reduce(final List<PageContainerForm.ContainerEntry> containerEntries) {
-        // Helper class to hold both contentIds and styleProperties during reduction
-        class ContainerData {
-            final Set<String> contentIds = new LinkedHashSet<>();
-            final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
-        }
+    private List<ContainerEntry> reduce(final List<ContainerEntry> containerEntries) {
+        final Map<MultiKey, Set<String>> containerEntryMap = new HashMap<>();
 
-        final Map<MultiKey, ContainerData> containerEntryMap = new HashMap<>();
+        for (final ContainerEntry containerEntry : containerEntries) {
+            final Set<String> contentletIdList = containerEntryMap.computeIfAbsent(
+                    new MultiKey(containerEntry.getPersonaTag(),
+                            containerEntry.getContainerId(), containerEntry.getContainerUUID()),
+                    k -> new LinkedHashSet<>());
 
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
-            // containerEntryMap key: personaTag + containerId + containerUUID
-            final MultiKey key = new MultiKey(containerEntry.getPersonaTag(),
-                    containerEntry.getContainerId(), containerEntry.getContainerUUID());
-
-            final ContainerData data = containerEntryMap.computeIfAbsent(key, k -> new ContainerData());
-
-            data.contentIds.addAll(containerEntry.getContentIds());
-
-            // Merge styles. Duplicated keys overwrite previous ones (last one wins)
-            final Map<String, Map<String, Object>> incomingStyles = Optional.of(
-                    containerEntry.getStylePropertiesMap()).orElse(Collections.emptyMap());
-
-            data.stylePropertiesMap.putAll(incomingStyles);
+            contentletIdList.addAll(containerEntry.getContentIds());
         }
 
         return containerEntryMap.entrySet().stream()
-                .map(entry -> new PageContainerForm.ContainerEntry(
+                .map(entry -> new ContainerEntry(
                         (String) entry.getKey().getKeys()[0],
                         (String) entry.getKey().getKeys()[1],
                         (String) entry.getKey().getKeys()[2],
-                        new ArrayList<>(entry.getValue().contentIds),
-                        entry.getValue().stylePropertiesMap))
+                        new ArrayList<>(entry.getValue())))
                 .collect(Collectors.toList());
     }
     /**
