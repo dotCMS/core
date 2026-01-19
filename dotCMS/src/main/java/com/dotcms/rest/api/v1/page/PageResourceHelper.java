@@ -1,5 +1,22 @@
 package com.dotcms.rest.api.v1.page;
 
+import static com.dotcms.util.CollectionsUtils.list;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.velocity.exception.ResourceNotFoundException;
+import org.jetbrains.annotations.NotNull;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
@@ -60,24 +77,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
-import org.apache.velocity.exception.ResourceNotFoundException;
-import org.jetbrains.annotations.NotNull;
-
-import javax.servlet.http.HttpServletRequest;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static com.dotcms.util.CollectionsUtils.list;
 
 /**
  * Provides the utility methods that interact with HTML Pages in dotCMS. These methods are used by
@@ -650,6 +653,160 @@ public class PageResourceHelper implements Serializable {
             return vanityUrlOpt;
         }
         return Optional.empty();
+    }
+
+    /**
+     * Updates style properties for contentlets within containers on a specific page.
+     * This method only updates the styleProperties field in existing MultiTree entries
+     * without modifying the page structure (containers, contentlets, order).
+     *
+     * @param pageId The identifier of the HTML Page whose contentlet styles are being updated.
+     * @param containerEntries The list of container entries with contentlet style updates.
+     *                        Must be already validated and reduced (deduplicated).
+     * @return A list of ContentView objects representing the updated contentlets with their new styles.
+     * @throws DotDataException If there's an error accessing or updating the database.
+     */
+    @WrapInTransaction
+    public List<ContentView> saveContentletStyles(final String pageId,
+                                                           final List<ContainerEntry> containerEntries)
+            throws DotDataException{
+
+        // Fetch all existing MultiTree entries for this page from database
+        final List<MultiTree> existingMultiTrees = multiTreeAPI.getMultiTrees(pageId);
+
+        if (existingMultiTrees.isEmpty()) {
+            String message = String.format(
+                    "There is no Content in the Page: %s to associate the style entries", pageId);
+            ContentletStylingErrorEntity.throwSingleError("CONTENT_NOT_FOUND", message, null);
+        }
+
+        // Create a lookup map for O(1) access
+        // Key = unique identifier (container|uuid|contentlet|personalization|variant)
+        // Value = MultiTree object
+        final Map<String, MultiTree> multiTreeLookup = existingMultiTrees.stream()
+                .collect(Collectors.toMap(
+                    mt -> buildMultiTreeLookupKey(
+                        mt.getContainer(),
+                        mt.getRelationType(),
+                        mt.getContentlet(),
+                        mt.getPersonalization(),
+                        mt.getVariantId()
+                    ),
+                    mt -> mt,
+                    // In case of duplicate keys (shouldn't happen), keep the first one
+                    (existing, duplicate) -> existing
+                ));
+
+        // Get the current variant from the request context (fallback to DEFAULT if unavailable)
+        final String currentVariantId = Try.of(
+                        () -> WebAPILocator.getVariantWebAPI().currentVariantId())
+                .getOrElse(VariantAPI.DEFAULT_VARIANT.name());
+
+        final List<MultiTree> multiTreesToUpdate = new ArrayList<>();
+        final List<ContentView> responseViews = new ArrayList<>();
+
+        // Process each container entry from the request
+        for (final ContainerEntry containerEntry : containerEntries) {
+
+            final String containerId = containerEntry.getContainerId();
+            final String containerUuid = containerEntry.getContainerUUID();
+            final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag())
+                    ? Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag()
+                    : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+            final Map<String, Map<String, Object>> contentletStylesMap = containerEntry.getStylePropertiesMap();
+
+            // For each contentlet in this container, update its styles
+            for (final String contentletId : containerEntry.getContentIds()) {
+                this.updateContentletStyles(pageId, contentletId, containerId, containerUuid,
+                        personalization, currentVariantId, multiTreeLookup, contentletStylesMap,
+                        multiTreesToUpdate, responseViews);
+            }
+        }
+
+        // Save all updated MultiTrees in a single batch operation
+        multiTreeAPI.saveMultiTrees(multiTreesToUpdate);
+        Logger.info(this, String.format(
+                "Successfully updated styles for %d contentlets on page %s (variant: %s)",
+                multiTreesToUpdate.size(), pageId, currentVariantId));
+
+        return responseViews;
+    }
+
+    /**
+     * Updates the style properties for a contentlet in a specific container on a specific page.
+     *
+     * @param pageId The identifier of the HTML Page whose contentlet styles are being updated.
+     * @param contentletId The identifier of the contentlet whose styles are being updated.
+     * @param containerId The identifier of the container in which the contentlet is located.
+     * @param containerUuid The UUID of the container.
+     * @param personalization The personalization tag (persona) of the contentlet.
+     * @param currentVariantId The current variant identifier.
+     * @param multiTreeLookup The lookup map for the MultiTree entries.
+     * @param contentletStylesMap The map of contentlet styles.
+     * @param multiTreesToUpdate The list of MultiTree entries to update.
+     * @param responseViews The list of ContentView objects representing the updated contentlets with their new styles.
+     */
+    private void updateContentletStyles(final String pageId, final String contentletId, final String containerId,
+            final String containerUuid, final String personalization, final String currentVariantId,
+            final Map<String, MultiTree> multiTreeLookup,
+            final Map<String, Map<String, Object>> contentletStylesMap,
+            final List<MultiTree> multiTreesToUpdate, final List<ContentView> responseViews) {
+
+        // Find the existing MultiTree entry searching in the multiTreeLookup map
+        final MultiTree existingMultiTree = multiTreeLookup.get(
+                buildMultiTreeLookupKey(containerId, containerUuid, contentletId, personalization, currentVariantId));
+
+        if (existingMultiTree == null) {
+            String message = String.format(
+                    "Contentlet: %s not found for page=%s, container=%s, uuid=%s, personalization=%s, variant=%s.",
+                    contentletId, pageId, containerId, containerUuid, personalization,
+                    currentVariantId);
+            ContentletStylingErrorEntity.throwSingleError("CONTENT_NOT_FOUND", message,
+                    null, contentletId, containerId, containerUuid);
+        }
+
+        // Get the new style properties for this contentlet (could be empty to clear styles)
+        final Map<String, Object> newStyleProperties = contentletStylesMap.get(contentletId);
+
+        // Update the MultiTree with new style properties
+        existingMultiTree.setStyleProperties(newStyleProperties);
+        multiTreesToUpdate.add(existingMultiTree);
+
+        // Invalidate contentlet cache for immediate visual updates
+        invalidateContentletCache(contentletId, currentVariantId);
+
+        // Build response view for this contentlet
+        final ContentView responseView = ContentView.builder()
+                .containerId(containerId)
+                .uuid(containerUuid)
+                .contentletId(contentletId)
+                .styleProperties(newStyleProperties)
+                .build();
+
+        responseViews.add(responseView);
+    }
+
+    /**
+     * Builds a unique lookup key for a MultiTree entry.
+     * This key includes all fields necessary to uniquely identify a MultiTree record,
+     * including personalization and variant to support personas and A/B testing.
+     *
+     * @param container       The container identifier
+     * @param instanceId      The container instance UUID
+     * @param contentlet      The contentlet identifier
+     * @param personalization The personalization tag (persona)
+     * @param variantId       The variant identifier
+     * @return A unique string key combining all parameters
+     */
+    private String buildMultiTreeLookupKey(final String container, final String instanceId,
+            final String contentlet, final String personalization, final String variantId) {
+        return String.format("%s|%s|%s|%s|%s",
+            container,
+            instanceId,
+            contentlet,
+            personalization != null ? personalization : MultiTree.DOT_PERSONALIZATION_DEFAULT,
+            variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name()
+        );
     }
 
 }
