@@ -4,7 +4,7 @@
     "projectType": "library",
     "sourceRoot": "libs/dot-rules/src",
     "prefix": "dot",
-    "tags": [],
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "lint": {
             "executor": "@nx/eslint:lint",

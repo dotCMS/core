@@ -1,8 +1,6 @@
 <form [formGroup]="formModel" let rf="ngForm">
     @if (showAddToBundleDialog) {
-        <dot-add-to-bundle
-            (cancel)="showAddToBundleDialog = false"
-            [assetIdentifier]="rule.key" />
+        <dot-add-to-bundle (cancel)="showAddToBundleDialog = false" [assetIdentifier]="rule.key" />
     }
     <div
         [class.cw-hidden]="hidden"
@@ -17,11 +15,7 @@
                 class="cw-header"
                 flex
                 layout="row">
-                <div
-                    class="cw-header-info"
-                    flex="70"
-                    layout="row"
-                    layout-align="start center">
+                <div class="cw-header-info" flex="70" layout="row" layout-align="start center">
                     <i
                         [class.pi-angle-right]="!rule._expanded"
                         [class.pi-angle-down]="rule._expanded"
@@ -63,11 +57,7 @@
                             appendTo="body" />
                     }
                 </div>
-                <div
-                    class="cw-header-actions"
-                    flex="30"
-                    layout="row"
-                    layout-align="end center">
+                <div class="cw-header-actions" flex="30" layout="row" layout-align="end center">
                     <span class="cw-rule-status-text" title="{{ statusText() }}">
                         {{ statusText(30) }}
                     </span>
@@ -91,7 +81,7 @@
                             "
                             [disabled]="!rule.isPersisted()"
                             class="p-button-secondary"
-                            style="margin-left:0.5rem"
+                            style="margin-left: 0.5rem"
                             pButton
                             icon="pi pi-plus"
                             arial-label="Add Group"></button>
@@ -114,9 +104,7 @@
                             onUpdateConditionGroupOperator($event, group)
                         "
                         (updateConditionType)="onUpdateConditionType($event, group)"
-                        (updateConditionParameter)="
-                            onUpdateConditionParameter($event, group)
-                        "
+                        (updateConditionParameter)="onUpdateConditionParameter($event, group)"
                         (updateConditionOperator)="onUpdateConditionOperator($event, group)"
                         [group]="group"
                         [conditionTypes]="conditionTypes"
