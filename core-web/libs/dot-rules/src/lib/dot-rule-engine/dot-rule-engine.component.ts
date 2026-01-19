@@ -151,7 +151,7 @@ export class DotRuleEngineComponent implements OnDestroy {
         }
     }
 
-    isFilteringField(field: string, value: any = null): boolean {
+    isFilteringField(field: string, value: boolean | null = null): boolean {
         let isFiltering;
         if (value === null) {
             const re = new RegExp(field + ':[\\w]*');
@@ -167,7 +167,7 @@ export class DotRuleEngineComponent implements OnDestroy {
         return CwFilter.isFiltered(rule, this.filterText);
     }
 
-    showPushPublishDialog(ruleKey: any): void {
+    showPushPublishDialog(ruleKey: string): void {
         this.dotPushPublishDialogService.open({
             assetIdentifier: ruleKey,
             title: this.pushPublishTitleLabel

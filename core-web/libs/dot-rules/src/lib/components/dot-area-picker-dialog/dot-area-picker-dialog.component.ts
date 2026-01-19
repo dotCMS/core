@@ -16,8 +16,8 @@ import { DialogModule } from 'primeng/dialog';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { GCircle } from '../models/gcircle.model';
-import { GoogleMapService } from '../services/GoogleMapService';
+import { GCircle } from '../../models/gcircle.model';
+import { GoogleMapService } from '../../services/GoogleMapService';
 
 let mapIdCounter = 1;
 
@@ -54,13 +54,11 @@ export class DotAreaPickerDialogComponent implements OnChanges {
 
     ngOnChanges(change): void {
         if (!this.hidden && this.map == null) {
-            this.mapsService.mapsApi$.subscribe(
-                (_x) => {},
-                () => {},
-                () => {
+            this.mapsService.mapsApi$.subscribe({
+                complete: () => {
                     this.readyMap();
                 }
-            );
+            });
         }
 
         if (change.hidden && this.hidden && this.map) {
@@ -133,6 +131,13 @@ export class DotAreaPickerDialogComponent implements OnChanges {
                     circle.getRadius(),
                     this.circle.radius
                 );
+            });
+
+            google.maps.event.addListener(circle, 'center_changed', () => {
+                const ll = circle.getCenter();
+                const center = { lat: ll.lat(), lng: ll.lng() };
+                this.loggerService.debug('center changed', center);
+                this.circle = { center, radius: circle.getRadius() };
             });
         }
     }

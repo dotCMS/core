@@ -76,20 +76,26 @@ export class DotVisitorsLocationContainerComponent implements OnChanges {
         const resources = this.resources;
         const loggerService = this.loggerService;
 
-        resources.get(I8N_BASE).subscribe((_rsrc) => {});
-        this._rsrcCache = {};
-
-        this.circle$.subscribe(
-            (_e) => {},
-            (e) => {
+        resources.get(I8N_BASE).subscribe({
+            error: (e) => {
                 loggerService.error(
                     'DotVisitorsLocationContainerComponent',
                     'Error updating area',
                     e
                 );
-            },
-            () => {}
-        );
+            }
+        });
+        this._rsrcCache = {};
+
+        this.circle$.subscribe({
+            error: (e) => {
+                loggerService.error(
+                    'DotVisitorsLocationContainerComponent',
+                    'Error updating area',
+                    e
+                );
+            }
+        });
     }
 
     rsrc(subkey: string): Observable<string> {
@@ -104,7 +110,8 @@ export class DotVisitorsLocationContainerComponent implements OnChanges {
 
     ngOnChanges(change): void {
         if (change.componentInstance && this.componentInstance != null) {
-            const temp: any = this.componentInstance.parameters;
+            const temp: VisitorsLocationParams = this.componentInstance
+                .parameters as unknown as VisitorsLocationParams;
             const params: VisitorsLocationParams = temp as VisitorsLocationParams;
             const comparisonDef = this.componentInstance.parameterDefs['comparison'];
 

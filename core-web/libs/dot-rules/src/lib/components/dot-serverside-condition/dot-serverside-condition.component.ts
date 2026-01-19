@@ -7,9 +7,11 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject, OnChanges
+    inject,
+    OnChanges,
+    SimpleChanges
 } from '@angular/core';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, UntypedFormControl } from '@angular/forms';
 
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
@@ -24,13 +26,33 @@ import { isEmpty } from '@dotcms/utils';
 import { ConditionModel, ParameterModel } from '../../services/Rule';
 import { ServerSideFieldModel } from '../../services/ServerSideFieldModel';
 import { I18nService } from '../../services/system/locale/I18n';
-import { CwComponent } from '../../services/util/CwComponent';
 import {
     ParameterDefinition,
     CwDropdownInputModel,
     CwRestDropdownInputModel
 } from '../../services/util/CwInputModel';
 import { Verify } from '../../services/validation/Verify';
+
+interface InputConfig {
+    control: UntypedFormControl;
+    name: string;
+    placeholder?: Observable<string>;
+    required?: boolean;
+    value?: string;
+    type?: string;
+    flex?: number;
+    argIndex?: number;
+    options$?: Observable<{ label: string; value: string }[]>;
+    allowAdditions?: boolean;
+    maxSelections?: number;
+    minSelections?: number;
+    modelValue?: string | string[];
+    visible?: boolean;
+}
+
+interface ComparisonOption {
+    rightHandArgCount?: number;
+}
 
 @Component({
     selector: 'dot-serverside-condition',
@@ -55,8 +77,8 @@ export class DotServersideConditionComponent implements OnChanges {
     parameterValueChange: EventEmitter<{ name: string; value: string }> = new EventEmitter(false);
     islast = null;
 
-    _inputs: Array<any>;
-    _rhArgCount: boolean;
+    _inputs: Array<InputConfig | { flex: number; type: string }>;
+    _rhArgCount: number | null;
     private _resources: I18nService;
 
     private _errorMessageFormatters = {
@@ -73,8 +95,10 @@ export class DotServersideConditionComponent implements OnChanges {
         this._inputs = [];
     }
 
-    private static getRightHandArgCount(selectedComparison): boolean {
-        let argCount = null;
+    private static getRightHandArgCount(
+        selectedComparison: ComparisonOption | undefined
+    ): number | null {
+        let argCount: number | null = null;
         if (selectedComparison) {
             argCount = Verify.isNumber(selectedComparison.rightHandArgCount)
                 ? selectedComparison.rightHandArgCount
@@ -84,28 +108,31 @@ export class DotServersideConditionComponent implements OnChanges {
         return argCount;
     }
 
-    private static isComparisonParameter(input): boolean {
-        return input && input.name === 'comparison';
+    private static isComparisonParameter(
+        input: InputConfig | { flex: number; type: string }
+    ): boolean {
+        return input && 'name' in input && input.name === 'comparison';
     }
 
-    private isConditionalFieldWithLessThanThreeFields(size: number, field: any): boolean {
+    private isConditionalFieldWithLessThanThreeFields(
+        size: number,
+        field: ServerSideFieldModel | undefined
+    ): boolean {
         return size <= 2 && field instanceof ConditionModel;
     }
 
-    ngOnChanges(change): void {
+    ngOnChanges(changes: SimpleChanges): void {
         let paramDefs = null;
-        if (change.componentInstance) {
+        if (changes['componentInstance']) {
             this._rhArgCount = null;
             paramDefs = this.componentInstance.type.parameters;
         }
 
         if (paramDefs) {
-            let prevPriority = 0;
             this._inputs = [];
             Object.keys(paramDefs).forEach((key) => {
                 const paramDef = this.componentInstance.getParameterDef(key);
                 const param = this.componentInstance.getParameter(key);
-                prevPriority = paramDef.priority;
 
                 const input = this.getInputFor(paramDef.inputType.type, param, paramDef);
                 this._inputs[paramDef.priority] = input;
@@ -117,22 +144,22 @@ export class DotServersideConditionComponent implements OnChanges {
             if (
                 this.isConditionalFieldWithLessThanThreeFields(
                     this._inputs.length,
-                    change.componentInstance.currentValue
+                    changes['componentInstance'].currentValue
                 )
             ) {
                 this._inputs = [{ flex: 40, type: 'spacer' }, ...this._inputs];
             }
 
-            let comparison;
-            let comparisonIdx = null;
-            this._inputs.forEach((input: any, idx) => {
+            let comparison: InputConfig | undefined;
+            let comparisonIdx: number | null = null;
+            this._inputs.forEach((input, idx) => {
                 if (DotServersideConditionComponent.isComparisonParameter(input)) {
-                    comparison = input;
+                    comparison = input as InputConfig;
                     this.applyRhsCount(comparison.value);
                     comparisonIdx = idx;
-                } else if (comparisonIdx !== null) {
+                } else if (comparisonIdx !== null && 'argIndex' in input) {
                     if (this._rhArgCount !== null) {
-                        input.argIndex = idx - comparisonIdx - 1;
+                        (input as InputConfig).argIndex = idx - comparisonIdx - 1;
                     }
                 }
             });
@@ -165,42 +192,51 @@ export class DotServersideConditionComponent implements OnChanges {
         }
     }
 
-    onDropdownChange(input: any, value: any): void {
+    onDropdownChange(input: InputConfig, value: string): void {
         input.control.setValue(value);
         input.control.markAsDirty();
         this.setParameterValue(input.name, value, input.control.valid, true);
     }
 
-    onDateChange(input: any, value: Date): void {
+    onDateChange(input: InputConfig, value: Date): void {
         const isoValue = this.convertToISOFormat(value);
         input.control.setValue(isoValue);
         input.control.markAsDirty();
         this.setParameterValue(input.name, isoValue, input.control.valid, true);
     }
 
-    onRestDropdownChange(input: any, value: any): void {
+    onRestDropdownChange(input: InputConfig, value: string | string[]): void {
         const finalValue = Array.isArray(value) ? value.join(',') : value;
         input.control.setValue(finalValue);
         input.control.markAsDirty();
         this.setParameterValue(input.name, finalValue, input.control.valid, true);
     }
 
-    setParameterValue(name: string, value: any, _valid: boolean, _isBlur = false): void {
+    setParameterValue(name: string, value: string, _valid: boolean, _isBlur = false): void {
         this.parameterValueChange.emit({ name, value });
         if (name === 'comparison') {
             this.applyRhsCount(value);
         }
     }
 
-    getInputFor(type: string, param, paramDef: ParameterDefinition): any {
+    getInputFor(type: string, param: ParameterModel, paramDef: ParameterDefinition): InputConfig {
         const i18nBaseKey = paramDef.i18nBaseKey || this.componentInstance.type.i18nKey;
         /* Save a potentially large number of requests by loading parent key: */
-        this._resources.get(i18nBaseKey).subscribe(() => {});
+        this._resources.get(i18nBaseKey).subscribe({
+            next: () => {
+                // Pre-loading i18n resources
+            }
+        });
 
-        let input;
+        let input: InputConfig;
         if (type === 'text' || type === 'number') {
             input = this.getTextInput(param, paramDef, i18nBaseKey);
-            this.loggerService.info('DotServersideConditionComponent', 'getInputFor', type, paramDef);
+            this.loggerService.info(
+                'DotServersideConditionComponent',
+                'getInputFor',
+                type,
+                paramDef
+            );
         } else if (type === 'datetime') {
             input = this.getDateTimeInput(param, paramDef, i18nBaseKey);
         } else if (type === 'restDropdown') {
@@ -214,7 +250,7 @@ export class DotServersideConditionComponent implements OnChanges {
         return input;
     }
 
-    getDateModelValue(input: any): Date {
+    getDateModelValue(input: InputConfig): Date {
         const value = input.value;
         if (isEmpty(value)) {
             return this.getDefaultDate();
@@ -238,7 +274,11 @@ export class DotServersideConditionComponent implements OnChanges {
         return new Date(value.getTime() - offset).toISOString().slice(0, -5);
     }
 
-    private getTextInput(param, paramDef, i18nBaseKey: string): any {
+    private getTextInput(
+        param: ParameterModel,
+        paramDef: ParameterDefinition,
+        i18nBaseKey: string
+    ): InputConfig {
         const rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
         const placeholderKey = rsrcKey + '.placeholder';
         const control = ServerSideFieldModel.createNgControl(this.componentInstance, param.key);
@@ -251,7 +291,11 @@ export class DotServersideConditionComponent implements OnChanges {
         };
     }
 
-    private getDateTimeInput(param, paramDef, _i18nBaseKey: string): any {
+    private getDateTimeInput(
+        param: ParameterModel,
+        paramDef: ParameterDefinition,
+        _i18nBaseKey: string
+    ): InputConfig {
         return {
             control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
             name: param.key,
@@ -261,7 +305,11 @@ export class DotServersideConditionComponent implements OnChanges {
         };
     }
 
-    private getRestDropdownInput(param, paramDef, i18nBaseKey: string): any {
+    private getRestDropdownInput(
+        param: ParameterModel,
+        paramDef: ParameterDefinition,
+        i18nBaseKey: string
+    ): InputConfig {
         const inputType: CwRestDropdownInputModel = <CwRestDropdownInputModel>paramDef.inputType;
         const rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key;
         const placeholderKey = rsrcKey + '.placeholder';
@@ -278,19 +326,19 @@ export class DotServersideConditionComponent implements OnChanges {
         const control = ServerSideFieldModel.createNgControl(this.componentInstance, param.key);
 
         // Fetch options from REST endpoint
-        const options$ = this.coreWebService
-            .request({ url: inputType.optionUrl })
-            .pipe(
-                map((res: any) => this.jsonEntriesToOptions(
+        const options$ = this.coreWebService.request({ url: inputType.optionUrl }).pipe(
+            map((res: Record<string, unknown> | unknown[]) =>
+                this.jsonEntriesToOptions(
                     res,
                     inputType.optionValueField || 'key',
                     inputType.optionLabelField || 'value'
-                )),
-                startWith([]),
-                shareReplay(1)
-            );
+                )
+            ),
+            startWith([]),
+            shareReplay(1)
+        );
 
-        const input: any = {
+        const input: InputConfig = {
             allowAdditions: inputType.allowAdditions,
             control: control,
             maxSelections: inputType.maxSelections,
@@ -300,33 +348,39 @@ export class DotServersideConditionComponent implements OnChanges {
             placeholder: this._resources.get(placeholderKey, paramDef.key),
             required: inputType.minSelections > 0,
             value: currentValue,
-            modelValue: inputType.maxSelections > 1 && currentValue
-                ? currentValue.split(',')
-                : currentValue
+            modelValue:
+                inputType.maxSelections > 1 && currentValue ? currentValue.split(',') : currentValue
         };
 
         if (!input.value) {
-            input.value = inputType.selected !== null ? inputType.selected : '';
+            const selected = inputType.selected;
+            input.value =
+                selected !== null ? (Array.isArray(selected) ? selected.join(',') : selected) : '';
         }
 
         return input;
     }
 
     private jsonEntriesToOptions(
-        res: any,
+        res: Record<string, unknown> | unknown[],
         optionValueField: string,
         optionLabelField: string
     ): { value: string; label: string }[] {
         const valuesJson = res;
-        let ary = [];
+        let ary: { value: string; label: string }[] = [];
 
         if (Verify.isArray(valuesJson)) {
-            ary = valuesJson.map((valueJson) =>
+            ary = (valuesJson as Record<string, unknown>[]).map((valueJson) =>
                 this.jsonEntryToOption(valueJson, null, optionValueField, optionLabelField)
             );
         } else {
             ary = Object.keys(valuesJson).map((key) => {
-                return this.jsonEntryToOption(valuesJson[key], key, optionValueField, optionLabelField);
+                return this.jsonEntryToOption(
+                    valuesJson[key] as Record<string, unknown>,
+                    key,
+                    optionValueField,
+                    optionLabelField
+                );
             });
         }
 
@@ -334,20 +388,20 @@ export class DotServersideConditionComponent implements OnChanges {
     }
 
     private jsonEntryToOption(
-        json: any,
-        key: string = null,
+        json: Record<string, unknown>,
+        key: string | null = null,
         optionValueField: string,
         optionLabelField: string
     ): { value: string; label: string } {
-        const opt = { value: null, label: null };
+        const opt: { value: string; label: string } = { value: '', label: '' };
 
         if (!json[optionValueField] && optionValueField === 'key' && key != null) {
             opt.value = key;
         } else {
-            opt.value = json[optionValueField];
+            opt.value = json[optionValueField] as string;
         }
 
-        opt.label = json[optionLabelField];
+        opt.label = json[optionLabelField] as string;
 
         return opt;
     }
@@ -356,7 +410,7 @@ export class DotServersideConditionComponent implements OnChanges {
         param: ParameterModel,
         paramDef: ParameterDefinition,
         i18nBaseKey: string
-    ): CwComponent {
+    ): InputConfig {
         const inputType: CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
         const opts = [];
         const options = inputType.options;
@@ -371,7 +425,7 @@ export class DotServersideConditionComponent implements OnChanges {
         const currentValue = this.componentInstance.getParameterValue(param.key);
         let needsCustomAttribute = currentValue !== null;
 
-        Object.keys(options).forEach((key: any) => {
+        Object.keys(options).forEach((key: string) => {
             const option = options[key];
             if (needsCustomAttribute && key === currentValue) {
                 needsCustomAttribute = false;
@@ -420,7 +474,7 @@ export class DotServersideConditionComponent implements OnChanges {
             shareReplay(1)
         );
 
-        const input: any = {
+        const input: InputConfig = {
             allowAdditions: inputType.allowAdditions,
             control: ServerSideFieldModel.createNgControl(this.componentInstance, param.key),
             maxSelections: inputType.maxSelections,
@@ -433,7 +487,9 @@ export class DotServersideConditionComponent implements OnChanges {
         };
 
         if (!input.value) {
-            input.value = inputType.selected !== null ? inputType.selected : '';
+            const selected = inputType.selected;
+            input.value =
+                selected !== null ? (Array.isArray(selected) ? selected.join(',') : selected) : '';
         }
 
         return input;
@@ -443,6 +499,7 @@ export class DotServersideConditionComponent implements OnChanges {
         const comparisonDef = this.componentInstance.getParameterDef('comparison');
         const comparisonType: CwDropdownInputModel = <CwDropdownInputModel>comparisonDef.inputType;
         const selectedComparisonDef = comparisonType.options[selectedComparison];
-        this._rhArgCount = DotServersideConditionComponent.getRightHandArgCount(selectedComparisonDef);
+        this._rhArgCount =
+            DotServersideConditionComponent.getRightHandArgCount(selectedComparisonDef);
     }
 }

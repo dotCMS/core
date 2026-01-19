@@ -22,12 +22,7 @@
                     appendTo="body" />
             }
             @if (input.type === 'restDropdown') {
-                <div
-                    [class.cw-last]="islast"
-                    flex
-                    layout-fill
-                    layout="column"
-                    class="cw-input">
+                <div [class.cw-last]="islast" flex layout-fill layout="column" class="cw-input">
                     @if (input.maxSelections > 1) {
                         <p-multiSelect
                             (onChange)="onRestDropdownChange(input, $event.value)"
@@ -81,12 +76,7 @@
                 </div>
             }
             @if (input.type === 'text' || input.type === 'number') {
-                <div
-                    [class.cw-last]="islast"
-                    flex
-                    layout-fill
-                    layout="column"
-                    class="cw-input">
+                <div [class.cw-last]="islast" flex layout-fill layout="column" class="cw-input">
                     <input
                         (blur)="onBlur(input)"
                         [placeholder]="input.placeholder | async"

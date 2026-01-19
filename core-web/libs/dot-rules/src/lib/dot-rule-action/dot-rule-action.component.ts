@@ -1,7 +1,15 @@
 import { Observable, from, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    OnChanges,
+    SimpleChanges,
+    inject
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +19,7 @@ import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { DotServersideConditionComponent } from '../condition-types/serverside-condition/dot-serverside-condition.component';
+import { DotServersideConditionComponent } from '../components/dot-serverside-condition/dot-serverside-condition.component';
 import { RuleActionActionEvent } from '../dot-rule-engine-container/dot-rule-engine-container.component';
 import {
     RULE_RULE_ACTION_UPDATE_TYPE,
@@ -42,7 +50,11 @@ export class DotRuleActionComponent implements OnChanges {
     typeDropdownOptions$: Observable<{ label: string; value: string }[]> = of([]);
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.ruleActionTypes && this.ruleActionTypes && Object.keys(this.ruleActionTypes).length > 0) {
+        if (
+            changes.ruleActionTypes &&
+            this.ruleActionTypes &&
+            Object.keys(this.ruleActionTypes).length > 0
+        ) {
             this.buildDropdownOptions();
         }
     }

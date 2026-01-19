@@ -13,7 +13,8 @@ import {
 } from '@dotcms/dotcms-js';
 
 import { DotRulesComponent } from './app/dot-rules.component';
-import { DotServersideConditionComponent } from './condition-types/serverside-condition/dot-serverside-condition.component';
+import { DotAreaPickerDialogComponent } from './components/dot-area-picker-dialog/dot-area-picker-dialog.component';
+import { DotServersideConditionComponent } from './components/dot-serverside-condition/dot-serverside-condition.component';
 import { DotVisitorsLocationContainerComponent } from './custom-types/visitors-location/dot-visitors-location-container.component';
 import { DotVisitorsLocationComponent } from './custom-types/visitors-location/dot-visitors-location.component';
 import { DotConditionGroupComponent } from './dot-condition-group/dot-condition-group.component';
@@ -22,7 +23,6 @@ import { DotRuleActionComponent } from './dot-rule-action/dot-rule-action.compon
 import { DotRuleConditionComponent } from './dot-rule-condition/dot-rule-condition.component';
 import { DotRuleEngineComponent } from './dot-rule-engine/dot-rule-engine.component';
 import { DotRuleEngineContainerComponent } from './dot-rule-engine-container/dot-rule-engine-container.component';
-import { DotAreaPickerDialogComponent } from './google-map/dot-area-picker-dialog.component';
 import { ActionService } from './services/Action';
 import { BundleService } from './services/bundle-service';
 import { ConditionService } from './services/Condition';

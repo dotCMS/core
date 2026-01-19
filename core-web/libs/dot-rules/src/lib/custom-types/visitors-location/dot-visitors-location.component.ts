@@ -7,7 +7,9 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject, OnChanges
+    inject,
+    OnChanges,
+    SimpleChanges
 } from '@angular/core';
 import { UntypedFormControl, FormsModule } from '@angular/forms';
 
@@ -19,24 +21,31 @@ import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { DotAreaPickerDialogComponent } from '../../google-map/dot-area-picker-dialog.component';
+import { DotAreaPickerDialogComponent } from '../../components/dot-area-picker-dialog/dot-area-picker-dialog.component';
 import { GCircle } from '../../models/gcircle.model';
 
-const UNITS = {
+type UnitKey = 'km' | 'm' | 'mi';
+
+interface ComparisonOption {
+    label: string | Observable<string>;
+    value: string;
+}
+
+const UNITS: Record<UnitKey, Record<UnitKey, (len: number) => number>> = {
     km: {
-        km: (len) => len,
-        m: (len) => len * 1000,
-        mi: (len) => len / 1.60934
+        km: (len: number) => len,
+        m: (len: number) => len * 1000,
+        mi: (len: number) => len / 1.60934
     },
     m: {
-        km: (len) => len / 1000,
-        m: (len) => len,
-        mi: (len) => len / 1609.34
+        km: (len: number) => len / 1000,
+        m: (len: number) => len,
+        mi: (len: number) => len / 1609.34
     },
     mi: {
-        km: (len) => len / 1.60934,
-        m: (len) => len * 1609.34,
-        mi: (len) => len
+        km: (len: number) => len / 1.60934,
+        m: (len: number) => len * 1609.34,
+        mi: (len: number) => len
     }
 };
 
@@ -62,10 +71,10 @@ export class DotVisitorsLocationComponent implements OnChanges {
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };
     @Input() comparisonValue: string;
     @Input() comparisonControl: UntypedFormControl;
-    @Input() comparisonOptions: {}[];
+    @Input() comparisonOptions: ComparisonOption[];
     @Input() fromLabel = 'of';
     @Input() changedHook = 0;
-    @Input() preferredUnit = 'm';
+    @Input() preferredUnit: UnitKey = 'm';
 
     @Output() areaChange: EventEmitter<GCircle> = new EventEmitter(false);
     @Output() comparisonChange: EventEmitter<string> = new EventEmitter(false);
@@ -79,14 +88,14 @@ export class DotVisitorsLocationComponent implements OnChanges {
         loggerService.info('DotVisitorsLocationComponent', 'constructor');
     }
 
-    ngOnChanges(change): void {
-        this.loggerService.info('DotVisitorsLocationComponent', 'ngOnChanges', change);
+    ngOnChanges(changes: SimpleChanges): void {
+        this.loggerService.info('DotVisitorsLocationComponent', 'ngOnChanges', changes);
 
-        if (change.comparisonOptions && this.comparisonOptions) {
-            this.comparisonDropdownOptions$ = from(this.comparisonOptions as any[]).pipe(
-                mergeMap((item: { label: Observable<string>; value: string }) => {
-                    if (item.label && (item.label as Observable<string>).pipe) {
-                        return (item.label as Observable<string>).pipe(
+        if (changes['comparisonOptions'] && this.comparisonOptions) {
+            this.comparisonDropdownOptions$ = from(this.comparisonOptions).pipe(
+                mergeMap((item: ComparisonOption) => {
+                    if (item.label && typeof item.label !== 'string' && 'pipe' in item.label) {
+                        return item.label.pipe(
                             map((text: string) => ({
                                 label: text,
                                 value: item.value
@@ -95,7 +104,7 @@ export class DotVisitorsLocationComponent implements OnChanges {
                     }
 
                     return of({
-                        label: item.label as unknown as string,
+                        label: item.label as string,
                         value: item.value
                     });
                 }),

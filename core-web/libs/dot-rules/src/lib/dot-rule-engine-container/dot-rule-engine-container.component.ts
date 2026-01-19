@@ -34,7 +34,7 @@ export interface ParameterChangeEvent extends CwChangeEvent {
 export interface TypeChangeEvent extends CwChangeEvent {
     rule?: RuleModel;
     source: ServerSideFieldModel;
-    value: any;
+    value: ServerSideTypeModel | string;
     index: number;
 }
 
@@ -193,7 +193,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     this.rules.set(newRules);
                 },
                 (e: CwError) => {
-                    this._handle403Error(e) ? null : { invalid: e.message };
+                    return this._handle403Error(e) ? null : { invalid: e.message };
                 }
             );
         }
@@ -385,7 +385,9 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             new ConditionModel({ _type: new ServerSideTypeModel(), operator: 'AND', priority: 1 })
         );
         rule._conditionGroups.push(group);
-        rule._conditionGroups.sort(this.prioritySortFn);
+        rule._conditionGroups.sort((a: ConditionGroupModel, b: ConditionGroupModel) => {
+            return a.priority - b.priority;
+        });
     }
 
     onUpdateConditionGroupOperator(event: ConditionGroupActionEvent): void {
@@ -427,7 +429,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             this.ruleUpdated(rule);
         } catch (e) {
             this.loggerService.error('DotRuleEngineContainerComponent', 'onCreateCondition', e);
-            this.ruleUpdated(rule, [{ unhandledError: e }]);
+            this.ruleUpdated(rule, { unhandledError: e instanceof Error ? e : String(e) });
         }
     }
 
@@ -528,7 +530,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         rule._errors = null;
     }
 
-    ruleUpdated(rule: RuleModel, errors?: { [key: string]: any }): void {
+    ruleUpdated(rule: RuleModel, errors?: { [key: string]: string | Error }): void {
         rule._saving = false;
         if (!errors) {
             rule._saved = true;
@@ -544,9 +546,9 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             rule.enabled = false;
         }
 
-        this._conditionGroupService
-            .updateConditionGroup(rule.key, group)
-            .subscribe((_result) => {});
+        this._conditionGroupService.updateConditionGroup(rule.key, group).subscribe((_result) => {
+            // noop
+        });
     }
 
     patchRule(rule: RuleModel, disable = true): void {
@@ -604,7 +606,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     (_result) => {
                         this.ruleUpdated(rule);
                     },
-                    (e: any) => {
+                    (e: CwError) => {
                         const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
                         this.ruleUpdated(rule, ruleError);
                     }
@@ -627,7 +629,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                         (_result) => {
                             this.ruleUpdated(rule);
                         },
-                        (e: any) => {
+                        (e: CwError) => {
                             const ruleError = this._handle403Error(e)
                                 ? null
                                 : { invalid: e.message };
@@ -683,7 +685,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         }
     }
 
-    prioritySortFn(a: any, b: any): number {
+    prioritySortFn<T extends { priority: number }>(a: T, b: T): number {
         return a.priority - b.priority;
     }
 
@@ -719,9 +721,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     }
 
     private loadRules(rules: RuleModel[]): void {
-        rules.sort((a, b) => {
-            return b.priority - a.priority;
-        });
+        rules.sort(this.prioritySortFn);
         this.rules.set(rules);
         this.loading.set(false);
     }

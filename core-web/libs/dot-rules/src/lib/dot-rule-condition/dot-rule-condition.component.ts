@@ -1,7 +1,15 @@
 import { Observable, from, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    Output,
+    OnChanges,
+    SimpleChanges,
+    inject
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +19,7 @@ import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { DotServersideConditionComponent } from '../condition-types/serverside-condition/dot-serverside-condition.component';
+import { DotServersideConditionComponent } from '../components/dot-serverside-condition/dot-serverside-condition.component';
 import { DotVisitorsLocationContainerComponent } from '../custom-types/visitors-location/dot-visitors-location-container.component';
 import {
     RULE_CONDITION_UPDATE_PARAMETER,
@@ -63,7 +71,11 @@ export class DotRuleConditionComponent implements OnChanges {
 
     ngOnChanges(changes: SimpleChanges): void {
         try {
-            if (changes.conditionTypes && this.conditionTypes && Object.keys(this.conditionTypes).length > 0) {
+            if (
+                changes.conditionTypes &&
+                this.conditionTypes &&
+                Object.keys(this.conditionTypes).length > 0
+            ) {
                 this.buildDropdownOptions();
             }
         } catch (e) {

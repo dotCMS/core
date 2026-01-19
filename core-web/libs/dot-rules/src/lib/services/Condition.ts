@@ -1,20 +1,23 @@
-import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
-import { Observable } from 'rxjs';
+import { from as observableFrom, empty as observableEmpty, Observable, Subject } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { reduce, mergeMap, catchError, map } from 'rxjs/operators';
 
-import { ApiRoot } from '@dotcms/dotcms-js';
-import { HttpCode } from '@dotcms/dotcms-js';
-import { CoreWebService, LoggerService } from '@dotcms/dotcms-js';
+import { ApiRoot, HttpCode, CoreWebService, LoggerService } from '@dotcms/dotcms-js';
 
-import { ConditionGroupModel, ConditionModel, ICondition } from './Rule';
+import { ConditionGroupModel, ConditionModel, ICondition, ParameterModel } from './Rule';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
 
-// tslint:disable-next-line:no-unused-variable
-// const noop = (...arg: any[]) => {};
+interface ConditionJson {
+    id: string;
+    conditionlet: string;
+    priority: number;
+    operator: string;
+    values: { [key: string]: ParameterModel };
+    owningGroup?: string;
+}
 
 @Injectable()
 export class ConditionService {
@@ -34,45 +37,42 @@ export class ConditionService {
         this._baseUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`;
     }
 
-    static toJson(condition: ConditionModel): any {
-        const json: any = {};
-        json.id = condition.key;
-        json.conditionlet = condition.type.key;
-        json.priority = condition.priority;
-        json.operator = condition.operator;
-        json.values = condition.parameters;
-
-        return json;
+    static toJson(condition: ConditionModel): ConditionJson {
+        return {
+            id: condition.key,
+            conditionlet: condition.type.key,
+            priority: condition.priority,
+            operator: condition.operator,
+            values: condition.parameters
+        };
     }
 
     static fromServerConditionTransformFn(condition: ICondition): ConditionModel {
         let conditionModel: ConditionModel = null;
         try {
             conditionModel = new ConditionModel(condition);
-            const values = condition['values'];
+            const values = condition['values'] as {
+                [key: string]: { value: string; priority: number };
+            };
 
             Object.keys(values).forEach((key) => {
                 const x = values[key];
                 conditionModel.setParameter(key, x.value, x.priority);
-                // tslint:disable-next-line:no-console
-                console.log('ConditionService', 'setting parameter', key, x);
             });
         } catch (e) {
-            // tslint:disable-next-line:no-console
-            console.error('Error reading Condition.', e);
             throw e;
         }
 
         return conditionModel;
     }
 
-    makeRequest(childPath: string): Observable<any> {
+    makeRequest(childPath: string): Observable<ICondition> {
         return this.coreWebService
-            .request({
+            .request<ICondition>({
                 url: this._baseUrl + '/' + childPath
             })
             .pipe(
-                catchError((err: any, _source: Observable<any>) => {
+                catchError((err: { status?: number }) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.info(
                             'Could not retrieve Condition Types: URL not valid.'
@@ -112,8 +112,7 @@ export class ConditionService {
         conditionId: string,
         conditionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ConditionModel> {
-        let conditionModelResult: Observable<ICondition>;
-        conditionModelResult = this.makeRequest(conditionId);
+        const conditionModelResult: Observable<ICondition> = this.makeRequest(conditionId);
 
         return conditionModelResult.pipe(
             map((entity) => {
@@ -125,8 +124,7 @@ export class ConditionService {
         );
     }
 
-    add(groupId: string, model: ConditionModel): Observable<any> {
-        // this.loggerService.info("api.rule-engine.ConditionService", "add", model)
+    add(groupId: string, model: ConditionModel): Observable<ConditionModel> {
         if (!model.isValid()) {
             throw new Error(`This should be thrown from a checkValid function on the model,
                         and should provide the info needed to make the user aware of the fix.`);
@@ -135,15 +133,14 @@ export class ConditionService {
         const json = ConditionService.toJson(model);
         json.owningGroup = groupId;
         const add = this.coreWebService
-            .request({
+            .request<{ id: string }>({
                 method: 'POST',
                 body: json,
                 url: this._baseUrl + '/'
             })
             .pipe(
-                map((res: HttpResponse<any>) => {
-                    const json: any = res;
-                    model.key = json.id;
+                map((res) => {
+                    model.key = res.id;
 
                     return model;
                 })
