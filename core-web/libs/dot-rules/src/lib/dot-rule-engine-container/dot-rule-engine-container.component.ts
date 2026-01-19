@@ -425,10 +425,13 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     onDeleteConditionGroup(event: ConditionGroupActionEvent): void {
         const rule = event.payload.rule;
         const group = event.payload.conditionGroup;
-        this._conditionGroupService.remove(rule.key, group).subscribe();
+        this._conditionGroupService.remove(rule.key, group).subscribe(() => {
+            this.refreshRules();
+        });
         rule._conditionGroups = rule._conditionGroups.filter(
             (aryGroup) => aryGroup.key !== group.key
         );
+        this.refreshRules();
     }
 
     onCreateCondition(event: ConditionActionEvent): void {
@@ -446,6 +449,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             });
             group._conditions.push(entity);
             this.ruleUpdated(rule);
+            this.refreshRules();
         } catch (e) {
             this.loggerService.error('DotRuleEngineContainerComponent', 'onCreateCondition', e);
             this.ruleUpdated(rule, { unhandledError: e instanceof Error ? e : String(e) });
@@ -530,6 +534,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     );
                     rule._conditionGroups.push(conditionGroup);
                 }
+                this.refreshRules(); // Force change detection after deletion
             });
         }
     }

@@ -1,15 +1,15 @@
 import { Observable, from } from 'rxjs';
 
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
-    EventEmitter,
     ElementRef,
-    Input,
-    Output,
     ChangeDetectionStrategy,
     inject,
-    OnChanges
+    input,
+    output,
+    signal,
+    effect
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -64,7 +64,7 @@ import {
 import { ServerSideTypeModel } from '../services/ServerSideFieldModel';
 import { I18nService } from '../services/system/locale/I18n';
 
-const I8N_BASE = 'api.sites.ruleengine';
+const I18N_BASE = 'api.sites.ruleengine';
 
 @Component({
     selector: 'dot-rule',
@@ -82,60 +82,67 @@ const I8N_BASE = 'api.sites.ruleengine';
         TooltipModule,
         DotAddToBundleComponent,
         DotConditionGroupComponent,
-        DotRuleActionComponent,
-        JsonPipe
+        DotRuleActionComponent
     ],
     changeDetection: ChangeDetectionStrategy.Default
 })
-export class DotRuleComponent implements OnChanges {
-    private _user = inject(UserModel);
-    elementRef = inject(ElementRef);
-    resources = inject(I18nService);
-    ruleService = inject(RuleService);
-    apiRoot = inject(ApiRoot);
-    private loggerService = inject(LoggerService);
+export class DotRuleComponent {
+    private readonly user = inject(UserModel);
+    private readonly formBuilder = inject(UntypedFormBuilder);
+    private readonly logger = inject(LoggerService);
+    readonly elementRef = inject(ElementRef);
+    readonly i18nService = inject(I18nService);
+    readonly ruleService = inject(RuleService);
+    readonly apiRoot = inject(ApiRoot);
 
-    @Input() rule: RuleModel;
-    @Input() saved = false;
-    @Input() saving = false;
-    @Input() errors: { [key: string]: string | Error } = null;
-    @Input() ruleActions: ActionModel[] = [];
-    @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
-    @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
-    @Input() environmentStores: IPublishEnvironment[] = [];
+    // Inputs
+    readonly $rule = input.required<RuleModel>({ alias: 'rule' });
+    readonly $saved = input<boolean>(false, { alias: 'saved' });
+    readonly $saving = input<boolean>(false, { alias: 'saving' });
+    readonly $errors = input<Record<string, string | Error> | null>(null, { alias: 'errors' });
+    readonly $ruleActions = input<ActionModel[]>([], { alias: 'ruleActions' });
+    readonly $ruleActionTypes = input<Record<string, ServerSideTypeModel>>(
+        {},
+        { alias: 'ruleActionTypes' }
+    );
+    readonly $conditionTypes = input<Record<string, ServerSideTypeModel>>(
+        {},
+        { alias: 'conditionTypes' }
+    );
+    readonly $environmentStores = input<IPublishEnvironment[]>([], { alias: 'environmentStores' });
+    readonly $hidden = input<boolean>(false, { alias: 'hidden' });
 
-    @Input() hidden = false;
+    // Outputs - Rule Events
+    readonly deleteRule = output<RuleActionEvent>();
+    readonly updateExpandedState = output<RuleActionEvent>();
+    readonly updateName = output<RuleActionEvent>();
+    readonly updateEnabledState = output<RuleActionEvent>();
+    readonly updateFireOn = output<RuleActionEvent>();
 
-    @Output() deleteRule: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateExpandedState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateName: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateEnabledState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateFireOn: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+    // Outputs - Rule Action Events
+    readonly createRuleAction = output<RuleActionActionEvent>();
+    readonly updateRuleActionType = output<RuleActionActionEvent>();
+    readonly updateRuleActionParameter = output<RuleActionActionEvent>();
+    readonly deleteRuleAction = output<RuleActionActionEvent>();
 
-    @Output() createRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output() updateRuleActionType: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output()
-    updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+    // Outputs - Condition Group Events
+    readonly updateConditionGroupOperator = output<ConditionGroupActionEvent>();
+    readonly createConditionGroup = output<ConditionGroupActionEvent>();
 
-    @Output()
-    updateConditionGroupOperator: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
-    @Output()
-    createConditionGroup: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
+    // Outputs - Condition Events
+    readonly createCondition = output<ConditionActionEvent>();
+    readonly deleteCondition = output<ConditionActionEvent>();
+    readonly updateConditionType = output<ConditionActionEvent>();
+    readonly updateConditionParameter = output<ConditionActionEvent>();
+    readonly updateConditionOperator = output<ConditionActionEvent>();
+    readonly openPushPublishDialog = output<string>();
 
-    @Output() createCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() deleteCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() updateConditionType: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output()
-    updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() openPushPublishDialog: EventEmitter<string> = new EventEmitter(false);
-
+    // State
     formModel: UntypedFormGroup;
-    fireOnValue = 'EVERY_PAGE';
+    readonly fireOnValue = signal('EVERY_PAGE');
     fireOnOptions$: Observable<{ label: string; value: string }[]>;
     fireOnPlaceholder$: Observable<string>;
-    showAddToBundleDialog = false;
+    readonly showAddToBundleDialog = signal(false);
     hideFireOn: boolean;
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';
@@ -143,31 +150,58 @@ export class DotRuleComponent implements OnChanges {
     tooltipRuleOnText: string;
     tooltipRuleOffText: string;
 
-    private _updateEnabledStateDelay: EventEmitter<{
-        type: string;
-        payload: { rule: RuleModel; value: boolean };
-    }> = new EventEmitter(false);
-
-    private _rsrcCache: { [key: string]: Observable<string> };
+    private readonly enabledStateDelayEmitter = signal<RuleActionEvent | null>(null);
+    private readonly i18nCache: Record<string, Observable<string>> = {};
 
     constructor() {
-        const apiRoot = this.apiRoot;
-        const fb = inject(UntypedFormBuilder);
+        this.hideFireOn = document.location.hash.includes('edit-page') || this.apiRoot.hideFireOn;
 
-        this._rsrcCache = {};
-        this.hideFireOn = document.location.hash.includes('edit-page') || apiRoot.hideFireOn;
+        this.initializeFormModel();
+        this.initializeFireOnOptions();
+        this.loadI18nLabels();
 
-        /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
-        this._updateEnabledStateDelay.pipe(debounceTime(20)).subscribe((event: RuleActionEvent) => {
-            this.updateEnabledState.emit(event);
+        // Handle rule changes
+        effect(() => {
+            const rule = this.$rule();
+            if (rule) {
+                this.onRuleChange(rule);
+            }
         });
 
-        // Build fireOn options with resolved labels
+        // Debounce enabled state changes
+        effect(() => {
+            const event = this.enabledStateDelayEmitter();
+            if (event) {
+                // Using setTimeout to simulate debounce behavior
+                setTimeout(() => {
+                    this.updateEnabledState.emit(event);
+                }, 20);
+            }
+        });
+    }
+
+    private initializeFormModel(): void {
+        const validators = [Validators.required, Validators.minLength(3)];
+        this.formModel = this.formBuilder.group({
+            name: new UntypedFormControl('', Validators.compose(validators))
+        });
+    }
+
+    private initializeFireOnOptions(): void {
         const fireOnRawOptions = [
-            { label: this.rsrc('inputs.fireOn.options.EveryPage'), value: 'EVERY_PAGE' },
-            { label: this.rsrc('inputs.fireOn.options.OncePerVisit'), value: 'ONCE_PER_VISIT' },
-            { label: this.rsrc('inputs.fireOn.options.OncePerVisitor'), value: 'ONCE_PER_VISITOR' },
-            { label: this.rsrc('inputs.fireOn.options.EveryRequest'), value: 'EVERY_REQUEST' }
+            { label: this.getI18nLabel('inputs.fireOn.options.EveryPage'), value: 'EVERY_PAGE' },
+            {
+                label: this.getI18nLabel('inputs.fireOn.options.OncePerVisit'),
+                value: 'ONCE_PER_VISIT'
+            },
+            {
+                label: this.getI18nLabel('inputs.fireOn.options.OncePerVisitor'),
+                value: 'ONCE_PER_VISITOR'
+            },
+            {
+                label: this.getI18nLabel('inputs.fireOn.options.EveryRequest'),
+                value: 'EVERY_REQUEST'
+            }
         ];
 
         this.fireOnOptions$ = from(fireOnRawOptions).pipe(
@@ -184,26 +218,27 @@ export class DotRuleComponent implements OnChanges {
             shareReplay(1)
         );
 
-        this.fireOnPlaceholder$ = this.rsrc('inputs.fireOn.placeholder', 'Select One');
+        this.fireOnPlaceholder$ = this.getI18nLabel('inputs.fireOn.placeholder', 'Select One');
+    }
 
-        this.initFormModel(fb);
-
-        this.resources
+    private loadI18nLabels(): void {
+        this.i18nService
             .get('api.sites.ruleengine.rules.inputs.action.type.placeholder')
             .subscribe((label) => {
                 this.actionTypePlaceholder = label;
             });
 
-        this.resources
+        this.i18nService
             .get('api.sites.ruleengine.rules.inputs.condition.type.placeholder')
             .subscribe((label) => {
                 this.conditionTypePlaceholder = label;
             });
 
-        this.resources
+        // Load menu options
+        this.i18nService
             .get('api.sites.ruleengine.rules.inputs.add_to_bundle.label')
             .subscribe((addToBundleLabel) => {
-                this.resources
+                this.i18nService
                     .get('api.sites.ruleengine.rules.inputs.deleteRule.label')
                     .subscribe((deleteRuleLabel) => {
                         this.ruleActionOptions = [
@@ -211,7 +246,7 @@ export class DotRuleComponent implements OnChanges {
                                 label: addToBundleLabel,
                                 visible: !this.apiRoot.hideRulePushOptions,
                                 command: () => {
-                                    this.showAddToBundleDialog = true;
+                                    this.showAddToBundleDialog.set(true);
                                 }
                             },
                             {
@@ -225,13 +260,14 @@ export class DotRuleComponent implements OnChanges {
                     });
             });
 
-        this.resources
+        // Load tooltip texts
+        this.i18nService
             .get('api.sites.ruleengine.rules.inputs.onOff.tip')
             .subscribe((tooltipLabel) => {
-                this.resources
+                this.i18nService
                     .get('api.sites.ruleengine.rules.inputs.onOff.on.label')
                     .subscribe((ruleOnLabel) => {
-                        this.resources
+                        this.i18nService
                             .get('api.sites.ruleengine.rules.inputs.onOff.off.label')
                             .subscribe((ruleOffLabel) => {
                                 this.tooltipRuleOnText = `${tooltipLabel} (${ruleOnLabel})`;
@@ -241,112 +277,108 @@ export class DotRuleComponent implements OnChanges {
             });
     }
 
-    initFormModel(fb: UntypedFormBuilder): void {
-        const vFns = [];
-        vFns.push(Validators.required);
-        vFns.push(Validators.minLength(3));
-        this.formModel = fb.group({
-            name: new UntypedFormControl(this.rule ? this.rule.name : '', Validators.compose(vFns))
-        });
-    }
+    private onRuleChange(rule: RuleModel): void {
+        const nameControl = this.formModel.controls['name'] as UntypedFormControl;
+        nameControl.patchValue(rule.name, {});
 
-    rsrc(subkey: string, defVal = '-missing-'): Observable<string> {
-        let msgObserver: Observable<string> = this._rsrcCache[subkey];
-        if (!msgObserver) {
-            msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal);
-            this._rsrcCache[subkey] = msgObserver;
-        }
-
-        return msgObserver;
-    }
-
-    ngOnChanges(change): void {
-        if (change.rule) {
-            const rule = this.rule;
-
-            const ctrl: UntypedFormControl = this.formModel.controls['name'] as UntypedFormControl;
-            ctrl.patchValue(this.rule.name, {});
-
-            ctrl.valueChanges.pipe(debounceTime(250)).subscribe((name: string) => {
-                if (ctrl.valid) {
-                    this.updateName.emit({
-                        payload: { rule: this.rule, value: name },
-                        type: RULE_UPDATE_NAME
-                    });
-                }
-            });
-            if (rule.isPersisted()) {
-                this.fireOnValue = rule.fireOn;
+        nameControl.valueChanges.pipe(debounceTime(250)).subscribe((name: string) => {
+            if (nameControl.valid) {
+                this.updateName.emit({
+                    payload: { rule: this.$rule(), value: name },
+                    type: RULE_UPDATE_NAME
+                });
             }
+        });
+
+        if (rule.isPersisted()) {
+            this.fireOnValue.set(rule.fireOn);
         }
+    }
+
+    getI18nLabel(subkey: string, defaultValue = '-missing-'): Observable<string> {
+        let cached = this.i18nCache[subkey];
+        if (!cached) {
+            cached = this.i18nService.get(`${I18N_BASE}.rules.${subkey}`, defaultValue);
+            this.i18nCache[subkey] = cached;
+        }
+        return cached;
     }
 
     onFireOnChange(value: string): void {
         this.updateFireOn.emit({
             type: 'RULE_UPDATE_FIRE_ON',
-            payload: { rule: this.rule, value }
+            payload: { rule: this.$rule(), value }
         });
     }
 
-    statusText(length = 0): string {
-        let t = '';
-        if (this.saved) {
-            t = 'All changes saved';
-        } else if (this.saving) {
-            t = 'Saving...';
-        } else if (this.errors) {
-            t =
-                (this.errors['invalid'] as string) ||
-                (this.errors['serverError'] as string) ||
+    getStatusText(maxLength = 0): string {
+        const saved = this.$saved();
+        const saving = this.$saving();
+        const errors = this.$errors();
+
+        let text = '';
+        if (saved) {
+            text = 'All changes saved';
+        } else if (saving) {
+            text = 'Saving...';
+        } else if (errors) {
+            text =
+                (errors['invalid'] as string) ||
+                (errors['serverError'] as string) ||
                 'Unsaved changes...';
         }
 
-        if (length) {
-            t = t.substring(0, length) + '...';
+        if (maxLength && text.length > maxLength) {
+            text = text.substring(0, maxLength) + '...';
         }
 
-        return t;
+        return text;
     }
 
     setRuleExpandedState(expanded: boolean): void {
-        if (this.rule.name) {
+        const rule = this.$rule();
+        if (rule.name) {
             this.updateExpandedState.emit({
-                payload: { rule: this.rule, value: expanded },
+                payload: { rule, value: expanded },
                 type: V_RULE_UPDATE_EXPANDED_STATE
             });
         }
     }
 
     setRuleEnabledState(event: ToggleSwitchChangeEvent): void {
-        this._updateEnabledStateDelay.emit({
-            payload: { rule: this.rule, value: event.checked },
+        this.enabledStateDelayEmitter.set({
+            payload: { rule: this.$rule(), value: event.checked },
             type: RULE_UPDATE_ENABLED_STATE
         });
         event.originalEvent.stopPropagation();
     }
 
     onCreateRuleAction(): void {
-        this.loggerService.info('DotRuleComponent', 'onCreateRuleAction');
-        this.createRuleAction.emit({ payload: { rule: this.rule }, type: RULE_RULE_ACTION_CREATE });
+        this.logger.info('DotRuleComponent', 'onCreateRuleAction');
+        this.createRuleAction.emit({
+            payload: { rule: this.$rule() },
+            type: RULE_RULE_ACTION_CREATE
+        });
     }
 
     onDeleteCondition(event: ConditionActionEvent, conditionGroup: ConditionGroupModel): void {
-        Object.assign(event.payload, { conditionGroup: conditionGroup, rule: this.rule });
+        Object.assign(event.payload, { conditionGroup, rule: this.$rule() });
         this.deleteCondition.emit(event);
     }
 
     onCreateConditionGroupClicked(): void {
-        const len = this.rule._conditionGroups.length;
-        const priority: number = len ? this.rule._conditionGroups[len - 1].priority : 1;
+        const rule = this.$rule();
+        const groupCount = rule._conditionGroups.length;
+        const priority: number = groupCount ? rule._conditionGroups[groupCount - 1].priority : 1;
         this.createConditionGroup.emit({
-            payload: { rule: this.rule, priority },
+            payload: { rule, priority },
             type: RULE_CONDITION_GROUP_CREATE
         });
     }
 
     onCreateCondition(event: ConditionActionEvent): void {
-        this.loggerService.info('DotRuleComponent', 'onCreateCondition');
-        Object.assign(event.payload, { rule: this.rule });
+        this.logger.info('DotRuleComponent', 'onCreateCondition');
+        Object.assign(event.payload, { rule: this.$rule() });
         this.createCondition.emit(event);
     }
 
@@ -354,25 +386,25 @@ export class DotRuleComponent implements OnChanges {
         type: string;
         payload: { value: string; index: number };
     }): void {
-        this.loggerService.info('DotRuleComponent', 'onUpdateRuleActionType');
+        this.logger.info('DotRuleComponent', 'onUpdateRuleActionType');
         this.updateRuleActionType.emit({
-            payload: Object.assign({ rule: this.rule }, event.payload),
+            payload: Object.assign({ rule: this.$rule() }, event.payload),
             type: RULE_RULE_ACTION_UPDATE_TYPE
         });
     }
 
     onUpdateRuleActionParameter(event): void {
-        this.loggerService.info('DotRuleComponent', 'onUpdateRuleActionParameter');
+        this.logger.info('DotRuleComponent', 'onUpdateRuleActionParameter');
         this.updateRuleActionParameter.emit({
-            payload: Object.assign({ rule: this.rule }, event.payload),
+            payload: Object.assign({ rule: this.$rule() }, event.payload),
             type: RULE_RULE_ACTION_UPDATE_PARAMETER
         });
     }
 
     onDeleteRuleAction(event: { type: string; payload: { value: string; index: number } }): void {
-        this.loggerService.info('DotRuleComponent', 'onDeleteRuleAction');
+        this.logger.info('DotRuleComponent', 'onDeleteRuleAction');
         this.deleteRuleAction.emit({
-            payload: Object.assign({ rule: this.rule }, event.payload),
+            payload: Object.assign({ rule: this.$rule() }, event.payload),
             type: RULE_RULE_ACTION_DELETE
         });
     }
@@ -382,10 +414,7 @@ export class DotRuleComponent implements OnChanges {
         conditionGroup: ConditionGroupModel
     ): void {
         this.updateConditionGroupOperator.emit({
-            payload: Object.assign(
-                { conditionGroup: conditionGroup, rule: this.rule },
-                event.payload
-            ),
+            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
             type: RULE_CONDITION_UPDATE_TYPE
         });
     }
@@ -394,54 +423,49 @@ export class DotRuleComponent implements OnChanges {
         event: { type: string; payload: { value: string; index: number } },
         conditionGroup: ConditionGroupModel
     ): void {
-        this.loggerService.info('DotRuleComponent', 'onUpdateConditionType');
+        this.logger.info('DotRuleComponent', 'onUpdateConditionType');
         this.updateConditionType.emit({
-            payload: Object.assign(
-                { conditionGroup: conditionGroup, rule: this.rule },
-                event.payload
-            ),
+            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
             type: RULE_CONDITION_UPDATE_TYPE
         });
     }
 
     onUpdateConditionParameter(event, conditionGroup: ConditionGroupModel): void {
-        this.loggerService.info('DotRuleComponent', 'onUpdateConditionParameter');
+        this.logger.info('DotRuleComponent', 'onUpdateConditionParameter');
         this.updateConditionParameter.emit({
-            payload: Object.assign(
-                { conditionGroup: conditionGroup, rule: this.rule },
-                event.payload
-            ),
+            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
             type: RULE_CONDITION_UPDATE_PARAMETER
         });
     }
 
     onUpdateConditionOperator(event, conditionGroup: ConditionGroupModel): void {
-        this.loggerService.info('DotRuleComponent', 'onUpdateConditionOperator');
+        this.logger.info('DotRuleComponent', 'onUpdateConditionOperator');
         this.updateConditionOperator.emit({
-            payload: Object.assign(
-                { conditionGroup: conditionGroup, rule: this.rule },
-                event.payload
-            ),
+            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
             type: RULE_CONDITION_UPDATE_OPERATOR
         });
     }
 
     deleteRuleClicked(event: Event): void {
-        let noWarn =
-            this._user.suppressAlerts ||
+        const ruleActions = this.$ruleActions();
+        const rule = this.$rule();
+
+        let skipWarning =
+            this.user.suppressAlerts ||
             ((event as KeyboardEvent)?.altKey && (event as KeyboardEvent)?.shiftKey);
-        if (!noWarn) {
-            noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted();
-            noWarn = noWarn && this.rule._conditionGroups.length === 1;
-            if (noWarn) {
-                const conditions = this.rule._conditionGroups[0].conditions;
+
+        if (!skipWarning) {
+            skipWarning = ruleActions.length === 1 && !ruleActions[0].isPersisted();
+            skipWarning = skipWarning && rule._conditionGroups.length === 1;
+            if (skipWarning) {
+                const conditions = rule._conditionGroups[0].conditions;
                 const keys = Object.keys(conditions);
-                noWarn = noWarn && keys.length === 0;
+                skipWarning = skipWarning && keys.length === 0;
             }
         }
 
-        if (noWarn || confirm('Are you sure you want delete this rule?')) {
-            this.deleteRule.emit({ payload: { rule: this.rule }, type: RULE_DELETE });
+        if (skipWarning || confirm('Are you sure you want delete this rule?')) {
+            this.deleteRule.emit({ payload: { rule }, type: RULE_DELETE });
         }
     }
 }

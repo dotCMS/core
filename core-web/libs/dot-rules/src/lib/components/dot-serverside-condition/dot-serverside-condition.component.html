@@ -1,6 +1,6 @@
 <div class="cw-serverside-condition">
     <div flex layout="row" class="cw-condition-component-body">
-        @for (input of _inputs; track input) {
+        @for (input of inputs; track $index) {
             @if (input.type === 'spacer') {
                 <div flex class="cw-input cw-input-placeholder">&nbsp;</div>
             }
@@ -8,6 +8,7 @@
                 <p-select
                     (onChange)="onDropdownChange(input, $event.value)"
                     [ngModel]="input.value"
+                    [ngModelOptions]="{ standalone: true }"
                     [options]="input.options$ | async"
                     [style]="{ width: '100%' }"
                     [required]="input.required"
@@ -15,24 +16,27 @@
                     [editable]="input.allowAdditions"
                     [filter]="true"
                     [class.cw-comparator-selector]="input.name === 'comparison'"
-                    [class.cw-last]="islast"
-                    [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                    [class.cw-last]="isLast"
+                    [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                     flex
                     class="cw-input"
                     appendTo="body" />
             }
             @if (input.type === 'restDropdown') {
-                <div [class.cw-last]="islast" flex layout-fill layout="column" class="cw-input">
+                <div [class.cw-last]="isLast" flex layout-fill layout="column" class="cw-input">
                     @if (input.maxSelections > 1) {
                         <p-multiSelect
                             (onChange)="onRestDropdownChange(input, $event.value)"
                             [ngModel]="input.modelValue"
+                            [ngModelOptions]="{ standalone: true }"
                             [options]="input.options$ | async"
                             [style]="{ width: '100%' }"
                             [placeholder]="input.placeholder | async"
-                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [hidden]="
+                                input.argIndex !== null && input.argIndex >= rightHandArgCount
+                            "
                             [class.cw-comparator-selector]="input.name === 'comparison'"
-                            [class.cw-last]="islast"
+                            [class.cw-last]="isLast"
                             flex
                             class="cw-input"
                             appendTo="body"
@@ -40,7 +44,7 @@
                         @if (
                             rdInputMulti.touched &&
                             !rdInputMulti.valid &&
-                            (input.argIndex === null || input.argIndex < _rhArgCount)
+                            (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
                             <div flex="50" class="name cw-warn basic label">
                                 {{ getErrorMessage(input) }}
@@ -50,15 +54,18 @@
                         <p-select
                             (onChange)="onRestDropdownChange(input, $event.value)"
                             [ngModel]="input.value"
+                            [ngModelOptions]="{ standalone: true }"
                             [options]="input.options$ | async"
                             [style]="{ width: '100%' }"
                             [required]="input.required"
                             [placeholder]="input.placeholder | async"
                             [editable]="input.allowAdditions"
                             [filter]="true"
-                            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                            [hidden]="
+                                input.argIndex !== null && input.argIndex >= rightHandArgCount
+                            "
                             [class.cw-comparator-selector]="input.name === 'comparison'"
-                            [class.cw-last]="islast"
+                            [class.cw-last]="isLast"
                             flex
                             class="cw-input"
                             appendTo="body"
@@ -66,7 +73,7 @@
                         @if (
                             rdInputSingle.touched &&
                             !rdInputSingle.valid &&
-                            (input.argIndex === null || input.argIndex < _rhArgCount)
+                            (input.argIndex === null || input.argIndex < rightHandArgCount)
                         ) {
                             <div flex="50" class="name cw-warn basic label">
                                 {{ getErrorMessage(input) }}
@@ -76,19 +83,19 @@
                 </div>
             }
             @if (input.type === 'text' || input.type === 'number') {
-                <div [class.cw-last]="islast" flex layout-fill layout="column" class="cw-input">
+                <div [class.cw-last]="isLast" flex layout-fill layout="column" class="cw-input">
                     <input
                         (blur)="onBlur(input)"
                         [placeholder]="input.placeholder | async"
                         [formControl]="input.control"
                         [type]="input.type"
-                        [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                        [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                         pInputText
                         #fInput="ngForm" />
                     @if (
                         fInput.touched &&
                         !fInput.valid &&
-                        (input.argIndex === null || input.argIndex < _rhArgCount)
+                        (input.argIndex === null || input.argIndex < rightHandArgCount)
                     ) {
                         <div flex="50" class="name cw-warn basic label">
                             {{ getErrorMessage(input) }}
@@ -98,16 +105,18 @@
             }
             @if (input.type === 'datetime') {
                 <p-datePicker
-                    (onSelect)="onDateChange(input, $event)"
-                    [ngModel]="getDateModelValue(input)"
+                    (ngModelChange)="onDateChange(input, $event)"
+                    [ngModel]="input.dateValue"
+                    [ngModelOptions]="{ standalone: true }"
                     [showTime]="true"
                     [showButtonBar]="true"
-                    [class.cw-last]="islast"
-                    [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                    [class.cw-last]="isLast"
+                    [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                     hourFormat="12"
                     flex
                     layout-fill
-                    class="cw-input" />
+                    class="cw-input"
+                    appendTo="body" />
             }
         }
     </div>

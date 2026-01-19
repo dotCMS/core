@@ -1,6 +1,8 @@
+@let condition = $condition();
+
 <div flex layout="row" class="cw-condition cw-entry">
     <div class="cw-btn-group cw-condition-toggle">
-        @if (index !== 0) {
+        @if ($index() !== 0) {
             <button
                 (click)="toggleOperator()"
                 [label]="condition.operator"
@@ -14,7 +16,7 @@
         [ngModel]="condition.type?.key"
         [options]="typeDropdownOptions$ | async"
         [style]="{ width: '100%' }"
-        [placeholder]="conditionTypePlaceholder"
+        [placeholder]="$conditionTypePlaceholder()"
         [filter]="true"
         flex="25"
         class="cw-type-dropdown"

@@ -1,15 +1,7 @@
 import { Observable, from, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import {
-    Component,
-    EventEmitter,
-    Input,
-    Output,
-    OnChanges,
-    SimpleChanges,
-    inject
-} from '@angular/core';
+import { Component, effect, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -34,35 +26,39 @@ import { ServerSideTypeModel } from '../services/ServerSideFieldModel';
     templateUrl: './dot-rule-action.component.html',
     imports: [AsyncPipe, FormsModule, ButtonModule, SelectModule, DotServersideConditionComponent]
 })
-export class DotRuleActionComponent implements OnChanges {
-    private loggerService = inject(LoggerService);
+export class DotRuleActionComponent {
+    private readonly logger = inject(LoggerService);
 
-    @Input() action: ActionModel;
-    @Input() index = 0;
-    @Input() actionTypePlaceholder = '';
-    @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
+    // Inputs
+    readonly $action = input.required<ActionModel>({ alias: 'action' });
+    readonly $index = input<number>(0, { alias: 'index' });
+    readonly $actionTypePlaceholder = input<string>('', { alias: 'actionTypePlaceholder' });
+    readonly $ruleActionTypes = input<Record<string, ServerSideTypeModel>>(
+        {},
+        { alias: 'ruleActionTypes' }
+    );
 
-    @Output() updateRuleActionType: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output()
-    updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+    // Outputs
+    readonly updateRuleActionType = output<RuleActionActionEvent>();
+    readonly updateRuleActionParameter = output<RuleActionActionEvent>();
+    readonly deleteRuleAction = output<RuleActionActionEvent>();
 
+    // State
     typeDropdownOptions$: Observable<{ label: string; value: string }[]> = of([]);
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (
-            changes.ruleActionTypes &&
-            this.ruleActionTypes &&
-            Object.keys(this.ruleActionTypes).length > 0
-        ) {
-            this.buildDropdownOptions();
-        }
+    constructor() {
+        // React to ruleActionTypes changes
+        effect(() => {
+            const types = this.$ruleActionTypes();
+            if (types && Object.keys(types).length > 0) {
+                this.buildDropdownOptions(types);
+            }
+        });
     }
 
-    private buildDropdownOptions(): void {
-        const rawOptions = Object.keys(this.ruleActionTypes).map((key) => {
-            const type = this.ruleActionTypes[key];
-
+    private buildDropdownOptions(actionTypes: Record<string, ServerSideTypeModel>): void {
+        const rawOptions = Object.keys(actionTypes).map((key) => {
+            const type = actionTypes[key];
             return {
                 label: type._opt.label as Observable<string>,
                 value: type._opt.value as string
@@ -92,21 +88,25 @@ export class DotRuleActionComponent implements OnChanges {
     }
 
     onTypeChange(type: string): void {
-        this.loggerService.info('DotRuleActionComponent', 'onTypeChange', type);
+        this.logger.info('DotRuleActionComponent', 'onTypeChange', type);
         this.updateRuleActionType.emit({
             type: RULE_RULE_ACTION_UPDATE_TYPE,
-            payload: { ruleAction: this.action, value: type, index: this.index }
+            payload: {
+                ruleAction: this.$action(),
+                value: type,
+                index: this.$index()
+            }
         });
     }
 
-    onParameterValueChange(event: { name: string; value: string }): void {
-        this.loggerService.info('DotRuleActionComponent', 'onParameterValueChange', event);
+    onParameterValueChange(change: { name: string; value: string }): void {
+        this.logger.info('DotRuleActionComponent', 'onParameterValueChange', change);
         this.updateRuleActionParameter.emit({
             payload: {
-                ruleAction: this.action,
-                name: event.name,
-                value: event.value,
-                index: this.index
+                ruleAction: this.$action(),
+                name: change.name,
+                value: change.value,
+                index: this.$index()
             },
             type: RULE_RULE_ACTION_UPDATE_PARAMETER
         });
@@ -115,7 +115,10 @@ export class DotRuleActionComponent implements OnChanges {
     onDeleteRuleActionClicked(): void {
         this.deleteRuleAction.emit({
             type: RULE_RULE_ACTION_DELETE,
-            payload: { ruleAction: this.action, index: this.index }
+            payload: {
+                ruleAction: this.$action(),
+                index: this.$index()
+            }
         });
     }
 }

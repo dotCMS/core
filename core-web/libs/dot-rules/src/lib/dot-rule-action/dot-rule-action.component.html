@@ -1,3 +1,5 @@
+@let action = $action();
+
 <div flex layout="row" class="cw-rule-action cw-entry">
     <div flex="25" layout="row" class="cw-row-start-area">
         <p-select
@@ -5,7 +7,7 @@
             [ngModel]="action.type?.key"
             [options]="typeDropdownOptions$ | async"
             [style]="{ width: '100%' }"
-            [placeholder]="actionTypePlaceholder"
+            [placeholder]="$actionTypePlaceholder()"
             [filter]="true"
             flex
             class="cw-type-dropdown"

@@ -3,13 +3,12 @@ import { Observable, from, of } from 'rxjs';
 import { AsyncPipe, DecimalPipe } from '@angular/common';
 import {
     Component,
-    Input,
-    Output,
-    EventEmitter,
     ChangeDetectionStrategy,
     inject,
-    OnChanges,
-    SimpleChanges
+    input,
+    output,
+    effect,
+    signal
 } from '@angular/core';
 import { UntypedFormControl, FormsModule } from '@angular/forms';
 
@@ -24,14 +23,14 @@ import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAreaPickerDialogComponent } from '../../components/dot-area-picker-dialog/dot-area-picker-dialog.component';
 import { GCircle } from '../../models/gcircle.model';
 
-type UnitKey = 'km' | 'm' | 'mi';
+type DistanceUnit = 'km' | 'm' | 'mi';
 
 interface ComparisonOption {
     label: string | Observable<string>;
     value: string;
 }
 
-const UNITS: Record<UnitKey, Record<UnitKey, (len: number) => number>> = {
+const UNIT_CONVERSIONS: Record<DistanceUnit, Record<DistanceUnit, (len: number) => number>> = {
     km: {
         km: (len: number) => len,
         m: (len: number) => len * 1000,
@@ -64,83 +63,97 @@ const UNITS: Record<UnitKey, Record<UnitKey, (len: number) => number>> = {
     providers: [DecimalPipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotVisitorsLocationComponent implements OnChanges {
-    decimalPipe = inject(DecimalPipe);
-    private loggerService = inject(LoggerService);
+export class DotVisitorsLocationComponent {
+    private readonly decimalPipe = inject(DecimalPipe);
+    private readonly logger = inject(LoggerService);
 
-    @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };
-    @Input() comparisonValue: string;
-    @Input() comparisonControl: UntypedFormControl;
-    @Input() comparisonOptions: ComparisonOption[];
-    @Input() fromLabel = 'of';
-    @Input() changedHook = 0;
-    @Input() preferredUnit: UnitKey = 'm';
+    // Inputs
+    readonly $circle = input<GCircle>(
+        { center: { lat: 38.89, lng: -77.04 }, radius: 10000 },
+        { alias: 'circle' }
+    );
+    readonly $comparisonValue = input<string>('', { alias: 'comparisonValue' });
+    readonly $comparisonControl = input<UntypedFormControl>(undefined, {
+        alias: 'comparisonControl'
+    });
+    readonly $comparisonOptions = input<ComparisonOption[]>([], { alias: 'comparisonOptions' });
+    readonly $fromLabel = input<string>('of', { alias: 'fromLabel' });
+    readonly $changedHook = input<number>(0, { alias: 'changedHook' });
+    readonly $preferredUnit = input<DistanceUnit>('m', { alias: 'preferredUnit' });
 
-    @Output() areaChange: EventEmitter<GCircle> = new EventEmitter(false);
-    @Output() comparisonChange: EventEmitter<string> = new EventEmitter(false);
+    // Outputs
+    readonly areaChange = output<GCircle>();
+    readonly comparisonChange = output<string>();
 
-    showingMap = false;
+    // State
+    readonly showingMap = signal(false);
     comparisonDropdownOptions$: Observable<{ label: string; value: string }[]> = of([]);
 
     constructor() {
-        const loggerService = this.loggerService;
+        this.logger.info('DotVisitorsLocationComponent', 'constructor');
 
-        loggerService.info('DotVisitorsLocationComponent', 'constructor');
+        // React to comparisonOptions changes
+        effect(() => {
+            const options = this.$comparisonOptions();
+            this.logger.info('DotVisitorsLocationComponent', 'comparisonOptions changed', options);
+
+            if (options && options.length > 0) {
+                this.buildComparisonDropdownOptions(options);
+            }
+        });
     }
 
-    ngOnChanges(changes: SimpleChanges): void {
-        this.loggerService.info('DotVisitorsLocationComponent', 'ngOnChanges', changes);
+    private buildComparisonDropdownOptions(options: ComparisonOption[]): void {
+        this.comparisonDropdownOptions$ = from(options).pipe(
+            mergeMap((item: ComparisonOption) => {
+                if (item.label && typeof item.label !== 'string' && 'pipe' in item.label) {
+                    return item.label.pipe(
+                        map((text: string) => ({
+                            label: text,
+                            value: item.value
+                        }))
+                    );
+                }
 
-        if (changes['comparisonOptions'] && this.comparisonOptions) {
-            this.comparisonDropdownOptions$ = from(this.comparisonOptions).pipe(
-                mergeMap((item: ComparisonOption) => {
-                    if (item.label && typeof item.label !== 'string' && 'pipe' in item.label) {
-                        return item.label.pipe(
-                            map((text: string) => ({
-                                label: text,
-                                value: item.value
-                            }))
-                        );
-                    }
-
-                    return of({
-                        label: item.label as string,
-                        value: item.value
-                    });
-                }),
-                toArray(),
-                startWith([]),
-                shareReplay(1)
-            );
-        }
+                return of({
+                    label: item.label as string,
+                    value: item.value
+                });
+            }),
+            toArray(),
+            startWith([]),
+            shareReplay(1)
+        );
     }
 
     onComparisonChange(value: string): void {
         this.comparisonChange.emit(value);
     }
 
-    getLatLong(): string {
-        const lat = this.circle.center.lat;
-        const lng = this.circle.center.lng;
+    getFormattedLatLong(): string {
+        const circle = this.$circle();
+        const lat = circle.center.lat;
+        const lng = circle.center.lng;
         const latStr = this.decimalPipe.transform(parseFloat(lat + ''), '1.6-6');
         const lngStr = this.decimalPipe.transform(parseFloat(lng + ''), '1.6-6');
 
-        return latStr + ', ' + lngStr;
+        return `${latStr}, ${lngStr}`;
     }
 
     getRadiusInPreferredUnit(): number {
-        const r = this.circle.radius;
-        this.loggerService.info('DotVisitorsLocationComponent', 'getRadiusInPreferredUnit', r);
+        const radius = this.$circle().radius;
+        const unit = this.$preferredUnit();
+        this.logger.info('DotVisitorsLocationComponent', 'getRadiusInPreferredUnit', radius);
 
-        return UNITS.m[this.preferredUnit](r);
+        return UNIT_CONVERSIONS.m[unit](radius);
     }
 
     toggleMap(): void {
-        this.showingMap = !this.showingMap;
+        this.showingMap.update((showing) => !showing);
     }
 
-    onUpdate(circle: GCircle): void {
-        this.showingMap = false;
+    onMapUpdate(circle: GCircle): void {
+        this.showingMap.set(false);
         this.areaChange.emit(circle);
     }
 }

@@ -1,12 +1,18 @@
+@let loading = $loading();
+@let showRules = $showRules();
+@let rules = $rules();
+@let pageId = $pageId();
+@let isContentletHost = $isContentletHost();
+
 @if (loading) {
     <div [class.cw-loading]="loading" class="cw-modal-glasspane"></div>
 }
-@if (!loading && globalError) {
+@if (!loading && globalError()?.message) {
     <div class="ui negative message cw-message">
-        <div class="header">{{ globalError.message }}</div>
-        <p>{{ rsrc('contact.admin.error') | async }}</p>
-        @if (showCloseButton) {
-            <i (click)="globalError.message = ''" class="pi pi-times close-button"></i>
+        <div class="header">{{ globalError().message }}</div>
+        <p>{{ getI18nLabel('contact.admin.error') | async }}</p>
+        @if (showCloseButton()) {
+            <i (click)="clearGlobalError()" class="pi pi-times close-button"></i>
         }
     </div>
 }
@@ -15,23 +21,23 @@
         <div class="cw-header">
             <div flex layout="row" style="align-items: center">
                 <input
-                    (keyup)="filterText = $event.target.value"
-                    [value]="filterText"
+                    (keyup)="filterText.set($event.target.value)"
+                    [value]="filterText()"
                     pInputText
-                    placeholder="{{ rsrc('inputs.filter.placeholder') | async }}" />
+                    placeholder="{{ getI18nLabel('inputs.filter.placeholder') | async }}" />
                 <div flex="2"></div>
                 <button (click)="addRule()" class="dot-icon-button">
                     <i class="pi pi-plus"></i>
                 </button>
             </div>
             <div class="cw-filter-links">
-                <span>{{ rsrc('inputs.filter.status.show.label') | async }}:</span>
+                <span>{{ getI18nLabel('inputs.filter.status.show.label') | async }}:</span>
                 <a
                     (click)="setFieldFilter('enabled', null)"
                     [class.active]="!isFilteringField('enabled')"
                     class="cw-filter-link"
                     href="javascript:void(0)">
-                    {{ rsrc('inputs.filter.status.all.label') | async }}
+                    {{ getI18nLabel('inputs.filter.status.all.label') | async }}
                 </a>
                 <span>&#124;</span>
                 <a
@@ -39,7 +45,7 @@
                     [class.active]="isFilteringField('enabled', true)"
                     class="cw-filter-link"
                     href="javascript:void(0)">
-                    {{ rsrc('inputs.filter.status.active.label') | async }}
+                    {{ getI18nLabel('inputs.filter.status.active.label') | async }}
                 </a>
                 <span>&#124;</span>
                 <a
@@ -47,7 +53,7 @@
                     [class.active]="isFilteringField('enabled', false)"
                     class="cw-filter-link"
                     href="javascript:void(0)">
-                    {{ rsrc('inputs.filter.status.inactive.label') | async }}
+                    {{ getI18nLabel('inputs.filter.status.inactive.label') | async }}
                 </a>
             </div>
         </div>
@@ -55,21 +61,22 @@
             <div class="cw-rule-engine__empty">
                 <i class="pi pi-sliders-h"></i>
                 <h2>
-                    {{ rsrc('inputs.no.rules') | async }}
+                    {{ getI18nLabel('inputs.no.rules') | async }}
                     {{
-                        rsrc(pageId && !isContentletHost ? 'inputs.on.page' : 'inputs.on.site')
-                            | async
-                    }}{{ rsrc('inputs.add.one.now') | async }}
+                        getI18nLabel(
+                            pageId && !isContentletHost ? 'inputs.on.page' : 'inputs.on.site'
+                        ) | async
+                    }}{{ getI18nLabel('inputs.add.one.now') | async }}
                 </h2>
                 @if (pageId && !isContentletHost) {
                     <span>
-                        {{ rsrc('inputs.page.rules.fired.every.time') | async }}
+                        {{ getI18nLabel('inputs.page.rules.fired.every.time') | async }}
                     </span>
                 }
                 <button
                     (click)="addRule()"
                     pButton
-                    label="{{ rsrc('inputs.addRule.label') | async }}"
+                    label="{{ getI18nLabel('inputs.addRule.label') | async }}"
                     icon="pi pi-plus"></button>
             </div>
         }
@@ -94,10 +101,10 @@
                 (deleteRule)="deleteRule.emit($event)"
                 [rule]="rule"
                 [hidden]="isFiltered(rule) === true"
-                [environmentStores]="environmentStores"
+                [environmentStores]="$environmentStores()"
                 [ruleActions]="rule._ruleActions"
-                [ruleActionTypes]="ruleActionTypes"
-                [conditionTypes]="conditionTypes"
+                [ruleActionTypes]="$ruleActionTypes()"
+                [conditionTypes]="$conditionTypes()"
                 [saved]="rule._saved"
                 [saving]="rule._saving"
                 [errors]="rule._errors" />

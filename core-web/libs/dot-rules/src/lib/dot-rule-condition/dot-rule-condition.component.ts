@@ -1,15 +1,7 @@
 import { Observable, from, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import {
-    Component,
-    EventEmitter,
-    Input,
-    Output,
-    OnChanges,
-    SimpleChanges,
-    inject
-} from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -30,6 +22,23 @@ import {
 } from '../services/Rule';
 import { ServerSideTypeModel } from '../services/ServerSideFieldModel';
 
+export interface ConditionPayload {
+    condition: ConditionModel;
+    index?: number;
+    name?: string;
+    value: string;
+}
+
+export interface ConditionEvent {
+    type: string;
+    payload: ConditionPayload;
+}
+
+export interface DeleteConditionEvent {
+    type: string;
+    payload: { condition: ConditionModel };
+}
+
 @Component({
     selector: 'dot-rule-condition',
     templateUrl: './dot-rule-condition.component.html',
@@ -42,51 +51,41 @@ import { ServerSideTypeModel } from '../services/ServerSideFieldModel';
         DotVisitorsLocationContainerComponent
     ]
 })
-export class DotRuleConditionComponent implements OnChanges {
-    private loggerService = inject(LoggerService);
+export class DotRuleConditionComponent {
+    private readonly logger = inject(LoggerService);
 
-    @Input() condition: ConditionModel;
-    @Input() index = 0;
-    @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
-    @Input() conditionTypePlaceholder = '';
-
-    @Output()
-    updateConditionType: EventEmitter<{ type: string; payload: Payload }> = new EventEmitter(false);
-    @Output()
-    updateConditionParameter: EventEmitter<{ type: string; payload: Payload }> = new EventEmitter(
-        false
+    // Inputs
+    readonly $condition = input.required<ConditionModel>({ alias: 'condition' });
+    readonly $index = input<number>(0, { alias: 'index' });
+    readonly $conditionTypes = input<Record<string, ServerSideTypeModel>>(
+        {},
+        { alias: 'conditionTypes' }
     );
-    @Output()
-    updateConditionOperator: EventEmitter<{ type: string; payload: Payload }> = new EventEmitter(
-        false
-    );
+    readonly $conditionTypePlaceholder = input<string>('', { alias: 'conditionTypePlaceholder' });
 
-    @Output()
-    deleteCondition: EventEmitter<{
-        type: string;
-        payload: { condition: ConditionModel };
-    }> = new EventEmitter(false);
+    // Outputs
+    readonly updateConditionType = output<ConditionEvent>();
+    readonly updateConditionParameter = output<ConditionEvent>();
+    readonly updateConditionOperator = output<ConditionEvent>();
+    readonly deleteCondition = output<DeleteConditionEvent>();
 
+    // State
+    readonly typeOptions = signal<{ label: string; value: string }[]>([]);
     typeDropdownOptions$: Observable<{ label: string; value: string }[]> = of([]);
 
-    ngOnChanges(changes: SimpleChanges): void {
-        try {
-            if (
-                changes.conditionTypes &&
-                this.conditionTypes &&
-                Object.keys(this.conditionTypes).length > 0
-            ) {
-                this.buildDropdownOptions();
+    constructor() {
+        // React to conditionTypes changes
+        effect(() => {
+            const types = this.$conditionTypes();
+            if (types && Object.keys(types).length > 0) {
+                this.buildDropdownOptions(types);
             }
-        } catch (e) {
-            this.loggerService.error('DotRuleConditionComponent', 'ngOnChanges', e);
-        }
+        });
     }
 
-    private buildDropdownOptions(): void {
-        const rawOptions = Object.keys(this.conditionTypes).map((key) => {
-            const type = this.conditionTypes[key];
-
+    private buildDropdownOptions(conditionTypes: Record<string, ServerSideTypeModel>): void {
+        const rawOptions = Object.keys(conditionTypes).map((key) => {
+            const type = conditionTypes[key];
             return {
                 label: type._opt.label as Observable<string>,
                 value: type._opt.value as string
@@ -116,49 +115,51 @@ export class DotRuleConditionComponent implements OnChanges {
     }
 
     onTypeChange(type: string): void {
-        this.loggerService.info('DotRuleConditionComponent', 'onTypeChange', type);
+        this.logger.info('DotRuleConditionComponent', 'onTypeChange', type);
         this.updateConditionType.emit({
-            payload: { condition: this.condition, value: type, index: this.index },
+            payload: {
+                condition: this.$condition(),
+                value: type,
+                index: this.$index()
+            },
             type: RULE_CONDITION_UPDATE_TYPE
         });
     }
 
-    onParameterValuesChange(event: { name: string; value: string }[]): void {
-        event.forEach((change) => this.onParameterValueChange(change));
+    onParameterValuesChange(changes: { name: string; value: string }[]): void {
+        changes.forEach((change) => this.onParameterValueChange(change));
     }
 
-    onParameterValueChange(event: { name: string; value: string }): void {
-        this.loggerService.info('DotRuleConditionComponent', 'onParameterValueChange');
+    onParameterValueChange(change: { name: string; value: string }): void {
+        this.logger.info('DotRuleConditionComponent', 'onParameterValueChange');
         this.updateConditionParameter.emit({
             payload: {
-                condition: this.condition,
-                name: event.name,
-                value: event.value,
-                index: this.index
+                condition: this.$condition(),
+                name: change.name,
+                value: change.value,
+                index: this.$index()
             },
             type: RULE_CONDITION_UPDATE_PARAMETER
         });
     }
 
     toggleOperator(): void {
-        const op = this.condition.operator === 'AND' ? 'OR' : 'AND';
+        const condition = this.$condition();
+        const newOperator = condition.operator === 'AND' ? 'OR' : 'AND';
         this.updateConditionOperator.emit({
             type: RULE_CONDITION_UPDATE_OPERATOR,
-            payload: { condition: this.condition, value: op, index: this.index }
+            payload: {
+                condition: condition,
+                value: newOperator,
+                index: this.$index()
+            }
         });
     }
 
     onDeleteConditionClicked(): void {
         this.deleteCondition.emit({
             type: RULE_CONDITION_DELETE,
-            payload: { condition: this.condition }
+            payload: { condition: this.$condition() }
         });
     }
-}
-
-export interface Payload {
-    condition: ConditionModel;
-    index?: number;
-    name?: string;
-    value: string;
 }

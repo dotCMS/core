@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
@@ -25,101 +25,101 @@ import { ServerSideTypeModel } from '../services/ServerSideFieldModel';
 import { I18nService } from '../services/system/locale/I18n';
 import { CwFilter } from '../services/util/CwFilter';
 
-const I8N_BASE = 'api.sites.ruleengine';
+const I18N_BASE = 'api.sites.ruleengine';
 
-/**
- *
- */
 @Component({
     selector: 'dot-rule-engine',
     templateUrl: './dot-rule-engine.component.html',
     imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent]
 })
 export class DotRuleEngineComponent {
-    private ruleViewService = inject(RuleViewService);
-    private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private readonly ruleViewService = inject(RuleViewService);
+    private readonly pushPublishService = inject(DotPushPublishDialogService);
+    private readonly i18nService = inject(I18nService);
+    private readonly destroyRef = inject(DestroyRef);
 
-    @Input() rules: RuleModel[] = [];
-    @Input() ruleActionTypes: { [key: string]: ServerSideTypeModel } = {};
-    @Input() loading = false;
-    @Input() showRules = false;
-    @Input() pageId = '';
-    @Input() isContentletHost = false;
-    @Input() conditionTypes: { [key: string]: ServerSideTypeModel } = {};
-    @Input() environmentStores: IPublishEnvironment[] = [];
+    // Inputs
+    readonly $rules = input<RuleModel[]>([], { alias: 'rules' });
+    readonly $ruleActionTypes = input<Record<string, ServerSideTypeModel>>(
+        {},
+        { alias: 'ruleActionTypes' }
+    );
+    readonly $loading = input<boolean>(false, { alias: 'loading' });
+    readonly $showRules = input<boolean>(false, { alias: 'showRules' });
+    readonly $pageId = input<string>('', { alias: 'pageId' });
+    readonly $isContentletHost = input<boolean>(false, { alias: 'isContentletHost' });
+    readonly $conditionTypes = input<Record<string, ServerSideTypeModel>>(
+        {},
+        { alias: 'conditionTypes' }
+    );
+    readonly $environmentStores = input<IPublishEnvironment[]>([], { alias: 'environmentStores' });
 
-    @Output() createRule: EventEmitter<{ type: string }> = new EventEmitter(false);
-    @Output() deleteRule: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateName: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateExpandedState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateEnabledState: EventEmitter<RuleActionEvent> = new EventEmitter(false);
-    @Output() updateFireOn: EventEmitter<RuleActionEvent> = new EventEmitter(false);
+    // Outputs - Rule Events
+    readonly createRule = output<{ type: string }>();
+    readonly deleteRule = output<RuleActionEvent>();
+    readonly updateName = output<RuleActionEvent>();
+    readonly updateExpandedState = output<RuleActionEvent>();
+    readonly updateEnabledState = output<RuleActionEvent>();
+    readonly updateFireOn = output<RuleActionEvent>();
 
-    @Output() createRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output() deleteRuleAction: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output() updateRuleActionType: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
-    @Output()
-    updateRuleActionParameter: EventEmitter<RuleActionActionEvent> = new EventEmitter(false);
+    // Outputs - Rule Action Events
+    readonly createRuleAction = output<RuleActionActionEvent>();
+    readonly deleteRuleAction = output<RuleActionActionEvent>();
+    readonly updateRuleActionType = output<RuleActionActionEvent>();
+    readonly updateRuleActionParameter = output<RuleActionActionEvent>();
 
-    @Output()
-    createConditionGroup: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
-    @Output()
-    updateConditionGroupOperator: EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false);
+    // Outputs - Condition Group Events
+    readonly createConditionGroup = output<ConditionGroupActionEvent>();
+    readonly updateConditionGroupOperator = output<ConditionGroupActionEvent>();
 
-    @Output() createCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() deleteCondition: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() updateConditionType: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output()
-    updateConditionParameter: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
-    @Output() updateConditionOperator: EventEmitter<ConditionActionEvent> = new EventEmitter(false);
+    // Outputs - Condition Events
+    readonly createCondition = output<ConditionActionEvent>();
+    readonly deleteCondition = output<ConditionActionEvent>();
+    readonly updateConditionType = output<ConditionActionEvent>();
+    readonly updateConditionParameter = output<ConditionActionEvent>();
+    readonly updateConditionOperator = output<ConditionActionEvent>();
 
-    globalError: DotRuleMessage;
-    showCloseButton: boolean;
+    // State
+    readonly globalError = signal<DotRuleMessage | null>(null);
+    readonly showCloseButton = signal(false);
+    readonly filterText = signal('');
+    readonly status = signal<string | null>(null);
+    readonly activeRuleCount = signal(0);
 
-    filterText = '';
-    status: string = null;
-    activeRules = 0;
-
-    private _rsrcCache: { [key: string]: Observable<string> } = {};
-
+    // i18n cache
+    private readonly i18nCache: Record<string, Observable<string>> = {};
     private pushPublishTitleLabel = '';
 
-    private resources = inject(I18nService);
-    private destroy$ = inject(DestroyRef);
-
     constructor() {
-        this.resources.get(I8N_BASE).subscribe(() => {
-            // Pre-loading i18n resources
-        });
+        // Pre-load i18n resources
+        this.i18nService.get(I18N_BASE).subscribe();
 
+        // Listen for error messages
         this.ruleViewService.message
-            .pipe(takeUntilDestroyed(this.destroy$))
-            .subscribe((dotRuleMessage: DotRuleMessage) => {
-                this.globalError = dotRuleMessage;
-                this.showCloseButton = dotRuleMessage.allowClose;
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe((message: DotRuleMessage) => {
+                this.globalError.set(message);
+                this.showCloseButton.set(message.allowClose);
             });
 
-        this.rsrc('pushPublish.title')
+        // Load push publish title
+        this.getI18nLabel('pushPublish.title')
             .pipe(take(1))
             .subscribe((label) => {
                 this.pushPublishTitleLabel = label;
             });
     }
 
-    rsrc(subkey: string): Observable<string> {
-        let x = this._rsrcCache[subkey];
-        if (!x) {
-            x = this.resources.get(I8N_BASE + '.rules.' + subkey);
-            this._rsrcCache[subkey] = x;
+    /**
+     * Get i18n resource for a given subkey
+     */
+    getI18nLabel(subkey: string): Observable<string> {
+        let cached = this.i18nCache[subkey];
+        if (!cached) {
+            cached = this.i18nService.get(`${I18N_BASE}.rules.${subkey}`);
+            this.i18nCache[subkey] = cached;
         }
-
-        return x;
-    }
-
-    ngOnChange(change): void {
-        if (change.rules) {
-            this.updateActiveRuleCount();
-        }
+        return cached;
     }
 
     addRule(): void {
@@ -127,43 +127,48 @@ export class DotRuleEngineComponent {
     }
 
     updateActiveRuleCount(): void {
-        this.activeRules = 0;
-        for (let i = 0; i < this.rules.length; i++) {
-            if (this.rules[i].enabled) {
-                this.activeRules++;
-            }
-        }
+        const rules = this.$rules();
+        const activeCount = rules.filter((rule) => rule.enabled).length;
+        this.activeRuleCount.set(activeCount);
     }
 
-    setFieldFilter(field: string, value: boolean = null): void {
-        // remove old status
-        const re = new RegExp(field + ':[\\w]*');
-        this.filterText = this.filterText.replace(re, ''); // whitespace issues: "blah:foo enabled:false mahRule"
+    setFieldFilter(field: string, value: boolean | null = null): void {
+        const currentFilter = this.filterText();
+        // Remove old status
+        const regex = new RegExp(`${field}:[\\w]*`);
+        let newFilter = currentFilter.replace(regex, '');
+
         if (value !== null) {
-            this.filterText = field + ':' + value + ' ' + this.filterText;
+            newFilter = `${field}:${value} ${newFilter}`;
         }
+
+        this.filterText.set(newFilter);
     }
 
     isFilteringField(field: string, value: boolean | null = null): boolean {
-        let isFiltering;
+        const filter = this.filterText();
         if (value === null) {
-            const re = new RegExp(field + ':[\\w]*');
-            isFiltering = this.filterText.match(re) !== null;
-        } else {
-            isFiltering = this.filterText.indexOf(field + ':' + value) >= 0;
+            const regex = new RegExp(`${field}:[\\w]*`);
+            return regex.test(filter);
         }
-
-        return isFiltering;
+        return filter.includes(`${field}:${value}`);
     }
 
     isFiltered(rule: RuleModel): boolean {
-        return CwFilter.isFiltered(rule, this.filterText);
+        return CwFilter.isFiltered(rule, this.filterText());
     }
 
     showPushPublishDialog(ruleKey: string): void {
-        this.dotPushPublishDialogService.open({
+        this.pushPublishService.open({
             assetIdentifier: ruleKey,
             title: this.pushPublishTitleLabel
         });
+    }
+
+    clearGlobalError(): void {
+        const error = this.globalError();
+        if (error) {
+            this.globalError.set({ ...error, message: '' });
+        }
     }
 }

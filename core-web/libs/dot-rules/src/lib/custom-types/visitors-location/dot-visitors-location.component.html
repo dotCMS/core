@@ -1,7 +1,7 @@
 <div flex layout="row" class="cw-visitors-location cw-condition-component-body">
     <p-select
         (onChange)="onComparisonChange($event.value)"
-        [ngModel]="comparisonValue"
+        [ngModel]="$comparisonValue()"
         [options]="comparisonDropdownOptions$ | async"
         [style]="{ width: '100%' }"
         [class.cw-comparator-selector]="true"
@@ -14,11 +14,11 @@
             [readonly]="true"
             pInputText
             class="cw-latLong" />
-        <label class="cw-input-label-right">{{ preferredUnit }}</label>
+        <label class="cw-input-label-right">{{ $preferredUnit() }}</label>
     </div>
     <div flex layout-fill layout="row" layout-align="start center" class="cw-input">
-        <label class="cw-input-label-left">{{ fromLabel }}</label>
-        <input [value]="getLatLong()" [readonly]="true" pInputText class="cw-radius" />
+        <label class="cw-input-label-left">{{ $fromLabel() }}</label>
+        <input [value]="getFormattedLatLong()" [readonly]="true" pInputText class="cw-radius" />
     </div>
     <div flex layout="column" class="cw-input cw-last">
         <button
@@ -31,8 +31,8 @@
     </div>
 </div>
 <dot-area-picker-dialog-component
-    (circleUpdate)="onUpdate($event)"
-    (cancel)="showingMap = !showingMap"
+    (circleUpdate)="onMapUpdate($event)"
+    (cancel)="showingMap.set(false)"
     [headerText]="'Select an area'"
-    [hidden]="!showingMap"
-    [circle]="circle" />
+    [hidden]="!showingMap()"
+    [circle]="$circle()" />
