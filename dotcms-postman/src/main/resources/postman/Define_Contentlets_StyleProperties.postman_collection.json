@@ -1243,7 +1243,8 @@
           },
           "response": []
         }
-      ]
+      ],
+      "description": "### Contentlet Style Validations\n\nValidates the request form for defining styleProperties."
     },
     {
       "name": "Defining Contentlet Styles",
@@ -1993,6 +1994,370 @@
                 "page",
                 "render",
                 "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Content in 1st Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test Content added to Test Page successfuly\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.errors.length).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ]\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Adds a single content to the created page"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Content Styles in 1st Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"{{Contentlet_1}}\": {\n            \"color\": \"#FF0000\"\n        }\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/styles",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{firstPageIdentifier}}",
+                "styles"
+              ]
+            },
+            "description": "Test when users make a request sending the style properties for some contentlets.  \nThis will save the style properties for the specified contentlets, in case style properties are empty the contentlet style properties will erased."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Styles in First Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Only one Contentlet must be present\", function() {",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "    pm.expect(contentletList.length).to.eql(1);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 has styleProperties\", function () {",
+                  "    // filter by container",
+                  "    const entity = pm.response.json().entity;",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "    // filter by contentlet",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    pm.expect(contentlet.dotStyleProperties.color).to.eql(\"#FF0000\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{firstPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{firstPageUrl}}"
+              ],
+              "query": [
+                {
+                  "key": "language_id",
+                  "value": "1"
+                },
+                {
+                  "key": "mode",
+                  "value": "EDIT_MODE"
+                },
+                {
+                  "key": "host_id",
+                  "value": "{{hostIdentifier}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Content in 2nd Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Test Content added to Test Page successfuly\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.errors.length).to.eql(0);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ]\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{secondPageIdentifier}}/content",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{secondPageIdentifier}}",
+                "content"
+              ]
+            },
+            "description": "Adds a single content to the created page"
+          },
+          "response": []
+        },
+        {
+          "name": "Save Content Styles in 2nd Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"{{Contentlet_1}}\": {\n            \"width\": \"100px\"\n        }\n    }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/{{secondPageIdentifier}}/styles",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "{{secondPageIdentifier}}",
+                "styles"
+              ]
+            },
+            "description": "Test when users make a request sending the style properties for some contentlets.  \nThis will save the style properties for the specified contentlets, in case style properties are empty the contentlet style properties will erased."
+          },
+          "response": []
+        },
+        {
+          "name": "Check Styles in Second Page",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+                  "const entity = pm.response.json().entity;",
+                  "",
+                  "pm.test(\"Only one Contentlet must be present\", function() {",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "    pm.expect(contentletList.length).to.eql(1);",
+                  "});",
+                  "",
+                  "pm.test(\"Validate Contentlet_1 has styleProperties\", function () {",
+                  "    // filter by container",
+                  "    const entity = pm.response.json().entity;",
+                  "    const contentletList = entity.containers.SYSTEM_CONTAINER.contentlets[\"uuid-1\"];",
+                  "",
+                  "    // filter by contentlet",
+                  "    const contentlet = contentletList.find(c => c.identifier === contentlet1);",
+                  "    pm.expect(contentlet).to.exist;",
+                  "    pm.expect(contentlet.dotStyleProperties.width).to.eql(\"100px\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/page/render/{{secondPageUrl}}?language_id=1&mode=EDIT_MODE&host_id={{hostIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "page",
+                "render",
+                "{{secondPageUrl}}"
               ],
               "query": [
                 {
