@@ -1,11 +1,10 @@
 @use "variables" as *;
 
-// Local variables for chart component
-$chart-pie-size: 12.5rem; // 200px
-$chart-y-axis-width: 3.125rem; // 50px
-$chart-x-axis-height: 1.875rem; // 30px
-$chart-border-width: 0.125rem; // 2px
-$chart-grid-padding: 0.625rem; // 10px
+$chart-pie-size: 12.5rem;
+$chart-y-axis-width: 3.125rem;
+$chart-x-axis-height: 1.875rem;
+$chart-border-width: 0.125rem;
+$chart-grid-padding: 0.625rem;
 $chart-grid-opacity: 0.6;
 
 :host {
@@ -17,20 +16,6 @@ $chart-grid-opacity: 0.6;
 .chart-card {
     width: 100%;
 
-    ::ng-deep .p-card {
-        width: 100%;
-    }
-
-    ::ng-deep .p-card-body {
-        padding: $spacing-3;
-        width: 100%;
-    }
-
-    ::ng-deep .p-card-content {
-        width: 100%;
-    }
-
-    // Full height for loading, empty and error states
     &.chart-card--loading,
     &.chart-card--empty,
     &.chart-card--error {
@@ -60,15 +45,6 @@ $chart-grid-opacity: 0.6;
     width: 100%;
     position: relative;
 
-    // Ensure p-chart takes full width
-    ::ng-deep p-chart {
-        display: block;
-        width: 100%;
-
-        canvas {
-            width: 100% !important;
-        }
-    }
 }
 
 .chart-title {
