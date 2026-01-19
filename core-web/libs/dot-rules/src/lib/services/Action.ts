@@ -1,40 +1,25 @@
-import { from as observableFrom, empty as observableEmpty, Observable, Subject } from 'rxjs';
+import { from as observableFrom, empty as observableEmpty, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { mergeMap, reduce, catchError, map } from 'rxjs/operators';
 
+import { ApiRoot } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
-    ApiRoot,
-    CoreWebService,
-    LoggerService,
-    HttpCode,
     UNKNOWN_RESPONSE_ERROR,
     CwError,
     SERVER_RESPONSE_ERROR,
     NETWORK_CONNECTION_ERROR,
     CLIENTS_ONLY_MESSAGES
 } from '@dotcms/dotcms-js';
+import { LoggerService } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
 
-import { ActionModel, ParameterModel } from './Rule';
+import { ActionModel } from './Rule';
 import { ServerSideTypeModel } from './ServerSideFieldModel';
-
-interface ActionJson {
-    key?: string;
-    id?: string;
-    actionlet: string;
-    priority: number;
-    parameters: { [key: string]: ParameterModel };
-    owningRule?: string;
-}
-
-interface ActionResponse {
-    id: string;
-    actionlet: string;
-    priority: number;
-    parameters: { [key: string]: { value: string } };
-}
 
 @Injectable()
 export class ActionService {
@@ -51,8 +36,8 @@ export class ActionService {
         return this._error.asObservable();
     }
 
-    static fromJson(type: ServerSideTypeModel, json: ActionResponse): ActionModel {
-        const ra = new ActionModel(json.key || json.id, type, json.priority);
+    static fromJson(type: ServerSideTypeModel, json: any): ActionModel {
+        const ra = new ActionModel(json.key, type, json.priority);
         Object.keys(json.parameters).forEach((key) => {
             const param = json.parameters[key];
             ra.setParameter(key, param.value);
@@ -61,12 +46,13 @@ export class ActionService {
         return ra;
     }
 
-    static toJson(action: ActionModel): ActionJson {
-        return {
-            actionlet: action.type.key,
-            priority: action.priority,
-            parameters: action.parameters
-        };
+    static toJson(action: ActionModel): any {
+        const json: any = {};
+        json.actionlet = action.type.key;
+        json.priority = action.priority;
+        json.parameters = action.parameters;
+
+        return json;
     }
 
     constructor() {
@@ -75,18 +61,18 @@ export class ActionService {
         this._actionsEndpointUrl = `/api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`;
     }
 
-    makeRequest(childPath?: string): Observable<ActionResponse> {
+    makeRequest(childPath?: string): Observable<any> {
         let path = this._actionsEndpointUrl;
         if (childPath) {
             path = `${path}${childPath}`;
         }
 
         return this.coreWebService
-            .request<ActionResponse>({
+            .request({
                 url: path
             })
             .pipe(
-                catchError((err: { status?: number }) => {
+                catchError((err: any, _source: Observable<any>) => {
                     if (err && err.status === HttpCode.NOT_FOUND) {
                         this.loggerService.error(
                             'Could not retrieve ' + this._typeName + ' : 404 path not valid.',
@@ -139,15 +125,16 @@ export class ActionService {
         ruleActionTypes?: { [key: string]: ServerSideTypeModel }
     ): Observable<ActionModel> {
         return this.makeRequest(key).pipe(
-            map((json: ActionResponse) => {
-                const responseWithKey = { ...json, id: key, key: key };
+            map((json: any) => {
+                json.id = key;
+                json.key = key;
 
-                return ActionService.fromJson(ruleActionTypes[json.actionlet], responseWithKey);
+                return ActionService.fromJson(ruleActionTypes[json.actionlet], json);
             })
         );
     }
 
-    createRuleAction(ruleId: string, model: ActionModel): Observable<ActionModel> {
+    createRuleAction(ruleId: string, model: ActionModel): Observable<any> {
         this.loggerService.debug('Action', 'add', model);
         if (!model.isValid()) {
             throw new Error(`This should be thrown from a checkValid function on the model,
@@ -159,14 +146,15 @@ and should provide the info needed to make the user aware of the fix.`);
         const path = this._getPath(ruleId);
 
         const add = this.coreWebService
-            .request<{ id: string }>({
+            .request({
                 method: 'POST',
                 body: json,
                 url: path
             })
             .pipe(
-                map((res) => {
-                    model.key = res.id;
+                map((res: HttpResponse<any>) => {
+                    const json: any = res;
+                    model.key = json.id;
 
                     return model;
                 })
@@ -183,18 +171,18 @@ and should provide the info needed to make the user aware of the fix.`);
         }
 
         if (!model.isPersisted()) {
-            return this.createRuleAction(ruleId, model);
+            this.createRuleAction(ruleId, model);
         } else {
             const json = ActionService.toJson(model);
             json.owningRule = ruleId;
             const save = this.coreWebService
-                .request<void>({
+                .request({
                     method: 'PUT',
                     body: json,
                     url: this._getPath(ruleId, model.key)
                 })
                 .pipe(
-                    map(() => {
+                    map((_res: HttpResponse<any>) => {
                         return model;
                     })
                 );
@@ -203,14 +191,14 @@ and should provide the info needed to make the user aware of the fix.`);
         }
     }
 
-    remove(ruleId: string, model: ActionModel): Observable<ActionModel> {
+    remove(ruleId, model: ActionModel): Observable<ActionModel> {
         const remove = this.coreWebService
-            .request<void>({
+            .request({
                 method: 'DELETE',
                 url: this._getPath(ruleId, model.key)
             })
             .pipe(
-                map(() => {
+                map((_res: HttpResponse<any>) => {
                     return model;
                 })
             );
@@ -228,13 +216,12 @@ and should provide the info needed to make the user aware of the fix.`);
     }
 
     private _catchRequestError(
-        _operation: string
-    ): (response: HttpResponse<{ error?: string }>) => Observable<never> {
-        return (response: HttpResponse<{ error?: string }>): Observable<never> => {
+        _operation
+    ): (response: HttpResponse<any>, original: Observable<any>) => Observable<any> {
+        return (response: HttpResponse<any>): Observable<any> => {
             if (response) {
                 if (response.status === HttpCode.SERVER_ERROR) {
-                    const bodyStr = typeof response.body === 'string' ? response.body : '';
-                    if (bodyStr.indexOf('ECONNREFUSED') >= 0) {
+                    if (response.body && response.body.indexOf('ECONNREFUSED') >= 0) {
                         throw new CwError(
                             NETWORK_CONNECTION_ERROR,
                             CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR]
@@ -259,9 +246,9 @@ and should provide the info needed to make the user aware of the fix.`);
                         response
                     );
 
-                    const errorMsg =
-                        response.body?.error?.replace('dotcms.api.error.forbidden: ', '') || '';
-                    this._error.next(errorMsg);
+                    this._error.next(
+                        response.body.error.replace('dotcms.api.error.forbidden: ', '')
+                    );
 
                     throw new CwError(
                         UNKNOWN_RESPONSE_ERROR,
@@ -270,7 +257,7 @@ and should provide the info needed to make the user aware of the fix.`);
                 }
             }
 
-            return observableEmpty();
+            return null;
         };
     }
 }

@@ -6,7 +6,7 @@
         <div class="header">{{ globalError.message }}</div>
         <p>{{ rsrc('contact.admin.error') | async }}</p>
         @if (showCloseButton) {
-            <i (click)="globalError.message = ''" class="material-icons" class="close-button">X</i>
+            <i (click)="globalError.message = ''" class="pi pi-times close-button"></i>
         }
     </div>
 }
@@ -21,7 +21,7 @@
                     placeholder="{{ rsrc('inputs.filter.placeholder') | async }}" />
                 <div flex="2"></div>
                 <button (click)="addRule()" class="dot-icon-button">
-                    <i class="material-icons">add</i>
+                    <i class="pi pi-plus"></i>
                 </button>
             </div>
             <div class="cw-filter-links">
@@ -53,7 +53,7 @@
         </div>
         @if (!rules.length) {
             <div class="cw-rule-engine__empty">
-                <i class="material-icons">tune</i>
+                <i class="pi pi-sliders-h"></i>
                 <h2>
                     {{ rsrc('inputs.no.rules') | async }}
                     {{
