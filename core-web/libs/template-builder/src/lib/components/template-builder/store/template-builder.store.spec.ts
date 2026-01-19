@@ -866,9 +866,7 @@ describe('DotTemplateBuilderStore', () => {
                 path: '/new/default/container/path',
                 archived: false,
                 categoryId: 'new-category',
-                parentPermissionable: {
-                    hostname: 'new-host'
-                }
+                hostName: 'new-host'
             };
 
             service.updateDefaultContainer(newDefaultContainer);

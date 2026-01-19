@@ -10429,14 +10429,9 @@ paths:
                 entity:
                 - containerId: some-container-id
                   contentletId: some-contentlet-id
-                  styleProperties:
-                    color: "#FF0000"
-                    margin: 10px
-                    width: 100px
                   uuid: some-uuid
                 - containerId: other-container-id
                   contentletId: other-contentlet-id
-                  styleProperties: null
                   uuid: other-uuid
                 errors: []
                 i18nMessagesMap: {}
@@ -20286,6 +20281,10 @@ components:
         getiDate:
           type: string
           format: date-time
+        hostId:
+          type: string
+        hostName:
+          type: string
         idate:
           type: string
           format: date-time
@@ -20343,6 +20342,8 @@ components:
           type: string
         useDiv:
           type: boolean
+        variant:
+          type: string
         versionId:
           type: string
         versionType:
