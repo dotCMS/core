@@ -62,6 +62,8 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
+- description: Push publishing job management endpoints
+  name: Publishing
 - description: Content relationship management
   name: Relationships
 - description: Endpoints for managing sites (hosts) and their configuration
@@ -122,8 +124,6 @@ tags:
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
-- description: Content publishing and deployment operations
-  name: Publishing
 - description: Remote content publishing and synchronization
   name: Push Publishing
 - description: User role and permission management
@@ -11420,6 +11420,71 @@ paths:
           description: default response
       tags:
       - Portlets
+  /v1/publishing:
+    get:
+      description: "Returns a paginated list of publishing jobs combining audit status\
+        \ and bundle metadata. Supports filtering by status and bundle name/ID. Each\
+        \ job includes asset preview (first 3 assets), environment count, and timing\
+        \ information."
+      operationId: listPublishingJobs
+      parameters:
+      - description: Page number (starts from 1)
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Results per page (1-500)
+        example: 50
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 50
+      - description: Case-insensitive partial match filter on bundle_id and bundle
+          name
+        example: staging
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).\
+          \ Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS,\
+          \ PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
+          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
+          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
+          \ INVALID_TOKEN, LICENSE_REQUIRED"
+        example: "SUCCESS,FAILED_TO_PUBLISH"
+        in: query
+        name: status
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPublishingJobsView"
+          description: Publishing jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request parameters (e.g., invalid status value, pagination\
+            \ out of range)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: List publishing jobs
+      tags:
+      - Publishing
   /v1/publishqueue:
     delete:
       operationId: deleteAssetsByIdentifiers
@@ -19550,6 +19615,26 @@ components:
       - inheritanceMode
       - isParentPermissionable
       - permissions
+    AssetPreviewView:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Asset identifier
+          example: abc123-content-id
+        title:
+          type: string
+          description: Human-readable asset title
+          example: Homepage Content Update
+        type:
+          type: string
+          description: "Asset type (e.g., contentlet, template, container, folder,\
+            \ host)"
+          example: contentlet
+      required:
+      - id
+      - title
+      - type
     AssetsRequestForm:
       type: object
       properties:
@@ -22653,6 +22738,18 @@ components:
             type: string
           variable:
             type: string
+    ImmutableListAssetPreviewView:
+      type: array
+      description: Preview of first 3 assets in the bundle
+      items:
+        $ref: "#/components/schemas/AssetPreviewView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/AssetPreviewView"
+        last:
+          $ref: "#/components/schemas/AssetPreviewView"
     ImmutableListCondition:
       type: array
       items:
@@ -24175,6 +24272,89 @@ components:
           type: boolean
         tokenInvalid:
           type: boolean
+    PublishingJobView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Total number of assets in the bundle
+          example: 47
+        assetPreview:
+          type: array
+          description: Preview of first 3 assets in the bundle
+          items:
+            $ref: "#/components/schemas/AssetPreviewView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/AssetPreviewView"
+            last:
+              $ref: "#/components/schemas/AssetPreviewView"
+        bundleId:
+          type: string
+          description: Unique bundle identifier
+          example: f3d9a4b7-staging-bundle-2026-01-15
+        bundleName:
+          type: string
+          description: Human-readable bundle name
+          example: bundle-testName
+        createDate:
+          type: string
+          format: date-time
+          description: Bundle creation timestamp in ISO 8601 format
+          example: 2026-01-15T10:29:55Z
+        environmentCount:
+          type: integer
+          format: int32
+          description: Number of target environments
+          example: 3
+        filterName:
+          type: string
+          description: Publishing filter name used
+          example: Live to Staging
+        numTries:
+          type: integer
+          format: int32
+          description: Number of publish attempts
+          example: 1
+        status:
+          type: string
+          description: Current publishing status
+          enum:
+          - BUNDLE_REQUESTED
+          - WAITING_FOR_PUBLISHING
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - PUBLISHING_BUNDLE
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - SUCCESS
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_PUBLISH
+          - FAILED_INTEGRITY_CHECK
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          example: SUCCESS
+        statusUpdated:
+          type: string
+          format: date-time
+          description: Last status update timestamp in ISO 8601 format
+          example: 2026-01-15T10:31:22Z
+      required:
+      - assetCount
+      - assetPreview
+      - bundleId
+      - createDate
+      - environmentCount
+      - numTries
+      - status
     PullRelatedForm:
       type: object
       properties:
@@ -25403,6 +25583,31 @@ components:
           type: array
           items:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPublishingJobsView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublishingJobView"
         errors:
           type: array
           items:
