@@ -1,5 +1,5 @@
 <p-dialog
-    [style]="{ width: '900px' }"
+    [style]="{ width: '56.25rem' }"
     [header]="$headerText()"
     [visible]="!$hidden()"
     [modal]="true"
@@ -15,12 +15,12 @@
         </div>
     }
     <ng-template pTemplate="footer">
-        <button (click)="onOkAction()" type="button" pButton label="Ok"></button>
+        <button (click)="onOkAction()" type="button" pButton severity="primary" label="Ok"></button>
         <button
             (click)="onCancelAction()"
             type="button"
             pButton
-            label="Cancel"
-            class="p-button-secondary"></button>
+            severity="secondary"
+            label="Cancel"></button>
     </ng-template>
 </p-dialog>

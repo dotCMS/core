@@ -11,17 +11,16 @@ import { take } from 'rxjs/operators';
 
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 
+import { IPublishEnvironment } from '../../services/api/bundle/bundle-service';
+import { RuleModel, RULE_CREATE } from '../../services/api/rule/Rule';
+import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
+import { I18nService } from '../../services/i18n/i18n.service';
 import {
     ConditionActionEvent,
     RuleActionActionEvent,
     RuleActionEvent,
     ConditionGroupActionEvent
-} from './dot-rule-engine-container.component';
-
-import { IPublishEnvironment } from '../../services/api/bundle/bundle-service';
-import { RuleModel, RULE_CREATE } from '../../services/api/rule/Rule';
-import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
-import { I18nService } from '../../services/i18n/i18n.service';
+} from '../../services/models/rule-event.model';
 import { RuleViewService, DotRuleMessage } from '../../services/ui/dot-view-rule-service';
 import { RuleFilter } from '../../services/utils/filter.util';
 import { DotRuleComponent } from '../rule/dot-rule.component';
@@ -31,6 +30,7 @@ const I18N_BASE = 'api.sites.ruleengine';
 @Component({
     selector: 'dot-rule-engine',
     templateUrl: './dot-rule-engine.component.html',
+    styleUrl: './dot-rule-engine.component.scss',
     imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent]
 })
 export class DotRuleEngineComponent {

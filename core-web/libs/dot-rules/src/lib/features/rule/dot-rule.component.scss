@@ -1,0 +1,150 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
+
+:host {
+    display: block;
+}
+
+.dot-rules-status-text {
+    margin-top: spacing.$spacing-0;
+    margin-right: spacing.$spacing-5;
+}
+
+.dot-rules-saved {
+    .dot-rules-status-text {
+        opacity: 0;
+        transition: opacity 2s cubic-bezier(1, 0.1, 0, 1) 1s;
+    }
+}
+
+.dot-rules-saving {
+    .dot-rules-status-text {
+        opacity: 1;
+        transition: opacity 0s 0s;
+    }
+}
+
+.dot-rules-item {
+    margin-bottom: spacing.$spacing-5;
+    border: 1px solid colors.$color-palette-gray-200;
+    border-radius: spacing.$spacing-1;
+    background-color: colors.$white;
+    font-size: fonts.$font-size-md;
+
+    .dot-rules-header-actions {
+        margin-right: spacing.$spacing-1;
+        position: relative;
+
+        p-toggleSwitch {
+            margin: spacing.$spacing-0 spacing.$spacing-3 0 0;
+        }
+    }
+
+    .dot-rules-name-input {
+        margin-right: spacing.$spacing-3;
+    }
+
+    > .dot-rules-header {
+        background-color: colors.$white;
+        padding: spacing.$spacing-1;
+        border-radius: spacing.$spacing-1 spacing.$spacing-1 0 0;
+    }
+
+    .dot-rules-caret {
+        min-width: 1.25rem;
+        max-width: 1.25rem;
+        margin-left: 0;
+    }
+
+    .dot-rules-cloud {
+        min-width: 1rem;
+        max-width: 1rem;
+        margin-left: spacing.$spacing-1;
+        margin-right: spacing.$spacing-0;
+        color: colors.$white;
+        text-shadow: 1px 1px 0.5rem colors.$color-palette-gray-600;
+
+        &.out-of-sync {
+            color: colors.$color-palette-red;
+            text-shadow: 1px 1px 0.5rem colors.$black;
+        }
+    }
+
+    .dot-rules-fire-on-label {
+        font-weight: bold;
+        margin-right: spacing.$spacing-1;
+        min-width: 4rem;
+        max-width: 4rem;
+    }
+
+    .dot-rules-fire-on-dropdown {
+        min-width: 12rem;
+        max-width: 12rem;
+    }
+
+    .dot-rules-accordion-body {
+        margin: spacing.$spacing-3;
+    }
+
+    .dot-rules-condition-row,
+    .dot-rules-action-row {
+        margin-bottom: spacing.$spacing-2;
+        min-height: 2.5rem;
+        align-items: center;
+        gap: spacing.$spacing-1;
+    }
+}
+
+.dot-rules-header-arrow {
+    font-size: fonts.$font-size-md;
+    font-weight: bold;
+    padding: spacing.$spacing-1;
+}
+
+.dot-rules-name-field {
+    margin: spacing.$spacing-1 spacing.$spacing-5;
+}
+
+.dot-rules-warn {
+    color: colors.$color-palette-red;
+}
+
+.dot-rules-hidden {
+    display: none !important;
+}
+
+.dot-rules-btn-group {
+    display: flex;
+    align-items: center;
+    gap: spacing.$spacing-1;
+}
+
+.dot-rules-add-btn {
+    min-width: 2.5rem;
+    width: 2.5rem;
+    flex-shrink: 0;
+}
+
+.dot-rules-delete-btn {
+    margin-left: spacing.$spacing-1;
+}
+
+// Action section styles (used in this component's template)
+.dot-rules-action-group {
+    margin-top: spacing.$spacing-3;
+}
+
+.dot-rules-action-separator {
+    display: flex;
+    align-items: center;
+    padding: spacing.$spacing-1 spacing.$spacing-3;
+    background-color: colors.$color-palette-green-tint;
+    border-radius: spacing.$spacing-1;
+    width: 100%;
+    gap: spacing.$spacing-2;
+}
+
+.dot-rules-actions {
+    padding: spacing.$spacing-1 spacing.$spacing-5 0 spacing.$spacing-5;
+}

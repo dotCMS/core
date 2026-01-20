@@ -1,0 +1,61 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
+:host {
+    display: block;
+    margin-top: spacing.$spacing-1;
+
+    &:first-child {
+        margin-top: 0;
+    }
+}
+
+.dot-rules-group-separator {
+    display: flex;
+    align-items: center;
+    padding: spacing.$spacing-1 spacing.$spacing-3;
+    padding-left: spacing.$spacing-5;
+    background-color: colors.$color-palette-secondary-200;
+    border-radius: spacing.$spacing-1;
+    width: 100%;
+    gap: spacing.$spacing-2;
+
+    > button {
+        min-width: 4rem;
+        width: 4rem;
+    }
+}
+
+.dot-rules-group {
+    .dot-rules-header-text {
+        flex: 1;
+        margin-left: spacing.$spacing-2;
+    }
+}
+
+.dot-rules-conditions {
+    padding: spacing.$spacing-2 spacing.$spacing-5;
+}
+
+.dot-rules-condition-row {
+    display: flex;
+    align-items: center;
+    gap: spacing.$spacing-1;
+    margin-bottom: spacing.$spacing-2;
+
+    &:last-child {
+        margin-bottom: 0;
+    }
+}
+
+.dot-rules-btn-group {
+    display: flex;
+    align-items: center;
+    gap: spacing.$spacing-1;
+}
+
+.dot-rules-add-btn {
+    min-width: 2.5rem;
+    width: 2.5rem;
+    flex-shrink: 0;
+}

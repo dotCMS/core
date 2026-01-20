@@ -1,30 +1,28 @@
 @let action = $action();
 
-<div class="dot-rules-action dot-rules-entry flex flex-row flex-1">
-    <div class="dot-rules-row-start-area basis-1/4 max-w-1/4 flex flex-row">
-        <p-select
-            (onChange)="onTypeChange($event.value)"
-            [ngModel]="action.type?.key"
-            [options]="typeDropdownOptions$ | async"
-            [style]="{ width: '100%' }"
-            [placeholder]="$actionTypePlaceholder()"
-            [filter]="true"
-            class="dot-rules-type-dropdown flex-1"
-            appendTo="body" />
-    </div>
-    <dot-serverside-condition
-        (parameterValueChange)="onParameterValueChange($event)"
-        [componentInstance]="action"
-        class="dot-rules-action-component basis-3/4 max-w-3/4" />
-    <div class="dot-rules-btn-group dot-rules-delete-btn">
-        <div class="ui basic icon buttons">
-            <button
-                (click)="onDeleteRuleActionClicked()"
-                [disabled]="!action.isPersisted()"
-                pButton
-                type="button"
-                icon="pi pi-trash"
-                class="p-button-rounded p-button-danger p-button-text"></button>
-        </div>
-    </div>
+<div class="dot-rules-action-spacer"></div>
+<p-select
+    (onChange)="onTypeChange($event.value)"
+    [ngModel]="action.type?.key"
+    [options]="typeDropdownOptions$ | async"
+    [style]="{ width: '100%' }"
+    [placeholder]="$actionTypePlaceholder()"
+    [filter]="true"
+    class="dot-rules-type-dropdown"
+    appendTo="body" />
+<dot-serverside-condition
+    (parameterValueChange)="onParameterValueChange($event)"
+    [componentInstance]="action"
+    class="dot-rules-action-component" />
+<div class="dot-rules-delete-btn">
+    <button
+        (click)="onDeleteRuleActionClicked()"
+        [disabled]="!action.isPersisted()"
+        [rounded]="true"
+        [text]="true"
+        pButton
+        type="button"
+        severity="danger"
+        icon="pi pi-trash"
+        ariaLabel="Delete Action"></button>
 </div>

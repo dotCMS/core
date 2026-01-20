@@ -26,9 +26,14 @@
                     pInputText
                     placeholder="{{ getI18nLabel('inputs.filter.placeholder') | async }}" />
                 <div class="flex-1"></div>
-                <button (click)="addRule()" class="dot-icon-button">
-                    <i class="pi pi-plus"></i>
-                </button>
+                <button
+                    (click)="addRule()"
+                    pButton
+                    [rounded]="true"
+                    [raised]="true"
+                    severity="primary"
+                    icon="pi pi-plus"
+                    ariaLabel="Add Rule"></button>
             </div>
             <div class="dot-rules-filter-links">
                 <span>{{ getI18nLabel('inputs.filter.status.show.label') | async }}:</span>

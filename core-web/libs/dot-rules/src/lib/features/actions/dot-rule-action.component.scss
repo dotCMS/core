@@ -1,0 +1,26 @@
+@use "../../../../../dotcms-scss/shared/spacing";
+
+:host {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: spacing.$spacing-2;
+}
+
+.dot-rules-action-spacer {
+    min-width: 4rem;
+    width: 4rem;
+}
+
+.dot-rules-type-dropdown {
+    min-width: 12rem;
+    max-width: 12rem;
+}
+
+.dot-rules-action-component {
+    flex: 1;
+}
+
+.dot-rules-delete-btn {
+    flex-shrink: 0;
+}

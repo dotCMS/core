@@ -55,20 +55,21 @@ import {
 } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../services/i18n/i18n.service';
-import { DotRuleActionComponent } from '../actions/dot-rule-action.component';
-import { DotConditionGroupComponent } from '../conditions/condition-group/dot-condition-group.component';
 import {
     ConditionActionEvent,
     RuleActionActionEvent,
     RuleActionEvent,
     ConditionGroupActionEvent
-} from '../rule-engine/dot-rule-engine-container.component';
+} from '../../services/models/rule-event.model';
+import { DotRuleActionComponent } from '../actions/dot-rule-action.component';
+import { DotConditionGroupComponent } from '../conditions/condition-group/dot-condition-group.component';
 
 const I18N_BASE = 'api.sites.ruleengine';
 
 @Component({
     selector: 'dot-rule',
     templateUrl: './dot-rule.component.html',
+    styleUrl: './dot-rule.component.scss',
     imports: [
         AsyncPipe,
         ReactiveFormsModule,

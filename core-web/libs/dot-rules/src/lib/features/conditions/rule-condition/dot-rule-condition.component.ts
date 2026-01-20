@@ -42,6 +42,7 @@ export interface DeleteConditionEvent {
 @Component({
     selector: 'dot-rule-condition',
     templateUrl: './dot-rule-condition.component.html',
+    styleUrl: './dot-rule-condition.component.scss',
     imports: [
         AsyncPipe,
         FormsModule,

@@ -52,6 +52,7 @@ const UNIT_CONVERSIONS: Record<DistanceUnit, Record<DistanceUnit, (len: number) 
 @Component({
     selector: 'dot-visitors-location-component',
     templateUrl: './dot-visitors-location.component.html',
+    styleUrl: './dot-visitors-location.component.scss',
     imports: [
         AsyncPipe,
         DecimalPipe,

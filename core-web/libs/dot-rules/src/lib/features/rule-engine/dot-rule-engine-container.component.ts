@@ -1,7 +1,7 @@
 import { from as observableFrom, Observable, merge, Subject } from 'rxjs';
 
 // tslint:disable-next-line:max-file-line-count
-import { Component, ViewEncapsulation, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
 import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
@@ -21,66 +21,22 @@ import {
     ConditionModel,
     ActionModel
 } from '../../services/api/rule/Rule';
+import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
 import {
-    ServerSideFieldModel,
-    ServerSideTypeModel
-} from '../../services/api/serverside-field/ServerSideFieldModel';
-import { ChangeEvent } from '../../services/models/event.model';
+    RuleActionEvent,
+    RuleActionActionEvent,
+    ConditionGroupActionEvent,
+    ConditionActionEvent
+} from '../../services/models/rule-event.model';
 import { RuleViewService } from '../../services/ui/dot-view-rule-service';
 
-export interface ParameterChangeEvent extends ChangeEvent {
-    rule?: RuleModel;
-    source?: ServerSideFieldModel;
-    name: string;
-    value: string;
-}
-
-export interface TypeChangeEvent extends ChangeEvent {
-    rule?: RuleModel;
-    source: ServerSideFieldModel;
-    value: ServerSideTypeModel | string;
-    index: number;
-}
-
-export interface RuleActionEvent {
-    type: string;
-    payload: {
-        rule?: RuleModel;
-        value?: string | boolean;
-    };
-}
-
-export interface RuleActionActionEvent extends RuleActionEvent {
-    payload: {
-        rule?: RuleModel;
-        value?: string | boolean;
-        ruleAction?: ActionModel;
-        index?: number;
-        name?: string;
-    };
-}
-
-export interface ConditionGroupActionEvent extends RuleActionEvent {
-    payload: {
-        rule?: RuleModel;
-        value?: string | boolean;
-        conditionGroup?: ConditionGroupModel;
-        index?: number;
-        priority?: number;
-    };
-}
-
-export interface ConditionActionEvent extends RuleActionEvent {
-    payload: {
-        rule?: RuleModel;
-        value?: string | boolean;
-        condition?: ConditionModel;
-        conditionGroup?: ConditionGroupModel;
-        index?: number;
-        name?: string;
-        type?: string;
-    };
-}
+// Re-export for backward compatibility
+export {
+    RuleActionEvent,
+    RuleActionActionEvent,
+    ConditionGroupActionEvent,
+    ConditionActionEvent
+} from '../../services/models/rule-event.model';
 
 /**
  *
@@ -88,9 +44,8 @@ export interface ConditionActionEvent extends RuleActionEvent {
 @Component({
     selector: 'dot-rule-engine-container',
     templateUrl: './dot-rule-engine-container.component.html',
-    styleUrls: ['../../styles/rule-engine.scss'],
-    imports: [DotRuleEngineComponent],
-    encapsulation: ViewEncapsulation.None
+    styleUrl: './dot-rule-engine-container.component.scss',
+    imports: [DotRuleEngineComponent]
 })
 export class DotRuleEngineContainerComponent implements OnDestroy {
     _ruleService = inject(RuleService);

@@ -4,34 +4,32 @@
         [ngModel]="$comparisonValue()"
         [options]="comparisonDropdownOptions$ | async"
         [style]="{ width: '100%' }"
-        [class.dot-rules-comparator]="true"
-        class="dot-rules-input flex-1"
+        class="dot-rules-comparator"
         appendTo="body" />
-    <div class="dot-rules-input flex-1 w-full min-h-full flex flex-row justify-start items-center">
+    <div class="dot-rules-input dot-rules-radius-group">
         <input
             [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
             [readonly]="true"
             pInputText
-            class="dot-rules-lat-long" />
-        <label class="dot-rules-label-right">{{ $preferredUnit() }}</label>
+            class="dot-rules-radius-input" />
+        <label class="dot-rules-label">{{ $preferredUnit() }}</label>
     </div>
-    <div class="dot-rules-input flex-1 w-full min-h-full flex flex-row justify-start items-center">
-        <label class="dot-rules-label-left">{{ $fromLabel() }}</label>
+    <div class="dot-rules-input dot-rules-coords-group">
+        <label class="dot-rules-label">{{ $fromLabel() }}</label>
         <input
             [value]="getFormattedLatLong()"
             [readonly]="true"
             pInputText
-            class="dot-rules-radius" />
+            class="dot-rules-coords-input" />
     </div>
-    <div class="dot-rules-input dot-rules-last flex-1 flex flex-col">
-        <button
-            (click)="toggleMap()"
-            pButton
-            class="p-button-secondary"
-            icon="pi pi-plus"
-            label="Show Map"
-            aria-label="Show Map"></button>
-    </div>
+    <button
+        (click)="toggleMap()"
+        pButton
+        severity="secondary"
+        icon="pi pi-plus"
+        label="Show Map"
+        class="dot-rules-map-btn"
+        ariaLabel="Show Map"></button>
 </div>
 <dot-area-picker-dialog-component
     (circleUpdate)="onMapUpdate($event)"

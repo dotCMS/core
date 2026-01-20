@@ -57,7 +57,7 @@
                             [ngModel]="fireOnValue()"
                             [ngModelOptions]="{ standalone: true }"
                             [options]="fireOnOptions$ | async"
-                            [style]="{ width: '150px' }"
+                            [style]="{ width: '9.5rem' }"
                             [placeholder]="fireOnPlaceholder$ | async"
                             class="dot-rules-fire-on-dropdown flex-none"
                             appendTo="body" />
@@ -77,9 +77,10 @@
                     <div class="dot-rules-btn-group">
                         <button
                             (click)="ruleOptions.toggle($event); $event.stopPropagation()"
-                            class="p-button-secondary"
                             pButton
-                            icon="pi pi-ellipsis-v"></button>
+                            severity="secondary"
+                            icon="pi pi-ellipsis-v"
+                            ariaLabel="Rule options"></button>
                         <button
                             (click)="
                                 onCreateConditionGroupClicked();
@@ -87,11 +88,11 @@
                                 $event.stopPropagation()
                             "
                             [disabled]="!rule.isPersisted()"
-                            class="p-button-secondary"
-                            style="margin-left: 0.5rem"
                             pButton
+                            severity="secondary"
                             icon="pi pi-plus"
-                            arial-label="Add Group"></button>
+                            ariaLabel="Add Group"
+                            styleClass="ml-2"></button>
                         <p-menu
                             [model]="ruleActionOptions"
                             #ruleOptions
@@ -138,16 +139,16 @@
                                     class="flex-1 flex flex-row" />
                                 <div class="dot-rules-btn-group dot-rules-add-btn">
                                     @if (i === ruleActions.length - 1) {
-                                        <div class="ui basic icon buttons">
-                                            <button
-                                                (click)="onCreateRuleAction()"
-                                                [disabled]="!ruleAction.isPersisted()"
-                                                class="p-button-rounded p-button-success p-button-text"
-                                                pButton
-                                                type="button"
-                                                icon="pi pi-plus"
-                                                arial-label="Add Action"></button>
-                                        </div>
+                                        <button
+                                            (click)="onCreateRuleAction()"
+                                            [disabled]="!ruleAction.isPersisted()"
+                                            [rounded]="true"
+                                            [text]="true"
+                                            pButton
+                                            type="button"
+                                            severity="success"
+                                            icon="pi pi-plus"
+                                            ariaLabel="Add Action"></button>
                                     }
                                 </div>
                             </div>

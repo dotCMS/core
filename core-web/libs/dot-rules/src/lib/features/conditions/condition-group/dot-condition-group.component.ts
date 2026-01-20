@@ -18,7 +18,7 @@ import { I18nService } from '../../../services/i18n/i18n.service';
 import {
     ConditionActionEvent,
     ConditionGroupActionEvent
-} from '../../rule-engine/dot-rule-engine-container.component';
+} from '../../../services/models/rule-event.model';
 import { DotRuleConditionComponent } from '../rule-condition/dot-rule-condition.component';
 
 const I18N_BASE = 'api.sites.ruleengine.rules';
@@ -26,6 +26,7 @@ const I18N_BASE = 'api.sites.ruleengine.rules';
 @Component({
     selector: 'dot-condition-group',
     templateUrl: './dot-condition-group.component.html',
+    styleUrl: './dot-condition-group.component.scss',
     imports: [AsyncPipe, ButtonModule, DotRuleConditionComponent]
 })
 export class DotConditionGroupComponent {

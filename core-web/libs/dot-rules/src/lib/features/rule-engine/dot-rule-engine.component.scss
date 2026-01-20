@@ -1,0 +1,72 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/shadows";
+@use "../../../../../dotcms-scss/shared/spacing";
+
+:host {
+    box-shadow: shadows.$shadow-m;
+    padding: spacing.$spacing-3 spacing.$spacing-4;
+    flex-grow: 1;
+    background-color: colors.$white;
+    overflow: auto;
+}
+
+.dot-rules-engine {
+    > .dot-rules-header {
+        padding-bottom: spacing.$spacing-5;
+    }
+}
+
+.dot-rules-filter-links {
+    padding: spacing.$spacing-1;
+    font-size: fonts.$font-size-sm;
+    color: colors.$color-palette-gray-500;
+
+    span:first-child {
+        padding-right: spacing.$spacing-0;
+    }
+
+    span {
+        padding: 0 spacing.$spacing-0;
+    }
+}
+
+.dot-rules-filter-link {
+    color: colors.$color-palette-gray-500;
+
+    &:hover {
+        color: colors.$foreground-active;
+    }
+
+    &.active {
+        font-weight: bold;
+        color: colors.$foreground-active;
+    }
+}
+
+.dot-rules-empty {
+    margin-top: spacing.$spacing-10;
+    text-align: center;
+
+    i {
+        font-size: 7.5rem;
+        color: colors.$color-palette-gray-500;
+        border: 0.5rem solid;
+        border-radius: spacing.$spacing-2;
+        margin-bottom: spacing.$spacing-4;
+    }
+
+    h2 {
+        font-size: fonts.$font-size-xl;
+        margin: 0;
+        color: colors.$color-palette-gray-700;
+    }
+
+    span {
+        display: block;
+    }
+
+    button {
+        margin-top: spacing.$spacing-3;
+    }
+}

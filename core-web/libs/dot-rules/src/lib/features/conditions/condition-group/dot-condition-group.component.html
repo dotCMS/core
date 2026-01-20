@@ -13,7 +13,8 @@
                 (click)="toggleGroupOperator()"
                 [label]="group.operator"
                 pButton
-                class="p-button-secondary p-button-sm"></button>
+                severity="secondary"
+                size="small"></button>
             <span class="dot-rules-header-text flex-1">
                 {{ getI18nLabel('inputs.group.whenFurtherConditions.label') | async }}
             </span>
@@ -34,16 +35,16 @@
                     class="flex-1 flex flex-row" />
                 <div class="dot-rules-btn-group dot-rules-add-btn">
                     @if (i === conditions.length - 1) {
-                        <div class="ui basic icon buttons">
-                            <button
-                                (click)="onCreateCondition()"
-                                [disabled]="!condition.isPersisted()"
-                                pButton
-                                type="button"
-                                icon="pi pi-plus"
-                                class="p-button-rounded p-button-success p-button-text"
-                                arial-label="Add Condition"></button>
-                        </div>
+                        <button
+                            (click)="onCreateCondition()"
+                            [disabled]="!condition.isPersisted()"
+                            [rounded]="true"
+                            [text]="true"
+                            pButton
+                            type="button"
+                            severity="success"
+                            icon="pi pi-plus"
+                            ariaLabel="Add Condition"></button>
                     }
                 </div>
             </div>

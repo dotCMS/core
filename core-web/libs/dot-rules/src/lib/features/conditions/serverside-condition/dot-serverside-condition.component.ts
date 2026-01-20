@@ -63,6 +63,7 @@ interface DropdownOption {
 @Component({
     selector: 'dot-serverside-condition',
     templateUrl: './dot-serverside-condition.component.html',
+    styleUrl: './dot-serverside-condition.component.scss',
     imports: [
         AsyncPipe,
         ReactiveFormsModule,

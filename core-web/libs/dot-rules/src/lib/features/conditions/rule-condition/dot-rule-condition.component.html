@@ -1,53 +1,52 @@
 @let condition = $condition();
 
-<div class="dot-rules-condition dot-rules-entry flex flex-row flex-1">
-    <div class="dot-rules-btn-group dot-rules-condition-toggle">
-        @if ($index() !== 0) {
-            <button
-                (click)="toggleOperator()"
-                [label]="condition.operator"
-                pButton
-                class="p-button-secondary"
-                aria-label="Swap And/Or"></button>
-        }
-    </div>
-    <p-select
-        (onChange)="onTypeChange($event.value)"
-        [ngModel]="condition.type?.key"
-        [options]="typeDropdownOptions$ | async"
-        [style]="{ width: '100%' }"
-        [placeholder]="$conditionTypePlaceholder()"
-        [filter]="true"
-        class="dot-rules-type-dropdown basis-1/4 max-w-1/4"
-        appendTo="body" />
-    <div class="dot-rules-condition-main basis-3/4 max-w-3/4">
-        @switch (condition.type?.key) {
-            @case ('NoSelection') {
-                <div class="dot-rules-condition-component"></div>
-            }
-            @case ('VisitorsGeolocationConditionlet') {
-                <dot-visitors-location-container
-                    (parameterValuesChange)="onParameterValuesChange($event)"
-                    [componentInstance]="condition" />
-            }
-            @default {
-                <dot-serverside-condition
-                    (parameterValueChange)="onParameterValueChange($event)"
-                    [componentInstance]="condition"
-                    class="dot-rules-condition-component" />
-            }
-        }
-    </div>
-</div>
-<div class="dot-rules-btn-group dot-rules-delete-btn">
-    <div class="ui basic icon buttons">
+<div class="dot-rules-condition-toggle">
+    @if ($index() !== 0) {
         <button
-            (click)="onDeleteConditionClicked()"
-            [disabled]="!condition.isPersisted()"
+            (click)="toggleOperator()"
+            [label]="condition.operator"
             pButton
-            type="button"
-            icon="pi pi-trash"
-            class="p-button-rounded p-button-danger p-button-text"
-            aria-label="Delete Condition"></button>
-    </div>
+            severity="secondary"
+            size="small"
+            ariaLabel="Swap And/Or"></button>
+    }
+</div>
+<p-select
+    (onChange)="onTypeChange($event.value)"
+    [ngModel]="condition.type?.key"
+    [options]="typeDropdownOptions$ | async"
+    [style]="{ width: '100%' }"
+    [placeholder]="$conditionTypePlaceholder()"
+    [filter]="true"
+    class="dot-rules-type-dropdown"
+    appendTo="body" />
+<div class="dot-rules-condition-main">
+    @switch (condition.type?.key) {
+        @case ('NoSelection') {
+            <div class="dot-rules-condition-component"></div>
+        }
+        @case ('VisitorsGeolocationConditionlet') {
+            <dot-visitors-location-container
+                (parameterValuesChange)="onParameterValuesChange($event)"
+                [componentInstance]="condition" />
+        }
+        @default {
+            <dot-serverside-condition
+                (parameterValueChange)="onParameterValueChange($event)"
+                [componentInstance]="condition"
+                class="dot-rules-condition-component" />
+        }
+    }
+</div>
+<div class="dot-rules-delete-btn">
+    <button
+        (click)="onDeleteConditionClicked()"
+        [disabled]="!condition.isPersisted()"
+        [rounded]="true"
+        [text]="true"
+        pButton
+        type="button"
+        severity="danger"
+        icon="pi pi-trash"
+        ariaLabel="Delete Condition"></button>
 </div>

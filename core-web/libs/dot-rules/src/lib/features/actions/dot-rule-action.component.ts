@@ -18,12 +18,13 @@ import {
     ActionModel
 } from '../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
+import { RuleActionActionEvent } from '../../services/models/rule-event.model';
 import { DotServersideConditionComponent } from '../conditions/serverside-condition/dot-serverside-condition.component';
-import { RuleActionActionEvent } from '../rule-engine/dot-rule-engine-container.component';
 
 @Component({
     selector: 'dot-rule-action',
     templateUrl: './dot-rule-action.component.html',
+    styleUrl: './dot-rule-action.component.scss',
     imports: [AsyncPipe, FormsModule, ButtonModule, SelectModule, DotServersideConditionComponent]
 })
 export class DotRuleActionComponent {
