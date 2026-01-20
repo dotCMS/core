@@ -1,13 +1,10 @@
 import { ChangeEvent } from './event.model';
 
+import { ActionModel, ConditionGroupModel, ConditionModel, RuleModel } from '../api/rule/Rule';
 import {
-    ActionModel,
-    ConditionGroupModel,
-    ConditionModel,
-    RuleModel
-} from '../api/rule/Rule';
-import { ServerSideFieldModel, ServerSideTypeModel } from '../api/serverside-field/ServerSideFieldModel';
-
+    ServerSideFieldModel,
+    ServerSideTypeModel
+} from '../api/serverside-field/ServerSideFieldModel';
 
 /**
  * Event emitted when a parameter value changes
