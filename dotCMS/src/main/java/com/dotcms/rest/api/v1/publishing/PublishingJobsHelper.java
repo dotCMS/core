@@ -96,14 +96,13 @@ public class PublishingJobsHelper {
      */
     public List<Status> parseStatuses(final String statusParam) {
         if (!UtilMethods.isSet(statusParam)) {
-            return Collections.emptyList();
+            return List.of();
         }
         return Arrays.stream(statusParam.split(","))
                 .map(String::trim)
                 .filter(UtilMethods::isSet)
-                .map(String::toUpperCase)
                 .map(this::parseStatusSafely)
-                .filter(Objects::nonNull)
+                .flatMap(Optional::stream)
                 .collect(Collectors.toList());
     }
 
@@ -115,12 +114,12 @@ public class PublishingJobsHelper {
      */
     public List<String> getInvalidStatuses(final String statusParam) {
         if (!UtilMethods.isSet(statusParam)) {
-            return Collections.emptyList();
+            return List.of();
         }
         return Arrays.stream(statusParam.split(","))
                 .map(String::trim)
                 .filter(UtilMethods::isSet)
-                .filter(name -> parseStatusSafely(name.toUpperCase()) == null)
+                .filter(name -> parseStatusSafely(name).isEmpty())
                 .collect(Collectors.toList());
     }
 
@@ -169,7 +168,7 @@ public class PublishingJobsHelper {
      */
     private List<AssetPreviewView> buildAssetPreviews(final PublishAuditHistory history) {
         if (history == null || !UtilMethods.isSet(history.getAssets())) {
-            return Collections.emptyList();
+            return List.of();
         }
 
         return history.getAssets().entrySet().stream()
@@ -221,14 +220,17 @@ public class PublishingJobsHelper {
     }
 
     /**
-     * Safely parses a status name to Status enum, returning null on failure.
+     * Safely parses a status name to Status enum (case-insensitive).
+     *
+     * @param statusName The status name to parse
+     * @return Optional containing the Status if valid, empty otherwise
      */
-    private Status parseStatusSafely(final String statusName) {
+    private Optional<Status> parseStatusSafely(final String statusName) {
         try {
-            return Status.valueOf(statusName);
+            return Optional.of(Status.valueOf(statusName.toUpperCase()));
         } catch (IllegalArgumentException e) {
             Logger.warn(this, "Invalid status value: " + statusName);
-            return null;
+            return Optional.empty();
         }
     }
 }
