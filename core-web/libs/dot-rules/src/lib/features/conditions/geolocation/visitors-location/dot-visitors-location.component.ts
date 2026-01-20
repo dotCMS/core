@@ -20,9 +20,8 @@ import { map, mergeMap, toArray, startWith, shareReplay } from 'rxjs/operators';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { DotAreaPickerDialogComponent } from './dot-area-picker-dialog.component';
-
-import { GCircle } from '../../../models/gcircle.model';
+import { GCircle } from '../../../../models/gcircle.model';
+import { DotAreaPickerDialogComponent } from '../dialog/dot-area-picker-dialog.component';
 
 type DistanceUnit = 'km' | 'm' | 'mi';
 
@@ -49,10 +48,12 @@ const UNIT_CONVERSIONS: Record<DistanceUnit, Record<DistanceUnit, (len: number) 
     }
 };
 
+/**
+ * Presentation component for visitors location input
+ */
 @Component({
     selector: 'dot-visitors-location-component',
     templateUrl: './dot-visitors-location.component.html',
-    styleUrl: './dot-visitors-location.component.scss',
     imports: [
         AsyncPipe,
         DecimalPipe,
@@ -63,7 +64,10 @@ const UNIT_CONVERSIONS: Record<DistanceUnit, Record<DistanceUnit, (len: number) 
         DotAreaPickerDialogComponent
     ],
     providers: [DecimalPipe],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-1 w-full'
+    }
 })
 export class DotVisitorsLocationComponent {
     private readonly decimalPipe = inject(DecimalPipe);

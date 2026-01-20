@@ -63,7 +63,6 @@ interface DropdownOption {
 @Component({
     selector: 'dot-serverside-condition',
     templateUrl: './dot-serverside-condition.component.html',
-    styleUrl: './dot-serverside-condition.component.scss',
     imports: [
         AsyncPipe,
         ReactiveFormsModule,
@@ -73,7 +72,10 @@ interface DropdownOption {
         SelectModule,
         MultiSelectModule
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-1 w-full'
+    }
 })
 export class DotServersideConditionComponent {
     private readonly logger = inject(LoggerService);

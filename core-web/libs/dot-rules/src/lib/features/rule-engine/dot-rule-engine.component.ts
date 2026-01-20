@@ -27,11 +27,16 @@ import { DotRuleComponent } from '../rule/dot-rule.component';
 
 const I18N_BASE = 'api.sites.ruleengine';
 
+/**
+ * Presentation component for the rule engine UI
+ */
 @Component({
     selector: 'dot-rule-engine',
     templateUrl: './dot-rule-engine.component.html',
-    styleUrl: './dot-rule-engine.component.scss',
-    imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent]
+    imports: [AsyncPipe, ButtonModule, InputTextModule, DotRuleComponent],
+    host: {
+        class: 'shadow-[0px_8px_16px_0px_hsla(230,13%,9%,0.08)] p-4 px-6 flex-grow bg-white overflow-auto'
+    }
 })
 export class DotRuleEngineComponent {
     private readonly ruleViewService = inject(RuleViewService);

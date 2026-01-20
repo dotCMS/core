@@ -15,15 +15,14 @@ import { DialogModule } from 'primeng/dialog';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { GCircle } from '../../../models/gcircle.model';
-import { GoogleMapService } from '../../../services/maps/GoogleMapService';
+import { GCircle } from '../../../../models/gcircle.model';
+import { GoogleMapService } from '../../../../services/maps/GoogleMapService';
 
 let mapIdCounter = 1;
 
 @Component({
     selector: 'dot-area-picker-dialog-component',
     templateUrl: './dot-area-picker-dialog.component.html',
-    styleUrls: ['./dot-area-picker-dialog.component.scss'],
     imports: [DialogModule, ButtonModule, SharedModule],
     changeDetection: ChangeDetectionStrategy.Default
 })

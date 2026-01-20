@@ -1,26 +1,26 @@
-<div class="dot-rules-geolocation dot-rules-condition-body flex flex-row flex-1">
+<div class="w-full gap-3 items-center flex flex-row flex-1">
     <p-select
         (onChange)="onComparisonChange($event.value)"
         [ngModel]="$comparisonValue()"
         [options]="comparisonDropdownOptions$ | async"
         [style]="{ width: '100%' }"
-        class="dot-rules-comparator"
+        class="min-w-24 max-w-24 flex-none"
         appendTo="body" />
-    <div class="dot-rules-input dot-rules-radius-group">
+    <div class="flex items-center gap-2 flex-1">
         <input
             [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
             [readonly]="true"
             pInputText
-            class="dot-rules-radius-input" />
-        <label class="dot-rules-label">{{ $preferredUnit() }}</label>
+            class="flex-1 text-right text-black" />
+        <label class="whitespace-nowrap">{{ $preferredUnit() }}</label>
     </div>
-    <div class="dot-rules-input dot-rules-coords-group">
-        <label class="dot-rules-label">{{ $fromLabel() }}</label>
+    <div class="flex items-center gap-2 flex-grow-2">
+        <label class="whitespace-nowrap">{{ $fromLabel() }}</label>
         <input
             [value]="getFormattedLatLong()"
             [readonly]="true"
             pInputText
-            class="dot-rules-coords-input" />
+            class="flex-1 text-right text-black" />
     </div>
     <button
         (click)="toggleMap()"
@@ -28,7 +28,7 @@
         severity="secondary"
         icon="pi pi-plus"
         label="Show Map"
-        class="dot-rules-map-btn"
+        class="shrink-0"
         ariaLabel="Show Map"></button>
 </div>
 <dot-area-picker-dialog-component

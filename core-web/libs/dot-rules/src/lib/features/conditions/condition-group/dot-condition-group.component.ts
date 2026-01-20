@@ -26,8 +26,11 @@ const I18N_BASE = 'api.sites.ruleengine.rules';
 @Component({
     selector: 'dot-condition-group',
     templateUrl: './dot-condition-group.component.html',
-    styleUrl: './dot-condition-group.component.scss',
-    imports: [AsyncPipe, ButtonModule, DotRuleConditionComponent]
+    imports: [AsyncPipe, ButtonModule, DotRuleConditionComponent],
+    host: {
+        class: 'block',
+        '[class.mt-2]': '$groupIndex() !== 0'
+    }
 })
 export class DotConditionGroupComponent {
     private readonly logger = inject(LoggerService);

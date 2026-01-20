@@ -59,7 +59,7 @@ Think of it like a visual programming interface for conditional business logic.
 
 ### 1. **DotRuleEngineContainerComponent** - The Command Center
 
-**Location**: `features/rule-engine/dot-rule-engine-container.component.ts`
+**Location**: `features/rule-engine/container/dot-rule-engine-container.component.ts`
 
 **What it does**: Everything. Seriously. This is where all the magic (and pain) happens.
 
@@ -301,9 +301,9 @@ input.argIndex !== null && input.argIndex >= rightHandArgCount
 **What it does**: Custom UI for "User is within X miles of Y location" condition.
 
 **Components**:
-- `DotVisitorsLocationContainerComponent` - State management
-- `DotVisitorsLocationComponent` - Input fields (lat, lng, radius)
-- `DotAreaPickerDialogComponent` - Google Maps dialog
+- `DotVisitorsLocationContainerComponent` - State management (`visitors-location/container/dot-visitors-location-container.component.ts`)
+- `DotVisitorsLocationComponent` - Input fields (lat, lng, radius) (`visitors-location/dot-visitors-location.component.ts`)
+- `DotAreaPickerDialogComponent` - Google Maps dialog (`dialog/dot-area-picker-dialog.component.ts`)
 
 **Why special**: This condition type needs a map interface. It can't use generic inputs.
 
@@ -627,7 +627,7 @@ onDescriptionChange(value: string): void {
 readonly updateDescription = output<RuleActionEvent>();
 
 // 5. Handle in container
-// File: features/rule-engine/dot-rule-engine-container.component.ts
+// File: features/rule-engine/container/dot-rule-engine-container.component.ts
 onUpdateDescription(event: RuleActionEvent): void {
     event.payload.rule.description = event.payload.value;
     this.patchRule(event.payload.rule, false);
@@ -717,7 +717,7 @@ onUpdateConditionType(event, conditionGroup: ConditionGroupModel): void {
 }
 
 // 5. Container handles the actual logic
-// features/rule-engine/dot-rule-engine-container.component.ts
+// features/rule-engine/container/dot-rule-engine-container.component.ts
 onUpdateConditionType(event: ConditionActionEvent): void {
     const condition = event.payload.condition;
     const group = event.payload.conditionGroup;
@@ -845,9 +845,13 @@ POST   /api/v1/sites/{siteId}/ruleengine/rules/{id}/ruleactions
 ## 📚 File Index (Quick Reference)
 
 ### Core Components
-- `features/rule-engine/dot-rule-engine-container.component.ts` - The brain, all state management
+- `features/rule-engine/dot-rule-engine.component.ts` - Presentation component for rule engine UI
+- `features/rule-engine/container/dot-rule-engine-container.component.ts` - The brain, all state management
 - `features/rule/dot-rule.component.ts` - Single rule card
 - `features/conditions/serverside-condition/dot-serverside-condition.component.ts` - Dynamic input generator
+- `features/conditions/geolocation/visitors-location/dot-visitors-location.component.ts` - Presentation component for visitors location input
+- `features/conditions/geolocation/visitors-location/container/dot-visitors-location-container.component.ts` - State management for visitors location
+- `features/conditions/geolocation/dialog/dot-area-picker-dialog.component.ts` - Google Maps dialog component
 
 ### Services
 - `services/api/rule/Rule.ts` - Rule CRUD, model definitions

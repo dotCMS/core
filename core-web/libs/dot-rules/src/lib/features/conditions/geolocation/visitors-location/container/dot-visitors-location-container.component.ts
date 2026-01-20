@@ -6,11 +6,10 @@ import { UntypedFormControl } from '@angular/forms';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
-import { DotVisitorsLocationComponent } from './dot-visitors-location.component';
-
-import { GCircle } from '../../../models/gcircle.model';
-import { ServerSideFieldModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
-import { I18nService } from '../../../services/i18n/i18n.service';
+import { GCircle } from '../../../../../models/gcircle.model';
+import { ServerSideFieldModel } from '../../../../../services/api/serverside-field/ServerSideFieldModel';
+import { I18nService } from '../../../../../services/i18n/i18n.service';
+import { DotVisitorsLocationComponent } from '../dot-visitors-location.component';
 
 interface Param<T> {
     key: string;
@@ -28,6 +27,9 @@ interface VisitorsLocationParams {
 
 const I8N_BASE = 'api.sites.ruleengine';
 
+/**
+ * Container component for visitors location that manages state and business logic
+ */
 @Component({
     selector: 'dot-visitors-location-container',
     templateUrl: './dot-visitors-location-container.component.html',

@@ -1,6 +1,6 @@
 @let condition = $condition();
 
-<div class="dot-rules-condition-toggle">
+<div class="min-w-16 w-16">
     @if ($index() !== 0) {
         <button
             (click)="toggleOperator()"
@@ -8,6 +8,7 @@
             pButton
             severity="secondary"
             size="small"
+            class="w-full"
             ariaLabel="Swap And/Or"></button>
     }
 </div>
@@ -18,12 +19,12 @@
     [style]="{ width: '100%' }"
     [placeholder]="$conditionTypePlaceholder()"
     [filter]="true"
-    class="dot-rules-type-dropdown"
+    class="min-w-48 max-w-48"
     appendTo="body" />
-<div class="dot-rules-condition-main">
+<div class="flex-1">
     @switch (condition.type?.key) {
         @case ('NoSelection') {
-            <div class="dot-rules-condition-component"></div>
+            <div></div>
         }
         @case ('VisitorsGeolocationConditionlet') {
             <dot-visitors-location-container
@@ -33,12 +34,11 @@
         @default {
             <dot-serverside-condition
                 (parameterValueChange)="onParameterValueChange($event)"
-                [componentInstance]="condition"
-                class="dot-rules-condition-component" />
+                [componentInstance]="condition" />
         }
     }
 </div>
-<div class="dot-rules-delete-btn">
+<div class="shrink-0">
     <button
         (click)="onDeleteConditionClicked()"
         [disabled]="!condition.isPersisted()"

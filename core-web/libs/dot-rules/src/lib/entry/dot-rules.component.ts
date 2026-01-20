@@ -2,13 +2,15 @@ import { Component, inject } from '@angular/core';
 
 import { LoginService } from '@dotcms/dotcms-js';
 
-import { DotRuleEngineContainerComponent } from '../features/rule-engine/dot-rule-engine-container.component';
+import { DotRuleEngineContainerComponent } from '../features/rule-engine/container/dot-rule-engine-container.component';
 
 @Component({
     selector: 'dot-rules',
     templateUrl: './dot-rules.component.html',
-    styleUrls: ['./dot-rules.component.scss'],
-    imports: [DotRuleEngineContainerComponent]
+    imports: [DotRuleEngineContainerComponent],
+    host: {
+        class: 'flex w-full min-h-full h-full mr-20'
+    }
 })
 export class DotRulesComponent {
     loginService = inject(LoginService);

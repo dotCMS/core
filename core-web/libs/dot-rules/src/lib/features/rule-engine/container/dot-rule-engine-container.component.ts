@@ -1,6 +1,5 @@
 import { from as observableFrom, Observable, merge, Subject } from 'rxjs';
 
-// tslint:disable-next-line:max-file-line-count
 import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { ActivatedRoute, Params } from '@angular/router';
 
@@ -8,27 +7,26 @@ import { reduce, mergeMap, take, map, filter, takeUntil } from 'rxjs/operators';
 
 import { CwError, HttpCode, LoggerService } from '@dotcms/dotcms-js';
 
-import { DotRuleEngineComponent } from './dot-rule-engine.component';
-
-import { ActionService } from '../../services/api/action/Action';
-import { BundleService, IPublishEnvironment } from '../../services/api/bundle/bundle-service';
-import { ConditionService } from '../../services/api/condition/Condition';
-import { ConditionGroupService } from '../../services/api/condition-group/ConditionGroup';
+import { ActionService } from '../../../services/api/action/Action';
+import { BundleService, IPublishEnvironment } from '../../../services/api/bundle/bundle-service';
+import { ConditionService } from '../../../services/api/condition/Condition';
+import { ConditionGroupService } from '../../../services/api/condition-group/ConditionGroup';
 import {
     RuleModel,
     RuleService,
     ConditionGroupModel,
     ConditionModel,
     ActionModel
-} from '../../services/api/rule/Rule';
-import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerSideFieldModel';
+} from '../../../services/api/rule/Rule';
+import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
 import {
     RuleActionEvent,
     RuleActionActionEvent,
     ConditionGroupActionEvent,
     ConditionActionEvent
-} from '../../services/models/rule-event.model';
-import { RuleViewService } from '../../services/ui/dot-view-rule-service';
+} from '../../../services/models/rule-event.model';
+import { RuleViewService } from '../../../services/ui/dot-view-rule-service';
+import { DotRuleEngineComponent } from '../dot-rule-engine.component';
 
 // Re-export for backward compatibility
 export {
@@ -36,16 +34,18 @@ export {
     RuleActionActionEvent,
     ConditionGroupActionEvent,
     ConditionActionEvent
-} from '../../services/models/rule-event.model';
+} from '../../../services/models/rule-event.model';
 
 /**
- *
+ * Container component for the rule engine that manages all state and API calls
  */
 @Component({
     selector: 'dot-rule-engine-container',
     templateUrl: './dot-rule-engine-container.component.html',
-    styleUrl: './dot-rule-engine-container.component.scss',
-    imports: [DotRuleEngineComponent]
+    imports: [DotRuleEngineComponent],
+    host: {
+        class: 'flex flex-grow min-h-full'
+    }
 })
 export class DotRuleEngineContainerComponent implements OnDestroy {
     _ruleService = inject(RuleService);

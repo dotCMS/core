@@ -1,5 +1,5 @@
-<div class="dot-rules-serverside">
-    <div class="dot-rules-condition-body flex flex-row flex-1">
+<div class="w-full">
+    <div class="w-full gap-3 items-center flex flex-row flex-1">
         @for (input of inputs; track $index) {
             @if (input.type === 'spacer') {
                 <div class="dot-rules-input dot-rules-input-placeholder flex-1">&nbsp;</div>
@@ -15,7 +15,9 @@
                     [placeholder]="input.placeholder | async"
                     [editable]="input.allowAdditions"
                     [filter]="true"
-                    [class.dot-rules-comparator]="input.name === 'comparison'"
+                    [class.min-w-24]="input.name === 'comparison'"
+                    [class.max-w-24]="input.name === 'comparison'"
+                    [class.flex-none]="input.name === 'comparison'"
                     [class.dot-rules-last]="isLast"
                     [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
                     class="dot-rules-input flex-1"
@@ -36,7 +38,9 @@
                             [hidden]="
                                 input.argIndex !== null && input.argIndex >= rightHandArgCount
                             "
-                            [class.dot-rules-comparator]="input.name === 'comparison'"
+                            [class.min-w-24]="input.name === 'comparison'"
+                            [class.max-w-24]="input.name === 'comparison'"
+                            [class.flex-none]="input.name === 'comparison'"
                             [class.dot-rules-last]="isLast"
                             class="dot-rules-input flex-1"
                             appendTo="body"
@@ -64,7 +68,9 @@
                             [hidden]="
                                 input.argIndex !== null && input.argIndex >= rightHandArgCount
                             "
-                            [class.dot-rules-comparator]="input.name === 'comparison'"
+                            [class.min-w-24]="input.name === 'comparison'"
+                            [class.max-w-24]="input.name === 'comparison'"
+                            [class.flex-none]="input.name === 'comparison'"
                             [class.dot-rules-last]="isLast"
                             class="dot-rules-input flex-1"
                             appendTo="body"

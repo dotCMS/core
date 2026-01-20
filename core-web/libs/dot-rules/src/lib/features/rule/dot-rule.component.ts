@@ -69,7 +69,6 @@ const I18N_BASE = 'api.sites.ruleengine';
 @Component({
     selector: 'dot-rule',
     templateUrl: './dot-rule.component.html',
-    styleUrl: './dot-rule.component.scss',
     imports: [
         AsyncPipe,
         ReactiveFormsModule,
@@ -85,7 +84,10 @@ const I18N_BASE = 'api.sites.ruleengine';
         DotConditionGroupComponent,
         DotRuleActionComponent
     ],
-    changeDetection: ChangeDetectionStrategy.Default
+    changeDetection: ChangeDetectionStrategy.Default,
+    host: {
+        class: 'block'
+    }
 })
 export class DotRuleComponent {
     private readonly user = inject(UserModel);

@@ -19,7 +19,7 @@ import {
     ConditionModel
 } from '../../../services/api/rule/Rule';
 import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
-import { DotVisitorsLocationContainerComponent } from '../geolocation/dot-visitors-location-container.component';
+import { DotVisitorsLocationContainerComponent } from '../geolocation/visitors-location/container/dot-visitors-location-container.component';
 import { DotServersideConditionComponent } from '../serverside-condition/dot-serverside-condition.component';
 
 export interface ConditionPayload {
@@ -42,7 +42,6 @@ export interface DeleteConditionEvent {
 @Component({
     selector: 'dot-rule-condition',
     templateUrl: './dot-rule-condition.component.html',
-    styleUrl: './dot-rule-condition.component.scss',
     imports: [
         AsyncPipe,
         FormsModule,
@@ -50,7 +49,10 @@ export interface DeleteConditionEvent {
         SelectModule,
         DotServersideConditionComponent,
         DotVisitorsLocationContainerComponent
-    ]
+    ],
+    host: {
+        class: 'flex flex-1 items-center gap-3'
+    }
 })
 export class DotRuleConditionComponent {
     private readonly logger = inject(LoggerService);

@@ -10,8 +10,8 @@ export * from './lib/dot-rules.module';
 export * from './lib/entry/dot-rules.component';
 
 // Features - Rule Engine
-export * from './lib/features/rule-engine/dot-rule-engine-container.component';
 export * from './lib/features/rule-engine/dot-rule-engine.component';
+export * from './lib/features/rule-engine/container/dot-rule-engine-container.component';
 
 // Features - Rule
 export * from './lib/features/rule/dot-rule.component';
@@ -20,9 +20,9 @@ export * from './lib/features/rule/dot-rule.component';
 export * from './lib/features/conditions/condition-group/dot-condition-group.component';
 export * from './lib/features/conditions/rule-condition/dot-rule-condition.component';
 export * from './lib/features/conditions/serverside-condition/dot-serverside-condition.component';
-export * from './lib/features/conditions/geolocation/dot-visitors-location.component';
-export * from './lib/features/conditions/geolocation/dot-visitors-location-container.component';
-export * from './lib/features/conditions/geolocation/dot-area-picker-dialog.component';
+export * from './lib/features/conditions/geolocation/visitors-location/dot-visitors-location.component';
+export * from './lib/features/conditions/geolocation/visitors-location/container/dot-visitors-location-container.component';
+export * from './lib/features/conditions/geolocation/dialog/dot-area-picker-dialog.component';
 
 // Features - Actions
 export * from './lib/features/actions/dot-rule-action.component';

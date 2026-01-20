@@ -24,8 +24,10 @@ import { DotServersideConditionComponent } from '../conditions/serverside-condit
 @Component({
     selector: 'dot-rule-action',
     templateUrl: './dot-rule-action.component.html',
-    styleUrl: './dot-rule-action.component.scss',
-    imports: [AsyncPipe, FormsModule, ButtonModule, SelectModule, DotServersideConditionComponent]
+    imports: [AsyncPipe, FormsModule, ButtonModule, SelectModule, DotServersideConditionComponent],
+    host: {
+        class: 'flex flex-1 items-center gap-3'
+    }
 })
 export class DotRuleActionComponent {
     private readonly logger = inject(LoggerService);
