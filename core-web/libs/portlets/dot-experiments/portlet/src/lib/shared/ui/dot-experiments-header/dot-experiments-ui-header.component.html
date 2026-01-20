@@ -1,4 +1,5 @@
-<div class="wrapper flex flex-row items-center gap-2">
+<div
+    class="flex min-h-[4.25rem] flex-row items-center gap-2 bg-white px-4 text-xl text-black border-b border-[var(--gray-300)]">
     <button
         (click)="goBack.emit(true)"
         class="p-button-rounded p-button-text"
@@ -14,19 +15,12 @@
 
     @if (!!experiment?.status) {
         <div class="flex grow items-center justify-end">
-            <p-chip
-                [icon]="this.statusIcon"
-                [label]="
-                    (experiment?.status | titlecase | dm) +
-                    (experiment?.status === experimentStatus.RUNNING
-                        ? ' ' +
-                          ('dot.common.until' | dm) +
-                          ' ' +
-                          (experiment?.scheduling.endDate | date: runningUntilDateFormat)
-                        : '')
-                "
+            <p-tag
+                [icon]="statusIcon"
+                [severity]="statusSeverityMap[experiment.status]"
+                [value]="statusTagValue"
                 data-testId="status-tag"
-                styleClass="{{ experiment?.status | lowercase }}" />
+                [pt]="{ root: { class: 'px-4! py-3!' } }" />
         </div>
     }
 

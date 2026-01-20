@@ -5,11 +5,8 @@ import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit } from '@
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
-import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { takeUntil } from 'rxjs/operators';
 
@@ -49,10 +46,7 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotExperimentsOptionsModule,
         DrawerModule,
         ButtonModule,
-        SelectButtonModule,
-        CardModule,
         InputTextModule,
-        SelectModule,
         DotExperimentsGoalConfigurationReachPageComponent,
         DotExperimentsGoalConfigurationUrlParameterComponentComponent,
         DotExperimentsGoalsComingSoonComponent,

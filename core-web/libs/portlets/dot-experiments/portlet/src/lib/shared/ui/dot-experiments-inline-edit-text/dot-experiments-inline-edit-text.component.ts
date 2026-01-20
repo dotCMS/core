@@ -16,7 +16,7 @@ import {
     Validators
 } from '@angular/forms';
 
-import { SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { Inplace, InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -30,10 +30,6 @@ import {
 } from '@dotcms/ui';
 
 type InplaceInputSize = 'small' | 'large';
-const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; input: string }> = {
-    small: { input: 'p-inputtext-sm', button: 'p-button-sm' },
-    large: { input: 'p-inputtext-lg', button: 'p-button-lg' }
-};
 
 /**
  * Component to edit a text inplace and if the text control is valid
@@ -50,12 +46,11 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
         DotAutofocusDirective,
         DotFieldValidationMessageComponent,
         InplaceModule,
+        ButtonModule,
         InputTextModule,
-        SharedModule,
         DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-inline-edit-text.component.html',
-    styleUrls: ['./dot-experiments-inline-edit-text.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsInlineEditTextComponent implements OnChanges {
@@ -75,7 +70,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
      * Text to be edited
      */
     @Input()
-    text: string;
+    text = '';
 
     /**
      * Text to be shown when the text is empty
@@ -87,7 +82,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
      * Flag to disable the inplace
      */
     @Input()
-    disabled: boolean;
+    disabled = false;
 
     /**
      * Size of the input and button
@@ -116,9 +111,6 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     @ViewChild(Inplace) inplace!: Inplace;
     form: FormGroup;
 
-    protected readonly inplaceSizes = InplaceInputSizeMapPrimeNg;
-    private validatorsFn: ValidatorFn[] = [DotValidators.noWhitespace];
-
     constructor() {
         this.initForm();
     }
@@ -140,17 +132,9 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
             ? this.textControl.disable()
             : this.textControl.enable();
 
-        if (maxCharacterLength && maxCharacterLength.currentValue) {
-            this.validatorsFn.push(Validators.maxLength(maxCharacterLength.currentValue));
-        } else {
-            this.validatorsFn.push(Validators.maxLength(this.maxCharacterLength));
+        if (maxCharacterLength || required) {
+            this.updateValidators();
         }
-
-        if (required && required.currentValue) {
-            this.validatorsFn.push(Validators.required);
-        }
-
-        this.updateValidators();
     }
 
     /**
@@ -183,6 +167,7 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
                 validators: [Validators.required, Validators.maxLength(this.maxCharacterLength)]
             })
         });
+        this.updateValidators();
     }
 
     private resetForm() {
@@ -191,8 +176,17 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
     }
 
     private updateValidators() {
+        const validators: ValidatorFn[] = [
+            DotValidators.noWhitespace,
+            Validators.maxLength(this.maxCharacterLength)
+        ];
+
+        if (this.required) {
+            validators.push(Validators.required);
+        }
+
         this.textControl.clearValidators();
-        this.textControl.setValidators(this.validatorsFn);
+        this.textControl.setValidators(validators);
         this.textControl.updateValueAndValidity();
     }
 }

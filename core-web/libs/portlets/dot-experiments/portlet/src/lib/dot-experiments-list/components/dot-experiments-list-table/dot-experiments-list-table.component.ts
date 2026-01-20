@@ -39,12 +39,11 @@ import {
         DotTimestampToDatePipe
     ],
     templateUrl: './dot-experiments-list-table.component.html',
-    styleUrls: ['./dot-experiments-list-table.component.scss'],
     providers: [MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] | null | undefined = [];
+    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
 
     @Output()
     goToContainer = new EventEmitter<DotExperiment>();

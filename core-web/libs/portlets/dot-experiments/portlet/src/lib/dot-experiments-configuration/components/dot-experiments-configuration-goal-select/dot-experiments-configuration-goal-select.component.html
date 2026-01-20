@@ -2,12 +2,13 @@
     <p-drawer
         (onHide)="closeSidebar()"
         [(visible)]="vm.status.isOpen"
+        position="right"
         dotSidebar
         dotSize="{{ sidebarSizes.LG }}">
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
             dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}" />
-        <div class="experiment-goal-select__form-wrapper flex flex-col">
+        <div class="flex flex-col gap-4 py-4">
             <form
                 [formGroup]="form"
                 class="p-fluid"
@@ -47,8 +48,11 @@
                             </dot-experiment-options-item>
                         </dot-experiment-options>
                     </div>
-                    <div class="field flex-auto flex flex-col">
-                        <label class="p-label-input-required">
+
+                    <div class="p-field flex-auto flex flex-col gap-2 mt-4">
+                        <label
+                            for="name"
+                            class="p-label-input-required font-semibold after:content-['*'] after:text-red-500">
                             {{ 'experiments.goal.reach_page.form.name.label' | dm }}
                         </label>
                         <input
@@ -62,7 +66,7 @@
                             pInputText
                             required
                             type="text" />
-                        <dot-field-validation-message [field]="goalNameControl" />
+                        <dot-field-validation-message class="mt-1 flex" [field]="goalNameControl" />
                     </div>
                 </div>
             </form>
