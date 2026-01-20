@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { contentSaveHandler, contentActionHandler } from './handlers';
 
 import { ContentCreateParamsSchema, ContentActionParamsSchema } from '../../types/workflow';
+import { asMcpSchema } from '../../utils/schema-helpers';
 
 /**
  * Registers workflow tools with the MCP server
@@ -21,10 +22,12 @@ export function registerWorkflowTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: z.object({
-                content: ContentCreateParamsSchema,
-                comments: z.string().optional()
-            }) as any // eslint-disable-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs; runtime works
+            inputSchema: asMcpSchema(
+                z.object({
+                    content: ContentCreateParamsSchema,
+                    comments: z.string().optional()
+                })
+            )
         },
         contentSaveHandler
     );
@@ -41,8 +44,7 @@ export function registerWorkflowTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
-            inputSchema: ContentActionParamsSchema as any
+            inputSchema: asMcpSchema(ContentActionParamsSchema)
         },
         contentActionHandler
     );
