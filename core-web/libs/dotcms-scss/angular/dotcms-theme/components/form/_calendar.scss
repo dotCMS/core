@@ -148,7 +148,7 @@
                 border-radius: 50%;
                 color: colors.$color-palette-primary-500;
 
-                @extend #outlined-primary-severity;
+                @extend #outlined-primary-severity !optional;
             }
         }
 
@@ -222,7 +222,7 @@
         button {
             border-radius: common3.$border-radius-sm;
 
-            @extend #text-primary-severity;
+            @extend #text-primary-severity !optional;
         }
     }
 
