@@ -88,7 +88,6 @@ export function downloadFile(url: string, dest: string): Promise<void> {
             });
     });
 }
-
 export function finalStepsForNextjs({
     projectPath,
     urlDotCMSInstance,
@@ -101,30 +100,44 @@ export function finalStepsForNextjs({
     token: string;
 }) {
     console.log('\n');
-    console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+    console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.white('🪜  Steps:\n'));
-    console.log(chalk.white('1- cd ') + chalk.green(projectPath));
+    console.log(chalk.greenBright('📋 Next Steps:\n'));
+
     console.log(
-        chalk.white('2- Create a new file with the name ') +
-            chalk.green('.env') +
-            ' and paste the following:\n'
+        chalk.white('1. Navigate to your project:\n') + chalk.gray(`   $ cd ${projectPath}\n`)
     );
 
-    // ENV BLOCK — nicely spaced + grouped
-    console.log(chalk.white('──────────────────────────────────────────────'));
-    console.log(chalk.white(getEnvVariablesForNextJS(urlDotCMSInstance, siteId, token)));
+    console.log(
+        chalk.white('2. Create your environment file:\n') + chalk.gray('   $ touch .env\n')
+    );
+
+    console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
+
     console.log(chalk.white('──────────────────────────────────────────────\n'));
+    console.log(chalk.white(getEnvVariablesForNextJS(urlDotCMSInstance, siteId, token)));
+    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
 
-    // START DEV SERVER
-    console.log(chalk.blueBright('💻 Start your frontend development server:'));
-    console.log(chalk.white('$ npm run dev\n'));
-
-    console.log(chalk.greenBright("🎉 You're all set!.\n"));
+    console.log(chalk.gray('   💡 Tip: Copy the block above and paste into your .env file\n'));
 
     console.log(
-        chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
+        chalk.white('4. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
     );
+
+    console.log(
+        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
+    );
+
+    console.log(
+        chalk.white('6. Edit your page content in dotCMS:\n') +
+            chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
+    );
+
+    console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
+
+    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://docs.dotcms.com'));
+
+    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://dotcms.com/community\n'));
 }
 
 export function finalStepsForAstro({
@@ -139,34 +152,125 @@ export function finalStepsForAstro({
     token: string;
 }) {
     console.log('\n');
-    console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+    console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.white('🪜  Steps:\n'));
-    console.log(chalk.white('1- cd ') + chalk.green(projectPath));
+    console.log(chalk.greenBright('📋 Next Steps:\n'));
+
     console.log(
-        chalk.white('2- Create a new file with the name ') +
-            chalk.green('.env') +
-            ' and paste the following:\n'
+        chalk.white('1. Navigate to your project:\n') + chalk.gray(`   $ cd ${projectPath}\n`)
     );
 
-    // ENV BLOCK — nicely spaced + grouped
-    console.log(chalk.white('──────────────────────────────────────────────'));
-    console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
-    console.log();
+    console.log(
+        chalk.white('2. Create your environment file:\n') + chalk.gray('   $ touch .env\n')
+    );
+
+    console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
 
     console.log(chalk.white('──────────────────────────────────────────────\n'));
+    console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
+    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
 
-    // START DEV SERVER
-    console.log(chalk.blueBright('💻 Start your frontend development server:'));
-    console.log(chalk.white('$ npm run dev\n'));
-
-    console.log(chalk.greenBright("🎉 You're all set!.\n"));
+    console.log(chalk.gray('   💡 Tip: Copy the block above and paste into your .env file\n'));
 
     console.log(
-        chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
+        chalk.white('4. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
     );
+
+    console.log(
+        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
+    );
+
+    console.log(
+        chalk.white('6. Edit your page content in dotCMS:\n') +
+            chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
+    );
+
+    console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
+
+    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://docs.dotcms.com'));
+
+    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://dotcms.com/community\n'));
 }
 
+// export function finalStepsForAstro({
+//     projectPath,
+//     urlDotCMSInstance,
+//     siteId,
+//     token
+// }: {
+//     projectPath: string;
+//     urlDotCMSInstance: string;
+//     siteId: string;
+//     token: string;
+// }) {
+//     console.log('\n');
+//     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+//
+//     console.log(chalk.white('🪜  Steps:\n'));
+//     console.log(chalk.white('1- cd ') + chalk.green(projectPath));
+//     console.log(
+//         chalk.white('2- Create a new file with the name ') +
+//         chalk.green('.env') +
+//         ' and paste the following:\n'
+//     );
+//
+//     // ENV BLOCK — nicely spaced + grouped
+//     console.log(chalk.white('──────────────────────────────────────────────'));
+//     console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
+//     console.log();
+//
+//     console.log(chalk.white('──────────────────────────────────────────────\n'));
+//
+//     // START DEV SERVER
+//     console.log(chalk.blueBright('💻 Start your frontend development server:'));
+//     console.log(chalk.white('$ npm run dev\n'));
+//
+//     console.log(chalk.greenBright("🎉 You're all set!.\n"));
+//
+//     console.log(
+//         chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
+//     );
+// }
+
+// export function finalStepsForAngularAndAngularSSR({
+//     projectPath,
+//     urlDotCMSInstance,
+//     siteId,
+//     token
+// }: {
+//     projectPath: string;
+//     urlDotCMSInstance: string;
+//     siteId: string;
+//     token: string;
+// }) {
+//     console.log('\n');
+//     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+//
+//     console.log(chalk.white('🪜  Steps:\n'));
+//     console.log(chalk.white('1- cd ') + chalk.green(projectPath) + '/src/environments');
+//     console.log(
+//         chalk.white(
+//             '2- Replace the content of the file ' +
+//             chalk.green('environment.ts') +
+//             ' and ' +
+//             chalk.green('environment.development.ts') +
+//             ' with the following:'
+//         )
+//     );
+//
+//     // ENV BLOCK — nicely spaced + grouped
+//     console.log(chalk.white('──────────────────────────────────────────────'));
+//     console.log(chalk.white(getEnvVariablesForAngular(urlDotCMSInstance, siteId, token)));
+//     console.log(chalk.white('──────────────────────────────────────────────\n'));
+//
+//     // START DEV SERVER
+//     console.log(chalk.blueBright('💻 Start your frontend development server:'));
+//     console.log(chalk.white('$ ng serve\n'));
+//     console.log(chalk.greenBright("🎉 You're all set!.\n"));
+//     console.log(
+//         chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
+//     );
+// }
 export function finalStepsForAngularAndAngularSSR({
     projectPath,
     urlDotCMSInstance,
@@ -179,34 +283,51 @@ export function finalStepsForAngularAndAngularSSR({
     token: string;
 }) {
     console.log('\n');
-    console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
+    console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.white('🪜  Steps:\n'));
-    console.log(chalk.white('1- cd ') + chalk.green(projectPath) + '/src/environments');
+    console.log(chalk.greenBright('📋 Next Steps:\n'));
+
     console.log(
-        chalk.white(
-            '2- Replace the content of the file ' +
-                chalk.green('environment.ts') +
-                ' and ' +
-                chalk.green('environment.development.ts') +
-                ' with the following:'
-        )
+        chalk.white('1. Navigate to your environments directory:\n') +
+            chalk.gray(`   $ cd ${projectPath}/src/environments\n`)
     );
 
-    // ENV BLOCK — nicely spaced + grouped
-    console.log(chalk.white('──────────────────────────────────────────────'));
-    console.log(chalk.white(getEnvVariablesForAngular(urlDotCMSInstance, siteId, token)));
+    console.log(
+        chalk.white('2. Update the environment files:\n') +
+            chalk.gray(
+                '   Replace the contents of the following files:\n' +
+                    '   • environment.ts\n' +
+                    '   • environment.development.ts\n\n'
+            )
+    );
+
+    console.log(chalk.white('3. Add your dotCMS configuration:\n'));
+
     console.log(chalk.white('──────────────────────────────────────────────\n'));
+    console.log(chalk.white(getEnvVariablesForAngular(urlDotCMSInstance, siteId, token)));
+    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
 
-    // START DEV SERVER
-    console.log(chalk.blueBright('💻 Start your frontend development server:'));
-    console.log(chalk.white('$ ng serve\n'));
-    console.log(chalk.greenBright("🎉 You're all set!.\n"));
     console.log(
-        chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
+        chalk.gray('   💡 Tip: Copy the block above and paste it into both environment files\n')
     );
-}
 
+    console.log(chalk.white('4. Start your development server:\n') + chalk.gray('   $ ng serve\n'));
+
+    console.log(
+        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:4200\n')
+    );
+
+    console.log(
+        chalk.white('6. Edit your page content in dotCMS:\n') +
+            chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
+    );
+
+    console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
+
+    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://docs.dotcms.com'));
+
+    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://dotcms.com/community\n'));
+}
 function getEnvVariablesForNextJS(host: string, siteId: string, token: string) {
     return `
         NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=${token}
