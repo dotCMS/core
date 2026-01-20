@@ -7,6 +7,7 @@ import {
     ContentTypeListParamsSchema,
     ContentTypeCreateParamsSchema
 } from '../../services/contentType';
+import { asMcpSchema } from '../../utils/schema-helpers';
 
 /**
  * Registers content type tools with the MCP server
@@ -22,8 +23,7 @@ export function registerContentTypeTools(server: McpServer) {
                 title: 'List Content Types',
                 readOnlyHint: true
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
-            inputSchema: ContentTypeListParamsSchema as any
+            inputSchema: asMcpSchema(ContentTypeListParamsSchema)
         },
         contentTypeListHandler
     );
@@ -40,9 +40,11 @@ export function registerContentTypeTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: z.object({
-                contentType: ContentTypeCreateParamsSchema
-            }) as any // eslint-disable-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs; runtime works
+            inputSchema: asMcpSchema(
+                z.object({
+                    contentType: ContentTypeCreateParamsSchema
+                })
+            )
         },
         contentTypeCreateHandler
     );

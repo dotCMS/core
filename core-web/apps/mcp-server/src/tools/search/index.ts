@@ -4,6 +4,7 @@ import { searchDescription } from './description';
 import { contentSearchHandler } from './handlers';
 
 import { SearchFormSchema } from '../../services/search';
+import { asMcpSchema } from '../../utils/schema-helpers';
 
 /**
  * Registers content search tool with the MCP server
@@ -18,8 +19,7 @@ export function registerSearchTools(server: McpServer) {
                 title: 'Search Content',
                 readOnlyHint: true
             },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
-            inputSchema: SearchFormSchema as any
+            inputSchema: asMcpSchema(SearchFormSchema)
         },
         contentSearchHandler
     );

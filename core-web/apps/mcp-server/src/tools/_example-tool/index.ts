@@ -3,6 +3,8 @@ import { z } from 'zod';
 
 import { exampleToolHandler } from './handlers';
 
+import { asMcpSchema } from '../../utils/schema-helpers';
+
 /**
  * TODO: Define your input schema
  *
@@ -64,8 +66,7 @@ export function registerExampleTools(server: McpServer) {
                 openWorldHint: true
             },
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Zod .shape incompatible with SDK InputArgs (ZodRawShapeCompat); runtime works
-            inputSchema: ExampleToolInputSchema as any
+            inputSchema: asMcpSchema(ExampleToolInputSchema)
         },
         exampleToolHandler
     );
