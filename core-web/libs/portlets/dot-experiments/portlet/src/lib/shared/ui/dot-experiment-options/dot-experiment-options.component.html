@@ -1,20 +1,23 @@
 @for (item of itemList; track item; let i = $index) {
     <div
         [attr.data-testId]="'dot-options-item_' + item.val"
-        [class.active]="expanded.has(i)"
-        class="dot-options__item">
+        [ngClass]="expanded.has(i) ? 'bg-[var(--color-palette-primary-100)]' : ''"
+        class="flex flex-col rounded-sm border border-[var(--gray-200)] transition-colors duration-200 hover:bg-[var(--color-palette-primary-100)]">
         <ng-container
             [ngTemplateOutletContext]="{ $implicit: item, index: i }"
             [ngTemplateOutlet]="defaultHeader" />
         @if (item?.content) {
             <div
                 [attr.data-testId]="'dot-options-item-content_' + item.val"
-                [class.expanded]="expanded.has(i)"
-                class="option-item__content flex grow flex-col"
-                [@contentExpansion]="expanded.has(i) ? 'expanded' : 'collapsed'">
-                @if (expanded.has(i) && item?.content?.templateRef) {
-                    <ng-container *ngTemplateOutlet="item?.content?.templateRef" />
-                }
+                [class.pb-4]="expanded.has(i)"
+                class="dot-option-content px-4"
+                [class.dot-option-content--expanded]="expanded.has(i)"
+                [class.dot-option-content--collapsed]="!expanded.has(i)">
+                <div class="dot-option-content__inner flex grow flex-col">
+                    @if (expanded.has(i) && item?.content?.templateRef) {
+                        <ng-container *ngTemplateOutlet="item?.content?.templateRef" />
+                    }
+                </div>
             </div>
         }
     </div>
@@ -23,14 +26,32 @@
 <ng-template #defaultHeader let-index="index" let-item>
     <header
         (click)="item.selectItem(item, index)"
+        (keydown.enter)="item.selectItem(item, index)"
+        (keydown.space)="$event.preventDefault(); item.selectItem(item, index)"
         [attr.data-testId]="'dot-options-item-header_' + item.val"
-        class="option__header">
+        class="flex cursor-pointer gap-4 p-8"
+        role="button"
+        tabindex="0">
         @if (item.icon) {
-            <i [class]="'pi ' + item.icon"></i>
+            <i
+                [class]="'pi ' + item.icon"
+                class="mt-1.5 text-[var(--color-palette-secondary-500)]"></i>
         }
         <div>
-            <h2>{{ item.title }}</h2>
-            <p>{{ item.detail }}</p>
+            <h2
+                class="m-0 text-lg font-bold"
+                [ngClass]="
+                    expanded.has(index) ? 'text-[var(--gray-900)]' : 'text-[var(--gray-800)]'
+                ">
+                {{ item.title }}
+            </h2>
+            <p
+                class="m-0"
+                [ngClass]="
+                    expanded.has(index) ? 'text-[var(--gray-900)]' : 'text-[var(--gray-700)]'
+                ">
+                {{ item.detail }}
+            </p>
         </div>
     </header>
 </ng-template>

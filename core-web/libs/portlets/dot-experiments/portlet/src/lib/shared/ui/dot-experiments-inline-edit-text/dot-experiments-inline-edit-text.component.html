@@ -24,11 +24,12 @@
 
     <div pInplaceContent class="flex flex-col gap-1">
         <form [formGroup]="form" class="flex grow gap-2" novalidate>
-            <div class="grow flex p-input-icon-right items-center gap-2">
+            <span class="p-input-icon-right grow flex items-center gap-2">
                 <input
                     (keydown.enter)="saveAction()"
                     (keydown.escape)="deactivateInplace()"
-                    [pSize]="inputSize"
+                    [class.p-inputtext-sm]="inputSize === 'small'"
+                    [class.p-inputtext-lg]="inputSize === 'large'"
                     class="w-full"
                     data-testId="inplace-input"
                     dotAutofocus
@@ -36,15 +37,16 @@
                     formControlName="text"
                     pInputText />
 
-                <i
-                    (click)="deactivateInplace()"
-                    (keydown.enter)="deactivateInplace()"
-                    (keydown.space)="deactivateInplace()"
-                    class="pi pi-times cursor-pointer"
+                <p-button
+                    (onClick)="deactivateInplace()"
+                    [rounded]="true"
+                    [size]="inputSize"
+                    [text]="true"
+                    ariaLabel="Cancel"
                     data-testId="variant-inplace-button"
-                    role="button"
-                    tabindex="0"></i>
-            </div>
+                    icon="pi pi-times"
+                    type="button" />
+            </span>
 
             <p-button
                 (onClick)="saveAction()"

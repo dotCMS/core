@@ -10,7 +10,7 @@ import { DotExperimentOptionsComponent } from '../dot-experiment-options.compone
 @Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
     selector: 'dot-experiment-options-item',
-    standalone: false
+    standalone: true
 })
 export class DotExperimentOptionsItemDirective {
     private _select = inject(DotExperimentOptionsComponent, { optional: true, host: true });

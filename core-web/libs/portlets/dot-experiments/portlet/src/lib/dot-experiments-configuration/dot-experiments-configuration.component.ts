@@ -55,7 +55,7 @@ import { DotExperimentsInlineEditTextComponent } from '../shared/ui/dot-experime
     ],
     selector: 'dot-experiments-configuration',
     templateUrl: './dot-experiments-configuration.component.html',
-    host: { class: 'flex h-full w-full flex-col pb-12' },
+    host: { class: 'flex h-full w-full flex-col' },
     providers: [DotExperimentsConfigurationStore],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

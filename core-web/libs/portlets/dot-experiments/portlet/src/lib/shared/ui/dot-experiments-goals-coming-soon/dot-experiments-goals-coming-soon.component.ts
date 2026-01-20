@@ -14,7 +14,6 @@ interface ComingSoonCard {
     selector: 'dot-experiments-goals-coming-soon',
     imports: [CardModule, DotMessagePipe],
     templateUrl: './dot-experiments-goals-coming-soon.component.html',
-    styleUrls: ['./dot-experiments-goals-coming-soon.component.scss'],
     host: {
         class: 'bg-[var(--gray-100)] rounded-sm p-3 flex flex-col items-center gap-4'
     },
