@@ -101,6 +101,10 @@ public class PublishDateUpdater {
                 .collect(Collectors.toList());
     }
 
+    public static PublishDateUpdaterResult updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
+        return updatePublishExpireDates(fireTime, null);
+    }
+
     public static PublishDateUpdaterResult updatePublishExpireDates(final Date fireTime, final Date previousFireTime) throws DotDataException, DotSecurityException {
 
         if(LicenseUtil.getLevel()< LicenseLevel.PROFESSIONAL.level){
