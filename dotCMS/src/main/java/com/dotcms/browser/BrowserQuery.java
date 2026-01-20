@@ -42,6 +42,7 @@ import org.apache.commons.lang3.StringUtils;
 @JsonDeserialize(builder = BrowserQuery.Builder.class)
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
+    final boolean respectFrontEndRoles;
     final User user;
     final String  filter;
     final String fileName;
@@ -98,7 +99,8 @@ public class BrowserQuery {
 
     @Override
     public String toString() {
-        return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:"
+        return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
+                " ,site:" + site + ", folder:" + folder + ", filter:"
                 + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
@@ -114,6 +116,7 @@ public class BrowserQuery {
     }
 
     private BrowserQuery(final Builder builder) {
+        this.respectFrontEndRoles = builder.respectFrontEndRoles;
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
@@ -226,7 +229,8 @@ public class BrowserQuery {
      * Builder to build {@link BrowserQuery}.
      */
     public static final class Builder {
-
+        //setting respectFrontEndRoles to true by default to maintain backward compatibility.
+        private boolean respectFrontEndRoles = true;
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
@@ -290,6 +294,11 @@ public class BrowserQuery {
             this.showContent = browserQuery.showContent;
             this.showShorties = browserQuery.showShorties;
             this.showDefaultLangItems = browserQuery.showDefaultLangItems;
+        }
+
+        public Builder respectFrontEndRoles(boolean respectFrontEndRoles) {
+            this.respectFrontEndRoles = respectFrontEndRoles;
+            return this;
         }
 
         public Builder withUser(@Nonnull User user) {

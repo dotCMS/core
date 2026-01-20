@@ -12,6 +12,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -45,6 +46,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.HashSet;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -134,11 +136,13 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int startRow, final int maxRows) {
-
         final SelectAndCountQueries sqlQuery = this.selectAndCountQueries(browserQuery);
-        final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.countQuery);
-        sqlQuery.params.forEach(dcCount::addParam);
-        final AtomicInteger count = new AtomicInteger(dcCount.getInt("count"));
+        //First, we need to establish how many items there are -- This is paramount for pagination to work properly,
+        //But this value can vary - as the initial query only gives us a set of candidates
+        //These candidate can be discarded by the Text filtering or even by applying permissions
+        final int totalCount = computeTotalCount(browserQuery, sqlQuery);
+        Logger.debug(this, String.format("Total count for query '%s': %d", sqlQuery.selectQuery, totalCount));
+        final AtomicInteger count = new AtomicInteger(totalCount);
         final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
         try {
             final Set<String> collectedInodes = new LinkedHashSet<>();
@@ -151,19 +155,21 @@ public class BrowserAPIImpl implements BrowserAPI {
 
                 //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
                 if(startRow >= 0 && maxRows > 0) {
-                    dcSelect.setStartRow(startRow)
+                        dcSelect.setStartRow(startRow)
                             .setMaxRows(maxRows);
                 }
-                @SuppressWarnings("unchecked")
-                final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-                inodesMapList.forEach(inode -> collectedInodes.add(inode.get("inode")));
+                //Here we only get to slice we want to hydrate
+                @SuppressWarnings("unchecked") final List<Map<String, String>> loadResults = dcSelect.loadResults();
+                loadResults.forEach(result -> {
+                    final String inode = result.get("inode");
+                    collectedInodes.add(inode);
+                });
             }
 
             //Now this should load the good contentlets using parallel processing
             final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
-
             final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
-                    PERMISSION_READ, true, browserQuery.user);
+                    PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
             return new ContentUnderParent(filtered, count.get());
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
@@ -173,6 +179,59 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.warnAndDebug(this.getClass(), errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
         }
+    }
+
+    /**
+     * All this gymnastics to calculate an accurate count that takes permissions into account.
+     * First executes a query to get all items from the database using the BrowserQuery Params
+     * Then we craft a shallow contetlet using only the bare minimum returned by the select
+     * Then we use those shallow contentlets to compute the size of the permissionable collection
+     * @param browserQuery
+     * @param sqlQuery
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    int computeTotalCount(final BrowserQuery browserQuery, final SelectAndCountQueries sqlQuery) {
+        try {
+            if(browserQuery.user.isAdmin()){
+                //if Admin, no need to perform any gymnastics as we have rights over all pieces of content
+                final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.countQuery);
+                sqlQuery.params.forEach(dcCount::addParam);
+                return dcCount.getInt("count");
+            }
+            final Set<Permissionable> permissionables = new HashSet<>();
+            final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.selectQuery);
+            sqlQuery.params.forEach(dcCount::addParam);
+            @SuppressWarnings("unchecked") final List<Map<String, String>> loadResults = dcCount.loadResults();
+            loadResults.forEach(result -> {
+                final String inode = result.get("inode");
+                final String identifier = result.get("identifier");
+                final String contentTypeId = result.get("content_type_id");
+                permissionables.add(shallowPermissionable(identifier, contentTypeId, inode));
+            });
+            return permissionAPI.filterCollection(new ArrayList<>(permissionables),
+                    PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user).size();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * A shallow Permissionable is a contentlet built with the very minimum info required
+     * it's used to feed the filterCollection method to determine the number of items that meet permissions
+     * Doing this is less expensive than having to hydrate a full contentlet
+     * @param identifier
+     * @param contentTypeId
+     * @param inode
+     * @return
+     */
+    Permissionable shallowPermissionable(String identifier, String contentTypeId, String inode) {
+        return new Contentlet(
+                Map.of(Contentlet.IDENTIFIER_KEY, identifier,
+                       Contentlet.STRUCTURE_INODE_KEY, contentTypeId,
+                       Contentlet.INODE_KEY, inode)
+        );
     }
 
     /**
@@ -1480,7 +1539,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         // Build the main query
         final StringBuilder baseQuery = new StringBuilder(
-                "select cvi." + workingLiveInode + " as inode " + baseClause);
+                "select cvi." + workingLiveInode + " as inode, cvi.identifier as identifier, struc.inode as content_type_id  "  + baseClause);
 
         // Build the count query
         final StringBuilder countQuery = new StringBuilder(
