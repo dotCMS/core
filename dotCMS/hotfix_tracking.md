@@ -85,4 +85,5 @@ This maintenance release includes the following code fixes:
 79. https://github.com/dotCMS/core/issues/32581 : Apply a recommended fix for SQL Injection in dotCMS/core #32581
 80. https://github.com/dotCMS/core/issues/33768 : [TASK] Backport security issue 482 #33768
 81. https://github.com/dotCMS/core/issues/33767 : [TASK] Backport security fix #33767
+82. https://github.com/dotCMS/core/issues/34278 : [DEFECT] PublisherQueueJob (StatefulJob) updates Elasticsearch index but fails to commit DB changes when processing large batches #34278
 
