@@ -66,11 +66,13 @@
     #if($EDIT_MODE && $_hasPermission)
     	#set($localContent = $dotcontent.find($!{CONTENT_INODE}))
         #set($jsonContent = $json.generate($localContent))
+        #set($contentJson = $jsonContent.contentObject.toString())
+        #set($escapedJson = $contentJson.replaceAll("'", "&#39;"))
         <button
             data-dot-identifier="$!{localContent.identifier}"
             data-dot-inode="$!{CONTENT_INODE}"
             data-dot-object="edit-content"
-            onclick='window.dotUVE.editContentlet($jsonContent.contentObject)'
+            onclick='window.dotUVE.editContentlet($escapedJson)'
             style="box-shadow: 0 1px 3px rgb(0 0 0 / 12%), 0 1px 2px rgb(0 0 0 / 24%) !important; border: none !important; border-radius: 16px !important; cursor: pointer !important; font-size: 0 !important; height: 32px !important; outline: none !important; position: relative !important; width: 32px !important; z-index: 2147483646 !important;
             background: #fff url(data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjNDQ0NDQ0IiBoZWlnaHQ9IjE4IiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIxOCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4gICAgPHBhdGggZD0iTTMgMTcuMjVWMjFoMy43NUwxNy44MSA5Ljk0bC0zLjc1LTMuNzVMMyAxNy4yNXpNMjAuNzEgNy4wNGMuMzktLjM5LjM5LTEuMDIgMC0xLjQxbC0yLjM0LTIuMzRjLS4zOS0uMzktMS4wMi0uMzktMS40MSAwbC0xLjgzIDEuODMgMy43NSAzLjc1IDEuODMtMS44M3oiLz4gICAgPHBhdGggZD0iTTAgMGgyNHYyNEgweiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==) no-repeat center center !important;">
         </button>

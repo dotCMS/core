@@ -10,9 +10,6 @@ import com.dotcms.mock.request.ParameterDecorator;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.rest.ErrorEntity;
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.DotPreconditions;
@@ -55,7 +52,6 @@ import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -146,11 +142,11 @@ public class PageResourceHelper implements Serializable {
      *
      * @param pageId           The Identifier of the HTML Page whose contents are being updated.
      * @param containerEntries The list of Containers and Contentlets in the form of
-     *                         {@link PageContainerForm.ContainerEntry} objects.
+     *                         {@link ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
-     * @throws DotDataException An error occurred when interacting with the data source.
      * @param variantName      The variant name
      * @return The list of saved Contentlets with the containerId, contentletId, uuid and styleProperties.
+     * @throws DotDataException An error occurred when interacting with the data source.
      * @throws BadRequestException if style validation fails
      */
     @WrapInTransaction
@@ -159,30 +155,23 @@ public class PageResourceHelper implements Serializable {
             final Language language, String variantName) throws DotDataException {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
+        final List<ContentView> responseViews = new ArrayList<>();
 
-        for (final PageContainerForm.ContainerEntry containerEntry : containerEntries) {
+        for (final ContainerEntry containerEntry : containerEntries) {
             int i = 0;
             final List<String> contentIds = containerEntry.getContentIds();
             final String personalization = UtilMethods.isSet(containerEntry.getPersonaTag()) ?
                     Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + containerEntry.getPersonaTag() :
                     MultiTree.DOT_PERSONALIZATION_DEFAULT;
-            final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
-
-            // Validate style properties during the saving process
-            stylePropertiesValidation(stylePropertiesMap, contentIds,
-                    containerEntry.getContainerId(), containerEntry.getContainerUUID());
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
-                    final Map<String, Object> styleProperties = stylePropertiesMap.get(contentletId);
-
                     final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
                             .setContentlet(contentletId)
                             .setInstanceId(containerEntry.getContainerUUID())
                             .setTreeOrder(i++)
                             .setHtmlPage(pageId)
-                            .setVariantId(variantName)
-                            .setStyleProperties(styleProperties);
+                            .setVariantId(variantName);
 
                     CollectionsUtils.computeSubValueIfAbsent(
                             multiTreesMap, personalization,
@@ -190,28 +179,17 @@ public class PageResourceHelper implements Serializable {
                             CollectionsUtils::add,
                             (String key, MultiTree multitree) -> list(multitree));
 
-                    HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+                    // Invalidate contentlet cache for immediate visual updates
+                    invalidateContentletCache(contentletId, variantName);
 
-                        @Override
-                        public void run() {
-                            try {
-                                Contentlet contentlet =
-                                        contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantName);
+                    // Build response view for this contentlet
+                    final ContentView responseView = ContentView.builder()
+                            .containerId(containerEntry.getContainerId())
+                            .uuid(containerEntry.getContainerUUID())
+                            .contentletId(contentletId)
+                            .build();
 
-                                if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.equals(variantName)) {
-                                    contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentletId,
-                                            VariantAPI.DEFAULT_VARIANT.name());
-                                }
-
-                                new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
-                            } catch (final DotDataException e) {
-                                Logger.warn(this, String.format("Contentlet with ID '%s' could not be invalidated " +
-                                                                        "from cache: %s", contentletId,
-                                        e.getMessage()));
-                            }
-                        }
-
-                    });
+                    responseViews.add(responseView);
                 }
             } else {
                 multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
@@ -223,73 +201,46 @@ public class PageResourceHelper implements Serializable {
                     variantName);
         }
 
-        // MultiTrees as a flattened list
-        final List<MultiTree> savedMultiTrees = multiTreesMap.values().stream()
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-
-        // Response with container, contentlet and styleProperties
-        return buildSaveContentResponse(savedMultiTrees);
+        return responseViews;
     }
 
     /**
-     * Validates the style properties for a given contentlet and container during the saving process.
-     * @param stylePropertiesMap The map of style properties.
-     * @param contentIds The list of contentlet ids.
-     * @param containerId The id of the container.
-     * @param containerUUID The uuid of the container.
-     * @throws BadRequestException if the style properties are invalid.
+     * Invalidates the cache for contentlets that had their styles updated. This ensures that the
+     * rendered HTML reflects the style changes immediately.
+     *
+     * @param contentletId Contentlet identifier that was updated
+     * @param variantId    The variant identifier for the contentlets
      */
-    private void stylePropertiesValidation(
-            Map<String, Map<String, Object>> stylePropertiesMap,
-            List<String> contentIds, String containerId, String containerUUID
-    ) {
-        if (!stylePropertiesMap.isEmpty()) {
-            final List<ErrorEntity> errors = new ArrayList<>();
+    private void invalidateContentletCache(final String contentletId, final String variantId) {
+        HibernateUtil.addCommitListenerNoThrow(new FlushCacheRunnable() {
+            @Override
+            public void run() {
+                try {
+                    // Try to get contentlet with current variant first
+                    Contentlet contentlet =
+                            contentletAPI.findContentletByIdentifierAnyLanguage(contentletId, variantId);
 
-            stylePropertiesMap.forEach((contentletId, styleProps) -> {
-                if (!contentIds.contains(contentletId)) {
-                    errors.add(new ContentletStylingErrorEntity(
-                            "INVALID_CONTENTLET_REFERENCE",
-                            "Could not define Style Properties for non-existing contentlet",
-                            contentletId,
-                            containerId,
-                            containerUUID
-                    ));
-                }
-            });
-
-            if (!errors.isEmpty()) {
-                throw new BadRequestException(null, new ResponseEntityView<>(errors),
-                        "Invalid Style Properties configuration");
-            }
-        }
-    }
-
-    /**
-     * Returns a list of saved Contentlets and Style Properites.
-     * @param savedMultiTrees The list of saved MultiTrees.
-     * @return A list of the saved Contentlets with the containerId, uuid, contentletId and
-     * styleProperties.
-     */
-    private List<ContentView> buildSaveContentResponse(List<MultiTree> savedMultiTrees) {
-        return savedMultiTrees.stream()
-                .map(multiTree -> {
-                    ContentView.Builder builder = ContentView.builder()
-                            .containerId(multiTree.getContainer())
-                            .contentletId(multiTree.getContentlet())
-                            .uuid(multiTree.getRelationType());
-
-                    // Include style properties in the response if Style Editor FF is enabled
-                    final boolean isStyleEditorEnabled = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
-                    if (isStyleEditorEnabled) {
-                        final Map<String, Object> styleProperties = multiTree.getStyleProperties();
-                        builder.putAllStyleProperties(styleProperties != null ? styleProperties : new HashMap<>());
+                    // Fallback to DEFAULT variant if not found in current variant
+                    if (contentlet == null && !VariantAPI.DEFAULT_VARIANT.name().equals(variantId)) {
+                        contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                                contentletId, VariantAPI.DEFAULT_VARIANT.name());
                     }
 
-                    return builder.build();
-                })
-                .collect(Collectors.toList());
+                    // Invalidate cache for the contentlet in edit mode
+                    if (contentlet != null) {
+                        new ContentletLoader().invalidate(contentlet, PageMode.EDIT_MODE);
+                        Logger.debug(PageResourceHelper.this,
+                                String.format("Cache invalidated for contentlet: %s", contentletId));
+                    } else {
+                        Logger.warn(PageResourceHelper.this,
+                                String.format("Contentlet not found for cache invalidation: %s", contentletId));
+                    }
+                } catch (final DotDataException e) {
+                    Logger.warn(PageResourceHelper.this, String.format(
+                            "Could not invalidate cache for contentlet '%s': %s", contentletId, e.getMessage()));
+                }
+            }
+        });
     }
 
     public void saveMultiTree(final String containerId,

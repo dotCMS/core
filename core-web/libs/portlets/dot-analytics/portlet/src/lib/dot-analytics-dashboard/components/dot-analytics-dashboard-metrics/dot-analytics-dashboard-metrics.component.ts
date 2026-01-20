@@ -7,6 +7,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
 
+import { DotCountUpDirective } from '../../directives';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
@@ -21,6 +22,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         CardModule,
         SkeletonModule,
         DotMessagePipe,
+        DotCountUpDirective,
         DotAnalyticsStateMessageComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,10 +43,35 @@ export class DotAnalyticsDashboardMetricsComponent {
     /** PrimeIcons icon name (without 'pi-' prefix) displayed in top-right */
     readonly $icon = input<string>('', { alias: 'icon' });
 
+    /** Trend value (percentage) for the metric */
+    readonly $trend = input<number | undefined>(undefined, { alias: 'trend' });
+
     /** Component status for loading/error states */
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
 
+    /** Whether to animate numeric values with count-up effect */
+    readonly $animated = input<boolean>(true, { alias: 'animated' });
+
+    /** Duration of count-up animation in milliseconds */
+    readonly $animationDuration = input<number>(350, { alias: 'animationDuration' });
+
     // Computed properties
+    /** Computed signal for trend display data */
+    protected readonly $trendData = computed(() => {
+        const trend = this.$trend();
+        if (trend === undefined) {
+            return null;
+        }
+
+        const isPositive = trend >= 0;
+        return {
+            value: trend,
+            isPositive,
+            prefix: isPositive ? '+' : '',
+            class: isPositive ? 'metric-trend--positive' : 'metric-trend--negative'
+        };
+    });
+
     /** Check if value is a fraction format (e.g., "2/3") */
     protected readonly $isFraction = computed(() => {
         const val = this.$value();
@@ -57,10 +84,15 @@ export class DotAnalyticsDashboardMetricsComponent {
         const val = this.$value();
         if (typeof val === 'string' && val.includes('/')) {
             const [num, den] = val.split('/').map((s) => s.trim());
+            const numerator = parseInt(num, 10);
+            const denominator = parseInt(den, 10);
 
             return {
-                numerator: parseInt(num, 10).toLocaleString(),
-                denominator: parseInt(den, 10).toLocaleString()
+                numerator: numerator.toLocaleString(),
+                denominator: denominator.toLocaleString(),
+                // Raw values for count-up animation
+                numeratorValue: numerator,
+                denominatorValue: denominator
             };
         }
 
@@ -76,6 +108,38 @@ export class DotAnalyticsDashboardMetricsComponent {
         }
 
         return val;
+    });
+
+    /** Returns numeric value for count-up animation, or null if not a number */
+    protected readonly $numericValue = computed(() => {
+        const val = this.$value();
+
+        if (typeof val === 'number') {
+            return { value: val, suffix: '', format: 'number' as const };
+        }
+
+        if (typeof val === 'string') {
+            // Check for time format "Xm Ys" or "Xm" or "Ys"
+            const timeMatch = val.match(/^(?:(\d+)m)?\s*(?:(\d+)s)?$/);
+            if (timeMatch && (timeMatch[1] || timeMatch[2])) {
+                const minutes = parseInt(timeMatch[1] || '0', 10);
+                const seconds = parseInt(timeMatch[2] || '0', 10);
+                const totalSeconds = minutes * 60 + seconds;
+
+                return { value: totalSeconds, suffix: '', format: 'time' as const };
+            }
+
+            // Check for numeric strings with suffix (e.g., "45%", "5.2%")
+            const numMatch = val.match(/^([\d.]+)(.*)$/);
+            if (numMatch) {
+                const num = parseFloat(numMatch[1]);
+                if (!isNaN(num)) {
+                    return { value: num, suffix: numMatch[2], format: 'number' as const };
+                }
+            }
+        }
+
+        return null;
     });
 
     /** Computed signal for complete icon classes */

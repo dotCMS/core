@@ -36,7 +36,7 @@
     <div class="bg-white px-4">
         <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
             <p-tablist>
-                @for (tab of tabs; track tab.id) {
+                @for (tab of $tabs(); track tab.id) {
                     <p-tab [value]="tab.id">
                         {{ tab.label | dm }}
                     </p-tab>
@@ -44,7 +44,7 @@
             </p-tablist>
 
             <p-tabpanels>
-                @for (tab of tabs; track tab.id) {
+                @for (tab of $tabs(); track tab.id) {
                     <p-tabpanel [value]="tab.id">
                         @switch (tab.id) {
                             @case ('pageview') {
@@ -52,6 +52,9 @@
                             }
                             @case ('conversions') {
                                 <dot-analytics-dashboard-conversions-report />
+                            }
+                            @case ('engagement') {
+                                <dot-analytics-dashboard-engagement-report />
                             }
                         }
                     </p-tabpanel>

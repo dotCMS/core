@@ -1,0 +1,131 @@
+@use "variables" as *;
+
+$chart-pie-size: 12.5rem;
+$chart-y-axis-width: 3.125rem;
+$chart-x-axis-height: 1.875rem;
+$chart-border-width: 0.125rem;
+$chart-grid-padding: 0.625rem;
+$chart-grid-opacity: 0.6;
+
+:host {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.chart-card {
+    width: 100%;
+
+    &.chart-card--loading,
+    &.chart-card--empty,
+    &.chart-card--error {
+        height: 100%;
+
+        ::ng-deep .p-card {
+            height: 100%;
+
+            .p-card-body {
+                height: 100%;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .p-card-content {
+                flex: 1;
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+        }
+    }
+}
+
+.chart-container {
+    width: 100%;
+    position: relative;
+}
+
+.chart-title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-bold;
+    color: $black;
+    line-height: $line-height-relative;
+    margin: 0;
+}
+
+.chart-skeleton {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &--line {
+        ::ng-deep .p-skeleton {
+            border-radius: $border-radius-md;
+        }
+
+        .line-chart-skeleton {
+            display: grid;
+            grid-template-columns: $chart-y-axis-width 1fr;
+            grid-template-rows: 1fr $chart-x-axis-height;
+            gap: $spacing-2;
+            width: 100%;
+            height: 100%;
+            padding: $spacing-2;
+
+            .y-axis-skeleton {
+                grid-column: 1;
+                grid-row: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: flex-end;
+                padding-right: $spacing-1;
+            }
+
+            .chart-area-skeleton {
+                grid-column: 2;
+                grid-row: 1;
+                position: relative;
+                border-left: $chart-border-width solid $color-palette-gray-300;
+                border-bottom: $chart-border-width solid $color-palette-gray-300;
+
+                .grid-lines-skeleton {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: space-between;
+                    padding: $chart-grid-padding 0;
+
+                    .grid-line {
+                        height: $field-border-size;
+                        width: 100%;
+                        background: $color-palette-gray-200;
+                        opacity: $chart-grid-opacity;
+                    }
+                }
+            }
+
+            .x-axis-skeleton {
+                grid-column: 2;
+                grid-row: 2;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                padding-top: $spacing-1;
+            }
+        }
+    }
+
+    &--default {
+        ::ng-deep .p-skeleton {
+            border-radius: $border-radius-md;
+        }
+    }
+}
