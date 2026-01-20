@@ -11,7 +11,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ExperimentSteps,
@@ -21,7 +20,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -36,22 +35,18 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
         CommonModule,
         DotMessagePipe,
         DotDynamicDirective,
-        DotIconComponent,
         DotExperimentsDetailsTableComponent,
-        // PrimeNg
         ButtonModule,
         CardModule,
         TooltipModule,
         ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
-    styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
     providers: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
-    private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessagePipe = inject(DotMessagePipe);
 

@@ -9,7 +9,12 @@ import {
 
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { ComponentStatus, DotExperimentVariantDetail } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotExperimentVariantDetail,
+    ReachPageGoalCondition,
+    UrlParameterGoalCondition
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
 
 /**
@@ -42,7 +47,7 @@ export class DotExperimentsDetailsTableComponent {
 
     //** List of data to display, without templates, use the index of the objet as a header */
     @Input()
-    data!: DotExperimentVariantDetail[];
+    data!: DotExperimentVariantDetail[] | Array<UrlParameterGoalCondition | ReachPageGoalCondition>;
 
     @Input()
     isLoading = false;

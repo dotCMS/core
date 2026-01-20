@@ -1,12 +1,10 @@
-<div class="message__wrapper flex w-full max-w-[480px] gap-6 flex-col">
+<div class="flex w-full max-w-[480px] gap-6 flex-col">
     <div
         class="message__principal-wrapper flex items-center flex-col gap-2 break-words"
         data-testid="message-principal">
         @if (configuration.icon) {
             <i
-                [class]="
-                    'message__icon pi !text-6xl p-3 text-[var(--gray-700)] ' + configuration.icon
-                "
+                [class]="'pi !text-6xl p-3 text-[var(--gray-700)] ' + configuration.icon"
                 data-testid="message-icon"></i>
         }
         <h1
@@ -24,9 +22,7 @@
     </div>
 
     @if (!hideContactUsLink || buttonLabel) {
-        <div
-            class="message__extra-wrapper flex items-center flex-col gap-2"
-            data-testid="message-extra">
+        <div class="flex items-center flex-col gap-2" data-testid="message-extra">
             @if (buttonLabel) {
                 <button
                     pButton
@@ -41,7 +37,7 @@
                     <span>{{ 'dot.common.or.text' | dm }}</span>
                 }
                 <a
-                    class="message__external-link text-center text-sm font-medium"
+                    class="text-center text-sm font-medium"
                     data-testid="message-contact-link"
                     href="https://dotcms.com/contact-us/"
                     target="_blank">

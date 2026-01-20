@@ -19,8 +19,10 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         ButtonModule
     ],
     templateUrl: './dot-experiments-analytic-app-misconfiguration.component.html',
-    styleUrls: ['./dot-experiments-analytic-app-misconfiguration.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'w-full min-h-full flex justify-center items-center flex-col gap-4 bg-white'
+    }
 })
 export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnInit {
     private router = inject(Router);

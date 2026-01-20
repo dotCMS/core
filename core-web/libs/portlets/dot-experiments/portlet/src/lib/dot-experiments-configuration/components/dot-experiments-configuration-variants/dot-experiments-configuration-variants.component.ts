@@ -27,12 +27,7 @@ import {
     StepStatus,
     Variant
 } from '@dotcms/dotcms-models';
-import {
-    DotCopyButtonComponent,
-    DotDynamicDirective,
-    DotIconComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
+import { DotCopyButtonComponent, DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsInlineEditTextComponent } from '../../../shared/ui/dot-experiments-inline-edit-text/dot-experiments-inline-edit-text.component';
 import {
@@ -47,11 +42,9 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
     imports: [
         CommonModule,
         DotMessagePipe,
-        DotIconComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
-        //PrimeNg
         CardModule,
         InplaceModule,
         ButtonModule,
@@ -62,7 +55,6 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         DotExperimentsInlineEditTextComponent
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
-    styleUrls: ['./dot-experiments-configuration-variants.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsComponent {

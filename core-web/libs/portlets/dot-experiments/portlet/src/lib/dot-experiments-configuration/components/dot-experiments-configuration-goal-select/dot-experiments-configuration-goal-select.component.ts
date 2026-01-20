@@ -58,7 +58,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DotFieldValidationMessageComponent
     ],
     templateUrl: './dot-experiments-configuration-goal-select.component.html',
-    styleUrls: ['./dot-experiments-configuration-goal-select.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalSelectComponent implements OnInit, OnDestroy {

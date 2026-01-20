@@ -29,7 +29,10 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'secondary';
     templateUrl: './dot-experiments-ui-header.component.html',
     imports: [SkeletonModule, ButtonModule, TagModule],
     providers: [DatePipe, TitleCasePipe],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'w-full block'
+    }
 })
 export class DotExperimentsUiHeaderComponent implements OnChanges {
     @Input()

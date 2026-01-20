@@ -1,14 +1,22 @@
 @if (vm$ | async; as vm) {
     <p-card>
-        <ng-template pTemplate="title">
-            <div class="variant--title__wrapper flex justify-between">
-                <h2 class="flex items-center gap-1 uppercase">
-                    <dot-icon
-                        [ngClass]="{ isDone: vm.trafficProportion.variants?.length > 1 }"
-                        [size]="16"
-                        data-testId="variant-title-step-done"
-                        name="check_circle" />
-                    <span class="p-label-input-required" data-testId="variants-card-header">
+        <ng-template #title>
+            <div class="flex justify-between">
+                <h2 class="flex items-center gap-1 uppercase m-0 font-bold">
+                    <i
+                        [style.font-size.px]="16"
+                        class="material-icons"
+                        [ngClass]="
+                            vm.trafficProportion.variants?.length > 1
+                                ? 'text-green-600'
+                                : 'text-gray-500'
+                        "
+                        data-testId="variant-title-step-done">
+                        check_circle
+                    </i>
+                    <span
+                        class="p-label-input-required after:content-['*'] after:text-red-500 after:ml-1"
+                        data-testId="variants-card-header">
                         {{ 'experiments.configure.variants.name' | dm }}
                     </span>
                 </h2>
@@ -23,8 +31,8 @@
             let first = $first;
             let last = $last
         ) {
-            <p-card [ngClass]="{ first: first, last: last }" data-testId="variant-row-card">
-                <div class="variant--row__wrapper flex flex-row items-center content-between gap-2">
+            <p-card data-testId="variant-row-card">
+                <div class="flex flex-row items-center justify-between gap-2">
                     <div class="flex grow flex-row items-center gap-2">
                         @if (variant.name === defaultVariantName || vm.disabledTooltipLabel) {
                             <span data-testId="variant-name-original">{{ variant.name }}</span>
@@ -44,42 +52,48 @@
                                 [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm" />
                         }
                     </div>
-                    <span class="separator">|</span>
+                    <span class="mx-2">|</span>
                     <div
                         [pTooltip]="vm.disabledTooltipLabel | dm"
                         [tooltipDisabled]="!vm.disabledTooltipLabel"
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
-                        <button
-                            (click)="changeTrafficProportion()"
+                        <p-button
+                            (onClick)="changeTrafficProportion()"
                             [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
-                            class="p-button-sm p-button-link"
+                            [link]="true"
+                            [size]="'small'"
                             data-testId="variant-weight"
-                            label="{{ variant.weight | number: '2.2-2' }}% {{
-                                'experiments.configure.variants.weight' | dm
-                            }}"
-                            pButton></button>
+                            [label]="
+                                (variant.weight | number: '2.2-2') +
+                                '% ' +
+                                ('experiments.configure.variants.weight' | dm)
+                            "
+                            type="button" />
                     </div>
                     @if (
                         variant.name === defaultVariantName ||
                         !vm.isExperimentADraft ||
                         vm.pageSate.lockedByAnotherUser
                     ) {
-                        <button
-                            (click)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
-                            class="p-button-sm p-button-outlined no-padding"
+                        <p-button
+                            (onClick)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
+                            [outlined]="true"
+                            [size]="'small'"
+                            styleClass="p-0"
                             data-testId="variant-preview-button"
-                            label="{{ 'experiments.configure.variants.view' | dm }}"
-                            pButton
-                            type="button"></button>
+                            [label]="'experiments.configure.variants.view' | dm"
+                            type="button" />
                     } @else {
-                        <button
-                            (click)="goToEditPageVariant(variant, dotPageMode.EDIT)"
-                            class="p-button-sm p-button-outlined no-padding p-button-warning"
+                        <p-button
+                            (onClick)="goToEditPageVariant(variant, dotPageMode.EDIT)"
+                            [outlined]="true"
+                            [size]="'small'"
+                            severity="warn"
+                            styleClass="p-0"
                             data-testId="variant-edit-button"
-                            label="{{ 'experiments.action.edit' | dm }}"
-                            pButton
-                            type="button"></button>
+                            [label]="'experiments.action.edit' | dm"
+                            type="button" />
                     }
                     <div
                         [pTooltip]="vm.disabledTooltipLabel | dm"
@@ -88,23 +102,24 @@
                         "
                         data-testId="tooltip-on-disabled"
                         tooltipPosition="bottom">
-                        <button
-                            (click)="deleteVariant({ $event, variant }, vm.experimentId)"
+                        <p-button
+                            (onClick)="deleteVariant({ $event, variant }, vm.experimentId)"
                             [disabled]="
                                 variant.name === defaultVariantName ||
                                 !vm.isExperimentADraft ||
                                 vm.disabledTooltipLabel
                             "
-                            class="p-button-sm p-button-text p-button-danger"
+                            [text]="true"
+                            [size]="'small'"
+                            severity="danger"
                             data-testId="variant-delete-button"
-                            label="{{ 'experiments.configure.variants.delete' | dm }}"
-                            pButton
-                            type="button"></button>
+                            [label]="'experiments.configure.variants.delete' | dm"
+                            type="button" />
                     </div>
                 </div>
             </p-card>
         }
-        <ng-template pTemplate="footer">
+        <ng-template #footer>
             <div
                 [pTooltip]="vm.disabledTooltipLabel | dm"
                 [tooltipDisabled]="
@@ -114,18 +129,18 @@
                 class="inline-block"
                 data-testId="tooltip-on-disabled"
                 tooltipPosition="bottom">
-                <button
-                    (click)="addVariant()"
+                <p-button
+                    (onClick)="addVariant()"
                     [disabled]="
                         vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
                         !vm.isExperimentADraft ||
                         vm.disabledTooltipLabel
                     "
-                    class="p-button-sm p-button-outlined"
+                    [outlined]="true"
+                    [size]="'small'"
                     data-testId="variant-add-button"
-                    label="{{ 'experiments.configure.variants.add' | dm }}"
-                    pButton
-                    type="button"></button>
+                    [label]="'experiments.configure.variants.add' | dm"
+                    type="button" />
             </div>
         </ng-template>
     </p-card>

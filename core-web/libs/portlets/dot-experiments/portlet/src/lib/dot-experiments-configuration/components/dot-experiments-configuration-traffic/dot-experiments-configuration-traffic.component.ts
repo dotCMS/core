@@ -15,7 +15,7 @@ import {
     StepStatus,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,
@@ -30,14 +30,11 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
         CommonModule,
         DotMessagePipe,
         DotDynamicDirective,
-        // PrimeNg
         CardModule,
         ButtonModule,
-        DotIconComponent,
         TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-traffic.component.html',
-    styleUrls: ['./dot-experiments-configuration-traffic.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficComponent {

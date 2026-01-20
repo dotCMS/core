@@ -15,7 +15,7 @@ import {
     RangeOfDateAndTime,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experiments-configuration-scheduling-add/dot-experiments-configuration-scheduling-add.component';
@@ -26,14 +26,11 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
         CommonModule,
         DotDynamicDirective,
         DotMessagePipe,
-        DotIconComponent,
-        // PrimeNg
         CardModule,
         ButtonModule,
         TooltipModule
     ],
     templateUrl: './dot-experiments-configuration-scheduling.component.html',
-    styleUrls: ['./dot-experiments-configuration-scheduling.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingComponent {
