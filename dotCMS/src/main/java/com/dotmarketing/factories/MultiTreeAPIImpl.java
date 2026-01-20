@@ -686,14 +686,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Set<String> originalContentletIds = new HashSet<>();
         final DotConnect db = new DotConnect();
 
-        // Preserves already existing styles if Style Editor is disabled
-        final boolean isStyleEditorEnabled = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
-        if (!isStyleEditorEnabled) {
-            // Delete incoming styles (DB is the only source of truth)
-            multiTrees.forEach(mTree -> mTree.setStyleProperties(null));
-            // Restore existing styles from DB
-            preserveStylesBeforeSaving(pageId, multiTrees);
-        }
+        // Preserves already existing styles
+        preserveStylesBeforeSaving(pageId, multiTrees);
 
         if (languageIdOpt.isPresent()) {
             if (DbConnectionFactory.isMySql()) {
