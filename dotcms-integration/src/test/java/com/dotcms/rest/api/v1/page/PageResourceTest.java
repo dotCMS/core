@@ -102,9 +102,7 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
@@ -140,7 +138,6 @@ import javax.ws.rs.core.Response;
 import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -327,11 +324,10 @@ public class PageResourceTest {
      * When: Add content to a page with styleProperties using the PageAPI
      * Should: Save styleProperties in the {@link MultiTree} and be retrievable
      */
-    @Ignore("Fix in the new endpoint for contentlet style definition (PR #34299)")
     @Test
     public void test_addContent_with_styleProperties() throws Exception {
         // Save the original feature flag value
-        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false);
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
 
         try {
             // Enable the Style Editor feature flag
@@ -362,7 +358,7 @@ public class PageResourceTest {
             styleProperties.put("fontSize", "16px");
             styleProperties.put("padding", "10px");
 
-            // Create ContainerEntry with styleProperties
+            // Create ContainerEntry
             final List<ContainerEntry> entries = new ArrayList<>();
             final String containerUUID = UUIDGenerator.generateUuid();
             final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
@@ -372,14 +368,13 @@ public class PageResourceTest {
                     null,
                     container.getIdentifier(),
                     containerUUID,
-                    list(contentlet.getIdentifier()),
-                    stylePropertiesMap
+                    list(contentlet.getIdentifier())
             );
 
             entries.add(containerEntry);
             final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
 
-            // Save content with styleProperties
+            // Save content
             final Response addContentResponse = this.pageResourceWithHelper.addContent(
                     request,
                     response,
@@ -391,6 +386,25 @@ public class PageResourceTest {
             // Verify response is successful
             assertNotNull(addContentResponse);
             assertEquals(200, addContentResponse.getStatus());
+
+            // create ContentWithStylesForm with styleProperties
+            final ContentWithStylesForm contentWithStylesForm = new ContentWithStylesForm(
+                    container.getIdentifier(),
+                    containerUUID
+            );
+            contentWithStylesForm.addContentletStyle(contentlet.getIdentifier(), styleProperties);
+
+            // Save styleProperties for the content previously created
+            final Response addContentStylesResponse = this.pageResourceWithHelper.updateStyles(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    List.of(contentWithStylesForm)
+            );
+
+            // Verify response is successful Styles definition
+            assertNotNull(addContentStylesResponse);
+            assertEquals(200, addContentStylesResponse.getStatus());
 
             // Retrieve MultiTree and verify styleProperties are saved
             final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
@@ -422,79 +436,6 @@ public class PageResourceTest {
             Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFeatureFlagValue);
         }
     }
-
-    /**
-     * Method to test: {@link PageContainerForm.ContainerDeserialize#deserialize(JsonParser, DeserializationContext)}
-     * When: Deserialize a PageContainerForm with styleProperties
-     * Should: Return a PageContainerForm with the styleProperties
-     * @throws Exception Exception when deserializing the PageContainerForm
-     */
-    @Ignore("Fix in the new endpoint for contentlet style definition (PR #34299)")
-    @Test
-    public void test_PageContainerForm_deserialization_with_styleProperties() throws Exception {
-        final String json = "[\n" +
-                "    {\n" +
-                "        \"identifier\": \"container-123\",\n" +
-                "        \"uuid\": \"uuid-456\",\n" +
-                "        \"contentletsId\": [\"contentlet-789\"],\n" +
-                "        \"styleProperties\": {\n" +
-                "            \"contentlet-789\": {\n" +
-                "                \"backgroundColor\": \"red\",\n" +
-                "                \"fontSize\": 16,\n" +
-                "                \"isVisible\": true\n" +
-                "            }\n" +
-                "        }\n" +
-                "    }\n" +
-                "]";
-
-        final ObjectMapper mapper = new ObjectMapper();
-        // deserialize string
-        final PageContainerForm form = mapper.readValue(json, PageContainerForm.class);
-
-        assertNotNull("Form should not be null", form);
-        assertEquals("Should have 1 container entry", 1, form.getContainerEntries().size());
-
-        final ContainerEntry containerEntry = form.getContainerEntries().get(0);
-        final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
-
-        // Validate style properties map
-        assertNotNull("StyleProperties should not be null", stylePropertiesMap);
-        assertTrue("Should contain contentlet-789", stylePropertiesMap.containsKey("contentlet-789"));
-
-        // validate style properties (string, number, boolean)
-        final Map<String, Object> styleProperties = stylePropertiesMap.get("contentlet-789");
-        assertEquals("backgroundColor should be red", "red", styleProperties.get("backgroundColor"));
-        assertEquals("fontSize should be 16", 16, styleProperties.get("fontSize"));
-        assertEquals("isVisible should be true", true, styleProperties.get("isVisible"));
-    }
-
-    /**
-     * Method to test: {@link PageContainerForm.ContainerDeserialize#deserialize(JsonParser, DeserializationContext)}
-     * When: Deserialize a PageContainerForm without styleProperties
-     * Should: Return a PageContainerForm with the styleProperties
-     * @throws Exception Exception when deserializing the PageContainerForm
-     */
-    @Ignore("Fix in the new endpoint for contentlet style definition (PR #34299)")
-    @Test
-    public void test_PageContainerForm_deserialization_without_styleProperties() throws Exception {
-        // Test that containers without styleProperties don't break
-        final String json = "[\n" +
-                "    {\n" +
-                "        \"identifier\": \"container-123\",\n" +
-                "        \"uuid\": \"uuid-456\",\n" +
-                "        \"contentletsId\": [\"contentlet-789\"]\n" +
-                "    }\n" +
-                "]";
-
-        final ObjectMapper mapper = new ObjectMapper();
-        final PageContainerForm form = mapper.readValue(json, PageContainerForm.class);
-
-        assertNotNull("Form should not be null", form);
-        final ContainerEntry containerEntry = form.getContainerEntries().get(0);
-        assertNotNull("StylePropertiesMap should not be null", containerEntry.getStylePropertiesMap());
-        assertTrue("StylePropertiesMap should be empty", containerEntry.getStylePropertiesMap().isEmpty());
-    }
-
 
     /**
      * Should return at least one persona personalized
