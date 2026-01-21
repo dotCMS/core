@@ -162,10 +162,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 disabled: true
             },
             cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
-                action: () => {
-                    this.removeFieldsWithoutId();
-                }
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+                // No action needed - cleanup is handled by (visibleChange) event
             }
         };
 

@@ -544,7 +544,7 @@ describe('ContentTypesLayoutComponent', () => {
             let pTabPanel;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
-                pTabPanel = panels.length > 3 ? panels[3] : (panels.length > 2 ? panels[2] : null);
+                pTabPanel = panels.length > 3 ? panels[3] : panels.length > 2 ? panels[2] : null;
                 if (pTabPanel) {
                     fixture.detectChanges();
                     iframe = pTabPanel.query(By.css('dot-iframe'));

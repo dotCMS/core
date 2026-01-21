@@ -13,7 +13,7 @@ import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { DotMessageService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -197,9 +197,7 @@ describe('DotBinarySettingsComponent', () => {
             jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
                 of({} as DotFieldVariable)
             );
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(
-                of({} as DotFieldVariable)
-            );
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of({} as DotFieldVariable));
 
             spectator.detectChanges();
 

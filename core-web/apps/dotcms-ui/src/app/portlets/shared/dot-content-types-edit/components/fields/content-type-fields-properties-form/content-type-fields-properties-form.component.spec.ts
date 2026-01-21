@@ -158,12 +158,12 @@ describe('ContentTypeFieldsPropertiesFormComponent', () => {
     const createHostComponent = () => {
         hostFixture = TestBed.createComponent(DotHostTesterComponent);
         hostComp = hostFixture.componentInstance;
-        
+
         // Initialize data BEFORE first detectChanges
         hostComp.mockDFormFieldData = {
             ...mockDFormFieldData
         };
-        
+
         de = hostFixture.debugElement;
         hostFixture.detectChanges();
 

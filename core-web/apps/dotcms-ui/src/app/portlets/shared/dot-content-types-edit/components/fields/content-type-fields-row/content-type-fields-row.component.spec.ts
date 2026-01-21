@@ -123,7 +123,6 @@ describe('ContentTypeFieldsRowComponent', () => {
     }));
 
     describe('setting rows and columns', () => {
-
         it('should has row and columns', () => {
             const columns = de.queryAll(By.css('.row-columns__item'));
             expect(2).toEqual(columns.length);
