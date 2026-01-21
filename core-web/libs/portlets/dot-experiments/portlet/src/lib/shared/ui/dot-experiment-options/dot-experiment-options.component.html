@@ -29,7 +29,7 @@
         (keydown.enter)="item.selectItem(item, index)"
         (keydown.space)="$event.preventDefault(); item.selectItem(item, index)"
         [attr.data-testId]="'dot-options-item-header_' + item.val"
-        class="flex cursor-pointer gap-4 p-8"
+        class="flex cursor-pointer gap-4 p-7"
         role="button"
         tabindex="0">
         @if (item.icon) {

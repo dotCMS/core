@@ -2,12 +2,15 @@
     <p-drawer
         (onHide)="closeSidebar()"
         [(visible)]="vm.status.isOpen"
+        closable="false"
         position="right"
         dotSidebar
         dotSize="{{ sidebarSizes.LG }}">
+        <ng-template #header>
         <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}" />
+                [actionButtonTpl]="actionHeaderBtnTpl"
+                dotTitle="{{ 'experiments.configure.goals.sidebar.header' | dm }}" />
+        </ng-template>
         <div class="flex flex-col gap-4 py-4">
             <form
                 [formGroup]="form"

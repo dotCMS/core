@@ -17,7 +17,8 @@ import {
     DotSidebarDirective,
     DotSidebarHeaderComponent,
     DotTrimInputDirective,
-    DotValidators
+    DotValidators,
+    SIDEBAR_SIZES
 } from '@dotcms/ui';
 
 import {
@@ -34,7 +35,6 @@ import {
         DotMessagePipe,
         DotFieldValidationMessageComponent,
         DotSidebarDirective,
-        //PrimeNg
         DrawerModule,
         ButtonModule,
         InputTextModule,
@@ -43,7 +43,6 @@ import {
         DotTrimInputDirective
     ],
     templateUrl: './dot-experiments-configuration-variants-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-variants-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
@@ -51,6 +50,7 @@ export class DotExperimentsConfigurationVariantsAddComponent implements OnInit {
 
     stepStatus = ComponentStatus;
     form: FormGroup;
+    sidebarSizes = SIDEBAR_SIZES;
     vm$: Observable<ConfigurationVariantStepViewModel> =
         this.dotExperimentsConfigurationStore.variantsStepVm$;
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;

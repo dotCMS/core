@@ -15,7 +15,7 @@
                         check_circle
                     </i>
                     <span
-                        class="p-label-input-required after:content-['*'] after:text-red-500 after:ml-1"
+                        class="after:content-['*'] after:text-red-500 after:ml-1"
                         data-testId="variants-card-header">
                         {{ 'experiments.configure.variants.name' | dm }}
                     </span>
@@ -52,7 +52,7 @@
                                 [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm" />
                         }
                     </div>
-                    <span class="mx-2">|</span>
+                    <span class="mx-2 text-[var(--gray-500)]">|</span>
                     <div
                         [pTooltip]="vm.disabledTooltipLabel | dm"
                         [tooltipDisabled]="!vm.disabledTooltipLabel"

@@ -1,23 +1,32 @@
 @if (vm$ | async; as vm) {
-    <p-drawer (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
-        <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.variants.add' | dm }}" />
-        <div class="experiment-variant-add__form-wrapper">
+    <p-drawer
+        dotSidebar
+        position="right"
+        closable="false"
+        (onHide)="closeSidebar()"
+        [(visible)]="vm.status.isOpen"
+        dotSize="{{ sidebarSizes.MD }}">
+        <ng-template #header>
+            <dot-sidebar-header
+                [actionButtonTpl]="actionHeaderBtnTpl"
+                dotTitle="{{ 'experiments.configure.variants.add' | dm }}" />
+        </ng-template>
+        <div class="flex flex-col py-4">
             <form
                 [formGroup]="form"
-                class="experiment-create__form p-fluid"
+                class="p-fluid"
                 id="new-variant-form"
                 data-testId="new-variant-form"
                 novalidate>
                 <div class="field">
-                    <label class="p-label-input-required" for="name">
+                    <label class="block mb-4 after:content-['*'] after:text-red-500 after:ml-1" for="name">
                         {{ 'experiments.configure.variant.add.form.name.label' | dm }}
                     </label>
                     <input
-                        [maxlength]="this.maxNameLength + 1"
+                        [maxlength]="maxNameLength + 1"
                         [tabindex]="1"
                         id="name"
+                        class="w-full"
                         data-testId="add-experiment-description-input"
                         dotAutofocus
                         dotTrimInput
@@ -29,20 +38,18 @@
                         }}"
                         required
                         type="text" />
-                    <dot-field-validation-message [field]="form.controls.name" />
+                    <dot-field-validation-message [field]="form.controls['name']" />
                 </div>
             </form>
         </div>
     </p-drawer>
     <ng-template #actionHeaderBtnTpl>
-        <button
-            (click)="saveVariant(vm.experimentId)"
+        <p-button
+            (onClick)="saveVariant(vm.experimentId)"
             [disabled]="!form.valid"
             [loading]="vm.status.status === stepStatus.SAVING"
             data-testId="add-variant-button"
-            form="new-variant-form"
-            label="{{ 'experiments.action.add' | dm }}"
-            pButton
-            type="submit"></button>
+            [label]="'experiments.action.add' | dm"
+            type="button" />
     </ng-template>
 }

@@ -1,5 +1,5 @@
 <!-- Tailwind is used below only for layout/whitespace glue; visual theming comes from PrimeNG Lara. -->
-<p-inplace [disabled]="disabled" class="w-full">
+<p-inplace [disabled]="disabled" class="w-full" [pt]="{ display: 'p-0!' }">
     <div pInplaceDisplay class="flex flex-wrap items-center gap-2">
         @if (text) {
             <span class="whitespace-pre-wrap" data-testId="text-input">{{ text }}</span>
@@ -28,8 +28,7 @@
                 <input
                     (keydown.enter)="saveAction()"
                     (keydown.escape)="deactivateInplace()"
-                    [class.p-inputtext-sm]="inputSize === 'small'"
-                    [class.p-inputtext-lg]="inputSize === 'large'"
+                    [pSize]="inputSize"
                     class="w-full"
                     data-testId="inplace-input"
                     dotAutofocus
