@@ -9,7 +9,7 @@ import org.immutables.value.Value;
  * Represents a preview of an asset within a publishing bundle.
  * Used in the publishing jobs list to provide a quick overview of bundle contents.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since Jan 2026
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * This class transforms raw PublishAuditStatus objects into PublishingJobView DTOs
  * with enriched metadata including bundle names, filter titles, and asset previews.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since Jan 2026
  */
 public class PublishingJobsHelper {
@@ -76,7 +76,7 @@ public class PublishingJobsHelper {
         return PublishingJobView.builder()
                 .bundleId(bundleId)
                 .bundleName(bundle != null ? bundle.getName() : null)
-                .status(auditStatus.getStatus().name())
+                .status(auditStatus.getStatus())
                 .filterName(resolveFilterName(bundle))
                 .assetCount(auditStatus.getTotalNumberOfAssets())
                 .assetPreview(buildAssetPreviews(history))

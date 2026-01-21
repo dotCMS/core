@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.publishing;
 
 import com.dotcms.annotations.Nullable;
+import com.dotcms.publisher.business.PublishAuditStatus;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,7 +15,7 @@ import java.util.List;
  * This view provides a unified representation of publishing operations including
  * status, bundle information, asset preview, and timing details.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since Jan 2026
  */
 @Value.Style(typeImmutable = "*", typeAbstract = "Abstract*")
@@ -51,28 +52,14 @@ public interface AbstractPublishingJobView {
     /**
      * Current publishing status.
      *
-     * @return Status name
+     * @return Status enum value
      */
     @Schema(
             description = "Current publishing status",
             example = "SUCCESS",
-            allowableValues = {
-                    // Initial/Queue states
-                    "BUNDLE_REQUESTED", "WAITING_FOR_PUBLISHING",
-                    // In-progress states
-                    "BUNDLING", "SENDING_TO_ENDPOINTS", "PUBLISHING_BUNDLE",
-                    // Intermediate states
-                    "BUNDLE_SENT_SUCCESSFULLY", "RECEIVED_BUNDLE", "BUNDLE_SAVED_SUCCESSFULLY",
-                    // Success states
-                    "SUCCESS", "SUCCESS_WITH_WARNINGS",
-                    // Failure states
-                    "FAILED_TO_BUNDLE", "FAILED_TO_SENT", "FAILED_TO_SEND_TO_ALL_GROUPS",
-                    "FAILED_TO_SEND_TO_SOME_GROUPS", "FAILED_TO_PUBLISH",
-                    "FAILED_INTEGRITY_CHECK", "INVALID_TOKEN", "LICENSE_REQUIRED"
-            },
             requiredMode = Schema.RequiredMode.REQUIRED
     )
-    String status();
+    PublishAuditStatus.Status status();
 
     /**
      * Publishing filter name used for this bundle.

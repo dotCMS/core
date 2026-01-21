@@ -9,7 +9,7 @@ import java.util.List;
  * Response entity view wrapper for paginated publishing jobs list.
  * Provides proper type information for OpenAPI/Swagger documentation.
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since Jan 2026
  */
 public class ResponseEntityPublishingJobsView extends ResponseEntityView<List<PublishingJobView>> {

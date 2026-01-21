@@ -24319,23 +24319,23 @@ components:
           description: Current publishing status
           enum:
           - BUNDLE_REQUESTED
-          - WAITING_FOR_PUBLISHING
           - BUNDLING
           - SENDING_TO_ENDPOINTS
-          - PUBLISHING_BUNDLE
-          - BUNDLE_SENT_SUCCESSFULLY
-          - RECEIVED_BUNDLE
-          - BUNDLE_SAVED_SUCCESSFULLY
-          - SUCCESS
-          - SUCCESS_WITH_WARNINGS
-          - FAILED_TO_BUNDLE
-          - FAILED_TO_SENT
           - FAILED_TO_SEND_TO_ALL_GROUPS
           - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
           - FAILED_TO_PUBLISH
-          - FAILED_INTEGRITY_CHECK
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
           - INVALID_TOKEN
           - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
           example: SUCCESS
         statusUpdated:
           type: string

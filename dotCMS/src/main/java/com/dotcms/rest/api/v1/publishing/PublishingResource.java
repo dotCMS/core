@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  * <p>This resource unifies data from the publishing audit table and bundle
  * metadata to provide a comprehensive view of publishing operations.</p>
  *
- * @author dotCMS
+ * @author hassandotcms
  * @since Jan 2026
  */
 @Path("/v1/publishing")
