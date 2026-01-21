@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -69,7 +69,7 @@ export class DotExperimentsConfigurationVariantsComponent {
             tap(({ status }) => this.handleSidebar(status))
         );
     dotPageMode = DotPageMode;
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     protected readonly statusList = ComponentStatus;
     protected readonly maxVariantsAllowed = MAX_VARIANTS_ALLOWED;
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
@@ -163,16 +163,22 @@ export class DotExperimentsConfigurationVariantsComponent {
     }
 
     private loadSidebarComponent(): void {
-        this.sidebarHost.viewContainerRef.clear();
-        this.componentRef =
-            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
-                DotExperimentsConfigurationVariantsAddComponent
-            );
+        const sidebarHostRef = this.sidebarHost();
+        if (sidebarHostRef) {
+            sidebarHostRef.viewContainerRef.clear();
+            this.componentRef =
+                sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationVariantsAddComponent>(
+                    DotExperimentsConfigurationVariantsAddComponent
+                );
+        }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 

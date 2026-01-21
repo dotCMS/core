@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { Goals, RangeOfDateAndTime, SummaryLegend } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -14,18 +14,10 @@ import { DotMessagePipe } from '@dotcms/ui';
     }
 })
 export class DotExperimentsExperimentSummaryComponent {
-    @Input()
-    goals: Goals;
+    goals = input<Goals>();
+    scheduling = input<RangeOfDateAndTime>();
+    sessionsReached = input<number>();
+    suggestedWinner = input<SummaryLegend | null>(null);
 
-    @Input()
-    scheduling: RangeOfDateAndTime;
-
-    @Input()
-    sessionsReached: number;
-
-    @Input()
-    suggestedWinner: SummaryLegend | null = null;
-
-    @Output()
-    updateResults = new EventEmitter();
+    updateResults = output();
 }

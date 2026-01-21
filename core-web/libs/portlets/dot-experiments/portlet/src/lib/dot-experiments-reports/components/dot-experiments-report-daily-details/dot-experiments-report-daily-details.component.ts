@@ -1,5 +1,5 @@
 import { NgClass, TitleCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -28,14 +28,10 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportDailyDetailsComponent {
-    @Input()
-    detailData: DotExperimentVariantDetail[] = [];
-    @Input()
-    hasEnoughSessions: boolean;
-    @Input()
-    experimentId: string;
-    @Input()
-    promotedVariantId: Variant;
+    detailData = input<DotExperimentVariantDetail[]>([]);
+    hasEnoughSessions = input.required<boolean>();
+    experimentId = input.required<string>();
+    promotedVariantId = input.required<Variant>();
 
     protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
 

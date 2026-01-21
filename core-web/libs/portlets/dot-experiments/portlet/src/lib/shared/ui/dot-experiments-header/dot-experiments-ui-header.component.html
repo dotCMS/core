@@ -7,17 +7,17 @@
         icon="pi pi-arrow-left"
         pButton></button>
 
-    @if (!isLoading) {
-        <span data-testId="title">{{ title }}</span>
+    @if (!isLoading()) {
+        <span data-testId="title">{{ title() }}</span>
     } @else {
         <p-skeleton height="1rem" width="12rem" />
     }
 
-    @if (!!experiment?.status) {
+    @if (!!experiment()?.status) {
         <div class="flex grow items-center justify-end">
             <p-tag
-                [icon]="statusIcon"
-                [severity]="statusSeverityMap[experiment.status]"
+                [icon]="statusIcon()"
+                [severity]="statusSeverityMap[experiment()!.status]"
                 [value]="statusTagValue"
                 data-testId="status-tag"
                 [pt]="{ root: { class: 'px-4! py-3!' } }" />

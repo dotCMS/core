@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -61,7 +61,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     );
 
     destroy$: Subject<boolean> = new Subject<boolean>();
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     protected readonly GOALS_METADATA_MAP = GOALS_METADATA_MAP;
     protected readonly GOAL_TYPES = GOAL_TYPES;
 
@@ -108,17 +108,23 @@ export class DotExperimentsConfigurationGoalsComponent {
 
     private loadSidebarComponent(status: StepStatus): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.sidebarHost.viewContainerRef.clear();
-            this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(
-                    DotExperimentsConfigurationGoalSelectComponent
-                );
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+                this.componentRef =
+                    sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(
+                        DotExperimentsConfigurationGoalSelectComponent
+                    );
+            }
         }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 }

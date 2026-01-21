@@ -1,9 +1,9 @@
 <div
     class="flex items-center justify-between gap-4 max-w-[1100px] mx-auto w-full md:w-[calc(100%-2rem)]">
     <div class="flex items-center gap-4 flex-wrap">
-        @if (suggestedWinner) {
+        @if (suggestedWinner()) {
             <div class="flex items-center gap-2">
-                @if (suggestedWinner.icon === 'dot-trophy') {
+                @if (suggestedWinner()!.icon === 'dot-trophy') {
                     <img
                         alt="winner icon"
                         class="w-6 h-6"
@@ -18,30 +18,30 @@
                     </i>
                 }
                 <span
-                    [innerHTML]="suggestedWinner.legend | dm"
+                    [innerHTML]="suggestedWinner()!.legend | dm"
                     class="text-base"
                     data-TestId="suggested-winner-legend"></span>
             </div>
         }
-        @if (goals) {
+        @if (goals()) {
             <div class="flex items-center gap-2">
                 <i [style.font-size.px]="24" class="material-icons text-blue-600">flag</i>
                 <div class="text-base">
                     <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
-                    <span data-TestId="goal-label">&nbsp;{{ goals.primary.name }}</span>
+                    <span data-TestId="goal-label">&nbsp;{{ goals()!.primary.name }}</span>
                 </div>
             </div>
         }
-        @if (scheduling) {
+        @if (scheduling()) {
             <div class="flex items-center gap-2">
                 <i [style.font-size.px]="24" class="material-icons text-blue-600">calendar_today</i>
                 <div class="text-base">
                     <span data-TestId="schedule-start-date">
-                        {{ scheduling.startDate | date: 'longDate' }}
+                        {{ scheduling()!.startDate | date: 'longDate' }}
                     </span>
                     <span class="mx-1">-</span>
                     <span data-TestId="schedule-end-date">
-                        {{ scheduling.endDate | date: 'longDate' }}
+                        {{ scheduling()!.endDate | date: 'longDate' }}
                     </span>
                 </div>
             </div>
@@ -52,7 +52,7 @@
                 <span class="font-bold">
                     {{ 'experiments.summary.winner.session-to-date' | dm }}
                 </span>
-                <span class="ml-1">{{ sessionsReached | number }}</span>
+                <span class="ml-1">{{ sessionsReached() | number }}</span>
             </div>
         </div>
     </div>

@@ -1,6 +1,6 @@
 <dot-experiments-details-table
-    [data]="detailData"
-    [isEmpty]="!hasEnoughSessions"
+    [data]="detailData()"
+    [isEmpty]="!hasEnoughSessions()"
     [title]="'experiments.reports.resume' | dm">
     <ng-template #headers>
         <div class="col-span-2 flex flex-wrap items-center">
@@ -69,9 +69,9 @@
         <div
             [ngClass]="{ 'font-bold': row.isWinner }"
             class="col-span-2 flex flex-wrap items-center justify-end">
-            @if (!promotedVariantId && row.id !== defaultVariantId) {
+            @if (!promotedVariantId() && row.id !== defaultVariantId) {
                 <p-button
-                    (onClick)="promoteVariant($event, experimentId, row)"
+                    (onClick)="promoteVariant($event, experimentId(), row)"
                     [label]="'experiments.reports.promote' | dm"
                     [outlined]="true"
                     [size]="'small'"

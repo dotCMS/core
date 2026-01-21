@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
     selector: 'dot-experiments-configuration-items-count',
@@ -10,9 +10,6 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
     }
 })
 export class DotExperimentsConfigurationItemsCountComponent {
-    @Input()
-    maxLength: number;
-
-    @Input()
-    count: number;
+    maxLength = input.required<number>();
+    count = input.required<number>();
 }

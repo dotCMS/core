@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -46,7 +46,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
         tap(({ status }) => this.handleSidebar(status))
     );
 
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
 
     /**
@@ -68,17 +68,23 @@ export class DotExperimentsConfigurationSchedulingComponent {
 
     private loadSidebarComponent(status: StepStatus): void {
         if (this.shouldLoadSidebar(status)) {
-            this.sidebarHost.viewContainerRef.clear();
-            this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationSchedulingAddComponent>(
-                    DotExperimentsConfigurationSchedulingAddComponent
-                );
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+                this.componentRef =
+                    sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationSchedulingAddComponent>(
+                        DotExperimentsConfigurationSchedulingAddComponent
+                    );
+            }
         }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 

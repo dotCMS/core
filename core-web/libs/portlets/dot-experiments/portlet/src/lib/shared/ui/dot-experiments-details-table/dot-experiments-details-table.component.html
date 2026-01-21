@@ -1,12 +1,12 @@
-@if (!isLoading) {
-    @if (!isEmpty) {
+@if (!isLoading()) {
+    @if (!isEmpty()) {
         <div class="flex flex-col gap-2">
-            @if (title) {
+            @if (title()) {
                 <div
                     class="m-0 text-base font-bold text-black flex flex-row flex-wrap items-center"
                     data-testId="header-title">
-                    <ng-container *dotStringTemplateOutlet="title">
-                        {{ title }}
+                    <ng-container *dotStringTemplateOutlet="title()">
+                        {{ title() }}
                     </ng-container>
                 </div>
             }
@@ -16,11 +16,11 @@
                     <ng-container
                         *ngTemplateOutlet="
                             headers || defaultHeaders;
-                            context: { $implicit: data }
+                            context: { $implicit: data() }
                         " />
                 </div>
                 <div class="flex flex-col gap-2 bg-gray-100 rounded-md py-1 px-3">
-                    @for (row of data; track row) {
+                    @for (row of data(); track row) {
                         <div class="grid grid-cols-12 gap-4 min-h-[35px]" data-testId="detail-row">
                             <ng-container
                                 *ngTemplateOutlet="

@@ -1,12 +1,10 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
-    Input,
-    OnChanges,
-    Output,
-    SimpleChanges,
-    ViewChild
+    effect,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 import {
     FormControl,
@@ -53,88 +51,86 @@ type InplaceInputSize = 'small' | 'large';
     templateUrl: './dot-experiments-inline-edit-text.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotExperimentsInlineEditTextComponent implements OnChanges {
+export class DotExperimentsInlineEditTextComponent {
     /**
      * Max length of the text override by the user
      */
-    @Input()
-    maxCharacterLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
+    maxCharacterLength = input(MAX_INPUT_DESCRIPTIVE_LENGTH);
 
     /**
      * Flag to show the loading spinner
      */
-    @Input()
-    isLoading = false;
+    isLoading = input(false);
 
     /**
      * Text to be edited
      */
-    @Input()
-    text = '';
+    text = input('');
 
     /**
      * Text to be shown when the text is empty
      */
-    @Input()
-    emptyTextMessage = 'dot.common.inplace.empty.text';
+    emptyTextMessage = input('dot.common.inplace.empty.text');
 
     /**
      * Flag to disable the inplace
      */
-    @Input()
-    disabled = false;
+    disabled = input(false);
 
     /**
      * Size of the input and button
      **/
-    @Input()
-    inputSize: InplaceInputSize = 'small';
+    inputSize = input<InplaceInputSize>('small');
 
     /**
      * Flag to make the text required
      */
-    @Input()
-    required = false;
+    required = input(false);
 
     /**
      * Flag to hide the error message
      */
-    @Input()
-    showErrorMsg = true;
+    showErrorMsg = input(true);
 
     /**
      * Emitted when the text is changed and valid
      */
-    @Output()
-    textChanged = new EventEmitter<string>();
+    textChanged = output<string>();
 
-    @ViewChild(Inplace) inplace!: Inplace;
+    inplace = viewChild.required(Inplace);
     form: FormGroup;
+
+    private previousIsLoading = false;
 
     constructor() {
         this.initForm();
+
+        effect(() => {
+            const textValue = this.text();
+            this.textControl.setValue(textValue);
+        });
+
+        effect(() => {
+            const isLoadingValue = this.isLoading();
+            isLoadingValue ? this.textControl.disable() : this.textControl.enable();
+
+            // Check if loading changed from true to false
+            if (this.previousIsLoading && !isLoadingValue) {
+                const inplaceRef = this.inplace();
+                if (inplaceRef) {
+                    this.deactivateInplace();
+                }
+            }
+            this.previousIsLoading = isLoadingValue;
+        });
+
+        effect(() => {
+            this.updateValidators();
+        });
     }
 
     get textControl(): FormControl {
         return this.form.controls['text'] as FormControl;
-    }
-
-    ngOnChanges({ text, isLoading, maxCharacterLength, required }: SimpleChanges): void {
-        if (text) {
-            this.textControl.setValue(text.currentValue);
-        }
-
-        if (isLoading && isLoading.previousValue === true && isLoading.currentValue === false) {
-            this.deactivateInplace();
-        }
-
-        isLoading && isLoading.currentValue
-            ? this.textControl.disable()
-            : this.textControl.enable();
-
-        if (maxCharacterLength || required) {
-            this.updateValidators();
-        }
     }
 
     /**
@@ -157,31 +153,34 @@ export class DotExperimentsInlineEditTextComponent implements OnChanges {
      * @returns void
      */
     deactivateInplace() {
-        this.inplace.deactivate();
+        const inplaceRef = this.inplace();
+        if (inplaceRef) {
+            inplaceRef.deactivate();
+        }
         this.resetForm();
     }
 
     private initForm() {
         this.form = new FormGroup({
             text: new FormControl<string>('', {
-                validators: [Validators.required, Validators.maxLength(this.maxCharacterLength)]
+                validators: [Validators.required, Validators.maxLength(this.maxCharacterLength())]
             })
         });
         this.updateValidators();
     }
 
     private resetForm() {
-        this.textControl.setValue(this.text);
+        this.textControl.setValue(this.text());
         this.textControl.markAsPristine();
     }
 
     private updateValidators() {
         const validators: ValidatorFn[] = [
             DotValidators.noWhitespace,
-            Validators.maxLength(this.maxCharacterLength)
+            Validators.maxLength(this.maxCharacterLength())
         ];
 
-        if (this.required) {
+        if (this.required()) {
             validators.push(Validators.required);
         }
 

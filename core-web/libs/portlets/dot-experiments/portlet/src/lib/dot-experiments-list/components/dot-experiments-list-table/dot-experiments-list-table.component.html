@@ -1,6 +1,6 @@
 <div class="dot-experiment-list-table flex h-full flex-col gap-1 mb-8">
-    @if (experimentGroupedByStatus?.length) {
-        @for (group of experimentGroupedByStatus ?? []; track group.status) {
+    @if (experimentGroupedByStatus()?.length) {
+        @for (group of experimentGroupedByStatus() ?? []; track group.status) {
             <p-table [rowHover]="true" [value]="group.experiments" dataKey="id">
                 <ng-template #caption>
                     <div class="flex items-center justify-between">

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -47,7 +47,7 @@ export class DotExperimentsConfigurationTrafficComponent {
 
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
 
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     private componentRef: ComponentRef<
         | DotExperimentsConfigurationTrafficAllocationAddComponent
         | DotExperimentsConfigurationTrafficSplitAddComponent
@@ -71,20 +71,26 @@ export class DotExperimentsConfigurationTrafficComponent {
     }
 
     private loadSidebarComponent(status: StepStatus): void {
-        this.sidebarHost.viewContainerRef.clear();
-        this.componentRef =
-            status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
-                ? this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
-                      DotExperimentsConfigurationTrafficSplitAddComponent
-                  )
-                : this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
-                      DotExperimentsConfigurationTrafficAllocationAddComponent
-                  );
+        const sidebarHostRef = this.sidebarHost();
+        if (sidebarHostRef) {
+            sidebarHostRef.viewContainerRef.clear();
+            this.componentRef =
+                status.experimentStep == ExperimentSteps.TRAFFICS_SPLIT
+                    ? sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficSplitAddComponent>(
+                          DotExperimentsConfigurationTrafficSplitAddComponent
+                      )
+                    : sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationTrafficAllocationAddComponent>(
+                          DotExperimentsConfigurationTrafficAllocationAddComponent
+                      );
+        }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 }

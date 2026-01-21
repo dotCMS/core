@@ -1,12 +1,5 @@
 import { LowerCasePipe, UpperCasePipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    EventEmitter,
-    inject,
-    Input,
-    Output
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -43,10 +36,9 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    @Input() experimentGroupedByStatus: GroupedExperimentByStatus[] = [];
+    experimentGroupedByStatus = input<GroupedExperimentByStatus[]>([]);
 
-    @Output()
-    goToContainer = new EventEmitter<DotExperiment>();
+    goToContainer = output<DotExperiment>();
 
     private dotMessageService: DotMessageService = inject(DotMessageService);
     protected readonly emptyConfiguration: PrincipalConfiguration = {

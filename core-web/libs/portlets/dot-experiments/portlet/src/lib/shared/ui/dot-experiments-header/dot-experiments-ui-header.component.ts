@@ -2,12 +2,11 @@ import { DatePipe, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
+    effect,
     inject,
-    Input,
-    OnChanges,
-    Output,
-    SimpleChanges
+    input,
+    output,
+    signal
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -34,21 +33,15 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'secondary';
         class: 'w-full block'
     }
 })
-export class DotExperimentsUiHeaderComponent implements OnChanges {
-    @Input()
-    title = '';
+export class DotExperimentsUiHeaderComponent {
+    title = input('');
+    experiment = input<DotExperiment>();
+    isLoading = input<boolean>();
 
-    @Input()
-    experiment: DotExperiment;
-
-    @Input()
-    isLoading: boolean;
-
-    @Output()
-    goBack = new EventEmitter<boolean>();
+    goBack = output<boolean>();
 
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
-    statusIcon: string;
+    statusIcon = signal<string>('');
     protected readonly experimentStatus = DotExperimentStatus;
     private readonly dotMessageService = inject(DotMessageService);
     private readonly titleCasePipe = inject(TitleCasePipe);
@@ -61,16 +54,19 @@ export class DotExperimentsUiHeaderComponent implements OnChanges {
         [DotExperimentStatus.ARCHIVED]: 'secondary'
     };
 
-    ngOnChanges(changes: SimpleChanges): void {
-        const { experiment } = changes;
-        if (experiment && experiment.currentValue) {
-            const { status } = experiment.currentValue;
-            this.statusIcon = ExperimentsStatusIcons[status];
-        }
+    constructor() {
+        effect(() => {
+            const experimentValue = this.experiment();
+            if (experimentValue) {
+                const { status } = experimentValue;
+                this.statusIcon.set(ExperimentsStatusIcons[status]);
+            }
+        });
     }
 
     get statusTagValue(): string {
-        const status = this.experiment?.status;
+        const experimentValue = this.experiment();
+        const status = experimentValue?.status;
         if (!status) {
             return '';
         }
@@ -82,7 +78,7 @@ export class DotExperimentsUiHeaderComponent implements OnChanges {
             return statusLabel;
         }
 
-        const endDate = this.experiment?.scheduling?.endDate;
+        const endDate = experimentValue?.scheduling?.endDate;
         if (!endDate) {
             return statusLabel;
         }

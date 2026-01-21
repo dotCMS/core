@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -13,11 +13,17 @@ import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsStatusFilterComponent {
-    @Input()
-    selectedItems: Array<string>;
-    @Input()
-    options: Array<DotDropdownSelectOption<string>>;
+    selectedItemsInput = input.required<Array<string>>();
+    options = input.required<Array<DotDropdownSelectOption<string>>>();
 
-    @Output()
-    switch = new EventEmitter<DotExperimentStatus[]>();
+    switch = output<DotExperimentStatus[]>();
+
+    // Regular property for ngModel two-way binding
+    selectedItems: Array<string> = [];
+
+    constructor() {
+        effect(() => {
+            this.selectedItems = [...this.selectedItemsInput()];
+        });
+    }
 }

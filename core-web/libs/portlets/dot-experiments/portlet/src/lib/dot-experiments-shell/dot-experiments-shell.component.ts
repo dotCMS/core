@@ -15,7 +15,7 @@ import { DotExperimentsStore } from './store/dot-experiments.store';
     templateUrl: 'dot-experiments-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'w-full min-h-full flex bg-[var(--color-white)]'
+        class: 'w-full min-h-full flex bg-white]'
     }
 })
 export class DotExperimentsShellComponent {}

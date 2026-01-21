@@ -1,4 +1,4 @@
-import { ContentChild, Directive, Input, inject } from '@angular/core';
+import { ContentChild, Directive, input, inject } from '@angular/core';
 
 import { DotExperimentOptionContentDirective } from './dot-experiment-option-content.directive';
 
@@ -15,26 +15,13 @@ import { DotExperimentOptionsComponent } from '../dot-experiment-options.compone
 export class DotExperimentOptionsItemDirective {
     private _select = inject(DotExperimentOptionsComponent, { optional: true, host: true });
 
-    val!: string;
-
-    @Input()
-    title: string;
-    @Input()
-    detail: string;
-    @Input()
-    icon: string;
+    title = input<string>();
+    detail = input<string>();
+    icon = input<string>();
+    value = input.required<string>();
 
     @ContentChild(DotExperimentOptionContentDirective)
     content: DotExperimentOptionContentDirective;
-
-    get value() {
-        return this.val;
-    }
-
-    @Input()
-    set value(value: string) {
-        this.val = value;
-    }
 
     /**
      * Select and Open content of the option
@@ -42,7 +29,7 @@ export class DotExperimentOptionsItemDirective {
      * @param index
      */
     selectItem(item: DotExperimentOptionsItemDirective, index: number) {
-        this._select.setOptionSelected(item.value);
+        this._select.setOptionSelected(item.value());
         this._select.toggleOption(index);
     }
 }
