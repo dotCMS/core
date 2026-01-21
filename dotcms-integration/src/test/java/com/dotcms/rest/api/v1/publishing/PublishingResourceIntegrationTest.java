@@ -108,7 +108,7 @@ public class PublishingResourceIntegrationTest {
 
         // ALL returned jobs must have SUCCESS status
         for (final PublishingJobView job : jobs) {
-            assertEquals("All jobs should have SUCCESS status", "SUCCESS", job.status());
+            assertEquals("All jobs should have SUCCESS status", Status.SUCCESS, job.status());
         }
 
         // Our SUCCESS bundle must be present
@@ -138,7 +138,7 @@ public class PublishingResourceIntegrationTest {
         // All returned jobs must have one of the filtered statuses
         for (final PublishingJobView job : jobs) {
             assertTrue("Status should be SUCCESS or FAILED_TO_PUBLISH",
-                    "SUCCESS".equals(job.status()) || "FAILED_TO_PUBLISH".equals(job.status()));
+                    Status.SUCCESS.equals(job.status()) || Status.FAILED_TO_PUBLISH.equals(job.status()));
         }
 
         // WAITING bundle must NOT be present
@@ -293,7 +293,7 @@ public class PublishingResourceIntegrationTest {
         // Verify all required fields
         assertEquals("bundleId should match", bundleId, job.bundleId());
         assertEquals("bundleName should match", bundleName, job.bundleName());
-        assertEquals("status should be SUCCESS", "SUCCESS", job.status());
+        assertEquals("status should be SUCCESS", Status.SUCCESS, job.status());
         assertNotNull("createDate should not be null", job.createDate());
         assertTrue("assetCount should be >= 0", job.assetCount() >= 0);
         assertNotNull("assetPreview should not be null", job.assetPreview());
