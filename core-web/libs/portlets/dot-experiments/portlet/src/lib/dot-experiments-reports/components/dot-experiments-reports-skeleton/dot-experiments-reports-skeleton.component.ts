@@ -6,7 +6,9 @@ import { SkeletonModule } from 'primeng/skeleton';
     selector: 'dot-experiments-reports-skeleton',
     imports: [SkeletonModule],
     templateUrl: './dot-experiments-reports-skeleton.component.html',
-    styleUrls: ['./dot-experiments-reports-skeleton.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'w-full'
+    }
 })
 export class DotExperimentsReportsSkeletonComponent {}

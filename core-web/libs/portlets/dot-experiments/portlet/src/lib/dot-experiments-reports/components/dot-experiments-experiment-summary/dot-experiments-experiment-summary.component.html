@@ -1,60 +1,64 @@
-<div class="grid grid-cols-12 gap-4 grid-nogutter justify-between md:gap-2 xl:gap-4 wrapper">
-    @if (suggestedWinner) {
-        <div class="flex items-center justify-center gap-4">
-            @if (suggestedWinner.icon === 'dot-trophy') {
-                <img
-                    alt="winner icon"
-                    data-TestId="suggested-winner-icon"
-                    src="assets/icon/trophy.svg" />
-            } @else {
-                <i
-                    [ngClass]="suggestedWinner.icon"
-                    class="pi"
-                    data-TestId="suggested-winner-icon"></i>
-            }
-            <span
-                [innerHTML]="suggestedWinner.legend | dm"
-                class="grow"
-                data-TestId="suggested-winner-legend"></span>
-        </div>
-    }
-    @if (goals) {
-        <div class="flex items-center justify-center gap-4">
-            <i class="pi pi-flag"></i>
-            <div class="grow">
-                <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
-                <span data-TestId="goal-label">{{ goals.primary.name }}</span>
+<div class="flex items-center justify-between gap-4 max-w-[1100px] mx-auto w-full md:w-[calc(100%-2rem)]">
+    <div class="flex items-center gap-4 flex-wrap">
+        @if (suggestedWinner) {
+            <div class="flex items-center gap-2">
+                @if (suggestedWinner.icon === 'dot-trophy') {
+                    <img
+                        alt="winner icon"
+                        class="w-6 h-6"
+                        data-TestId="suggested-winner-icon"
+                        src="assets/icon/trophy.svg" />
+                } @else {
+                    <i
+                        [style.font-size.px]="24"
+                        class="material-icons text-red-500"
+                        data-TestId="suggested-winner-icon">
+                        block
+                    </i>
+                }
+                <span
+                    [innerHTML]="suggestedWinner.legend | dm"
+                    class="text-base"
+                    data-TestId="suggested-winner-legend"></span>
+            </div>
+        }
+        @if (goals) {
+            <div class="flex items-center gap-2">
+                <i [style.font-size.px]="24" class="material-icons text-blue-600">flag</i>
+                <div class="text-base">
+                    <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
+                    <span data-TestId="goal-label">&nbsp;{{ goals.primary.name }}</span>
+                </div>
+            </div>
+        }
+        @if (scheduling) {
+            <div class="flex items-center gap-2">
+                <i [style.font-size.px]="24" class="material-icons text-blue-600">calendar_today</i>
+                <div class="text-base">
+                    <span data-TestId="schedule-start-date">
+                        {{ scheduling.startDate | date: 'longDate' }}
+                    </span>
+                    <span class="mx-1">-</span>
+                    <span data-TestId="schedule-end-date">
+                        {{ scheduling.endDate | date: 'longDate' }}
+                    </span>
+                </div>
+            </div>
+        }
+        <div class="flex items-center gap-2">
+            <i [style.font-size.px]="24" class="material-icons text-blue-600">person</i>
+            <div class="text-base" data-TestId="summary-sessions-reached">
+                <span class="font-bold">{{ 'experiments.summary.winner.session-to-date' | dm }}</span>
+                <span class="ml-1">{{ sessionsReached | number }}</span>
             </div>
         </div>
-    }
-    @if (scheduling) {
-        <div class="flex items-center justify-center gap-4">
-            <i class="pi pi-calendar"></i>
-            <div class="grow">
-                <span data-TestId="schedule-start-date">
-                    {{ scheduling.startDate | date: 'longDate' }}
-                </span>
-                -
-                <span data-TestId="schedule-end-date">
-                    {{ scheduling.endDate | date: 'longDate' }}
-                </span>
-            </div>
-        </div>
-    }
-    <div class="flex items-center justify-center gap-4">
-        <i class="pi pi-user"></i>
-        <div class="grow" data-TestId="summary-sessions-reached">
-            <span class="font-bold">{{ 'experiments.summary.winner.session-to-date' | dm }}</span>
-            {{ sessionsReached | number }}
-        </div>
     </div>
-    <div class="flex items-center justify-center gap-4">
-        <button
-            (click)="updateResults.emit()"
-            [label]="'Refresh' | dm"
-            class="p-button-outlined"
-            data-testId="reload-button"
-            icon="pi pi-refresh"
-            pButton></button>
-    </div>
+    <button
+        (click)="updateResults.emit()"
+        class="flex items-center gap-2 rounded-md border border-blue-300 bg-transparent px-4 py-2 text-base text-blue-600 transition-colors hover:bg-blue-50"
+        data-testId="reload-button"
+        type="button">
+        <i [style.font-size.px]="24" class="material-icons text-blue-600">refresh</i>
+        <span>{{ 'Refresh' | dm }}</span>
+    </button>
 </div>
