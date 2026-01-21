@@ -6,19 +6,19 @@ const getOrCreateLegendList = (chart) => {
     if (!chart || !chart.canvas) {
         return null;
     }
-    
+
     // Start from the canvas and traverse up to find the parent container
     // The legend-wrapper is a sibling of the p-chart component
     let current = chart.canvas;
     let legendContainer = null;
-    
+
     // Traverse up the DOM tree to find a parent that contains the legend-wrapper
     while (current && current.parentElement && !legendContainer) {
         current = current.parentElement;
-        
+
         // Check if this parent has a legend-wrapper as a direct child or descendant
         legendContainer = current.querySelector('.legend-wrapper');
-        
+
         // If found in a sibling, we need to go up one more level
         if (!legendContainer && current.parentElement) {
             const parent = current.parentElement;
@@ -38,13 +38,13 @@ const getOrCreateLegendList = (chart) => {
                 }
             }
         }
-        
+
         // Stop if we've gone too far up
         if (current.tagName === 'BODY' || current.tagName === 'HTML') {
             break;
         }
     }
-    
+
     // If still not found, return null to prevent errors
     if (!legendContainer) {
         return null;
@@ -75,7 +75,7 @@ export const htmlLegendPlugin = {
     id: 'dotHtmlLegend',
     afterUpdate(chart) {
         const ul = getOrCreateLegendList(chart);
-        
+
         // If legend container not found, skip rendering
         if (!ul) {
             return;

@@ -23,7 +23,12 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus, TrafficProportionTypes, Variant } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    SIDEBAR_SIZES
+} from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,
@@ -38,7 +43,6 @@ import {
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
-        //PrimeNg
         DrawerModule,
         ButtonModule,
         RadioButtonModule,
@@ -46,7 +50,6 @@ import {
         FormsModule
     ],
     templateUrl: './dot-experiments-configuration-traffic-split-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-traffic-split-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnInit {
@@ -55,6 +58,7 @@ export class DotExperimentsConfigurationTrafficSplitAddComponent implements OnIn
 
     form: FormGroup;
     stepStatus = ComponentStatus;
+    sidebarSizes = SIDEBAR_SIZES;
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
     customPercentages = TrafficProportionTypes.CUSTOM_PERCENTAGES;
 

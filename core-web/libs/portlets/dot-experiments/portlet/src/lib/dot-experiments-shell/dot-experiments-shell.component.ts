@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
@@ -18,27 +18,4 @@ import { DotExperimentsStore } from './store/dot-experiments.store';
         class: 'w-full min-h-full flex bg-[var(--color-white)]'
     }
 })
-export class DotExperimentsShellComponent implements OnInit {
-    private router = inject(Router);
-    private activatedRoute = inject(ActivatedRoute);
-
-    ngOnInit() {
-        this.removeVariantQueryParams();
-    }
-
-    private removeVariantQueryParams() {
-        const { mode, variantName, experimentId } = this.activatedRoute.snapshot.queryParams;
-
-        if (mode || variantName || experimentId) {
-            this.router.navigate([], {
-                queryParams: {
-                    mode: null,
-                    variantName: null,
-                    experimentId: null
-                },
-                queryParamsHandling: 'merge',
-                replaceUrl: true
-            });
-        }
-    }
-}
+export class DotExperimentsShellComponent {}

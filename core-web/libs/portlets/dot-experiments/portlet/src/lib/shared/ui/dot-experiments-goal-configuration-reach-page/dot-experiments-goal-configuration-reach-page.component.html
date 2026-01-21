@@ -1,12 +1,16 @@
 <div [formGroup]="primaryFormGroup" class="flex flex-col gap-4">
     <div class="flex-auto flex flex-col">
-        <h3 class="m-0 mb-3 text-base font-bold">{{ 'experiments.goal.reach_page.form.conditions.label' | dm }}</h3>
+        <h3 class="m-0 mb-3 text-base font-bold">
+            {{ 'experiments.goal.reach_page.form.conditions.label' | dm }}
+        </h3>
 
         @for (condition of conditionsFormArray.controls; track condition; let i = $index) {
             <ng-container formArrayName="conditions">
                 <div [formGroupName]="i" class="flex gap-3">
                     <div class="field flex-none flex flex-col w-60">
-                        <label class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1" for="parameter">
+                        <label
+                            class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1"
+                            for="parameter">
                             {{ 'experiments.goal.reach_page.form.conditions.parameter.label' | dm }}
                         </label>
                         <p-select
@@ -24,7 +28,9 @@
                             [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']" />
                     </div>
                     <div class="field flex-none flex flex-col w-60">
-                        <label class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1" for="operator">
+                        <label
+                            class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1"
+                            for="operator">
                             {{ 'experiments.goal.reach_page.form.conditions.operator.label' | dm }}
                         </label>
                         <p-select
@@ -42,7 +48,9 @@
                             [field]="getConditionsFormArrayItemByIndex(i).controls['operator']" />
                     </div>
                     <div class="field grow flex flex-col">
-                        <label class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1" for="value">
+                        <label
+                            class="block mb-3 after:content-['*'] after:text-red-500 after:ml-1"
+                            for="value">
                             {{ 'experiments.goal.reach_page.form.conditions.value.label' | dm }}
                         </label>
                         <input

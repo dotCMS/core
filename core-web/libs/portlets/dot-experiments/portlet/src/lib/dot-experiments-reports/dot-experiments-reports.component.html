@@ -17,11 +17,14 @@
                     <p-tabs [value]="0">
                         <p-tablist>
                             <p-tab [value]="0">{{ 'experiments.reports.chart.title' | dm }}</p-tab>
-                            <p-tab [value]="1">{{ 'experiments.bayesian.reports.chart.title' | dm }}</p-tab>
+                            <p-tab [value]="1">
+                                {{ 'experiments.bayesian.reports.chart.title' | dm }}
+                            </p-tab>
                         </p-tablist>
                         <p-tabpanels>
                             <p-tabpanel [value]="0">
-                                <div class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
+                                <div
+                                    class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
                                     <dot-experiments-reports-chart
                                         [config]="axisLabelsProbabilityChart"
                                         [data]="vm.dailyChart?.chartData"
@@ -31,7 +34,8 @@
                                 </div>
                             </p-tabpanel>
                             <p-tabpanel [value]="1">
-                                <div class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
+                                <div
+                                    class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
                                     <dot-experiments-reports-chart
                                         [config]="axisLabelsBayesianChart"
                                         [data]="vm.bayesianChart?.chartData"

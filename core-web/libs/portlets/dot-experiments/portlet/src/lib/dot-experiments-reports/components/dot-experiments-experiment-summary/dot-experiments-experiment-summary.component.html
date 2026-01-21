@@ -1,4 +1,5 @@
-<div class="flex items-center justify-between gap-4 max-w-[1100px] mx-auto w-full md:w-[calc(100%-2rem)]">
+<div
+    class="flex items-center justify-between gap-4 max-w-[1100px] mx-auto w-full md:w-[calc(100%-2rem)]">
     <div class="flex items-center gap-4 flex-wrap">
         @if (suggestedWinner) {
             <div class="flex items-center gap-2">
@@ -48,7 +49,9 @@
         <div class="flex items-center gap-2">
             <i [style.font-size.px]="24" class="material-icons text-blue-600">person</i>
             <div class="text-base" data-TestId="summary-sessions-reached">
-                <span class="font-bold">{{ 'experiments.summary.winner.session-to-date' | dm }}</span>
+                <span class="font-bold">
+                    {{ 'experiments.summary.winner.session-to-date' | dm }}
+                </span>
                 <span class="ml-1">{{ sessionsReached | number }}</span>
             </div>
         </div>
