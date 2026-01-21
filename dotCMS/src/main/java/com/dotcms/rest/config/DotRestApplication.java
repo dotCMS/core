@@ -105,10 +105,25 @@ public class DotRestApplication extends ResourceConfig {
 			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-            reloader.ifPresent(ContainerReloader::reload);
+
+		// Check if class with same name already exists (by name, not Class object identity)
+		// This is necessary because OSGI can reload the same class with a different classloader,
+		// resulting in a different Class<?> object with the same name
+		final boolean alreadyRegistered = customClasses.keySet().stream()
+				.anyMatch(registeredClass -> registeredClass.getName().equals(clazz.getName()));
+
+		if (alreadyRegistered) {
+			Logger.warn(DotRestApplication.class,
+				"REST resource class already registered, skipping: " + clazz.getName());
+			return;
 		}
+
+		// Add the new class and reload
+		customClasses.put(clazz, true);
+		Logger.info(DotRestApplication.class,
+			"Registering new REST resource class: " + clazz.getName());
+		final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+		reloader.ifPresent(ContainerReloader::reload);
 	}
 
 	/**
