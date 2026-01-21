@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
@@ -10,7 +10,6 @@ import { CoreWebServiceMock, dotcmsContentTypeFieldBasicMock } from '@dotcms/uti
 import { DotFieldVariablesService } from './dot-field-variables.service';
 
 describe('DotFieldVariablesService', () => {
-    let injector: TestBed;
     let dotFieldVariablesService: DotFieldVariablesService;
     let httpMock: HttpTestingController;
 
@@ -22,9 +21,8 @@ describe('DotFieldVariablesService', () => {
                 DotFieldVariablesService
             ]
         });
-        injector = getTestBed();
-        dotFieldVariablesService = injector.get(DotFieldVariablesService);
-        httpMock = injector.get(HttpTestingController);
+        dotFieldVariablesService = TestBed.inject(DotFieldVariablesService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should load field variables', () => {

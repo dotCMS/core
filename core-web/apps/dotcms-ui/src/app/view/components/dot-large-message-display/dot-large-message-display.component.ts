@@ -33,7 +33,8 @@ interface DotLargeMessageDisplayParams {
     selector: 'dot-large-message-display',
     templateUrl: './dot-large-message-display.component.html',
     styleUrls: ['./dot-large-message-display.component.scss'],
-    standalone: false
+    imports: [DotDialogComponent],
+    providers: [DotParseHtmlService]
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {
     private dotcmsEventsService = inject(DotcmsEventsService);

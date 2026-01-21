@@ -456,6 +456,111 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         assertTrue(contentletIdList.isEmpty());
     }
 
+    /**
+     * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
+     * Given Scenario: Creates a story block with nested images inside lists.
+     * This tests the recursive dependency detection fix where images nested
+     * within list items were not being detected for push publishing bundles.
+     * ExpectedResult: The nested image identifiers should be retrieved
+     */
+    @Test
+    public void test_get_dependencies_with_nested_images_in_lists() throws Exception {
+
+        final Host host = APILocator.systemHost();
+        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+        File tempFile1 = File.createTempFile("nestedImageTest1", ".jpg");
+        File tempFile2 = File.createTempFile("nestedImageTest2", ".jpg");
+
+        URL url = FocalPointAPITest.class.getResource("/images/test.jpg");
+        Assert.assertNotNull("Can't find the test image file", url);
+        File testImage = new File(url.getFile());
+        FileUtils.copyFile(testImage, tempFile1);
+        FileUtils.copyFile(testImage, tempFile2);
+
+        try {
+            final Contentlet imageFileAsset1 = new FileAssetDataGen(tempFile1)
+                    .host(host)
+                    .languageId(1L)
+                    .folder(imageFolder)
+                    .nextPersisted();
+
+            final Contentlet imageFileAsset2 = new FileAssetDataGen(tempFile2)
+                    .host(host)
+                    .languageId(1L)
+                    .folder(imageFolder)
+                    .nextPersisted();
+
+            // JSON with top level image and a bullet list containing a nested image
+            final String storyBlockJsonWithNestedImages = String.format(
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotImage\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": {" +
+                    "          \"identifier\": \"%s\"," +
+                    "          \"languageId\": 1" +
+                    "        }" +
+                    "      }" +
+                    "    }," +
+                    "    {" +
+                    "      \"type\": \"bulletList\"," +
+                    "      \"content\": [" +
+                    "        {" +
+                    "          \"type\": \"listItem\"," +
+                    "          \"content\": [" +
+                    "            {" +
+                    "              \"type\": \"paragraph\"," +
+                    "              \"content\": [" +
+                    "                {" +
+                    "                  \"type\": \"text\"," +
+                    "                  \"text\": \"Image inside list:\"" +
+                    "                }" +
+                    "              ]" +
+                    "            }," +
+                    "            {" +
+                    "              \"type\": \"dotImage\"," +
+                    "              \"attrs\": {" +
+                    "                \"data\": {" +
+                    "                  \"identifier\": \"%s\"," +
+                    "                  \"languageId\": 1" +
+                    "                }" +
+                    "              }" +
+                    "            }" +
+                    "          ]" +
+                    "        }" +
+                    "      ]" +
+                    "    }" +
+                    "  ]" +
+                    "}",
+                    imageFileAsset1.getIdentifier(),
+                    imageFileAsset2.getIdentifier()
+            );
+
+
+            final List<String> contentletIdList = APILocator.getStoryBlockAPI()
+                    .getDependencies(storyBlockJsonWithNestedImages);
+
+            // Verify both images are detected
+            assertNotNull("Dependency list should not be null", contentletIdList);
+            assertEquals("Should find 2 image dependencies", 2, contentletIdList.size());
+            assertTrue("Should contain top-level image",
+                    contentletIdList.contains(imageFileAsset1.getIdentifier()));
+            assertTrue("Should contain nested image inside list",
+                    contentletIdList.contains(imageFileAsset2.getIdentifier()));
+
+        } finally {
+            
+            if (tempFile1.exists()) {
+                tempFile1.delete();
+            }
+            if (tempFile2.exists()) {
+                tempFile2.delete();
+            }
+        }
+    }
+
     @Test
     public void test_get_refreshStoryBlockValueReferences_with_bad_content_value()  {
     
@@ -1120,6 +1225,131 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             if (contentTypeWithImage != null) {
                 ContentTypeDataGen.remove(contentTypeWithImage);
             }
+        }
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: Test the fix for issue-33900 where the data attribute could be a JSON String
+     * instead of a Map, causing a ClassCastException. This test covers three scenarios:
+     * 1. Data as a JSON String (the bug case) - should parse successfully
+     * 2. Data as a Map (normal case) - should process successfully
+     * 3. Data as an invalid type (Integer) - should handle gracefully
+     * 4. Data as an invalid JSON String - should handle gracefully
+     * ExpectedResult: All scenarios should be handled without throwing ClassCastException
+     */
+    @Test
+    public void test_refreshStoryBlockValueReferences_data_field_as_string_vs_map() throws DotDataException, DotSecurityException {
+        final ContentType contentTypeRichText = APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent");
+        final Contentlet richTextContentlet = new ContentletDataGen(contentTypeRichText)
+                .setProperty("title", "Test Content")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersistedAndPublish();
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            final HttpServletRequest request = new MockAttributeRequest(mock(HttpServletRequest.class));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            // Test Case 1: Data field as JSON String (the bug case that caused ClassCastException)
+            final String storyBlockJsonWithDataAsString = String.format(
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": \"{\\\"identifier\\\":\\\"%s\\\",\\\"languageId\\\":%s}\"" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}",
+                    richTextContentlet.getIdentifier(),
+                    richTextContentlet.getLanguageId()
+            );
+
+            final StoryBlockReferenceResult resultWithString = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsString, "parent-123");
+
+            assertNotNull("Result should not be null for data as String", resultWithString);
+            assertTrue("Should successfully process data field as JSON String", resultWithString.isRefreshed());
+
+            // Test Case 2: Data field as Map (normal/expected case)
+            final String storyBlockJsonWithDataAsMap = String.format(
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": {" +
+                    "          \"identifier\": \"%s\"," +
+                    "          \"languageId\": %s" +
+                    "        }" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}",
+                    richTextContentlet.getIdentifier(),
+                    richTextContentlet.getLanguageId()
+            );
+
+            final StoryBlockReferenceResult resultWithMap = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsMap, "parent-456");
+
+            assertNotNull("Result should not be null for data as Map", resultWithMap);
+            assertTrue("Should successfully process data field as Map", resultWithMap.isRefreshed());
+
+            // Test Case 3: Data field as invalid type (Integer) - should handle gracefully
+            final String storyBlockJsonWithDataAsInteger =
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": 12345" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}";
+
+            final StoryBlockReferenceResult resultWithInteger = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsInteger, "parent-789");
+
+            assertNotNull("Result should not be null for data as Integer", resultWithInteger);
+            // Should return false in isRefreshed since data type is unexpected
+            assertFalse("Should handle unexpected data type gracefully", resultWithInteger.isRefreshed());
+
+            // Test Case 4: Data field as invalid JSON String - should handle gracefully
+            final String storyBlockJsonWithInvalidJsonString =
+                    "{" +
+                    "  \"type\": \"doc\"," +
+                    "  \"content\": [" +
+                    "    {" +
+                    "      \"type\": \"dotContent\"," +
+                    "      \"attrs\": {" +
+                    "        \"data\": \"this is not valid json {{{\"" +
+                    "      }" +
+                    "    }" +
+                    "  ]" +
+                    "}";
+
+            final StoryBlockReferenceResult resultWithInvalidJson = APILocator.getStoryBlockAPI()
+                    .refreshStoryBlockValueReferences(storyBlockJsonWithInvalidJsonString, "parent-999");
+
+            assertNotNull("Result should not be null for invalid JSON string", resultWithInvalidJson);
+            // Should return false since JSON parsing failed
+            assertFalse("Should handle invalid JSON string gracefully", resultWithInvalidJson.isRefreshed());
+
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
         }
     }
 }

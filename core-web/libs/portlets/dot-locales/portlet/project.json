@@ -3,14 +3,15 @@
     "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/portlets/dot-locales/portlet/src",
     "prefix": "dot",
-    "tags": ["type:feature", "scope:dotcms-ui", "portlet:locales"],
     "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:locales"],
     "targets": {
         "test": {
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "libs/portlets/dot-locales/portlet/jest.config.ts"
+                "jestConfig": "libs/portlets/dot-locales/portlet/jest.config.ts",
+                "tsConfig": "libs/portlets/dot-locales/portlet/tsconfig.spec.json"
             },
             "configurations": {
                 "ci": {

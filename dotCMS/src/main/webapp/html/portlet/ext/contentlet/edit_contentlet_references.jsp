@@ -42,11 +42,12 @@
 			str_style2 = "class=alternate_2";
 		}
 		Cmod++;
+		String urlWithLang = htmlpageRef.getURI() + "&language_id=" + htmlpageRef.getLanguageId();
 %>
 	<tr <%= str_style2 %> >
 		<td><%= host.getName() %></td>
 		<td>
-			<a href="/dotAdmin/#/edit-page/content?url=<%=htmlpageRef.getURI()%>" class="beta" target="_top">
+			<a href="/dotAdmin/#/edit-page/content?url=<%=urlWithLang%>" class="beta" target="_top">
 				<%= UtilMethods.escapeHTMLSpecialChars(htmlpageRef.getTitle()) %>
 			</a>
 		</td>

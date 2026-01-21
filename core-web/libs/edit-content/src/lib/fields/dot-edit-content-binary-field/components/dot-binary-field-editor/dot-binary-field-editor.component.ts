@@ -114,6 +114,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
      * @memberof DotBinaryFieldEditorComponent
      */
     @HostListener('document:keydown.escape', ['$event']) onEscape(event) {
+        // TODO: The 'emit' function requires a mandatory void argument
         this.cancel.emit();
         event.preventDefault();
         event.stopPropagation();

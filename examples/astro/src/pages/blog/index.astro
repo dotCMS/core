@@ -17,18 +17,15 @@ if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
 
 const title = pageAsset ? pageAsset.page.title : "Error";
 ---
+
 {
-    (
-      <Layout title={title}>
-        {errors ? (
-          <Error error={errors} />
-        ) : (
-          <BlogListingPage
-            client:only="react"
-            pageResponse={pageResponse}
-          />
-        )}
-      </Layout>
-    )
-  }
-  
+  (
+    <Layout title={title}>
+      {errors ? (
+        <Error error={errors} />
+      ) : (
+        <BlogListingPage client:only="react" pageResponse={pageResponse} />
+      )}
+    </Layout>
+  )
+}

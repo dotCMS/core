@@ -1,4 +1,4 @@
-import {RecommendedCard} from "@/components/ui";
+import { RecommendedCard } from "@/components/ui";
 import type { DotCMSBasicContentlet } from "@dotcms/types";
 
 interface Blog extends DotCMSBasicContentlet {

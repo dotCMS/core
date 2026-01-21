@@ -1,7 +1,7 @@
-import { initializeContentAnalytics } from './core/dot-content-analytics';
+import { initializeContentAnalytics } from './core/dot-analytics.content';
 import { ANALYTICS_WINDOWS_KEY } from './core/shared/constants';
-import { getAnalyticsConfig } from './core/shared/dot-content-analytics.utils';
 import { DotCMSAnalytics } from './core/shared/models';
+import { getAnalyticsConfig } from './core/shared/utils/dot-analytics.utils';
 
 declare global {
     interface Window {
@@ -18,7 +18,7 @@ declare global {
         // Don't initialize if siteAuth is missing
         // eslint-disable-next-line no-console
         console.warn(
-            'DotAnalytics: Cannot initialize without required configuration: missing data-analytics-auth'
+            'DotCMS Analytics [Standalone]: Cannot initialize without required configuration: missing data-analytics-auth'
         );
         window[ANALYTICS_WINDOWS_KEY] = null;
         return;
@@ -44,14 +44,14 @@ declare global {
                     analytics.pageView();
                 }
             } else {
-                console.warn('DotCMS Analytics: Auto page view is disabled');
+                console.warn('DotCMS Analytics [Standalone]: Auto page view is disabled');
             }
         } else {
             window[ANALYTICS_WINDOWS_KEY] = null;
         }
     } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('DotCMS Analytics: Failed to initialize:', error);
+        console.error('DotCMS Analytics [Standalone]: Failed to initialize:', error);
         window[ANALYTICS_WINDOWS_KEY] = null;
     }
 })();

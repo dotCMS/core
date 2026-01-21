@@ -9,7 +9,9 @@ import {
     getPersonalization,
     getFullPageURL,
     SDK_EDITOR_SCRIPT_SOURCE,
-    computePageIsLocked,
+    getBaseHrefFromPageURI,
+    injectBaseTag,
+    computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
@@ -20,7 +22,9 @@ import {
     createReorderMenuURL,
     getOrientation,
     getWrapperMeasures,
-    normalizeQueryParams
+    normalizeQueryParams,
+    convertUTCToLocalTime,
+    escapeHtmlAttributeValue
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -39,9 +43,160 @@ const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
 });
 
 describe('utils functions', () => {
+    const countRealBaseTags = (html: string): number => {
+        // Mirror runtime behavior: ignore <base> inside comments/CDATA when counting "real" tags
+        const withoutCommentsAndCdata = html
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/<!\[CDATA\[[\s\S]*?\]\]>/g, '');
+
+        return withoutCommentsAndCdata.match(/<base\b/gi)?.length ?? 0;
+    };
+
     describe('SDK Editor Script Source', () => {
         it('should return the correct script source', () => {
             expect(SDK_EDITOR_SCRIPT_SOURCE).toEqual('/ext/uve/dot-uve.js');
+        });
+    });
+
+    describe('base tag helpers', () => {
+        it('should build base href from pageURI', () => {
+            expect(getBaseHrefFromPageURI('/golf-outing-fundraiser', 'https://example.com')).toBe(
+                'https://example.com/'
+            );
+            expect(
+                getBaseHrefFromPageURI('/dotAdmin/golf-outing-fundraiser', 'https://example.com')
+            ).toBe('https://example.com/dotAdmin/');
+            expect(
+                getBaseHrefFromPageURI(
+                    'https://example.com/news/article-1',
+                    'https://irrelevant.com'
+                )
+            ).toBe('https://example.com/news/');
+        });
+
+        it('should handle root path "/" as pageURI', () => {
+            expect(getBaseHrefFromPageURI('/', 'https://example.com')).toBe('https://example.com/');
+        });
+
+        it('should handle empty string pageURI', () => {
+            expect(getBaseHrefFromPageURI('', 'https://example.com')).toBe('https://example.com/');
+        });
+
+        it('should ignore query parameters when building the base href', () => {
+            expect(getBaseHrefFromPageURI('/news/article-1?x=1&y=2', 'https://example.com')).toBe(
+                'https://example.com/news/'
+            );
+        });
+
+        it('should preserve encoded characters in the base href pathname (spaces and unicode)', () => {
+            expect(getBaseHrefFromPageURI('/hello world/index', 'https://example.com')).toBe(
+                'https://example.com/hello%20world/'
+            );
+            expect(getBaseHrefFromPageURI('/café/index', 'https://example.com')).toBe(
+                'https://example.com/caf%C3%A9/'
+            );
+        });
+
+        it('should handle pageURI with trailing slashes', () => {
+            expect(getBaseHrefFromPageURI('/news/', 'https://example.com')).toBe(
+                'https://example.com/news/'
+            );
+        });
+
+        it('should fall back to origin when pageURI cannot be parsed', () => {
+            // Intentionally malformed absolute URL (missing closing bracket in host)
+            expect(getBaseHrefFromPageURI('http://[::1', 'https://example.com')).toBe(
+                'https://example.com/'
+            );
+        });
+
+        it('should inject base tag when missing and head exists', () => {
+            const html = '<html><head><title>x</title></head><body><a href="a">a</a></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+        });
+
+        it('should not inject base tag when base already exists', () => {
+            const html =
+                '<html><head><base href="https://example.com/"><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            // still only one base tag
+            expect(out.match(/<base\b/gi)?.length).toBe(1);
+        });
+
+        it('should inject base tag when "<base>" appears only inside an HTML comment', () => {
+            const html =
+                '<html><head><!-- <base href="https://evil.example/"> --><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+            expect(countRealBaseTags(out)).toBe(1);
+        });
+
+        it('should inject base tag when "<base>" appears only inside a CDATA block', () => {
+            const html =
+                '<html><head><![CDATA[<base href="https://evil.example/">]]><title>x</title></head><body></body></html>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+            expect(countRealBaseTags(out)).toBe(1);
+        });
+
+        it('should inject base tag for malformed HTML missing closing tags', () => {
+            const html = '<head><title>x</title><body><a href="a">a</a>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out).toContain('<base href="https://example.com/dotAdmin/">');
+        });
+
+        it('should inject base tag when there is no html/head/body wrapper', () => {
+            const html = '<div>hello</div>';
+            const out = injectBaseTag({
+                html,
+                url: '/dotAdmin/golf-outing-fundraiser',
+                origin: 'https://example.com'
+            });
+
+            expect(out.startsWith('<head><base href="https://example.com/dotAdmin/"></head>')).toBe(
+                true
+            );
+        });
+
+        it('should escape HTML-sensitive characters in attribute values', () => {
+            expect(escapeHtmlAttributeValue(`a&b<c>d"e'f`)).toBe('a&amp;b&lt;c&gt;d&quot;e&#39;f');
+        });
+
+        it('should be a no-op when pageURI is missing', () => {
+            const html = '<html><head><title>x</title></head><body></body></html>';
+            expect(
+                injectBaseTag({
+                    html,
+                    url: undefined,
+                    origin: 'https://example.com'
+                })
+            ).toBe(html);
         });
     });
 
@@ -214,7 +369,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 1,
+                maxContentlets: 2,
                 variantId: '1'
             };
 
@@ -264,7 +419,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1,
+                maxContentlets: 4,
                 variantId: '1'
             };
 
@@ -338,6 +493,7 @@ describe('utils functions', () => {
 
             expect(result).toEqual({
                 didInsert: false,
+                errorCode: 'DUPLICATE_CONTENT',
                 pageContainers: [
                     {
                         identifier: 'test',
@@ -405,11 +561,10 @@ describe('utils functions', () => {
                 identifier: 'test',
                 uuid: 'test',
                 contentletsId: ['test123'],
-                maxContentlets: 1,
+                maxContentlets: 2,
                 acceptTypes: 'test',
                 variantId: '1'
             };
-
             // Contentlet to insert
             const contentlet = {
                 identifier: 'test123',
@@ -417,7 +572,6 @@ describe('utils functions', () => {
                 title: 'test',
                 contentType: 'test'
             };
-
             const result = insertContentletInContainer({
                 pageContainers,
                 container,
@@ -438,11 +592,173 @@ describe('utils functions', () => {
                         contentletsId: ['test123', '000'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
+                        maxContentlets: 2,
                         variantId: '1'
                     }
                 ]
             });
+        });
+
+        it('should allow inserting into empty container when limit is 1', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: [],
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: [],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet1',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1']);
+        });
+
+        it('should NOT allow inserting when container with limit 1 already has 1 contentlet', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1'],
+                    acceptTypes: 'test',
+                    maxContentlets: 1,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1'],
+                maxContentlets: 1,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet2',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1']);
+        });
+
+        it('should allow inserting into container with limit 2 that has 1 contentlet', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1'],
+                    acceptTypes: 'test',
+                    maxContentlets: 2,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1'],
+                maxContentlets: 2,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet2',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
+        });
+
+        it('should NOT allow inserting when container with limit 2 already has 2 contentlets', () => {
+            const pageContainers = [
+                {
+                    identifier: 'test',
+                    uuid: 'test',
+                    contentletsId: ['contentlet1', 'contentlet2'],
+                    acceptTypes: 'test',
+                    maxContentlets: 2,
+                    variantId: '1'
+                }
+            ];
+
+            const container = {
+                identifier: 'test',
+                uuid: 'test',
+                contentletsId: ['contentlet1', 'contentlet2'],
+                maxContentlets: 2,
+                acceptTypes: 'test',
+                variantId: '1'
+            };
+
+            const result = insertContentletInContainer({
+                pageContainers,
+                container,
+                contentlet: {
+                    identifier: 'contentlet1',
+                    inode: 'inode1',
+                    title: 'test',
+                    contentType: 'test'
+                },
+                pageId: 'test',
+                language_id: 'test',
+                newContentletId: 'contentlet3',
+                personaTag: 'persona-tag'
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
+            expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
         });
     });
 
@@ -550,41 +866,81 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computePageIsLocked', () => {
-        it('should return false when the page is unlocked', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: false,
-                lockedBy: '123',
-                userId: '123'
+    describe('computeIsPageLocked', () => {
+        describe('with legacy behavior (feature flag disabled)', () => {
+            it('should return false when the page is unlocked', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const result = computeIsPageLocked(page, currentUser, false);
+
+                expect(result).toBe(false);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return false when the page is locked and is the same user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '123'
+                });
 
-            expect(result).toBe(false);
+                const result = computeIsPageLocked(page, currentUser, false);
+
+                expect(result).toBe(false);
+            });
+
+            it('should return true when the page is locked and is not the same user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '456'
+                });
+
+                const result = computeIsPageLocked(page, currentUser, false);
+
+                expect(result).toBe(true);
+            });
         });
 
-        it('should return false when the page is locked and is the same user', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: true,
-                lockedBy: '123',
-                userId: '123'
+        describe('with new behavior (feature flag enabled)', () => {
+            it('should return false when the page is unlocked', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const result = computeIsPageLocked(page, currentUser, true);
+
+                expect(result).toBe(false);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return true when the page is locked by current user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '123'
+                });
 
-            expect(result).toBe(false);
-        });
+                const result = computeIsPageLocked(page, currentUser, true);
 
-        it('should return true when the page is locked and is not the same user', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: true,
-                lockedBy: '123',
-                userId: '456'
+                expect(result).toBe(true);
             });
 
-            const result = computePageIsLocked(page, currentUser);
+            it('should return true when the page is locked by another user', () => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: true,
+                    lockedBy: '123',
+                    userId: '456'
+                });
 
-            expect(result).toBe(true);
+                const result = computeIsPageLocked(page, currentUser, true);
+
+                expect(result).toBe(true);
+            });
         });
     });
 
@@ -1065,6 +1421,66 @@ describe('utils functions', () => {
 
                 expect(result).toEqual(params);
             });
+        });
+    });
+
+    describe('convertUTCToLocalTime', () => {
+        it('should convert UTC time to local time representation', () => {
+            // Create a date representing "2025-11-19T17:13:00.000Z" (5:13 PM UTC)
+            const utcDate = new Date('2025-11-19T17:13:00.000Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            // The local time should show 17:13 (5:13 PM) in local timezone
+            expect(result.getHours()).toBe(17);
+            expect(result.getMinutes()).toBe(13);
+            expect(result.getSeconds()).toBe(0);
+            expect(result.getFullYear()).toBe(2025);
+            expect(result.getMonth()).toBe(10); // November (0-indexed)
+            expect(result.getDate()).toBe(19);
+        });
+
+        it('should preserve all time components including milliseconds', () => {
+            const utcDate = new Date('2025-11-19T14:30:45.123Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(14);
+            expect(result.getMinutes()).toBe(30);
+            expect(result.getSeconds()).toBe(45);
+            expect(result.getMilliseconds()).toBe(123);
+        });
+
+        it('should handle midnight UTC correctly', () => {
+            const utcDate = new Date('2025-11-19T00:00:00.000Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(0);
+            expect(result.getMinutes()).toBe(0);
+            expect(result.getSeconds()).toBe(0);
+        });
+
+        it('should handle end of day UTC correctly', () => {
+            const utcDate = new Date('2025-11-19T23:59:59.999Z');
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getHours()).toBe(23);
+            expect(result.getMinutes()).toBe(59);
+            expect(result.getSeconds()).toBe(59);
+            expect(result.getMilliseconds()).toBe(999);
+        });
+
+        it('should handle leap year dates correctly', () => {
+            const utcDate = new Date('2024-02-29T12:00:00.000Z'); // Leap year
+
+            const result = convertUTCToLocalTime(utcDate);
+
+            expect(result.getFullYear()).toBe(2024);
+            expect(result.getMonth()).toBe(1); // February (0-indexed)
+            expect(result.getDate()).toBe(29);
+            expect(result.getHours()).toBe(12);
         });
     });
 });

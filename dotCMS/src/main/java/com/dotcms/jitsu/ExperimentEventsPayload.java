@@ -3,6 +3,7 @@ package com.dotcms.jitsu;
 import com.dotmarketing.util.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ public class ExperimentEventsPayload extends EventsPayload {
     }
 
     @Override
-    public Iterable<EventPayload> payloads() {
+    public Collection<EventPayload> payloads() {
         final String jsonObjectString = jsonObject.toString();
         final List<EventPayload> eventPayloads = new ArrayList<>();
 

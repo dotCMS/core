@@ -1,5 +1,6 @@
 import { fromEvent, Subscription } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -13,6 +14,8 @@ import {
     inject
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
+
 import { filter } from 'rxjs/operators';
 
 import { DialogButton, DotDialogActions } from '@dotcms/dotcms-models';
@@ -21,7 +24,7 @@ import { DialogButton, DotDialogActions } from '@dotcms/dotcms-models';
     selector: 'dot-dialog',
     templateUrl: './dot-dialog.component.html',
     styleUrls: ['./dot-dialog.component.scss'],
-    standalone: false
+    imports: [CommonModule, ButtonModule]
 })
 export class DotDialogComponent implements OnChanges {
     private el = inject(ElementRef);

@@ -1,0 +1,9 @@
+<div class="lock-overlay" data-testId="lock-overlay">
+    <div class="lock-overlay__content">
+        <div class="lock-overlay__icon">
+            <i [class]="$overlayMessages()?.icon"></i>
+        </div>
+        <h3 class="lock-overlay__title">{{ $overlayMessages()?.title | dm }}</h3>
+        <p class="lock-overlay__message">{{ $overlayMessages()?.message | dm }}</p>
+    </div>
+</div>

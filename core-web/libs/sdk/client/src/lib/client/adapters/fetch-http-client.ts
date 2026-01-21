@@ -98,6 +98,7 @@ export class FetchHttpClient extends BaseHttpClient {
 
             // Handle different response types
             const contentType = response.headers.get('content-type');
+
             if (contentType?.includes('application/json')) {
                 return response.json();
             }

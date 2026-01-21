@@ -1,6 +1,10 @@
 import { Observable } from 'rxjs';
 
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { DropdownModule } from 'primeng/dropdown';
 
 import { DotRelationshipCardinality } from '../model/dot-relationship-cardinality.model';
 import { DotRelationshipService } from '../services/dot-relationship.service';
@@ -14,11 +18,10 @@ import { DotRelationshipService } from '../services/dot-relationship.service';
  * @implements {OnChanges}
  */
 @Component({
-    providers: [],
     selector: 'dot-cardinality-selector',
     templateUrl: './dot-cardinality-selector.component.html',
     styleUrls: ['./dot-cardinality-selector.component.scss'],
-    standalone: false
+    imports: [DropdownModule, FormsModule, AsyncPipe]
 })
 export class DotCardinalitySelectorComponent implements OnInit {
     private dotRelationshipService = inject(DotRelationshipService);

@@ -2,71 +2,64 @@
     <div class="flex-auto flex flex-column">
         <h3>{{ 'experiments.goal.reach_page.form.conditions.label' | dm }}</h3>
 
-        <ng-container
-            *ngFor="let condition of conditionsFormArray.controls; let i = index"
-            formArrayName="conditions">
-            <div [formGroupName]="i" class="condition flex">
-                <div class="field flex-none flex flex-column w-15rem">
-                    <label dotFieldRequired for="parameter">
-                        {{ 'experiments.goal.reach_page.form.conditions.parameter.label' | dm }}
-                    </label>
-                    <p-dropdown
-                        [dotOptions]="parametersList"
-                        id="parameter"
-                        data-testId="parameter-input"
-                        dotDropdown
-                        formControlName="parameter"
-                        placeholder="{{
-                            'experiments.goal.reach_page.form.conditions.parameter.placeholder' | dm
-                        }}"></p-dropdown>
-                    <dot-field-validation-message
-                        [field]="
-                            getConditionsFormArrayItemByIndex(i).controls['parameter']
-                        "></dot-field-validation-message>
+        @for (condition of conditionsFormArray.controls; track condition; let i = $index) {
+            <ng-container formArrayName="conditions">
+                <div [formGroupName]="i" class="condition flex">
+                    <div class="field flex-none flex flex-column w-15rem">
+                        <label dotFieldRequired for="parameter">
+                            {{ 'experiments.goal.reach_page.form.conditions.parameter.label' | dm }}
+                        </label>
+                        <p-dropdown
+                            [dotOptions]="parametersList"
+                            id="parameter"
+                            data-testId="parameter-input"
+                            dotDropdown
+                            formControlName="parameter"
+                            placeholder="{{
+                                'experiments.goal.reach_page.form.conditions.parameter.placeholder'
+                                    | dm
+                            }}" />
+                        <dot-field-validation-message
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['parameter']" />
+                    </div>
+                    <div class="field flex-none flex flex-column w-15rem">
+                        <label dotFieldRequired for="operator">
+                            {{ 'experiments.goal.reach_page.form.conditions.operator.label' | dm }}
+                        </label>
+                        <p-dropdown
+                            [dotOptions]="operatorsList"
+                            id="operator"
+                            data-testId="operator-input"
+                            dotDropdown
+                            formControlName="operator"
+                            placeholder="{{
+                                'experiments.goal.reach_page.form.conditions.operator.placeholder'
+                                    | dm
+                            }}" />
+                        <dot-field-validation-message
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['operator']" />
+                    </div>
+                    <div class="field flex-grow-1 flex flex-column">
+                        <label dotFieldRequired for="value">
+                            {{ 'experiments.goal.reach_page.form.conditions.value.label' | dm }}
+                        </label>
+                        <input
+                            id="value"
+                            data-testId="value-input"
+                            dotAutofocus
+                            formControlName="value"
+                            name="value"
+                            pInputText
+                            placeholder="{{
+                                'experiments.goal.reach_page.form.conditions.value.placeholder' | dm
+                            }}"
+                            required
+                            type="text" />
+                        <dot-field-validation-message
+                            [field]="getConditionsFormArrayItemByIndex(i).controls['value']" />
+                    </div>
                 </div>
-
-                <div class="field flex-none flex flex-column w-15rem">
-                    <label dotFieldRequired for="operator">
-                        {{ 'experiments.goal.reach_page.form.conditions.operator.label' | dm }}
-                    </label>
-                    <p-dropdown
-                        [dotOptions]="operatorsList"
-                        id="operator"
-                        data-testId="operator-input"
-                        dotDropdown
-                        formControlName="operator"
-                        placeholder="{{
-                            'experiments.goal.reach_page.form.conditions.operator.placeholder' | dm
-                        }}"></p-dropdown>
-
-                    <dot-field-validation-message
-                        [field]="
-                            getConditionsFormArrayItemByIndex(i).controls['operator']
-                        "></dot-field-validation-message>
-                </div>
-
-                <div class="field flex-grow-1 flex flex-column">
-                    <label dotFieldRequired for="value">
-                        {{ 'experiments.goal.reach_page.form.conditions.value.label' | dm }}
-                    </label>
-                    <input
-                        id="value"
-                        data-testId="value-input"
-                        dotAutofocus
-                        formControlName="value"
-                        name="value"
-                        pInputText
-                        placeholder="{{
-                            'experiments.goal.reach_page.form.conditions.value.placeholder' | dm
-                        }}"
-                        required
-                        type="text" />
-                    <dot-field-validation-message
-                        [field]="
-                            getConditionsFormArrayItemByIndex(i).controls['value']
-                        "></dot-field-validation-message>
-                </div>
-            </div>
-        </ng-container>
+            </ng-container>
+        }
     </div>
 </div>

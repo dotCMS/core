@@ -17,8 +17,7 @@ describe('DotContentComparePreviewFieldComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentComparePreviewFieldComponent],
-            imports: [DotMessagePipe],
+            imports: [DotContentComparePreviewFieldComponent, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });
         fixture = TestBed.createComponent(DotContentComparePreviewFieldComponent);

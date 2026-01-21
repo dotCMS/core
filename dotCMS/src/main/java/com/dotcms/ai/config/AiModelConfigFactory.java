@@ -3,6 +3,7 @@ package com.dotcms.ai.config;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.config.parser.AiModelConfigParser;
 import com.dotcms.ai.config.parser.AiVendorCatalogData;
+import com.dotcms.ai.rest.AiModelSummaryView;
 import com.dotcms.business.SystemCache;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
@@ -19,6 +20,7 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
 import javax.enterprise.context.ApplicationScoped;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,7 +53,7 @@ public class AiModelConfigFactory {
 
         final SystemCache systemCache = CacheLocator.getSystemCache();
         final AiModelConfig configFromCache = (AiModelConfig) systemCache.get(key(siteId, vendorModelPath));
-        if (null == configFromCache) {
+            if (null == configFromCache) {
 
             final AiModelConfig configFromApp = Try.of(()->findAiModelFromApp(siteId, vendorModelPath)).getOrNull();
             if (null != configFromApp) {
@@ -93,6 +95,7 @@ public class AiModelConfigFactory {
         return null != modelConfigCatalog? modelConfigCatalog.getByPath(vendorModelPath):null;
     }
 
+
     private AiModelConfig findDefaultAiModelFromRoutingApp(final String siteId) throws DotDataException, DotSecurityException {
 
         AiModelConfigCatalog modelConfigCatalog = null;
@@ -107,6 +110,23 @@ public class AiModelConfigFactory {
 
 
         return null != modelConfigCatalog? modelConfigCatalog.getDefaultChatModel():null;
+    }
+
+
+    private AiModelConfig findDefaultAiModelEmbeddingFromRoutingApp(final String siteId) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(siteId)) {
+
+            if (!loadVendorModelFromAppBySiteId(siteId)) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(siteId);
+
+
+        return null != modelConfigCatalog? modelConfigCatalog.getDefaultEmbeddingModel():null;
     }
 
     private boolean loadVendorModelFromAppBySiteId(final String siteId) throws DotDataException, DotSecurityException {
@@ -148,5 +168,105 @@ public class AiModelConfigFactory {
 
         final boolean useDefaultModelWhenNotFound = true;
         return getAiModelConfig(site.getIdentifier(), vendorModelPath, useDefaultModelWhenNotFound);
+    }
+
+    public Optional<AiModelConfig> getAiModelConfigOrDefaultEmbedding(final Host site, final String vendorModelPath) {
+        final boolean useDefaultModelWhenNotFound = true;
+        return getAiModelConfigEmbedding(site.getIdentifier(), vendorModelPath, useDefaultModelWhenNotFound);
+    }
+
+    private Optional<AiModelConfig> getAiModelConfigEmbedding(final String siteId, final String vendorModelPath, boolean useDefaultModelWhenNotFound) {
+
+        final SystemCache systemCache = CacheLocator.getSystemCache();
+        final AiModelConfig configFromCache = (AiModelConfig) systemCache.get(key(siteId, vendorModelPath));
+        if (null == configFromCache) {
+
+            final AiModelConfig configFromApp = Try.of(()->findAiModelFromApp(siteId, vendorModelPath)).getOrNull();
+            if (null != configFromApp) {
+
+                systemCache.put(key(siteId, vendorModelPath), configFromApp);
+                return Optional.ofNullable(configFromApp);
+            } else {
+                systemCache.put(key(siteId, vendorModelPath), configCache404);
+            }
+        }
+
+        if (configFromCache == configCache404 || null == configFromCache) {
+
+            // try the default model from routing
+            if (useDefaultModelWhenNotFound) {
+                final AiModelConfig configFromApp = Try.of(() -> findDefaultAiModelEmbeddingFromRoutingApp(siteId)).getOrNull();
+
+                return Optional.ofNullable(configFromApp);
+            }
+
+            return Optional.empty();
+        }
+
+        return Optional.ofNullable(configFromCache);
+    }
+
+    public List<AiModelSummaryView> getAllChatModelNames(final Host site) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(site.getIdentifier())) {
+
+            if (!loadVendorModelFromAppBySiteId(site.getIdentifier())) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(site.getIdentifier());
+
+        return modelConfigCatalog.getAllChatModelSummaries();
+    }
+
+    public List<AiModelSummaryView> getAllEmbeddingModelNames(Host site) throws DotDataException, DotSecurityException {
+
+        AiModelConfigCatalog modelConfigCatalog = null;
+        if (!this.aiModelConfigCatalogMap.containsKey(site.getIdentifier())) {
+
+            if (!loadVendorModelFromAppBySiteId(site.getIdentifier())) {
+                return null;
+            }
+        }
+
+        modelConfigCatalog = this.aiModelConfigCatalogMap.get(site.getIdentifier());
+
+        return modelConfigCatalog.getAllEmbeddingModelSummaries();
+    }
+
+    /**
+     * Invalidates all cached AI model configurations for a specific site.
+     * This should be called when the AI app configuration changes.
+     *
+     * @param siteId the site identifier
+     */
+    public void invalidateCacheForSite(final String siteId) {
+        Logger.info(this, "Invalidating AI model config cache for site: " + siteId);
+
+        // Clear the catalog cache
+        this.aiModelConfigCatalogMap.remove(siteId);
+
+        // Clear system cache entries for this site
+        final SystemCache systemCache = CacheLocator.getSystemCache();
+        //systemCache.removeGroup("ai_model_config" + siteId);
+        systemCache.clearCache();
+    }
+
+    /**
+     * Invalidates all cached AI model configurations across all sites.
+     * Useful for development or when the default configuration template changes.
+     */
+    public void invalidateAllCaches() {
+        Logger.info(this, "Invalidating all AI model config caches");
+
+        // Clear the catalog cache
+        this.aiModelConfigCatalogMap.clear();
+
+        // Clear all system cache entries
+        final SystemCache systemCache = CacheLocator.getSystemCache();
+        //systemCache.flushGroup("ai_model_config");
+        systemCache.clearCache();
     }
 }

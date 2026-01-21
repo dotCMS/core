@@ -6,6 +6,7 @@ export * from './lib/services/dot-analytics.service';
 
 // Utils
 export * from './lib/utils/data/analytics-data.utils';
+export * from './lib/utils/filters.utils';
 
 // Constants
 export * from './lib/constants';

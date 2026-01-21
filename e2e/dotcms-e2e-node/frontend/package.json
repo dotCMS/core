@@ -30,6 +30,7 @@
     "start-dev": "CURRENT_ENV=dev yarn run start",
     "start-ci": "CURRENT_ENV=ci yarn run start",
     "codegen": "yarn playwright codegen",
+    "playwright-install": "playwright install --with-deps",
     "ui:local": "CURRENT_ENV=local yarn playwright test --ui",
     "ui:local-dev": "CURRENT_ENV=dev yarn playwright test --ui",
     "ui:ci": "CURRENT_ENV=ci yarn playwright test --ui",

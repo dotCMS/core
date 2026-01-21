@@ -49,6 +49,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.page.PageContainerForm.ContainerEntry;
 import com.dotcms.rest.api.v1.page.PageScenarioUtils.ContentConfig;
 import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.util.FiltersUtil;
@@ -101,7 +102,9 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.PortalException;
@@ -318,6 +321,169 @@ public class PageResourceTest {
         final PageContainerForm pageContainerForm = new PageContainerForm(entries, requestJson);
         this.pageResource.addContent(request, response, pagetest.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
     }
+
+    /**
+     * Method to test: {@link PageResource#addContent} with styleProperties
+     * When: Add content to a page with styleProperties using the PageAPI
+     * Should: Save styleProperties in the {@link MultiTree} and be retrievable
+     */
+    @Test
+    public void test_addContent_with_styleProperties() throws Exception {
+        // Create a page with container
+        final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset testPage = pageRenderTest.getPage();
+        final Container container = pageRenderTest.getFirstContainer();
+
+        // Create contentlet
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+        final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                .languageId(1)
+                .folder(APILocator.getFolderAPI().findSystemFolder())
+                .host(host)
+                .setProperty("title", "Test Content with Style Properties")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersisted();
+
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        APILocator.getContentletAPI().publish(contentlet, user, false);
+
+        // Prepare styleProperties
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("backgroundColor", "red");
+        styleProperties.put("fontSize", "16px");
+        styleProperties.put("padding", "10px");
+
+        // Create ContainerEntry with styleProperties
+        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
+        final String containerUUID = UUIDGenerator.generateUuid();
+        final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
+        stylePropertiesMap.put(contentlet.getIdentifier(), styleProperties);
+
+        final PageContainerForm.ContainerEntry containerEntry =
+                new PageContainerForm.ContainerEntry(
+                        null,
+                        container.getIdentifier(),
+                        containerUUID,
+                        list(contentlet.getIdentifier()),
+                        stylePropertiesMap
+                );
+
+        entries.add(containerEntry);
+        final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+
+        // Save content with styleProperties
+        final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                request,
+                response,
+                testPage.getIdentifier(),
+                VariantAPI.DEFAULT_VARIANT.name(),
+                pageContainerForm
+        );
+
+        // Verify response is successful
+        assertNotNull(addContentResponse);
+        assertEquals(200, addContentResponse.getStatus());
+
+        // Retrieve MultiTree and verify styleProperties are saved
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+
+        assertNotNull("MultiTrees should not be null", multiTrees);
+        assertFalse("MultiTrees should not be empty", multiTrees.isEmpty());
+
+        // Find the MultiTree for our contentlet
+        final Optional<MultiTree> multiTreeOpt = multiTrees.stream()
+                .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                .findFirst();
+
+        assertTrue("MultiTree for the contentlet should exist", multiTreeOpt.isPresent());
+
+        final MultiTree multiTree = multiTreeOpt.get();
+        final Map<String, Object> savedStyleProperties = multiTree.getStyleProperties();
+
+        // Verify styleProperties were saved correctly
+        assertNotNull("StyleProperties should not be null", savedStyleProperties);
+        assertFalse("StyleProperties should not be empty", savedStyleProperties.isEmpty());
+        assertEquals("backgroundColor should match", "red", savedStyleProperties.get("backgroundColor"));
+        assertEquals("fontSize should match", "16px", savedStyleProperties.get("fontSize"));
+        assertEquals("padding should match", "10px", savedStyleProperties.get("padding"));
+
+        Logger.info(this, "StyleProperties saved successfully: " + savedStyleProperties);
+    }
+
+    /**
+     * Method to test: {@link PageContainerForm.ContainerDeserialize#deserialize(JsonParser, DeserializationContext)}
+     * When: Deserialize a PageContainerForm with styleProperties
+     * Should: Return a PageContainerForm with the styleProperties
+     * @throws Exception Exception when deserializing the PageContainerForm
+     */
+    @Test
+    public void test_PageContainerForm_deserialization_with_styleProperties() throws Exception {
+        final String json = "[\n" +
+                "    {\n" +
+                "        \"identifier\": \"container-123\",\n" +
+                "        \"uuid\": \"uuid-456\",\n" +
+                "        \"contentletsId\": [\"contentlet-789\"],\n" +
+                "        \"styleProperties\": {\n" +
+                "            \"contentlet-789\": {\n" +
+                "                \"backgroundColor\": \"red\",\n" +
+                "                \"fontSize\": 16,\n" +
+                "                \"isVisible\": true\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "]";
+
+        final ObjectMapper mapper = new ObjectMapper();
+        // deserialize string
+        final PageContainerForm form = mapper.readValue(json, PageContainerForm.class);
+
+        assertNotNull("Form should not be null", form);
+        assertEquals("Should have 1 container entry", 1, form.getContainerEntries().size());
+
+        final ContainerEntry containerEntry = form.getContainerEntries().get(0);
+        final Map<String, Map<String, Object>> stylePropertiesMap = containerEntry.getStylePropertiesMap();
+
+        // Validate style properties map
+        assertNotNull("StyleProperties should not be null", stylePropertiesMap);
+        assertTrue("Should contain contentlet-789", stylePropertiesMap.containsKey("contentlet-789"));
+
+        // validate style properties (string, number, boolean)
+        final Map<String, Object> styleProperties = stylePropertiesMap.get("contentlet-789");
+        assertEquals("backgroundColor should be red", "red", styleProperties.get("backgroundColor"));
+        assertEquals("fontSize should be 16", 16, styleProperties.get("fontSize"));
+        assertEquals("isVisible should be true", true, styleProperties.get("isVisible"));
+    }
+
+    /**
+     * Method to test: {@link PageContainerForm.ContainerDeserialize#deserialize(JsonParser, DeserializationContext)}
+     * When: Deserialize a PageContainerForm without styleProperties
+     * Should: Return a PageContainerForm with the styleProperties
+     * @throws Exception Exception when deserializing the PageContainerForm
+     */
+    @Test
+    public void test_PageContainerForm_deserialization_without_styleProperties() throws Exception {
+        // Test that containers without styleProperties don't break
+        final String json = "[\n" +
+                "    {\n" +
+                "        \"identifier\": \"container-123\",\n" +
+                "        \"uuid\": \"uuid-456\",\n" +
+                "        \"contentletsId\": [\"contentlet-789\"]\n" +
+                "    }\n" +
+                "]";
+
+        final ObjectMapper mapper = new ObjectMapper();
+        final PageContainerForm form = mapper.readValue(json, PageContainerForm.class);
+
+        assertNotNull("Form should not be null", form);
+        final PageContainerForm.ContainerEntry containerEntry = form.getContainerEntries().get(0);
+        assertNotNull("StylePropertiesMap should not be null", containerEntry.getStylePropertiesMap());
+        assertTrue("StylePropertiesMap should be empty", containerEntry.getStylePropertiesMap().isEmpty());
+    }
+
 
     /**
      * Should return at least one persona personalized
@@ -2192,6 +2358,70 @@ public class PageResourceTest {
         return createTestPageWithContentConfigs(contentConfigs, referenceDate);
     }
 
+    /**
+     * Test validates that PageMode.LIVE + future date returns correct content versions.
+     * Creates 2 contentlets:
+     * - Contentlet A: Single LIVE version
+     * - Contentlet B: LIVE version + scheduled future version
+     *
+     * When querying with PageMode.LIVE + future date BEFORE scheduled publication:
+     * - Contentlet A: Should return LIVE version
+     * - Contentlet B: Should return LIVE version (NOT future version)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void TestPageWithFutureDateShowsCorrectVersions() throws Exception {
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            // Setup dates: query date is before scheduled publication
+            final Date queryDate = Date.from(LocalDateTime.now().plusDays(5).atZone(utc.toZoneId()).toInstant());
+            final Date futurePublishDate = Date.from(LocalDateTime.now().plusDays(10).atZone(utc.toZoneId()).toInstant());
+            final String queryDateIso8601 = queryDate.toInstant().toString();
+
+            final PageInfo pageInfo = createPageWithMixedContentVersions(queryDate, futurePublishDate);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            // Test: PageMode.LIVE with future date before scheduled publication
+            final Response pareResponse = pageResource
+                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                            "1", null, queryDateIso8601);
+
+            final PageView pageView = PageScenarioUtils.extractPageViewFromResponse(pareResponse);
+
+            // Validate: Should get exactly 2 contentlets
+            final List<? extends ContainerRaw> containers = (List<? extends ContainerRaw>) pageView.getContainers();
+            assertEquals(1, containers.size());
+            final Map<String, List<Contentlet>> contentlets = containers.get(0).getContentlets();
+
+            final List<Contentlet> contentletList = contentlets.values().iterator().next();
+            assertEquals("Should have exactly 2 contentlets", 2, contentletList.size());
+
+            // Validate titles: Should get LIVE versions only
+            List<String> titles = contentletList.stream()
+                    .map(c -> c.getStringProperty("title"))
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            //This is the regular Live Contentlet
+            assertEquals("Contentlet A - LIVE Version", titles.get(0));
+            //This is the Live version that should still show, regardless of having a new version set to be published in the future
+            //Remember that this one has two versions
+            assertEquals("Contentlet B - LIVE Version", titles.get(1));
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
 
     /**
      * Given scenario: A page with a container and a contentlet is created. The contentlet is set to be published in the future.
@@ -2288,6 +2518,116 @@ public class PageResourceTest {
         } finally {
             TimeZone.setDefault(defaultZone);
         }
+    }
+
+    /**
+     * Creates a page with mixed content versions for testing future date queries.
+     * - Contentlet A: Single LIVE version
+     * - Contentlet B: LIVE version + scheduled future version
+     *
+     * @param queryDate The date for the query (before future publish)
+     * @param futurePublishDate The scheduled publication date for Contentlet B's second version
+     * @return PageInfo with the created page and contentlets
+     * @throws DotDataException if there is an error creating the page
+     * @throws DotSecurityException if there is an error creating the page
+     * @throws WebAssetException if there is an error creating the page
+     */
+    PageInfo createPageWithMixedContentVersions(final Date queryDate, final Date futurePublishDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+        final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container myContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-friendly-name" + System.currentTimeMillis())
+                .title("container-title")
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(myContainer);
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(myContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(myContainer.getIdentifier())
+                .nextPersisted();
+
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final String myFolderName = "folder-" + System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "my-mixed-versions-test-page-" + System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
+
+        assertNotNull(blogLikeContentType.publishDateVar());
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
+        // Create Contentlet A: Single LIVE version
+        final Contentlet contentletA = new ContentletDataGen(blogLikeContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "Contentlet A - LIVE Version")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty(Contentlet.IS_TEST_MODE, true)
+                .nextPersistedAndPublish();
+
+        // Create Contentlet B: Start with the LIVE version
+        final Contentlet contentletBV1 = new ContentletDataGen(blogLikeContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "Contentlet B - LIVE Version")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty(Contentlet.IS_TEST_MODE, true)
+                .nextPersistedAndPublish();
+
+        // Create Contentlet B Version 2: Scheduled for future publication
+        final Map<String, Object> newProps = new HashMap<>();
+        newProps.put("title", "Contentlet B - Future Version");
+        newProps.put("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
+        newProps.put("publishDate", futurePublishDate);
+
+        final Contentlet contentletBV2 = ContentletDataGen.createNewVersion(contentletBV1, VariantAPI.DEFAULT_VARIANT, newProps);
+
+        // Don't publish V2 yet - it should be scheduled for the future
+        assertFalse("Contentlet B V2 should not be live (scheduled for future)", contentletBV2.isLive());
+        assertTrue("Contentlet B V1 should be live", contentletBV1.isLive());
+
+        final String uuid = UUIDUtil.uuid();
+        // Add both contentlets to the page
+        final MultiTree multiTreeA = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), contentletA.getIdentifier(), uuid, 1);
+        multiTreeAPI.saveMultiTree(multiTreeA);
+
+        final MultiTree multiTreeB = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), contentletBV1.getIdentifier(), uuid, 2);
+        multiTreeAPI.saveMultiTree(multiTreeB);
+
+        final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
+        Logger.info(this, "Mixed versions page created: " + myPagePath);
+        Logger.info(this, "Query Date: " + queryDate);
+        Logger.info(this, "Future Publish Date: " + futurePublishDate);
+        Logger.info(this, "Contentlet A ID: " + contentletA.getIdentifier());
+        Logger.info(this, "Contentlet B ID: " + contentletBV1.getIdentifier());
+
+        return new PageInfo(myPagePath, contentletBV1.getIdentifier(),
+                Set.of(contentletA.getInode(), contentletBV1.getInode(), contentletBV2.getInode()));
     }
 
 

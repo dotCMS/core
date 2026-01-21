@@ -1,8 +1,7 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
 @Pipe({
-    name: 'dotFilter',
-    standalone: false
+    name: 'dotFilter'
 })
 export class DotFilterPipe implements PipeTransform {
     transform<T>(value: T[], keys: string, term: string): T[] {

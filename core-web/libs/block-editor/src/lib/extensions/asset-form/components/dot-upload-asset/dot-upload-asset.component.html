@@ -1,27 +1,24 @@
-<p-fileUpload
-    *ngIf="status === 'SELECT'; else preview"
-    (onSelect)="onSelectFile($event.files)"
-    [accept]="type + '/*'"
-    [customUpload]="true"
-    chooseLabel="browse files"
-    mode="basic"></p-fileUpload>
-
-<ng-template #preview>
+@if (status === 'SELECT') {
+    <p-fileUpload
+        (onSelect)="onSelectFile($event.files)"
+        [accept]="type + '/*'"
+        [customUpload]="true"
+        chooseLabel="browse files"
+        mode="basic" />
+} @else {
     <div class="preview-container">
-        <dot-asset-preview
-            *ngIf="status === 'UPLOAD'"
-            [type]="type"
-            [file]="file"
-            [src]="src"></dot-asset-preview>
-
-        <ng-template *ngIf="status === 'ERROR'" #errorTemplate>
-            <span class="error">{{ error }}</span>
-        </ng-template>
+        @if (status === 'UPLOAD') {
+            <dot-asset-preview [type]="type" [file]="file" [src]="src" />
+        }
+        @if (status === 'ERROR') {
+            <ng-template #errorTemplate>
+                <span class="error">{{ error }}</span>
+            </ng-template>
+        }
     </div>
-
     <div class="action-container">
         <div class="loading-message">
-            <dot-spinner [size]="'30px'"></dot-spinner>
+            <dot-spinner [size]="'30px'" />
             <span (@shakeit.done)="shakeEnd($event)" class="warning" [@shakeit]="animation">
                 {{ errorMessage }}
             </span>
@@ -30,4 +27,4 @@
             Cancel
         </button>
     </div>
-</ng-template>
+}

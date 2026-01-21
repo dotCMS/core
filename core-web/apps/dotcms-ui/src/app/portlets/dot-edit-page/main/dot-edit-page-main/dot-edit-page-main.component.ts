@@ -1,8 +1,12 @@
 import { merge, Observable, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+
+import { DialogModule } from 'primeng/dialog';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
 
 import { pluck, takeUntil, tap } from 'rxjs/operators';
 
@@ -14,13 +18,28 @@ import {
 import { DotPageRenderState } from '@dotcms/dotcms-models';
 
 import { DotCustomEventHandlerService } from '../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { DotEditContentletComponent } from '../../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { DotExperimentClassDirective } from '../../../shared/directives/dot-experiment-class.directive';
+import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
+import { DotEditPageNavDirective } from '../dot-edit-page-nav/directives/dot-edit-page-nav.directive';
+import { DotEditPageNavComponent } from '../dot-edit-page-nav/dot-edit-page-nav.component';
 
 @Component({
     selector: 'dot-edit-page-main',
     templateUrl: './dot-edit-page-main.component.html',
     styleUrls: ['./dot-edit-page-main.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        RouterModule,
+        DotEditContentletComponent,
+        DotBlockEditorSidebarComponent,
+        DotEditPageNavDirective,
+        DotEditPageNavComponent,
+        DotExperimentClassDirective,
+        OverlayPanelModule,
+        DialogModule
+    ]
 })
 export class DotEditPageMainComponent implements OnInit, OnDestroy {
     private route = inject(ActivatedRoute);

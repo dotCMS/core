@@ -4,7 +4,7 @@
         "outDir": "../../dist/out-tsc",
         "declaration": true,
         "module": "ES2015",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "target": "ES2015",
         "lib": ["es2020", "dom"],
         "types": ["node", "vite/client"]

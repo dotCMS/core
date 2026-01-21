@@ -24,6 +24,7 @@ import com.dotcms.content.elasticsearch.util.PaginationUtil;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -43,6 +44,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeIf;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeTransformer;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -54,6 +56,8 @@ import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.contenttype.util.StoryBlockUtil;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.FileMetadataAPI;
@@ -64,7 +68,6 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.FunctionUtils;
-import com.dotcms.util.JsonUtil;
 import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.variant.VariantAPI;
@@ -1624,7 +1627,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return;
         }
-        if (user.isAdmin()) {
+        if (user != null && user.isAdmin()) {
             return;
         }
 
@@ -7547,7 +7550,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     field.getVelocityVarName());
                 }
             } else {
-                
+
                 contentlet.setDateProperty(field.getVelocityVarName(), null);
             }
         } else if (field.isRequired() && value == null) {
@@ -7629,6 +7632,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         (contentTypeId));
         if (BaseContentType.FILEASSET.getType() == contentType.baseType().getType()) {
             this.validateFileAsset(contentlet, contentIdentifier, contentType);
+        }
+
+        if(contentlet.isDotAsset()){
+            this.validateDotAsset(contentlet);
         }
 
         if (BaseContentType.HTMLPAGE.getType() == contentType.baseType().getType()) {
@@ -7731,6 +7738,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         hasError = true;
                         Logger.warn(this, String.format("String Field [%s] is required", field.getVelocityVarName()));
                         continue;
+                    }
+                } else if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())) {
+                    // Story Block validation - handle both JSON and legacy WYSIWYG content during migration
+                    if (fieldValue == null) {
+                        cveBuilder.addRequiredField(field, "null");
+                        hasError = true;
+                        Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
+                        continue;
+                    } else if (!(fieldValue instanceof String)) {
+                        cveBuilder.addBadTypeField(field, fieldValue != null ? fieldValue.toString() : "null");
+                        hasError = true;
+                        Logger.warn(this, String.format("Story Block Field [%s] must be a String, but got: %s",
+                            field.getVelocityVarName(), fieldValue.getClass().getSimpleName()));
+                        continue;
+                    } else {
+                        String stringValue = (String) fieldValue;
+                        if (JsonUtil.isValidJSON(stringValue)) {
+                            // Valid JSON - validate as Story Block
+                            if (StoryBlockUtil.isEmptyStoryBlock(stringValue)) {
+                                cveBuilder.addRequiredField(field, fieldValue.toString());
+                                hasError = true;
+                                Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
+                                continue;
+                            }
+                        } else {
+                            // Legacy WYSIWYG content (including malformed JSON) - use simple string validation for backward compatibility
+                            if (stringValue.trim().isEmpty()) {
+                                cveBuilder.addRequiredField(field, fieldValue.toString());
+                                hasError = true;
+                                Logger.warn(this, String.format("Story Block Field [%s] is required", field.getVelocityVarName()));
+                                continue;
+                            }
+                            // Otherwise, let legacy WYSIWYG content (including malformed JSON) pass validation during migration
+                        }
                     }
                 } else if (fieldValue instanceof String) {
                     String s1 = (String) fieldValue;
@@ -8099,7 +8140,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                                     UtilMethods.prettyByteify(maxLength))))
                                     .addBadTypeField(legacyField, String.valueOf(fileLength))
                                     .build();
-                            Logger.warn(this, String.format("Name of Binary field [%s] has a length: %d but the max length is: %d", 
+                            Logger.warn(this, String.format("Name of Binary field [%s] has a length: %d but the max length is: %d",
                                     fieldName, fileLength, maxLength));
                             throw cve;
                         }
@@ -8264,7 +8305,42 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    final static Pattern dnsPattern = Pattern.compile(dnsRegEx);
+    /**
+     * Simple dotAssetValidation
+     * @param contentlet
+     * @throws DotAssetValidationException
+     */
+    private void validateDotAsset(final Contentlet contentlet) throws DotAssetValidationException {
+        try {
+            final FolderAPI folderAPI = APILocator.getFolderAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Folder folder = UtilMethods.isSet(contentlet.getFolder()) ?
+                    folderAPI.find(contentlet.getFolder(),
+                            systemUser, false) :
+                    folderAPI.findSystemFolder();
+            final String fileName =
+                    contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR) != null
+                            ? contentlet.getBinary(DotAssetContentType.ASSET_FIELD_VAR).getName()
+                            : BLANK;
+            if (UtilMethods.isNotSet(fileName)) {
+                throw new DotAssetValidationException(
+                        "Unable to get The Asset From the Given dotAsset Contentlet");
+            }
+            if (!folderAPI.matchFilter(folder, fileName)) {
+                final String fileExtension = UtilMethods.getFileExtension(fileName);
+                throw new DotAssetValidationException(String.format(
+                        "The target folder %s does not accept the given file extension %s",
+                        folder.getPath(), fileExtension));
+            }
+        } catch (Exception e) {
+            if (e instanceof DotAssetValidationException) {
+                throw (DotAssetValidationException) e;
+            }
+            Logger.warn(this, e.getMessage());
+        }
+    }
+
+    static final Pattern dnsPattern = Pattern.compile(dnsRegEx);
 
     /**
      * Host validation method shared by HostResource and ContentletWebAPI
@@ -8280,6 +8356,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
     }
+
 
 
     @CloseDBIfOpened
@@ -8341,6 +8418,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                    final List<Category> cats) throws DotContentletValidationException {
         validateContentlet(contentlet,contentRelationships, cats, false );
     }
+
 
     @CloseDBIfOpened
     @Override
@@ -8439,7 +8517,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 if (!foundInRelationships && !hasExistingRelatedContent) {
                     hasError = true;
-                    Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]", 
+                    Logger.error(this, String.format("Required %s relationship [%s] is not present for contentlet [%s]",
                             (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
                     builder.addRequiredRelationship(rel, new ArrayList<>());
                 }
@@ -8485,7 +8563,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         && isRelationshipParent) {
                     if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        Logger.error(this, String.format("Error in Contentlet [%s]: Child relationship [%s] is required.", 
+                        Logger.error(this, String.format("Error in Contentlet [%s]: Child relationship [%s] is required.",
                                 contentletId, relationship.getRelationTypeValue()));
                         builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
@@ -8523,25 +8601,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                         contentsInRelationship);
                             }
                         } catch (final DotDataException e) {
-                            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
+                            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]",
                                     contentInRelationship.getIdentifier()), e);
                         }
                     }
                 } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {
                     if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
                         hasError = true;
-                        Logger.error(this, String.format("Error in Contentlet [%s]: Parent relationship [%s] is required.", 
+                        Logger.error(this, String.format("Error in Contentlet [%s]: Parent relationship [%s] is required.",
                                 contentletId, relationship.getRelationTypeValue()));
                         builder.addRequiredRelationship(relationship, contentsInRelationship);
                     }
                     //grouping by id to avoid duplicate contents due to different languages
-                    List<Contentlet> contentsInRelationshipSameLanguage = new ArrayList<>(contentsInRelationship.stream()
-                            .collect(Collectors.toMap(
-                                    Contentlet::getIdentifier,
-                                    Function.identity(),
-                                    (existing, replacement) -> existing
-                            ))
-                            .values());
+                    List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
 
                     // If there's a 1-N relationship and the child content is
                     // trying to relate to one more parent...
@@ -8552,7 +8624,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         final String parentIds = contentsInRelationship.stream()
                                 .map(Contentlet::getIdentifier)
                                 .collect(java.util.stream.Collectors.joining(", "));
-                        final String errorMessage = String.format("ERROR! Child content [%s] is already related to another parent content [%s]", 
+                        final String errorMessage = String.format("ERROR! Child content [%s] is already related to another parent content [%s]",
                                 contentletId, parentIds);
                         Logger.error(this, errorMessage);
                         hasError = true;
@@ -8570,14 +8642,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 && !contentInRelationship.getContentTypeId().equalsIgnoreCase(
                                 relationship.getParentStructureInode())) {
                             hasError = true;
-                            Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in relationship [%s]", 
+                            Logger.error(this, String.format("Content Type of Contentlet [%s] does not match the Content Type in relationship [%s]",
                                     contentletId, relationship.getRelationTypeValue()));
                             builder.addInvalidContentRelationship(relationship, contentsInRelationship);
                         }
                     }
                 } else {
                     hasError = true;
-                    Logger.error(this, String.format("Relationship [%s] is neither parent nor child of Contentlet [%s]", 
+                    Logger.error(this, String.format("Relationship [%s] is neither parent nor child of Contentlet [%s]",
                             relationship.getRelationTypeValue(), contentletId));
                     builder.addBadRelationship(relationship, contentsInRelationship);
                 }
@@ -8599,9 +8671,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final DotContentletValidationException.Builder builder, final Relationship relationship,
             final List<Contentlet> contentsInRelationship) {
 
+        List<Contentlet> contentsInRelationshipSameLanguage = groupContentletsByLanguage(contentsInRelationship);
         //Trying to relate more than one piece of content
-        if (contentsInRelationship.size() > 1) {
-            Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One", 
+        if (contentsInRelationshipSameLanguage.size() > 1) {
+            Logger.error(this, String.format("Error in Contentlet [%s]: Relationship [%s] has been defined as One to One",
                     contentlet.getIdentifier(), relationship.getRelationTypeValue()));
             builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
             return false;
@@ -8615,18 +8688,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             .getSystemUser(), true, 1, 0, null);
             if (relatedContents.size() > 0 && !relatedContents.get(0).getIdentifier()
                     .equals(contentlet.getIdentifier())) {
-                Logger.error(this, String.format("Error in related Contentlet [%s]: Relationship [%s] has been defined as One to One", 
+                Logger.error(this, String.format("Error in related Contentlet [%s]: Relationship [%s] has been defined as One to One",
                         relatedContents.get(0).getIdentifier(), relationship.getRelationTypeValue()));
                 builder.addBadCardinalityRelationship(relationship, contentsInRelationship);
                 return false;
             }
         } catch (final DotDataException e) {
-            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]", 
+            Logger.error(this, String.format("An error occurred when retrieving information from related Contentlet [%s]",
                     contentsInRelationship.get(0).getIdentifier()), e);
             builder.addInvalidContentRelationship(relationship, contentsInRelationship);
             return false;
         }
         return true;
+    }
+
+    private List<Contentlet> groupContentletsByLanguage(List<Contentlet> contentsInRelationship) {
+
+    return new ArrayList<>(contentsInRelationship.stream()
+            .collect(Collectors.toMap(
+                    Contentlet::getIdentifier,
+                    Function.identity(),
+                    (existing, replacement) -> existing
+            ))
+            .values());
     }
 
     @Override
@@ -9299,7 +9383,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                     multitree.getRelationType(),
                                     multitree.getTreeOrder(),
                                     multitree.getPersonalization(),
-                                    multitree.getVariantId()));
+                                    multitree.getVariantId(),
+                                    multitree.getStyleProperties()));
                 }
             }
         }

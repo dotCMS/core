@@ -14,7 +14,7 @@
                 [options]="pushActions"
                 class="push-publish-dialog__action-select p-button-tabbed"
                 id="pushActionSelected"
-                formControlName="pushActionSelected"></p-selectButton>
+                formControlName="pushActionSelected" />
         </div>
         <div class="field">
             <label for="filterKey">{{ 'contenttypes.content.push_publish.filters' | dm }}:</label>
@@ -24,7 +24,7 @@
                 id="filterKey"
                 pAutoFocus
                 formControlName="filterKey"
-                appendTo="body"></p-dropdown>
+                appendTo="body" />
         </div>
         <div class="field form-group__two-cols push-publish-dialog__publish-dates-container">
             <div class="field push-publish-dialog__publish-date">
@@ -42,13 +42,13 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-calendar>
+                        showTime="true" />
                 </div>
                 <dot-field-validation-message
                     [field]="form.get('publishDate')"
                     message="{{
                         'contenttypes.content.push_publish.publish_date_errormsg' | dm
-                    }}"></dot-field-validation-message>
+                    }}" />
             </div>
             <div class="field push-publish-dialog__expire-date">
                 <label dotFieldRequired for="expireDate">
@@ -64,13 +64,11 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true"></p-calendar>
+                        showTime="true" />
                 </div>
                 <dot-field-validation-message
                     [field]="form.get('expireDate')"
-                    message="{{
-                        'contenttypes.content.push_publish.expire_date_errormsg' | dm
-                    }}"></dot-field-validation-message>
+                    message="{{ 'contenttypes.content.push_publish.expire_date_errormsg' | dm }}" />
             </div>
         </div>
         <div class="field push-publish-dialog__timezone-label">
@@ -88,7 +86,7 @@
                 data-testid="timeZoneSelect"
                 formControlName="timezoneId"
                 filterBy="label"
-                appendTo="body"></p-dropdown>
+                appendTo="body" />
         </div>
         <div class="field">
             <label dotFieldRequired for="environment">
@@ -97,12 +95,10 @@
             <dot-push-publish-env-selector
                 [assetIdentifier]="assetIdentifier"
                 id="environment"
-                formControlName="environment"></dot-push-publish-env-selector>
+                formControlName="environment" />
             <dot-field-validation-message
                 [field]="form.get('environment')"
-                message="{{
-                    'contenttypes.content.push_publish.push_to_errormsg' | dm
-                }}"></dot-field-validation-message>
+                message="{{ 'contenttypes.content.push_publish.push_to_errormsg' | dm }}" />
         </div>
     </form>
 }

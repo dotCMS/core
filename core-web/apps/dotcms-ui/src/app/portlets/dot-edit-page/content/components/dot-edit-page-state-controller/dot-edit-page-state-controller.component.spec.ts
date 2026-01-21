@@ -12,7 +12,7 @@ import { ConfirmationService } from 'primeng/api';
 import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { MenuModule } from 'primeng/menu';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
@@ -110,11 +110,7 @@ describe('DotEditPageStateControllerComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotEditPageStateControllerComponent,
-                DotEditPageLockInfoComponent
-            ],
+            declarations: [TestHostComponent],
             providers: [
                 {
                     provide: DotMessageService,
@@ -142,6 +138,8 @@ describe('DotEditPageStateControllerComponent', () => {
                 DotPropertiesService
             ],
             imports: [
+                DotEditPageStateControllerComponent,
+                DotEditPageLockInfoComponent,
                 InputSwitchModule,
                 SelectButtonModule,
                 TooltipModule,
@@ -230,10 +228,11 @@ describe('DotEditPageStateControllerComponent', () => {
 
                 await fixtureHost.whenRenderingDone();
 
-                expect(lockerDe.classes.warn).toBe(true, 'warn class');
+                expect(lockerDe.classes.warn).toBe(true);
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerDe.attributes['ng-reflect-content']).toBe('Page locked by Some One');
-                expect(lockerDe.attributes['ng-reflect-tooltip-position']).toBe('top');
+                const tooltipDirective = lockerDe.injector.get(Tooltip);
+                expect(tooltipDirective.content).toBe('Page locked by Some One');
+                expect(tooltipDirective.tooltipPosition).toBe('top');
                 expect(locker.modelValue).toBe(false);
                 expect(locker.disabled).toBe(false);
             });

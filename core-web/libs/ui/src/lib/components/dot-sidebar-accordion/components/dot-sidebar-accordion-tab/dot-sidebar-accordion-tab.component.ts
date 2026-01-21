@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } from '@angular/core';
 
 /**
@@ -28,13 +27,13 @@ import { ChangeDetectionStrategy, Component, input, TemplateRef, ViewChild } fro
  */
 @Component({
     selector: 'dot-sidebar-accordion-tab',
-    imports: [CommonModule],
+    imports: [],
     template: `
         <ng-template #tabContent>
-            <ng-content></ng-content>
+            <ng-content />
         </ng-template>
         <ng-template #headerContent>
-            <ng-content select="[slot=header-content]"></ng-content>
+            <ng-content select="[slot=header-content]" />
         </ng-template>
     `,
     styles: [

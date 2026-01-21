@@ -25,7 +25,9 @@ export interface DotLanguageVariableEntry {
  * @export
  * @class DotLanguagesService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotLanguagesService {
     private httpClient: HttpClient = inject(HttpClient);
 

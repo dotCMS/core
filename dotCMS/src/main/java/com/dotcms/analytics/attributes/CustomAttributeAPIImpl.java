@@ -5,21 +5,25 @@ import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.util.JsonUtil;
-
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
-
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.io.IOException;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -78,7 +82,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         try {
             Logger.debug(CustomAttributeAPIImpl.class, () -> "Loading custom attribute mappings into cache");
             final Map<String, Map<String, String>> all = customAttributeFactory.getAll();
-            all.forEach((key, value) -> customAttributeCache.put(key, value));
+            all.forEach(customAttributeCache::put);
             Logger.info(CustomAttributeAPIImpl.class, () -> "Loaded " + all.size() + " event type mapping(s) into cache");
         } catch (DotDataException e) {
             Logger.error(CustomAttributeAPIImpl.class, e.getMessage(), e);
@@ -176,10 +180,9 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         final Set<String> oldCustomEvents = customAttributesMatch != null ?
                 customAttributesMatch.keySet() : new HashSet<>();
 
-        final List<String> newCustomAttributes = customPayload.keySet().stream()
+        return customPayload.keySet().stream()
                 .filter(key -> !oldCustomEvents.contains(key))
                 .collect(Collectors.toList());
-        return newCustomAttributes;
     }
 
     /** {@inheritDoc} */
@@ -211,11 +214,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         return translateCustomPayload;
     }
 
-
     @Override
-    /**
-     * {@inheritDoc}
-     */
     public TranslatedQuery translateFromFriendlyName(final String query) throws CustomAttributeProcessingException {
         if (!containsCustomAttributes(query)) {
             return new TranslatedQuery(query);
@@ -230,34 +229,31 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         final List<String> eventsTypes = extractEventTypeFilter(queryAsJson);
 
         if (eventsTypes.size() != 1) {
-            throw new CustomAttributeProcessingException("It is impossible to determine the EventType to resolve the custom attribute match");
+            throw new CustomAttributeProcessingException("You must filter by one Event Type in order to resolve custom attributes");
         }
 
         final String eventTypeNameOptional = eventsTypes.get(0);
 
         final Map<String, String> customAttributesMatches = getCustomAttributesMatchFromCache(eventTypeNameOptional);
-        final Map<String, String> matchApplyed = new HashMap<>();
+        final Map<String, String> matchApplied = new HashMap<>();
 
         String translateResponse = query;
 
         if (UtilMethods.isSet(customAttributesMatches)) {
-            for (Map.Entry<String, String> customMatch : customAttributesMatches.entrySet()) {
+            for (final Map.Entry<String, String> customMatch : customAttributesMatches.entrySet()) {
                 final String findBy =  FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX + customMatch.getKey();
                 final String replaceBy = QUERY_CUSTOM_ATTRIBUTE_PREFIX + customMatch.getValue();
 
                 translateResponse = translateResponse.replaceAll("\"" + findBy + "\"",
                         "\"" + replaceBy + "\"");
-                matchApplyed.put(findBy, replaceBy);
+                matchApplied.put(findBy, replaceBy);
             }
         }
 
-        return new TranslatedQuery(translateResponse, matchApplyed);
+        return new TranslatedQuery(translateResponse, matchApplied);
     }
 
     @Override
-    /**
-     * {@inheritDoc}
-     */
     public ReportResponse translateResults(final ReportResponse reportResponse, final Map<String, String> matchApplied){
         final List<ResultSetItem> results = reportResponse.getResults();
         final List<ResultSetItem> newResults = new ArrayList<>();
@@ -287,6 +283,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      * @param queryAsJson the parsed Cube.js query as a map.
      * @return a list of event type strings found in the filter tree (possibly empty).
      */
+    @SuppressWarnings("unchecked")
     public static List<String> extractEventTypeFilter(final Map<String, Object> queryAsJson) {
 
         Object filtersObject = queryAsJson.get("filters");
@@ -328,6 +325,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      * @return an optional list of event type strings if the filter's member is "request.eventType";
      *         otherwise, {@link Optional#empty()}.
      */
+    @SuppressWarnings("unchecked")
     private static  Optional<List<String>> getEventTypes(Map<String, Object> filter) {
         final String member = filter.get("member") != null ?
                 filter.get("member").toString() : StringPool.BLANK;
@@ -335,7 +333,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
         if ( member.equals("request.eventType")) {
             final List<String> values = (List<String>) filter.get("values");
 
-            if (values != null && values.size() > 0) {
+            if (values != null && !values.isEmpty()) {
                 return Optional.of(values);
             }
         }
@@ -381,6 +379,7 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
      * @param attributeName the attribute name to read (usually "and" or "or").
      * @return the list of maps if present and well-formed; otherwise an empty list.
      */
+    @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> getList(final Map<String, Object> filterNode, final String attributeName) {
         Object asObject = filterNode.get(attributeName);
 
@@ -398,4 +397,5 @@ public class CustomAttributeAPIImpl implements CustomAttributeAPI {
     private static boolean containsCustomAttributes(final String cubeJsQueryJson) {
         return cubeJsQueryJson.contains(FRIENDLY_QUERY_CUSTOM_ATTRIBUTE_PREFIX);
     }
+
 }

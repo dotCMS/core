@@ -100,7 +100,7 @@ export function withClient() {
                     }
 
                     const params = store.pageParams();
-                    const { mode, language_id, url } = params;
+                    const { mode, language_id, url, variantName } = params;
 
                     return {
                         ...store.graphql(),
@@ -109,7 +109,8 @@ export function withClient() {
                             url,
                             mode,
                             languageId: language_id,
-                            personaId: params[PERSONA_KEY]
+                            personaId: params[PERSONA_KEY],
+                            variantName
                         }
                     };
                 })

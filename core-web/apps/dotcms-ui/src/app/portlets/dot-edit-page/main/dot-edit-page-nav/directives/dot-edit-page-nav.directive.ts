@@ -18,7 +18,6 @@ const urlPortletRules = {
  * Directive to add a class depending on the current route
  */
 @Directive({
-    standalone: true,
     selector: '[dotNavbar]'
 })
 export class DotEditPageNavDirective implements OnDestroy {

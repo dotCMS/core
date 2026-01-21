@@ -8,7 +8,9 @@ import { getDotCMSPage } from "@/dotcms-integration";
 import { DetailPage } from "@/views/DetailPage";
 
 const params = Astro.params;
-const pageResponse = await getDotCMSPage<DotCMSCustomDetailPageResponse>("/blog/post/" + params?.post);
+const pageResponse = await getDotCMSPage<DotCMSCustomDetailPageResponse>(
+  "/blog/post/" + params?.post,
+);
 
 const pageAsset = pageResponse?.pageAsset;
 const errors = pageResponse?.error;
@@ -27,10 +29,7 @@ const title = pageAsset ? pageAsset.page.title : "Error";
       {errors ? (
         <Error error={errors} />
       ) : (
-        <DetailPage
-          client:only="react"
-          pageResponse={pageResponse}
-        />
+        <DetailPage client:only="react" pageResponse={pageResponse} />
       )}
     </Layout>
   )

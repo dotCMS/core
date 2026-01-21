@@ -107,20 +107,18 @@ export const DotAiImagePromptStore = signalStore(
                         return dotAiService
                             .generateAndPublishImage(finalPrompt, formValue.size)
                             .pipe(
-                                tapResponse(
-                                    (response) => {
+                                tapResponse({
+                                    next: (response) => {
                                         const newImage: DotGeneratedAIImage = {
                                             request: formValue,
                                             response: response,
                                             error: null
                                         };
-
                                         if (isImageWithError) {
                                             imagesArray[galleryActiveIndex] = newImage;
                                         } else {
                                             imagesArray.push(newImage);
                                         }
-
                                         patchState(store, {
                                             status: ComponentStatus.IDLE,
                                             images: imagesArray,
@@ -129,13 +127,13 @@ export const DotAiImagePromptStore = signalStore(
                                                 : imagesArray.length - 1
                                         });
                                     },
-                                    (error: string) => {
+                                    error: (error: string) => {
                                         patchState(store, {
                                             status: ComponentStatus.ERROR,
                                             error: error
                                         });
                                     }
-                                )
+                                })
                             );
                     })
                 )

@@ -13,10 +13,3 @@ export * from './request.model';
 
 // Library models (Internal SDK structures)
 export * from './library.model';
-
-// Extend Window interface to include our custom properties
-declare global {
-    interface Window {
-        __dotAnalyticsCleanup?: () => void;
-    }
-}

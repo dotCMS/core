@@ -34,7 +34,13 @@
                 "compiler": "babel",
                 "format": ["esm", "cjs"],
                 "extractCss": false,
-                "assets": [{ "input": "libs/sdk/uve", "output": ".", "glob": "*.md" }]
+                "assets": [
+                    {
+                        "input": "libs/sdk/uve",
+                        "output": ".",
+                        "glob": "*.md"
+                    }
+                ]
             }
         },
         "build:js": {

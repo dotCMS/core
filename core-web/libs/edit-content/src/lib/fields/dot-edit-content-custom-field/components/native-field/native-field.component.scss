@@ -1,0 +1,112 @@
+@use "variables" as *;
+@import "mixins";
+
+:host {
+    ::ng-deep {
+        input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not(
+                [type="submit"]
+            ):not([type="reset"]),
+        select,
+        textarea {
+            width: 100%;
+            background-color: $white;
+            height: $field-height-md;
+            border-radius: $field-border-radius;
+            border: $field-border-size solid $color-palette-gray-400;
+            padding: 0 $spacing-1;
+            color: $color-palette-gray-700;
+            font-size: $font-size-md;
+            font-family: $font-default;
+            outline: none;
+            transition:
+                border-color $basic-speed,
+                box-shadow $basic-speed;
+
+            &::placeholder {
+                color: $label-color;
+            }
+
+            &:enabled:hover,
+            &:hover {
+                border-color: $color-palette-primary-400;
+            }
+
+            &:enabled:active,
+            &:enabled:focus,
+            &:active,
+            &:focus {
+                border-color: $color-palette-primary-400;
+                @include field-focus;
+            }
+
+            &:disabled {
+                border-color: $color-palette-gray-200;
+                background: $color-palette-gray-100;
+                color: $color-palette-gray-500;
+                cursor: not-allowed;
+
+                &::placeholder {
+                    color: $color-palette-gray-500;
+                }
+            }
+
+            &.p-filled {
+                color: $black;
+            }
+        }
+
+        textarea {
+            padding: $spacing-1;
+            min-height: 4rem;
+            resize: vertical;
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237e7a86' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right $spacing-1 center;
+            padding-right: $spacing-6;
+        }
+
+        button:not(.p-button),
+        input[type="button"],
+        input[type="submit"],
+        input[type="reset"] {
+            border: none;
+            color: $white;
+            background-color: $color-palette-primary;
+            border-radius: $border-radius-md;
+            font-size: $font-size-md;
+            font-family: $font-default;
+            height: $field-height-md;
+            padding: 0 $spacing-3;
+            cursor: pointer;
+            transition:
+                background-color $basic-speed,
+                box-shadow $basic-speed;
+            text-transform: capitalize;
+            outline: none;
+
+            &:hover:not(:disabled) {
+                background-color: $color-palette-primary-600;
+            }
+
+            &:active:not(:disabled) {
+                background-color: $color-palette-primary-700;
+            }
+
+            &:focus:not(:disabled) {
+                background-color: $color-palette-primary;
+                @include field-focus;
+            }
+
+            &:disabled {
+                background-color: $color-palette-gray-200;
+                color: $color-palette-gray-500;
+                cursor: not-allowed;
+            }
+        }
+    }
+}

@@ -1,6 +1,7 @@
 import { Component, ElementRef, Input, ViewChild } from '@angular/core';
 
 import { DotPageRenderState } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Basic page information for edit mode
@@ -13,7 +14,7 @@ import { DotPageRenderState } from '@dotcms/dotcms-models';
     selector: 'dot-edit-page-lock-info',
     templateUrl: './dot-edit-page-lock-info.component.html',
     styleUrls: ['./dot-edit-page-lock-info.component.scss'],
-    standalone: false
+    imports: [DotMessagePipe]
 })
 export class DotEditPageLockInfoComponent {
     @ViewChild('lockedPageMessage') lockedPageMessage: ElementRef;

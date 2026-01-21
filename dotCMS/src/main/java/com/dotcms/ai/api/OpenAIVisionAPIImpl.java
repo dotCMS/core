@@ -40,7 +40,7 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     static final String AI_VISION_ALT_TEXT_VARIABLE = "altText";
     static final String AI_VISION_TAG_FIELD = DotAssetContentType.TAGS_FIELD_VAR;
 
-    static final String TAGGED_BY_DOTAI = "dot:taggedByDotAI";
+    static final String TAGGED_BY_DOTAI = "dot:taggedbydotai";
 
     static final ImageFilterExporter IMAGE_FILTER_EXPORTER = new ImageFilterExporter();
 

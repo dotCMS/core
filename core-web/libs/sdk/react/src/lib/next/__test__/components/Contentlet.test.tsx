@@ -2,11 +2,12 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { getDotContentletAttributes } from '@dotcms/uve/internal';
+import { getDotAnalyticsAttributes, getDotContentletAttributes } from '@dotcms/uve/internal';
 
 import { Contentlet } from '../../components/Contentlet/Contentlet';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
+import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
 
 jest.mock('../../components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (
@@ -19,8 +20,13 @@ jest.mock('../../hooks/useCheckVisibleContent', () => ({
     useCheckVisibleContent: jest.fn(() => false)
 }));
 
+jest.mock('../../hooks/useIsAnalyticsActive', () => ({
+    useIsAnalyticsActive: jest.fn(() => false)
+}));
+
 jest.mock('@dotcms/uve/internal', () => ({
     getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' })),
+    getDotAnalyticsAttributes: jest.fn(() => ({ 'data-analytics-custom': 'true' })),
     DEVELOPMENT_MODE: 'development',
     PRODUCTION_MODE: 'production'
 }));
@@ -36,11 +42,15 @@ describe('Contentlet', () => {
     };
 
     const useCheckVisibleContentMock = useCheckVisibleContent as jest.Mock;
+    const useIsAnalyticsActiveMock = useIsAnalyticsActive as jest.Mock;
     const getDotContentletAttributesMock = getDotContentletAttributes as jest.Mock;
+    const getDotAnalyticsAttributesMock = getDotAnalyticsAttributes as jest.Mock;
 
     beforeEach(() => {
         useCheckVisibleContentMock.mockReturnValue(false);
+        useIsAnalyticsActiveMock.mockReturnValue(false);
         getDotContentletAttributesMock.mockClear();
+        getDotAnalyticsAttributesMock.mockClear();
     });
 
     test('should render fallback component when no custom component exists', () => {
@@ -108,5 +118,51 @@ describe('Contentlet', () => {
 
         const containerDiv = document.querySelector('div[data-dot-object="contentlet"]');
         expect(containerDiv).not.toHaveStyle('min-height: 4rem');
+    });
+
+    test('should add analytics attributes when isAnalyticsActive is true in production', () => {
+        useIsAnalyticsActiveMock.mockReturnValue(true);
+
+        const contextValue = {
+            mode: 'production',
+            userComponents: {}
+        };
+
+        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+
+        // UVE attributes should NOT be called in production
+        expect(getDotContentletAttributesMock).not.toHaveBeenCalled();
+        // Analytics attributes SHOULD be called when analytics is active
+        expect(getDotAnalyticsAttributesMock).toHaveBeenCalledWith(dummyContentlet);
+    });
+
+    test('should not add any data attributes when both isDevMode and isAnalyticsActive are false', () => {
+        useIsAnalyticsActiveMock.mockReturnValue(false);
+
+        const contextValue = {
+            mode: 'production',
+            userComponents: {}
+        };
+
+        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+
+        expect(getDotContentletAttributesMock).not.toHaveBeenCalled();
+        expect(getDotAnalyticsAttributesMock).not.toHaveBeenCalled();
+    });
+
+    test('should NOT add analytics attributes when in development mode (UVE)', () => {
+        useIsAnalyticsActiveMock.mockReturnValue(true);
+
+        const contextValue = {
+            mode: 'development',
+            userComponents: {}
+        };
+
+        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+
+        // UVE attributes should be called in development
+        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
+        // Analytics attributes should NOT be called in development mode (even if analytics is active)
+        expect(getDotAnalyticsAttributesMock).not.toHaveBeenCalled();
     });
 });

@@ -1,0 +1,29 @@
+<script type="application/javascript">
+	dojo.ready(function(){
+
+	var titleBox=new dijit.form.TextBox({
+		name: "titleBox",
+		value: dojo.byId("title").value,
+		onChange: function() {
+			dojo.byId("title").value=this.get('value');
+
+			var url=dijit.byId('url');
+			if(url && url.get('value').trim()==='') {
+				url.set('value', 
+					this.get('value').toLowerCase().trim()
+									.replace(/[^a-zA-Z0-9]+/g,'-')
+									.replace(/-+$|^-+/g,''));
+			}
+
+			var fname=dijit.byId('friendlyName');
+			if(fname && fname.get('value').trim()==='') {
+				fname.set('value', this.get('value'));
+			}
+		},
+		onKeyDown: function() {
+			dojo.byId("title").value=this.get('value');
+		}
+	}, "titleBox");
+	});
+</script>
+<input id="titleBox"/>

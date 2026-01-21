@@ -8,6 +8,7 @@ import {
     ContentTypeField,
     ContentTypeSchema,
     FieldClazz,
+    FieldClazzEnum,
     Layout
 } from '../types/contentype';
 import { Logger } from '../utils/logger';
@@ -99,7 +100,7 @@ const ContentTypeFieldSchema = z
     .object({
         name: z.string(),
         fieldType: FieldTypeEnum,
-        clazz: z.custom<FieldClazz>().optional(), // Optional since it will be auto-generated
+        clazz: FieldClazzEnum.optional(), // Optional since it will be auto-generated
         required: z.boolean().optional(),
         listed: z.boolean().optional(),
         searchable: z.boolean().optional(),
@@ -112,7 +113,7 @@ const ContentTypeFieldSchema = z
         const needsValue = ['Checkbox', 'Multi-Select', 'Radio', 'Select'];
         if (needsValue.includes(data.fieldType) && (!data.values || data.values.trim() === '')) {
             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
+                code: 'custom',
                 message: `Field type '${data.fieldType}' requires a 'value' property with options in the format 'Label|value' (one per line).`,
                 path: ['values']
             });

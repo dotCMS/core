@@ -2,7 +2,7 @@
     (goBack)="backHandler()"
     (filter)="filterContentlets($event)"
     [goBackBtn]="true"
-    #inputFilter></dot-palette-input-filter>
+    #inputFilter />
 
 @if (items?.length) {
     <div class="dot-content-palette__items">
@@ -17,7 +17,7 @@
                                 ? item?.contentTypeIcon || item?.icon
                                 : item?.__icon__
                         "
-                        size="45px"></dot-contentlet-icon>
+                        size="45px" />
                 }
                 <p>{{ item.title || item.name }}</p>
             </div>
@@ -27,11 +27,11 @@
             [rows]="itemsPerPage"
             [showFirstLastIcon]="false"
             [totalRecords]="totalRecords"
-            pageLinkSize="2"></p-paginator>
+            pageLinkSize="2" />
     </div>
 } @else {
     @if (loading) {
-        <dot-spinner [size]="'40px'" [borderSize]="'8px'"></dot-spinner>
+        <dot-spinner [size]="'40px'" [borderSize]="'8px'" />
     }
 }
 

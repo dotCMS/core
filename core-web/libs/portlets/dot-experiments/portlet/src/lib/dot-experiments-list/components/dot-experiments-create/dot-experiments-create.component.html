@@ -1,9 +1,8 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.sidebar.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}"></dot-sidebar-header>
-
+            dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}" />
         <div class="experiment-create__form-wrapper">
             <form
                 [formGroup]="form"
@@ -29,10 +28,8 @@
                         placeholder="{{ 'experiments.create.form.name.placeholder' | dm }}"
                         required
                         type="text" />
-                    <dot-field-validation-message
-                        [field]="form.controls.name"></dot-field-validation-message>
+                    <dot-field-validation-message [field]="form.controls.name" />
                 </div>
-
                 <div class="field">
                     <label for="description">
                         {{ 'experiments.create.form.description.label' | dm }}
@@ -46,14 +43,11 @@
                         pInputTextarea
                         placeholder="{{ 'experiments.create.form.description.placeholder' | dm }}"
                         rows="6"></textarea>
-
-                    <dot-field-validation-message
-                        [field]="form.controls.description"></dot-field-validation-message>
+                    <dot-field-validation-message [field]="form.controls.description" />
                 </div>
             </form>
         </div>
     </p-sidebar>
-
     <ng-template #actionHeaderBtnTpl>
         <button
             (click)="handleSubmit(vm.pageId)"
@@ -65,4 +59,4 @@
             pButton
             type="submit"></button>
     </ng-template>
-</ng-container>
+}

@@ -14,7 +14,7 @@ import { delay } from 'rxjs/operators';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotDialogModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
@@ -63,7 +63,7 @@ describe('DotFormSelectorComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotFormSelectorComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 PaginatorService,
                 {
@@ -73,7 +73,8 @@ describe('DotFormSelectorComponent', () => {
                 { provide: CoreWebService, useClass: CoreWebServiceMock }
             ],
             imports: [
-                DotDialogModule,
+                DotFormSelectorComponent,
+                DotDialogComponent,
                 BrowserAnimationsModule,
                 HttpClientTestingModule,
                 TableModule,

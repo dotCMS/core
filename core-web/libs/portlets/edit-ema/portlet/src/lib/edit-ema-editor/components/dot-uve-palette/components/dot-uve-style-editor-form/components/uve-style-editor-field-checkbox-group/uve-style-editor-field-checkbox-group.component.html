@@ -1,0 +1,15 @@
+<div class="form-field">
+    <label class="field-label">{{ $field().label }}</label>
+    <div class="checkbox-group flex flex-column" [formGroupName]="$field().id">
+        @for (option of $options(); track option.value) {
+            <div class="flex items-center">
+                <p-checkbox
+                    [formControlName]="option.value"
+                    [binary]="true"
+                    [inputId]="$field().id + '-' + option.value"
+                    [label]="option.label"
+                    class="uve-checkbox"></p-checkbox>
+            </div>
+        }
+    </div>
+</div>

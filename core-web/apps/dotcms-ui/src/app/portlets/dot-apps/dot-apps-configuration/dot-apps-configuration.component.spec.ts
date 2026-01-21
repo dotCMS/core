@@ -29,14 +29,14 @@ import {
     MockDotRouterService
 } from '@dotcms/utils-testing';
 
-import { DotAppsConfigurationListModule } from './dot-apps-configuration-list/dot-apps-configuration-list.module';
+import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 import { DotAppsConfigurationResolver } from './dot-apps-configuration-resolver.service';
 import { DotAppsConfigurationComponent } from './dot-apps-configuration.component';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
-import { DotActionButtonModule } from '../../../view/components/_common/dot-action-button/dot-action-button.module';
-import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
-import { DotAppsImportExportDialogModule } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.module';
+import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
+import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
+import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 const messages = {
     'apps.key': 'Key',
@@ -118,16 +118,17 @@ describe('DotAppsConfigurationComponent', () => {
                 InputTextModule,
                 ButtonModule,
                 CommonModule,
-                DotActionButtonModule,
-                DotAppsConfigurationHeaderModule,
-                DotAppsImportExportDialogModule,
-                DotAppsConfigurationListModule,
+                DotActionButtonComponent,
+                DotAppsConfigurationHeaderComponent,
+                DotAppsImportExportDialogComponent,
+                DotAppsConfigurationListComponent,
                 HttpClientTestingModule,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                MarkdownModule.forRoot()
+                MarkdownModule.forRoot(),
+                DotAppsConfigurationComponent
             ],
-            declarations: [DotAppsConfigurationComponent],
+            declarations: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {

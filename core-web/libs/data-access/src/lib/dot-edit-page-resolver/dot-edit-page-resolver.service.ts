@@ -27,7 +27,6 @@ export class DotEditPageResolver implements Resolve<DotPageRenderState | null> {
     private dotRouterService = inject(DotRouterService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private siteService = inject(SiteService);
-
     private dotSessionStorageService: DotSessionStorageService = inject(DotSessionStorageService);
 
     resolve(route: ActivatedRouteSnapshot): Observable<DotPageRenderState | null> {

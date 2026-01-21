@@ -9,4 +9,3 @@ export const dotCMSClient = createDotCMSClient({
     cache: "no-cache",
   },
 });
-

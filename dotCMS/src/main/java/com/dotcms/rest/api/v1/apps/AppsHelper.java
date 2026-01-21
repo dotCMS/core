@@ -2,8 +2,6 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
@@ -17,6 +15,7 @@ import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -29,6 +28,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
@@ -378,10 +378,7 @@ class AppsHelper {
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
-        if (appSecretsOptional.isPresent()) {
-            Logger.debug(AppsHelper.class, () -> "Secrets already exist in storage. We must override it.");
-            appsAPI.deleteSecrets(key, host, user);
-        }
+
         appsAPI.saveSecrets(secrets, host, user);
         securityLoggerAPI.logInfo(this.getClass(),
                 String.format("User `%s` saved secret for app `%s` on host `%s`", user, key, host.getIdentifier()));

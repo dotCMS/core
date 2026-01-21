@@ -955,8 +955,133 @@ class PushServiceIT {
 
 
     /**
+     * Given scenario: Files matching patterns in .dotcliignore should be excluded from push
+     * Expected Result: Ignored files should not be pushed to the server
+     * @throws IOException if an I/O error occurs
+     */
+    @Test
+    void Test_Push_With_DotCliIgnore() throws IOException {
+
+        // Create a temporal folder for the pull
+        var tempFolder = filesTestHelper.createTempFolder();
+        var workspace = workspaceManager.getOrCreate(tempFolder);
+
+        try {
+            // Preparing the data for the test
+            final var testSiteName = filesTestHelper.prepareData();
+            final var folderPath = String.format("//%s", testSiteName);
+
+            // Pulling the content
+            OutputOptionMixin outputOptions = new MockOutputOptionMixin();
+            final Path absolutePath = workspace.files().toAbsolutePath();
+
+            Map<String, Object> customOptions = Map.of(
+                    INCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    INCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    EXCLUDE_FOLDER_PATTERNS, new HashSet<>(),
+                    EXCLUDE_ASSET_PATTERNS, new HashSet<>(),
+                    NON_RECURSIVE, false,
+                    PRESERVE, false,
+                    INCLUDE_EMPTY_FOLDERS, true
+            );
+
+            // Execute the pull
+            pullService.pull(
+                    PullOptions.builder().
+                            destination(absolutePath.toFile()).
+                            contentKey(folderPath).
+                            isShortOutput(false).
+                            failFast(true).
+                            maxRetryAttempts(0).
+                            customOptions(customOptions).
+                            build(),
+                    outputOptions,
+                    fileProvider,
+                    filePullHandler
+            );
+
+            // Create a .dotcliignore file in the workspace
+            Path dotCliIgnorePath = tempFolder.resolve(".dotcliignore");
+            String ignorePatterns =
+                    "# Ignore log files\n" +
+                    "*.log\n" +
+                    "\n" +
+                    "# Ignore temporary files\n" +
+                    "*.tmp\n" +
+                    "\n" +
+                    "# Ignore test directory\n" +
+                    "testdir/\n";
+            Files.writeString(dotCliIgnorePath, ignorePatterns);
+
+            // Create files that should be ignored
+            Path liveSitePath = Paths.get(absolutePath.toString(), "live", "en-us", testSiteName);
+            Path testLogFile = liveSitePath.resolve("test.log");
+            Path errorLogFile = liveSitePath.resolve("folder1").resolve("error.log");
+            Path tempFile = liveSitePath.resolve("temp.tmp");
+
+            // Create a test directory that should be ignored
+            Path testDir = liveSitePath.resolve("testdir");
+            Files.createDirectories(testDir);
+            Path fileInTestDir = testDir.resolve("ignored.txt");
+
+            // Write content to ignored files
+            Files.writeString(testLogFile, "This is a test log");
+            Files.writeString(errorLogFile, "This is an error log");
+            Files.writeString(tempFile, "This is a temp file");
+            Files.writeString(fileInTestDir, "This should be ignored");
+
+            // Create a file that should NOT be ignored
+            Path normalFile = liveSitePath.resolve("folder1").resolve("normal.txt");
+            Files.writeString(normalFile, "This is a normal file that should be pushed");
+
+            // Count files before push
+            long totalCreatedFiles = 5; // 3 log/tmp files + 1 in testdir + 1 normal file
+
+            // Now we are going to push the content
+            var traverseResults = pushService.traverseLocalFolders(
+                    outputOptions,
+                    tempFolder.toFile(),
+                    tempFolder.toFile(),
+                    true,
+                    true,
+                    true,
+                    true
+            );
+
+            Assertions.assertNotNull(traverseResults);
+            Assertions.assertEquals(2, traverseResults.size()); // Live and working folders
+
+            final TraverseResult traverseResult1 = traverseResults.get(0);
+            Assertions.assertEquals("live", traverseResult1.localPaths().status());
+            Assertions.assertTrue(traverseResult1.exceptions().isEmpty());
+
+            var optional = traverseResult1.treeNode();
+            Assertions.assertTrue(optional.isPresent());
+            final TreeNode treeNode = optional.get();
+            var treeNodePushInfo = treeNode.collectPushInfo();
+
+            // Verify that only the normal file is marked for push
+            // The 4 ignored files (test.log, error.log, temp.tmp, and fileInTestDir) should not be counted
+            // We should only see the 1 new normal file being pushed
+            Assertions.assertEquals(1, treeNodePushInfo.assetsNewCount(),
+                    "Only the normal.txt file should be marked for push, ignored files should be excluded");
+
+            // The testdir/ folder should also not be counted
+            // We expect 0 new folders (since we're just adding files to existing pulled structure)
+            Assertions.assertEquals(0, treeNodePushInfo.foldersToPushCount(),
+                    "testdir/ folder should be ignored and not counted");
+
+            // Verify no modifications to existing files
+            Assertions.assertEquals(0, treeNodePushInfo.assetsModifiedCount());
+
+        } finally {
+            filesTestHelper.deleteTempDirectory(tempFolder);
+        }
+    }
+
+    /**
      * Verifies that the RESTEasy file upload threshold is properly configured.
-     * This test ensures that the 'quarkus.resteasy.multipart.file-size-threshold' property 
+     * This test ensures that the 'quarkus.resteasy.multipart.file-size-threshold' property
      * is set to -1, which allows for unlimited file sizes during multipart file uploads.
      * Setting this value to -1 is crucial for handling large file uploads
      */

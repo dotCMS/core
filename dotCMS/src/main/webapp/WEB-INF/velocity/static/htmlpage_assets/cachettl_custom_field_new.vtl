@@ -1,0 +1,19 @@
+<script type="application/javascript">
+	DotCustomFieldApi.ready(() => {
+		const cachettlField = DotCustomFieldApi.getField('cachettl');
+		const cachettlbox = document.getElementById('cachettlbox');
+		
+		let currentValue = cachettlField.getValue() || '';
+		if(currentValue === '') {
+			currentValue = $config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS",15);
+			cachettlField.setValue(currentValue);
+		}
+		
+		cachettlbox.value = currentValue;
+		
+		cachettlbox.addEventListener('change', () => {
+			cachettlField.setValue(cachettlbox.value);
+		});
+	});
+</script>
+<input type="text" id="cachettlbox"/>

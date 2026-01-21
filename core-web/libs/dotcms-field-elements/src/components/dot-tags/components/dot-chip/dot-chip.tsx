@@ -16,7 +16,7 @@ export class DotChipComponent {
     /** (optional) If is true disabled the delete button */
     @Prop({ reflect: true }) disabled = false;
 
-    @Event() remove: EventEmitter<String>;
+    @Event() remove: EventEmitter<string>;
 
     render() {
         const label = this.label ? `${this.deleteLabel} ${this.label}` : null;

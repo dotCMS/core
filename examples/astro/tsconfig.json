@@ -5,7 +5,7 @@
     "jsxImportSource": "react",
     "module": "es2020",
     "baseUrl": "./",
-    "plugins": [ { "name": "@astrojs/ts-plugin" } ],
+    "plugins": [{ "name": "@astrojs/ts-plugin" }],
     "paths": {
       "@/components/*": ["./src/components/*"],
       "@/components/common/*": ["./src/components/common/*"],

@@ -19,7 +19,9 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.DotAssetDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FieldRelationshipDataGen;
@@ -31,10 +33,12 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestDataUtils.TestFile;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -91,6 +95,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
+import java.net.URISyntaxException;
 import org.apache.http.HttpStatus;
 import org.elasticsearch.action.admin.cluster.settings.ClusterUpdateSettingsRequest;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
@@ -4778,6 +4783,42 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             ContentletDataGen.remove(contentlet);
         }
 
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkin(Contentlet, User, boolean)}
+     * Given Scenario: Create a DotAsset in a folder that restricts the asset's file extension
+     * Expected Result: Should throw a DotAssetValidationException indicating the folder doesn't accept the file extension
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void test_checkin_DotAsset_FolderWithRestrictedExtension_ShouldThrowException()
+            throws Exception {
+
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+
+        // Create a folder that only accepts .txt files (restricts .png files)
+        final Folder restrictedFolder = new FolderDataGen()
+                .site(host)
+                .name("restrictedFolder")
+                .fileMasks("*.txt") // Only allow .txt files
+                .nextPersisted();
+        try {
+            // Create a test PNG file
+            final File testPngFile = TestDataUtils.nextBinaryFile(TestFile.PNG);
+            // Try to create a DotAsset with .png extension in a folder that only accepts .txt
+            try {
+                new DotAssetDataGen(host, restrictedFolder, testPngFile).nextPersisted();
+                Assert.fail("Should have thrown an exception!");
+            }catch (Exception e) {
+                Assert.assertTrue("Should have thrown a DotAssetValidationException ",  ExceptionUtil.causedBy(e, DotAssetValidationException.class));
+            }
+        } finally {
+            // Clean up the folder
+            FolderDataGen.remove(restrictedFolder);
+        }
     }
 
 }

@@ -16,7 +16,7 @@ public class GeminiVendorModelProviderImpl implements VendorModelProvider {
 
     @Override
     public String getVendorName() {
-        return AiVendor.OPEN_AI.getVendorName();
+        return AiVendor.GEMINI.getVendorName();
     }
 
     @Override

@@ -30,7 +30,7 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.servlet.http.HttpServletRequest;
@@ -603,7 +603,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = new String(Base64.getDecoder().decode(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -622,7 +622,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = new String(Base64.getDecoder().decode(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }

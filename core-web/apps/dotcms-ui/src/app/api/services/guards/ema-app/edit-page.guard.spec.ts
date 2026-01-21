@@ -27,7 +27,7 @@ describe('EditPageGuard', () => {
                     provide: Router,
                     useValue: {
                         navigate: jest.fn(),
-                        getCurrentNavigation: jest.fn().mockReturnValue({
+                        currentNavigation: jest.fn().mockReturnValue({
                             extractedUrl: {
                                 queryParams: {
                                     url: '/some-url'

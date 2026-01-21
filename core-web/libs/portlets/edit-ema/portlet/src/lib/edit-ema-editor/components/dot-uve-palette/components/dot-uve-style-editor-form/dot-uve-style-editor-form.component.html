@@ -1,0 +1,28 @@
+@if ($form() && $sections()) {
+    <form [formGroup]="$form()!" class="uve-style-editor-form">
+        <p-accordion [multiple]="true" class="uve-accordion">
+            @for (section of $sections(); track section.title) {
+                <p-accordionTab [header]="section.title" class="uve-accordion-tab">
+                    <div class="form-fields">
+                        @for (field of section.fields; track field.id) {
+                            @switch (field.type) {
+                                @case (STYLE_EDITOR_FIELD_TYPES.DROPDOWN) {
+                                    <dot-uve-style-editor-field-dropdown [field]="field" />
+                                }
+                                @case (STYLE_EDITOR_FIELD_TYPES.CHECKBOX_GROUP) {
+                                    <dot-uve-style-editor-field-checkbox-group [field]="field" />
+                                }
+                                @case (STYLE_EDITOR_FIELD_TYPES.RADIO) {
+                                    <dot-uve-style-editor-field-radio [field]="field" />
+                                }
+                                @case (STYLE_EDITOR_FIELD_TYPES.INPUT) {
+                                    <dot-uve-style-editor-field-input [field]="field" />
+                                }
+                            }
+                        }
+                    </div>
+                </p-accordionTab>
+            }
+        </p-accordion>
+    </form>
+}

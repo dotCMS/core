@@ -32,6 +32,30 @@
     font-weight: $font-weight-bold;
     color: $color-palette-gray-900;
     margin: 0;
+
+    &--fraction {
+        display: flex;
+        align-items: baseline;
+        gap: $spacing-1;
+    }
+
+    &__numerator {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-bold;
+        color: $color-palette-gray-900;
+    }
+
+    &__separator {
+        font-size: $font-size-xl;
+        font-weight: $font-weight-bold;
+        color: $color-palette-gray-900;
+    }
+
+    &__denominator {
+        font-size: $font-size-md;
+        font-weight: $font-weight-regular-bold;
+        color: $color-palette-gray-400;
+    }
 }
 
 .metric-subtitle {

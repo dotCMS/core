@@ -8,7 +8,7 @@
         #siteSelector
         dotSiteSelector
         optionLabel="name"
-        filterBy="name"></p-dropdown>
+        filterBy="name" />
 
     <div class="theme-header__search-box">
         <input
@@ -75,9 +75,9 @@
     <p-button
         (onClick)="close()"
         styleClass="p-button-outlined"
-        label="{{ 'dot.common.cancel' | dm }}"></p-button>
+        label="{{ 'dot.common.cancel' | dm }}" />
     <p-button
         (onClick)="apply()"
         [disabled]="!currentTheme || currentTheme?.inode === themeId"
-        label="{{ 'dot.common.apply' | dm }}"></p-button>
+        label="{{ 'dot.common.apply' | dm }}" />
 </div>

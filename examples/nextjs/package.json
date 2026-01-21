@@ -15,9 +15,9 @@
         "@dotcms/types": "latest",
         "@dotcms/uve": "latest",
         "@tinymce/tinymce-react": "6.2.1",
-        "next": "15.3.2",
-        "react": "19.1.0",
-        "react-dom": "19.1.0"
+        "next": "^15.5.9",
+        "react": "19.2.1",
+        "react-dom": "19.2.1"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.1.6",

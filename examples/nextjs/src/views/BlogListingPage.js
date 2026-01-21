@@ -5,7 +5,7 @@ import { dotCMSClient } from "@/utils/dotCMSClient";
 
 import { useDebounce } from "@/hooks/useDebounce";
 import { useEditableDotCMSPage } from "@dotcms/react";
-import Header from "@/components/Header";
+import Header from "@/components/header/Header";
 import BlogCard from "@/components/BlogCard";
 
 export function BlogListingPage(pageResponse) {

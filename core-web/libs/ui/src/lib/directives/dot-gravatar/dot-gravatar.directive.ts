@@ -16,8 +16,7 @@ const FALLBACK_AVATAR_LETTER = 'A';
  * If no email is provided, displays a default character.
  */
 @Directive({
-    selector: 'p-avatar[dotGravatar]',
-    standalone: true
+    selector: 'p-avatar[dotGravatar]'
 })
 export class DotGravatarDirective {
     /** Reference to the PrimeNG Avatar component instance. */

@@ -32,8 +32,8 @@ import { CoreWebServiceMock, MockDotMessageService } from '@dotcms/utils-testing
 import { DotCategoriesListComponent } from './dot-categories-list.component';
 
 import { DotCategoriesService } from '../../../api/services/dot-categories/dot-categories.service';
-import { DotEmptyStateModule } from '../../../view/components/_common/dot-empty-state/dot-empty-state.module';
-import { DotPortletBaseModule } from '../../../view/components/dot-portlet-base/dot-portlet-base.module';
+import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
+import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-test-host-component',
@@ -101,7 +101,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
             'message.category.empty.button.label': 'Add New Category'
         });
         TestBed.configureTestingModule({
-            declarations: [DotCategoriesListComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
                 SharedModule,
                 MenuModule,
@@ -110,7 +110,7 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 BreadcrumbModule,
-                DotPortletBaseModule,
+                DotPortletBaseComponent,
                 ButtonModule,
                 InputTextModule,
                 TableModule,
@@ -119,7 +119,8 @@ xdescribe('DotCategoriesListingTableComponent', () => {
                 InputNumberModule,
                 DotActionMenuButtonComponent,
                 CheckboxModule,
-                DotEmptyStateModule
+                DotEmptyStateComponent,
+                DotCategoriesListComponent
             ],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },

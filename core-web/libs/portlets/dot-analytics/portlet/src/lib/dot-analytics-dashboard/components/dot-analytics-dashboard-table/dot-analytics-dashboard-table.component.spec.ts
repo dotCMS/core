@@ -7,35 +7,38 @@ import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { RequestState, TopPerformaceTableEntity } from '@dotcms/portlets/dot-analytics/data-access';
+import {
+    RequestState,
+    TopPerformanceTableEntity
+} from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsDashboardTableComponent } from './dot-analytics-dashboard-table.component';
 
 describe('DotAnalyticsDashboardTableComponent', () => {
     let spectator: Spectator<DotAnalyticsDashboardTableComponent>;
 
-    const mockTableData: TopPerformaceTableEntity[] = [
+    const mockTableData: TopPerformanceTableEntity[] = [
         {
-            'request.pageTitle': 'Home Page',
-            'request.path': '/home',
-            'request.totalRequest': '1250'
+            'EventSummary.title': 'Home Page',
+            'EventSummary.identifier': '/home',
+            'EventSummary.totalEvents': '1250'
         },
         {
-            'request.pageTitle': 'About Us',
-            'request.path': '/about',
-            'request.totalRequest': '890'
+            'EventSummary.title': 'About Us',
+            'EventSummary.identifier': '/about',
+            'EventSummary.totalEvents': '890'
         },
         {
-            'request.pageTitle': 'Contact',
-            'request.path': '/contact',
-            'request.totalRequest': '567'
+            'EventSummary.title': 'Contact',
+            'EventSummary.identifier': '/contact',
+            'EventSummary.totalEvents': '567'
         }
     ];
 
     const createMockTableState = (
-        data: TopPerformaceTableEntity[] | null = mockTableData,
+        data: TopPerformanceTableEntity[] | null = mockTableData,
         status: ComponentStatus = ComponentStatus.LOADED
-    ): RequestState<TopPerformaceTableEntity[]> => ({
+    ): RequestState<TopPerformanceTableEntity[]> => ({
         data,
         status,
         error: null
@@ -96,11 +99,11 @@ describe('DotAnalyticsDashboardTableComponent', () => {
 
     describe('Data Handling', () => {
         it('should handle data changes', () => {
-            const newData: TopPerformaceTableEntity[] = [
+            const newData: TopPerformanceTableEntity[] = [
                 {
-                    'request.pageTitle': 'New Page',
-                    'request.path': '/new',
-                    'request.totalRequest': '100'
+                    'EventSummary.title': 'New Page',
+                    'EventSummary.identifier': '/new',
+                    'EventSummary.totalEvents': '100'
                 }
             ];
 

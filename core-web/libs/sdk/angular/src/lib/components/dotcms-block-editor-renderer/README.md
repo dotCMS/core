@@ -21,11 +21,11 @@ The `DotCMSBlockEditorRenderer` is designed to display content created with DotC
     `
 })
 export class MyComponent {
-    blockEditorContent: BlockEditorContent = {...};
+    blockEditorContent: BlockEditorNode = {...};
 }
 ```
 
-Where `blockEditorContent` represents the Block Editor content structure.
+Where `blockEditorContent` represents the Block Editor content structure (now using unified `BlockEditorNode`).
 More info in the [Block Editor documentation](https://dev.dotcms.com/docs/block-editor#JSONObject)
 
 ## Default Block Types
@@ -71,18 +71,65 @@ We recommend using CustomRenderers if you need more complex components, as the d
 
 ### Creating a Custom Renderer
 
+Custom renderers receive the full `BlockEditorNode` with access to `attrs`, `marks`, `content`, etc.
+
 ```typescript
 @Component({
     selector: 'my-custom-paragraph',
     standalone: true,
     template: `
-        <div class="custom-paragraph">
-            {{ content.text }}
+        <div class="custom-paragraph" [style]="node.attrs">
+            <ng-content />
         </div>
     `
 })
 export class MyCustomParagraphComponent {
-    @Input() content: ContentNode;
+    @Input() node!: BlockEditorNode;
+}
+```
+
+### Accessing Node Properties
+
+The `node` input provides access to all block editor node properties:
+
+```typescript
+@Component({
+    selector: 'activity-renderer',
+    standalone: true,
+    template: `
+        <article class="activity">
+            <h2>{{ data.title }}</h2>
+            <p>{{ data.description }}</p>
+            <time>{{ data.date }}</time>
+            <address *ngIf="data.location">{{ data.location }}</address>
+            <ng-content />
+        </article>
+    `
+})
+export class ActivityRendererComponent {
+    @Input() node!: BlockEditorNode;
+
+    get data() {
+        // Access contentlet data from node.attrs.data
+        return this.node.attrs?.data as {
+            title: string;
+            description: string;
+            date: string;
+            location?: string;
+        };
+    }
+
+    get type() {
+        return this.node.type;  // Block type name
+    }
+
+    get marks() {
+        return this.node.marks;  // Text formatting marks
+    }
+
+    get content() {
+        return this.node.content;  // Nested content nodes
+    }
 }
 ```
 

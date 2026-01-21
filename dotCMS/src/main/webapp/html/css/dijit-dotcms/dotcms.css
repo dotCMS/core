@@ -4609,6 +4609,8 @@
 .dijitTabPaneWrapper .dijitContentPane {
   padding: 1.5rem;
   overflow: visible;
+  max-height: 100%;
+  overflow-y: auto;
 }
 .dijitTabChecked, .dijitTabChecked.dijitTabCheckedHover {
   background-color: var(--color-palette-primary-200);
@@ -4742,6 +4744,9 @@
   height: calc(100% - 42px);
   border-top: none;
   overflow: auto;
+}
+.dijitTabContainerTopChildWrapper {
+  height: 100%;
 }
 .dijitTabContainerBottom-container {
   border-bottom: none;
@@ -9766,7 +9771,6 @@ a.category_higlighted, a.tag_higlighted {
   height: 100%;
   margin: 0px 300px 0 0;
   position: relative;
-  padding-top: 1rem;
   width: auto;
   z-index: 1;
 }
