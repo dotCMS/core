@@ -10598,6 +10598,55 @@ paths:
           description: default response
       tags:
       - Page
+  /v1/page/{pageId}/styles:
+    put:
+      description: Updates style properties for contentlets within containers on a
+        specific page. Only updates the styleProperties field without modifying page
+        structure.
+      operationId: updateStyles
+      parameters:
+      - description: Page identifier
+        in: path
+        name: pageId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentWithStylesForm"
+        description: "List of containers with contentlet style updates. Each container\
+          \ includes its ID, UUID, and dynamic properties where contentlet IDs are\
+          \ keys with their style properties as values."
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentView"
+          description: Contentlet styles updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - empty container entries or invalid contentlet
+            references
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user does not have EDIT permission on the page
+        "404":
+          content:
+            application/json: {}
+          description: Page not found
+      summary: Update contentlet styles in a page
+      tags:
+      - Page
   /v1/permissions:
     get:
       description: Returns available permission levels and scopes that can be assigned
@@ -20646,6 +20695,53 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowFormEntry"
+    ContentView:
+      type: object
+      properties:
+        containerId:
+          type: string
+          description: Container identifier
+          example: //demo.dotcms.com/application/containers/default/
+        contentletId:
+          type: string
+          description: Contentlet identifier
+        dotStyleProperties:
+          type: object
+          additionalProperties:
+            type: object
+            description: Styles defined for the Contentlet
+            example:
+              color: "#FF0000"
+              margin: 10px
+          description: Styles defined for the Contentlet
+          example:
+            color: "#FF0000"
+            margin: 10px
+          properties:
+            empty:
+              type: boolean
+        uuid:
+          type: string
+          description: Container unique identifier (UUID)
+      required:
+      - containerId
+      - contentletId
+      - uuid
+    ContentWithStylesForm:
+      type: object
+      description: Container with contentlet style properties
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+          example: //demo.dotcms.com/application/containers/default/
+        uuid:
+          type: string
+          description: Container unique identifier (UUID)
+          example: "1"
+      required:
+      - identifier
+      - uuid
     ContentletWorkflowStatusView:
       type: object
       properties:
@@ -22928,6 +23024,14 @@ components:
       type: object
       additionalProperties:
         type: object
+        description: Styles defined for the Contentlet
+        example:
+          color: "#FF0000"
+          margin: 10px
+      description: Styles defined for the Contentlet
+      example:
+        color: "#FF0000"
+        margin: 10px
       properties:
         empty:
           type: boolean
@@ -24852,6 +24956,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Container"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentView"
         errors:
           type: array
           items:
