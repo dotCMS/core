@@ -1,7 +1,7 @@
 name: "Content Analytics"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/analytics.png"
 allowExtraParameters: false
-description: "Content Analytics allow developers and/or marketers to track user interactions across specified Sites in dotCMS."
+description: "The Content Analytics App allows you to track and analyze user interactions with your content (like impressions and clicks) across your dotCMS sites, helping you understand engagement and optimize your content strategy."
 
 params:
   siteAuth:
@@ -13,3 +13,54 @@ params:
     required: true
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
+  auto_page_view:
+    value: true
+    hidden: false
+    type: "BOOL"
+    label: "Enable Auto Page Views"
+    hint: "Automatically track page views. If not specified, it defaults to true."
+    required: false
+  content_impression:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable Content Impressions"
+    hint: "Automatically track when contentlets are visible in the viewport. If not specified, it defaults to false."
+    required: false
+  content_click:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable Content Clicks"
+    hint: "Automatically track when users click on contentlets. If not specified, it defaults to false."
+    required: false
+  advanced_config:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Advanced Configuration (JSON)"
+    hint: |
+        Allows you to enter a JSON object to fine-tune the SDK behavior. For example:
+        <br/><br/>
+        ```json
+        {
+          "queue": {
+            "eventBatchSize": 15,
+            "flushInterval": 5000
+          },
+          "impressions": {
+            "visibilityThreshold": 0.5,
+            "dwellMs": 750
+          }
+        }
+        ```
+        <br/>
+        Refer to the documentation for all available settings.
+    required: false
+  debug:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable Debug Mode"
+    hint: "Enables debug mode in the browser console to log additional information for troubleshooting. If not specified, it defaults to false."
+    required: false

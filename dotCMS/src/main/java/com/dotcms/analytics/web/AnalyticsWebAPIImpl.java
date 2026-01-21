@@ -6,6 +6,7 @@ import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -21,6 +22,7 @@ import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -127,11 +129,22 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
         try {
 
             final StringBuilder builder = new StringBuilder(this.jsCode.get());
+            final Map<String, Secret> secrets = ContentAnalyticsUtil.getAppSecrets(currentHost);
 
-            Map.of("${site_auth}", this.analyticsKeyFunction.apply(currentHost),
-                   "${debug}", "false",
-                   "${auto_page_view}", "true")
-                    .forEach((key, value) -> {
+            final Function<String, String> getSecret = (key) -> {
+                final Secret secret = secrets.get(key);
+                return (secret != null) ? secret.getString() : StringPool.BLANK;
+            };
+
+            final Map<String, String> placeholders = new HashMap<>();
+            placeholders.put("${site_auth}", getSecret.apply("siteAuth"));
+            placeholders.put("${debug}", getSecret.apply("debug"));
+            placeholders.put("${auto_page_view}", getSecret.apply("auto_page_view"));
+            placeholders.put("${content_impression}", getSecret.apply("content_impression"));
+            placeholders.put("${content_click}", getSecret.apply("content_click"));
+            placeholders.put("${advanced_config}", getSecret.apply("advanced_config"));
+
+            placeholders.forEach((key, value) -> {
 
                 int start;
                 while ((start = builder.indexOf(key)) != -1) {
