@@ -155,7 +155,7 @@ public class PageResourceHelper implements Serializable {
     @WrapInTransaction
     public List<ContentView> saveContent(final String pageId,
             final List<ContainerEntry> containerEntries,
-            final Language language, String variantName) throws DotDataException {
+            final Language language, String variantName, User user) throws DotDataException {
 
         final Map<String, List<MultiTree>> multiTreesMap = new HashMap<>();
         final List<ContentView> responseViews = new ArrayList<>();
@@ -169,7 +169,8 @@ public class PageResourceHelper implements Serializable {
 
             if (UtilMethods.isSet(contentIds)) {
                 for (final String contentletId : contentIds) {
-                    final MultiTree multiTree = new MultiTree().setContainer(containerEntry.getContainerId())
+                    final MultiTree multiTree = new MultiTree()
+                            .setContainer(castToOriginalContainerId(containerEntry.getContainerId(), user, false))
                             .setContentlet(contentletId)
                             .setInstanceId(containerEntry.getContainerUUID())
                             .setTreeOrder(i++)

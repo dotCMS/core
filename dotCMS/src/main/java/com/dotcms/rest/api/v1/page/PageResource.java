@@ -802,7 +802,7 @@ public class PageResource {
 
             // Save content and Get the saved contentlets
             final List<ContentView> savedContent = pageResourceHelper.saveContent(
-                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName);
+                    pageId, this.reduce(pageContainerForm.getContainerEntries()), language, variantName, user);
 
             return Response.ok(new ResponseEntityContentView(savedContent)).build();
         } catch(HTMLPageAssetNotFoundException e) {
