@@ -1,10 +1,15 @@
-<dot-secondary-toolbar>
-    <div class="main-toolbar-left flex items-center">
-        <div class="content-type__title">
-            <header>
-                <dot-icon name="{{ contentType.icon }}" />
+<div class="h-14 bg-white border-b border-gray-300 flex items-center justify-between px-4">
+    <div class="flex items-center">
+        <div class="text-lg flex flex-col flex-wrap">
+            <header class="flex items-center">
+                <span class="material-icons mr-2 text-2xl">{{ contentType.icon }}</span>
+
                 <ng-template #inlineEditDisplayTemplate>
-                    <h4 (click)="editInlineActivate($event)">{{ contentType.name }}</h4>
+                    <h4
+                        class="m-0 text-black font-normal cursor-pointer"
+                        (click)="editInlineActivate($event)">
+                        {{ contentType.name }}
+                    </h4>
                 </ng-template>
                 <ng-template #inlineEditContentTemplate>
                     <input
@@ -23,8 +28,10 @@
             </header>
         </div>
 
-        <div class="content-type__info">
-            <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}" />
+        <div class="flex items-center text-gray-700 text-sm ml-4 gap-2 justify-center">
+            <div class="px-2 mt-1">
+                <dot-api-link href="api/v1/contenttype/id/{{ contentType.id }}" />
+            </div>
             <dot-copy-button
                 [copy]="contentType.id"
                 [tooltipText]="contentType.id"
@@ -36,26 +43,22 @@
                 data-testId="copyVariableName" />
         </div>
     </div>
-    <div class="main-toolbar-right">
-        <button
+    <div class="flex items-center gap-2">
+        <p-button
             (click)="addContentInMenu()"
-            class="p-button-outlined content-type__add-to-menu"
             id="add-to-menu-button"
-            label="{{ 'contenttypes.content.add_to_menu' | dm }}"
-            pButton
-            type="button"></button>
-        <button
+            [label]="'contenttypes.content.add_to_menu' | dm"
+            [outlined]="true" />
+        <p-button
             (click)="openEditDialog.next()"
-            class="p-button-outlined"
             id="form-edit-button"
             icon="pi pi-pencil"
-            label="{{ 'contenttypes.action.edit' | dm }}"
-            pButton
-            type="button"></button>
+            [label]="'contenttypes.action.edit' | dm"
+            [outlined]="true" />
     </div>
-</dot-secondary-toolbar>
-<p-tabs value="0">
-    <p-tablist>
+</div>
+<p-tabs [value]="0" class="h-full flex flex-col">
+    <p-tablist class="shrink-0">
         <p-tab [value]="0">
             {{ 'contenttypes.tab.fields.header' | dm }}
         </p-tab>
@@ -75,13 +78,15 @@
             </p-tab>
         }
     </p-tablist>
-    <p-tabpanels>
-        <p-tabpanel [value]="0" class="content-type__properties">
-            <div class="content-type__fields-layout" id="content-type-form-layout">
-                <div class="content-type__fields-main" id="content-type-form-main">
+    <p-tabpanels class="grow basis-0">
+        <p-tabpanel [value]="0" class="content-type__properties h-full">
+            <div class="flex grow overflow-hidden" id="content-type-form-layout">
+                <div
+                    class="flex flex-col grow overflow-auto bg-gray-200 p-3"
+                    id="content-type-form-main">
                     <ng-content></ng-content>
                 </div>
-                <div class="content-type__fields-sidebar">
+                <div class="items-center flex flex-col">
                     <p-splitButton
                         (onClick)="fireAddRowEvent()"
                         [model]="actions"
@@ -93,26 +98,32 @@
             </div>
         </p-tabpanel>
         @if (contentType) {
-            <p-tabpanel [value]="1" class="content-type__relationships">
-                <dot-portlet-box>
-                    <dot-iframe [src]="relationshipURL" />
-                </dot-portlet-box>
+            <p-tabpanel [value]="1" class="h-full">
+                <div class="h-full">
+                    <dot-portlet-box class="h-full">
+                        <dot-iframe class="h-full" [src]="relationshipURL" />
+                    </dot-portlet-box>
+                </div>
             </p-tabpanel>
         }
         @if (contentType && showPermissionsTab | async) {
-            <p-tabpanel [value]="2" class="content-type__permissions">
-                <dot-portlet-box>
-                    <dot-iframe [src]="permissionURL" />
-                </dot-portlet-box>
+            <p-tabpanel [value]="2" class="h-full">
+                <div class="h-full">
+                    <dot-portlet-box class="h-full">
+                        <dot-iframe class="h-full" [src]="permissionURL" />
+                    </dot-portlet-box>
+                </div>
             </p-tabpanel>
         }
         @if (contentType) {
             <p-tabpanel
                 [value]="contentType && (showPermissionsTab | async) ? 3 : 2"
-                class="content-type__push_history">
-                <dot-portlet-box>
-                    <dot-iframe [src]="pushHistoryURL" />
-                </dot-portlet-box>
+                class="h-full">
+                <div class="h-full">
+                    <dot-portlet-box class="h-full">
+                        <dot-iframe class="h-full" [src]="pushHistoryURL" />
+                    </dot-portlet-box>
+                </div>
             </p-tabpanel>
         }
     </p-tabpanels>

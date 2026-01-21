@@ -1,8 +1,8 @@
-<div class="content-type-fields-drop-zone">
+<div class="flex grow flex-col relative">
     <div
         [dragulaModel]="fieldRows"
         [attr.disabled]="loading"
-        class="content-type-fields-drop-zone__container"
+        class="grow flex flex-col gap-4"
         dragula="fields-row-bag">
         @for (row of fieldRows; track row; let i = $index) {
             @if (row.columns && row.columns.length) {
@@ -31,7 +31,7 @@
     [modal]="true"
     [style]="{ width: '45rem' }"
     (visibleChange)="removeFieldsWithoutId()">
-    <p-tabs (onChange)="handleTabChange($event.value)" [(value)]="activeTab">
+    <p-tabs (onChange)="handleTabChange($event.value)" [(value)]="activeTab" class="-mx-6">
         <p-tablist>
             <p-tab [value]="0">
                 {{ 'contenttypes.dropzone.tab.overview' | dm }}

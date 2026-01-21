@@ -1,6 +1,14 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    inject,
+    OnDestroy,
+    OnInit,
+    ViewChild,
+    ViewContainerRef
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take, takeUntil } from 'rxjs/operators';
@@ -55,7 +63,6 @@ type DotRowActions = {
  */
 @Component({
     selector: 'dot-content-types',
-    styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
     imports: [
         DotListingDataTableComponent,
@@ -87,6 +94,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private dotContentTypeStore = inject(DotContentTypeStore);
+    private cdr = inject(ChangeDetectorRef);
 
     @ViewChild('listing', { static: false })
     listing: DotListingDataTableComponent;
@@ -134,7 +142,11 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 this.setFilterByContentType(filterBy as string);
             }
 
-            this.showTable = true;
+            // Defer showTable change to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
+            setTimeout(() => {
+                this.showTable = true;
+                this.cdr.markForCheck();
+            });
         });
     }
 
@@ -376,9 +388,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     }
 
     private async showCloneContentTypeDialog(item: DotCMSContentType) {
-        const { DotContentTypeCopyDialogComponent } = await import(
-            './components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component'
-        );
+        const { DotContentTypeCopyDialogComponent } =
+            await import('./components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component');
         const componentRef = this.dotDynamicDialog.createComponent(
             DotContentTypeCopyDialogComponent
         );

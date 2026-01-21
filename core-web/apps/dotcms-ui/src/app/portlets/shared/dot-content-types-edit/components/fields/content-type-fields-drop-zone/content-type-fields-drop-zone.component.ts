@@ -43,7 +43,6 @@ import { FieldPropertyService } from '../service/field-properties.service';
  */
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
-    styleUrls: ['./content-type-fields-drop-zone.component.scss'],
     templateUrl: './content-type-fields-drop-zone.component.html',
     standalone: false
 })
@@ -163,7 +162,10 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
                 disabled: true
             },
             cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
+                action: () => {
+                    this.removeFieldsWithoutId();
+                }
             }
         };
 

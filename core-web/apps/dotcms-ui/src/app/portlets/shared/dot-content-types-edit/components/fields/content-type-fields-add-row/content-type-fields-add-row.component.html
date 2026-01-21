@@ -1,28 +1,33 @@
-<div class="dot-add-rows__container">
+<div class="flex items-center">
     @if (rowState === 'add') {
         <div
             [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
-            class="dot-add-rows-button__container">
+            class="flex w-full items-baseline justify-center h-49.5">
             <p-splitButton
                 (onClick)="setColumnSelect()"
                 [disabled]="disabled"
                 [model]="actions"
+                icon="pi pi-plus"
                 label="{{ 'contenttypes.dropzone.rows.add' | dm }}" />
         </div>
     }
 
     @if (rowState === 'select') {
-        <div class="dot-add-rows-columns-list__container">
-            <div class="dot-add-rows-columns-list__title">
-                {{ 'contenttypes.content.add_column_title' | dm }}
+        <div class="bg-white block h-49.5 p-3 relative w-full">
+            <div class="flex justify-between items-center mb-4">
+                <div class="text-lg">
+                    {{ 'contenttypes.content.add_column_title' | dm }}
+                </div>
+                <p-button
+                    (click)="showAddView()"
+                    icon="pi pi-times"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small" />
             </div>
-            <p-button
-                (click)="showAddView()"
-                icon="pi pi-times"
-                styleClass="p-button-rounded  p-button-text p-button-sm" />
             <ul
                 [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
-                class="dot-add-rows-columns-list"
+                class="flex p-0 w-full list-none m-0"
                 #colContainer>
                 @for (colNum of columns; track colNum; let i = $index) {
                     <li
@@ -30,14 +35,19 @@
                         (mouseleave)="onMouseLeave($event)"
                         (click)="emitColumnNumber()"
                         [class.active]="i === selectedColumnIndex"
-                        class="dot-add-rows-columns-list__item"
+                        [ngClass]="{
+                            'bg-primary-50 ring-2 ring-primary-200': i === selectedColumnIndex,
+                            'bg-gray-200': i !== selectedColumnIndex
+                        }"
+                        class="cursor-pointer block grow mr-3 outline-none p-3 last:mr-0 transition-colors duration-200 rounded-md"
                         tabindex="-1">
-                        <span class="dot-add-rows-columns-list__item-title">
+                        <span class="text-gray-700 text-sm mb-2 block font-semibold">
                             {{ setColumnValue(i) }}
                         </span>
-                        <div class="dot-add-rows-columns-list__item-container">
+                        <div class="flex">
                             @for (col of numberOfCols(colNum); track $index) {
-                                <div class="dot-add-rows-columns-list__item-col"></div>
+                                <div
+                                    class="bg-gray-800 grow h-15 mx-1 first:ml-0 last:mr-0 rounded"></div>
                             }
                         </div>
                     </li>

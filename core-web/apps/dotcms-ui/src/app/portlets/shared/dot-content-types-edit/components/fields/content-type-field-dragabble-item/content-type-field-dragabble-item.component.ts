@@ -27,7 +27,10 @@ import { FieldService } from '../service';
     styleUrls: ['./content-type-field-dragabble-item.component.scss'],
     templateUrl: './content-type-field-dragabble-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    standalone: false,
+    host: {
+        class: 'bg-white hover:shadow-md cursor-move flex flex-row items-center gap-3  min-h-18 transition-shadow duration-200 rounded-md border border-gray-400 mb-1 w-full box-border relative hover:z-10 group'
+    }
 })
 export class ContentTypesFieldDragabbleItemComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
@@ -44,6 +47,7 @@ export class ContentTypesFieldDragabbleItemComponent implements OnInit {
 
     @ViewChild('op') overlayPanel: Popover;
 
+    isDragging = false;
     open = false;
 
     fieldAttributesArray: string[];

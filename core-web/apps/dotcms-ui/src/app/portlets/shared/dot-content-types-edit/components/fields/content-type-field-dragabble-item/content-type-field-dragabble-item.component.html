@@ -1,18 +1,25 @@
-<dot-icon class="field-drag" name="drag_indicator" />
+<i class="material-icons text-gray-400 text-xl ml-1">drag_indicator</i>
 
-<dot-icon class="field-icon" name="{{ icon }}" />
-<div class="field-properties">
-    <div class="field-properties__info-container">
-        <span class="info-container__name">{{ field.name }}</span>
+<div
+    class="h-7 min-w-12 min-h-12 bg-(--color-palette-secondary-200) flex justify-center items-center rounded-full ml-1">
+    <i class="material-icons text-(--color-palette-secondary-500) text-lg">{{ icon }}</i>
+</div>
+
+<div class="flex flex-col overflow-hidden pr-1 grow gap-2">
+    <div class="h-4 flex items-center justify-between mb-1">
+        <span class="truncate text-black font-semibold text-sm block">{{ field.name }}</span>
         @if (!field.fixed) {
             <p-button
                 (click)="removeItem($event)"
                 id="info-container__delete"
-                styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
+                [text]="true"
+                [rounded]="true"
+                severity="danger"
+                size="small"
                 icon="pi pi-trash" />
         }
     </div>
-    <div class="field-properties__actions-container">
+    <div class="h-4 flex items-center justify-between">
         @if (field.variable) {
             <dot-copy-link [label]="field.variable" [copy]="field.variable" />
         }
@@ -24,15 +31,18 @@
                         (click)="openAttr($event)"
                         [class.open]="open"
                         data-testid="field-info-button"
-                        styleClass="p-button-text p-button-sm  p-button-rounded"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        [ngClass]="{ 'bg-primary-200': open }"
                         icon="pi pi-info-circle" />
                 }
             </div>
         } @else {
-            <div class="field-properties__attributes-container">
-                <p class="attributes-container__field-name">{{ fieldTypeLabel }}</p>
+            <div class="flex gap-3 text-xs">
+                <p class="text-gray-900 font-bold m-0">{{ fieldTypeLabel }}</p>
                 @for (field of fieldAttributesArray; track field; let index = $index) {
-                    <p class="attributes-container__attribute">
+                    <p class="text-gray-700 m-0">
                         {{ field }}
                     </p>
                 }
@@ -46,11 +56,11 @@
     (onHide)="setOpen(false)"
     #op
     appendTo="body"
-    styleClass="contentType__overlayPanel">
-    <div class="field-properties__overlay-attributes-container">
-        <p class="overlay-attributes-container__field-name">{{ fieldTypeLabel }}</p>
+    styleClass="contentType__overlayPanel shadow-lg rounded-md border border-gray-200">
+    <div class="flex flex-col text-black p-2 min-w-50">
+        <p class="font-bold text-sm m-0">{{ fieldTypeLabel }}</p>
         @if (fieldAttributesString.length) {
-            <p class="overlay-attributes-container__attributes-text">
+            <p class="mt-1 text-sm m-0">
                 {{ fieldAttributesString }}
             </p>
         }

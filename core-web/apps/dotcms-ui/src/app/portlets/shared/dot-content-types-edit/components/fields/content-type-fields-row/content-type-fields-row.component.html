@@ -1,12 +1,16 @@
-<div class="row-header">
-    <dot-icon class="row-header__drag" name="drag_handle" />
-</div>
-<div class="row-columns">
-    @for (column of fieldRow.columns; track column; let i = $index) {
+@if (fieldRow) {
+    <div class="row-header bg-white rounded-t-xl flex justify-center">
+        <i class="material-icons row-header__drag cursor-move text-gray-400 block" aria-hidden="true">
+            drag_handle
+        </i>
+    </div>
+    <div class="row-columns flex bg-white p-2 rounded-b-xl">
+        @for (column of fieldRow.columns; track column; let i = $index) {
         <div
             [(dragulaModel)]="column.fields"
             [class.empty]="!column.fields.length"
-            class="row-columns__item"
+            [ngClass]="{ 'bg-gray-200 min-h-36': !column.fields.length }"
+            class="row-columns__item group flex flex-col flex-1 mx-2 first:ml-0 last:mr-0 relative w-0"
             [attr.data-testid]="'fields-bag-' + i"
             data-drag-type="target"
             dragula="fields-bag">
@@ -14,7 +18,7 @@
                 <p-button
                     (click)="remove(i)"
                     [pTooltip]="'contenttypes.action.delete' | dm"
-                    class="row-header__remove"
+                    class="absolute right-2 top-2"
                     icon="pi pi-trash"
                     styleClass="p-button-rounded p-button-text p-button-sm p-button-danger" />
             }
@@ -25,6 +29,11 @@
                     [field]="field"
                     [isSmall]="fieldRow.columns.length > 1" />
             }
+            <div
+                class="bg-white border border-dashed border-gray-600 text-gray-600 text-xs text-center rounded-md flex flex-col justify-center flex-1 min-h-18 pointer-events-none group-[.row-columns__item--over]:hidden">
+                {{ emptyMessage }}
+            </div>
         </div>
     }
-</div>
+    </div>
+}

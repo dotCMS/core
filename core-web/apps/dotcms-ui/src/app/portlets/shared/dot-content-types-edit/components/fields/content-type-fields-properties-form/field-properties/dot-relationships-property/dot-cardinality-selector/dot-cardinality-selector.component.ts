@@ -20,7 +20,6 @@ import { DotRelationshipService } from '../services/dot-relationship.service';
 @Component({
     selector: 'dot-cardinality-selector',
     templateUrl: './dot-cardinality-selector.component.html',
-    styleUrls: ['./dot-cardinality-selector.component.scss'],
     imports: [SelectModule, FormsModule, AsyncPipe]
 })
 export class DotCardinalitySelectorComponent implements OnInit {

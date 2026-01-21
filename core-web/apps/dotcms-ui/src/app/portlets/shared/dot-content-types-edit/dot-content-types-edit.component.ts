@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { mergeMap, pluck, take, map } from 'rxjs/operators';
+import { map, mergeMap, pluck, take } from 'rxjs/operators';
 
 import {
     DotContentTypesInfoService,
@@ -40,7 +40,6 @@ import { ContentTypesFormComponent } from './components/form';
 @Component({
     selector: 'dot-content-types-edit',
     templateUrl: './dot-content-types-edit.component.html',
-    styleUrls: ['./dot-content-types-edit.component.scss'],
     standalone: false
 })
 export class DotContentTypesEditComponent implements OnInit, OnDestroy {

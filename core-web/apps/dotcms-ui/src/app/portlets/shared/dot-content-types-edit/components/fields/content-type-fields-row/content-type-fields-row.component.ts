@@ -12,9 +12,11 @@ import { FieldUtil } from '@dotcms/utils';
  */
 @Component({
     selector: 'dot-content-type-fields-row',
-    styleUrls: ['./content-type-fields-row.component.scss'],
     templateUrl: './content-type-fields-row.component.html',
-    standalone: false
+    standalone: false,
+    host: {
+        class: 'block relative mb-2 last:mb-0 transition-shadow duration-200'
+    }
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
@@ -32,13 +34,10 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     @Output()
     removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
+    emptyMessage = '';
+
     ngOnInit() {
-        document
-            .querySelector('html')
-            .style.setProperty(
-                '--empty-message',
-                `"${this.dotMessageService.get('contenttypes.dropzone.rows.empty.message')}"`
-            );
+        this.emptyMessage = this.dotMessageService.get('contenttypes.dropzone.rows.empty.message');
     }
 
     /**

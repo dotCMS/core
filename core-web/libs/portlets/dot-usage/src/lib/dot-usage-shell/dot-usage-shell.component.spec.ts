@@ -1,5 +1,5 @@
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
-import { of, throwError, Subject } from 'rxjs';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -134,9 +134,13 @@ describe('DotUsageShellComponent', () => {
         expect(refreshButton).toBeTruthy();
 
         // PrimeNG buttons use onClick event, not native click
-        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.triggerEventHandler(
+            '[data-testid="refresh-button"]',
+            'onClick',
+            new MouseEvent('click')
+        );
         spectator.detectChanges();
-        
+
         expect(usageService.getSummary).toHaveBeenCalled();
     });
 
@@ -155,7 +159,11 @@ describe('DotUsageShellComponent', () => {
         (usageService.getSummary as jest.Mock).mockReturnValue(summarySubject.asObservable());
 
         // PrimeNG buttons use onClick event, not native click
-        spectator.triggerEventHandler('[data-testid="retry-button"]', 'onClick', new MouseEvent('click'));
+        spectator.triggerEventHandler(
+            '[data-testid="retry-button"]',
+            'onClick',
+            new MouseEvent('click')
+        );
         spectator.detectChanges();
 
         // Check that reset happened synchronously (before observable completes)
@@ -184,7 +192,9 @@ describe('DotUsageShellComponent', () => {
             statusText: 'Internal Server Error'
         };
         (usageService.getSummary as jest.Mock).mockReturnValue(throwError(() => httpError));
-        (usageService.getErrorMessage as jest.Mock).mockReturnValue('usage.dashboard.error.serverError');
+        (usageService.getErrorMessage as jest.Mock).mockReturnValue(
+            'usage.dashboard.error.serverError'
+        );
 
         // console.error is already mocked in beforeEach, but we can verify it was called
         const errorCallCount = (console.error as jest.Mock).mock.calls.length;
@@ -193,7 +203,9 @@ describe('DotUsageShellComponent', () => {
 
         // Verify console.error was called (the mock from beforeEach should have been called)
         expect(console.error).toHaveBeenCalled();
-        expect((console.error as jest.Mock).mock.calls[errorCallCount][0]).toBe('Failed to load usage data:');
+        expect((console.error as jest.Mock).mock.calls[errorCallCount][0]).toBe(
+            'Failed to load usage data:'
+        );
         expect(spectator.component.error()).toBe('usage.dashboard.error.serverError');
         expect(spectator.component.loading()).toBe(false);
     });
@@ -306,8 +318,10 @@ describe('DotUsageShellComponent', () => {
 
     it('should unsubscribe on destroy', () => {
         spectator.component.ngOnInit();
-        
-        const subscription = spectator.component['dataSubscription'] as { unsubscribe: () => void } | undefined;
+
+        const subscription = spectator.component['dataSubscription'] as
+            | { unsubscribe: () => void }
+            | undefined;
         if (subscription) {
             const unsubscribeSpy = jest.spyOn(subscription, 'unsubscribe');
             spectator.component.ngOnDestroy();
@@ -318,17 +332,29 @@ describe('DotUsageShellComponent', () => {
     it('should handle multiple refresh calls correctly', () => {
         // Reset call count before test
         (usageService.getSummary as jest.Mock).mockClear();
-        
+
         const refreshButton = spectator.query(byTestId('refresh-button'));
         expect(refreshButton).toBeTruthy();
-        
+
         // PrimeNG buttons use onClick event, not native click
         // Click refresh multiple times
-        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.triggerEventHandler(
+            '[data-testid="refresh-button"]',
+            'onClick',
+            new MouseEvent('click')
+        );
         spectator.detectChanges();
-        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.triggerEventHandler(
+            '[data-testid="refresh-button"]',
+            'onClick',
+            new MouseEvent('click')
+        );
         spectator.detectChanges();
-        spectator.triggerEventHandler('[data-testid="refresh-button"]', 'onClick', new MouseEvent('click'));
+        spectator.triggerEventHandler(
+            '[data-testid="refresh-button"]',
+            'onClick',
+            new MouseEvent('click')
+        );
         spectator.detectChanges();
 
         // Should call getSummary for each click

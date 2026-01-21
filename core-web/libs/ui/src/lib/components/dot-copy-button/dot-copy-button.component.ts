@@ -41,7 +41,7 @@ export class DotCopyButtonComponent {
     customClass = input('');
 
     // Final CSS class to be added to the button
-    $clazz = computed(() => `p-button-sm p-button-text ${this.customClass()}`);
+    $clazz = computed(() => `p-button p-button-sm p-button-text ${this.customClass()}`);
 
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);

@@ -6,6 +6,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SelectItem } from 'primeng/api';
+import { Select } from 'primeng/select';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -54,12 +55,14 @@ describe('DotBaseTypeSelectorComponent', () => {
     });
 
     it('should emit the selected content type', () => {
-        const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
+        fixture.detectChanges();
+        const pSelect: DebugElement = de.query(By.css('p-select'));
         jest.spyOn(component.selected, 'emit');
         jest.spyOn(component, 'change');
-        pDropDown.triggerEventHandler('onChange', allContentTypesItem);
+        const selectChangeEvent = { value: allContentTypesItem.value };
+        pSelect.triggerEventHandler('onChange', selectChangeEvent);
 
-        expect(component.change).toHaveBeenCalledWith(allContentTypesItem);
+        expect(component.change).toHaveBeenCalledWith(selectChangeEvent);
         expect(component.change).toHaveBeenCalledTimes(1);
         expect(component.selected.emit).toHaveBeenCalledWith(allContentTypesItem.value);
         expect(component.selected.emit).toHaveBeenCalledTimes(1);
@@ -73,9 +76,9 @@ describe('DotBaseTypeSelectorComponent', () => {
         });
     });
 
-    it('shoudl set fixed width to dropdown', () => {
+    it('should set fixed width to dropdown', () => {
         fixture.detectChanges();
-        const pDropDown: Select = de.query(By.css('p-dropdown')).componentInstance;
-        expect(pDropDown.style).toEqual({ width: '155px' });
+        const pSelectElement = de.query(By.css('p-select')).nativeElement;
+        expect(pSelectElement.style.width).toBe('155px');
     });
 });

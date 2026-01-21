@@ -15,7 +15,6 @@ import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/do
 
 @Component({
     selector: 'dot-content-type-fields-variables',
-    styleUrls: ['./dot-content-type-fields-variables.component.scss'],
     templateUrl: './dot-content-type-fields-variables.component.html',
     imports: [DotKeyValueComponent],
     providers: [DotFieldVariablesService]

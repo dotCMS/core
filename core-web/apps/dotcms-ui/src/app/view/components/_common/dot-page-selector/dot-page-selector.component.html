@@ -11,17 +11,18 @@
     #autoComplete
     inputStyleClass="w-full"
     appendTo="body"
+    class="w-full"
     data-testId="p-autoComplete"
     field="label">
     <ng-template let-item pTemplate="item">
-        <div class="dot-page-selector__item">
+        <div class="flex max-w-[380px]">
             @if (searchType === 'site') {
-                <span>{{ item.label }}</span>
+                <span class="truncate text-left">{{ item.label }}</span>
             } @else {
-                <span class="dot-page-selector__item-url">
+                <span class="basis-1/2 truncate text-left">
                     {{ item.payload.path }}
                 </span>
-                <span class="dot-page-selector__item-host">
+                <span class="basis-1/2 truncate text-left pl-1">
                     {{ item.payload.hostName }}
                 </span>
             }
@@ -29,10 +30,12 @@
     </ng-template>
 </p-autoComplete>
 <small
+    class="block mt-1"
     [class]="isError ? 'p-invalid' : 'p-info'"
     [textContent]="message"
     data-testId="message"></small>
 <dot-field-helper
+    class="absolute top-0 right-0"
     [message]="
         (folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm
     "></dot-field-helper>

@@ -1,6 +1,7 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     EventEmitter,
     Input,
@@ -31,9 +32,11 @@ import { FieldPropertyService } from '../service';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
-    styleUrls: ['./content-type-fields-properties-form.component.scss'],
     templateUrl: './content-type-fields-properties-form.component.html',
-    standalone: false
+    standalone: false,
+    host: {
+        class: 'block'
+    }
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
     /** Form builder instance for creating reactive forms */
@@ -41,6 +44,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
 
     /** Service for managing field properties */
     private fieldPropertyService = inject(FieldPropertyService);
+
+    /** Change detector reference for manual change detection */
+    private cdr = inject(ChangeDetectorRef);
 
     /** Event emitter for saving field properties */
     @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
@@ -86,8 +92,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     ngOnChanges(changes: SimpleChanges): void {
         if (changes.formFieldData?.currentValue && this.formFieldData) {
             this.destroy();
-
-            setTimeout(this.init.bind(this), 0);
+            this.init();
+            this.cdr.detectChanges();
         }
     }
 
@@ -96,7 +102,11 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     ngOnInit(): void {
         // TODO: Migrate to Signal Forms
-        this.initFormGroup();
+        if (this.formFieldData) {
+            this.init();
+        } else {
+            this.initFormGroup();
+        }
     }
 
     /**

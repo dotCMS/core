@@ -49,7 +49,7 @@ import {
     DotMessagePipe,
     DotSiteComponent
 } from '@dotcms/ui';
-import { isEqual, FieldUtil } from '@dotcms/utils';
+import { FieldUtil, isEqual } from '@dotcms/utils';
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotPageSelectorComponent } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.component';
@@ -68,7 +68,6 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
 @Component({
     providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],
     selector: 'dot-content-types-form',
-    styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html',
     imports: [
         CommonModule,

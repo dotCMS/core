@@ -39,7 +39,6 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
         DotMessagePipe
     ],
     templateUrl: './dot-binary-settings.component.html',
-    styleUrl: './dot-binary-settings.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinarySettingsComponent implements OnInit, OnChanges {

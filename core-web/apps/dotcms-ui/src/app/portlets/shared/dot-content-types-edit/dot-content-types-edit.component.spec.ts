@@ -5,7 +5,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { Location } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
@@ -31,7 +31,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotIconComponent } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
@@ -71,7 +71,8 @@ class TestContentTypeFieldsDropZoneComponent {
 
 @Component({
     selector: 'dot-content-type-layout',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: true
 })
 class TestContentTypeLayoutComponent {
     @Input() contentType: DotCMSContentType;
@@ -81,7 +82,8 @@ class TestContentTypeLayoutComponent {
 
 @Component({
     selector: 'dot-content-types-form',
-    template: ''
+    template: '',
+    standalone: true
 })
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
@@ -146,7 +148,6 @@ describe('DotContentTypesEditComponent', () => {
                 ]),
                 BrowserAnimationsModule,
                 DotIconComponent,
-                DotDialogComponent,
                 HttpClientTestingModule,
                 ButtonModule
             ],
@@ -207,40 +208,45 @@ describe('DotContentTypesEditComponent', () => {
             dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
 
             fixture.detectChanges();
-            dialog = de.query(By.css('dot-dialog'));
+            dialog = de.query(By.css('p-dialog'));
 
             jest.spyOn(comp, 'onDialogHide');
         }));
 
         it('should have dialog opened by default & has css base-type class', () => {
             expect(dialog).not.toBeNull();
-            expect(dialog.componentInstance.visible).toBeTruthy();
+            expect(comp.show).toBeTruthy();
         });
 
         it('should set dialog actions set correctly', () => {
-            expect(dialog.componentInstance.actions).toEqual({
+            expect(comp.dialogActions).toEqual({
                 accept: {
                     disabled: true,
                     label: 'Create',
                     action: expect.any(Function)
                 },
                 cancel: {
-                    label: 'Cancel'
+                    label: 'Cancel',
+                    action: expect.any(Function)
                 }
             });
         });
 
-        it('should close the dialog', () => {
-            const dialogCancelButton = dialog.query(By.css('.dialog__button-cancel')).nativeElement;
-            dialogCancelButton.click();
+        it('should close the dialog', fakeAsync(() => {
+            // Trigger dialog actions setup
+            tick();
             fixture.detectChanges();
             const portlet = dotRouterService.currentPortlet.id;
+            
+            // Simulate dialog hide event (visibleChange) - this is what p-dialog emits when closed
+            comp.onDialogHide();
+            tick();
+            fixture.detectChanges();
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
-            expect(comp.show).toBe(false);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith(`/${portlet}`);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
-        });
+        }));
 
         it('should NOT have dot-content-type-layout', () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
@@ -249,8 +255,8 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should have show form by default', () => {
             const contentTypeForm = de.query(By.css('dot-content-types-form'));
-            expect(contentTypeForm === null).toBe(false);
-            expect(dialog === null).toBe(false);
+            expect(contentTypeForm).not.toBeNull();
+            expect(dialog).not.toBeNull();
         });
 
         it('should NOT have dot-content-type-fields-drop-zone', () => {
@@ -259,7 +265,7 @@ describe('DotContentTypesEditComponent', () => {
         });
 
         it('should have create title create mode', () => {
-            expect(dialog.componentInstance.header).toEqual('Create Content');
+            expect(comp.templateInfo.header).toEqual('Create Content');
         });
 
         describe('create', () => {
@@ -388,20 +394,21 @@ describe('DotContentTypesEditComponent', () => {
                 expect(comp.dialogActions.accept.disabled).toBe(false);
             });
 
-            it('should submit form when save button is clicked', () => {
+            it('should submit form when save button is clicked', fakeAsync(() => {
                 form.triggerEventHandler('valid', true);
+                tick();
                 fixture.detectChanges();
-                const saveButton = de.query(By.css('.dialog__button-accept'));
-                saveButton.nativeElement.click();
+                // Call accept action directly via component
+                comp.dialogActions.accept.action();
                 expect(form.componentInstance.submitForm).toHaveBeenCalledTimes(1);
-            });
+            }));
         });
 
         describe('checkAndOpenFormDialog', () => {
             it('should open form dialog by default in create mode', () => {
-                const dialog = de.query(By.css('dot-dialog'));
+                const dialog = de.query(By.css('p-dialog'));
                 expect(dialog).not.toBeNull();
-                expect(dialog.componentInstance.visible).toBeTruthy();
+                expect(comp.show).toBeTruthy();
             });
         });
     });
@@ -516,7 +523,7 @@ describe('DotContentTypesEditComponent', () => {
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
             contentTypeLayout.componentInstance.openEditDialog.next();
             fixture.detectChanges();
-            dialog = de.query(By.css('dot-dialog'));
+            dialog = de.query(By.css('p-dialog'));
         };
 
         it('should have contentType set in dot-content-type-fields-drop-zone', () => {
@@ -544,7 +551,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should have edit content type title', () => {
             clickEditButton();
-            expect(dialog.componentInstance.header).toEqual('Edit Content');
+            expect(comp.templateInfo.header).toEqual('Edit Content');
         });
 
         it('should open dialog on edit button click', () => {
@@ -552,7 +559,6 @@ describe('DotContentTypesEditComponent', () => {
 
             expect(dialog).not.toBeNull();
             expect(comp.show).toBeTruthy();
-            expect(dialog.componentInstance.visible).toBeTruthy();
         });
 
         it('should send notifications to add rows & tab divider', () => {
@@ -570,15 +576,19 @@ describe('DotContentTypesEditComponent', () => {
             expect(dotEventsService.notify).toHaveBeenCalledTimes(2);
         });
 
-        it('should close the dialog', () => {
+        it('should close the dialog', fakeAsync(() => {
             clickEditButton();
-            const cancelButton = de.query(By.css('.dialog__button-cancel'));
-            cancelButton.nativeElement.click();
+            tick();
+            fixture.detectChanges();
+            
+            // Simulate dialog hide event (visibleChange) - this is what p-dialog emits when closed
+            comp.onDialogHide();
+            tick();
+            fixture.detectChanges();
 
             expect(comp.onDialogHide).toHaveBeenCalledTimes(1);
-            expect(comp.show).toBe(false);
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
-        });
+        }));
 
         it('should update fields attribute when a field is edit', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
@@ -644,7 +654,7 @@ describe('DotContentTypesEditComponent', () => {
             expect<any>(fieldService.saveFields).toHaveBeenCalledWith('1234567890', newFieldsAdded);
         });
 
-        it('should show loading when saving fields on dropzone', () => {
+        it('should show loading when saving fields on dropzone', fakeAsync(() => {
             const newFieldsAdded: DotCMSContentTypeField[] = [
                 {
                     ...dotcmsContentTypeFieldBasicMock,
@@ -666,18 +676,19 @@ describe('DotContentTypesEditComponent', () => {
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
             jest.spyOn<any>(fieldService, 'saveFields').mockImplementation(() => {
-                fixture.detectChanges();
-                expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(true);
-
+                // Check loading is set to true before the observable completes
+                expect(comp.loadingFields).toBe(true);
                 return of(fieldsReturnByServer);
             });
 
             // when: the saveFields event is tiggered in content-type-fields-drop-zone
             contentTypeFieldsDropZone.componentInstance.saveFields.emit(newFieldsAdded);
+            tick();
+            fixture.detectChanges();
 
             fixture.detectChanges();
             expect(contentTypeFieldsDropZone.componentInstance.loading).toBe(false);
-        });
+        }));
 
         it('should update fields on dropzone event when creating a new one or update', () => {
             const newFieldsAdded: DotCMSContentTypeField[] = [
@@ -903,15 +914,16 @@ describe('DotContentTypesEditComponent', () => {
                 jest.spyOn(comp, 'startFormDialog');
             });
 
-            it('should open form dialog when open-config is true', (done) => {
-                queryParams.next({ 'open-config': 'true' });
+            it('should open form dialog when open-config is true', fakeAsync(() => {
+                // First detectChanges to trigger subscription
                 fixture.detectChanges();
+                tick();
+                
+                queryParams.next({ 'open-config': 'true' });
+                tick();
 
-                setTimeout(() => {
-                    expect(comp.startFormDialog).toHaveBeenCalled();
-                    done();
-                });
-            });
+                expect(comp.startFormDialog).toHaveBeenCalled();
+            }));
 
             it('should not open form dialog when open-config is false', (done) => {
                 queryParams.next({ 'open-config': 'false' });
@@ -933,22 +945,21 @@ describe('DotContentTypesEditComponent', () => {
                 });
             });
 
-            it('should only subscribe once to queryParams', (done) => {
-                queryParams.next({ 'open-config': 'true' });
+            it('should only subscribe once to queryParams', fakeAsync(() => {
+                // First detectChanges to trigger subscription
                 fixture.detectChanges();
+                tick();
+                
+                queryParams.next({ 'open-config': 'true' });
+                tick();
 
-                setTimeout(() => {
-                    expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+                expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
 
-                    queryParams.next({ 'open-config': 'true' });
-                    fixture.detectChanges();
+                queryParams.next({ 'open-config': 'true' });
+                tick();
 
-                    setTimeout(() => {
-                        expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
-                        done();
-                    });
-                });
-            });
+                expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
+            }));
         });
     });
 

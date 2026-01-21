@@ -27,7 +27,6 @@ import {
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
-    DotIconComponent,
     DotMessagePipe
 } from '@dotcms/ui';
 
@@ -35,14 +34,12 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
-import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',
-    styleUrls: ['./content-types-layout.component.scss'],
     templateUrl: 'content-types-layout.component.html',
     imports: [
         CommonModule,
@@ -51,8 +48,7 @@ import { FieldDragDropService } from '../fields/service';
         SplitButtonModule,
         ButtonModule,
         InputTextModule,
-        DotSecondaryToolbarComponent,
-        DotIconComponent,
+        InputTextModule,
         DotApiLinkComponent,
         DotCopyButtonComponent,
         DotMessagePipe,
@@ -99,7 +95,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
                 .pipe(take(1))
                 .subscribe((id: string) => {
                     // tslint:disable-next-line:max-line-length
-                    this.relationshipURL = `c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${this.contentType.id}`;
+                    this.relationshipURL = `/c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${this.contentType.id}`;
                 });
             this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${this.contentType.id}&popup=true`;
             this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${this.contentType.id}&popup=true`;
@@ -134,7 +130,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     editInlineActivate(event: MouseEvent): void {
-        this.contentTypeNameInputSize = event.target['offsetWidth'];
+        this.contentTypeNameInputSize = event.target['offsetWidth'] + 20;
     }
 
     /**
