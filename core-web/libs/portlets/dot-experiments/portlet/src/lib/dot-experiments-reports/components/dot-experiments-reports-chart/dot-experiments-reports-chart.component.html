@@ -1,11 +1,11 @@
-@if (!isLoading()) {
+@if (!$isLoading()) {
     <div class="flex flex-col gap-2">
         <div class="flex flex-row justify-end pr-1">
             <div class="legend-wrapper" data-testId="chart-legends"></div>
         </div>
-        @if (!isEmpty()) {
+        @if (!$isEmpty()) {
             <p-chart
-                [data]="data()"
+                [data]="$data()"
                 [options]="options"
                 [plugins]="plugins"
                 [id]="chartId"

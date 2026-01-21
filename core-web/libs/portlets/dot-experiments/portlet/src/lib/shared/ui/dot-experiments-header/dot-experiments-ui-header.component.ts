@@ -34,11 +34,11 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'secondary';
     }
 })
 export class DotExperimentsUiHeaderComponent {
-    title = input('');
-    experiment = input<DotExperiment>();
-    isLoading = input<boolean>();
+    $title = input('', { alias: 'title' });
+    $experiment = input<DotExperiment | null>(null, { alias: 'experiment' });
+    $isLoading = input(true, { alias: 'isLoading' });
 
-    goBack = output<boolean>();
+    $goBack = output<boolean>({ alias: 'goBack' });
 
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
     statusIcon = signal<string>('');
@@ -56,7 +56,7 @@ export class DotExperimentsUiHeaderComponent {
 
     constructor() {
         effect(() => {
-            const experimentValue = this.experiment();
+            const experimentValue = this.$experiment();
             if (experimentValue) {
                 const { status } = experimentValue;
                 this.statusIcon.set(ExperimentsStatusIcons[status]);
@@ -65,7 +65,7 @@ export class DotExperimentsUiHeaderComponent {
     }
 
     get statusTagValue(): string {
-        const experimentValue = this.experiment();
+        const experimentValue = this.$experiment();
         const status = experimentValue?.status;
         if (!status) {
             return '';

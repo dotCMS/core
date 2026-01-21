@@ -10,6 +10,6 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
     }
 })
 export class DotExperimentsConfigurationItemsCountComponent {
-    maxLength = input.required<number>();
-    count = input.required<number>();
+    $maxLength = input.required<number>({ alias: 'maxLength' });
+    $count = input.required<number>({ alias: 'count' });
 }

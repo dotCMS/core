@@ -22,11 +22,11 @@ import { getRandomUUID } from '../../../shared/dot-experiment.utils';
     }
 })
 export class DotExperimentsReportsChartComponent {
-    isEmpty = input(true);
-    isLoading = input(true);
-    config = input<{ xAxisLabel: string; yAxisLabel: string }>();
-    data = input<ChartData<'line'>>();
-    isLinearAxis = input(false);
+    $isEmpty = input(true, { alias: 'isEmpty' });
+    $isLoading = input(true, { alias: 'isLoading' });
+    $config = input.required<{ xAxisLabel: string; yAxisLabel: string }>({ alias: 'config' });
+    $data = input.required<ChartData<'line'>>({ alias: 'data' });
+    $isLinearAxis = input(false, { alias: 'isLinearAxis' });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     options: any;
@@ -36,9 +36,9 @@ export class DotExperimentsReportsChartComponent {
 
     constructor() {
         effect(() => {
-            const configValue = this.config();
-            const dataValue = this.data();
-            const isLinearAxisValue = this.isLinearAxis();
+            const configValue = this.$config();
+            const dataValue = this.$data();
+            const isLinearAxisValue = this.$isLinearAxis();
 
             if (configValue && dataValue) {
                 this.options = generateDotExperimentLineChartJsOptions({

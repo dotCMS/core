@@ -13,17 +13,17 @@ import { DotDropdownDirective, DotMessagePipe } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsStatusFilterComponent {
-    selectedItemsInput = input.required<Array<string>>();
-    options = input.required<Array<DotDropdownSelectOption<string>>>();
+    $selectedItems = input.required<Array<string>>({ alias: 'selectedItems' });
+    $options = input.required<Array<DotDropdownSelectOption<string>>>({ alias: 'options' });
 
-    switch = output<DotExperimentStatus[]>();
+    $switch = output<DotExperimentStatus[]>({ alias: 'switch' });
 
     // Regular property for ngModel two-way binding
     selectedItems: Array<string> = [];
 
     constructor() {
         effect(() => {
-            this.selectedItems = [...this.selectedItemsInput()];
+            this.selectedItems = [...this.$selectedItems()];
         });
     }
 }

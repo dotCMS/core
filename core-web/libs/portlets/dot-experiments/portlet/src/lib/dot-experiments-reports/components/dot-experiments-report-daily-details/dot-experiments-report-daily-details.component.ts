@@ -28,10 +28,10 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportDailyDetailsComponent {
-    detailData = input<DotExperimentVariantDetail[]>([]);
-    hasEnoughSessions = input.required<boolean>();
-    experimentId = input.required<string>();
-    promotedVariantId = input.required<Variant>();
+    $detailData = input<DotExperimentVariantDetail[]>([], { alias: 'detailData' });
+    $hasEnoughSessions = input.required<boolean>({ alias: 'hasEnoughSessions' });
+    $experimentId = input.required<string>({ alias: 'experimentId' });
+    $promotedVariantId = input.required<Variant>({ alias: 'promotedVariantId' });
 
     protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
 

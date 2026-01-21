@@ -1,19 +1,19 @@
 <!-- Tailwind is used below only for layout/whitespace glue; visual theming comes from PrimeNG Lara. -->
-<p-inplace [disabled]="disabled()" class="w-full" [pt]="{ display: 'p-0!' }">
+<p-inplace [disabled]="$disabled()" class="w-full" [pt]="{ display: 'p-0!' }">
     <div pInplaceDisplay class="flex flex-wrap items-center gap-2">
-        @if (text()) {
-            <span class="whitespace-pre-wrap" data-testId="text-input">{{ text() }}</span>
+        @if ($text()) {
+            <span class="whitespace-pre-wrap" data-testId="text-input">{{ $text() }}</span>
         } @else {
             <span class="text-color-secondary" data-testId="empty-text-message">
-                {{ emptyTextMessage() | dm }}
+                {{ $emptyTextMessage() | dm }}
             </span>
         }
 
-        @if (!disabled()) {
+        @if (!$disabled()) {
             <p-button
                 (onClick)="inplace()?.activate($event)"
                 [rounded]="true"
-                [size]="inputSize()"
+                [size]="$inputSize()"
                 [text]="true"
                 ariaLabel="Edit"
                 data-testId="text-input-button"
@@ -28,7 +28,7 @@
                 <input
                     (keydown.enter)="saveAction()"
                     (keydown.escape)="deactivateInplace()"
-                    [pSize]="inputSize()"
+                    [pSize]="$inputSize()"
                     class="w-full"
                     data-testId="inplace-input"
                     dotAutofocus
@@ -39,7 +39,7 @@
                 <p-button
                     (onClick)="deactivateInplace()"
                     [rounded]="true"
-                    [size]="inputSize()"
+                    [size]="$inputSize()"
                     [text]="true"
                     ariaLabel="Cancel"
                     data-testId="variant-inplace-button"
@@ -50,9 +50,9 @@
             <p-button
                 (onClick)="saveAction()"
                 [disabled]="form.invalid || textControl.pristine"
-                [loading]="isLoading()"
+                [loading]="$isLoading()"
                 [rounded]="true"
-                [size]="inputSize()"
+                [size]="$inputSize()"
                 [text]="true"
                 ariaLabel="Save"
                 data-testId="text-save-btn"
@@ -60,7 +60,7 @@
                 type="button" />
         </form>
 
-        @if (form.invalid && showErrorMsg()) {
+        @if (form.invalid && $showErrorMsg()) {
             <dot-field-validation-message [field]="textControl" />
         }
     </div>

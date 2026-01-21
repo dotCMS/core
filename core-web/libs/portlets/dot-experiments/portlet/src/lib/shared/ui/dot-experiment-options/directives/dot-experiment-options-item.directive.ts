@@ -15,10 +15,10 @@ import { DotExperimentOptionsComponent } from '../dot-experiment-options.compone
 export class DotExperimentOptionsItemDirective {
     private _select = inject(DotExperimentOptionsComponent, { optional: true, host: true });
 
-    title = input<string>();
-    detail = input<string>();
-    icon = input<string>();
-    value = input.required<string>();
+    $title = input.required<string>({ alias: 'title' });
+    $value = input.required<string>({ alias: 'value' });
+    $detail = input<string>('', { alias: 'detail' });
+    $icon = input<string>('', { alias: 'icon' });
 
     @ContentChild(DotExperimentOptionContentDirective)
     content: DotExperimentOptionContentDirective;
@@ -29,7 +29,7 @@ export class DotExperimentOptionsItemDirective {
      * @param index
      */
     selectItem(item: DotExperimentOptionsItemDirective, index: number) {
-        this._select.setOptionSelected(item.value());
+        this._select.setOptionSelected(item.$value());
         this._select.toggleOption(index);
     }
 }

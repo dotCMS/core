@@ -41,15 +41,15 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsDetailsTableComponent {
-    title = input.required<string | TemplateRef<unknown>>();
+    $title = input.required<string | TemplateRef<unknown>>({ alias: 'title' });
 
     //** List of data to display, without templates, use the index of the objet as a header */
-    data = input.required<
+    $data = input.required<
         DotExperimentVariantDetail[] | Array<UrlParameterGoalCondition | ReachPageGoalCondition>
-    >();
+    >({ alias: 'data' });
 
-    isLoading = input(false);
-    isEmpty = input(false);
+    $isLoading = input(false, { alias: 'isLoading' });
+    $isEmpty = input(false, { alias: 'isEmpty' });
 
     //** Template to display the headers */
     @ContentChild('headers', { static: true }) headers!: TemplateRef<unknown>;

@@ -1,23 +1,23 @@
 <div
     class="flex min-h-[4.25rem] flex-row items-center gap-2 bg-white px-4 text-xl text-black border-b border-[var(--gray-300)]">
     <button
-        (click)="goBack.emit(true)"
+        (click)="$goBack.emit(true)"
         class="p-button-rounded p-button-text"
         data-testId="goback-link"
         icon="pi pi-arrow-left"
         pButton></button>
 
-    @if (!isLoading()) {
-        <span data-testId="title">{{ title() }}</span>
+    @if (!$isLoading()) {
+        <span data-testId="title">{{ $title() }}</span>
     } @else {
         <p-skeleton height="1rem" width="12rem" />
     }
 
-    @if (!!experiment()?.status) {
+    @if (!!$experiment()?.status) {
         <div class="flex grow items-center justify-end">
             <p-tag
                 [icon]="statusIcon()"
-                [severity]="statusSeverityMap[experiment()!.status]"
+                [severity]="statusSeverityMap[$experiment()!.status]"
                 [value]="statusTagValue"
                 data-testId="status-tag"
                 [pt]="{ root: { class: 'px-4! py-3!' } }" />

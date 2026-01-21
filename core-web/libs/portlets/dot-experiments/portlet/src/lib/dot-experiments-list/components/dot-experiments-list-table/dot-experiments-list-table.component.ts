@@ -36,9 +36,11 @@ import {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsListTableComponent {
-    experimentGroupedByStatus = input<GroupedExperimentByStatus[]>([]);
+    $experimentGroupedByStatus = input<GroupedExperimentByStatus[]>([], {
+        alias: 'experimentGroupedByStatus'
+    });
 
-    goToContainer = output<DotExperiment>();
+    $goToContainer = output<DotExperiment>({ alias: 'goToContainer' });
 
     private dotMessageService: DotMessageService = inject(DotMessageService);
     protected readonly emptyConfiguration: PrincipalConfiguration = {

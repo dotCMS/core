@@ -1,7 +1,7 @@
 <p-multiselect
-    (onChange)="switch.emit($event.value)"
+    (onChange)="$switch.emit($event.value)"
     [(ngModel)]="selectedItems"
-    [dotOptions]="options()"
+    [dotOptions]="$options()"
     [filter]="true"
     [style]="{ width: '15rem' }"
     [placeholder]="'experimentspage.experiment.status.placeholder' | dm"

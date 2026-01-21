@@ -14,10 +14,10 @@ import { DotMessagePipe } from '@dotcms/ui';
     }
 })
 export class DotExperimentsExperimentSummaryComponent {
-    goals = input<Goals>();
-    scheduling = input<RangeOfDateAndTime>();
-    sessionsReached = input<number>();
-    suggestedWinner = input<SummaryLegend | null>(null);
+    $goals = input.required<Goals>({ alias: 'goals' });
+    $scheduling = input.required<RangeOfDateAndTime>({ alias: 'scheduling' });
+    $sessionsReached = input.required<number>({ alias: 'sessionsReached' });
+    $suggestedWinner = input<SummaryLegend | null>(null, { alias: 'suggestedWinner' });
 
-    updateResults = output();
+    $updateResults = output<void>({ alias: 'updateResults' });
 }

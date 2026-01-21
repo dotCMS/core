@@ -55,47 +55,47 @@ export class DotExperimentsInlineEditTextComponent {
     /**
      * Max length of the text override by the user
      */
-    maxCharacterLength = input(MAX_INPUT_DESCRIPTIVE_LENGTH);
+    $maxCharacterLength = input(MAX_INPUT_DESCRIPTIVE_LENGTH, { alias: 'maxCharacterLength' });
 
     /**
      * Flag to show the loading spinner
      */
-    isLoading = input(false);
+    $isLoading = input(false, { alias: 'isLoading' });
 
     /**
      * Text to be edited
      */
-    text = input('');
+    $text = input('', { alias: 'text' });
 
     /**
      * Text to be shown when the text is empty
      */
-    emptyTextMessage = input('dot.common.inplace.empty.text');
+    $emptyTextMessage = input('dot.common.inplace.empty.text', { alias: 'emptyTextMessage' });
 
     /**
      * Flag to disable the inplace
      */
-    disabled = input(false);
+    $disabled = input(false, { alias: 'disabled' });
 
     /**
      * Size of the input and button
      **/
-    inputSize = input<InplaceInputSize>('small');
+    $inputSize = input<InplaceInputSize>('small', { alias: 'inputSize' });
 
     /**
      * Flag to make the text required
      */
-    required = input(false);
+    $required = input(false, { alias: 'required' });
 
     /**
      * Flag to hide the error message
      */
-    showErrorMsg = input(true);
+    $showErrorMsg = input(true, { alias: 'showErrorMsg' });
 
     /**
      * Emitted when the text is changed and valid
      */
-    textChanged = output<string>();
+    $textChanged = output<string>({ alias: 'textChanged' });
 
     inplace = viewChild.required(Inplace);
     form: FormGroup;
@@ -106,12 +106,12 @@ export class DotExperimentsInlineEditTextComponent {
         this.initForm();
 
         effect(() => {
-            const textValue = this.text();
+            const textValue = this.$text();
             this.textControl.setValue(textValue);
         });
 
         effect(() => {
-            const isLoadingValue = this.isLoading();
+            const isLoadingValue = this.$isLoading();
             isLoadingValue ? this.textControl.disable() : this.textControl.enable();
 
             // Check if loading changed from true to false
@@ -142,7 +142,7 @@ export class DotExperimentsInlineEditTextComponent {
      */
     saveAction(): void {
         if (this.textControl.valid) {
-            this.textChanged.emit(this.textControl.value.trim());
+            this.$textChanged.emit(this.textControl.value.trim());
         }
     }
 
@@ -163,24 +163,24 @@ export class DotExperimentsInlineEditTextComponent {
     private initForm() {
         this.form = new FormGroup({
             text: new FormControl<string>('', {
-                validators: [Validators.required, Validators.maxLength(this.maxCharacterLength())]
+                validators: [Validators.required, Validators.maxLength(this.$maxCharacterLength())]
             })
         });
         this.updateValidators();
     }
 
     private resetForm() {
-        this.textControl.setValue(this.text());
+        this.textControl.setValue(this.$text());
         this.textControl.markAsPristine();
     }
 
     private updateValidators() {
         const validators: ValidatorFn[] = [
             DotValidators.noWhitespace,
-            Validators.maxLength(this.maxCharacterLength())
+            Validators.maxLength(this.$maxCharacterLength())
         ];
 
-        if (this.required()) {
+        if (this.$required()) {
             validators.push(Validators.required);
         }
 
