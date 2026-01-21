@@ -200,21 +200,60 @@ public class BrowserAPIImpl implements BrowserAPI {
                 sqlQuery.params.forEach(dcCount::addParam);
                 return dcCount.getInt("count");
             }
-            final Set<Permissionable> permissionables = new HashSet<>();
+
             final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.selectQuery);
             sqlQuery.params.forEach(dcCount::addParam);
             @SuppressWarnings("unchecked") final List<Map<String, String>> loadResults = dcCount.loadResults();
-            loadResults.forEach(result -> {
-                final String inode = result.get("inode");
-                final String identifier = result.get("identifier");
-                final String contentTypeId = result.get("content_type_id");
-                permissionables.add(shallowPermissionable(identifier, contentTypeId, inode));
-            });
-            return permissionAPI.filterCollection(new ArrayList<>(permissionables),
-                    PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user).size();
+
+            // Configuration for batch processing
+            final int batchSize = Config.getIntProperty("BROWSER_PERMISSION_CHECK_BATCH_SIZE", 1000);
+
+            // If small dataset, process directly to avoid overhead
+            if (loadResults.size() <= batchSize) {
+                final List<Permissionable> permissionables = buildPermissionablesFromResults(loadResults);
+                return permissionAPI.filterCollection(permissionables,
+                        PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user).size();
+            }
+
+            // For large datasets, partition into batches and process in parallel
+            final List<List<Map<String, String>>> batches = Lists.partition(loadResults, batchSize);
+
+            return batches.parallelStream()
+                .mapToInt(batch -> {
+                    try {
+                        // Step 1: Build Permissionables in parallel for this batch
+                        final List<Permissionable> batchPermissionables = buildPermissionablesFromResults(batch);
+
+                        // Step 2: Filter this batch
+                        return permissionAPI.filterCollection(batchPermissionables,
+                                PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user).size();
+                    } catch (Exception e) {
+                        Logger.error(this, "Error processing permission batch: " + e.getMessage(), e);
+                        return 0; // Continue processing other batches
+                    }
+                })
+                .sum(); // Sum all batch results
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Builds a list of Permissionable objects from database result maps using parallel processing.
+     * Extracts the required fields (inode, identifier, contentTypeId) and creates shallow Permissionable objects.
+     *
+     * @param results List of database result maps containing content metadata
+     * @return List of Permissionable objects ready for permission filtering
+     */
+    private List<Permissionable> buildPermissionablesFromResults(final List<Map<String, String>> results) {
+        return results.parallelStream()
+            .map(result -> {
+                final String inode = result.get("inode");
+                final String identifier = result.get("identifier");
+                final String contentTypeId = result.get("content_type_id");
+                return shallowPermissionable(identifier, contentTypeId, inode);
+            })
+            .collect(Collectors.toList());
     }
 
     /**
