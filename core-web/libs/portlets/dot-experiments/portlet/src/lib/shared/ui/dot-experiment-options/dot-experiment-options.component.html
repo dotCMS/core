@@ -1,6 +1,6 @@
 @for (item of itemList; track item; let i = $index) {
     <div
-        [attr.data-testId]="'dot-options-item_' + item.val"
+        [attr.data-testId]="'dot-options-item_' + item.$value()"
         [ngClass]="expanded.has(i) ? 'bg-[var(--color-palette-primary-100)]' : ''"
         class="flex flex-col rounded-sm border border-[var(--gray-200)] transition-colors duration-200 hover:bg-[var(--color-palette-primary-100)]">
         <ng-container
@@ -8,7 +8,7 @@
             [ngTemplateOutlet]="defaultHeader" />
         @if (item?.content) {
             <div
-                [attr.data-testId]="'dot-options-item-content_' + item.val"
+                [attr.data-testId]="'dot-options-item-content_' + item.$value()"
                 [class.pb-4]="expanded.has(i)"
                 class="dot-option-content px-4"
                 [class.dot-option-content--expanded]="expanded.has(i)"
@@ -28,13 +28,13 @@
         (click)="item.selectItem(item, index)"
         (keydown.enter)="item.selectItem(item, index)"
         (keydown.space)="$event.preventDefault(); item.selectItem(item, index)"
-        [attr.data-testId]="'dot-options-item-header_' + item.val"
+        [attr.data-testId]="'dot-options-item-header_' + item.$value()"
         class="flex cursor-pointer gap-4 p-7"
         role="button"
         tabindex="0">
-        @if (item.icon) {
+        @if (item.$icon()) {
             <i
-                [class]="'pi ' + item.icon"
+                [class]="'pi ' + item.$icon()"
                 class="mt-1.5 text-[var(--color-palette-secondary-500)]"></i>
         }
         <div>
@@ -43,14 +43,14 @@
                 [ngClass]="
                     expanded.has(index) ? 'text-[var(--gray-900)]' : 'text-[var(--gray-800)]'
                 ">
-                {{ item.title }}
+                {{ item.$title() }}
             </h2>
             <p
                 class="m-0"
                 [ngClass]="
                     expanded.has(index) ? 'text-[var(--gray-900)]' : 'text-[var(--gray-700)]'
                 ">
-                {{ item.detail }}
+                {{ item.$detail() }}
             </p>
         </div>
     </header>

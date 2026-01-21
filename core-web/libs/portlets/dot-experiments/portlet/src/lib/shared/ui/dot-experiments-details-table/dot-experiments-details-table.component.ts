@@ -41,7 +41,7 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsDetailsTableComponent {
-    $title = input.required<string | TemplateRef<unknown>>({ alias: 'title' });
+    $title = input<string | TemplateRef<unknown>>('', { alias: 'title' });
 
     //** List of data to display, without templates, use the index of the objet as a header */
     $data = input.required<

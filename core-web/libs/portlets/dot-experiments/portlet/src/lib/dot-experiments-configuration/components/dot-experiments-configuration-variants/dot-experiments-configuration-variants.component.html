@@ -25,100 +25,108 @@
                     [maxLength]="maxVariantsAllowed" />
             </div>
         </ng-template>
-        @for (
-            variant of vm.trafficProportion.variants;
-            track variant;
-            let first = $first;
-            let last = $last
-        ) {
-            <p-card data-testId="variant-row-card">
-                <div class="flex flex-row items-center justify-between gap-2">
-                    <div class="flex grow flex-row items-center gap-2">
-                        @if (variant.name === defaultVariantName || vm.disabledTooltipLabel) {
-                            <span data-testId="variant-name-original">{{ variant.name }}</span>
+        <div class="flex flex-col gap-4 w-full">
+            @for (
+                variant of vm.trafficProportion.variants;
+                track variant;
+                let first = $first;
+                let last = $last
+            ) {
+                <p-card data-testId="variant-row-card">
+                    <div class="flex flex-row items-center justify-between gap-2">
+                        <div class="flex grow flex-row items-center gap-2">
+                            @if (variant.name === defaultVariantName || vm.disabledTooltipLabel) {
+                                <span data-testId="variant-name-original">{{ variant.name }}</span>
+                            } @else {
+                                <dot-experiments-inplace-edit-text
+                                    (textChanged)="
+                                        editVariantName($event, variant, vm.experimentId)
+                                    "
+                                    [isLoading]="
+                                        vm.status && vm.status.status === statusList.SAVING
+                                    "
+                                    [maxCharacterLength]="maxInputTitleLength"
+                                    [required]="true"
+                                    [showErrorMsg]="false"
+                                    [text]="variant.name" />
+                            }
+                            @if (variant.url) {
+                                <dot-copy-button
+                                    [copy]="url + '&variantName=' + variant.id"
+                                    [label]="'editpage.header.copy' | dm"
+                                    [tooltipText]="
+                                        'dot.common.message.pageurl.copy.clipboard' | dm
+                                    " />
+                            }
+                        </div>
+                        <span class="mx-2 text-[var(--gray-500)]">|</span>
+                        <div
+                            [pTooltip]="vm.disabledTooltipLabel | dm"
+                            [tooltipDisabled]="!vm.disabledTooltipLabel"
+                            data-testId="tooltip-on-disabled"
+                            tooltipPosition="bottom">
+                            <p-button
+                                (onClick)="changeTrafficProportion()"
+                                [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
+                                [link]="true"
+                                [size]="'small'"
+                                data-testId="variant-weight"
+                                [label]="
+                                    (variant.weight | number: '2.2-2') +
+                                    '% ' +
+                                    ('experiments.configure.variants.weight' | dm)
+                                "
+                                type="button" />
+                        </div>
+                        @if (
+                            variant.name === defaultVariantName ||
+                            !vm.isExperimentADraft ||
+                            vm.pageSate.lockedByAnotherUser
+                        ) {
+                            <p-button
+                                (onClick)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
+                                [outlined]="true"
+                                [size]="'small'"
+                                styleClass="p-0"
+                                data-testId="variant-preview-button"
+                                [label]="'experiments.configure.variants.view' | dm"
+                                type="button" />
                         } @else {
-                            <dot-experiments-inplace-edit-text
-                                (textChanged)="editVariantName($event, variant, vm.experimentId)"
-                                [isLoading]="vm.status && vm.status.status === statusList.SAVING"
-                                [maxCharacterLength]="maxInputTitleLength"
-                                [required]="true"
-                                [showErrorMsg]="false"
-                                [text]="variant.name" />
+                            <p-button
+                                (onClick)="goToEditPageVariant(variant, dotPageMode.EDIT)"
+                                [outlined]="true"
+                                [size]="'small'"
+                                severity="warn"
+                                styleClass="p-0"
+                                data-testId="variant-edit-button"
+                                [label]="'experiments.action.edit' | dm"
+                                type="button" />
                         }
-                        @if (variant.url) {
-                            <dot-copy-button
-                                [copy]="url + '&variantName=' + variant.id"
-                                [label]="'editpage.header.copy' | dm"
-                                [tooltipText]="'dot.common.message.pageurl.copy.clipboard' | dm" />
-                        }
-                    </div>
-                    <span class="mx-2 text-[var(--gray-500)]">|</span>
-                    <div
-                        [pTooltip]="vm.disabledTooltipLabel | dm"
-                        [tooltipDisabled]="!vm.disabledTooltipLabel"
-                        data-testId="tooltip-on-disabled"
-                        tooltipPosition="bottom">
-                        <p-button
-                            (onClick)="changeTrafficProportion()"
-                            [disabled]="!vm.isExperimentADraft || vm.disabledTooltipLabel"
-                            [link]="true"
-                            [size]="'small'"
-                            data-testId="variant-weight"
-                            [label]="
-                                (variant.weight | number: '2.2-2') +
-                                '% ' +
-                                ('experiments.configure.variants.weight' | dm)
+                        <div
+                            [pTooltip]="vm.disabledTooltipLabel | dm"
+                            [tooltipDisabled]="
+                                !vm.disabledTooltipLabel || variant.name === defaultVariantName
                             "
-                            type="button" />
+                            data-testId="tooltip-on-disabled"
+                            tooltipPosition="bottom">
+                            <p-button
+                                (onClick)="deleteVariant({ $event, variant }, vm.experimentId)"
+                                [disabled]="
+                                    variant.name === defaultVariantName ||
+                                    !vm.isExperimentADraft ||
+                                    vm.disabledTooltipLabel
+                                "
+                                [text]="true"
+                                [size]="'small'"
+                                severity="danger"
+                                data-testId="variant-delete-button"
+                                [label]="'experiments.configure.variants.delete' | dm"
+                                type="button" />
+                        </div>
                     </div>
-                    @if (
-                        variant.name === defaultVariantName ||
-                        !vm.isExperimentADraft ||
-                        vm.pageSate.lockedByAnotherUser
-                    ) {
-                        <p-button
-                            (onClick)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
-                            [outlined]="true"
-                            [size]="'small'"
-                            styleClass="p-0"
-                            data-testId="variant-preview-button"
-                            [label]="'experiments.configure.variants.view' | dm"
-                            type="button" />
-                    } @else {
-                        <p-button
-                            (onClick)="goToEditPageVariant(variant, dotPageMode.EDIT)"
-                            [outlined]="true"
-                            [size]="'small'"
-                            severity="warn"
-                            styleClass="p-0"
-                            data-testId="variant-edit-button"
-                            [label]="'experiments.action.edit' | dm"
-                            type="button" />
-                    }
-                    <div
-                        [pTooltip]="vm.disabledTooltipLabel | dm"
-                        [tooltipDisabled]="
-                            !vm.disabledTooltipLabel || variant.name === defaultVariantName
-                        "
-                        data-testId="tooltip-on-disabled"
-                        tooltipPosition="bottom">
-                        <p-button
-                            (onClick)="deleteVariant({ $event, variant }, vm.experimentId)"
-                            [disabled]="
-                                variant.name === defaultVariantName ||
-                                !vm.isExperimentADraft ||
-                                vm.disabledTooltipLabel
-                            "
-                            [text]="true"
-                            [size]="'small'"
-                            severity="danger"
-                            data-testId="variant-delete-button"
-                            [label]="'experiments.configure.variants.delete' | dm"
-                            type="button" />
-                    </div>
-                </div>
-            </p-card>
-        }
+                </p-card>
+            }
+        </div>
         <ng-template #footer>
             <div
                 [pTooltip]="vm.disabledTooltipLabel | dm"

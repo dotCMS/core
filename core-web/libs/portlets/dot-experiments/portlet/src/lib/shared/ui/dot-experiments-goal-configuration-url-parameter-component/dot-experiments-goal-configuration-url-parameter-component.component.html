@@ -48,10 +48,11 @@
                             data-testId="operator-input"
                             dotDropdown
                             formControlName="operator"
+                            appendTo="body"
                             placeholder="{{
                                 'experiments.goal.url_parameter.form.conditions.operator.placeholder'
                                     | dm
-                            }}"></p-select>
+                            }}" />
                         <dot-field-validation-message
                             [field]="getConditionsFormArrayItemByIndex(i).controls['operator']" />
                     </div>
