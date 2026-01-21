@@ -24,8 +24,8 @@
                                 <div class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
                                     <dot-experiments-reports-chart
                                         [config]="axisLabelsProbabilityChart"
-                                        [data]="vm.dailyChart.chartData"
-                                        [isEmpty]="!vm.dailyChart.hasEnoughData"
+                                        [data]="vm.dailyChart?.chartData"
+                                        [isEmpty]="!vm.dailyChart?.hasEnoughData"
                                         [isLoading]="vm.isLoading"
                                         data-testId="daily-chart" />
                                 </div>
@@ -34,8 +34,8 @@
                                 <div class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
                                     <dot-experiments-reports-chart
                                         [config]="axisLabelsBayesianChart"
-                                        [data]="vm.bayesianChart.chartData"
-                                        [isEmpty]="!vm.bayesianChart.hasEnoughData"
+                                        [data]="vm.bayesianChart?.chartData"
+                                        [isEmpty]="!vm.bayesianChart?.hasEnoughData"
                                         [isLinearAxis]="true"
                                         [isLoading]="vm.isLoading"
                                         data-testId="bayesian-chart" />
@@ -46,7 +46,7 @@
                     <dot-experiments-report-daily-details
                         [detailData]="vm.detailData"
                         [experimentId]="vm.experiment.id"
-                        [hasEnoughSessions]="vm.dailyChart.hasEnoughData"
+                        [hasEnoughSessions]="vm.results ? vm.results.sessions.total >= 10 : false"
                         [promotedVariantId]="vm.promotedVariant" />
                 </div>
             </div>

@@ -25,7 +25,6 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
         ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-report-daily-details.component.html',
-    styleUrls: ['./dot-experiments-report-daily-details.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportDailyDetailsComponent {

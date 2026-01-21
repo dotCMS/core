@@ -38,7 +38,6 @@ import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-details-table.component.html',
-    styleUrls: ['./dot-experiments-details-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsDetailsTableComponent {
