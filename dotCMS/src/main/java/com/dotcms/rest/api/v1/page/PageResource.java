@@ -1551,7 +1551,7 @@ public class PageResource {
 
             // Update style properties in database
             final List<ContentView> updatedStyles =
-                pageResourceHelper.saveContentletStyles(pageId, reducedContainerEntries);
+                pageResourceHelper.saveContentletStyles(pageId, reducedContainerEntries, user);
 
             return Response.ok(new ResponseEntityContentView(updatedStyles)).build();
 
