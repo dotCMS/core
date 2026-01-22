@@ -1,14 +1,19 @@
 <ul
     [dragulaModel]="$fieldTypes()"
-    class="content-types-fields-list"
+    class="list-none p-0 m-0 mb-6 overflow-auto"
     dragula="fields-bag"
     data-drag-type="source">
-    @for (fieldType of $fieldTypes(); track fieldType.clazz) {
+    @for (fieldType of $fieldTypes(); track fieldType.clazz; let i = $index) {
         <li
             [attr.data-testid]="fieldType.clazz"
             [attr.data-clazz]="fieldType.clazz"
-            class="content-types-fields-list__item">
-            <dot-icon name="{{ fieldIcons[fieldType.clazz] }}" />
+            class="flex items-center cursor-move leading-5 py-3 px-4 transition-colors duration-200 hover:bg-gray-100 group"
+            [class.border-b]="i === 1"
+            [class.border-gray-300]="i === 1">
+            <i
+                class="material-icons text-gray-700 mr-3 text-2xl transition-colors duration-200 group-hover:text-black">
+                {{ fieldIcons[fieldType.clazz] }}
+            </i>
             <span role="listitem">{{ fieldType.name }}</span>
         </li>
     }

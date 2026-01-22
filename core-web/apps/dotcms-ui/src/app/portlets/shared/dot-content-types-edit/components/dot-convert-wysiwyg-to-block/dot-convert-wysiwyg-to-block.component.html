@@ -1,16 +1,18 @@
-<h3 data-testId="infoHeader">
+<h3 data-testId="infoHeader" class="text-xl font-bold my-2">
     {{ 'contenttypes.field.properties.wysiwyg.convert.info.header' | dm }}
 </h3>
 <p
     [innerHTML]="'contenttypes.field.properties.wysiwyg.convert.info.content' | dm"
+    class="leading-relaxed mb-4"
     data-testId="infoContent"></p>
 
-<h4 data-testId="header">
+<h4 data-testId="header" class="text-lg font-bold my-2">
     {{ 'contenttypes.field.properties.wysiwyg.convert.header' | dm }}
 </h4>
 
 <p
     [innerHTML]="'contenttypes.field.properties.wysiwyg.convert.content' | dm"
+    class="leading-relaxed mb-4"
     data-testId="content"></p>
 
 <div class="flex gap-2 items-center">
@@ -20,8 +22,10 @@
     </label>
 </div>
 
-<p>
-    <button (click)="convert.emit($event)" [disabled]="!accept" pButton data-testId="buttonConvert">
-        {{ 'contenttypes.field.properties.wysiwyg.convert.button' | dm }}
-    </button>
+<p class="mt-4">
+    <p-button
+        (click)="$convert.emit($event)"
+        [disabled]="!accept"
+        [label]="'contenttypes.field.properties.wysiwyg.convert.button' | dm"
+        data-testId="buttonConvert" />
 </p>

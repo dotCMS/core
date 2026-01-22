@@ -5,16 +5,16 @@ import { Subject } from 'rxjs';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
     OnChanges,
     OnDestroy,
     OnInit,
-    Output,
     Renderer2,
     SimpleChanges,
-    ViewChild,
-    inject
+    effect,
+    inject,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 
 import { takeUntil } from 'rxjs/operators';
@@ -43,7 +43,6 @@ import { FieldPropertyService } from '../service/field-properties.service';
  */
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
-    styleUrls: ['./content-type-fields-drop-zone.component.scss'],
     templateUrl: './content-type-fields-drop-zone.component.html',
     standalone: false
 })
@@ -69,23 +68,16 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     hideButtons = false;
     activeTab = 0;
 
-    @ViewChild('fieldPropertiesForm', { static: true })
-    propertiesForm: ContentTypeFieldsPropertiesFormComponent;
+    readonly $propertiesForm =
+        viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
 
-    @Input()
-    layout: DotCMSContentTypeLayoutRow[];
+    readonly $layout = input<DotCMSContentTypeLayoutRow[]>(undefined, { alias: 'layout' });
+    readonly $contentType = input<DotCMSContentType>(undefined, { alias: 'contentType' });
 
-    @Input()
-    contentType: DotCMSContentType;
+    readonly saveFields = output<DotCMSContentTypeLayoutRow[]>();
+    readonly editField = output<DotCMSContentTypeField>();
+    readonly removeFields = output<DotCMSContentTypeField[]>();
 
-    @Output()
-    saveFields = new EventEmitter<DotCMSContentTypeLayoutRow[]>();
-
-    @Output()
-    editField = new EventEmitter<DotCMSContentTypeField>();
-
-    @Output()
-    removeFields = new EventEmitter<DotCMSContentTypeField[]>();
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     private _loading: boolean;
@@ -94,15 +86,17 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         return this._loading;
     }
 
-    @Input()
-    set loading(loading: boolean) {
-        this._loading = loading;
+    readonly $loading = input<boolean>(false, { alias: 'loading' });
 
-        if (loading) {
-            this.dotLoadingIndicatorService.show();
-        } else {
-            this.dotLoadingIndicatorService.hide();
-        }
+    constructor() {
+        effect(() => {
+            const loading = this.$loading();
+            if (loading) {
+                this.dotLoadingIndicatorService.show();
+            } else {
+                this.dotLoadingIndicatorService.hide();
+            }
+        });
     }
 
     get isFieldWithSettings() {
@@ -157,13 +151,17 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         this.defaultDialogActions = {
             accept: {
                 action: () => {
-                    this.propertiesForm.saveFieldProperties();
+                    this.$propertiesForm().saveFieldProperties();
                 },
                 label: this.dotMessageService.get('contenttypes.dropzone.action.save'),
                 disabled: true
             },
             cancel: {
-                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel')
+                label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
+                action: () => {
+                    this.removeFieldsWithoutId();
+                    this.displayDialog = false;
+                }
             }
         };
 
@@ -222,8 +220,8 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.layout && changes.layout.currentValue) {
-            this.fieldRows = structuredClone(changes.layout.currentValue);
+        if (changes.$layout && changes.$layout.currentValue) {
+            this.fieldRows = structuredClone(changes.$layout.currentValue);
         }
     }
 
@@ -368,7 +366,7 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      * @memberof ContentTypeFieldsDropZoneComponent
      */
     cancelLastDragAndDrop(): void {
-        this.fieldRows = structuredClone(this.layout);
+        this.fieldRows = structuredClone(this.$layout());
     }
 
     /**
@@ -425,6 +423,12 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
      */
     changesDialogActions(controls: DotDialogActions) {
         this.dialogActions = controls;
+    }
+
+    handleDialogVisibleChange(isVisible: boolean): void {
+        if (!isVisible) {
+            this.removeFieldsWithoutId();
+        }
     }
 
     protected toggleDialog(): void {

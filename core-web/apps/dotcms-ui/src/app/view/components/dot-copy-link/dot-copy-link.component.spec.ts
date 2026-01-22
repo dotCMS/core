@@ -69,8 +69,7 @@ describe('DotCopyLinkComponent', () => {
         });
 
         it('should show copy icon', () => {
-            const icon = de.query(By.css('[data-testId="icon"]'));
-            expect(icon).not.toBeNull();
+            expect(button.componentInstance.icon).toBe('pi pi-copy');
         });
 
         it('should have pTooltip attributes', () => {

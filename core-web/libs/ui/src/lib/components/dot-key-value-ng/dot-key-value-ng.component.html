@@ -1,11 +1,6 @@
 @let variableList = $variableList();
 
-<p-table
-    [value]="variableList()"
-    #table
-    dataKey="key"
-    (onRowReorder)="reorderVariables()"
-    styleClass="dotTable p-datatable-key-value">
+<p-table [value]="variableList()" #table dataKey="key" (onRowReorder)="reorderVariables()">
     <ng-template pTemplate="header" let-columns>
         <dot-key-value-table-header-row
             (save)="saveVariable($event)"

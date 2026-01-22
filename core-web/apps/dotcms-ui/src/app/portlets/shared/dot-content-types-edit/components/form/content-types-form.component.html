@@ -1,6 +1,13 @@
-<form [formGroup]="form" class="form" id="content-type-form" novalidate>
+<form
+    [formGroup]="form"
+    class="form"
+    [class.pt-14]="newContentEditorEnabled"
+    id="content-type-form"
+    novalidate>
     @if (newContentEditorEnabled) {
-        <div class="banner" data-test-id="content-type__new-content-banner">
+        <div
+            class="absolute top-22 -ml-5 left-5 w-full flex items-center gap-1 py-2 px-4 text-sm bg-primary-200 text-primary-900"
+            data-test-id="content-type__new-content-banner">
             <p-checkbox
                 class="p-checkbox-sm"
                 formControlName="newEditContent"
@@ -124,18 +131,22 @@
     }
     @if (form.get('urlMapPattern')) {
         <div class="field">
-            <dot-field-helper
-                [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
             <label for="content-type-form-url-map-pattern">
                 {{ 'contenttypes.form.label.URL.pattern' | dm }}
             </label>
-            <input
-                [tabindex]="10"
-                id="content-type-form-url-map-pattern"
-                pInputText
-                type="text"
-                name="urlMapPattern"
-                formControlName="urlMapPattern" />
+            <div class="relative">
+                <input
+                    [tabindex]="10"
+                    id="content-type-form-url-map-pattern"
+                    pInputText
+                    type="text"
+                    name="urlMapPattern"
+                    class="w-full"
+                    formControlName="urlMapPattern" />
+                <dot-field-helper
+                    class="absolute top-1/2 -translate-y-1/2 right-1"
+                    [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
+            </div>
         </div>
     }
 </form>

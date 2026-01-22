@@ -33,14 +33,17 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     ngOnChanges(changes: SimpleChanges): void {
         const fieldChanged = changes.field;
         const propertyNameChanged = changes.propertyName;
+        const groupChanged = changes.group;
 
-        // Only create component if field or propertyName actually changed
+        // Only create component if field, propertyName or group actually changed
         if (
             fieldChanged?.currentValue &&
             (fieldChanged.firstChange ||
                 !isEqual(fieldChanged.previousValue, fieldChanged.currentValue) ||
                 propertyNameChanged?.firstChange ||
-                propertyNameChanged?.previousValue !== propertyNameChanged?.currentValue)
+                propertyNameChanged?.previousValue !== propertyNameChanged?.currentValue ||
+                groupChanged?.firstChange ||
+                groupChanged?.previousValue !== groupChanged?.currentValue)
         ) {
             const currentFieldId = this.field?.id || null;
             const currentPropertyName = this.propertyName;
@@ -57,7 +60,7 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
                 this.previousFieldId = currentFieldId;
                 this.previousPropertyName = currentPropertyName;
             } else {
-                // Update existing component instance if field changed but same field/property
+                // Update existing component instance if field or group changed but same field/property
                 this.updateComponent();
             }
         }

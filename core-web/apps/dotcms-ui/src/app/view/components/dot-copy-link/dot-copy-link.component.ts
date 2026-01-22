@@ -17,7 +17,6 @@ import { DotClipboardUtil } from '@dotcms/ui';
 @Component({
     selector: 'dot-copy-link',
     templateUrl: './dot-copy-link.component.html',
-    styleUrls: ['./dot-copy-link.component.scss'],
     imports: [TooltipModule, ButtonModule],
     providers: [DotClipboardUtil]
 })

@@ -12,7 +12,7 @@
                 (keydown.enter)="handleKeyInputEnter($event)"
                 [formControl]="keyControl"
                 [placeholder]="'keyValue.key_input.placeholder' | dm"
-                class="dot-key-value-table-input-row__key-input"
+                class="w-full h-8"
                 #keyCell
                 id="key-value-input-row-key-input"
                 data-testId="key-input"
@@ -21,10 +21,12 @@
                 pSize="small"
                 autocomplete="false" />
             @if (keyControl.dirty && keyControl.hasError('required')) {
-                <small class="error-message">{{ 'keyValue.key_input.required' | dm }}</small>
+                <small class="text-red-500 text-xs">{{ 'keyValue.key_input.required' | dm }}</small>
             }
             @if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
-                <small class="error-message">{{ 'keyValue.key_input.duplicated' | dm }}</small>
+                <small class="text-red-500 text-xs">
+                    {{ 'keyValue.key_input.duplicated' | dm }}
+                </small>
             }
         </div>
     </th>
@@ -40,7 +42,7 @@
                 [formControl]="valueControl"
                 [type]="hiddenControl.value ? 'password' : 'text'"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
-                class="dot-key-value-table-input-row__value-input"
+                class="w-full h-8"
                 id="key-value-input-row-value-input"
                 #valueCell
                 data-testId="value-input"
@@ -48,30 +50,32 @@
                 pSize="small"
                 autocomplete="false" />
             @if (valueControl.dirty && valueControl.hasError('required')) {
-                <small class="error-message">{{ 'keyValue.value_input.required' | dm }}</small>
+                <small class="text-red-500 text-xs">
+                    {{ 'keyValue.value_input.required' | dm }}
+                </small>
             }
         </div>
     </th>
     @if ($showHiddenField()) {
-        <th class="dot-key-value-input__variables-hidden">
+        <th>
             <div class="flex flex-col">
                 <label for="key-value-input-row-hidden-input" class="mb-1">
                     {{ 'keyValue.hidden_header.label' | dm }}
                 </label>
                 <p-inputSwitch
-                    class="dot-key-value-input__hidden-switch"
+                    class="inline-block mt-2"
                     [formControl]="hiddenControl"
                     id="key-value-input-row-hidden-input"
                     data-testId="hidden-switch" />
             </div>
         </th>
     }
-    <th class="relative w-16" scope="col" style="min-width: 3rem">
+    <th class="relative w-16 min-w-12" scope="col">
         <button
             (click)="saveVariable()"
             icon="pi pi-plus"
             [text]="true"
-            class="key-value-input__save-button"
+            class="absolute top-9"
             #saveButton
             size="small"
             data-testId="save-button"

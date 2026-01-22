@@ -1,18 +1,18 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
-    EventEmitter,
-    Input,
+    ElementRef,
     OnChanges,
     OnDestroy,
     OnInit,
-    Output,
     SimpleChanges,
-    ViewChild,
     computed,
     inject,
-    input
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
@@ -31,9 +31,11 @@ import { FieldPropertyService } from '../service';
 
 @Component({
     selector: 'dot-content-type-fields-properties-form',
-    styleUrls: ['./content-type-fields-properties-form.component.scss'],
     templateUrl: './content-type-fields-properties-form.component.html',
-    standalone: false
+    standalone: false,
+    host: {
+        class: 'block'
+    }
 })
 export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnInit, OnDestroy {
     /** Form builder instance for creating reactive forms */
@@ -42,20 +44,26 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     /** Service for managing field properties */
     private fieldPropertyService = inject(FieldPropertyService);
 
+    /** Change detector reference for manual change detection */
+    private cdr = inject(ChangeDetectorRef);
+
     /** Event emitter for saving field properties */
-    @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+    readonly saveField = output<DotCMSContentTypeField>();
 
     /** Event emitter for form validation status */
-    @Output() valid: EventEmitter<boolean> = new EventEmitter();
+    readonly valid = output<boolean>();
 
     /** Input data for the form field being edited */
-    @Input() formFieldData: DotCMSContentTypeField;
+    readonly $formFieldData = input<DotCMSContentTypeField>(undefined, { alias: 'formFieldData' });
 
     /** Signal containing the content type information */
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
     /** Reference to the properties container element */
-    @ViewChild('properties') propertiesContainer;
+    readonly $propertiesContainer = viewChild<ElementRef>('properties');
+
+    /** Local copy of form field data for mutations */
+    formFieldData: DotCMSContentTypeField;
 
     /** Reactive form group for field properties */
     form: UntypedFormGroup;
@@ -84,10 +92,13 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * @param {SimpleChanges} changes - Object containing changed properties
      */
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.formFieldData?.currentValue && this.formFieldData) {
-            this.destroy();
-
-            setTimeout(this.init.bind(this), 0);
+        if (changes.$formFieldData?.currentValue) {
+            this.formFieldData = this.$formFieldData();
+            if (this.formFieldData) {
+                this.destroy();
+                this.init();
+                this.cdr.detectChanges();
+            }
         }
     }
 
@@ -96,7 +107,12 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     ngOnInit(): void {
         // TODO: Migrate to Signal Forms
-        this.initFormGroup();
+        this.formFieldData = this.$formFieldData();
+        if (this.formFieldData) {
+            this.init();
+        } else {
+            this.initFormGroup();
+        }
     }
 
     /**
@@ -161,15 +177,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     destroy(): void {
         this.fieldProperties = [];
-
-        if (this.propertiesContainer) {
-            const propertiesContainer = this.propertiesContainer.nativeElement;
-            propertiesContainer.childNodes.forEach((child) => {
-                if (child.tagName) {
-                    propertiesContainer.removeChild(child);
-                }
-            });
-        }
     }
 
     /**
