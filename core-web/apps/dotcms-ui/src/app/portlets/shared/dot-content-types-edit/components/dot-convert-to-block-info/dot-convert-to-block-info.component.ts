@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 @Component({
     selector: 'dot-convert-to-block-info',
@@ -9,7 +9,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     }
 })
 export class DotConvertToBlockInfoComponent {
-    @Input() currentFieldType;
-    @Output() action = new EventEmitter<MouseEvent>();
-    @Input() currentField;
+    readonly $currentFieldType = input({ alias: 'currentFieldType' });
+    readonly $action = output<MouseEvent>();
+    readonly $currentField = input({ alias: 'currentField' });
 }

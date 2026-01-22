@@ -3,17 +3,16 @@ import { Subject } from 'rxjs';
 import {
     ChangeDetectorRef,
     Component,
-    EventEmitter,
-    Input,
+    ElementRef,
     OnChanges,
     OnDestroy,
     OnInit,
-    Output,
     SimpleChanges,
-    ViewChild,
     computed,
     inject,
-    input
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
@@ -49,19 +48,22 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private cdr = inject(ChangeDetectorRef);
 
     /** Event emitter for saving field properties */
-    @Output() saveField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
+    readonly saveField = output<DotCMSContentTypeField>();
 
     /** Event emitter for form validation status */
-    @Output() valid: EventEmitter<boolean> = new EventEmitter();
+    readonly valid = output<boolean>();
 
     /** Input data for the form field being edited */
-    @Input() formFieldData: DotCMSContentTypeField;
+    readonly $formFieldData = input<DotCMSContentTypeField>(undefined, { alias: 'formFieldData' });
 
     /** Signal containing the content type information */
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
     /** Reference to the properties container element */
-    @ViewChild('properties') propertiesContainer;
+    readonly $propertiesContainer = viewChild<ElementRef>('properties');
+
+    /** Local copy of form field data for mutations */
+    formFieldData: DotCMSContentTypeField;
 
     /** Reactive form group for field properties */
     form: UntypedFormGroup;
@@ -90,10 +92,13 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * @param {SimpleChanges} changes - Object containing changed properties
      */
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.formFieldData?.currentValue && this.formFieldData) {
-            this.destroy();
-            this.init();
-            this.cdr.detectChanges();
+        if (changes.$formFieldData?.currentValue) {
+            this.formFieldData = this.$formFieldData();
+            if (this.formFieldData) {
+                this.destroy();
+                this.init();
+                this.cdr.detectChanges();
+            }
         }
     }
 
@@ -102,6 +107,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     ngOnInit(): void {
         // TODO: Migrate to Signal Forms
+        this.formFieldData = this.$formFieldData();
         if (this.formFieldData) {
             this.init();
         } else {
@@ -171,15 +177,6 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     destroy(): void {
         this.fieldProperties = [];
-
-        if (this.propertiesContainer) {
-            const propertiesContainer = this.propertiesContainer.nativeElement;
-            propertiesContainer.childNodes.forEach((child) => {
-                if (child.tagName) {
-                    propertiesContainer.removeChild(child);
-                }
-            });
-        }
     }
 
     /**

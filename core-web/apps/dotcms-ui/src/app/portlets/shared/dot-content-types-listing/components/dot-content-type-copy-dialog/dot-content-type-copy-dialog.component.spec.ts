@@ -120,12 +120,12 @@ describe('DotContentTypeCopyDialogComponent', () => {
         fixture.detectChanges();
 
         expect(component.form.valid).toEqual(true);
-        jest.spyOn(component.validFormFields, 'emit');
+        jest.spyOn(component.$validFormFields, 'emit');
 
         acceptButton.nativeElement.click();
 
-        expect(component.validFormFields.emit).toHaveBeenCalledWith(formValues);
-        expect(component.validFormFields.emit).toHaveBeenCalledTimes(1);
+        expect(component.$validFormFields.emit).toHaveBeenCalledWith(formValues);
+        expect(component.$validFormFields.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should emit cancelBtn event when cancel button is clicked', () => {
@@ -135,12 +135,12 @@ describe('DotContentTypeCopyDialogComponent', () => {
 
         expect(cancelButton).toBeDefined();
         jest.spyOn(component, 'closeDialog');
-        jest.spyOn(component.cancelBtn, 'emit');
+        jest.spyOn(component.$cancelBtn, 'emit');
 
         cancelButton.nativeElement.click();
 
         expect(component.closeDialog).toHaveBeenCalledTimes(1);
-        expect(component.cancelBtn.emit).toHaveBeenCalledWith(true);
+        expect(component.$cancelBtn.emit).toHaveBeenCalledWith(true);
     });
 
     it("shouldn't emit form values when accept button is clicked and form is invalid", () => {
@@ -156,13 +156,13 @@ describe('DotContentTypeCopyDialogComponent', () => {
         const buttonComponent = copyButton.componentInstance;
         expect(buttonComponent.disabled).toBe(true);
 
-        jest.spyOn(component.validFormFields, 'emit');
+        jest.spyOn(component.$validFormFields, 'emit');
 
         fixture.detectChanges();
 
         // Even if clicked programmatically, submitForm checks form validity and won't emit
         copyButton.nativeElement.click();
 
-        expect(component.validFormFields.emit).not.toHaveBeenCalled();
+        expect(component.$validFormFields.emit).not.toHaveBeenCalled();
     });
 });

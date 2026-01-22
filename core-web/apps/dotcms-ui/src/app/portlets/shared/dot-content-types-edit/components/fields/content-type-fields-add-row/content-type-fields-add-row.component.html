@@ -5,7 +5,7 @@
             class="flex w-full items-baseline justify-center h-49.5">
             <p-splitButton
                 (onClick)="setColumnSelect()"
-                [disabled]="disabled"
+                [disabled]="$disabled()"
                 [model]="actions"
                 icon="pi pi-plus"
                 label="{{ 'contenttypes.dropzone.rows.add' | dm }}" />
@@ -29,7 +29,7 @@
                 [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
                 class="flex p-0 w-full list-none m-0"
                 #colContainer>
-                @for (colNum of columns; track colNum; let i = $index) {
+                @for (colNum of $columns(); track colNum; let i = $index) {
                     <li
                         (mouseenter)="onMouseEnter(i, $event)"
                         (mouseleave)="onMouseLeave($event)"

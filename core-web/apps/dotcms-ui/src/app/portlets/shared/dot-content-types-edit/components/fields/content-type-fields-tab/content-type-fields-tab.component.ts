@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, OnInit, inject, input, output } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -21,19 +21,19 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private dotDialogService = inject(DotAlertConfirmService);
 
-    @Input()
+    readonly $fieldTab = input.required<DotCMSContentTypeLayoutRow>({ alias: 'fieldTab' });
+
+    readonly editTab = output<DotCMSContentTypeField>();
+    readonly removeTab = output<DotCMSContentTypeLayoutRow>();
+
+    /** Local copy of fieldTab for access */
     fieldTab: DotCMSContentTypeLayoutRow;
-
-    @Output()
-    editTab: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-
-    @Output()
-    removeTab: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
     label: string;
 
     ngOnInit() {
-        this.label = this.fieldTab.divider.name;
+        this.fieldTab = this.$fieldTab();
+        this.label = this.fieldTab.divider.name || '';
     }
 
     /**

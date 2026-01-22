@@ -43,6 +43,12 @@ const mockFieldVariablesServiceEmpty = {
     delete: jest.fn().mockReturnValue(of([]))
 };
 
+const MOCK_FIELD = {
+    id: 'f965a51b-130a-435f-b646-41e07d685363',
+    name: 'testField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+} as any;
+
 describe('DotBlockEditorSettingsComponent', () => {
     describe('with existing variables', () => {
         let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
@@ -81,6 +87,7 @@ describe('DotBlockEditorSettingsComponent', () => {
             }).compileComponents();
 
             fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
             de = fixture.debugElement;
             component = de.componentInstance;
             dotFieldVariableService = de.injector.get(DotFieldVariablesService);
@@ -98,50 +105,50 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should emit changeControls when isVisible input is true', () => {
             fixture.detectChanges();
-            jest.spyOn(component.changeControls, 'emit');
+            jest.spyOn(component.$changeControls, 'emit');
             component.ngOnChanges({
-                isVisible: new SimpleChange(false, true, false)
+                $isVisible: new SimpleChange(false, true, false)
             });
             fixture.detectChanges();
-            expect(component.changeControls.emit).toHaveBeenCalled();
+            expect(component.$changeControls.emit).toHaveBeenCalled();
         });
 
         it('should emit valid output on form change', () => {
-            jest.spyOn(component.valid, 'emit');
+            jest.spyOn(component.$valid, 'emit');
             fixture.detectChanges();
             component.form.get('allowedBlocks').setValue(['codeblock']);
-            expect(component.valid.emit).toHaveBeenCalled();
+            expect(component.$valid.emit).toHaveBeenCalled();
         });
 
         it('should save properties on saveSettings', () => {
             mockFieldVariablesServiceWithData.save.mockReturnValue(of(mockFieldVariables[0]));
-            jest.spyOn(component.save, 'emit');
+            jest.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.saveSettings();
             expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
-            expect(component.save.emit).toHaveBeenCalled();
+            expect(component.$save.emit).toHaveBeenCalled();
             expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
         });
 
         it('should delete properties on saveSettings when is empty', () => {
             mockFieldVariablesServiceWithData.delete.mockReturnValue(of(mockFieldVariables[0]));
-            jest.spyOn(component.save, 'emit');
+            jest.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.form.get('allowedBlocks').setValue([]);
             component.saveSettings();
             expect(dotFieldVariableService.delete).toHaveBeenCalled();
-            expect(component.save.emit).toHaveBeenCalled();
+            expect(component.$save.emit).toHaveBeenCalled();
             expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
         });
 
         it('should handle error if save properties failed', () => {
             mockFieldVariablesServiceWithData.save.mockReturnValue(throwError(() => ({})));
             jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-            jest.spyOn(component.save, 'emit');
+            jest.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.saveSettings();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-            expect(component.save.emit).not.toHaveBeenCalled();
+            expect(component.$save.emit).not.toHaveBeenCalled();
         });
 
         describe('MultiSelector', () => {
@@ -205,6 +212,7 @@ describe('DotBlockEditorSettingsComponent', () => {
             }).compileComponents();
 
             fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
             de = fixture.debugElement;
             component = de.componentInstance;
             dotFieldVariableService = de.injector.get(DotFieldVariablesService);
@@ -251,6 +259,7 @@ describe('DotBlockEditorSettingsComponent', () => {
             }).compileComponents();
 
             const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
             component = fixture.componentInstance;
         }));
 

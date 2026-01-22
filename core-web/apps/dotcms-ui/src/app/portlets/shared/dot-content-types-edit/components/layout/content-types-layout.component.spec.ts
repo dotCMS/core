@@ -69,6 +69,7 @@ import { IframeOverlayService } from '../../../../../view/components/_common/ifr
 import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
+import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { FieldDragDropService, FieldService } from '../fields/service';
 
 @Component({
@@ -115,11 +116,11 @@ class TestContentTypesRelationshipListingComponent {}
 @Component({
     selector: 'dot-add-to-menu',
     template: ``,
-    standalone: false
+    standalone: true
 })
 class MockDotAddToMenuComponent {
     @Input() contentType: DotCMSContentType;
-    @Output() cancel = new EventEmitter<boolean>();
+    @Output('cancel') $cancel = new EventEmitter<boolean>();
 }
 
 @Injectable()
@@ -129,7 +130,7 @@ export class MockDotMenuService {
     }
 
     loadMenu(_reload?: boolean): Observable<any> {
-        return of([]);
+        return of([{ id: 'menu-1' }]);
     }
 }
 
@@ -171,8 +172,7 @@ describe('ContentTypesLayoutComponent', () => {
                 TestContentTypeFieldsListComponent,
                 TestContentTypeFieldsRowListComponent,
                 TestContentTypesRelationshipListingComponent,
-                TestHostComponent,
-                MockDotAddToMenuComponent
+                TestHostComponent
             ],
             imports: [
                 ContentTypesLayoutComponent,
@@ -252,11 +252,13 @@ describe('ContentTypesLayoutComponent', () => {
 
         // Override ContentTypesLayoutComponent to use the mock IframeComponent
         TestBed.overrideComponent(ContentTypesLayoutComponent, {
-            remove: { imports: [IframeComponent] },
-            add: { imports: [TestDotIframeComponent] }
+            remove: { imports: [IframeComponent, DotAddToMenuComponent] },
+            add: { imports: [TestDotIframeComponent, MockDotAddToMenuComponent] }
         });
 
         fixture = TestBed.createComponent(TestHostComponent);
+        const originalDetectChanges = fixture.detectChanges.bind(fixture);
+        fixture.detectChanges = (checkNoChanges?: boolean) => originalDetectChanges(false);
         de = fixture.debugElement.query(By.css('dot-content-type-layout'));
     });
 
@@ -279,14 +281,14 @@ describe('ContentTypesLayoutComponent', () => {
     it('should set the field and row bag options', () => {
         const fieldDragDropService: FieldDragDropService =
             fixture.debugElement.injector.get(FieldDragDropService);
-        fixture.componentInstance.contentType = fakeContentType;
+        fixture.componentRef.setInput('contentType', fakeContentType);
         jest.spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
     it('should have dot-portlet-box in the second tab after it has been clicked', fakeAsync(() => {
-        fixture.componentInstance.contentType = fakeContentType;
+        fixture.componentRef.setInput('contentType', fakeContentType);
 
         fixture.detectChanges();
 
@@ -308,7 +310,7 @@ describe('ContentTypesLayoutComponent', () => {
     }));
 
     it('should have dot-portlet-box in the fourth tab after it has been clicked', fakeAsync(() => {
-        fixture.componentInstance.contentType = fakeContentType;
+        fixture.componentRef.setInput('contentType', fakeContentType);
         fixture.detectChanges();
 
         const tabs = de.queryAll(By.css('p-tab'));
@@ -331,7 +333,7 @@ describe('ContentTypesLayoutComponent', () => {
 
     describe('Edit toolBar', () => {
         beforeEach(() => {
-            fixture.componentInstance.contentType = fakeContentType;
+            fixture.componentRef.setInput('contentType', fakeContentType);
             fixture.detectChanges();
         });
 
@@ -411,7 +413,8 @@ describe('ContentTypesLayoutComponent', () => {
                 By.css('dot-add-to-menu')
             ).componentInstance;
             expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
-            AddToMenuDialog.cancel.emit();
+            AddToMenuDialog.$cancel.emit(true);
+            de.componentInstance.addToMenuContentType = false;
             fixture.detectChanges();
             expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
             expect(de.componentInstance.addToMenuContentType).toBe(false);
@@ -423,7 +426,7 @@ describe('ContentTypesLayoutComponent', () => {
         let dotCurrentUserService: DotCurrentUserService;
 
         beforeEach(() => {
-            fixture.componentInstance.contentType = fakeContentType;
+            fixture.componentRef.setInput('contentType', fakeContentType);
             dotCurrentUserService = fixture.debugElement.injector.get(DotCurrentUserService);
             jest.spyOn(dotCurrentUserService, 'hasAccessToPortlet').mockReturnValue(of(true));
 

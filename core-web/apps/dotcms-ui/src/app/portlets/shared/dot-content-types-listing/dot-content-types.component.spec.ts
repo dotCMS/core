@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of, throwError as observableThrowError } from 'rxjs';
+import { Observable, throwError as observableThrowError, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
@@ -537,7 +537,7 @@ describe('DotContentTypesPortletComponent', () => {
             tick(1);
             fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
-            expect(comp.listing.paginatorService.extraParams.get('type')).toBe('Form');
+            expect(comp.$listing().paginatorService.extraParams.get('type')).toBe('Form');
             expect(comp.actionHeaderOptions.primary.model).toBe(null);
             expect(comp.actionHeaderOptions.primary.command).toBeDefined();
         }));

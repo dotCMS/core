@@ -27,7 +27,7 @@
                 @for (field of column.fields; track field) {
                     <dot-content-type-field-dragabble-item
                         (remove)="onRemoveField($event)"
-                        (edit)="this.editField.emit(field)"
+                        (edit)="this.editField.emit($event)"
                         [field]="field"
                         [isSmall]="fieldRow.columns.length > 1" />
                 }

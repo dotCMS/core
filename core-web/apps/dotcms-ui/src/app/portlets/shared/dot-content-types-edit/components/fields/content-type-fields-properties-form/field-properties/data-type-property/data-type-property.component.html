@@ -3,9 +3,9 @@
         <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
             {{ 'contenttypes.field.properties.data_type.label' | dm }}
         </label>
-        @for (radio of radioInputs; track radio) {
-            <div class="flex gap-2 items-center">
-                <div class="flex items-center">
+        <div class="flex flex-wrap gap-4 items-center">
+            @for (radio of radioInputs; track radio) {
+                <div class="flex items-center gap-2">
                     <p-radioButton
                         [inputId]="property.name + '_' + radio.value"
                         [name]="property.name"
@@ -15,7 +15,7 @@
                         {{ radio.text | dm }}
                     </label>
                 </div>
-            </div>
-        }
+            }
+        </div>
     </div>
 }

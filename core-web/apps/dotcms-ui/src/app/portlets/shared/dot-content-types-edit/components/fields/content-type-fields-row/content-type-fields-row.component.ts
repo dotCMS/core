@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, OnInit, inject, input, output } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -22,21 +22,19 @@ export class ContentTypeFieldsRowComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private dotDialogService = inject(DotAlertConfirmService);
 
-    @Input()
+    readonly $fieldRow = input.required<DotCMSContentTypeLayoutRow>({ alias: 'fieldRow' });
+
+    readonly editField = output<DotCMSContentTypeField>();
+    readonly removeField = output<DotCMSContentTypeField>();
+    readonly removeRow = output<DotCMSContentTypeLayoutRow>();
+
+    /** Local copy of fieldRow for mutations */
     fieldRow: DotCMSContentTypeLayoutRow;
-
-    @Output()
-    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-
-    @Output()
-    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-
-    @Output()
-    removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
 
     emptyMessage = '';
 
     ngOnInit() {
+        this.fieldRow = this.$fieldRow();
         this.emptyMessage = this.dotMessageService.get('contenttypes.dropzone.rows.empty.message');
     }
 

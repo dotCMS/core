@@ -238,7 +238,7 @@ describe('DotAddToMenuComponent', () => {
 
         jest.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
         jest.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
-        jest.spyOn(component.cancel, 'emit');
+        jest.spyOn(component.$cancel, 'emit');
 
         addButton.nativeElement.click();
 
@@ -252,7 +252,7 @@ describe('DotAddToMenuComponent', () => {
             dataViewMode: 'list',
             layoutId: component.form.get('menuOption').value
         });
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should emit Cancel event on close button click', () => {
@@ -260,9 +260,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogCancelAction"]')
         );
 
-        jest.spyOn(component.cancel, 'emit');
+        jest.spyOn(component.$cancel, 'emit');
         cancelButton.nativeElement.click();
 
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
     });
 });

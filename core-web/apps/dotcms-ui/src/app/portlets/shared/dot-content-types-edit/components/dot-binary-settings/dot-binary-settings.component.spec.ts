@@ -33,6 +33,12 @@ const SYSTEM_OPTIONS = JSON.stringify({
     allowGenerateImg: false
 });
 
+const MOCK_FIELD = {
+    id: 'f965a51b-130a-435f-b646-41e07d685363',
+    name: 'testField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField'
+} as any;
+
 describe('DotBinarySettingsComponent', () => {
     let spectator: Spectator<DotBinarySettingsComponent>;
     let component: DotBinarySettingsComponent;
@@ -89,7 +95,11 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                props: {
+                    field: MOCK_FIELD
+                }
+            });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 
@@ -106,31 +116,31 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should emit changeControls when isVisible input is true', () => {
-            jest.spyOn(component.changeControls, 'emit');
+            jest.spyOn(component.$changeControls, 'emit');
 
             spectator.setInput('isVisible', true);
 
-            expect(component.changeControls.emit).toHaveBeenCalled();
+            expect(component.$changeControls.emit).toHaveBeenCalled();
         });
 
         it('should emit valid output on form change', () => {
-            jest.spyOn(component.valid, 'emit');
+            jest.spyOn(component.$valid, 'emit');
 
             const acceptInput = spectator.query(byTestId('setting-accept'));
             spectator.typeInElement('text/*', acceptInput);
 
-            expect(component.valid.emit).toHaveBeenCalled();
+            expect(component.$valid.emit).toHaveBeenCalled();
         });
 
         it('should handler error if save properties failed', () => {
             jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
             jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-            jest.spyOn(component.save, 'emit');
+            jest.spyOn(component.$save, 'emit');
 
             component.saveSettings();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-            expect(component.save.emit).not.toHaveBeenCalled();
+            expect(component.$save.emit).not.toHaveBeenCalled();
         });
 
         it('should have 3 switches with the corresponding control name', () => {
@@ -186,7 +196,11 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                props: {
+                    field: MOCK_FIELD
+                }
+            });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 

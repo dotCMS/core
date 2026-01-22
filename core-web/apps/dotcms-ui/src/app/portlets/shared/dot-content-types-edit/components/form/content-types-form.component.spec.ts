@@ -14,8 +14,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotSiteService,
-    DotWorkflowService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
@@ -671,7 +671,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         jest.spyOn(spectator.component, 'submitForm');
 
-        spectator.component.send.subscribe((res) => (data = res));
+        spectator.component.$send.subscribe((res) => (data = res));
         spectator.component.submitForm();
 
         expect(data).toBeNull();
@@ -686,11 +686,11 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
         jest.spyOn(spectator.component, 'submitForm');
-        jest.spyOn(spectator.component.send, 'emit');
+        jest.spyOn(spectator.component.$send, 'emit');
 
         spectator.component.submitForm();
 
-        expect(spectator.component.send.emit).not.toHaveBeenCalled();
+        expect(spectator.component.$send.emit).not.toHaveBeenCalled();
     });
 
     it('should have dot-page-selector component and right attrs', () => {
@@ -717,7 +717,7 @@ describe('ContentTypesFormComponent', () => {
             spectator.detectChanges();
             data = null;
             jest.spyOn(spectator.component, 'submitForm');
-            spectator.component.send.subscribe((res) => (data = res));
+            spectator.component.$send.subscribe((res) => (data = res));
             spectator.component.form.controls.name.setValue('A content type name');
             // Set host to match SiteServiceMock currentSite identifier
             spectator.component.form.controls.host.setValue('123-xyz-567-xxl');

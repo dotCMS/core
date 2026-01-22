@@ -5,12 +5,11 @@ import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
-    EventEmitter,
     inject,
-    Input,
+    input,
     OnChanges,
     OnInit,
-    Output,
+    output,
     SimpleChanges
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -42,12 +41,12 @@ import { DotFieldVariablesService } from '../fields/dot-content-type-fields-vari
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinarySettingsComponent implements OnInit, OnChanges {
-    @Input() field: DotCMSContentTypeField;
-    @Input() isVisible = false;
+    readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
 
-    @Output() changeControls = new EventEmitter<DotDialogActions>();
-    @Output() valid = new EventEmitter<boolean>();
-    @Output() save = new EventEmitter<DotFieldVariable[]>();
+    readonly $changeControls = output<DotDialogActions>();
+    readonly $valid = output<boolean>();
+    readonly $save = output<DotFieldVariable[]>();
 
     form: FormGroup;
     protected readonly systemOptions = [
@@ -72,9 +71,9 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
     private FIELD_VARIABLES: Record<string, DotFieldVariable> = {};
 
     ngOnChanges(changes: SimpleChanges) {
-        const { isVisible } = changes;
-        if (isVisible?.currentValue) {
-            this.changeControls.emit(this.dialogActions());
+        const { $isVisible } = changes;
+        if ($isVisible?.currentValue) {
+            this.$changeControls.emit(this.dialogActions());
         }
     }
 
@@ -89,10 +88,10 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
         });
 
         this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-            this.valid.emit(this.form.valid);
+            this.$valid.emit(this.form.valid);
         });
 
-        this.fieldVariablesService.load(this.field).subscribe({
+        this.fieldVariablesService.load(this.$field()).subscribe({
             next: (fieldVariables: DotFieldVariable[]) => {
                 fieldVariables.forEach((variable) => {
                     const { key, value } = variable;
@@ -133,8 +132,8 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
 
             return (
                 value
-                    ? this.fieldVariablesService.save(this.field, fieldVariable)
-                    : this.fieldVariablesService.delete(this.field, fieldVariable)
+                    ? this.fieldVariablesService.save(this.$field(), fieldVariable)
+                    : this.fieldVariablesService.delete(this.$field(), fieldVariable)
             ).pipe(tap((variable) => (this.FIELD_VARIABLES[key] = variable))); // Update Variable Reference
         });
 
@@ -147,7 +146,7 @@ export class DotBinarySettingsComponent implements OnInit, OnChanges {
             )
             .subscribe((value: DotFieldVariable[]) => {
                 this.form.markAsPristine();
-                this.save.emit(value);
+                this.$save.emit(value);
             });
     }
 

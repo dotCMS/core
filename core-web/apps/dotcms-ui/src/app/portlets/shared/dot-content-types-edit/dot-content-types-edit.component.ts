@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -54,11 +54,8 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     router = inject(Router);
     private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
 
-    @ViewChild('form')
-    contentTypesForm: ContentTypesFormComponent;
-
-    @ViewChild('fieldsDropZone')
-    fieldsDropZone: ContentTypeFieldsDropZoneComponent;
+    readonly $contentTypesForm = viewChild<ContentTypesFormComponent>('form');
+    readonly $fieldsDropZone = viewChild<ContentTypeFieldsDropZoneComponent>('fieldsDropZone');
 
     contentTypeActions: MenuItem[];
     dialogCloseable = false;
@@ -250,7 +247,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                         .handle(err)
                         .pipe(take(1))
                         .subscribe(() => {
-                            this.fieldsDropZone.cancelLastDragAndDrop();
+                            this.$fieldsDropZone().cancelLastDragAndDrop();
                             this.loadingFields = false;
                         });
                 }
@@ -278,7 +275,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                         .handle(err)
                         .pipe(take(1))
                         .subscribe(() => {
-                            this.fieldsDropZone.cancelLastDragAndDrop();
+                            this.$fieldsDropZone().cancelLastDragAndDrop();
                             this.loadingFields = false;
                         });
                 }
@@ -302,7 +299,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                     ? this.dotMessageService.get('contenttypes.action.update')
                     : this.dotMessageService.get('contenttypes.action.create'),
                 action: () => {
-                    this.contentTypesForm.submitForm();
+                    this.$contentTypesForm().submitForm();
                 }
             },
             cancel: {

@@ -52,12 +52,17 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
                 FieldService
             ]
         });
+    }));
 
+    function createComponent(field: DotCMSContentTypeField, isSmall = false) {
         fixture = TestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
-
+        fixture.componentRef.setInput('field', field);
+        fixture.componentRef.setInput('isSmall', isSmall);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-    }));
+        fixture.detectChanges(); // Initial detectChanges to initialize component
+        return fixture;
+    }
 
     it('should have a name & variable', () => {
         const field = {
@@ -71,11 +76,10 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
-        const container = de.query(By.css('.info-container__name'));
+        const container = de.query(By.css('span.truncate'));
         expect(container).not.toBeNull();
         expect(container.nativeElement.textContent.trim().replace('  ', ' ')).toEqual('Field name');
     });
@@ -93,8 +97,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
         const copyButton: DebugElement = de.query(By.css('dot-copy-link'));
@@ -115,16 +118,11 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             variable: 'test',
             velocityVarName: 'velocityName'
         };
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
         const attrs = ['FieldLabel', 'Required', 'Indexed', 'Show on list'];
 
-        const attrsString = de.query(
-            By.css(
-                '.field-properties > .field-properties__actions-container > .field-properties__attributes-container'
-            )
-        ).nativeElement.textContent;
+        const attrsString = de.nativeElement.textContent;
 
         expect(attrs.every((attr) => attrsString.includes(attr))).toBe(true);
     });
@@ -140,12 +138,14 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
-        const button = de.query(By.css('.field-drag'));
-        expect(button).not.toBeNull();
+        const icons = de.queryAll(By.css('i.material-icons'));
+        const hasDragIcon = icons.some(
+            (icon) => icon.nativeElement.textContent.trim() === 'drag_indicator'
+        );
+        expect(hasDragIcon).toBe(true);
     });
 
     it('should has a remove button', () => {
@@ -159,8 +159,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
         const button = de.query(By.css('#info-container__delete'));
@@ -189,8 +188,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = field;
-
+        createComponent(field);
         fixture.detectChanges();
 
         const button = de.query(By.css('#info-container__delete'));
@@ -208,9 +206,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = mockField;
-
-        fixture.detectChanges();
+        createComponent(mockField);
 
         let resp: DotCMSContentTypeField;
         comp.edit.subscribe((field) => (resp = field));
@@ -235,9 +231,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = mockField;
-
-        fixture.detectChanges();
+        createComponent(mockField);
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeFalsy();
     });
 
@@ -252,10 +246,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             velocityVarName: 'velocityName'
         };
 
-        comp.field = mockField;
-        comp.isSmall = true;
-
-        fixture.detectChanges();
+        createComponent(mockField, true);
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();
     });
 });

@@ -89,7 +89,9 @@ class TestContentTypeLayoutComponent {
 class TestContentTypesFormComponent {
     @Input() data: DotCMSContentType;
     @Input() layout: DotCMSContentTypeField[];
-    @Output() send: EventEmitter<DotCMSContentType> = new EventEmitter();
+    @Input() contentType: DotCMSContentType;
+    @Output() $send: EventEmitter<DotCMSContentType> = new EventEmitter();
+    @Output() $valid: EventEmitter<boolean> = new EventEmitter();
 
     resetForm = jest.fn();
 
@@ -332,7 +334,7 @@ describe('DotContentTypesEditComponent', () => {
                 jest.spyOn(crudService, 'postData').mockReturnValue(of([responseContentType]));
                 jest.spyOn(location, 'replaceState').mockImplementation(() => {});
 
-                contentTypeForm.triggerEventHandler('send', mockContentType);
+                contentTypeForm.triggerEventHandler('$send', mockContentType);
 
                 const replacedWorkflowsPropContentType = {
                     ...mockContentType
@@ -361,14 +363,14 @@ describe('DotContentTypesEditComponent', () => {
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 
-                contentTypeForm.triggerEventHandler('send', mockContentType);
+                contentTypeForm.triggerEventHandler('$send', mockContentType);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
 
             it('should update workflows value', () => {
                 jest.spyOn(crudService, 'postData').mockReturnValue(of([]));
 
-                contentTypeForm.triggerEventHandler('send', {
+                contentTypeForm.triggerEventHandler('$send', {
                     workflows: [
                         {
                             id: '123',
@@ -396,12 +398,12 @@ describe('DotContentTypesEditComponent', () => {
             });
 
             it('should bind save button disabled attribute to canSave property from the form', () => {
-                form.triggerEventHandler('valid', true);
+                form.triggerEventHandler('$valid', true);
                 expect(comp.dialogActions.accept.disabled).toBe(false);
             });
 
             it('should submit form when save button is clicked', fakeAsync(() => {
-                form.triggerEventHandler('valid', true);
+                form.triggerEventHandler('$valid', true);
                 tick();
                 fixture.detectChanges();
                 // Call accept action directly via component
@@ -887,7 +889,7 @@ describe('DotContentTypesEditComponent', () => {
 
                 jest.spyOn(crudService, 'putData').mockReturnValue(of(responseContentType));
 
-                contentTypeForm.triggerEventHandler('send', fakeContentType);
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
 
                 const replacedWorkflowsPropContentType = {
                     ...fakeContentType
@@ -911,7 +913,7 @@ describe('DotContentTypesEditComponent', () => {
                     throwError(mockResponseView(403))
                 );
 
-                contentTypeForm.triggerEventHandler('send', fakeContentType);
+                contentTypeForm.triggerEventHandler('$send', fakeContentType);
 
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });

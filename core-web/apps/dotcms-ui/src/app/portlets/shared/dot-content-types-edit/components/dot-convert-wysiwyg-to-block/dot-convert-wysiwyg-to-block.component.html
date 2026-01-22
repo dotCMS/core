@@ -24,7 +24,7 @@
 
 <p class="mt-4">
     <p-button
-        (click)="convert.emit($event)"
+        (click)="$convert.emit($event)"
         [disabled]="!accept"
         [label]="'contenttypes.field.properties.wysiwyg.convert.button' | dm"
         data-testId="buttonConvert" />

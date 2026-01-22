@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, Input, OnChanges, OnDestroy, SimpleChanges, inject } from '@angular/core';
+import { Component, OnChanges, OnDestroy, SimpleChanges, inject, input } from '@angular/core';
 
 import { take, takeUntil } from 'rxjs/operators';
 
@@ -23,8 +23,11 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private fieldVariablesService = inject(DotFieldVariablesService);
 
-    @Input() field: DotCMSContentTypeField;
-    @Input() showTable = true;
+    readonly $field = input<DotCMSContentTypeField>(undefined, { alias: 'field' });
+    readonly $showTable = input<boolean>(true, { alias: 'showTable' });
+
+    /** Local copy of field for access */
+    field: DotCMSContentTypeField;
 
     fieldVariables: DotFieldVariable[] = [];
     blackList = {
@@ -41,7 +44,8 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.field?.currentValue) {
+        if (changes.$field?.currentValue) {
+            this.field = this.$field();
             this.initTableData();
         }
     }
@@ -92,6 +96,11 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     }
 
     private initTableData(): void {
+        if (!this.field?.contentTypeId || !this.field?.id) {
+            this.fieldVariables = [];
+            return;
+        }
+
         this.fieldVariablesService
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
