@@ -71,6 +71,8 @@
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.search>${ext.docker.image.search}</docker.image.search>
         <!--suppress UnresolvedMavenProperty -->
+        <docker.image.search.3x>${ext.docker.image.search.3x}</docker.image.search.3x>
+        <!--suppress UnresolvedMavenProperty -->
         <docker.image.postgres>${ext.docker.image.postgres}</docker.image.postgres>
         <!--suppress UnresolvedMavenProperty -->
         <context.name>${ext.default.context.name}</context.name>
@@ -193,6 +195,7 @@
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
         <docker.es.volume>${docker.run.context}_es</docker.es.volume>
+        <docker.es.3x.volume>${docker.run.context}_es-3x</docker.es.3x.volume>
         <docker.skip.clean.before>false</docker.skip.clean.before>
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
@@ -299,6 +302,10 @@
                                 <name>${docker.data.shared.volume}</name>
                                 <driver>local</driver>
                             </volume>
+                            <volume>
+                                <name>${docker.es.3x.volume}</name>
+                                <driver>local</driver>
+                            </volume>
                         </volumes>
                         <imagesMap>
                             <database>
@@ -368,6 +375,46 @@
                                     </log>
                                 </run>
                             </opensearch>
+                            <opensearch-3x>
+                                <name>${docker.image.search.3x}</name>
+                                <run>
+                                    <env>
+                                        <cluster.name>opensearch-3x-cluster</cluster.name>
+                                        <discovery.type>single-node</discovery.type>
+                                        <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
+                                        <bootstrap.memory_lock>true</bootstrap.memory_lock>
+                                        <DISABLE_SECURITY_PLUGIN>true</DISABLE_SECURITY_PLUGIN>
+                                        <OPENSEARCH_JAVA_OPTS>-Xms512m -Xmx512m -XX:-UseContainerSupport</OPENSEARCH_JAVA_OPTS>
+                                    </env>
+                                    <ports>
+                                        <port>es.3x.port:9200</port>
+                                    </ports>
+                                    <volumes>
+                                        <bind>
+                                            <volume>${docker.es.3x.volume}:/usr/share/opensearch/data</volume>
+                                        </bind>
+                                    </volumes>
+                                    <ulimits>
+                                        <ulimit>
+                                            <name>memlock</name>
+                                            <hard>-1</hard>
+                                            <soft>-1</soft>
+                                        </ulimit>
+                                    </ulimits>
+                                    <wait>
+                                        <http>
+                                            <!--suppress UnresolvedMavenProperty -->
+                                            <url>http://${docker.host.address}:${es.3x.port}</url>
+                                        </http>
+                                        <time>120000</time>
+                                        <shutdown>5000</shutdown>
+                                    </wait>
+                                    <log>
+                                        <prefix>[OS3X]</prefix>
+                                        <color>yellow</color>
+                                    </log>
+                                </run>
+                            </opensearch-3x>
                             <dotcms>
                                 <name>${dotcms.image.name}</name>
                                 <external>

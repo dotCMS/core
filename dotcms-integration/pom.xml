@@ -64,6 +64,7 @@
         <test.db.db>dotcms${surefire.forkNumber}</test.db.db>
         <db.port>5437</db.port>
         <es.port>9207</es.port>
+        <es.3x.port>9201</es.3x.port>
         <test.db.port>${db.port}</test.db.port>
         <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
         <!--suppress UnresolvedMavenProperty -->
@@ -73,9 +74,11 @@
         <test.es.host>localhost</test.es.host>
         <test.es.port>${es.port}</test.es.port>
         <test.es.endpoints>${test.es.scheme}://${test.es.host}:${es.port}</test.es.endpoints>
+        <test.es.3x.port>${es.3x.port}</test.es.3x.port>
+        <test.es.3x.endpoints>${test.es.scheme}://${test.es.host}:${es.3x.port}</test.es.3x.endpoints>
         <maven.failsafe.debugArgs/>
         <coreit.test.skip>true</coreit.test.skip>
-        <docker.filter>database,opensearch</docker.filter>
+        <docker.filter>database,opensearch,opensearch-3x</docker.filter>
           <!-- Force to use node v18.20.3 -->
         <node.js.version>v18.20.3</node.js.version>
     </properties>
@@ -463,6 +466,7 @@
                         <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
                         <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                         <DOT_ES_ENDPOINTS>${test.es.endpoints}</DOT_ES_ENDPOINTS>
+                        <DOT_ES_ENDPOINTS_3X>${test.es.3x.endpoints}</DOT_ES_ENDPOINTS_3X>
                         <DOT_STARTER_DATA_LOAD>${starter.run.path}</DOT_STARTER_DATA_LOAD>
                         <DOT_VELOCITY_ROOT>${test.webapp.root}/WEB-INF/velocity</DOT_VELOCITY_ROOT>
                         <DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>${test.webapp.root}/WEB-INF/geoip2/GeoLite2-City.mmdb</DOT_GEOIP2_CITY_DATABASE_PATH_OVERRIDE>
@@ -497,7 +501,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <filter>database,opensearch</filter>
+                    <filter>database,opensearch,opensearch-3x</filter>
                     <!-- We do not start up dotcms only services -->
                     <imagesMap>
                         <database>
