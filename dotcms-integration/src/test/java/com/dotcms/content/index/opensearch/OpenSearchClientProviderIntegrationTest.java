@@ -396,6 +396,92 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
     }
 
     /**
+     * Test OpenSearch 3.x version validation using Maven POM properties
+     * This test reads the endpoint from DOT_ES_ENDPOINTS_3X system property and validates the version
+     *
+     * Given Scenario: Integration tests with DOT_ES_ENDPOINTS_3X property from Maven POM
+     * Expected: Should connect to OpenSearch 3.x instance and return version starting with "3."
+     */
+    @Test
+    public void test_opensearch3x_versionValidation_fromMavenProperties() {
+        ConfigurableOpenSearchProvider provider = null;
+        try {
+            // Given Scenario: Read OpenSearch 3.x endpoint from Maven POM system property
+            String opensearch3xEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_3X", "");
+
+            Logger.info(this, "🔍 Testing OpenSearch 3.x version validation from Maven properties");
+            Logger.info(this, "🔍 DOT_ES_ENDPOINTS_3X property: " + opensearch3xEndpoint);
+
+            // Verify the property is correctly set from Maven
+            assertNotNull("DOT_ES_ENDPOINTS_3X should not be null", opensearch3xEndpoint);
+            assertTrue("DOT_ES_ENDPOINTS_3X should contain localhost:9201",
+                      opensearch3xEndpoint.contains("localhost:9201"));
+
+            // Create configuration using the Maven property
+            OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+                    .addEndpoints(opensearch3xEndpoint)  // Use Maven property value
+                    .tlsEnabled(false)
+                    .connectionTimeout(Duration.ofSeconds(15))
+                    .socketTimeout(Duration.ofSeconds(15))
+                    .build();
+
+            provider = new ConfigurableOpenSearchProvider(config);
+            OpenSearchClient client = provider.getClient();
+
+            // Act - Make a request to extract OpenSearch version info
+            Logger.info(this, "📡 Making request to OpenSearch 3.x to extract version info...");
+            var infoResponse = client.info();
+
+            // Assert - Validate the response and version
+            assertNotNull("Info response should not be null", infoResponse);
+            assertNotNull("Version should not be null", infoResponse.version());
+            assertNotNull("Version number should not be null", infoResponse.version().number());
+
+            String version = infoResponse.version().number();
+            String buildHash = infoResponse.version().buildHash();
+            String buildDate = infoResponse.version().buildDate();
+            String luceneVersion = infoResponse.version().luceneVersion();
+
+            // Expected: Version should be 3.x
+            assertTrue("Expected OpenSearch 3.x but got version: " + version +
+                      ". Check that opensearch-3x container is running with correct image version.",
+                      version.startsWith("3."));
+
+            // Log detailed version information
+            Logger.info(this, "✅ OpenSearch Version Validation Results:");
+            Logger.info(this, "✅ - Version: " + version);
+            Logger.info(this, "✅ - Build Hash: " + buildHash.substring(0, Math.min(12, buildHash.length())) + "...");
+            Logger.info(this, "✅ - Build Date: " + buildDate);
+            Logger.info(this, "✅ - Lucene Version: " + luceneVersion);
+            Logger.info(this, "✅ - Endpoint Used: " + opensearch3xEndpoint);
+            Logger.info(this, "✅ - Maven Property: DOT_ES_ENDPOINTS_3X");
+
+            // Additional cluster verification
+            var healthResponse = client.cluster().health();
+            assertEquals("Should connect to opensearch-3x-cluster",
+                        "opensearch-3x-cluster", healthResponse.clusterName());
+
+            Logger.info(this, "✅ Cluster Name Verified: " + healthResponse.clusterName());
+            Logger.info(this, "✅ OpenSearch 3.x version validation PASSED!");
+
+        } catch (OpenSearchException e) {
+            Logger.error(this, "❌ OpenSearch API error during version validation: " + e.getMessage());
+            Logger.error(this, "❌ Status: " + e.status());
+            Logger.error(this, "❌ Make sure opensearch-3x container is running with OpenSearch 3.0.0 image");
+            fail("OpenSearch 3.x version validation failed. API error: " + e.getMessage());
+        } catch (IOException e) {
+            Logger.error(this, "❌ Connection error during version validation: " + e.getMessage());
+            Logger.error(this, "❌ Check that opensearch-3x service is running on port 9201");
+            fail("Cannot connect to OpenSearch 3.x for version validation. Connection error: " + e.getMessage());
+        } catch (Exception e) {
+            Logger.error(this, "❌ Unexpected error during version validation: " + e.getMessage(), e);
+            fail("Unexpected error during OpenSearch 3.x version validation: " + e.getMessage());
+        } finally {
+            closeProvider(provider);
+        }
+    }
+
+    /**
      * Test provider close functionality
      */
     @Test
