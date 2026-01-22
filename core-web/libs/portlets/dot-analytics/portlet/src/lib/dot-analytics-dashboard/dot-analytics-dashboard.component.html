@@ -49,7 +49,7 @@
     <!-- Dashboard Content - Tabs -->
     <div class="analytics-dashboard__dashboard-row">
         <p-tabView [activeIndex]="$activeTabIndex()" (onChange)="onTabChange($event)">
-            @for (tab of tabs; track tab.id) {
+            @for (tab of $tabs(); track tab.id) {
                 <p-tabPanel [header]="tab.label | dm">
                     <ng-template pTemplate="content">
                         @switch (tab.id) {
@@ -58,6 +58,9 @@
                             }
                             @case ('conversions') {
                                 <dot-analytics-dashboard-conversions-report />
+                            }
+                            @case ('engagement') {
+                                <dot-analytics-dashboard-engagement-report />
                             }
                         }
                     </ng-template>

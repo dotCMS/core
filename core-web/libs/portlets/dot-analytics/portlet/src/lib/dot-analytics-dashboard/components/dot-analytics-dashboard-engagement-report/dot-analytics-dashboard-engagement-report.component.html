@@ -1,0 +1,120 @@
+<div class="engagement-dashboard flex flex-column gap-2">
+    @let kpis = $kpis();
+    @let status = $status();
+
+    <!-- Row 1: Engagement Rate + Trend Chart -->
+    <div class="engagement-dashboard__top-row grid align-items-stretch">
+        <div class="col-12 lg:col-4">
+            <dot-analytics-dashboard-metrics
+                class="h-full"
+                [name]="'analytics.engagement.metrics.engagement-rate'"
+                [value]="
+                    (kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')
+                "
+                [trend]="kpis?.engagementRate?.trend ?? 0"
+                [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
+                [status]="status">
+                <dot-analytics-sparkline
+                    [data]="kpis?.engagementRate?.sparklineData ?? []"
+                    [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
+                    valueSuffix="%"
+                    [status]="$status()" />
+                @if ($isLoaded()) {
+                    <div class="flex justify-content-center mt-auto">
+                        <button
+                            pButton
+                            type="button"
+                            [label]="'analytics.engagement.dialog.how-calculated.button' | dm"
+                            class="p-button-outlined p-button-sm"
+                            (click)="$showCalculationDialog.set(true)"></button>
+                    </div>
+                }
+            </dot-analytics-dashboard-metrics>
+        </div>
+
+        <div class="col-12 lg:col-8">
+            <dot-analytics-dashboard-chart
+                class="h-full"
+                [title]="'analytics.engagement.charts.trend.title' | dm"
+                [type]="'bar'"
+                [data]="$trend()!"
+                [status]="status"
+                height="13rem" />
+        </div>
+    </div>
+
+    <!-- Row 2: Three metrics -->
+    <div class="engagement-dashboard__metrics-row grid">
+        <div class="col-12 md:col-4">
+            <dot-analytics-dashboard-metrics
+                [name]="'analytics.engagement.metrics.avg-interactions'"
+                [value]="kpis?.avgInteractions?.value ?? ''"
+                [trend]="kpis?.avgInteractions?.trend ?? 0"
+                icon="pi-bullseye"
+                [status]="status" />
+        </div>
+        <div class="col-12 md:col-4">
+            <dot-analytics-dashboard-metrics
+                [name]="'analytics.engagement.metrics.avg-session-time'"
+                [value]="kpis?.avgSessionTime?.value ?? ''"
+                [trend]="kpis?.avgSessionTime?.trend ?? 0"
+                icon="pi-clock"
+                [status]="status" />
+        </div>
+        <div class="col-12 md:col-4">
+            <dot-analytics-dashboard-metrics
+                [name]="'analytics.engagement.metrics.total-sessions'"
+                [value]="kpis?.conversionRate?.value ?? ''"
+                [trend]="kpis?.conversionRate?.trend ?? 0"
+                icon="pi-bullseye"
+                [status]="status" />
+        </div>
+    </div>
+
+    <!-- Row 3: Breakdown Chart + Platform Analytics -->
+    @defer (on viewport) {
+        <div class="engagement-dashboard__bottom-row grid">
+            <div class="col-12 lg:col-5">
+                <dot-analytics-dashboard-chart
+                    [title]="'analytics.engagement.charts.breakdown.title' | dm"
+                    [type]="'doughnut'"
+                    [data]="$breakdown()!"
+                    [status]="status" />
+            </div>
+            <div class="col-12 lg:col-7">
+                <dot-analytics-platforms-table
+                    class="h-full"
+                    [platforms]="$platforms()"
+                    [status]="status" />
+            </div>
+        </div>
+    } @placeholder {
+        <div style="min-height: 24rem"></div>
+    }
+</div>
+
+<!-- How it's calculated Dialog -->
+<p-dialog
+    [header]="'analytics.engagement.dialog.how-calculated.title' | dm"
+    [(visible)]="$showCalculationDialog"
+    [modal]="true"
+    [dismissableMask]="true"
+    [closable]="true"
+    [style]="{ width: '32rem' }">
+    <p class="text-color-secondary mt-0">
+        {{ 'analytics.engagement.dialog.how-calculated.intro' | dm }}
+    </p>
+
+    <p class="font-semibold mb-2">
+        {{ 'analytics.engagement.dialog.how-calculated.criteria-title' | dm }}
+    </p>
+
+    <ul class="engagement-criteria-list pl-4 m-0">
+        <li class="mb-2">{{ 'analytics.engagement.dialog.how-calculated.criteria-time' | dm }}</li>
+        <li class="mb-2">{{ 'analytics.engagement.dialog.how-calculated.criteria-click' | dm }}</li>
+    </ul>
+
+    <p class="text-color-secondary mt-3 mb-0">
+        {{ 'analytics.engagement.dialog.how-calculated.conclusion' | dm }}
+    </p>
+</p-dialog>

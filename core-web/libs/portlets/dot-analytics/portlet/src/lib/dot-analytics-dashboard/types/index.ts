@@ -1,56 +1,14 @@
-// Import shared types from data-access
-import { DateRange, TimeRange, TimeRangeInput } from '@dotcms/portlets/dot-analytics/data-access';
+// Import and re-export shared types from data-access
+import {
+    AnalyticsChartColors,
+    AnalyticsChartColorVariants,
+    DateRange,
+    TimeRange,
+    TimeRangeInput
+} from '@dotcms/portlets/dot-analytics/data-access';
 
-// Re-export shared types for consumers
-export { DateRange, TimeRange, TimeRangeInput };
-
-/**
- * Chart color palette for analytics dashboard.
- * Uses consistent colors across all charts.
- */
-export const AnalyticsChartColors = {
-    // Primary colors for main metrics
-    primary: {
-        line: 'rgb(99, 102, 241)', // Indigo
-        fill: 'rgba(99, 102, 241, 0.15)',
-        bar: 'rgba(99, 102, 241, 0.6)'
-    },
-    // Secondary colors for comparison/secondary metrics
-    secondary: {
-        line: 'rgb(34, 197, 94)', // Green
-        fill: 'rgba(34, 197, 94, 0.15)',
-        bar: 'rgba(34, 197, 94, 0.6)'
-    },
-    // Tertiary colors for additional metrics
-    tertiary: {
-        line: 'rgb(249, 115, 22)', // Orange
-        fill: 'rgba(249, 115, 22, 0.15)',
-        bar: 'rgba(249, 115, 22, 0.6)'
-    },
-    // Quaternary colors
-    quaternary: {
-        line: 'rgb(236, 72, 153)', // Pink
-        fill: 'rgba(236, 72, 153, 0.15)',
-        bar: 'rgba(236, 72, 153, 0.6)'
-    },
-    // Additional colors
-    fifth: {
-        line: 'rgb(14, 165, 233)', // Sky blue
-        fill: 'rgba(14, 165, 233, 0.15)',
-        bar: 'rgba(14, 165, 233, 0.6)'
-    }
-} as const;
-
-/**
- * Array of chart color variants for automatic assignment
- */
-export const AnalyticsChartColorVariants = [
-    AnalyticsChartColors.primary,
-    AnalyticsChartColors.secondary,
-    AnalyticsChartColors.tertiary,
-    AnalyticsChartColors.quaternary,
-    AnalyticsChartColors.fifth
-] as const;
+// Re-export for consumers
+export { AnalyticsChartColors, AnalyticsChartColorVariants, DateRange, TimeRange, TimeRangeInput };
 
 /**
  * Get color properties for a dataset by index.
@@ -125,6 +83,10 @@ export interface ChartOptions {
     responsive?: boolean;
     /** Whether to maintain aspect ratio on resize */
     maintainAspectRatio?: boolean;
+    /** Animation configuration (false to disable) */
+    animation?: boolean | Record<string, unknown>;
+    /** Transition configuration for smooth hover/active effects */
+    transitions?: Record<string, { animation?: { duration?: number; easing?: string } }>;
     /** Interaction configuration */
     interaction?: {
         /** Interaction mode */
@@ -183,10 +145,34 @@ export interface ChartOptions {
         };
         /** Tooltip configuration */
         tooltip?: {
+            /** Whether to show tooltip */
+            enabled?: boolean;
             /** Tooltip mode */
             mode?: 'point' | 'nearest' | 'index' | 'dataset' | 'x' | 'y';
             /** Whether tooltip requires intersection with element */
             intersect?: boolean;
+            /** Whether to show color indicators */
+            displayColors?: boolean;
+            /** Background color */
+            backgroundColor?: string;
+            /** Title text color */
+            titleColor?: string;
+            /** Body text color */
+            bodyColor?: string;
+            /** Border color */
+            borderColor?: string;
+            /** Border width */
+            borderWidth?: number;
+            /** Padding inside tooltip */
+            padding?: number;
+            /** Corner radius */
+            cornerRadius?: number;
+            /** Title font configuration */
+            titleFont?: { size?: number; weight?: string };
+            /** Body font configuration */
+            bodyFont?: { size?: number; weight?: string };
+            /** Tooltip animation configuration */
+            animation?: { duration?: number; easing?: string };
             /** Tooltip callback functions */
             callbacks?: {
                 /** Custom label callback */
@@ -200,6 +186,18 @@ export interface ChartOptions {
     };
     /** Scale configurations for axes */
     scales?: Record<string, unknown>;
+    /** Element configurations (line, point, etc.) */
+    elements?: {
+        line?: {
+            borderWidth?: number;
+            tension?: number;
+            fill?: boolean | string;
+        };
+        point?: {
+            radius?: number;
+            hoverRadius?: number;
+        };
+    };
 }
 
 /** Configuration for table column display and behavior */
