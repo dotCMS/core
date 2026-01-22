@@ -39,7 +39,7 @@ import {
     installDependenciesForProject
 } from './utils';
 
-import type { SupportedFrontEndFrameworks } from './types';
+import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 
 // Supported values
 
@@ -64,63 +64,25 @@ program
     .option('-u, --username <username>', 'DotCMS instance username (skip in case of local)')
     .option('-p, --password <password>', 'DotCMS instance password (skip in case of local)')
 
-    .action(async (options) => {
-        // <-- Add beta notice here
+    .action(async (options: DotCmsCliOptions) => {
+        // console.log(options);
+
+        // welcome cli
         console.log(chalk.white('\nWelcome to dotCMS CLI\n'));
         console.log(chalk.bgGrey.white('\n ℹ️  Beta: Features may change \n'));
 
-        const { dir, directory } = options;
-        const { name, projectName } = options;
-        const { url } = options;
-        const { user, username } = options;
-        const { pass, password } = options;
-        const { framework, f } = options;
-
-        let projectNameFinal: string;
-        let directoryInput: string;
-        let finalDirectory: string;
-        let isCloudInstanceSelected: boolean;
-        let selectedFramework: string;
-
-        if (name === undefined && projectName === undefined) {
-            projectNameFinal = await askProjectName();
-        } else {
-            projectNameFinal = name || projectName;
-        }
-
-        if (dir === undefined && directory === undefined) {
-            directoryInput = await askDirectory();
-            finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-        } else {
-            directoryInput = dir || directory;
-            finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-        }
-
-        if (framework === undefined && f === undefined) {
-            selectedFramework = await askFramework();
-        } else {
-            selectedFramework = framework || f;
-        }
-        if (options.local === undefined) {
-            isCloudInstanceSelected = await askCloudOrLocalInstance();
-        } else {
-            isCloudInstanceSelected = !JSON.parse(options.local);
-        }
+        const projectNameFinal = options.name ?? (await askProjectName());
+        const directoryInput = options.directory ?? (await askDirectory());
+        const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
+        const selectedFramework = options.framework ?? (await askFramework());
+        const isCloudInstanceSelected =
+            options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
 
         if (isCloudInstanceSelected) {
-            const urlDotcmsInstance = url === undefined ? await askDotcmsCloudUrl() : url;
+            const urlDotcmsInstance = options.url ?? (await askDotcmsCloudUrl());
+            const userNameDotCmsInstance = options.username ?? (await askUserNameForDotcmsCloud());
+            const passwordDotCmsInstance = options.password ?? (await askPasswordForDotcmsCloud());
 
-            const userNameDotCmsInstance =
-                user === undefined && username === undefined
-                    ? await askUserNameForDotcmsCloud()
-                    : user || username;
-
-            const passwordDotCmsInstance =
-                pass === undefined && password === undefined
-                    ? await askPasswordForDotcmsCloud()
-                    : pass || password;
-            // mark here
-            //
             const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
             const emaConfigApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
             const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
@@ -218,49 +180,16 @@ program
             spinner.stop();
             console.log(chalk.white(`✅ Project setup complete!`));
             const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
-            switch (selectedFramework) {
-                case 'nextjs': {
-                    finalStepsForNextjs({
-                        projectPath: relativePath,
-                        token: dotcmsToken.val,
-                        siteId: demoSite.val.entity.identifier,
-                        urlDotCMSInstance: urlDotcmsInstance
-                    });
-                    break;
-                }
-                case 'angular': {
-                    finalStepsForAngularAndAngularSSR({
-                        projectPath: relativePath,
-                        token: dotcmsToken.val,
-                        siteId: demoSite.val.entity.identifier,
-                        urlDotCMSInstance: urlDotcmsInstance
-                    });
-                    break;
-                }
-                case 'angular-ssr': {
-                    finalStepsForAngularAndAngularSSR({
-                        projectPath: relativePath,
-                        token: dotcmsToken.val,
-                        siteId: demoSite.val.entity.identifier,
-                        urlDotCMSInstance: urlDotcmsInstance
-                    });
-                    break;
-                }
-                case 'astro': {
-                    finalStepsForAstro({
-                        projectPath: relativePath,
-                        token: dotcmsToken.val,
-                        siteId: demoSite.val.entity.identifier,
-                        urlDotCMSInstance: urlDotcmsInstance
-                    });
-                    break;
-                }
-            }
+
+            displayFinalSteps({
+                host: urlDotcmsInstance,
+                relativePath,
+                token: dotcmsToken.val,
+                siteId: demoSite.val.entity.identifier,
+                selectedFramework: selectedFramework
+            });
             return;
         }
-
-        // console.log(chalk.green("✔ Starting DotCMS app setup...\n"));
-        // const spinner = ora(`Scaffolding ${framework} application ...`).start();
 
         const spinner = ora(`Starting dotCMS with Docker`).start();
 
@@ -370,44 +299,14 @@ program
         spinner.stop();
         console.log(chalk.white(`✅ Project setup complete!`));
         const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
-        switch (selectedFramework) {
-            case 'nextjs': {
-                finalStepsForNextjs({
-                    projectPath: relativePath,
-                    token: dotcmsToken.val,
-                    siteId: demoSite.val.entity.identifier,
-                    urlDotCMSInstance: 'http://localhost:8082'
-                });
-                break;
-            }
-            case 'angular': {
-                finalStepsForAngularAndAngularSSR({
-                    projectPath: relativePath,
-                    token: dotcmsToken.val,
-                    siteId: demoSite.val.entity.identifier,
-                    urlDotCMSInstance: 'http://localhost:8082'
-                });
-                break;
-            }
-            case 'angular-ssr': {
-                finalStepsForAngularAndAngularSSR({
-                    projectPath: relativePath,
-                    token: dotcmsToken.val,
-                    siteId: demoSite.val.entity.identifier,
-                    urlDotCMSInstance: 'http://localhost:8082'
-                });
-                break;
-            }
-            case 'astro': {
-                finalStepsForAstro({
-                    projectPath: relativePath,
-                    token: dotcmsToken.val,
-                    siteId: demoSite.val.entity.identifier,
-                    urlDotCMSInstance: 'http://localhost:8082'
-                });
-                break;
-            }
-        }
+
+        displayFinalSteps({
+            host: 'http://localhost:8082',
+            relativePath,
+            token: dotcmsToken.val,
+            siteId: demoSite.val.entity.identifier,
+            selectedFramework: selectedFramework
+        });
     });
 
 export async function createApp() {
@@ -490,5 +389,56 @@ async function isDotcmsRunning(url?: string): Promise<boolean> {
         return false;
     }
 }
-
+function displayFinalSteps({
+    selectedFramework,
+    relativePath,
+    token,
+    siteId,
+    host
+}: {
+    selectedFramework: string;
+    relativePath: string;
+    token: string;
+    siteId: string;
+    host: string;
+}) {
+    switch (selectedFramework) {
+        case 'nextjs': {
+            finalStepsForNextjs({
+                projectPath: relativePath,
+                token: token,
+                siteId: siteId,
+                urlDotCMSInstance: host
+            });
+            break;
+        }
+        case 'angular': {
+            finalStepsForAngularAndAngularSSR({
+                projectPath: relativePath,
+                token: token,
+                siteId: siteId,
+                urlDotCMSInstance: host
+            });
+            break;
+        }
+        case 'angular-ssr': {
+            finalStepsForAngularAndAngularSSR({
+                projectPath: relativePath,
+                token: token,
+                siteId: siteId,
+                urlDotCMSInstance: host
+            });
+            break;
+        }
+        case 'astro': {
+            finalStepsForAstro({
+                projectPath: relativePath,
+                token: token,
+                siteId: siteId,
+                urlDotCMSInstance: host
+            });
+            break;
+        }
+    }
+}
 createApp();

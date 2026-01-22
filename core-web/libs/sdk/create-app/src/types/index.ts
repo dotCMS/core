@@ -56,3 +56,18 @@ export interface DemoSiteResponse {
         working: boolean;
     };
 }
+
+export type DotCmsCliOptions = {
+    // common
+    name?: string; // project name
+    framework?: 'nextjs' | 'astro' | 'angular' | 'angular-ssr';
+    directory?: string;
+
+    // local / cloud
+    local?: boolean;
+
+    // cloud-only
+    url?: string;
+    username?: string;
+    password?: string;
+};
