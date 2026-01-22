@@ -1,4 +1,13 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    createHostFactory,
+    Spectator,
+    SpectatorHost
+} from '@ngneat/spectator/jest';
+
+import { Component } from '@angular/core';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -18,7 +27,8 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             props: {
                 name: 'test.metric',
                 value: 100,
-                status: ComponentStatus.LOADED
+                status: ComponentStatus.LOADED,
+                animated: false // Disable count-up animation for tests
             } as unknown,
             detectChanges: false
         });
@@ -35,6 +45,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('value', 12345);
             spectator.setInput('subtitle', 'analytics.metrics.subtitle');
             spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
             spectator.detectChanges();
 
             // Act & Assert
@@ -52,6 +63,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 1234567);
             spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
             spectator.detectChanges();
 
             // Act & Assert
@@ -258,6 +270,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
             spectator.detectChanges();
 
             const emptyIcon = spectator.query('.pi.pi-info-circle');
@@ -361,5 +374,60 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
             expect(spectator.queryAll('p-skeleton').length).toBe(0);
         });
+    });
+});
+
+@Component({
+    selector: 'dot-test-host',
+    standalone: false,
+    template: `
+        <dot-analytics-dashboard-metrics [name]="'test.metric'" [value]="100" [status]="status">
+            <div data-testid="projected-content">Projected Chart</div>
+        </dot-analytics-dashboard-metrics>
+    `
+})
+class TestHostComponent {
+    status = ComponentStatus.LOADED;
+}
+
+describe('DotAnalyticsDashboardMetricsComponent - Content Projection', () => {
+    let spectator: SpectatorHost<DotAnalyticsDashboardMetricsComponent, TestHostComponent>;
+
+    const createHost = createHostFactory({
+        component: DotAnalyticsDashboardMetricsComponent,
+        host: TestHostComponent,
+        imports: [NoopAnimationsModule, DotAnalyticsDashboardMetricsComponent],
+        mocks: [DotMessageService]
+    });
+
+    beforeEach(() => {
+        spectator = createHost(undefined, { detectChanges: false });
+        const messageService = spectator.inject(DotMessageService);
+        messageService.get.mockReturnValue('Translated Message');
+    });
+
+    it('should project content when provided', () => {
+        spectator.hostComponent.status = ComponentStatus.LOADED;
+        spectator.detectChanges();
+
+        const projectedContent = spectator.query(byTestId('projected-content'));
+        expect(projectedContent).toExist();
+        expect(projectedContent).toHaveText('Projected Chart');
+    });
+
+    it('should not show projected content in loading state', () => {
+        spectator.hostComponent.status = ComponentStatus.LOADING;
+        spectator.detectChanges();
+
+        const projectedContent = spectator.query(byTestId('projected-content'));
+        expect(projectedContent).not.toExist();
+    });
+
+    it('should not show projected content in error state', () => {
+        spectator.hostComponent.status = ComponentStatus.ERROR;
+        spectator.detectChanges();
+
+        const projectedContent = spectator.query(byTestId('projected-content'));
+        expect(projectedContent).not.toExist();
     });
 });

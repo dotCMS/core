@@ -26,8 +26,6 @@ export class DotSidebarDirective {
     constructor() {
         if (this.primeSidebar) {
             // Set other properties that are not signals
-            this.primeSidebar.styleClass = SIDEBAR_SIZES.MD;
-            this.primeSidebar.showCloseIcon = false;
             this.primeSidebar.dismissible = false;
             this.primeSidebar.closeOnEscape = false;
 
@@ -46,8 +44,10 @@ export class DotSidebarDirective {
     set dotSize(size: string) {
         if (size === SIDEBAR_SIZES.LG) {
             this.primeSidebar.style = { width: '60%' };
+        } else if (size === SIDEBAR_SIZES.SM) {
+            this.primeSidebar.style = { width: '30%' };
         } else {
-            this.primeSidebar.styleClass = size;
+            this.primeSidebar.style = { width: '40%' };
         }
     }
 }

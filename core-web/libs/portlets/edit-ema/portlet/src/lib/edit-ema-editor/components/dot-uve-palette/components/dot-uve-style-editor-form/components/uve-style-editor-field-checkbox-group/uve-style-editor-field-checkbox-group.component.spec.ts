@@ -133,9 +133,10 @@ describe('UveStyleEditorFieldCheckboxGroupComponent', () => {
             );
             spectator.detectChanges();
 
-            const checkboxes = spectator.queryAll(Checkbox);
-            expect(checkboxes[0].label).toBe('Underline');
-            expect(checkboxes[1].label).toBe('Overline');
+            // PrimeNG Checkbox does not expose a stable "label" API on the component instance.
+            // Assert through DOM aria-labels (we bind [ariaLabel]="option.label").
+            expect(spectator.query('input[aria-label="Underline"]')).toBeTruthy();
+            expect(spectator.query('input[aria-label="Overline"]')).toBeTruthy();
         });
 
         it('should render checkboxes with correct inputId', () => {
@@ -286,7 +287,7 @@ describe('UveStyleEditorFieldCheckboxGroupComponent', () => {
             spectator.detectChanges();
 
             const checkboxes = spectator.queryAll(Checkbox);
-            const checkedCheckboxes = checkboxes.filter((checkbox) => checkbox.checked());
+            const checkedCheckboxes = checkboxes.filter((checkbox) => checkbox.checked);
             expect(checkedCheckboxes.length).toBe(1);
         });
 

@@ -34,6 +34,7 @@ export * from './lib/components/dot-browser-selector/dot-browser-selector.compon
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 export * from './lib/dot-tab-buttons/dot-tab-buttons.component';
+export * from './lib/components/dot-language-selector/dot-language-selector.component';
 
 // Directives
 export * from './lib/directives/dot-autofocus/dot-autofocus.directive';

@@ -1,0 +1,34 @@
+<p-select
+    #select
+    size="small"
+    data-testId="language-selector"
+    (onChange)="handleLanguageChange($event.value)"
+    (onHide)="onSelectHide()"
+    (onShow)="onShow.emit()"
+    [appendTo]="'body'"
+    [class]="class()"
+    [disabled]="$disabled()"
+    [filter]="true"
+    filterBy="label,language,languageCode,isoCode,countryCode"
+    filterPlaceholder="Search languages..."
+    [inputId]="id()"
+    [loading]="$state.loading()"
+    [ngModel]="$state.pinnedOption()"
+    [options]="$state.languages()"
+    [placeholder]="placeholder()"
+    [showClear]="false"
+    dataKey="id"
+    optionLabel="label">
+    <ng-template pTemplate="selectedItem" let-selectedOption>
+        <div class="flex items-center gap-2 leading-5 text-[var(--color-palette-primary-500)]">
+            <i class="pi pi-globe text-color-secondary"></i>
+            <span class="truncate">
+                {{ selectedOption?.label ?? $state.pinnedOption()?.label }}
+            </span>
+        </div>
+    </ng-template>
+
+    <ng-template let-language #item>
+        <span class="truncate">{{ language.label }}</span>
+    </ng-template>
+</p-select>

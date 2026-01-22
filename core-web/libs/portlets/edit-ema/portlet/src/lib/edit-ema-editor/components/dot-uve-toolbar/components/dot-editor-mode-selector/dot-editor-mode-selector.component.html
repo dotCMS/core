@@ -1,23 +1,28 @@
-<p-button
-    icon="pi pi-angle-down"
-    iconPos="right"
-    [label]="$currentModeLabel() | dm"
-    [outlined]="true"
+<p-select
+    [options]="$menuItems()"
+    [(ngModel)]="selectedModeModel"
+    [pt]="dropdownIconStyle"
+    (onChange)="onModeOptionChange($event.value)"
+    optionLabel="label"
+    dataKey="id"
     size="small"
-    styleClass="p-2 mode-selector"
-    (click)="menu.toggle($event)"
-    data-testId="more-button" />
-
-<p-menu #menu [popup]="true" styleClass="more-menu" [model]="$menuItems()" data-testId="more-menu">
-    <ng-template pTemplate="item" let-item>
-        <a
-            pRipple
-            class="flex flex-col p-menuitem-link menu-item items-start"
-            [ngClass]="{ 'menu-item--active': item.id === $currentMode() }"
-            (click)="onModeChange(item.id)"
-            [attr.data-testId]="item.id + '-menu-item'">
-            <span class="menu-item__label">{{ item.label | dm }}</span>
-            <span class="menu-item__description">{{ item.description | dm }}</span>
-        </a>
+    data-testId="more-button">
+    <ng-template #selectedItem let-selectedOption>
+        <span class="leading-5 text-[var(--color-palette-primary-500)]">
+            {{ selectedOption.label }}
+        </span>
     </ng-template>
-</p-menu>
+
+    <ng-template #item let-item>
+        <div class="w-full" [attr.data-testId]="item.id + '-menu-item'">
+            <span class="flex min-w-0 flex-col">
+                <span class="font-semibold leading-5 text-gray-900">
+                    {{ item.label }}
+                </span>
+                <span class="mt-1 text-xs leading-4 text-gray-600">
+                    {{ item.description }}
+                </span>
+            </span>
+        </div>
+    </ng-template>
+</p-select>

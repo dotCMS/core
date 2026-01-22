@@ -1,5 +1,6 @@
 /**
  * API entity types for analytics responses
+ * TODO: Move dashboard specific types here (e.g. Engagement types)
  */
 
 /**

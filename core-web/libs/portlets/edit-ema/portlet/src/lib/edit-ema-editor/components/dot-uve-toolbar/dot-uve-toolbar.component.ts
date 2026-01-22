@@ -28,7 +28,7 @@ import { map } from 'rxjs/operators';
 import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
 import { DotLanguage, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditorModeSelectorComponent } from './components/dot-editor-mode-selector/dot-editor-mode-selector.component';
 import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema-bookmarks.component';
@@ -37,7 +37,6 @@ import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-e
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
@@ -66,17 +65,16 @@ import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../
         DotToggleLockButtonComponent,
         DotUveDeviceSelectorComponent,
         DotUveWorkflowActionsComponent,
-        EditEmaLanguageSelectorComponent,
-        EditEmaPersonaSelectorComponent
+        EditEmaPersonaSelectorComponent,
+        DotLanguageSelectorComponent
     ],
     providers: [DotPersonalizeService, DotDevicesService],
     templateUrl: './dot-uve-toolbar.component.html',
-    styleUrl: './dot-uve-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
-    $languageSelector = viewChild<EditEmaLanguageSelectorComponent>('languageSelector');
+    $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
     @Output() translatePage = new EventEmitter<{ page: DotCMSPage; newLanguage: number }>();
     @Output() editUrlContentMap = new EventEmitter<DotCMSURLContentMap>();
@@ -102,6 +100,15 @@ export class DotUveToolbarComponent {
     readonly $isPaletteOpen = this.#store.palette.open;
     readonly $canEditPage = this.#store.$canEditPage;
 
+    /**
+     * Popover passthrough styles for the "Copy URLs" popover.
+     * Keeps the popover compact and prevents long URLs from stretching the overlay.
+     */
+    readonly copyUrlPopoverPt = {
+        root: { class: 'w-full max-w-[25rem]' },
+        content: { class: '!p-3' }
+    };
+
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
         {
@@ -115,6 +122,16 @@ export class DotUveToolbarComponent {
         const previewDate = publishDate ? convertUTCToLocalTime(new Date(publishDate)) : new Date();
 
         return previewDate;
+    });
+
+    protected readonly $showDeviceSelector = computed(() => {
+        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        return !isEditMode && this.$devices()?.length > 0;
+    });
+
+    protected readonly $showUrlContentMap = computed(() => {
+        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        return isEditMode && this.$urlContentMap();
     });
 
     readonly $pageURLS: Signal<{ label: string; value: string }[]> = computed(() => {
@@ -314,7 +331,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector()?.resetModel(this.$toolbar().currentLanguage);
+                this.$languageSelector()?.value.set(this.$toolbar().currentLanguage);
             }
         });
     }

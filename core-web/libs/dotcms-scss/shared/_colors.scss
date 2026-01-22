@@ -223,6 +223,7 @@ $success: $color-accessible-text-green;
 $foreground-active: #848484;
 
 @mixin root-colors {
+    --color-white: #ffffff;
     --color-primary-h: 225deg;
     --color-primary-s: 85%;
     --color-secondary-h: 256;

@@ -70,7 +70,9 @@ describe('DotUsageShellComponent', () => {
         // Create a fresh mock service for each test
         mockService = createMockService();
         // Mock console.error to avoid noise in test output
-        jest.spyOn(console, 'error').mockImplementation(() => {});
+        jest.spyOn(console, 'error').mockImplementation(() => {
+            // Do nothing
+        });
         spectator = createComponent();
         usageService = spectator.inject(DotUsageService);
     });

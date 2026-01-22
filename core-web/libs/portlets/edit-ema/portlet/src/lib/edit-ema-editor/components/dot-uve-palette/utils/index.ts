@@ -86,12 +86,10 @@ export const DEFAULT_SORT_OPTIONS: DotPaletteSortOption = {
 export function getSortActiveClass(
     itemSort: DotPaletteSortOption,
     currentSort: DotPaletteSortOption
-): string {
+): boolean {
     const sameOrderby = currentSort.orderby === itemSort.orderby;
     const sameDirection = currentSort.direction === itemSort.direction;
-    const isActive = sameOrderby && sameDirection;
-
-    return isActive ? 'active-menu-item' : '';
+    return sameOrderby && sameDirection;
 }
 
 export function buildPaletteMenuItems({
@@ -112,7 +110,7 @@ export function buildPaletteMenuItems({
                 {
                     label: 'uve.palette.menu.sort.option.popular',
                     command: () => onSortSelect({ orderby: 'usage', direction: 'ASC' }),
-                    styleClass: getSortActiveClass(
+                    isActive: getSortActiveClass(
                         { orderby: 'usage', direction: 'ASC' },
                         currentSort
                     )
@@ -120,15 +118,12 @@ export function buildPaletteMenuItems({
                 {
                     label: 'uve.palette.menu.sort.option.a-to-z',
                     command: () => onSortSelect({ orderby: 'name', direction: 'ASC' }),
-                    styleClass: getSortActiveClass(
-                        { orderby: 'name', direction: 'ASC' },
-                        currentSort
-                    )
+                    isActive: getSortActiveClass({ orderby: 'name', direction: 'ASC' }, currentSort)
                 },
                 {
                     label: 'uve.palette.menu.sort.option.z-to-a',
                     command: () => onSortSelect({ orderby: 'name', direction: 'DESC' }),
-                    styleClass: getSortActiveClass(
+                    isActive: getSortActiveClass(
                         { orderby: 'name', direction: 'DESC' },
                         currentSort
                     )
@@ -140,13 +135,13 @@ export function buildPaletteMenuItems({
             items: [
                 {
                     label: 'uve.palette.menu.view.option.grid',
-                    command: () => onViewSelect('grid grid-cols-12 gap-4'),
-                    styleClass: viewMode === 'grid grid-cols-12 gap-4' ? 'active-menu-item' : ''
+                    command: () => onViewSelect('grid'),
+                    isActive: viewMode === 'grid'
                 },
                 {
                     label: 'uve.palette.menu.view.option.list',
                     command: () => onViewSelect('list'),
-                    styleClass: viewMode === 'list' ? 'active-menu-item' : ''
+                    isActive: viewMode === 'list'
                 }
             ]
         }

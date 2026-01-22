@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { Component, ElementRef, Input, Type } from '@angular/core';
@@ -112,7 +112,7 @@ describe('ContentletComponent', () => {
 
         const contentletWithStyleProperties = {
             ...mockContentlet,
-            styleProperties: {
+            dotStyleProperties: {
                 'font-size': 20,
                 'font-family': 'Arial'
             }
@@ -123,12 +123,12 @@ describe('ContentletComponent', () => {
 
         expect(component.styleProperties).toBeTruthy();
         expect(component.styleProperties).toBe(
-            JSON.stringify(contentletWithStyleProperties.styleProperties)
+            JSON.stringify(contentletWithStyleProperties.dotStyleProperties)
         );
 
         const hostElement = spectator.debugElement.nativeElement;
         expect(hostElement.getAttribute('data-dot-style-properties')).toBe(
-            JSON.stringify(contentletWithStyleProperties.styleProperties)
+            JSON.stringify(contentletWithStyleProperties.dotStyleProperties)
         );
     });
 

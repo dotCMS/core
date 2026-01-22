@@ -1,15 +1,22 @@
 @let contentlet = $contentlet();
 
 <!-- Drag handle -->
-<div class="drag-handle">
-    <i class="pi pi-ellipsis-v"></i>
-    <i class="pi pi-ellipsis-v"></i>
+<div
+    class="opacity-0 transition-opacity group-hover:opacity-100 text-gray-300 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-4 h-4">
+    <i class="pi pi-ellipsis-v text-[14px]"></i>
+    <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
 </div>
 
 <!-- Contentlet icon and name -->
-<div class="content">
-    <div class="icon">
-        <dot-contentlet-thumbnail [contentlet]="contentlet" [iconSize]="'24px'" />
+<div class="flex min-w-0 flex-1 items-center gap-2">
+    <div
+        class="h-9 w-[54px] min-w-[54px] shrink-0 overflow-hidden rounded-sm flex items-center justify-center">
+        <dot-contentlet-thumbnail
+            class="pointer-events-none"
+            [contentlet]="contentlet"
+            [iconSize]="'24px'" />
     </div>
-    <div class="name">{{ contentlet.title }}</div>
+    <div class="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-gray-800">
+        {{ contentlet.title }}
+    </div>
 </div>

@@ -1,96 +1,91 @@
 <dot-experiments-details-table
-    [data]="detailData"
-    [isEmpty]="!hasEnoughSessions"
+    [data]="$detailData()"
+    [isEmpty]="!$hasEnoughSessions()"
     [title]="'experiments.reports.resume' | dm">
     <ng-template #headers>
-        <div class="flex col row-container">
-            <div class="flex col-fixed flex-wrap items-center" style="width: 20%">
-                {{ 'experiments.reports.variants' | dm }}
-            </div>
-            <div class="flex col-fixed flex-wrap items-center justify-end" style="width: 120px">
-                {{ 'experiments.reports.conversions' | dm }}
-            </div>
-            <div class="flex col-fixed flex-wrap items-center justify-end" style="width: 110px">
-                {{ 'experiments.reports.sessions' | dm }}
-            </div>
-            <div class="flex col-fixed flex-wrap items-center justify-end" style="width: 150px">
-                {{ 'experiments.reports.conversions.rate' | dm }}
-            </div>
-            <div class="flex col flex-wrap items-center justify-end text-right">
-                {{ 'experiments.reports.probability.best' | dm }}
-            </div>
-            <div class="flex col flex-wrap items-center justify-end text-right">
-                {{ 'experiments.reports.conversion.rate.range' | dm }}
-            </div>
-            <div class="flex col flex-wrap items-center justify-end">
-                {{ 'experiments.reports.promote' | dm }}
-            </div>
+        <div class="col-span-2 flex flex-wrap items-center">
+            {{ 'experiments.reports.variants' | dm }}
+        </div>
+        <div class="col-span-1 flex flex-wrap items-center justify-end">
+            {{ 'experiments.reports.conversions' | dm }}
+        </div>
+        <div class="col-span-1 flex flex-wrap items-center justify-end">
+            {{ 'experiments.reports.sessions' | dm }}
+        </div>
+        <div class="col-span-2 flex flex-wrap items-center justify-end">
+            {{ 'experiments.reports.conversions.rate' | dm }}
+        </div>
+        <div class="col-span-2 flex flex-wrap items-center justify-end text-right">
+            {{ 'experiments.reports.probability.best' | dm }}
+        </div>
+        <div class="col-span-2 flex flex-wrap items-center justify-end text-right">
+            {{ 'experiments.reports.conversion.rate.range' | dm }}
+        </div>
+        <div class="col-span-2 flex flex-wrap items-center justify-end">
+            {{ 'experiments.reports.promote' | dm }}
         </div>
     </ng-template>
 
     <ng-template #rows let-row>
-        <div class="flex col row-container">
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex content-center col-fixed flex-wrap content-center first-column gap-1"
-                style="width: 20%">
-                @if (row.isWinner) {
-                    <svg class="trophy" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                            d="M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M12,14 c-1.65,0-3-1.35-3-3V5h6v6C15,12.65,13.65,14,12,14z M19,8c0,1.3-0.84,2.4-2,2.82V7h2V8z" />
-                    </svg>
-                }
-                <span>{{ row.name }}</span>
-            </div>
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col-fixed flex-wrap content-center justify-end"
-                style="width: 120px">
-                {{ row.conversions }}
-            </div>
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col-fixed flex-wrap content-center justify-end"
-                style="width: 110px">
-                {{ row.sessions }}
-            </div>
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col-fixed flex-wrap content-center justify-end"
-                style="width: 150px">
-                {{ row.conversionRate }}
-            </div>
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col flex-wrap content-center justify-end">
-                {{ row.probabilityToBeBest }}
-            </div>
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col flex-wrap content-center justify-end">
-                {{ row.conversionRateRange }}
-            </div>
-            <div
-                [ngClass]="{ 'prospect-winner': row.isWinner }"
-                class="flex col flex-wrap content-center justify-end">
-                @if (!promotedVariantId && row.id !== defaultVariantId) {
-                    <button
-                        (click)="promoteVariant($event, experimentId, row)"
-                        [label]="'experiments.reports.promote' | dm"
-                        class="p-button-sm p-button-outlined"
-                        data-testId="promote-variant-button"
-                        icon="pi pi-send"
-                        pButton
-                        type="button"></button>
-                }
-                @if (row.isPromoted) {
-                    <p-tag
-                        [value]="'promoted' | dm | titlecase"
-                        class="sm p-tag-info"
-                        data-testId="variant-promoted-tag"
-                        icon="pi pi-send" />
-                }
-            </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-2 flex items-center flex-wrap gap-1">
+            @if (row.isWinner) {
+                <svg
+                    class="h-5 min-w-[20px] fill-green-600"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M19,5h-2V3H7v2H5C3.9,5,3,5.9,3,7v1c0,2.55,1.92,4.63,4.39,4.94c0.63,1.5,1.98,2.63,3.61,2.96V19H7v2h10v-2h-4v-3.1 c1.63-0.33,2.98-1.46,3.61-2.96C19.08,12.63,21,10.55,21,8V7C21,5.9,20.1,5,19,5z M5,8V7h2v3.82C5.84,10.4,5,9.3,5,8z M12,14 c-1.65,0-3-1.35-3-3V5h6v6C15,12.65,13.65,14,12,14z M19,8c0,1.3-0.84,2.4-2,2.82V7h2V8z" />
+                </svg>
+            }
+            <span>{{ row.name }}</span>
+        </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-1 flex flex-wrap items-center justify-end">
+            {{ row.conversions }}
+        </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-1 flex flex-wrap items-center justify-end">
+            {{ row.sessions }}
+        </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-2 flex flex-wrap items-center justify-end">
+            {{ row.conversionRate }}
+        </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-2 flex flex-wrap items-center justify-end">
+            {{ row.probabilityToBeBest }}
+        </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-2 flex flex-wrap items-center justify-end">
+            {{ row.conversionRateRange }}
+        </div>
+        <div
+            [ngClass]="{ 'font-bold': row.isWinner }"
+            class="col-span-2 flex flex-wrap items-center justify-end">
+            @if (!$promotedVariantId() && row.id !== defaultVariantId) {
+                <p-button
+                    (onClick)="promoteVariant($event, $experimentId(), row)"
+                    [label]="'experiments.reports.promote' | dm"
+                    [outlined]="true"
+                    [size]="'small'"
+                    data-testId="promote-variant-button"
+                    icon="pi pi-send"
+                    type="button" />
+            }
+            @if (row.isPromoted) {
+                <p-tag
+                    [value]="'promoted' | dm | titlecase"
+                    severity="info"
+                    data-testId="variant-promoted-tag"
+                    icon="pi pi-send" />
+            }
         </div>
     </ng-template>
 </dot-experiments-details-table>

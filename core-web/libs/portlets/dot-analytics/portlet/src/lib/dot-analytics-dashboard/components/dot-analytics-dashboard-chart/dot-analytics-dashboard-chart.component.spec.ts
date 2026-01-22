@@ -73,6 +73,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
         });
 
         it('should initialize with status input', () => {
+            // beforeEach sets status to LOADED
             expect(spectator.component.$status()).toBe(ComponentStatus.LOADED);
         });
     });

@@ -1,0 +1,39 @@
+<div class="w-full gap-3 items-center flex flex-row flex-1">
+    <p-select
+        (onChange)="onComparisonChange($event.value)"
+        [ngModel]="$comparisonValue()"
+        [options]="comparisonDropdownOptions$ | async"
+        [style]="{ width: '100%' }"
+        class="min-w-24 max-w-24 flex-none"
+        appendTo="body" />
+    <div class="flex items-center gap-2 flex-1">
+        <input
+            [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
+            [readonly]="true"
+            pInputText
+            class="flex-1 text-right text-black" />
+        <label class="whitespace-nowrap">{{ $preferredUnit() }}</label>
+    </div>
+    <div class="flex items-center gap-2 flex-grow-2">
+        <label class="whitespace-nowrap">{{ $fromLabel() }}</label>
+        <input
+            [value]="getFormattedLatLong()"
+            [readonly]="true"
+            pInputText
+            class="flex-1 text-right text-black" />
+    </div>
+    <button
+        (click)="toggleMap()"
+        pButton
+        severity="secondary"
+        icon="pi pi-plus"
+        label="Show Map"
+        class="shrink-0"
+        ariaLabel="Show Map"></button>
+</div>
+<dot-area-picker-dialog-component
+    (circleUpdate)="onMapUpdate($event)"
+    (cancel)="showingMap.set(false)"
+    [headerText]="'Select an area'"
+    [hidden]="!showingMap()"
+    [circle]="$circle()" />

@@ -34,6 +34,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -709,12 +710,21 @@ public class APILocator extends Locator<APIIndex> {
 
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
-	 *
+	 * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
 	 * @return The {@link IndiciesAPI} class.
 	 */
+    @Deprecated(forRemoval = true)
 	public static IndiciesAPI getIndiciesAPI() {
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
+
+    /**
+     * Get the modern index Manger
+     * @return
+     */
+    public static VersionedIndicesAPI getVersionedIndicesAPI() {
+        return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
+    }
 
 	/**
 	 * Creates a single instance of the {@link ContentletIndexAPI} class.

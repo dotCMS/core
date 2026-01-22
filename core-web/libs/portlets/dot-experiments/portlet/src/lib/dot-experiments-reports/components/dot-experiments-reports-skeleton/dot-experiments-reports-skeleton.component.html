@@ -1,41 +1,14 @@
 <!--  summary  -->
-<div class="grid grid-cols-12 gap-4 summary-skeleton">
-    <div class="col-span-10 col-start-2">
-        <div class="grid grid-cols-12 gap-4">
-            <div class="col-span-2">
-                <p-skeleton height="1rem" width="100%"></p-skeleton>
-            </div>
-            <div class="col-span-2 col-start-2">
-                <p-skeleton height="1rem" width="100%"></p-skeleton>
-            </div>
-            <div class="col-span-2 col-start-2">
-                <p-skeleton height="1rem" width="100%"></p-skeleton>
-            </div>
-            <div class="col-span-3 col-start-2">
-                <p-skeleton height="1rem" width="100%"></p-skeleton>
-            </div>
-        </div>
-    </div>
+<div class="flex justify-center items-center gap-4 my-6 w-full">
+    <p-skeleton height="1rem" width="120px" />
+    <p-skeleton height="1rem" width="120px" />
+    <p-skeleton height="1rem" width="120px" />
+    <p-skeleton height="1rem" width="150px" />
 </div>
 
 <!--  chart  -->
-<div class="grid grid-cols-12 gap-4 chart-skeleton">
-    <div class="flex w-full chart-skeleton-container">
-        <div class="col-span-10 col-start-2">
-            <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-2">
-                    <p-skeleton height="1rem" width="100%"></p-skeleton>
-                </div>
-                <div class="col-span-1 col-start-8">
-                    <p-skeleton height="1rem" width="100%"></p-skeleton>
-                </div>
-                <div class="col-span-1">
-                    <p-skeleton height="1rem" width="100%"></p-skeleton>
-                </div>
-                <div class="col-span-1">
-                    <p-skeleton height="1rem" width="100%"></p-skeleton>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="w-full bg-white p-5 rounded-xl min-h-[500px] max-lg:w-[calc(100%-1.25rem)]">
+    <div
+        class="relative w-full h-[500px] bg-no-repeat bg-center bg-contain"
+        [style.background-image]="chartSkeletonBackground"></div>
 </div>

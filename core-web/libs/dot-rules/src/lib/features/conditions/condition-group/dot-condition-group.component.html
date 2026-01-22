@@ -1,0 +1,56 @@
+@let group = $group();
+@let conditions = group._conditions;
+
+<div class="w-full">
+    @if ($groupIndex() === 0) {
+        <div
+            class="flex items-center py-2 pr-4 pl-8 bg-(--color-palette-secondary-200) rounded w-full gap-3">
+            {{ getI18nLabel('inputs.group.whenConditions.label') | async }}
+        </div>
+    }
+    @if ($groupIndex() !== 0) {
+        <div
+            class="flex items-center py-2 pr-4 pl-8 bg-(--color-palette-secondary-200) rounded w-full gap-3">
+            <button
+                (click)="toggleGroupOperator()"
+                [label]="group.operator"
+                pButton
+                severity="secondary"
+                size="small"
+                class="min-w-16 w-16 shrink-0"></button>
+            <span class="flex-1 ml-3">
+                {{ getI18nLabel('inputs.group.whenFurtherConditions.label') | async }}
+            </span>
+        </div>
+    }
+    <div class="pt-3 px-8 pb-0 flex flex-col flex-1">
+        @for (condition of conditions; track trackByCondition($index, condition); let i = $index) {
+            <div class="flex items-center gap-2 mb-3 last:mb-0">
+                <dot-rule-condition
+                    (deleteCondition)="deleteCondition.emit($event)"
+                    (updateConditionType)="updateConditionType.emit($event)"
+                    (updateConditionParameter)="updateConditionParameter.emit($event)"
+                    (updateConditionOperator)="updateConditionOperator.emit($event)"
+                    [condition]="condition"
+                    [conditionTypes]="$conditionTypes()"
+                    [conditionTypePlaceholder]="$conditionTypePlaceholder()"
+                    [index]="i"
+                    class="flex-1 flex flex-row" />
+                <div class="flex items-center gap-2 min-w-10 w-10 shrink-0">
+                    @if (i === conditions.length - 1) {
+                        <button
+                            (click)="onCreateCondition()"
+                            [disabled]="!condition.isPersisted()"
+                            [rounded]="true"
+                            [text]="true"
+                            pButton
+                            type="button"
+                            severity="success"
+                            icon="pi pi-plus"
+                            ariaLabel="Add Condition"></button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,30 +1,34 @@
-<div class="dot-uve-palette-list__controls">
+@let listStyle = $layoutMode() === 'list' || $isContentletsView();
+
+<div class="flex items-center gap-2 pb-4 shrink-0">
     @if ($isContentletsView()) {
         <p-button
             data-testid="back-to-content-types-button"
             icon="pi pi-chevron-left"
-            styleClass="options-menu-button"
             [text]="true"
             [rounded]="true"
             (onClick)="onBackToContentTypes()" />
     }
 
     @if (!$shouldHideControls()) {
-        <p-iconField iconPosition="left" [style]="{ width: '100%' }">
-            <p-inputIcon styleClass="pi pi-search" />
+        <p-iconField iconPosition="left">
+            <p-inputIcon class="pi pi-search" />
             <input
                 pInputText
                 data-testid="palette-search-input"
-                styleClass="input-text-sm"
                 [formControl]="searchControl"
                 [placeholder]="'search' | dm"
-                [style]="{ width: '100%' }" />
+                class="w-full" />
         </p-iconField>
 
         @if ($isContentTypesView()) {
             @let actionBtn = $actionButton();
             <p-button
-                styleClass="options-menu-button"
+                [pt]="{
+                    icon: {
+                        class: 'rotate-90'
+                    }
+                }"
                 [attr.data-testid]="actionBtn.testId"
                 [icon]="actionBtn.icon"
                 [text]="true"
@@ -33,16 +37,25 @@
         }
     }
 </div>
-<div
-    class="dot-uve-palette-list__grid"
-    [class.dot-uve-palette-list__grid--list]="$showListLayout()"
-    [class.dot-uve-palette-list__grid--loading]="$isLoading()">
-    @if ($isLoading()) {
-        <ng-container *ngTemplateOutlet="loadingTemplate" />
-    } @else if ($isEmpty()) {
-        <ng-container *ngTemplateOutlet="emptyStateTemplate" />
+<div class="grid flex-1 min-h-0 verflow-x-hidden pb-3">
+    @if ($isEmpty()) {
+        <div class="grid h-full place-items-center overflow-hidden grid-cols-1">
+            <ng-container *ngTemplateOutlet="emptyStateTemplate" />
+        </div>
     } @else {
-        <ng-container *ngTemplateOutlet="contentTemplate" />
+        <div
+            class="grid h-full gap-4"
+            [ngClass]="{
+                'grid-cols-2 auto-rows-[7.5rem]': !listStyle,
+                'grid-cols-1 auto-rows-[4.5rem]': listStyle,
+                'overflow-auto': !$isLoading()
+            }">
+            @if ($isLoading()) {
+                <ng-container *ngTemplateOutlet="loadingTemplate" />
+            } @else {
+                <ng-container *ngTemplateOutlet="contentTemplate" />
+            }
+        </div>
     }
 </div>
 
@@ -56,15 +69,18 @@
 
 <!-- Empty State Template -->
 <ng-template #emptyStateTemplate>
-    <div class="dot-uve-palette-list__empty">
-        <div class="dot-uve-palette-list__empty-icon">
-            <i [class]="$emptyState().icon"></i>
+    <div
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full bg-gray-100 p-6">
+            <i class="text-[70px] font-normal text-gray-500" [class]="$emptyState().icon"></i>
         </div>
-        <div>
-            <span class="dot-uve-palette-list__empty-title">{{ $emptyState().title | dm }}</span>
+        <div class="space-y-2">
+            <div class="text-sm font-bold leading-[150%] text-gray-900">
+                {{ $emptyState().title | dm }}
+            </div>
             <p
                 data-testid="empty-state-message"
-                class="dot-uve-palette-list__empty-text"
+                class="m-0 text-sm leading-6 text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
                 [innerHTML]="$emptyState().message | dm"
                 (click)="onEmptyStateClick($event)"></p>
         </div>
@@ -105,17 +121,19 @@
         [currentPageReportTemplate]="'uve.palette.pagination.template' | dm" />
 }
 
-<p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" styleClass="options-menu-popup">
-    <ng-template pTemplate="submenuheader" let-item>
+<p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body">
+    <ng-template #submenuheader let-item>
         <span>{{ item.label | dm }}</span>
     </ng-template>
-    <ng-template pTemplate="item" let-item>
-        <a class="p-ripple p-element p-menuitem-link">
-            <span class="p-menuitem-text">{{ item.label | dm }}</span>
-        </a>
+    <ng-template #item let-item>
+        <span
+            class="inline-block cursor-pointer p-2 pl-5 w-full"
+            [class.bg-gray-100]="item.isActive">
+            {{ item.label | dm }}
+        </span>
     </ng-template>
 </p-menu>
 
-<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" styleClass="no-padding" />
+<p-contextMenu #cm [model]="$contextMenuItems()" appendTo="body" />
 
 <dot-favorite-selector #favoritesPanel />

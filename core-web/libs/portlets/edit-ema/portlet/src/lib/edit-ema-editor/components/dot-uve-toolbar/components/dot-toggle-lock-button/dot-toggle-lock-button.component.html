@@ -1,33 +1,28 @@
 @if ($toggleLockOptions()) {
-    <button
-        class="lock-button"
-        [class.lock-button--locked]="$toggleLockOptions().isLocked"
-        [class.lock-button--unlocked]="!$toggleLockOptions().isLocked"
-        [class.lock-button--disabled]="!$toggleLockOptions().canLock"
-        [disabled]="$lockLoading()"
+    <p-button
+        [disabled]="$lockLoading() || !$toggleLockOptions().canLock"
         [pTooltip]="
             $toggleLockOptions().canLock ? null : ('uve.editor.toggle.lock.button.disabled' | dm)
         "
         tooltipPosition="bottom"
+        [icon]="$toggleLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"
+        [label]="$buttonLabel() | dm"
+        [loading]="$lockLoading()"
+        size="small"
+        [outlined]="true"
         (click)="toggleLock()"
-        data-testId="toggle-lock-button">
-        <i [class]="$toggleLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"></i>
-        <span>{{ $buttonLabel() | dm }}</span>
-    </button>
-} @else {
-    @if ($unlockButton(); as unlockButton) {
-        <p-button
-            [disabled]="unlockButton.disabled"
-            [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
-            [escape]="false"
-            tooltipPosition="bottom"
-            icon="pi pi-lock"
-            [text]="true"
-            size="small"
-            [rounded]="true"
-            styleClass="unlock-button"
-            [loading]="unlockButton.loading"
-            (click)="unlockPage(unlockButton.inode)"
-            data-testId="uve-toolbar-unlock-button" />
-    }
+        data-testId="toggle-lock-button" />
+} @else if ($unlockButton(); as unlockButton) {
+    <p-button
+        [disabled]="unlockButton.disabled"
+        [pTooltip]="unlockButton.info.message | dm: unlockButton.info.args"
+        [escape]="false"
+        tooltipPosition="bottom"
+        icon="pi pi-lock"
+        [text]="true"
+        size="small"
+        [rounded]="true"
+        [loading]="unlockButton.loading"
+        (click)="unlockPage(unlockButton.inode)"
+        data-testId="uve-toolbar-unlock-button" />
 }

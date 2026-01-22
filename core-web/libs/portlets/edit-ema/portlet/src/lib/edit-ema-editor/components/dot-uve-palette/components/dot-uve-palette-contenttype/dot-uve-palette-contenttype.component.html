@@ -1,29 +1,46 @@
 @let contentType = $contentType();
 
 <!-- Drag handle -->
-<div class="drag-handle">
-    <i class="pi pi-ellipsis-v"></i>
-    <i class="pi pi-ellipsis-v"></i>
+<div
+    class="drag-handle opacity-0 transition-opacity text-gray-400 cursor-grab active:cursor-grabbing select-none flex items-center justify-center w-8 h-8 rounded hover:text-gray-500 hover:bg-black/5"
+    [ngClass]="
+        contentType.disabled
+            ? 'cursor-not-allowed pointer-events-none opacity-0'
+            : 'group-hover:opacity-100'
+    ">
+    <i class="pi pi-ellipsis-v text-[14px]"></i>
+    <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
 </div>
 
 <!-- Content type icon and name -->
 <div
-    class="content"
+    class="flex flex-1 items-center justify-center min-w-0"
     [pTooltip]="'uve.palette.item.disabled.tooltip' | dm"
-    [tooltipDisabled]="!contentType.disabled">
-    <div class="icon">
-        @if (contentType.icon) {
-            <i class="material-icons material-icons-outlined">
-                {{ contentType.icon }}
-            </i>
-        } @else {
-            <i class="material-icons material-icons-outlined">palette</i>
-        }
+    [tooltipDisabled]="!contentType.disabled"
+    [ngClass]="$isListView() ? 'flex-row gap-2 justify-start' : 'flex-col gap-2'">
+    <div class="flex items-center justify-center shrink-0">
+        <i class="material-icons material-icons-outlined leading-none text-[28px]! text-gray-600">
+            {{ contentType.icon || 'palette' }}
+        </i>
     </div>
-    <div class="name">{{ contentType.name }}</div>
+    <div
+        class="text-sm font-semibold leading-tight text-gray-600 min-w-0"
+        [ngClass]="$isListView() ? 'truncate text-left' : 'text-center line-clamp-2'">
+        {{ contentType.name }}
+    </div>
 </div>
 
 <!-- Chevron -->
-<div class="chevron" (click)="onChevronClick(contentType)">
-    <i class="pi pi-chevron-right"></i>
-</div>
+<button
+    type="button"
+    class="chevron opacity-0 transition-opacity text-gray-300 hover:text-gray-500 flex items-center justify-center w-8 h-8 rounded hover:bg-black/5"
+    [ngClass]="
+        contentType.disabled
+            ? 'cursor-not-allowed opacity-0 pointer-events-none'
+            : 'cursor-pointer group-hover:opacity-100'
+    "
+    (click)="onChevronClick(contentType)"
+    [disabled]="contentType.disabled"
+    [attr.aria-label]="'Open ' + contentType.name">
+    <i class="pi pi-chevron-right text-[14px] text-gray-400 group-hover:text-gray-500"></i>
+</button>

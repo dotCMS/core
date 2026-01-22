@@ -1,19 +1,23 @@
 @if (vm$ | async; as vm) {
     <p-card>
-        <ng-template pTemplate="title">
+        <ng-template #title>
             <div class="flex justify-between">
-                <h2 class="flex items-center gap-1 uppercase">
-                    <dot-icon
-                        [ngClass]="{ isDone: vm.goals }"
-                        [size]="16"
-                        data-testId="goal-title-step-done"
-                        name="check_circle" />
-                    <span class="p-label-input-required" data-testId="goals-card-name">
+                <h2 class="flex items-center gap-1 uppercase m-0 font-bold mb-3">
+                    <i
+                        [style.font-size.px]="16"
+                        class="material-icons"
+                        [ngClass]="vm.goals ? 'text-green-600' : 'text-gray-500'"
+                        data-testId="goal-title-step-done">
+                        check_circle
+                    </i>
+                    <span
+                        class="after:content-['*'] after:text-red-500 after:ml-1"
+                        data-testId="goals-card-name">
                         {{ 'experiments.configure.goals.name' | dm }}
                     </span>
                 </h2>
             </div>
-            <h3 class="flex description" data-testId="goals-empty-msg">
+            <h3 class="flex m-0 font-normal text-base" data-testId="goals-empty-msg">
                 {{ 'experiments.configure.goals.no.seleted.goal.message' | dm }}
             </h3>
         </ng-template>
@@ -23,8 +27,7 @@
                     @if (vm.goals.primary.conditions.length) {
                         <dot-experiments-details-table
                             [data]="vm.goals.primary.conditions"
-                            [isEmpty]="false"
-                            [title]="titleTpl">
+                            [isEmpty]="false">
                             <ng-template #headers>
                                 <div
                                     class="flex col flex-wrap items-center"
@@ -72,7 +75,7 @@
                         </dot-experiments-details-table>
                     } @else {
                         <div class="flex items-center flex-1">
-                            <h3 class="grow flex gap-1 detail__title">
+                            <h3 class="grow flex gap-1 m-0 text-base font-bold text-black">
                                 <span data-testId="goal-label-type-goal">
                                     {{ GOALS_METADATA_MAP[vm.goals.primary.type].label | dm }}
                                 </span>
@@ -81,21 +84,23 @@
                                     {{ vm.goals.primary.name | dm }}
                                 </span>
                             </h3>
-                            <div class="flex-none flex items-center delete">
+                            <div class="flex-none flex items-center">
                                 <div
                                     [pTooltip]="vm.disabledTooltipLabel | dm"
                                     [tooltipDisabled]="!vm.disabledTooltipLabel"
                                     data-testId="tooltip-on-disabled"
                                     tooltipPosition="bottom">
-                                    <button
-                                        (click)="deleteGoal($event, 'primary', vm.experimentId)"
+                                    <p-button
+                                        (onClick)="deleteGoal($event, 'primary', vm.experimentId)"
                                         [disabled]="vm.disabledTooltipLabel"
                                         [pTooltip]="'experiments.configure.variants.delete' | dm"
                                         [tooltipDisabled]="!!vm.disabledTooltipLabel"
-                                        class="p-button-rounded p-button-text p-button-danger"
+                                        [rounded]="true"
+                                        [text]="true"
+                                        severity="danger"
                                         data-testId="goal-delete-button"
                                         icon="pi pi-trash"
-                                        pButton></button>
+                                        type="button" />
                                 </div>
                             </div>
                         </div>
@@ -103,17 +108,18 @@
                 </div>
             </div>
         }
-        <ng-template pTemplate="footer">
+        <ng-template #footer>
             <div>
-                <button
-                    (click)="openSelectGoalSidebar()"
+                <p-button
+                    (onClick)="openSelectGoalSidebar()"
                     [disabled]="!!vm.goals || !vm.isExperimentADraft || vm.disabledTooltipLabel"
                     [pTooltip]="vm.disabledTooltipLabel | dm"
                     [tooltipDisabled]="!vm.disabledTooltipLabel"
-                    class="p-button-sm p-button-outlined"
+                    [outlined]="true"
+                    [size]="'small'"
                     data-testId="goals-add-button"
-                    label="{{ 'experiments.configure.goals.add' | dm }}"
-                    pButton></button>
+                    [label]="'experiments.configure.goals.add' | dm"
+                    type="button" />
             </div>
         </ng-template>
     </p-card>
