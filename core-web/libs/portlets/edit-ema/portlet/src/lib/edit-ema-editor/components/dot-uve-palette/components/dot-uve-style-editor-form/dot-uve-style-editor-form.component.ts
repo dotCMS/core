@@ -88,6 +88,14 @@ export class DotUveStyleEditorFormComponent {
         }
     });
 
+    /**
+     * Computed property that returns an array of all section indices to keep all tabs open by default
+     */
+    $activeTabIndices = computed(() => {
+        const sections = this.$sections();
+        return sections.map((_, index) => index);
+    });
+
     readonly #rollbackDetectionEffect = effect(() => {
         const isRollback = this.$isRollback();
 
@@ -115,7 +123,7 @@ export class DotUveStyleEditorFormComponent {
         const activeContentlet = this.#uveStore.editor().activeContentlet;
 
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
-        const initialValues = activeContentlet?.contentlet?.styleProperties;
+        const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
 
         const form = this.#formBuilder.buildForm(schema, initialValues);
         this.#form.set(form);

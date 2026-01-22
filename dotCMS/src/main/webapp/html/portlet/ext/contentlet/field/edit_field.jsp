@@ -1099,7 +1099,7 @@
 
         function change<%=field.getFieldContentlet()%>ThumbnailSize(newValue) {
             <%=field.getFieldContentlet()%>ThumbSize = newValue;
-            $('<%=field.getFieldContentlet()%>Thumbnail').src =
+            document.getElementById('<%=field.getFieldContentlet()%>Thumbnail').src =
                 "/contentAsset/image-thumbnail/<%=inode+"/"+field.getVelocityVarName()%>?w=" + newValue + "&rand=" + Math.random();
             dojo.cookie('<%=field.getStructureInode()%>-<%=field.getFieldContentlet()%>ThumbSize', new String(newValue));
         }
@@ -1258,7 +1258,7 @@
         <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>MultiSelect() {
             var valuesList = "";
-            var multiselect = $('<%=field.getVelocityVarName()%>MultiSelect');
+            var multiselect = document.getElementById('<%=field.getVelocityVarName()%>MultiSelect');
             for(var i = 0; i < multiselect.options.length; i++) {
                 if(multiselect.options[i].selected) {
                     if (valuesList != ""){
@@ -1267,7 +1267,7 @@
                     valuesList += multiselect.options[i].value;
                 }
             }
-            $('<%=field.getVelocityVarName()%>MultiSelectHF').value = valuesList;
+            document.getElementById('<%=field.getVelocityVarName()%>MultiSelectHF').value = valuesList;
         }
 
         update<%=field.getVelocityVarName()%>MultiSelect();
@@ -1325,7 +1325,7 @@
             checkedInputs.forEach(function(checkedInput) {
                 valuesList.push(checkedInput.value);
             });
-            $("<%=field.getVelocityVarName()%>Checkbox").value = valuesList.join(",");
+            document.getElementById("<%=field.getVelocityVarName()%>Checkbox").value = valuesList.join(",");
         }
 
         update<%=field.getVelocityVarName()%>Checkbox();

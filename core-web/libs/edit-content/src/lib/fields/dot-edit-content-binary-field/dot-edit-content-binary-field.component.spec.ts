@@ -129,6 +129,11 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     beforeEach(() => {
+        // This spec relies on async Angular stabilization (whenStable).
+        // In large Jest runs, other suites can leave fake timers enabled in the same worker,
+        // which can cause these async setups to hang/flap. Force real timers for isolation.
+        jest.useRealTimers();
+
         spectator = createComponent({
             detectChanges: false,
             props: {
@@ -769,6 +774,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     afterEach(() => {
+        jest.clearAllTimers();
+        jest.useRealTimers();
         jest.resetAllMocks();
     });
 });
