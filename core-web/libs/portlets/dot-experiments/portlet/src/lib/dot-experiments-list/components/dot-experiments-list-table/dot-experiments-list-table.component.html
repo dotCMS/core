@@ -1,11 +1,13 @@
-<div class="dot-experiment-list-table gap-1">
-    @if (experimentGroupedByStatus.length) {
-        @for (group of experimentGroupedByStatus; track group) {
-            <p-table [rowHover]="true" [value]="group.experiments" styleClass="experiment-list">
-                <ng-template pTemplate="caption">
-                    {{ group.status | lowercase | dm | uppercase }}
+<div class="dot-experiment-list-table flex h-full flex-col gap-1 mb-8">
+    @if ($experimentGroupedByStatus()?.length) {
+        @for (group of $experimentGroupedByStatus() ?? []; track group.status) {
+            <p-table [rowHover]="true" [value]="group.experiments" dataKey="id">
+                <ng-template #caption>
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg">{{ group.status | lowercase | dm | uppercase }}</span>
+                    </div>
                 </ng-template>
-                <ng-template pTemplate="header">
+                <ng-template #header>
                     <tr>
                         <th>{{ 'experiments.list.name' | dm }}</th>
                         <th style="width: 20%">{{ 'experiments.list.created' | dm }}</th>
@@ -13,8 +15,14 @@
                         <th style="width: 10%"></th>
                     </tr>
                 </ng-template>
-                <ng-template let-experiment pTemplate="body">
-                    <tr (click)="goToContainer.emit(experiment)" data-testId="experiment-row">
+                <ng-template #body let-experiment>
+                    <tr
+                        (click)="$goToContainer.emit(experiment)"
+                        (keydown.enter)="$goToContainer.emit(experiment)"
+                        (keydown.space)="$goToContainer.emit(experiment); $event.preventDefault()"
+                        data-testId="experiment-row"
+                        role="button"
+                        tabindex="0">
                         <td data-testId="experiment-row__name">
                             {{ experiment.name }}
                         </td>

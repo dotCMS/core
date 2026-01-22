@@ -1,18 +1,27 @@
 @if (vm$ | async; as vm) {
-    <p-drawer (onHide)="closeSidebar()" [(visible)]="vm.sidebar.isOpen" dotSidebar>
-        <dot-sidebar-header
-            [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}" />
-        <div class="experiment-create__form-wrapper">
+    <p-drawer
+        (onHide)="closeSidebar()"
+        [(visible)]="vm.sidebar.isOpen"
+        [blockScroll]="true"
+        [pt]="{ root: { style: { width: '40rem' } } }"
+        [closable]="false"
+        dotSidebar
+        position="right">
+        <ng-template #header>
+            <dot-sidebar-header
+                [actionButtonTpl]="actionHeaderBtnTpl"
+                dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}" />
+        </ng-template>
+        <div class="py-8">
             <form
                 [formGroup]="form"
-                class="experiment-create__form p-fluid"
+                class="flex flex-col gap-6"
                 id="new-experiment-form"
                 #myForm="ngForm"
                 data-testId="new-experiment-form"
                 novalidate>
-                <div class="field">
-                    <label dotFieldRequired for="name">
+                <div class="flex flex-col gap-2">
+                    <label dotFieldRequired for="name" class="text-sm font-medium text-gray-900">
                         {{ 'experiments.create.form.name.label' | dm }}
                     </label>
                     <input
@@ -25,13 +34,14 @@
                         formControlName="name"
                         name="name"
                         pInputText
+                        class="w-full"
                         placeholder="{{ 'experiments.create.form.name.placeholder' | dm }}"
                         required
                         type="text" />
                     <dot-field-validation-message [field]="form.controls.name" />
                 </div>
-                <div class="field">
-                    <label for="description">
+                <div class="flex flex-col gap-2">
+                    <label for="description" class="text-sm font-medium text-gray-900">
                         {{ 'experiments.create.form.description.label' | dm }}
                     </label>
                     <textarea
@@ -42,7 +52,8 @@
                         name="description"
                         pInputTextarea
                         placeholder="{{ 'experiments.create.form.description.placeholder' | dm }}"
-                        rows="6"></textarea>
+                        class="w-full resize-none"
+                        rows="4"></textarea>
                     <dot-field-validation-message [field]="form.controls.description" />
                 </div>
             </form>

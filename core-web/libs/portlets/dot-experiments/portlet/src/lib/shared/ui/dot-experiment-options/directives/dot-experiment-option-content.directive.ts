@@ -5,7 +5,7 @@ import { Directive, TemplateRef, inject } from '@angular/core';
  */
 @Directive({
     selector: '[dotOptionContent]',
-    standalone: false
+    standalone: true
 })
 export class DotExperimentOptionContentDirective {
     templateRef = inject<TemplateRef<unknown>>(TemplateRef);

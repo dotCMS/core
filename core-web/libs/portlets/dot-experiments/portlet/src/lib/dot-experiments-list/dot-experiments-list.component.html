@@ -3,19 +3,18 @@
         (goBack)="goToBrowserBack()"
         [isLoading]="vm.isLoading"
         [title]="vm.pageTitle" />
-    <div class="dot-experiment">
+    <div class="dot-experiment flex flex-col w-full h-full overflow-y-auto gap-4 p-8 pt-4">
         @if (vm.experiments.length) {
-            <div class="dot-experiment__actions">
+            <div class="dot-experiment__actions flex justify-between">
                 <dot-experiments-status-filter
                     (switch)="selectedStatusFilter($event)"
                     [options]="statusOptionList"
                     [selectedItems]="vm.filterStatus" />
-                <button
-                    (click)="addExperiment()"
+                <p-button
                     data-testId="add-experiment-button"
-                    label="{{ 'experimentspage.add.new.experiment' | dm }}"
-                    pButton
-                    type="button"></button>
+                    [label]="'experimentspage.add.new.experiment' | dm"
+                    (click)="addExperiment()"
+                    type="button" />
             </div>
             <dot-experiments-list-table
                 (goToContainer)="goToContainerAction($event)"

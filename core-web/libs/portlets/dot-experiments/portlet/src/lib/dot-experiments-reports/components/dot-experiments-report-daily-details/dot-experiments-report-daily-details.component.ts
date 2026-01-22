@@ -1,5 +1,5 @@
 import { NgClass, TitleCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -25,18 +25,13 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
         ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-report-daily-details.component.html',
-    styleUrls: ['./dot-experiments-report-daily-details.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsReportDailyDetailsComponent {
-    @Input()
-    detailData: DotExperimentVariantDetail[] = [];
-    @Input()
-    hasEnoughSessions: boolean;
-    @Input()
-    experimentId: string;
-    @Input()
-    promotedVariantId: Variant;
+    $detailData = input<DotExperimentVariantDetail[]>([], { alias: 'detailData' });
+    $hasEnoughSessions = input.required<boolean>({ alias: 'hasEnoughSessions' });
+    $experimentId = input.required<string>({ alias: 'experimentId' });
+    $promotedVariantId = input.required<Variant>({ alias: 'promotedVariantId' });
 
     protected readonly defaultVariantId = DEFAULT_VARIANT_ID;
 

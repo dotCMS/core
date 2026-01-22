@@ -1,19 +1,19 @@
-<div class="dot-sidebar-header-wrapper">
-    <div class="grid grid-cols-12 gap-4 dot-sidebar-header">
-        <div class="flex col items-center">
-            <button
-                (click)="closePrimeNgSidebar()"
-                class="p-button-rounded p-button-text"
-                data-testid="header-close-icon"
-                icon="pi pi-times"
-                pButton></button>
-            <h2 data-testid="header-title">{{ dotTitle }}</h2>
-        </div>
-
-        @if (actionButtonTpl) {
-            <div class="col-fixed">
-                <ng-container *ngTemplateOutlet="actionButtonTpl" />
-            </div>
-        }
+<div class="flex w-full items-center justify-between gap-3 border-b border-gray-200 bg-white py-3">
+    <div class="flex min-w-0 items-center gap-2">
+        <button
+            (click)="closePrimeNgSidebar()"
+            class="p-button-rounded p-button-text"
+            data-testid="header-close-icon"
+            icon="pi pi-times"
+            pButton></button>
+        <h2 class="truncate text-base font-semibold text-gray-900" data-testid="header-title">
+            {{ dotTitle }}
+        </h2>
     </div>
+
+    @if (actionButtonTpl) {
+        <div class="shrink-0">
+            <ng-container *ngTemplateOutlet="actionButtonTpl" />
+        </div>
+    }
 </div>

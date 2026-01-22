@@ -1,16 +1,15 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 @Component({
     selector: 'dot-experiments-configuration-items-count',
     imports: [],
     templateUrl: './dot-experiments-configuration-items-count.component.html',
-    styleUrls: ['./dot-experiments-configuration-items-count.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'text-sm text-[var(--gray-800)] pr-2 font-bold'
+    }
 })
 export class DotExperimentsConfigurationItemsCountComponent {
-    @Input()
-    maxLength: number;
-
-    @Input()
-    count: number;
+    $maxLength = input.required<number>({ alias: 'maxLength' });
+    $count = input.required<number>({ alias: 'count' });
 }

@@ -22,7 +22,8 @@
                     }
                 ],
                 "@nx/enforce-module-boundaries": ["off"],
-                "@angular-eslint/prefer-standalone": "off"
+                "@angular-eslint/no-input-rename": "off",
+                "@angular-eslint/no-output-rename": "off"
             },
             "extends": [
                 "plugin:@nx/angular",
