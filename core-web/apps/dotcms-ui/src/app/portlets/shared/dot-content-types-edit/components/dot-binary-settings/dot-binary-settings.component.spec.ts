@@ -37,7 +37,7 @@ const MOCK_FIELD = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField'
-} as any;
+} as unknown;
 
 describe('DotBinarySettingsComponent', () => {
     let spectator: Spectator<DotBinarySettingsComponent>;
@@ -98,7 +98,10 @@ describe('DotBinarySettingsComponent', () => {
             spectator = createComponent({
                 props: {
                     field: MOCK_FIELD
-                }
+                    // Note: Using `as unknown` because Spectator doesn't properly handle signal inputs
+                    // with the `$` prefix (e.g., `$field`). The type assertion bypasses TypeScript's
+                    // type checking for the props object.
+                } as unknown
             });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
@@ -199,7 +202,10 @@ describe('DotBinarySettingsComponent', () => {
             spectator = createComponent({
                 props: {
                     field: MOCK_FIELD
-                }
+                    // Note: Using `as unknown` because Spectator doesn't properly handle signal inputs
+                    // with the `$` prefix (e.g., `$field`). The type assertion bypasses TypeScript's
+                    // type checking for the props object.
+                } as unknown
             });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
