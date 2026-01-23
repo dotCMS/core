@@ -47,7 +47,7 @@ const MOCK_FIELD = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-} as any;
+} as unknown;
 
 describe('DotBlockEditorSettingsComponent', () => {
     describe('with existing variables', () => {

@@ -19,5 +19,5 @@ export class DotExperimentsExperimentSummaryComponent {
     $sessionsReached = input.required<number>({ alias: 'sessionsReached' });
     $suggestedWinner = input<SummaryLegend | null>(null, { alias: 'suggestedWinner' });
 
-    $updateResults = output<void>({ alias: 'updateResults' });
+    updateResults = output<void>();
 }

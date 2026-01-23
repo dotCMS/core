@@ -13,7 +13,6 @@ import { Popover } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-
 import { camelCase } from '@dotcms/utils';
 
 import { FieldService } from '../service';
