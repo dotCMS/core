@@ -135,9 +135,9 @@ export function finalStepsForNextjs({
 
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://docs.dotcms.com'));
+    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://dev.dotcms.com'));
 
-    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://dotcms.com/community\n'));
+    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://community.dotcms.com\n'));
 }
 
 export function finalStepsForAstro({
@@ -187,9 +187,9 @@ export function finalStepsForAstro({
 
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://docs.dotcms.com'));
+    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://dev.dotcms.com'));
 
-    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://dotcms.com/community\n'));
+    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://community.dotcms.com\n'));
 }
 
 // export function finalStepsForAstro({
@@ -324,9 +324,9 @@ export function finalStepsForAngularAndAngularSSR({
 
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
-    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://docs.dotcms.com'));
+    console.log(chalk.blueBright('📖 Documentation: ') + chalk.white('https://dev.dotcms.com'));
 
-    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://dotcms.com/community\n'));
+    console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://community.dotcms.com\n'));
 }
 function getEnvVariablesForNextJS(host: string, siteId: string, token: string) {
     return `
