@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, pluck, take } from 'rxjs/operators';
@@ -66,10 +66,12 @@ export class DotTemplatesService {
      * Get the template filtered by tittle or inode .
      *
      * @param {DotTemplatesRequestOptions} options
-     * @returns {Observable<DotTemplate>}
+     * @returns {Observable<{ templates: DotTemplate[]; totalRecords: number }>}
      * @memberof DotTemplatesService
      */
-    getFiltered(options: DotTemplatesRequestOptions): Observable<DotTemplate[]> {
+    getFiltered(
+        options: DotTemplatesRequestOptions
+    ): Observable<{ templates: DotTemplate[]; totalRecords: number }> {
         const url = `${TEMPLATE_API_URL}`;
         const per_page = options.per_page ?? DEFAULT_PER_PAGE;
         const page = options.page ?? DEFAULT_PAGE;
@@ -86,10 +88,35 @@ export class DotTemplatesService {
             .set('archive', archive.toString())
             .set('filter', filter.toString());
 
-        return this.request<DotTemplate[]>({
+        return this.request<
+            HttpResponse<{ entity: DotTemplate[]; pagination: { totalEntries: number } }>
+        >({
+            method: 'GET',
             url,
-            params
-        });
+            params,
+            observe: 'response'
+        }).pipe(
+            map(
+                (
+                    response: HttpResponse<{
+                        entity: DotTemplate[];
+                        pagination: { totalEntries: number };
+                    }>
+                ) => {
+                    const templates = response.body?.entity || [];
+                    const totalRecords =
+                        response.body?.pagination?.totalEntries || templates.length;
+
+                    return { templates, totalRecords };
+                }
+            ),
+            catchError((error: HttpErrorResponse) => {
+                return this.httpErrorManagerService.handle(error).pipe(
+                    take(1),
+                    map(() => ({ templates: [], totalRecords: 0 }))
+                );
+            })
+        );
     }
 
     /**
@@ -224,12 +251,17 @@ export class DotTemplatesService {
         return this.request<DotTemplate>({ method: 'PUT', url });
     }
 
-    private request<T>(options: DotRequestOptionsArgs): Observable<T> {
+    private request<T>(options: DotRequestOptionsArgs & { observe?: 'response' }): Observable<T> {
         const response$ = this.http.request<T>(options.method || 'GET', options.url, {
             body: options?.body,
             params: options?.params,
-            headers: options?.headers
+            headers: options?.headers,
+            observe: options.observe
         });
+
+        if (options.observe === 'response') {
+            return response$ as Observable<T>;
+        }
 
         return response$.pipe(
             pluck('entity'),

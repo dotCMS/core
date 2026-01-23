@@ -1,99 +1,204 @@
-<dot-listing-data-table
-    (rowWasClicked)="editTemplate($event)"
-    (selectedItems)="updateSelectedTemplates($event)"
-    (contextMenuSelect)="setContextMenu($event)"
-    [actionHeaderOptions]="$state.actionHeaderOptions()"
-    [columns]="$state.tableColumns()"
-    [actions]="[]"
-    [checkbox]="true"
-    [mapItems]="mapTableItems"
-    [paginationPerPage]="4"
-    [contextMenu]="true"
-    #listing
-    sortField="modDate"
-    sortOrder="DESC"
-    url="v1/templates"
-    dataKey="inode">
-    <div class="template-listing__header-options">
-        <div>
-            <div class="flex items-center">
-                <p-checkbox
-                    (onChange)="handleArchivedFilter($event.checked)"
-                    [inputId]="'show-archived-templates'"
-                    [binary]="true"
-                    data-testid="archiveCheckbox"></p-checkbox>
-                <label [for]="'show-archived-templates'">
-                    {{ 'Show-Archived' | dm }}
-                </label>
-            </div>
-            <p-button
-                (click)="actionsMenu.toggle($event)"
-                [disabled]="!$state.selectedTemplates()?.length"
-                [label]="'Actions' | dm"
-                severity="secondary"
-                [outlined]="true"
-                icon="pi pi-ellipsis-v"
-                data-testid="bulkActions"></p-button>
+<div class="flex items-center justify-between p-3 px-5 bg-white">
+    <div class="flex items-center gap-3">
+        <input
+            (keydown.arrowdown)="focusFirstRow()"
+            [(ngModel)]="filter"
+            #globalSearch
+            (input)="onFilterChange(globalSearch.value)"
+            pInputText
+            placeholder="{{ 'Type-to-filter' | dm }}"
+            type="text"
+            class="w-[300px]" />
+        <div class="flex items-center gap-2">
+            <p-checkbox
+                (onChange)="handleArchivedFilter($event.checked)"
+                [inputId]="'show-archived-templates'"
+                [binary]="true"
+                [ngModel]="$state.archive()"
+                data-testid="archiveCheckbox"></p-checkbox>
+            <label [for]="'show-archived-templates'">
+                {{ 'Show-Archived' | dm }}
+            </label>
         </div>
+    </div>
+    <div class="flex items-center gap-3">
+        <p-button
+            (click)="actionsMenu.toggle($event)"
+            [disabled]="!$state.selectedTemplates()?.length"
+            [label]="'Actions' | dm"
+            severity="secondary"
+            [outlined]="true"
+            icon="pi pi-ellipsis-v"
+            data-testid="bulkActions"></p-button>
+        <p-button
+            (click)="handleButtonClick()"
+            [icon]="'pi pi-plus'"
+            [rounded]="true"
+            data-testid="addTemplate"></p-button>
         <p-menu
             [popup]="true"
             [model]="$state.templateBulkActions()"
             #actionsMenu
             appendTo="body" />
     </div>
+</div>
 
-    <dot-empty-state
-        (buttonClick)="handleButtonClick()"
-        [rows]="10"
-        [colsTextWidth]="[60, 50, 60, 80]"
-        [title]="'message.template.empty.title' | dm"
-        [content]="'message.template.empty.content' | dm"
-        [buttonLabel]="'message.template.empty.button.label' | dm"
-        icon="web" />
-
-    <ng-template #rowTemplate let-rowData="rowData">
-        <td [ngStyle]="{ 'text-align': $state.tableColumns()[0].textAlign }">
-            {{ rowData.name }}
-        </td>
-        <td [ngStyle]="{ 'text-align': $state.tableColumns()[1].textAlign }">
-            <dot-state-icon
-                [labels]="setStateLabels()"
-                [state]="getTemplateState(rowData)"
-                size="14px" />
-        </td>
-        <td
-            [ngStyle]="{ 'text-align': $state.tableColumns()[2].textAlign }"
-            data-testId="theme-cell">
-            @if (rowData.themeInfo?.inode === 'SYSTEM_THEME') {
-                {{ rowData.themeInfo?.title }}
-            } @else {
-                @if (rowData.themeInfo) {
-                    <a
-                        (click)="goToFolder($event, rowData.themeInfo?.path)"
-                        data-testId="theme-folder-link"
-                        target="_self">
-                        {{ rowData.themeInfo?.title }}
-                    </a>
+<p-table
+    #dataTable
+    [value]="$state.templates()"
+    [tableStyle]="{ width: '100%', maxHeight: '100%' }"
+    [paginator]="true"
+    [rows]="MIN_ROWS_PER_PAGE"
+    [rowsPerPageOptions]="rowsPerPageOptions"
+    [totalRecords]="$state.totalRecords()"
+    [lazy]="true"
+    [lazyLoadOnInit]="true"
+    [scrollable]="true"
+    [(selection)]="selectedTemplates"
+    (selectionChange)="onSelectionChange()"
+    (onPage)="onPage($event)"
+    (onSort)="onSort($event)"
+    [first]="$state.first()"
+    (firstChange)="onFirstChange()"
+    dataKey="inode"
+    sortMode="single"
+    selectionMode="multiple"
+    [sortField]="$state.sortField()"
+    [sortOrder]="$state.sortOrder()"
+    data-testId="table"
+    scrollHeight="flex">
+    <ng-template pTemplate="header">
+        <tr data-testId="header-row">
+            <th [style.width]="'3rem'">
+                <p-tableHeaderCheckbox data-testId="header-checkbox" />
+            </th>
+            @for (column of $state.tableColumns(); track column.fieldName) {
+                @if (column.sortable) {
+                    <th
+                        [pSortableColumn]="column.fieldName"
+                        [style.width]="column.width"
+                        [style.text-align]="column.textAlign || 'left'"
+                        data-testId="header-column-sortable">
+                        {{ column.header | dm }}
+                        <p-sortIcon [field]="column.fieldName" data-testId="sort-icon" />
+                    </th>
+                } @else {
+                    <th
+                        [style.width]="column.width"
+                        [style.text-align]="column.textAlign || 'left'"
+                        data-testId="header-column-not-sortable">
+                        {{ column.header | dm }}
+                    </th>
                 }
             }
-        </td>
-        <td [ngStyle]="{ 'text-align': $state.tableColumns()[3].textAlign }">
-            {{ rowData.friendlyName }}
-        </td>
-        <td [ngStyle]="{ 'text-align': $state.tableColumns()[4].textAlign }">
-            {{ rowData.modDate | dotRelativeDate }}
-        </td>
-        <td style="width: 5%">
-            @if (!rowData.disableInteraction) {
-                <dot-action-menu-button
-                    [attr.data-testid]="rowData.identifier"
-                    [actions]="setTemplateActions(rowData)"
-                    [item]="rowData"
-                    class="listing-datatable__action-button" />
-            }
-        </td>
+            <th [style.width]="'5%'"></th>
+        </tr>
     </ng-template>
-</dot-listing-data-table>
+
+    <ng-template pTemplate="body" let-template>
+        @if ($state.loading() || !$state.templates().length) {
+            <tr data-testId="loading-row" class="cursor-default h-17 hover:bg-transparent!">
+                <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
+                    <span class="flex items-center justify-center h-full">
+                        <p-skeleton height="1.5rem" width="2.5rem" />
+                    </span>
+                </td>
+                @for (column of $state.tableColumns(); track column.fieldName) {
+                    <td [style.width]="column.width">
+                        <span class="flex items-center justify-center h-full first:text-left">
+                            <p-skeleton height="1.5rem" width="100%" />
+                        </span>
+                    </td>
+                }
+                <td [style.width]="'5%'">
+                    <span class="flex items-center justify-center h-full">
+                        <p-skeleton height="1.5rem" width="2.5rem" />
+                    </span>
+                </td>
+            </tr>
+        } @else {
+            <tr
+                class="group transition-colors duration-200"
+                [class.opacity-50]="template.identifier === 'SYSTEM_TEMPLATE'"
+                [class.cursor-not-allowed]="template.identifier === 'SYSTEM_TEMPLATE'"
+                [pSelectableRow]="template"
+                [pSelectableRowDisabled]="template.disableInteraction"
+                data-testId="item-row"
+                (contextmenu)="setContextMenu($event, template)"
+                (dblclick)="template.identifier !== 'SYSTEM_TEMPLATE' && onRowClick(template)">
+                <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
+                    @if (!template.disableInteraction) {
+                        <p-tableCheckbox [value]="template" />
+                    }
+                </td>
+                <td [ngStyle]="{ 'text-align': $state.tableColumns()[0].textAlign || 'left' }">
+                    <span
+                        (click)="template.identifier !== 'SYSTEM_TEMPLATE' && onRowClick(template)"
+                        [class.cursor-pointer]="template.identifier !== 'SYSTEM_TEMPLATE'"
+                        [class.cursor-not-allowed]="template.identifier === 'SYSTEM_TEMPLATE'">
+                        {{ template.name }}
+                    </span>
+                </td>
+                <td [ngStyle]="{ 'text-align': $state.tableColumns()[1].textAlign || 'left' }">
+                    <dot-contentlet-status-chip [state]="getTemplateState(template)" />
+                </td>
+                <td
+                    [ngStyle]="{ 'text-align': $state.tableColumns()[2].textAlign || 'left' }"
+                    data-testId="theme-cell">
+                    @if (template.themeInfo?.inode === 'SYSTEM_THEME') {
+                        {{ template.themeInfo?.title }}
+                    } @else {
+                        @if (template.themeInfo) {
+                            <a
+                                (click)="goToFolder($event, template.themeInfo?.path)"
+                                data-testId="theme-folder-link"
+                                target="_self">
+                                {{ template.themeInfo?.title }}
+                            </a>
+                        }
+                    }
+                </td>
+                <td [ngStyle]="{ 'text-align': $state.tableColumns()[3].textAlign || 'left' }">
+                    {{ template.friendlyName }}
+                </td>
+                <td [ngStyle]="{ 'text-align': $state.tableColumns()[4].textAlign || 'left' }">
+                    {{ template.modDate | dotRelativeDate }}
+                </td>
+                <td style="width: 5%" (contextmenu)="$event.stopPropagation()">
+                    @if (!template.disableInteraction) {
+                        <p-button
+                            [attr.data-testid]="template.identifier"
+                            icon="pi pi-ellipsis-v"
+                            styleClass="p-button-sm p-button-rounded p-button-text"
+                            (click)="setContextMenu($event, template)"
+                            class="opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                    }
+                </td>
+            </tr>
+        }
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+        @if (!$state.loading()) {
+            <tr class="hover:bg-transparent! h-max">
+                <td
+                    [attr.colspan]="$state.tableColumns().length + 2"
+                    class="p-6 text-center h-full border-none">
+                    <dot-empty-state
+                        (buttonClick)="handleButtonClick()"
+                        [rows]="10"
+                        [colsTextWidth]="[60, 50, 60, 80]"
+                        [title]="'message.template.empty.title' | dm"
+                        [content]="'message.template.empty.content' | dm"
+                        [buttonLabel]="'message.template.empty.button.label' | dm"
+                        icon="web" />
+                </td>
+            </tr>
+        }
+    </ng-template>
+</p-table>
+
+<p-contextMenu [model]="contextMenuItems" #contextMenu appendTo="body" />
 
 @if ($state.addToBundleIdentifier()) {
     <dot-add-to-bundle

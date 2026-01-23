@@ -20,7 +20,8 @@ export class DotTemplateCreateEditResolver implements Resolve<DotTemplate> {
 
         return inode
             ? this.service.getFiltered({ filter: inode }).pipe(
-                  map((templates: DotTemplate[]) => {
+                  map((response: { templates: DotTemplate[]; totalRecords: number }) => {
+                      const templates = response.templates;
                       if (templates.length) {
                           const firstTemplate = templates.find((t) => t.inode === inode);
                           if (firstTemplate) {

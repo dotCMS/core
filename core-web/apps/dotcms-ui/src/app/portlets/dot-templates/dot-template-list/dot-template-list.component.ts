@@ -1,15 +1,28 @@
 import { patchState, signalState } from '@ngrx/signals';
 
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, OnInit, inject, viewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    ElementRef,
+    OnInit,
+    effect,
+    inject,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
 
-import { MenuItem, SharedModule } from 'primeng/api';
+import { LazyLoadEvent, MenuItem, SharedModule, SortEvent } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenu } from 'primeng/contextmenu';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { SkeletonModule } from 'primeng/skeleton';
+import { Table, TableModule } from 'primeng/table';
 
 import { map, take } from 'rxjs/operators';
 
@@ -32,8 +45,8 @@ import {
     DotTemplate
 } from '@dotcms/dotcms-models';
 import {
-    DotActionMenuButtonComponent,
     DotAddToBundleComponent,
+    DotContentletStatusChipComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -43,7 +56,6 @@ import { ActionHeaderOptions } from '../../../shared/models/action-header/action
 import { DataTableColumn } from '../../../shared/models/data-table/data-table-column';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
-import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 interface TemplateListState {
     tableColumns: DataTableColumn[];
@@ -52,6 +64,16 @@ interface TemplateListState {
     addToBundleIdentifier: string | null;
     selectedTemplates: DotTemplate[];
     hasEnvironments: boolean;
+    templates: DotTemplate[];
+    loading: boolean;
+    totalRecords: number;
+    first: number;
+    page: number;
+    perPage: number;
+    sortField: string;
+    sortOrder: number;
+    archive: boolean;
+    filter: string;
 }
 
 @Component({
@@ -60,18 +82,22 @@ interface TemplateListState {
     styleUrls: ['./dot-template-list.component.scss'],
     imports: [
         CommonModule,
-        DotListingDataTableComponent,
+        FormsModule,
         DotMessagePipe,
         DotRelativeDatePipe,
         SharedModule,
         CheckboxModule,
         MenuModule,
         ButtonModule,
-        DotActionMenuButtonComponent,
         DotAddToBundleComponent,
         DynamicDialogModule,
         DotEmptyStateComponent,
-        AutoFocusModule
+        AutoFocusModule,
+        TableModule,
+        SkeletonModule,
+        InputTextModule,
+        DotContentletStatusChipComponent,
+        ContextMenu
     ],
     providers: [DotTemplatesService, DialogService, DotSiteBrowserService]
 })
@@ -89,7 +115,25 @@ export class DotTemplateListComponent implements OnInit {
 
     dialogService = inject(DialogService);
 
-    $listing = viewChild<DotListingDataTableComponent>('listing');
+    dataTable = viewChild<Table>('dataTable');
+    globalSearch = viewChild<ElementRef>('globalSearch');
+    contextMenu = viewChild<ContextMenu>('contextMenu');
+
+    selectedTemplates: DotTemplate[] = [];
+    filter = '';
+    contextMenuItems: MenuItem[] = [];
+
+    readonly MIN_ROWS_PER_PAGE = 40;
+    readonly rowsPerPageOptions = [20, this.MIN_ROWS_PER_PAGE, 60];
+
+    /**
+     * Effect that clears selected items when templates change
+     */
+    protected readonly $cleanSelectedItems = effect(() => {
+        this.$state.templates();
+        this.selectedTemplates = [];
+        patchState(this.$state, { selectedTemplates: [] });
+    });
 
     readonly $state = signalState<TemplateListState>({
         tableColumns: [],
@@ -97,7 +141,17 @@ export class DotTemplateListComponent implements OnInit {
         actionHeaderOptions: null,
         addToBundleIdentifier: null,
         selectedTemplates: [],
-        hasEnvironments: false
+        hasEnvironments: false,
+        templates: [],
+        loading: false,
+        totalRecords: 0,
+        first: 0,
+        page: 1,
+        perPage: this.MIN_ROWS_PER_PAGE,
+        sortField: 'modDate',
+        sortOrder: -1,
+        archive: false,
+        filter: ''
     });
 
     ngOnInit(): void {
@@ -106,10 +160,15 @@ export class DotTemplateListComponent implements OnInit {
             tableColumns: this.setTemplateColumns(),
             templateBulkActions: this.setTemplateBulkActions()
         });
-        this.setAddOptions();
+
+        // Sync filter with state
+        this.filter = this.$state.filter();
 
         // Load environments asynchronously in the background
         this.loadEnvironments();
+
+        // Load initial templates
+        this.loadTemplates();
 
         // Listen for site changes using SiteService
         this.dotSiteService.switchSite$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
@@ -143,16 +202,24 @@ export class DotTemplateListComponent implements OnInit {
     /**
      * Handle selected template.
      *
-     * @param {DotTemplate} { template }
+     * @param {DotTemplate} template
      * @memberof DotTemplateListComponent
      */
-    editTemplate(event: unknown): void {
-        const template = event as DotTemplate;
+    editTemplate(template: DotTemplate): void {
         this.isTemplateAsFile(template)
             ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
                   this.dotRouterService.goToSiteBrowser();
               })
             : this.dotRouterService.goToEditTemplate(template.identifier);
+    }
+
+    /**
+     * Handle row click/double click
+     * @param {DotTemplate} template
+     * @memberof DotTemplateListComponent
+     */
+    onRowClick(template: DotTemplate): void {
+        this.editTemplate(template);
     }
 
     /**
@@ -162,21 +229,16 @@ export class DotTemplateListComponent implements OnInit {
      * @memberof DotTemplateListComponent
      */
     handleArchivedFilter(checked: boolean): void {
-        checked
-            ? this.$listing().paginatorService.setExtraParams('archive', checked)
-            : this.$listing().paginatorService.deleteExtraParams('archive');
-        this.$listing().loadFirstPage();
+        patchState(this.$state, { archive: checked, first: 0, page: 1 });
+        this.loadTemplates();
     }
 
     /**
-     * Keep updated the selected templates in the grid
-     * @param {DotTemplate[]} templates
-     *
+     * Handle selection change from table
      * @memberof DotTemplateListComponent
      */
-    updateSelectedTemplates(event: unknown): void {
-        const templates = event as DotTemplate[];
-        patchState(this.$state, { selectedTemplates: templates });
+    onSelectionChange(): void {
+        patchState(this.$state, { selectedTemplates: this.selectedTemplates });
     }
 
     /**
@@ -207,14 +269,25 @@ export class DotTemplateListComponent implements OnInit {
 
     /**
      * set the content menu items of the listing to be shown, base on the template status.
+     * @param {Event} event
      * @param {DotTemplate} template
      * @memberof DotTemplateListComponent
      */
-    setContextMenu(event: unknown): void {
-        const template = event as DotTemplate;
-        this.$listing().contextMenuItems = this.setTemplateActions(template).map(
+    setContextMenu(event: Event, template: DotTemplate): void {
+        if (template.disableInteraction) {
+            event.preventDefault();
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );
+        if (this.contextMenu()) {
+            this.contextMenu().show(event);
+        }
     }
 
     /**
@@ -225,20 +298,6 @@ export class DotTemplateListComponent implements OnInit {
      */
     getTemplateState({ live, working, deleted, hasLiveVersion }: DotTemplate): DotContentState {
         return { live, working, deleted, hasLiveVersion };
-    }
-
-    /**
-     * set the labels of dot-state-icon.
-     * @returns { [key: string]: string }
-     * @memberof DotTemplateListComponent
-     */
-    setStateLabels(): { [key: string]: string } {
-        return {
-            archived: this.dotMessageService.get('Archived'),
-            published: this.dotMessageService.get('Published'),
-            revision: this.dotMessageService.get('Revision'),
-            draft: this.dotMessageService.get('Draft')
-        };
     }
 
     /**
@@ -264,8 +323,10 @@ export class DotTemplateListComponent implements OnInit {
      */
     mapTableItems(templates: DotTemplate[]): DotTemplate[] {
         return templates.map((template) => {
+            // SYSTEM_TEMPLATE is completely disabled
+            // Advanced templates (file-based) are clickable but not selectable and no context menu
             template.disableInteraction =
-                template.identifier.includes('/') || template.identifier === 'SYSTEM_TEMPLATE';
+                template.identifier === 'SYSTEM_TEMPLATE' || template.identifier.includes('/');
 
             return template;
         });
@@ -317,18 +378,6 @@ export class DotTemplateListComponent implements OnInit {
                 textAlign: 'left'
             }
         ];
-    }
-
-    private setAddOptions(): void {
-        patchState(this.$state, {
-            actionHeaderOptions: {
-                primary: {
-                    command: () => {
-                        this.dotRouterService.gotoPortlet(`/templates/new`);
-                    }
-                }
-            }
-        });
     }
 
     private setTemplateBulkActions(): MenuItem[] {
@@ -392,7 +441,7 @@ export class DotTemplateListComponent implements OnInit {
                                           this.showToastNotification(
                                               this.dotMessageService.get('message.template.copy')
                                           );
-                                          this.$listing().loadCurrentPage();
+                                          this.loadCurrentPage();
                                       }
                                   });
                           }
@@ -607,8 +656,8 @@ export class DotTemplateListComponent implements OnInit {
             this.showToastNotification(this.dotMessageService.get(messageKey));
         }
 
-        this.$listing().clearSelection();
-        this.$listing().loadCurrentPage();
+        this.clearSelection();
+        this.loadCurrentPage();
     }
 
     private showToastNotification(message: string): void {
@@ -637,8 +686,131 @@ export class DotTemplateListComponent implements OnInit {
     }
 
     private getTemplateName(identifier: string): string {
-        return (this.$listing().items as DotTemplate[]).find((template: DotTemplate) => {
-            return template.identifier === identifier;
-        }).name;
+        return (
+            this.$state.templates().find((template: DotTemplate) => {
+                return template.identifier === identifier;
+            })?.name || ''
+        );
+    }
+
+    /**
+     * Load templates from the service
+     * @private
+     * @memberof DotTemplateListComponent
+     */
+    private loadTemplates(): void {
+        patchState(this.$state, { loading: true });
+
+        const state = this.$state();
+        const direction = state.sortOrder === -1 ? 'DESC' : 'ASC';
+
+        this.dotTemplatesService
+            .getFiltered({
+                page: state.page,
+                per_page: state.perPage,
+                orderby: state.sortField,
+                direction,
+                archive: state.archive,
+                filter: state.filter || ''
+            })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+                next: (response) => {
+                    const mappedTemplates = this.mapTableItems(response.templates);
+                    patchState(this.$state, {
+                        templates: mappedTemplates,
+                        loading: false,
+                        totalRecords: response.totalRecords
+                    });
+                },
+                error: () => {
+                    patchState(this.$state, { loading: false });
+                }
+            });
+    }
+
+    /**
+     * Handle pagination event
+     * @param {LazyLoadEvent} event
+     * @memberof DotTemplateListComponent
+     */
+    onPage(event: LazyLoadEvent): void {
+        const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
+        patchState(this.$state, {
+            first: event.first || 0,
+            page,
+            perPage: event.rows || this.MIN_ROWS_PER_PAGE
+        });
+        this.loadTemplates();
+    }
+
+    /**
+     * Handle sort event
+     * @param {SortEvent} event
+     * @memberof DotTemplateListComponent
+     */
+    onSort(event: SortEvent): void {
+        patchState(this.$state, {
+            sortField: event.field || 'modDate',
+            sortOrder: event.order || -1
+        });
+        this.loadTemplates();
+    }
+
+    /**
+     * Handle first change event (for pagination sync)
+     * Basically primeNG Table handles the change of the first on every OnChange
+     * Making it lose the reference if you do a sort and do not handle this manually
+     *
+     * Check this issue to know if we are able to remove this function
+     * since its a legacy issue that they are basically ignoring.
+     * https://github.com/primefaces/primeng/issues/11898#issuecomment-1831076132
+     * @memberof DotTemplateListComponent
+     */
+    onFirstChange(): void {
+        const dataTable = this.dataTable();
+
+        if (dataTable) {
+            dataTable.first = this.$state.first();
+        }
+    }
+
+    /**
+     * Clear selection
+     * @memberof DotTemplateListComponent
+     */
+    clearSelection(): void {
+        this.selectedTemplates = [];
+        patchState(this.$state, { selectedTemplates: [] });
+        if (this.dataTable()) {
+            this.dataTable().selection = [];
+        }
+    }
+
+    /**
+     * Reload current page
+     * @memberof DotTemplateListComponent
+     */
+    loadCurrentPage(): void {
+        this.loadTemplates();
+    }
+
+    /**
+     * Handle filter input change
+     * @param {string} value
+     * @memberof DotTemplateListComponent
+     */
+    onFilterChange(value: string): void {
+        this.filter = value;
+        patchState(this.$state, { filter: value, first: 0, page: 1 });
+        this.loadTemplates();
+    }
+
+    /**
+     * Focus first row (for keyboard navigation)
+     * @memberof DotTemplateListComponent
+     */
+    focusFirstRow(): void {
+        // Implementation for focusing first row if needed
     }
 }
