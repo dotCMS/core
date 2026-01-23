@@ -71,3 +71,12 @@ export type DotCmsCliOptions = {
     username?: string;
     password?: string;
 };
+
+export interface FinalStepsOptions {
+    projectPath: string;
+    urlDotCMSInstance: string;
+    devCommand: string; // e.g. 'npm run dev' or 'ng serve'
+    defaultPort: number; // e.g. 3000, 4200
+    envVariablesString: string;
+    envDirectory?: string; // optional, defaults to projectPath
+}

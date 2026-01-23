@@ -22,7 +22,7 @@ import type { SupportedFrontEndFrameworks } from '../types';
 export async function fetchWithRetry(url: string, retries = 5, delay = 5000) {
     for (let i = 0; i < retries; i++) {
         try {
-            return await axios.get(url);
+            return await axios.get(url, { timeout: 5000 });
         } catch (err) {
             console.log(`dotCMS still not up 😴 ${i + 1}. Retrying in ${delay / 1000}s...`);
 
@@ -192,85 +192,6 @@ export function finalStepsForAstro({
     console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://community.dotcms.com\n'));
 }
 
-// export function finalStepsForAstro({
-//     projectPath,
-//     urlDotCMSInstance,
-//     siteId,
-//     token
-// }: {
-//     projectPath: string;
-//     urlDotCMSInstance: string;
-//     siteId: string;
-//     token: string;
-// }) {
-//     console.log('\n');
-//     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
-//
-//     console.log(chalk.white('🪜  Steps:\n'));
-//     console.log(chalk.white('1- cd ') + chalk.green(projectPath));
-//     console.log(
-//         chalk.white('2- Create a new file with the name ') +
-//         chalk.green('.env') +
-//         ' and paste the following:\n'
-//     );
-//
-//     // ENV BLOCK — nicely spaced + grouped
-//     console.log(chalk.white('──────────────────────────────────────────────'));
-//     console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
-//     console.log();
-//
-//     console.log(chalk.white('──────────────────────────────────────────────\n'));
-//
-//     // START DEV SERVER
-//     console.log(chalk.blueBright('💻 Start your frontend development server:'));
-//     console.log(chalk.white('$ npm run dev\n'));
-//
-//     console.log(chalk.greenBright("🎉 You're all set!.\n"));
-//
-//     console.log(
-//         chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
-//     );
-// }
-
-// export function finalStepsForAngularAndAngularSSR({
-//     projectPath,
-//     urlDotCMSInstance,
-//     siteId,
-//     token
-// }: {
-//     projectPath: string;
-//     urlDotCMSInstance: string;
-//     siteId: string;
-//     token: string;
-// }) {
-//     console.log('\n');
-//     console.log(chalk.cyanBright('📄 Update your frontend environment variables:\n'));
-//
-//     console.log(chalk.white('🪜  Steps:\n'));
-//     console.log(chalk.white('1- cd ') + chalk.green(projectPath) + '/src/environments');
-//     console.log(
-//         chalk.white(
-//             '2- Replace the content of the file ' +
-//             chalk.green('environment.ts') +
-//             ' and ' +
-//             chalk.green('environment.development.ts') +
-//             ' with the following:'
-//         )
-//     );
-//
-//     // ENV BLOCK — nicely spaced + grouped
-//     console.log(chalk.white('──────────────────────────────────────────────'));
-//     console.log(chalk.white(getEnvVariablesForAngular(urlDotCMSInstance, siteId, token)));
-//     console.log(chalk.white('──────────────────────────────────────────────\n'));
-//
-//     // START DEV SERVER
-//     console.log(chalk.blueBright('💻 Start your frontend development server:'));
-//     console.log(chalk.white('$ ng serve\n'));
-//     console.log(chalk.greenBright("🎉 You're all set!.\n"));
-//     console.log(
-//         chalk.greenBright(`Edit your page in ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index`)
-//     );
-// }
 export function finalStepsForAngularAndAngularSSR({
     projectPath,
     urlDotCMSInstance,
@@ -350,9 +271,9 @@ function getEnvVariablesForAstro(host: string, siteId: string, token: string) {
 function getEnvVariablesForAngular(host: string, siteId: string, token: string) {
     return `
     export const environment = {
-        dotcmsUrl: ${host},
-        authToken: ${token},
-        siteId: ${siteId},
+        dotcmsUrl: '${host}',
+        authToken: '${token}',
+        siteId: '${siteId}',
     };
     `;
 }

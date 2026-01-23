@@ -11,21 +11,17 @@ import type { SupportedFrontEndFrameworks } from './types';
  * Ask interactively if framework not specified
  */
 export async function askFramework(): Promise<SupportedFrontEndFrameworks> {
-    const ans = await inquirer.prompt<{ frameworks: SupportedFrontEndFrameworks[] }>([
+    const ans = await inquirer.prompt<{ frameworks: SupportedFrontEndFrameworks }>([
         {
-            type: 'checkbox',
+            type: 'select',
             name: 'frameworks',
             message: 'Select your frontend framework:',
-            choices: FRAMEWORKS_CHOICES,
-            validate(selected) {
-                if (selected.length === 0) return 'Please select at least one framework.';
-                return true;
-            }
+            choices: FRAMEWORKS_CHOICES
         }
     ]);
 
     // Return the first selected framework (checkbox returns array)
-    return ans.frameworks[0];
+    return ans.frameworks;
 }
 /**
  * Ask user name of the project
@@ -126,22 +122,18 @@ export async function askPasswordForDotcmsCloud() {
 export async function askCloudOrLocalInstance(): Promise<boolean> {
     const ans = await inquirer.prompt<{ isCloud: boolean }>([
         {
-            type: 'checkbox',
+            type: 'select',
             name: 'isCloud',
             message: 'Do you have an exsisting dotCMS instance?',
             choices: [
                 { name: 'Yes - I have a dotCMS instance URL', value: true },
-                { name: 'No - Spin up dotCSM locally with Docker', value: false }
-            ],
-            validate(selected) {
-                if (selected.length === 0) return 'Please select at least one option.';
-                return true;
-            }
+                { name: 'No - Spin up dotCMS locally with Docker', value: false }
+            ]
         }
     ]);
 
     // Return the first selected framework (checkbox returns array)
-    return ans.isCloud[0];
+    return ans.isCloud;
 }
 
 /**

@@ -212,7 +212,7 @@ program
         }
 
         const demoSite = await DotCMSApi.getDemoSiteIdentifier({
-            siteName: 'default',
+            siteName: 'demo.dotcms.com',
             authenticationToken: dotcmsToken.val
         });
         if (!demoSite.ok) {
