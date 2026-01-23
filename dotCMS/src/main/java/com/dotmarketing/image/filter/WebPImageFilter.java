@@ -8,7 +8,6 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.FileImageOutputStream;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
 import com.luciad.imageio.webp.WebPWriteParam;
 
 public class WebPImageFilter extends ImageFilter {
