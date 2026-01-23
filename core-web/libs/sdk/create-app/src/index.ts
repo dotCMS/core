@@ -52,7 +52,7 @@ program
     .version('0.1.0-beta');
 
 program
-    .option('-n, --name <projectName>', 'Name of the project')
+    .argument('[projectName]', 'Name of the project')
     .option('-f, --framework <framework>', 'Framework to use [nextjs,astro,angular,angular-ssr]')
     // directory flags
     .option('-d, --directory <path>', 'Project directory')
@@ -65,10 +65,10 @@ program
     .option('-u, --username <username>', 'DotCMS instance username (skip in case of local)')
     .option('-p, --password <password>', 'DotCMS instance password (skip in case of local)')
 
-    .action(async (options: DotCmsCliOptions) => {
+    .action(async (projectName: string, options: DotCmsCliOptions) => {
         // welcome cli
         printWelcomeScreen();
-        const projectNameFinal = options.name ?? (await askProjectName());
+        const projectNameFinal = projectName ?? (await askProjectName());
         const directoryInput = options.directory ?? (await askDirectory());
         const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
         const selectedFramework = options.framework ?? (await askFramework());
