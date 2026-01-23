@@ -2,6 +2,27 @@
 
 This document describes all available configuration properties for the DotOpenSearchClientProvider.
 
+## DotCMS Integration Testing Configuration
+
+DotCMS supports parallel OpenSearch instances for integration testing and migration scenarios:
+
+### Test Environment Variables (Set by Maven)
+```properties
+# Legacy OpenSearch instance (1.3.6) - Default production instance
+DOT_ES_ENDPOINTS_LEGACY=http://localhost:9207
+
+# Upgrade OpenSearch instance (3.0.0) - Testing new version
+DOT_ES_ENDPOINTS_UPGRADE=http://localhost:9201
+```
+
+### Maven Integration Test Ports
+- **Legacy Instance**: Port 9207 (OpenSearch 1.3.6) - Connected to dotCMS by default
+- **Upgrade Instance**: Port 9201 (OpenSearch 3.0.0) - For parallel testing
+
+### Docker Service Names
+- **opensearch-legacy**: The current production version (1.3.6)
+- **opensearch-upgrade**: The future version for migration (3.0.0)
+
 ## Connection Properties
 
 ### Endpoints Configuration
@@ -101,6 +122,45 @@ OS_TLS_CLIENT_KEY=/opt/certs/client.key
 OS_TLS_CA_CERT=/opt/certs/ca.pem
 ```
 
+### Integration Testing with Parallel Instances
+
+#### Testing Against Legacy OpenSearch (1.3.6)
+```java
+// Test uses DOT_ES_ENDPOINTS_LEGACY (set by Maven to http://localhost:9207)
+String legacyEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_LEGACY", "");
+OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+    .addEndpoints(legacyEndpoint)
+    .tlsEnabled(false)
+    .build();
+```
+
+#### Testing Against Upgrade OpenSearch (3.0.0)
+```java
+// Test uses DOT_ES_ENDPOINTS_UPGRADE (set by Maven to http://localhost:9201)
+String upgradeEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_UPGRADE", "");
+OpenSearchClientConfig config = OpenSearchClientConfig.builder()
+    .addEndpoints(upgradeEndpoint)
+    .tlsEnabled(false)
+    .build();
+```
+
+#### Parallel Testing Example
+```java
+@Test
+public void test_compareVersions_betweenLegacyAndUpgrade() {
+    // Connect to legacy instance
+    String legacyEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_LEGACY", "");
+    OpenSearchClient legacyClient = createClient(legacyEndpoint);
+
+    // Connect to upgrade instance
+    String upgradeEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_UPGRADE", "");
+    OpenSearchClient upgradeClient = createClient(upgradeEndpoint);
+
+    // Compare behavior between versions
+    compareSearchResults(legacyClient, upgradeClient);
+}
+```
+
 ## Property Defaults
 
 | Property | Default Value | Description |
@@ -115,6 +175,15 @@ OS_TLS_CA_CERT=/opt/certs/ca.pem
 | OS_SOCKET_TIMEOUT | 30000 | Socket timeout (ms) |
 | OS_MAX_CONNECTIONS | 100 | Max total connections |
 | OS_MAX_CONNECTIONS_PER_ROUTE | 50 | Max connections per route |
+
+## Integration Testing Properties
+
+| Property | Value | Description |
+|----------|-------|-------------|
+| DOT_ES_ENDPOINTS_LEGACY | http://localhost:9207 | Legacy OpenSearch instance endpoint (1.3.6) |
+| DOT_ES_ENDPOINTS_UPGRADE | http://localhost:9201 | Upgrade OpenSearch instance endpoint (3.0.0) |
+
+> **Note**: Integration testing properties are automatically set by Maven during test execution and should not be manually configured.
 
 ## Configuration Priority
 
