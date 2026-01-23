@@ -47,22 +47,22 @@ export const ACTIVITY_SCHEMA = defineStyleEditorSchema({
                         {
                             label: 'Left',
                             value: 'left',
-                            imageURL: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSphn5CRr3MrQUjWWH7ByHWW-lROnVQl4XxYQ&s',
+                            imageURL: 'https://i.ibb.co/cXv3tfYd/Screenshot-2025-12-23-at-11-58-32-AM.png',
                         },
                         {
                             label: 'Right',
                             value: 'right',
-                            imageURL: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSphn5CRr3MrQUjWWH7ByHWW-lROnVQl4XxYQ&s'
+                            imageURL: 'https://i.ibb.co/v4cJxyLZ/Screenshot-2025-12-23-at-11-59-01-AM.png'
                         },
                         {
                             label: 'Center',
                             value: 'center',
-                            imageURL: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSphn5CRr3MrQUjWWH7ByHWW-lROnVQl4XxYQ&s'
+                            imageURL: 'https://i.ibb.co/kVntSyzn/Screenshot-2025-12-23-at-11-58-50-AM.png'
                         },
                         {
                             label: 'Overlap',
                             value: 'overlap',
-                            imageURL: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSphn5CRr3MrQUjWWH7ByHWW-lROnVQl4XxYQ&s'
+                            imageURL: 'https://i.ibb.co/43Y5KLY/placeholder-icon-design-free-vector.jpg'
                         },
                     ],
                 }),
