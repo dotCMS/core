@@ -215,3 +215,18 @@ export type DotCMSEvent =
     | DotCMSContentClickEvent
     | DotCMSConversionEvent
     | DotCMSCustomEvent;
+
+/**
+ * Structure for persisted queue in sessionStorage.
+ * Used to preserve events across traditional page navigations.
+ */
+export interface PersistedQueue {
+    /** Version number for backward compatibility */
+    version: number;
+    /** Unique identifier for this browser tab */
+    tabId: string;
+    /** Timestamp when the queue was last persisted */
+    timestamp: number;
+    /** Array of events waiting to be sent */
+    events: DotCMSEvent[];
+}

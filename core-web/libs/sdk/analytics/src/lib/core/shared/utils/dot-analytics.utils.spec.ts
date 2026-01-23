@@ -17,9 +17,9 @@ import {
     getUtmData,
     validateAnalyticsConfig
 } from './dot-analytics.utils';
-import { DotCMSAnalyticsConfig } from './models';
 
 import { ANALYTICS_MINIFIED_SCRIPT_NAME } from '../constants/dot-analytics.constants';
+import { DotCMSAnalyticsConfig } from '../models';
 
 describe('Analytics Utils', () => {
     let mockLocation: Location;
@@ -270,6 +270,208 @@ describe('Analytics Utils', () => {
                 autoPageView: false,
                 siteAuth: 'test-key'
             });
+        });
+
+        it('should parse queue batch size from JSON config', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    queue: { eventBatchSize: 5 }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteAuth: 'test-key',
+                queue: {
+                    eventBatchSize: 5
+                }
+            });
+        });
+
+        it('should parse queue flush interval from JSON config', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    queue: { flushInterval: 2000 }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteAuth: 'test-key',
+                queue: {
+                    flushInterval: 2000
+                }
+            });
+        });
+
+        it('should parse both queue config values from JSON', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    queue: {
+                        eventBatchSize: 3,
+                        flushInterval: 1500
+                    }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteAuth: 'test-key',
+                queue: {
+                    eventBatchSize: 3,
+                    flushInterval: 1500
+                }
+            });
+        });
+
+        it('should ignore invalid batch size values in JSON (string instead of number)', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    queue: { eventBatchSize: 'invalid' }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            // Queue object should not be created if no valid properties exist
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteAuth: 'test-key'
+            });
+        });
+
+        it('should ignore invalid flush interval values in JSON (string instead of number)', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    queue: { flushInterval: 'abc' }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteAuth: 'test-key'
+            });
+        });
+
+        it('should parse valid batch size but ignore invalid flush interval in JSON', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    queue: {
+                        eventBatchSize: 10,
+                        flushInterval: 'invalid'
+                    }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result).toEqual({
+                server: 'https://analytics.dotcms.com',
+                debug: false,
+                autoPageView: false,
+                siteAuth: 'test-key',
+                queue: {
+                    eventBatchSize: 10
+                }
+            });
+        });
+
+        it('should parse impressions toggle from data attribute', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-impressions', 'true');
+
+            const result = getAnalyticsConfig();
+
+            expect(result.impressions).toBe(true);
+        });
+
+        it('should parse clicks toggle from data attribute', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-clicks', 'true');
+
+            const result = getAnalyticsConfig();
+
+            expect(result.clicks).toBe(true);
+        });
+
+        it('should parse granular impression configuration from JSON in data-analytics-config', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            if (script) {
+                script.setAttribute('data-analytics-auto-page-view', 'true');
+                script.setAttribute(
+                    'data-analytics-config',
+                    '{"queue": {"eventBatchSize": 15, "flushInterval": 5000}, "impressions": {"visibilityThreshold": 0.8}}'
+                );
+                document.head.appendChild(script);
+
+                const config = getAnalyticsConfig();
+                expect(config.queue).toEqual({ eventBatchSize: 15, flushInterval: 5000 });
+                expect(config.impressions).toEqual({ visibilityThreshold: 0.8 });
+            }
+        });
+
+        it('should perform boolean override: disable impressions via attribute even if config is present', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-impressions', 'false');
+            script?.setAttribute(
+                'data-analytics-config',
+                '{"impressions": {"visibilityThreshold": 0.8}}'
+            );
+
+            const result = getAnalyticsConfig();
+
+            // Explicit attribute 'false' overrides check (merge logic depends on implementation)
+            // Current impl: ...(impressionsAttr && { impressions: impressionsAttr === 'true' })
+            // So if attr is present and 'false', it sets impressions: false, overriding spread ...advancedConfig
+            expect(result.impressions).toBe(false);
+        });
+
+        it('should ignore invalid numeric values in impression config via JSON', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    impressions: {
+                        visibilityThreshold: 'invalid',
+                        dwellMs: 100
+                    }
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            // Should contain valid dwellMs but ignore invalid visibilityThreshold
+            expect(result.impressions).toEqual({ dwellMs: 100 });
         });
     });
 
