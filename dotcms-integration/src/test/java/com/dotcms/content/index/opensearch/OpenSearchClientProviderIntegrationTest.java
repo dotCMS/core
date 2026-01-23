@@ -167,7 +167,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
      */
     @Test
     public void test_clientFunctionality_clusterHealth_shouldReturnValidResponse() {
-        // This test connects to local OpenSearch (opensearch-3x container on port 9201)
+        // This test connects to local OpenSearch (opensearch-upgrade container on port 9201)
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Arrange - Configure for local OpenSearch container
@@ -304,7 +304,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
     public void test_localOpenSearchConnectivity_shouldProvideDetailedInfo() {
         ConfigurableOpenSearchProvider provider = null;
         try {
-            // Arrange - Configure specifically for the opensearch-3x container
+            // Arrange - Configure specifically for the opensearch-upgrade container
             OpenSearchClientConfig config = OpenSearchClientConfig.builder()
                     .addEndpoints("http://localhost:9201")  // Container mapped port
                     .tlsEnabled(false)  // DISABLE_SECURITY_PLUGIN=true
@@ -358,7 +358,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             assertNotNull("Version number should not be null", infoResponse.version().number());
 
             String version = infoResponse.version().number();
-            assertTrue("Expected OpenSearch 3.x but got version: " + version + ". Make sure opensearch-3x container is running.",
+            assertTrue("Expected OpenSearch 3.x but got version: " + version + ". Make sure opensearch-upgrade container is running.",
                     version.startsWith("3."));
             Logger.info(this, "✅ Confirmed OpenSearch 3.x version: " + version);
 
@@ -444,7 +444,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
             // Expected: Version should be 3.x
             assertTrue("Expected OpenSearch 3.x but got version: " + version +
-                      ". Check that opensearch-3x container is running with correct image version.",
+                      ". Check that opensearch-upgrade container is running with correct image version.",
                       version.startsWith("3."));
 
             // Log detailed version information

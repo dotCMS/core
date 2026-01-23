@@ -2196,7 +2196,7 @@
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
-                            <filter>database,opensearch</filter>
+                            <filter>database,opensearch-legacy,opensearch-upgrade</filter>
                         </configuration>
                         <executions>
                             <execution>
@@ -2264,7 +2264,7 @@
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
-                            <filter>database,opensearch</filter>
+                            <filter>database,opensearch-legacy,opensearch-upgrade</filter>
                         </configuration>
                         <executions>
                             <execution>

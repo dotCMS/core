@@ -75,6 +75,8 @@
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.postgres>${ext.docker.image.postgres}</docker.image.postgres>
         <!--suppress UnresolvedMavenProperty -->
+        <docker.image.wiremock>${ext.docker.image.wiremock}</docker.image.wiremock>
+        <!--suppress UnresolvedMavenProperty -->
         <context.name>${ext.default.context.name}</context.name>
         <docker.properties.prefix>ext.docker.${context.module}.${context.name}.dotcms</docker.properties.prefix>
         <docker.skip>false</docker.skip>
@@ -460,7 +462,7 @@
                                     </wait>
                                     <links>
                                         <link>database:db</link>
-                                        <link>opensearch:es</link>
+                                        <link>opensearch-legacy:es</link>
                                     </links>
                                     <log>
                                         <prefix>[DOTCMS]</prefix>
