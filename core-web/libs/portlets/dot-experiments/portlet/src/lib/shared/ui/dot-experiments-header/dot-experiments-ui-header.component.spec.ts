@@ -34,7 +34,10 @@ describe('ExperimentsHeaderComponent', () => {
 
     it('should has a title rendered', () => {
         const title = 'My title';
-        spectator.setInput('title', title);
+        spectator.setInput({
+            title: title,
+            isLoading: false
+        });
         expect(spectator.query(byTestId('title'))).toHaveText(title);
     });
 

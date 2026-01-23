@@ -24,8 +24,8 @@ import { getRandomUUID } from '../../../shared/dot-experiment.utils';
 export class DotExperimentsReportsChartComponent {
     $isEmpty = input(true, { alias: 'isEmpty' });
     $isLoading = input(true, { alias: 'isLoading' });
-    $config = input.required<{ xAxisLabel: string; yAxisLabel: string }>({ alias: 'config' });
-    $data = input.required<ChartData<'line'>>({ alias: 'data' });
+    $config = input<{ xAxisLabel: string; yAxisLabel: string }>(null, { alias: 'config' });
+    $data = input<ChartData<'line'> | null>(null, { alias: 'data' });
     $isLinearAxis = input(false, { alias: 'isLinearAxis' });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
