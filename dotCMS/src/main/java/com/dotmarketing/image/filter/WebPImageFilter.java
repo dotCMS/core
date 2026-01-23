@@ -11,8 +11,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.luciad.imageio.webp.WebPWriteParam;
 
-import static com.dotmarketing.image.filter.ImageFilterAPI.WEBP;
-
 public class WebPImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
 		return  new String[] {
