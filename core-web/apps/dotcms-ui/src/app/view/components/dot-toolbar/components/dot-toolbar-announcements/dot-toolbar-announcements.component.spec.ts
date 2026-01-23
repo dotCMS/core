@@ -1,9 +1,4 @@
-import {
-    Spectator,
-    SpyObject,
-    createComponentFactory,
-    mockProvider
-} from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
@@ -15,7 +10,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-
 
 import { DotToolbarAnnouncementsComponent } from './dot-toolbar-announcements.component';
 import { AnnouncementsStore, TypesIcons } from './store/dot-announcements.store';
@@ -244,8 +238,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should display unread badge for unread announcements', () => {
-            const unreadItems = spectator
-                .component
+            const unreadItems = spectator.component
                 .$announcements()
                 .filter((item) => !item.hasBeenRead);
 

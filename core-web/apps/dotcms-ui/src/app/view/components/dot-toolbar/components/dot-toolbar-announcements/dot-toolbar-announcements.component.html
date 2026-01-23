@@ -4,7 +4,7 @@
     [showBadge]="$showUnreadAnnouncement()"
     (onHide)="markAnnouncementsAsRead()"
     overlayStyleClass="max-h-[80vh] overflow-auto translate-x-2">
-    <div >
+    <div>
         <h5 class="border-b border-gray-300 pb-2 text-base font-semibold">
             {{ 'announcements' | dm }}
         </h5>
@@ -13,7 +13,6 @@
                 <li
                     [class.bg-violet-50]="!item.hasBeenRead"
                     class="relative mb-2 flex flex-row items-center gap-3 rounded-md p-2 hover:bg-gray-100">
-              
                     @if (!item.hasBeenRead) {
                         <span
                             class="absolute left-10 top-3 h-2.5 w-2.5 rounded-full bg-fuchsia-600"></span>
