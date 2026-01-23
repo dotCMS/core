@@ -82,7 +82,7 @@ describe('DotContentletStatusChipComponent', () => {
             expect(chip?.textContent?.trim()).toBe('Archived');
         });
 
-        it('should render "Revision" chip with yellow styling when contentlet has live version but is not live', () => {
+        it('should render "Revision" chip with blue styling when contentlet has live version but is not live', () => {
             const state: DotContentState = {
                 live: false,
                 working: false,
@@ -96,8 +96,8 @@ describe('DotContentletStatusChipComponent', () => {
 
             const chip = spectator.query('p-chip');
             expect(chip).toBeTruthy();
-            expect(chip).toHaveClass('bg-yellow-100!');
-            expect(chip).toHaveClass('text-yellow-700!');
+            expect(chip).toHaveClass('bg-blue-100!');
+            expect(chip).toHaveClass('text-blue-700!');
             expect(chip?.textContent?.trim()).toBe('Revision');
         });
 
