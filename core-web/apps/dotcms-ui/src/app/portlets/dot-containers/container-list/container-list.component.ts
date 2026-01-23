@@ -40,7 +40,8 @@ import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
     DotMessagePipe,
-    DotRelativeDatePipe
+    DotRelativeDatePipe,
+    DotContentletStatusChipComponent
 } from '@dotcms/ui';
 
 import { DotContainerListResolver } from './dot-container-list-resolver.service';
@@ -69,7 +70,8 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotActionMenuButtonComponent,
         DotRelativeDatePipe,
         ActionHeaderComponent,
-        InputTextModule
+        InputTextModule,
+        DotContentletStatusChipComponent
     ],
     providers: [
         DotContainerListStore,

@@ -86,7 +86,7 @@
             </td>
             <td>
                 <div class="flex items-center gap-2 whitespace-nowrap">
-                    <dot-state-icon [labels]="dotStateLabels" [state]="page" size="14px" />
+                    <dot-contentlet-status-chip [state]="page" />
                     <dot-badge [bordered]="true">
                         {{ languageIsoCodeById[page['languageId']] }}
                     </dot-badge>

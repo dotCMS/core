@@ -15,7 +15,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotContentletStatusChipComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotPagesTableComponent } from './dot-pages-table.component';
@@ -129,6 +134,7 @@ describe('DotPagesTableComponent', () => {
             TableModule,
             TooltipModule,
             DotAutofocusDirective,
+            DotContentletStatusChipComponent,
             DotMessagePipe,
             DotRelativeDatePipe,
             ReactiveFormsModule

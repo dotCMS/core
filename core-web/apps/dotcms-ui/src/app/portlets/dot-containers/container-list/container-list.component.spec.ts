@@ -52,6 +52,7 @@ import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer } from '@dotcms/dot
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
+    DotContentletStatusChipComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -242,6 +243,7 @@ describe('ContainerListComponent', () => {
                 CommonModule,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
+                DotContentletStatusChipComponent,
                 DotEmptyStateComponent,
                 DotMessagePipe,
                 DotPortletBaseComponent,
