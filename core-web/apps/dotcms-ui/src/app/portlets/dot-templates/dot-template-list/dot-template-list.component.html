@@ -2,11 +2,12 @@
     (rowWasClicked)="editTemplate($event)"
     (selectedItems)="updateSelectedTemplates($event)"
     (contextMenuSelect)="setContextMenu($event)"
-    [actionHeaderOptions]="actionHeaderOptions"
-    [columns]="tableColumns"
+    [actionHeaderOptions]="$state.actionHeaderOptions()"
+    [columns]="$state.tableColumns()"
     [actions]="[]"
     [checkbox]="true"
     [mapItems]="mapTableItems"
+    [paginationPerPage]="4"
     [contextMenu]="true"
     #listing
     sortField="modDate"
@@ -25,17 +26,20 @@
                     {{ 'Show-Archived' | dm }}
                 </label>
             </div>
-            <button
+            <p-button
                 (click)="actionsMenu.toggle($event)"
-                [disabled]="!this.selectedTemplates?.length"
+                [disabled]="!$state.selectedTemplates()?.length"
                 [label]="'Actions' | dm"
-                class="p-button-outlined"
-                type="button"
-                pButton
+                severity="secondary"
+                [outlined]="true"
                 icon="pi pi-ellipsis-v"
-                data-testid="bulkActions"></button>
+                data-testid="bulkActions"></p-button>
         </div>
-        <p-menu [popup]="true" [model]="templateBulkActions" #actionsMenu appendTo="body" />
+        <p-menu
+            [popup]="true"
+            [model]="$state.templateBulkActions()"
+            #actionsMenu
+            appendTo="body" />
     </div>
 
     <dot-empty-state
@@ -48,16 +52,18 @@
         icon="web" />
 
     <ng-template #rowTemplate let-rowData="rowData">
-        <td [ngStyle]="{ 'text-align': tableColumns[0].textAlign }">
+        <td [ngStyle]="{ 'text-align': $state.tableColumns()[0].textAlign }">
             {{ rowData.name }}
         </td>
-        <td [ngStyle]="{ 'text-align': tableColumns[1].textAlign }">
+        <td [ngStyle]="{ 'text-align': $state.tableColumns()[1].textAlign }">
             <dot-state-icon
                 [labels]="setStateLabels()"
                 [state]="getTemplateState(rowData)"
                 size="14px" />
         </td>
-        <td [ngStyle]="{ 'text-align': tableColumns[2].textAlign }" data-testId="theme-cell">
+        <td
+            [ngStyle]="{ 'text-align': $state.tableColumns()[2].textAlign }"
+            data-testId="theme-cell">
             @if (rowData.themeInfo?.inode === 'SYSTEM_THEME') {
                 {{ rowData.themeInfo?.title }}
             } @else {
@@ -71,10 +77,10 @@
                 }
             }
         </td>
-        <td [ngStyle]="{ 'text-align': tableColumns[3].textAlign }">
+        <td [ngStyle]="{ 'text-align': $state.tableColumns()[3].textAlign }">
             {{ rowData.friendlyName }}
         </td>
-        <td [ngStyle]="{ 'text-align': tableColumns[4].textAlign }">
+        <td [ngStyle]="{ 'text-align': $state.tableColumns()[4].textAlign }">
             {{ rowData.modDate | dotRelativeDate }}
         </td>
         <td style="width: 5%">
@@ -89,8 +95,8 @@
     </ng-template>
 </dot-listing-data-table>
 
-@if (addToBundleIdentifier) {
+@if ($state.addToBundleIdentifier()) {
     <dot-add-to-bundle
-        (cancel)="addToBundleIdentifier = null"
-        [assetIdentifier]="addToBundleIdentifier" />
+        (cancel)="clearAddToBundle()"
+        [assetIdentifier]="$state.addToBundleIdentifier()" />
 }

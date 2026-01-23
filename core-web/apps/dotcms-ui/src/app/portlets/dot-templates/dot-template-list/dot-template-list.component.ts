@@ -1,8 +1,8 @@
-import { Subject } from 'rxjs';
+import { patchState, signalState } from '@ngrx/signals';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, DestroyRef, OnInit, inject, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MenuItem, SharedModule } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
@@ -11,14 +11,15 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MenuModule } from 'primeng/menu';
 
-import { pluck, take, takeUntil } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService
+    DotSiteBrowserService,
+    PushPublishService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -44,6 +45,15 @@ import { DotBulkInformationComponent } from '../../../view/components/_common/do
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
+interface TemplateListState {
+    tableColumns: DataTableColumn[];
+    templateBulkActions: MenuItem[];
+    actionHeaderOptions: ActionHeaderOptions | null;
+    addToBundleIdentifier: string | null;
+    selectedTemplates: DotTemplate[];
+    hasEnvironments: boolean;
+}
+
 @Component({
     selector: 'dot-template-list',
     templateUrl: './dot-template-list.component.html',
@@ -65,7 +75,7 @@ import { DotListingDataTableComponent } from '../../../view/components/dot-listi
     ],
     providers: [DotTemplatesService, DialogService, DotSiteBrowserService]
 })
-export class DotTemplateListComponent implements OnInit, OnDestroy {
+export class DotTemplateListComponent implements OnInit {
     private dotAlertConfirmService = inject(DotAlertConfirmService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dotMessageService = inject(DotMessageService);
@@ -73,41 +83,61 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     private dotRouterService = inject(DotRouterService);
     private dotSiteService = inject(SiteService);
     private dotTemplatesService = inject(DotTemplatesService);
-    private route = inject(ActivatedRoute);
-    dialogService = inject(DialogService);
+    private pushPublishService = inject(PushPublishService);
+    private destroyRef = inject(DestroyRef);
     private dotSiteBrowserService = inject(DotSiteBrowserService);
 
-    @ViewChild('listing', { static: false })
-    listing: DotListingDataTableComponent;
-    tableColumns: DataTableColumn[];
-    templateBulkActions: MenuItem[];
-    actionHeaderOptions: ActionHeaderOptions;
-    addToBundleIdentifier: string;
-    selectedTemplates: DotTemplate[] = [];
+    dialogService = inject(DialogService);
 
-    private isEnterPrise: boolean;
-    private hasEnvironments: boolean;
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    $listing = viewChild<DotListingDataTableComponent>('listing');
+
+    readonly $state = signalState<TemplateListState>({
+        tableColumns: [],
+        templateBulkActions: [],
+        actionHeaderOptions: null,
+        addToBundleIdentifier: null,
+        selectedTemplates: [],
+        hasEnvironments: false
+    });
 
     ngOnInit(): void {
-        this.route.data
-            .pipe(pluck('dotTemplateListResolverData'), take(1))
-            .subscribe(([isEnterPrise, hasEnvironments]: [boolean, boolean]) => {
-                this.isEnterPrise = isEnterPrise;
-                this.hasEnvironments = hasEnvironments;
-                this.tableColumns = this.setTemplateColumns();
-                this.templateBulkActions = this.setTemplateBulkActions();
-            });
+        // Initialize immediately without waiting for environments
+        patchState(this.$state, {
+            tableColumns: this.setTemplateColumns(),
+            templateBulkActions: this.setTemplateBulkActions()
+        });
         this.setAddOptions();
 
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        // Load environments asynchronously in the background
+        this.loadEnvironments();
+
+        // Listen for site changes using SiteService
+        this.dotSiteService.switchSite$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
             this.dotRouterService.gotoPortlet('templates');
         });
     }
 
-    ngOnDestroy(): void {
-        this.destroy$.next(true);
-        this.destroy$.complete();
+    /**
+     * Load push-publish environments asynchronously and update menus when ready.
+     * This is non-blocking and doesn't delay route activation.
+     *
+     * @private
+     * @memberof DotTemplateListComponent
+     */
+    private loadEnvironments(): void {
+        this.pushPublishService
+            .getEnvironments()
+            .pipe(
+                map((environments) => !!environments.length),
+                take(1)
+            )
+            .subscribe((hasEnvironments: boolean) => {
+                // Update environments flag and bulk actions menu with Remote-Publish option if available
+                patchState(this.$state, {
+                    hasEnvironments,
+                    templateBulkActions: this.setTemplateBulkActions()
+                });
+            });
     }
 
     /**
@@ -133,9 +163,9 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      */
     handleArchivedFilter(checked: boolean): void {
         checked
-            ? this.listing.paginatorService.setExtraParams('archive', checked)
-            : this.listing.paginatorService.deleteExtraParams('archive');
-        this.listing.loadFirstPage();
+            ? this.$listing().paginatorService.setExtraParams('archive', checked)
+            : this.$listing().paginatorService.deleteExtraParams('archive');
+        this.$listing().loadFirstPage();
     }
 
     /**
@@ -146,7 +176,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      */
     updateSelectedTemplates(event: unknown): void {
         const templates = event as DotTemplate[];
-        this.selectedTemplates = templates;
+        patchState(this.$state, { selectedTemplates: templates });
     }
 
     /**
@@ -182,7 +212,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
      */
     setContextMenu(event: unknown): void {
         const template = event as DotTemplate;
-        this.listing.contextMenuItems = this.setTemplateActions(template).map(
+        this.$listing().contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );
     }
@@ -255,6 +285,10 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
         this.dotRouterService.gotoPortlet(`/templates/new`);
     }
 
+    clearAddToBundle(): void {
+        patchState(this.$state, { addToBundleIdentifier: null });
+    }
+
     private setTemplateColumns(): DataTableColumn[] {
         return [
             {
@@ -286,13 +320,15 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     }
 
     private setAddOptions(): void {
-        this.actionHeaderOptions = {
-            primary: {
-                command: () => {
-                    this.dotRouterService.gotoPortlet(`/templates/new`);
+        patchState(this.$state, {
+            actionHeaderOptions: {
+                primary: {
+                    command: () => {
+                        this.dotRouterService.gotoPortlet(`/templates/new`);
+                    }
                 }
             }
-        };
+        });
     }
 
     private setTemplateBulkActions(): MenuItem[] {
@@ -301,7 +337,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('Publish'),
                 command: () => {
                     this.publishTemplate(
-                        this.selectedTemplates.map((template) => template.identifier)
+                        this.$state.selectedTemplates().map((template) => template.identifier)
                     );
                 }
             },
@@ -310,7 +346,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('Unpublish'),
                 command: () => {
                     this.unPublishTemplate(
-                        this.selectedTemplates.map((template) => template.identifier)
+                        this.$state.selectedTemplates().map((template) => template.identifier)
                     );
                 }
             },
@@ -318,7 +354,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('Archive'),
                 command: () => {
                     this.archiveTemplates(
-                        this.selectedTemplates.map((template) => template.identifier)
+                        this.$state.selectedTemplates().map((template) => template.identifier)
                     );
                 }
             },
@@ -326,7 +362,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('Unarchive'),
                 command: () => {
                     this.unArchiveTemplate(
-                        this.selectedTemplates.map((template) => template.identifier)
+                        this.$state.selectedTemplates().map((template) => template.identifier)
                     );
                 }
             },
@@ -334,7 +370,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                 label: this.dotMessageService.get('Delete'),
                 command: () => {
                     this.deleteTemplate(
-                        this.selectedTemplates.map((template) => template.identifier)
+                        this.$state.selectedTemplates().map((template) => template.identifier)
                     );
                 }
             }
@@ -356,7 +392,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
                                           this.showToastNotification(
                                               this.dotMessageService.get('message.template.copy')
                                           );
-                                          this.listing.loadCurrentPage();
+                                          this.$listing().loadCurrentPage();
                                       }
                                   });
                           }
@@ -393,7 +429,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
 
     private setLicenseAndRemotePublishTemplateOptions(template: DotTemplate): DotActionMenuItem[] {
         const options: DotActionMenuItem[] = [];
-        if (this.hasEnvironments) {
+        if (this.$state.hasEnvironments()) {
             options.push({
                 menuItem: {
                     label: this.dotMessageService.get('Remote-Publish'),
@@ -407,28 +443,27 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             });
         }
 
-        if (this.isEnterPrise) {
-            options.push({
-                menuItem: {
-                    label: this.dotMessageService.get('Add-To-Bundle'),
-                    command: () => {
-                        this.addToBundleIdentifier = template.identifier;
-                    }
+        options.push({
+            menuItem: {
+                label: this.dotMessageService.get('Add-To-Bundle'),
+                command: () => {
+                    patchState(this.$state, { addToBundleIdentifier: template.identifier });
                 }
-            });
-        }
+            }
+        });
 
         return options;
     }
 
     private setLicenseAndRemotePublishTemplateBulkOptions(): MenuItem[] {
         const bulkOptions: MenuItem[] = [];
-        if (this.hasEnvironments) {
+        if (this.$state.hasEnvironments()) {
             bulkOptions.push({
                 label: this.dotMessageService.get('Remote-Publish'),
                 command: () => {
                     this.dotPushPublishDialogService.open({
-                        assetIdentifier: this.selectedTemplates
+                        assetIdentifier: this.$state
+                            .selectedTemplates()
                             .map((template) => template.identifier)
                             .toString(),
                         title: this.dotMessageService.get('contenttypes.content.push_publish')
@@ -437,16 +472,17 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             });
         }
 
-        if (this.isEnterPrise) {
-            bulkOptions.push({
-                label: this.dotMessageService.get('Add-To-Bundle'),
-                command: () => {
-                    this.addToBundleIdentifier = this.selectedTemplates
+        bulkOptions.push({
+            label: this.dotMessageService.get('Add-To-Bundle'),
+            command: () => {
+                patchState(this.$state, {
+                    addToBundleIdentifier: this.$state
+                        .selectedTemplates()
                         .map((template) => template.identifier)
-                        .toString();
-                }
-            });
-        }
+                        .toString()
+                });
+            }
+        });
 
         return bulkOptions;
     }
@@ -571,8 +607,8 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
             this.showToastNotification(this.dotMessageService.get(messageKey));
         }
 
-        this.listing.clearSelection();
-        this.listing.loadCurrentPage();
+        this.$listing().clearSelection();
+        this.$listing().loadCurrentPage();
     }
 
     private showToastNotification(message: string): void {
@@ -601,7 +637,7 @@ export class DotTemplateListComponent implements OnInit, OnDestroy {
     }
 
     private getTemplateName(identifier: string): string {
-        return (this.listing.items as DotTemplate[]).find((template: DotTemplate) => {
+        return (this.$listing().items as DotTemplate[]).find((template: DotTemplate) => {
             return template.identifier === identifier;
         }).name;
     }
