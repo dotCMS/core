@@ -120,7 +120,7 @@ class TestContentTypesRelationshipListingComponent {}
 })
 class MockDotAddToMenuComponent {
     @Input() contentType: DotCMSContentType;
-    @Output('cancel') $cancel = new EventEmitter<boolean>();
+    @Output() cancel = new EventEmitter<boolean>();
 }
 
 @Injectable()
@@ -258,7 +258,7 @@ describe('ContentTypesLayoutComponent', () => {
 
         fixture = TestBed.createComponent(TestHostComponent);
         const originalDetectChanges = fixture.detectChanges.bind(fixture);
-        fixture.detectChanges = (checkNoChanges?: boolean) => originalDetectChanges(false);
+        fixture.detectChanges = (_checkNoChanges?: boolean) => originalDetectChanges(false);
         de = fixture.debugElement.query(By.css('dot-content-type-layout'));
     });
 
@@ -413,7 +413,7 @@ describe('ContentTypesLayoutComponent', () => {
                 By.css('dot-add-to-menu')
             ).componentInstance;
             expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
-            AddToMenuDialog.$cancel.emit(true);
+            AddToMenuDialog.cancel.emit(true);
             de.componentInstance.addToMenuContentType = false;
             fixture.detectChanges();
             expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();

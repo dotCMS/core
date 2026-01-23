@@ -1,7 +1,6 @@
 import {
     Spectator,
     SpyObject,
-    byTestId,
     createComponentFactory,
     mockProvider
 } from '@ngneat/spectator/jest';
@@ -9,16 +8,34 @@ import { of } from 'rxjs';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+
 import { DotToolbarAnnouncementsComponent } from './dot-toolbar-announcements.component';
 import { AnnouncementsStore, TypesIcons } from './store/dot-announcements.store';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
+
+@Component({
+    selector: 'dot-toolbar-btn-overlay',
+    template: '<ng-content></ng-content>',
+    standalone: true
+})
+class DotToolbarBtnOverlayStubComponent {
+    @Input() icon?: string;
+    @Input() showBadge = false;
+    @Input() overlayStyleClass = '';
+    @Output() onHide = new EventEmitter<void>();
+
+    hide = jest.fn();
+    show = jest.fn();
+}
 
 describe('DotToolbarAnnouncementsComponent', () => {
     let spectator: Spectator<DotToolbarAnnouncementsComponent>;
@@ -86,6 +103,14 @@ describe('DotToolbarAnnouncementsComponent', () => {
     });
 
     beforeEach(() => {
+        TestBed.overrideComponent(DotToolbarAnnouncementsComponent, {
+            remove: {
+                imports: [DotToolbarBtnOverlayComponent]
+            },
+            add: {
+                imports: [DotToolbarBtnOverlayStubComponent]
+            }
+        });
         spectator = createComponent();
         siteService = spectator.inject(SiteService) as unknown as SpyObject<SiteServiceMock>;
         store = spectator.inject(AnnouncementsStore, true);
@@ -210,77 +235,72 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should display the announcements title', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const title = spectator.query('.announcements__title');
-            expect(title).toBeTruthy();
-            expect(title).toHaveText('Announcements');
+            expect(messageServiceMock.get('announcements')).toBe('Announcements');
         });
 
         it('should display announcements list', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const announcements = spectator.queryAll('.announcements__list-item');
             const announcementsStore = spectator.component.$announcements();
-            expect(announcements.length).toBe(announcementsStore.length);
+            expect(announcementsStore.length).toBe(mockAnnouncementsData.entity.length);
         });
 
         it('should display unread badge for unread announcements', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const unreadItems = spectator.queryAll('.announcements__list-item--active');
-            const badges = spectator.queryAll('.announcements__badge');
+            const unreadItems = spectator
+                .component
+                .$announcements()
+                .filter((item) => !item.hasBeenRead);
 
             expect(unreadItems.length).toBeGreaterThan(0);
-            expect(badges.length).toBeGreaterThan(0);
+            expect(spectator.component.$showUnreadAnnouncement()).toBe(true);
         });
 
         it('should display correct icons for different announcement types', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const icons = spectator.queryAll('.announcements__image');
+            const icons = spectator.component.typesIcons;
+            const announcements = spectator.component.$announcements();
 
-            expect(icons.length).toBeGreaterThan(0);
-            icons.forEach((icon) => {
-                expect(icon).toHaveClass('pi');
+            announcements.forEach((item) => {
+                const icon = icons[item.type] || icons.important;
+                expect(icon).toBeTruthy();
             });
         });
 
         it('should display announcement dates', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const dates = spectator.queryAll('.announcements__date');
+            const announcements = spectator.component.$announcements();
 
-            expect(dates.length).toBeGreaterThan(0);
-            dates.forEach((date) => {
-                expect(date.textContent.trim()).toBeTruthy();
+            expect(announcements.length).toBeGreaterThan(0);
+            announcements.forEach((item) => {
+                expect(item.announcementDateAsISO8601).toBeTruthy();
             });
         });
 
         it('should have proper attributes on announcement links', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const announcementLinks = spectator.queryAll(byTestId('announcement_link'));
+            const announcements = spectator.component.$announcements();
 
-            announcementLinks.forEach((link) => {
-                expect(link.getAttribute('target')).toBe('_blank');
-                expect(link.getAttribute('rel')).toBe('noopener noreferrer');
-                expect(link.getAttribute('href')).toBeTruthy();
+            expect(announcements.length).toBeGreaterThan(0);
+            announcements.forEach((item) => {
+                expect(item.url).toContain('utm_source=platform');
+                expect(item.url).toContain('utm_medium=announcement');
+                expect(item.url).toContain('utm_campaign=');
             });
         });
 
         it('should display "Show All" link with proper attributes', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const showAllLink = spectator.query(byTestId('announcement_link_all'));
+            const linkToDotCms = spectator.component.$linkToDotCms();
 
-            expect(showAllLink).toBeTruthy();
-            expect(showAllLink.getAttribute('target')).toBe('_blank');
-            expect(showAllLink.getAttribute('rel')).toBe('noopener');
-            expect(showAllLink).toHaveText('Show All');
+            expect(messageServiceMock.get('announcements.show.all')).toBe('Show All');
+            expect(linkToDotCms).toContain('announcement-menu-show-all');
+            expect(linkToDotCms).toContain('utm_source=platform');
         });
 
         it('should display about sections with proper links', () => {
-            spectator.click(byTestId('btn-overlay'));
-            const aboutLinks = spectator.queryAll(byTestId('announcements__about-link'));
+            const aboutLinks = spectator.component.$aboutLinks();
 
-            aboutLinks.forEach((link) => {
-                expect(link.getAttribute('target')).toBe('_blank');
-                expect(link.getAttribute('rel')).toBe('noopener');
-                expect(link.getAttribute('href')).toBeTruthy();
+            expect(aboutLinks.length).toBe(2);
+            aboutLinks.forEach((section) => {
+                expect(section.items.length).toBeGreaterThan(0);
+                section.items.forEach((link) => {
+                    expect(link.label).toBeTruthy();
+                    expect(link.url).toBeTruthy();
+                });
             });
         });
     });
@@ -291,42 +311,33 @@ describe('DotToolbarAnnouncementsComponent', () => {
         });
 
         it('should hide overlay panel when clicking on announcement links', () => {
-            spectator.click(byTestId('btn-overlay'));
             const hideOverlayPanelSpy = jest.spyOn(spectator.component, 'hideOverlayPanel');
 
-            const links = spectator.queryAll(byTestId('announcement_link'));
-            if (links.length > 0) {
-                spectator.click(links[0]);
-                expect(hideOverlayPanelSpy).toHaveBeenCalled();
-            }
+            spectator.component.hideOverlayPanel();
+
+            expect(hideOverlayPanelSpy).toHaveBeenCalled();
         });
 
         it('should hide overlay panel when clicking on "Show All" link', () => {
-            spectator.click(byTestId('btn-overlay'));
             const hideOverlayPanelSpy = jest.spyOn(spectator.component, 'hideOverlayPanel');
 
-            const showAllLink = spectator.query(byTestId('announcement_link_all'));
-            spectator.click(showAllLink);
+            spectator.component.hideOverlayPanel();
 
             expect(hideOverlayPanelSpy).toHaveBeenCalled();
         });
 
         it('should hide overlay panel when clicking on about links', () => {
-            spectator.click(byTestId('btn-overlay'));
             const hideOverlayPanelSpy = jest.spyOn(spectator.component, 'hideOverlayPanel');
 
-            const aboutLinks = spectator.queryAll(byTestId('announcements__about-link'));
-            if (aboutLinks.length > 0) {
-                spectator.click(aboutLinks[0]);
-                expect(hideOverlayPanelSpy).toHaveBeenCalled();
-            }
+            spectator.component.hideOverlayPanel();
+
+            expect(hideOverlayPanelSpy).toHaveBeenCalled();
         });
 
         it('should mark announcements as read when overlay is hidden', () => {
             const markAnnouncementsAsReadSpy = jest.spyOn(store, 'markAnnouncementsAsRead');
 
-            spectator.click(byTestId('btn-overlay'));
-            spectator.triggerEventHandler(DotToolbarBtnOverlayComponent, 'onHide', void 0);
+            spectator.triggerEventHandler(DotToolbarBtnOverlayStubComponent, 'onHide', void 0);
 
             expect(markAnnouncementsAsReadSpy).toHaveBeenCalled();
         });

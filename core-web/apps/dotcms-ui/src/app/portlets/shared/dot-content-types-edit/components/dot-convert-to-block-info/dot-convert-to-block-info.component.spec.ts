@@ -1,5 +1,4 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { ButtonModule } from 'primeng/button';
@@ -17,10 +16,8 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotConvertToBlockInfoComponent', () => {
-    let testBed: typeof TestBed;
-
     beforeEach(async () => {
-        testBed = TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotConvertToBlockInfoComponent],
             imports: [DotMessagePipe, ButtonModule],
             providers: [
@@ -31,7 +28,7 @@ describe('DotConvertToBlockInfoComponent', () => {
             ]
         });
 
-        await testBed.compileComponents();
+        await TestBed.compileComponents();
     });
 
     it('should render info and learn more button', () => {

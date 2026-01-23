@@ -98,7 +98,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should not show badge initially', () => {
-            const badge = spectator.query('.dot-toolbar__badge');
+            const badge = spectator.query(byTestId('overlay-badge'));
             expect(badge).not.toExist();
         });
 
@@ -106,7 +106,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             spectator.setInput('showBadge', true);
             spectator.detectChanges();
 
-            const badge = spectator.query('.dot-toolbar__badge');
+            const badge = spectator.query(byTestId('overlay-badge'));
             expect(badge).toExist();
         });
 
@@ -119,14 +119,19 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should render overlay panel with correct attributes', () => {
-            const overlayPanel = spectator.query('p-overlaypanel');
+            const overlayPanel = spectator.query('p-popover');
 
             expect(overlayPanel).toBeTruthy();
 
-            // Access PrimeNG OverlayPanel component instance to verify appendTo property
-            const overlayPanelDebugElement = spectator.debugElement.query(By.css('p-overlaypanel'));
+            // Access PrimeNG Popover component instance to verify appendTo property
+            const overlayPanelDebugElement = spectator.debugElement.query(By.css('p-popover'));
             const overlayPanelComponent = overlayPanelDebugElement?.componentInstance as Popover;
-            expect(overlayPanelComponent?.appendTo).toBe('body');
+            const appendToValue =
+                typeof overlayPanelComponent?.appendTo === 'function'
+                    ? overlayPanelComponent.appendTo()
+                    : overlayPanelComponent?.appendTo;
+
+            expect(appendToValue).toBe('body');
         });
 
         it('should apply custom style class to overlay panel', () => {
@@ -138,12 +143,12 @@ describe('DotToolbarBtnOverlayComponent', () => {
             spectatorWithClass.setInput('overlayStyleClass', customClass);
             spectatorWithClass.detectChanges();
 
-            const overlayPanel = spectatorWithClass.query('p-overlaypanel');
+            const overlayPanel = spectatorWithClass.query('p-popover');
             expect(overlayPanel).toBeTruthy();
 
-            // Access PrimeNG OverlayPanel component instance to verify styleClass property
+            // Access PrimeNG Popover component instance to verify styleClass property
             const overlayPanelDebugElement = spectatorWithClass.debugElement.query(
-                By.css('p-overlaypanel')
+                By.css('p-popover')
             );
             const overlayPanelComponent = overlayPanelDebugElement?.componentInstance as Popover;
             expect(overlayPanelComponent?.styleClass).toBe(customClass);
