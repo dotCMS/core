@@ -10,6 +10,8 @@ import javax.imageio.stream.FileImageOutputStream;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.luciad.imageio.webp.WebPWriteParam;
 
+import static com.dotmarketing.image.filter.ImageFilterAPI.WEBP;
+
 public class WebPImageFilter extends ImageFilter {
 	public String[] getAcceptedParameters(){
 		return  new String[] {
@@ -17,6 +19,10 @@ public class WebPImageFilter extends ImageFilter {
 		};
 	}
 	public File runFilter(final File file, final Map<String, String[]> parameters) {
+
+        if(file!=null && file.getName().contains(WEBP)){
+            return file;
+        }
 
 	    final int qualityParam = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
 
@@ -46,8 +52,8 @@ public class WebPImageFilter extends ImageFilter {
 
             final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
 
-	        
-	        
+
+
 	        writer.setOutput(new FileImageOutputStream(tempResultFile));
 	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
 	        writer.dispose();
