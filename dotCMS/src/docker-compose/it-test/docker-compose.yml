@@ -7,14 +7,14 @@ networks:
 
 volumes:
     dbdata-test:
-    esdata-test:
-    esdata-test-3x:
+    esdata-test-legacy:
+    esdata-test-upgrade:
 
 services:
-    elasticsearch-test:
-        image: ${ES_IMAGE:-opensearchproject/opensearch:1.3.6}
+    elasticsearch-test-legacy:
+        image: ${ES_IMAGE_LEGACY:-opensearchproject/opensearch:1.3.6}
         environment:
-            - cluster.name=elastic-cluster
+            - cluster.name=opensearch-legacy-cluster
             - discovery.type=single-node
             - data
             - bootstrap.system_call_filter=false
@@ -30,17 +30,17 @@ services:
                 soft: -1
                 hard: -1
         ports:
-            - ${ES_HOST_PORT:-9207}:9200
+            - ${ES_HOST_PORT_LEGACY:-9207}:9200
         volumes:
-            - esdata-test:/usr/share/elasticsearch/data
+            - esdata-test-legacy:/usr/share/opensearch/data
         networks:
             - es_net
 
-    elasticsearch-test-3x:
-        image: ${ES_IMAGE_3X:-opensearchproject/opensearch:3.0.0}
+    elasticsearch-test-upgrade:
+        image: ${ES_IMAGE_UPGRADE:-opensearchproject/opensearch:3.0.0}
         environment:
-            - cluster.name=opensearch-3x-cluster
-            - node.name=opensearch-3x-node
+            - cluster.name=opensearch-upgrade-cluster
+            - node.name=opensearch-upgrade-node
             - discovery.type=single-node
             - bootstrap.system_call_filter=false
             - bootstrap.memory_lock=true
@@ -56,9 +56,9 @@ services:
                 soft: -1
                 hard: -1
         ports:
-            - ${ES_HOST_PORT_3X:-9201}:9200
+            - ${ES_HOST_PORT_UPGRADE:-9201}:9200
         volumes:
-            - esdata-test-3x:/usr/share/opensearch/data
+            - esdata-test-upgrade:/usr/share/opensearch/data
         networks:
             - es_net
 
@@ -68,7 +68,7 @@ services:
         ports:
             - '1358:1358'
         links:
-            - elasticsearch-test
+            - elasticsearch-test-legacy
     db-test:
         image: ${PG_IMAGE:-pgvector/pgvector:pg18}
         command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'

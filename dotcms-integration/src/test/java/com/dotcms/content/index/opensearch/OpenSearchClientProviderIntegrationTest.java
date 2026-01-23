@@ -197,7 +197,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
             // Additional assertions for the specific container configuration
             assertTrue("Should have at least one node", healthResponse.numberOfNodes() >= 1);
-            assertEquals("Should be single-node cluster", "opensearch-3x-cluster", healthResponse.clusterName());
+            assertEquals("Should be single-node cluster", "opensearch-cluster", healthResponse.clusterName());
 
             // Verify OpenSearch 3.x version
             var infoResponse = client.info();
@@ -213,7 +213,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             fail("OpenSearch cluster health test failed. Make sure OpenSearch container is running on http://localhost:9201. Error: " + e.getMessage());
         } catch (IOException e) {
             Logger.error(this, "❌ Connection error during cluster health test: " + e.getMessage());
-            Logger.error(this, "❌ Make sure OpenSearch container is running with: docker-compose up opensearch-3x");
+            Logger.error(this, "❌ Make sure OpenSearch container is running with: docker-compose up opensearch");
             fail("Cannot connect to OpenSearch on http://localhost:9201. Error: " + e.getMessage());
         } catch (Exception e) {
             Logger.error(this, "❌ Unexpected error during cluster health test: " + e.getMessage(), e);
@@ -286,7 +286,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             fail("OpenSearch index operations test failed. Make sure OpenSearch container is running on http://localhost:9201. Error: " + e.getMessage());
         } catch (IOException e) {
             Logger.error(this, "❌ Connection error during index operations test: " + e.getMessage());
-            Logger.error(this, "❌ Make sure OpenSearch container is running with: docker-compose up opensearch-3x");
+            Logger.error(this, "❌ Make sure OpenSearch container is running with: docker-compose up opensearch");
             fail("Cannot connect to OpenSearch on http://localhost:9201. Error: " + e.getMessage());
         } catch (Exception e) {
             Logger.error(this, "❌ Unexpected error during index operations test: " + e.getMessage(), e);
@@ -316,7 +316,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
             Logger.info(this, "🔍 Testing connectivity to local OpenSearch container...");
             Logger.info(this, "🔍 Endpoint: http://localhost:9201");
-            Logger.info(this, "🔍 Expected cluster: opensearch-3x-cluster");
+            Logger.info(this, "🔍 Expected cluster: opensearch-cluster");
 
             provider = new ConfigurableOpenSearchProvider(config);
             OpenSearchClient client = provider.getClient();
@@ -340,7 +340,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
             // Verify expected container configuration
             assertEquals("Should match container cluster name",
-                    "opensearch-3x-cluster", healthResponse.clusterName());
+                    "opensearch-cluster", healthResponse.clusterName());
             assertEquals("Should have exactly one node (single-node setup)",
                     1, healthResponse.numberOfNodes());
 
@@ -363,7 +363,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             Logger.info(this, "✅ Confirmed OpenSearch 3.x version: " + version);
 
             Logger.info(this, "\n✅ Local OpenSearch connectivity test PASSED!");
-            Logger.info(this, "✅ Container opensearch-3x is running and accessible");
+            Logger.info(this, "✅ Container opensearch is running and accessible");
 
         } catch (OpenSearchException e) {
             Logger.error(this, "\n❌ OpenSearch API Error:");
@@ -371,7 +371,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             Logger.error(this, "❌ Status: " + e.status());
             Logger.error(this, "\n🔧 Troubleshooting steps:");
             Logger.error(this, "🔧 1. Check if container is running: docker ps | grep opensearch");
-            Logger.error(this, "🔧 2. Check container logs: docker logs opensearch-3x");
+            Logger.error(this, "🔧 2. Check container logs: docker logs opensearch");
             Logger.error(this, "🔧 3. Verify port mapping: curl http://localhost:9201");
             fail("OpenSearch API error: " + e.getMessage());
 
@@ -379,8 +379,8 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             Logger.error(this, "\n❌ Connection Error:");
             Logger.error(this, "❌ " + e.getMessage());
             Logger.error(this, "\n🔧 Troubleshooting steps:");
-            Logger.error(this, "🔧 1. Start OpenSearch container: docker-compose up -d opensearch-3x");
-            Logger.error(this, "🔧 2. Wait for startup: docker logs -f opensearch-3x");
+            Logger.error(this, "🔧 1. Start OpenSearch container: docker-compose up -d opensearch");
+            Logger.error(this, "🔧 2. Wait for startup: docker logs -f opensearch");
             Logger.error(this, "🔧 3. Test direct access: curl http://localhost:9201");
             Logger.error(this, "🔧 4. Check network: docker network ls");
             fail("Cannot connect to OpenSearch on http://localhost:9201. Connection error: " + e.getMessage());
@@ -397,9 +397,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test OpenSearch 3.x version validation using Maven POM properties
-     * This test reads the endpoint from DOT_ES_ENDPOINTS_3X system property and validates the version
+     * This test reads the endpoint from DOT_ES_ENDPOINTS system property and validates the version
      *
-     * Given Scenario: Integration tests with DOT_ES_ENDPOINTS_3X property from Maven POM
+     * Given Scenario: Integration tests with DOT_ES_ENDPOINTS property from Maven POM
      * Expected: Should connect to OpenSearch 3.x instance and return version starting with "3."
      */
     @Test
@@ -407,19 +407,19 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Given Scenario: Read OpenSearch 3.x endpoint from Maven POM system property
-            String opensearch3xEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_3X", "");
+            String opensearchUpgradeEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_UPGRADE", "");
 
             Logger.info(this, "🔍 Testing OpenSearch 3.x version validation from Maven properties");
-            Logger.info(this, "🔍 DOT_ES_ENDPOINTS_3X property: " + opensearch3xEndpoint);
+            Logger.info(this, "🔍 DOT_ES_ENDPOINTS_UPGRADE property: " + opensearchUpgradeEndpoint);
 
             // Verify the property is correctly set from Maven
-            assertNotNull("DOT_ES_ENDPOINTS_3X should not be null", opensearch3xEndpoint);
-            assertTrue("DOT_ES_ENDPOINTS_3X should contain localhost:9201",
-                      opensearch3xEndpoint.contains("localhost:9201"));
+            assertNotNull("DOT_ES_ENDPOINTS_UPGRADE should not be null", opensearchUpgradeEndpoint);
+            assertTrue("DOT_ES_ENDPOINTS_UPGRADE should contain localhost:9201",
+                      opensearchUpgradeEndpoint.contains("localhost:9201"));
 
             // Create configuration using the Maven property
             OpenSearchClientConfig config = OpenSearchClientConfig.builder()
-                    .addEndpoints(opensearch3xEndpoint)  // Use Maven property value
+                    .addEndpoints(opensearchUpgradeEndpoint)  // Use Maven property value
                     .tlsEnabled(false)
                     .connectionTimeout(Duration.ofSeconds(15))
                     .socketTimeout(Duration.ofSeconds(15))
@@ -453,13 +453,13 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
             Logger.info(this, "✅ - Build Hash: " + buildHash.substring(0, Math.min(12, buildHash.length())) + "...");
             Logger.info(this, "✅ - Build Date: " + buildDate);
             Logger.info(this, "✅ - Lucene Version: " + luceneVersion);
-            Logger.info(this, "✅ - Endpoint Used: " + opensearch3xEndpoint);
-            Logger.info(this, "✅ - Maven Property: DOT_ES_ENDPOINTS_3X");
+            Logger.info(this, "✅ - Endpoint Used: " + opensearchUpgradeEndpoint);
+            Logger.info(this, "✅ - Maven Property: DOT_ES_ENDPOINTS_UPGRADE");
 
             // Additional cluster verification
             var healthResponse = client.cluster().health();
-            assertEquals("Should connect to opensearch-3x-cluster",
-                        "opensearch-3x-cluster", healthResponse.clusterName());
+            assertEquals("Should connect to opensearch-cluster",
+                        "opensearch-cluster", healthResponse.clusterName());
 
             Logger.info(this, "✅ Cluster Name Verified: " + healthResponse.clusterName());
             Logger.info(this, "✅ OpenSearch 3.x version validation PASSED!");
@@ -467,11 +467,11 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         } catch (OpenSearchException e) {
             Logger.error(this, "❌ OpenSearch API error during version validation: " + e.getMessage());
             Logger.error(this, "❌ Status: " + e.status());
-            Logger.error(this, "❌ Make sure opensearch-3x container is running with OpenSearch 3.0.0 image");
+            Logger.error(this, "❌ Make sure opensearch container is running with OpenSearch 3.0.0 image");
             fail("OpenSearch 3.x version validation failed. API error: " + e.getMessage());
         } catch (IOException e) {
             Logger.error(this, "❌ Connection error during version validation: " + e.getMessage());
-            Logger.error(this, "❌ Check that opensearch-3x service is running on port 9201");
+            Logger.error(this, "❌ Check that opensearch service is running on port 9201");
             fail("Cannot connect to OpenSearch 3.x for version validation. Connection error: " + e.getMessage());
         } catch (Exception e) {
             Logger.error(this, "❌ Unexpected error during version validation: " + e.getMessage(), e);
