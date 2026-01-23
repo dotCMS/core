@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
+import cfonts from 'cfonts';
 import chalk from 'chalk';
 import { Command } from 'commander';
 import { execa } from 'execa';
-import ora from 'ora';
+import ora, { Ora } from 'ora';
 import { Result, Ok, Err } from 'ts-results';
 
 import path from 'path';
@@ -65,12 +66,8 @@ program
     .option('-p, --password <password>', 'DotCMS instance password (skip in case of local)')
 
     .action(async (options: DotCmsCliOptions) => {
-        // console.log(options);
-
         // welcome cli
-        console.log(chalk.white('\nWelcome to dotCMS CLI\n'));
-        console.log(chalk.bgGrey.white('\n ℹ️  Beta: Features may change \n'));
-
+        printWelcomeScreen();
         const projectNameFinal = options.name ?? (await askProjectName());
         const directoryInput = options.directory ?? (await askDirectory());
         const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
@@ -153,34 +150,9 @@ program
             } else {
                 spinner.succeed(`Configured the Universal Visual Editor`);
             }
-
-            spinner.start(`⏳ Scaffolding ${selectedFramework} project...`);
-            const created = await scaffoldFrontendProject({
-                framework: selectedFramework as SupportedFrontEndFrameworks,
-                directory: finalDirectory
-            });
-
-            if (!created.ok) {
-                spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
-                return;
-            }
-
-            // TODO need to insert here the dependices step
-            spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
-            spinner.start(
-                `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
-            );
-            const result = await installDependenciesForProject(finalDirectory);
-            if (!result)
-                spinner.fail(
-                    `Failed to install dependencies.Please check if npm is installed in your system`
-                );
-            else spinner.succeed(`Dependencies installed`);
-            console.log('\n\n');
-            spinner.stop();
+            await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
             console.log(chalk.white(`✅ Project setup complete!`));
             const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
-
             displayFinalSteps({
                 host: urlDotcmsInstance,
                 relativePath,
@@ -269,37 +241,12 @@ program
         } else {
             spinner.succeed(`Configured the Universal Visual Editor`);
         }
-        // STEP 1 — Scaffold front-end
-        spinner.start(`⏳ Scaffolding ${selectedFramework} project...`);
-        // this is required because git needs empty folder to start
+        // required since git requires empty directory
         moveDockerComposeOneLevelUp(finalDirectory);
-        const created = await scaffoldFrontendProject({
-            framework: selectedFramework as SupportedFrontEndFrameworks,
-            directory: finalDirectory
-        });
+        await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
         moveDockerComposeBack(finalDirectory);
-
-        if (!created.ok) {
-            spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
-            return;
-        }
-
-        // TODO need to insert here the dependices step
-        spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
-        spinner.start(
-            `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
-        );
-        const result = await installDependenciesForProject(finalDirectory);
-        if (!result)
-            spinner.fail(
-                `Failed to install dependencies.Please check if npm is installed in your system`
-            );
-        else spinner.succeed(`Dependencies installed`);
-        console.log('\n\n');
-        spinner.stop();
         console.log(chalk.white(`✅ Project setup complete!`));
         const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
-
         displayFinalSteps({
             host: 'http://localhost:8082',
             relativePath,
@@ -344,7 +291,7 @@ async function downloadTheDockerCompose({
     directory: string;
 }): Promise<Result<void, FailedToDownloadDockerComposeError>> {
     try {
-        // console.log(chalk.cyan("📥 Downloading docker-compose.yml..."));
+        // console.log(chalk.cyan(""));
 
         await downloadDockerCompose(directory);
 
@@ -440,5 +387,59 @@ function displayFinalSteps({
             break;
         }
     }
+}
+
+async function startScaffoldingFrontEnd({
+    spinner,
+    selectedFramework,
+    finalDirectory
+}: {
+    spinner: Ora;
+    selectedFramework: SupportedFrontEndFrameworks;
+    finalDirectory: string;
+}) {
+    spinner.start(`⏳ Scaffolding ${selectedFramework} project...`);
+    const created = await scaffoldFrontendProject({
+        framework: selectedFramework as SupportedFrontEndFrameworks,
+        directory: finalDirectory
+    });
+
+    if (!created.ok) {
+        spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
+        return;
+    }
+
+    // TODO need to insert here the dependices step
+    spinner.succeed(`Frontend project (${selectedFramework}) scaffolded successfully.`);
+    spinner.start(
+        `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
+    );
+    const result = await installDependenciesForProject(finalDirectory);
+    if (!result)
+        spinner.fail(
+            `Failed to install dependencies.Please check if npm is installed in your system`
+        );
+    else spinner.succeed(`Dependencies installed`);
+    console.log('\n\n');
+    spinner.stop();
+}
+function printWelcomeScreen() {
+    cfonts.say('DOTCMS', {
+        font: 'block', // define the font face
+        align: 'left', // define text alignment
+        colors: ['system'], // define all colors
+        background: 'transparent', // define the background color, you can also use `backgroundColor` here as key
+        letterSpacing: 1, // define letter spacing
+        lineHeight: 1, // define the line height
+        space: true, // define if the output text should have empty lines on top and on the bottom
+        maxLength: '0', // define how many character can be on one line
+        gradient: false, // define your two gradient colors
+        independentGradient: false, // define if you want to recalculate the gradient for each new line
+        transitionGradient: false, // define if this is a transition between colors directly
+        rawMode: false, // define if the line breaks should be CRLF (`\r\n`) over the default LF (`\n`)
+        env: 'node' // define the environment cfonts is being executed in
+    });
+    console.log(chalk.white('\nWelcome to dotCMS CLI'));
+    console.log(chalk.bgGrey.white('\n ℹ️  Beta: Features may change \n'));
 }
 createApp();
