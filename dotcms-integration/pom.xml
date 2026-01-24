@@ -70,15 +70,14 @@
         <!--suppress UnresolvedMavenProperty -->
         <test.db.username>postgres${surefire.forkNumber}</test.db.username>
         <test.db.password>postgres</test.db.password>
+        <!-- Legacy ElasticSearch -->
         <test.es.scheme>http</test.es.scheme>
         <test.es.host>localhost</test.es.host>
         <test.es.port>${es.port}</test.es.port>
-        <!-- Legacy ElasticSearch -->
+        <test.es.endpoints>${test.es.scheme}://${test.es.host}:${es.port}</test.es.endpoints>
+        <!-- Open Search Upgrade -->
         <test.os.upgrade.scheme>http</test.os.upgrade.scheme>
         <test.os.upgrade.host>localhost</test.os.upgrade.host>
-        <test.os.upgrade.port>${os.upgrade.port}</test.os.upgrade.port>
-        <!-- Open Search Upgrade -->
-        <test.os.endpoints>${test.es.scheme}://${test.es.host}:${es.port}</test.os.endpoints>
         <test.os.upgrade.port>${os.upgrade.port}</test.os.upgrade.port>
         <test.os.upgrade.endpoints>${test.os.upgrade.scheme}://${test.os.upgrade.host}:${os.upgrade.port}</test.os.upgrade.endpoints>
         <maven.failsafe.debugArgs/>
