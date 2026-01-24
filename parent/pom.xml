@@ -71,6 +71,8 @@
         <!--suppress UnresolvedMavenProperty -->
         <docker.image.search>${ext.docker.image.search}</docker.image.search>
         <!--suppress UnresolvedMavenProperty -->
+        <docker.image.search.upgrade>${ext.docker.image.search.upgrade}</docker.image.search.upgrade>
+        <!--suppress UnresolvedMavenProperty -->
         <docker.image.postgres>${ext.docker.image.postgres}</docker.image.postgres>
         <!--suppress UnresolvedMavenProperty -->
         <context.name>${ext.default.context.name}</context.name>
@@ -193,6 +195,7 @@
         <docker.starter.volume.internal>/data/starter</docker.starter.volume.internal>
         <docker.db.volume>${docker.run.context}_db</docker.db.volume>
         <docker.es.volume>${docker.run.context}_es</docker.es.volume>
+        <docker.os.upgrade.volume>${docker.run.context}_os-upgrade</docker.os.upgrade.volume>
         <docker.skip.clean.before>false</docker.skip.clean.before>
         <docker.skip.clean.after>false</docker.skip.clean.after>
         <debug.suspend.flag>n</debug.suspend.flag>
@@ -299,6 +302,10 @@
                                 <name>${docker.data.shared.volume}</name>
                                 <driver>local</driver>
                             </volume>
+                            <volume>
+                                <name>${docker.os.upgrade.volume}</name>
+                                <driver>local</driver>
+                            </volume>
                         </volumes>
                         <imagesMap>
                             <database>
@@ -368,6 +375,46 @@
                                     </log>
                                 </run>
                             </opensearch>
+                            <opensearch-upgrade>
+                                <name>${docker.image.search.upgrade}</name>
+                                <run>
+                                    <env>
+                                        <cluster.name>opensearch-upgrade-cluster</cluster.name>
+                                        <discovery.type>single-node</discovery.type>
+                                        <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
+                                        <bootstrap.memory_lock>true</bootstrap.memory_lock>
+                                        <DISABLE_SECURITY_PLUGIN>true</DISABLE_SECURITY_PLUGIN>
+                                        <OPENSEARCH_JAVA_OPTS>-Xms512m -Xmx512m -XX:-UseContainerSupport</OPENSEARCH_JAVA_OPTS>
+                                    </env>
+                                    <ports>
+                                        <port>os.upgrade.port:9204</port>
+                                    </ports>
+                                    <volumes>
+                                        <bind>
+                                            <volume>${docker.os.upgrade.volume}:/usr/share/opensearch-upgrade/data</volume>
+                                        </bind>
+                                    </volumes>
+                                    <ulimits>
+                                        <ulimit>
+                                            <name>memlock</name>
+                                            <hard>-1</hard>
+                                            <soft>-1</soft>
+                                        </ulimit>
+                                    </ulimits>
+                                    <wait>
+                                        <http>
+                                            <!--suppress UnresolvedMavenProperty -->
+                                            <url>http://${docker.host.address}:${os.upgrade.port}</url>
+                                        </http>
+                                        <time>120000</time>
+                                        <shutdown>5000</shutdown>
+                                    </wait>
+                                    <log>
+                                        <prefix>[OS-UPGRADE]</prefix>
+                                        <color>yellow</color>
+                                    </log>
+                                </run>
+                            </opensearch-upgrade>
                             <dotcms>
                                 <name>${dotcms.image.name}</name>
                                 <external>
@@ -414,6 +461,7 @@
                                     <links>
                                         <link>database:db</link>
                                         <link>opensearch:es</link>
+                                        <link>opensearch-upgrade:os</link>
                                     </links>
                                     <log>
                                         <prefix>[DOTCMS]</prefix>

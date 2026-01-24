@@ -64,6 +64,7 @@
         <test.db.db>dotcms${surefire.forkNumber}</test.db.db>
         <db.port>5437</db.port>
         <es.port>9207</es.port>
+        <os.upgrade.port>9201</os.upgrade.port>
         <test.db.port>${db.port}</test.db.port>
         <test.db.url>jdbc:postgresql://${test.db.host}:${test.db.port}/${test.db.db}?autosave=conservative</test.db.url>
         <!--suppress UnresolvedMavenProperty -->
@@ -72,10 +73,17 @@
         <test.es.scheme>http</test.es.scheme>
         <test.es.host>localhost</test.es.host>
         <test.es.port>${es.port}</test.es.port>
-        <test.es.endpoints>${test.es.scheme}://${test.es.host}:${es.port}</test.es.endpoints>
+        <!-- Legacy ElasticSearch -->
+        <test.os.upgrade.scheme>http</test.os.upgrade.scheme>
+        <test.os.upgrade.host>localhost</test.os.upgrade.host>
+        <test.os.upgrade.port>${os.upgrade.port}</test.os.upgrade.port>
+        <!-- Open Search Upgrade -->
+        <test.os.endpoints>${test.es.scheme}://${test.es.host}:${es.port}</test.os.endpoints>
+        <test.os.upgrade.port>${os.upgrade.port}</test.os.upgrade.port>
+        <test.os.upgrade.endpoints>${test.os.upgrade.scheme}://${test.os.upgrade.host}:${os.upgrade.port}</test.os.upgrade.endpoints>
         <maven.failsafe.debugArgs/>
         <coreit.test.skip>true</coreit.test.skip>
-        <docker.filter>database,opensearch</docker.filter>
+        <docker.filter>database,opensearch,opensearch-upgrade</docker.filter>
           <!-- Force to use node v18.20.3 -->
         <node.js.version>v18.20.3</node.js.version>
     </properties>
