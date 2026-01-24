@@ -179,8 +179,10 @@ export class DotErrorAISearch extends Error {
  * @public
  * @interface DotCMSAISearchResponse
  */
-export interface DotCMSAISearchResponse<T extends DotCMSBasicContentlet>
-    extends Omit<DotCMSAISearchRawResponse<T>, 'dotCMSResults'> {
+export interface DotCMSAISearchResponse<T extends DotCMSBasicContentlet> extends Omit<
+    DotCMSAISearchRawResponse<T>,
+    'dotCMSResults'
+> {
     /**
      * The results from the AI search.
      * @property {DotCMSAISearchContentletData<T>[]} results - The results from the AI search.

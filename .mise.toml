@@ -29,3 +29,12 @@ experimental = true
 
 # Automatically install missing tools
 auto_install = true
+
+# Enable reading legacy version files (.nvmrc, .sdkmanrc, etc.)
+# This allows mise to automatically detect Node.js and Java versions
+# from existing version files without explicit configuration in .mise.toml
+legacy_version_file = true
+
+# Enable idiomatic version file detection for Java and Node
+# Required for mise to read .java-version, .sdkmanrc, and .nvmrc files
+idiomatic_version_file_enable_tools = ["java", "node"]
