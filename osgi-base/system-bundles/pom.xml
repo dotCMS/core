@@ -13,7 +13,7 @@
 
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tika.version>1.28.5</tika.version>
+        <tika.version>3.2.2</tika.version>
         <spifly.version>1.3.6</spifly.version>
         <asm.version>9.4</asm.version>
         <tika.plugin.bundle.version>2.7.0</tika.plugin.bundle.version>
