@@ -1,10 +1,10 @@
+import { DotCMSEditableText } from "@dotcms/react";
 import Image from "next/image";
 import Link from "next/link";
-import { DotCMSEditableText } from "@dotcms/react";
 
 function Banner(contentlet) {
     const { title, caption, inode, image, link, buttonText, dotStyleProperties } = contentlet;
-    console.log(dotStyleProperties);
+    
     // Extract style properties with defaults
     const titleSize = dotStyleProperties?.["title-size"] || "text-6xl"
     const captionSize = dotStyleProperties?.["caption-size"] || "text-xl"
