@@ -1,197 +1,64 @@
 <div
-    style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #faf5ff 100%)"
-    class="dot-onboarding"
-    #onboardingContainer>
+    style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #faf5ff 100%); height: 100%"
+    class="dot-onboarding relative">
     <p class="button-link flex items-center" (click)="resetUserProfile()">
         <img src="dotAdmin/assets/logos/sync.svg" alt="" />
         <span class="mx-1 underline">Not a developer?</span>
     </p>
-    <div class="dot-onboarding__content">
+    <div class="">
         <header>
             <h1>Start with dotCMS headless development in minutes</h1>
+            <p>Seamlessly integrate dotCMS into your favorite technology stack.</p>
         </header>
-
-        <p-tabView (onChange)="changeSelectedFramework($event.index)" styleClass="tabview-custom ">
-            @for (framework of frameworks; track framework.id) {
-                <p-tabPanel [disabled]="framework.disabled">
-                    <ng-template pTemplate="header">
-                        <div class="flex align-items-center gap-2">
-                            <p-avatar
-                                [image]="framework.logo"
-                                styleClass="bg-white"
-                                size="normal"
-                                shape="square" />
-                            <span class="white-space-nowrap text-md m-0">
-                                {{ framework.label }}
+        @for (framework of frameworks; track framework.id) {
+            <div style="width: 562px" class="framework-container mx-auto bg-white">
+                <div class="">
+                    <p-avatar
+                        [image]="framework.logo"
+                        size="large"
+                        shape="square"
+                        styleClass="bg-white w-40 h-40"></p-avatar>
+                </div>
+                <div class="flex-column">
+                    <h3 class="m-0 p-0 titleFramework">{{ framework.label }}</h3>
+                    @if (framework.cliCommand !== '') {
+                        <p class="commandClass">> {{ framework.cliCommand }}</p>
+                    } @else {
+                        <p class="paragraphFramework">
+                            Our interactive guide is coming soon. Try the fully configured
+                            <a
+                                target="_blank"
+                                style="text-decoration: none"
+                                href="{{ framework.githubUrl }}">
+                                {{ framework.label }} starter kit
+                            </a>
+                        </p>
+                    }
+                </div>
+                @if (framework.cliCommand !== '') {
+                    <div class="relative">
+                        <img
+                            (click)="copyToClipboard(framework)"
+                            [src]="'/dotAdmin/assets/logos/copy.svg'"
+                            class="bg-white cursor-pointer w-40 h-40" />
+                        @if (framework.copied) {
+                            <span
+                                style="top: 20px; left: 20px"
+                                class="absolute text-xs text-black px-2 py-1 rounded">
+                                Copied!
                             </span>
-                        </div>
-                    </ng-template>
-                    <div class="px-2 px-4">
-                        <section class="mt-4">
-                            <ng-template #buttonTemplate>
-                                <dot-button-copy />
-                            </ng-template>
-                            <markdown
-                                clipboard
-                                commandLine
-                                [data]="formatSubstep()"
-                                [clipboardButtonTemplate]="buttonTemplate"></markdown>
-                        </section>
+                        }
                     </div>
-                </p-tabPanel>
-            }
-        </p-tabView>
-        <!--        <section>-->
-        <!--            <p>Replace the <b>USERNAME</b>and <b>PASSWORD</b> placeholders with your own credentials, run the command,-->
-        <!--                and follow the CLI steps.</p>-->
-        <!--            <div>-->
-        <!--                <ng-template #buttonTemplate>-->
-        <!--                    <dot-button-copy/>-->
-        <!--                </ng-template>-->
-        <!--                <markdown-->
-        <!--                    clipboard-->
-        <!--                    commandLine-->
-        <!--                    [data]="formatSubstep()"-->
-        <!--                    [clipboardButtonTemplate]="buttonTemplate"></markdown>-->
-        <!--            </div>-->
-        <!--            <p class="mt-4">Following CLI options are used: </p>-->
-        <!--            <markdown-->
-        <!--                class="mt-4 dot-step__substep-description"-->
-        <!--                [data]=" `\n- **&#45;&#45;framework** : Specifies the frontend framework to use.-->
-        <!--                \n- **&#45;&#45;directory** : Sets the project directory.-->
-        <!--                \n- **&#45;&#45;url**: dotCMS Cloud instance URL.-->
-        <!--                \n- **&#45;&#45;username**: dotCMS Cloud instance username.-->
-        <!--                \n- **&#45;&#45;password**: dotCMS Cloud instance password.-->
-        <!--                \n⚠️ **Save the generated variables(siteID,token) — once the terminal is cleared they are lost.**-->
-        <!--                `-->
-        <!--"></markdown>-->
-        <!--        </section>-->
-
-        <!--        <section class="dot-onboarding__steps">-->
-        <!--            <p-accordion-->
-        <!--                (activeIndexChange)="activeIndexChange($event)"-->
-        <!--                [activeIndex]="state().activeAccordionIndex"-->
-        <!--                [multiple]="false">-->
-        <!--                @for (step of content.steps; let i = $index; track step) {-->
-        <!--                    <p-accordionTab>-->
-        <!--                        <ng-template pTemplate="header">-->
-        <!--                            <div class="flex gap-2 justify-content-between w-full">-->
-        <!--                                <h2>{{ step.number + '. ' + step.title }}</h2>-->
-        <!--                                @if (isStepCompleted(i)) {-->
-        <!--                                    <i class="pi pi-circle-on dot-onboarding__step-completed"></i>-->
-        <!--                                } @else {-->
-        <!--                                    <i class="pi pi-circle-off"></i>-->
-        <!--                                }-->
-        <!--                            </div>-->
-        <!--                        </ng-template>-->
-        <!--                        <div class="dot-step">-->
-        <!--                            @if (step.videoPath) {-->
-        <!--                                <div class="dot-step__video"></div>-->
-        <!--                            }-->
-        <!--                            @if (step.description) {-->
-        <!--                                <markdown class="dot-step__description" [data]="step.description" />-->
-        <!--                            }-->
-
-        <!--                            @if (step.substeps?.length) {-->
-        <!--                                <hr />-->
-        <!--                            }-->
-
-        <!--                            <div class="dot-step__substeps">-->
-        <!--                                @if (step.substeps?.length) {-->
-        <!--                                    @for (substep of step.substeps; track substep) {-->
-        <!--                                        <div class="dot-step__substep">-->
-        <!--                                            <div>-->
-        <!--                                                <h3>{{ substep.explanation.title }}</h3>-->
-        <!--                                                <markdown-->
-        <!--                                                    class="dot-step__substep-description"-->
-        <!--                                                    [data]="-->
-        <!--                                                        substep.explanation.description-->
-        <!--                                                    "></markdown>-->
-        <!--                                            </div>-->
-        <!--                                            @if (substep.code !== '') {-->
-        <!--                                                <div>-->
-        <!--                                                    @if (substep.filePath) {-->
-        <!--                                                        <div class="dot-step__file-path">-->
-        <!--                                                            {{ substep.filePath }}-->
-        <!--                                                        </div>-->
-        <!--                                                    } @else {-->
-        <!--                                                        <div class="dot-step__file-path">-->
-        <!--                                                            {{ substep.type }}-->
-        <!--                                                        </div>-->
-        <!--                                                    }-->
-        <!--                                                    <ng-template #buttonTemplate>-->
-        <!--                                                        <dot-button-copy />-->
-        <!--                                                    </ng-template>-->
-        <!--                                                    <markdown-->
-        <!--                                                        clipboard-->
-        <!--                                                        [data]="formatSubstep(substep)"-->
-        <!--                                                        [clipboardButtonTemplate]="-->
-        <!--                                                            buttonTemplate-->
-        <!--                                                        "></markdown>-->
-        <!--                                                </div>-->
-        <!--                                            }-->
-        <!--                                        </div>-->
-        <!--                                    }-->
-        <!--                                }-->
-        <!--                            </div>-->
-
-        <!--                            <button-->
-        <!--                                class="dot-step__next-button"-->
-        <!--                                type="button"-->
-        <!--                                pButton-->
-        <!--                                label="Next Step"-->
-        <!--                                (click)="activeIndexChange(i + 1)"></button>-->
-        <!--                        </div>-->
-        <!--                    </p-accordionTab>-->
-        <!--                }-->
-        <!--            </p-accordion>-->
-        <!--        </section>-->
+                } @else {
+                    <div>
+                        <a target="_blank" href="{{ framework.githubUrl }}">
+                            <img
+                                [src]="'/dotAdmin/assets/logos/external-link.svg'"
+                                class="bg-white w-40 h-40" />
+                        </a>
+                    </div>
+                }
+            </div>
+        }
     </div>
 </div>
-
-<!--<section class="dot-onboarding__progress" aria-label="Progress tracker">-->
-<!--    <div class="dot-onboarding__progress-container">-->
-<!--        <div class="dot-onboarding__progress-left">-->
-<!--            <p class="dot-onboarding__current-title">-->
-<!--                {{ state.currentStateLabel() }}-->
-<!--            </p>-->
-<!--        </div>-->
-
-<!--        <div class="dot-onboarding__progress-ring">-->
-<!--            <span class="dot-onboarding__progress-percentage">-->
-<!--                {{ state().progress | number: '1.0-0' }}%-->
-<!--            </span>-->
-<!--            <p-knob-->
-<!--                [(ngModel)]="state().progress"-->
-<!--                [readonly]="true"-->
-<!--                [size]="24"-->
-<!--                [strokeWidth]="6"-->
-<!--                valueTemplate=" "></p-knob>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</section>-->
-
-<p-overlayPanel #frameworkInfoOverlay>
-    <div class="flex flex-column gap-3" style="max-width: 20rem">
-        <div>
-            <span class="font-medium text-900 block mb-2">
-                Ready to build with {{ selectedFrameworkInfo?.label }}?
-            </span>
-            <p class="text-600 m-0">
-                The interactive guide is in development, but you can check out our fully configured
-                {{ selectedFrameworkInfo?.label }} starter kit today
-            </p>
-        </div>
-        <div>
-            <a
-                [href]="selectedFrameworkInfo?.githubUrl"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex align-items-center gap-2 text-primary no-underline">
-                <i class="pi pi-github"></i>
-                <span class="font-medium">View Starter Kit</span>
-                <i class="pi pi-external-link text-sm"></i>
-            </a>
-        </div>
-    </div>
-</p-overlayPanel>
