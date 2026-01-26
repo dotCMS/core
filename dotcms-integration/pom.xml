@@ -504,7 +504,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <filter>database,opensearch</filter>
+                    <filter>database,opensearch,opensearch-upgrade</filter>
                     <!-- We do not start up dotcms only services -->
                     <imagesMap>
                         <database>
