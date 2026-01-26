@@ -1,8 +1,10 @@
 import { InferInputSignals } from '@ngneat/spectator';
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormGroup } from '@angular/forms';
 
 import { Accordion, AccordionModule } from 'primeng/accordion';
@@ -10,11 +12,13 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -80,6 +84,12 @@ describe('DotUveStyleEditorFormComponent', () => {
     let mockUveStore: {
         currentIndex: ReturnType<typeof signal<number>>;
         activeContentlet: ReturnType<typeof signal<ActionPayload | null>>;
+        graphqlResponse: ReturnType<typeof signal<DotCMSPageAsset | null>>;
+        $customGraphqlResponse: ReturnType<typeof computed<DotCMSPageAsset | null>>;
+        saveStyleEditor: jest.Mock;
+        rollbackGraphqlResponse: jest.Mock;
+        addHistory: jest.Mock;
+        setGraphqlResponse: jest.Mock;
     };
 
     const createComponent = createComponentFactory({
@@ -98,10 +108,46 @@ describe('DotUveStyleEditorFormComponent', () => {
         ]
     });
 
+    const createMockGraphQLResponse = (fontSize: number): DotCMSPageAsset =>
+        ({
+            page: {
+                identifier: 'test-page',
+                title: 'Test Page'
+            },
+            containers: {
+                'test-container': {
+                    contentlets: {
+                        'uuid-test-uuid': [
+                            {
+                                identifier: 'test-id',
+                                inode: 'test-inode',
+                                title: 'Test',
+                                contentType: 'test-content-type',
+                                dotStyleProperties: {
+                                    'font-size': fontSize
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }) as unknown as DotCMSPageAsset;
+
     beforeEach(() => {
+        const graphqlResponseSignal = signal<DotCMSPageAsset | null>(null);
+        const customGraphqlResponseComputed = computed(() => graphqlResponseSignal());
+
         mockUveStore = {
             currentIndex: signal(0),
-            activeContentlet: signal(null)
+            activeContentlet: signal(null),
+            graphqlResponse: graphqlResponseSignal,
+            $customGraphqlResponse: customGraphqlResponseComputed,
+            saveStyleEditor: jest.fn(),
+            rollbackGraphqlResponse: jest.fn().mockReturnValue(true),
+            addHistory: jest.fn(),
+            setGraphqlResponse: jest.fn((response: DotCMSPageAsset | null) => {
+                graphqlResponseSignal.set(response);
+            })
         };
 
         spectator = createComponent({
@@ -218,5 +264,100 @@ describe('DotUveStyleEditorFormComponent', () => {
             expect(textDecorationGroup.get('underline')?.value).toBe(false);
             expect(textDecorationGroup.get('overline')?.value).toBe(true);
         });
+    });
+
+    describe('rollback and form restoration', () => {
+        beforeEach(() => {
+            // Set up activeContentlet with initial style properties
+            mockUveStore.activeContentlet.set({
+                contentlet: {
+                    identifier: 'test-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'test-content-type',
+                    dotStyleProperties: {
+                        'font-size': 16
+                    }
+                },
+                container: {
+                    acceptTypes: 'test',
+                    identifier: 'test-container',
+                    maxContentlets: 1,
+                    variantId: 'test-variant',
+                    uuid: 'test-uuid'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'test-page'
+            });
+
+            // Set initial graphqlResponse
+            const initialResponse = createMockGraphQLResponse(16);
+            mockUveStore.graphqlResponse.set(initialResponse);
+        });
+
+        it('should restore form values after rollback on save failure', fakeAsync(() => {
+            // Create component with activeContentlet
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+
+            const form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(16);
+
+            // Mock saveStyleEditor to fail and simulate rollback by updating graphqlResponse
+            const rolledBackResponse = createMockGraphQLResponse(16);
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                throwError(() => {
+                    // Simulate store's rollback behavior: update graphqlResponse to rolled-back state
+                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    return new Error('Save failed');
+                })
+            );
+
+            // Change form value (this triggers the save flow)
+            form?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100); // Wait for debounce + error handling
+
+            // Verify form is restored to rolled-back value
+            expect(form?.get('font-size')?.value).toBe(16);
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalled();
+        }));
+
+        it('should handle consecutive rollback failures correctly', fakeAsync(() => {
+            // Create component with activeContentlet
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+
+            const form = spectator.component.$form();
+            const rolledBackResponse = createMockGraphQLResponse(16);
+
+            // Mock saveStyleEditor to always fail and rollback to 16
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                throwError(() => {
+                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    return new Error('Save failed');
+                })
+            );
+
+            // First failure: change from 16 to 20, then fail
+            form?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            expect(form?.get('font-size')?.value).toBe(16); // Rolled back to 16
+
+            // Second failure: change from 16 to 24, then fail again
+            form?.patchValue({ 'font-size': 24 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            expect(form?.get('font-size')?.value).toBe(16); // Should rollback to 16, not 24
+        }));
     });
 });

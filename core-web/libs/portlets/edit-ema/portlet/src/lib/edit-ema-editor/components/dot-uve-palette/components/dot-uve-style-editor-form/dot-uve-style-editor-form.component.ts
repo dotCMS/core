@@ -136,8 +136,9 @@ export class DotUveStyleEditorFormComponent {
     #restoreFormFromRollback(): void {
         const form = this.#form();
         const activeContentlet = this.#uveStore.activeContentlet();
+        const schema = this.$schema();
 
-        if (!form || !activeContentlet) {
+        if (!form || !activeContentlet || !schema) {
             return;
         }
 
@@ -156,11 +157,12 @@ export class DotUveStyleEditorFormComponent {
                 activeContentlet
             );
 
-            if (styleProperties) {
-                // Update form values without triggering valueChanges
-                // Use patchValue with emitEvent: false to prevent triggering form changes
-                form.patchValue(styleProperties, { emitEvent: false });
-            }
+            // Rebuild the form with the rolled-back style properties to ensure complete sync
+            // This is more reliable than patching, as it ensures all form controls match the schema
+            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties || undefined);
+
+            // Copy values from rebuilt form to current form without triggering valueChanges
+            form.patchValue(restoredForm.value, { emitEvent: false });
         } catch (error) {
             console.error('Error restoring form from rollback:', error);
         }
@@ -212,17 +214,19 @@ export class DotUveStyleEditorFormComponent {
                 return;
             }
 
-            // Update the internal response (mutates the pageAsset in place)
-            // Since $customGraphqlResponse is computed from graphqlResponse(),
-            // updating the internal response will automatically reflect in the computed
+            // Deep clone the graphqlResponse before mutating to prevent affecting history entries
+            // This ensures that mutations don't affect the stored state in history
+            const clonedResponse = structuredClone(internalGraphqlResponse);
+
+            // Update the cloned response (mutates the clone in place)
             const updatedInternalResponse = updateStylePropertiesInGraphQL(
-                internalGraphqlResponse,
+                clonedResponse,
                 activeContentlet,
                 formValues
             );
 
             // Optimistic update: Update state WITHOUT saving to history
-            // History is only saved when we actually call the API (in #saveStylePropertiesToApi)
+            // History is only saved when we actually call the API (in #saveStyleProperties)
             this.#uveStore.setGraphqlResponse(updatedInternalResponse);
 
             // Send updated response to iframe immediately for instant feedback
@@ -287,6 +291,11 @@ export class DotUveStyleEditorFormComponent {
                     });
                 },
                 error: (error) => {
+                    // Restore form values from rolled-back state
+                    // Rollback already happened synchronously in store's error handler,
+                    // so we can restore the form immediately
+                    this.#restoreFormFromRollback();
+
                     // Error toast - rollback already handled in store
                     this.#messageService.add({
                         severity: 'error',
