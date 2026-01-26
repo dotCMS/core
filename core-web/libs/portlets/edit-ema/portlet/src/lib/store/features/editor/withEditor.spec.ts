@@ -27,9 +27,10 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { ActionPayload } from '../../../shared/models';
+import { ActionPayload, ContainerPayload } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { UVEState } from '../../models';
+import { withPageContext } from '../withPageContext';
 
 const emptyParams = {} as DotPageApiParams;
 
@@ -64,6 +65,7 @@ const mockCanEditPage = signal(true);
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withPageContext(),
     withComputed(() => {
         return {
             $canEditPage: computed(() => mockCanEditPage())
@@ -933,9 +935,10 @@ describe('withEditor', () => {
         });
 
         describe('getCurrentTreeNode', () => {
-            it('should return the current TreeNode', () => {
+            it('should return the current TreeNode with variantId from store.$variantId()', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
 
+                // When variantId is not set in pageParams, $variantId() returns empty string
                 expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
@@ -943,8 +946,56 @@ describe('withEditor', () => {
                     personalization: 'dot:persona:dot:persona',
                     relationType: 'uuid-123',
                     treeOrder: '-1',
-                    variantId: '123'
+                    variantId: '' // Uses store.$variantId() which comes from pageParams()?.variantId ?? ''
                 });
+            });
+
+            it('should use variantId from store.$variantId() when variantId is set in pageParams', () => {
+                const { container, contentlet } = ACTION_PAYLOAD_MOCK;
+                const testVariantId = 'test-variant-id-123';
+
+                // Set variantId in pageParams
+                patchState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        variantId: testVariantId
+                    }
+                });
+
+                const result = store.getCurrentTreeNode(container, contentlet);
+
+                expect(result.variantId).toBe(testVariantId);
+                expect(result).toEqual({
+                    containerId: 'container-identifier-123',
+                    contentId: 'contentlet-identifier-123',
+                    pageId: '123',
+                    personalization: 'dot:persona:dot:persona',
+                    relationType: 'uuid-123',
+                    treeOrder: '-1',
+                    variantId: testVariantId
+                });
+            });
+
+            it('should not use variantId from container payload', () => {
+                const { contentlet } = ACTION_PAYLOAD_MOCK;
+                // Create a container with a different variantId to verify it's not used
+                const containerWithVariantId: ContainerPayload = {
+                    ...ACTION_PAYLOAD_MOCK.container,
+                    variantId: 'container-variant-id-should-not-be-used'
+                };
+
+                const testVariantId = 'store-variant-id';
+                patchState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        variantId: testVariantId
+                    }
+                });
+
+                const result = store.getCurrentTreeNode(containerWithVariantId, contentlet);
+
+                expect(result.variantId).toBe(testVariantId);
+                expect(result.variantId).not.toBe(containerWithVariantId.variantId);
             });
         });
 

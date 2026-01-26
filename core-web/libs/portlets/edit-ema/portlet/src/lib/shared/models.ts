@@ -72,7 +72,7 @@ export interface ContainerPayload {
     identifier: string;
     contentletsId?: string[];
     maxContentlets: number;
-    variantId: string;
+    variantId?: string; // Optional: containers don't have variantId, use page-level variantId instead
     uuid: string;
 }
 
