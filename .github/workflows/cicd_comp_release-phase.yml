@@ -109,7 +109,7 @@ jobs:
       - name: Deploy Release Artifacts to Artifactory
         run: |
           ./mvnw -ntp \
-            "${JVM_TEST_MAVEN_OPTS}" \
+            ${JVM_TEST_MAVEN_OPTS} \
             -Dprod=true \
             -DskipTests=true \
             deploy
@@ -118,7 +118,7 @@ jobs:
       - name: Generate and Upload Javadocs
         run: |
           ./mvnw -ntp \
-            "${JVM_TEST_MAVEN_OPTS}" \
+            ${JVM_TEST_MAVEN_OPTS} \
             javadoc:javadoc \
             -pl :dotcms-core
           rc=$?
