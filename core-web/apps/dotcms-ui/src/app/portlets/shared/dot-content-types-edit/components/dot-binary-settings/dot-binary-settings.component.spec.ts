@@ -13,7 +13,8 @@ import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { DotMessageService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -31,6 +32,12 @@ const SYSTEM_OPTIONS = JSON.stringify({
     allowCodeWrite: true,
     allowGenerateImg: false
 });
+
+const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    id: 'f965a51b-130a-435f-b646-41e07d685363',
+    name: 'testField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField'
+} as unknown;
 
 describe('DotBinarySettingsComponent', () => {
     let spectator: Spectator<DotBinarySettingsComponent>;
@@ -88,7 +95,14 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                props: {
+                    field: MOCK_FIELD
+                    // Note: Using `as unknown` because Spectator doesn't properly handle signal inputs
+                    // with the `$` prefix (e.g., `$field`). The type assertion bypasses TypeScript's
+                    // type checking for the props object.
+                } as unknown
+            });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 
@@ -105,31 +119,31 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should emit changeControls when isVisible input is true', () => {
-            jest.spyOn(component.changeControls, 'emit');
+            jest.spyOn(component.$changeControls, 'emit');
 
             spectator.setInput('isVisible', true);
 
-            expect(component.changeControls.emit).toHaveBeenCalled();
+            expect(component.$changeControls.emit).toHaveBeenCalled();
         });
 
         it('should emit valid output on form change', () => {
-            jest.spyOn(component.valid, 'emit');
+            jest.spyOn(component.$valid, 'emit');
 
             const acceptInput = spectator.query(byTestId('setting-accept'));
             spectator.typeInElement('text/*', acceptInput);
 
-            expect(component.valid.emit).toHaveBeenCalled();
+            expect(component.$valid.emit).toHaveBeenCalled();
         });
 
         it('should handler error if save properties failed', () => {
             jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
             jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-            jest.spyOn(component.save, 'emit');
+            jest.spyOn(component.$save, 'emit');
 
             component.saveSettings();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-            expect(component.save.emit).not.toHaveBeenCalled();
+            expect(component.$save.emit).not.toHaveBeenCalled();
         });
 
         it('should have 3 switches with the corresponding control name', () => {
@@ -185,7 +199,14 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         beforeEach(() => {
-            spectator = createComponent();
+            spectator = createComponent({
+                props: {
+                    field: MOCK_FIELD
+                    // Note: Using `as unknown` because Spectator doesn't properly handle signal inputs
+                    // with the `$` prefix (e.g., `$field`). The type assertion bypasses TypeScript's
+                    // type checking for the props object.
+                } as unknown
+            });
             dotFieldVariableService = spectator.inject(DotFieldVariablesService);
             dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
 
@@ -193,8 +214,10 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should not call save or delete when is empty and not previous variable exist', () => {
-            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of([]));
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of([]));
+            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
+                of({} as DotFieldVariable)
+            );
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of({} as DotFieldVariable));
 
             spectator.detectChanges();
 

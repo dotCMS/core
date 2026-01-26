@@ -3,6 +3,7 @@ import { Subject } from 'rxjs';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 
@@ -13,7 +14,7 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 @Component({
     selector: 'dot-alert-confirm',
     templateUrl: './dot-alert-confirm.html',
-    imports: [ConfirmDialogModule, DialogModule]
+    imports: [ConfirmDialogModule, DialogModule, ButtonModule]
 })
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     dotAlertConfirmService = inject(DotAlertConfirmService);
@@ -30,7 +31,9 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => {
                 const btn = this.confirmBtn || this.acceptBtn;
-                btn.nativeElement.focus();
+                if (btn?.nativeElement) {
+                    btn.nativeElement.focus();
+                }
             });
     }
 

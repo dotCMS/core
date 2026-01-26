@@ -1,29 +1,30 @@
 import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
+    ChangeDetectorRef,
     Component,
+    computed,
     ContentChild,
     ContentChildren,
     ElementRef,
     EventEmitter,
+    inject,
     Input,
     OnInit,
     Output,
     QueryList,
+    signal,
     TemplateRef,
-    ViewChild,
-    computed,
-    inject,
-    signal
+    ViewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem, PrimeTemplate } from 'primeng/api';
+import { MenuItem, PrimeTemplate } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ContextMenu } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
-import { Table, TableModule } from 'primeng/table';
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 
 import { take } from 'rxjs/operators';
 
@@ -80,6 +81,7 @@ function tableFactory(dotListingDataTableComponent: DotListingDataTableComponent
     ]
 })
 export class DotListingDataTableComponent implements OnInit, AfterViewInit {
+    private cdr = inject(ChangeDetectorRef);
     loggerService = inject(LoggerService);
     paginatorService = inject(PaginatorService);
 
@@ -147,9 +149,11 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit(): void {
-        // Update signal reactively when ViewChild becomes available
-        // This follows Angular 21 best practices - using signals instead of setTimeout
-        this.contextMenuRefSignal.set(this.contextMenuRef);
+        // Defer signal update to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
+        // The signal update must happen after the current change detection cycle completes
+        setTimeout(() => {
+            this.contextMenuRefSignal.set(this.contextMenuRef);
+        });
     }
 
     /**
@@ -201,12 +205,12 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
 
     /**
      * Call when click on any pagination link
-     * @param {LazyLoadEvent} event
+     * @param {TableLazyLoadEvent} event
      *
      * @memberof DotListingDataTableComponent
      */
-    loadDataPaginationEvent(event: LazyLoadEvent): void {
-        this.loadData(event.first, event.sortField, event.sortOrder);
+    loadDataPaginationEvent(event: TableLazyLoadEvent): void {
+        this.loadData(event.first, event.sortField as string, event.sortOrder);
     }
 
     /**
@@ -292,14 +296,15 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     }
 
     private setItems(items): void {
+        // Defer state updates to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
+        // This is needed because p-table with lazy loading triggers onLazyLoad during initialization
         setTimeout(() => {
-            // avoid ExpressionChangedAfterItHasBeenCheckedError on p-table on tests.
-            // TODO: Double check if versions after prime-ng 11.0.0 solve the need to add this hack.
             this.items = this.mapItems === undefined ? items : this.mapItems(items);
             this.loading = false;
             this.maxLinksPage = this.paginatorService.maxLinksPage;
             this.totalRecords = this.paginatorService.totalRecords;
-        }, 0);
+            this.cdr.markForCheck();
+        });
     }
 
     private isTypeNumber(col: DataTableColumn): boolean {

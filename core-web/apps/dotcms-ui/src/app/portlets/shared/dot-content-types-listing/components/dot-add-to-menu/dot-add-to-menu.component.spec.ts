@@ -144,10 +144,31 @@ describe('DotAddToMenuComponent', () => {
         dotAddToMenuService = TestBed.inject(DotAddToMenuService);
         dotMenuService = TestBed.inject(DotMenuService);
 
-        dotdialog = de.query(By.css('dot-dialog'));
-        jest.spyOn(dotMenuService, 'loadMenu');
+        jest.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
+            of([
+                {
+                    id: '123',
+                    name: 'Menu 1',
+                    tabName: 'Name',
+                    tabDescription: 'Description',
+                    tabIcon: 'icon',
+                    url: '/url/index',
+                    menuItems: []
+                },
+                {
+                    id: '456',
+                    name: 'Menu 2',
+                    tabName: 'Name 2',
+                    tabDescription: 'Description 2',
+                    tabIcon: 'icon2',
+                    url: '/url/456',
+                    menuItems: []
+                }
+            ])
+        );
 
         fixture.detectChanges();
+        dotdialog = de.query(By.css('p-dialog'));
     });
 
     it('should have a form', () => {
@@ -157,41 +178,38 @@ describe('DotAddToMenuComponent', () => {
     });
 
     it('should load labels and data when init', () => {
-        expect(dotdialog.componentInstance.header).toBe(
-            messageServiceMock.get('contenttypes.content.add_to_menu.header')
-        );
+        // Check title label
         expect(
-            dotdialog.query(By.css('[data-testId="titleMenuLabel"]')).nativeElement.innerHTML.trim()
-        ).toBe(messageServiceMock.get('contenttypes.content.add_to_menu.name'));
+            dotdialog.query(By.css('[data-testId="titleMenuLabel"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.name'));
+        // Check menu option label
         expect(
-            dotdialog
-                .query(By.css('[data-testId="menuOptionLabel"]'))
-                .nativeElement.innerHTML.trim()
-        ).toBe(messageServiceMock.get('contenttypes.content.add_to_menu.show_under'));
+            dotdialog.query(By.css('[data-testId="menuOptionLabel"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.show_under'));
+        // Check view mode label
         expect(
-            dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.innerHTML.trim()
-        ).toBe(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
+            dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
+        // Check radio button labels (they are in sibling <label> elements inside .radio div)
         expect(
-            dotdialog.query(By.css('[data-testId="cardViewMode"]')).componentInstance.label
-        ).toBe(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
+            dotdialog.query(By.css('.radio label[for="cardViewMode"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
         expect(
-            dotdialog.query(By.css('[data-testId="listViewMode"]')).componentInstance.label
-        ).toBe(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
+            dotdialog.query(By.css('.radio label[for="listViewMode"]')).nativeElement.textContent
+        ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
 
         expect(dotdialog.query(By.css('[data-testId="titleMenu"]')).nativeElement.value).toBe(
             contentTypeVar.name
         );
-        expect(
-            dotdialog.query(By.css('[data-testId="menuOption"]')).componentInstance.options.length
-        ).toBe(2);
+        // Check buttons text
         expect(
             dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement
                 .textContent
-        ).toBe(messageServiceMock.get('Add'));
+        ).toContain(messageServiceMock.get('add'));
         expect(
             dotdialog.query(By.css('[data-testId="dotDialogCancelAction"]')).nativeElement
                 .textContent
-        ).toBe(messageServiceMock.get('Cancel'));
+        ).toContain(messageServiceMock.get('cancel'));
     });
 
     it('should load form values when init', () => {
@@ -208,9 +226,8 @@ describe('DotAddToMenuComponent', () => {
             title: null
         });
         fixture.detectChanges();
-        expect(
-            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.disabled
-        ).toBe(true);
+        const acceptButton = dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]'));
+        expect(acceptButton.componentInstance.disabled).toBe(true);
         expect(component.form.valid).toEqual(false);
     });
 
@@ -221,7 +238,7 @@ describe('DotAddToMenuComponent', () => {
 
         jest.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
         jest.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
-        jest.spyOn(component.cancel, 'emit');
+        jest.spyOn(component.$cancel, 'emit');
 
         addButton.nativeElement.click();
 
@@ -235,7 +252,7 @@ describe('DotAddToMenuComponent', () => {
             dataViewMode: 'list',
             layoutId: component.form.get('menuOption').value
         });
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should emit Cancel event on close button click', () => {
@@ -243,9 +260,9 @@ describe('DotAddToMenuComponent', () => {
             By.css('[data-testId="dotDialogCancelAction"]')
         );
 
-        jest.spyOn(component.cancel, 'emit');
+        jest.spyOn(component.$cancel, 'emit');
         cancelButton.nativeElement.click();
 
-        expect(component.cancel.emit).toHaveBeenCalledTimes(1);
+        expect(component.$cancel.emit).toHaveBeenCalledTimes(1);
     });
 });

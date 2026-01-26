@@ -112,14 +112,11 @@ export class DotPageApiService {
         const payload = {
             identifier: containerIdentifier,
             uuid: containerUUID,
-            contentletsId: [contentletIdentifier],
-            styleProperties: {
-                [contentletIdentifier]: styleProperties
-            }
+            [contentletIdentifier]: styleProperties
         };
 
         return this.http
-            .post(`/api/v1/page/${pageId}/content`, [payload])
+            .put(`/api/v1/page/${pageId}/styles`, [payload])
             .pipe(catchError(() => EMPTY));
     }
 

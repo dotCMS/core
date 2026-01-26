@@ -16,8 +16,10 @@ import { Drawer } from 'primeng/drawer';
     selector: 'dot-sidebar-header',
     imports: [CommonModule, ButtonModule],
     templateUrl: './dot-sidebar-header.component.html',
-    styleUrls: ['./dot-sidebar-header.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block w-full'
+    }
 })
 export class DotSidebarHeaderComponent {
     private readonly sidebarComponent = inject(Drawer, { optional: true, host: true });

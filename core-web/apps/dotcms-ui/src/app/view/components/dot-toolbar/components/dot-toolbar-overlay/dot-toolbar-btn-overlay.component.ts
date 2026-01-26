@@ -30,7 +30,6 @@ import { Popover, PopoverModule } from 'primeng/popover';
 @Component({
     selector: 'dot-toolbar-btn-overlay',
     imports: [ButtonModule, PopoverModule],
-    styleUrls: ['./dot-toolbar-btn-overlay.component.scss'],
     templateUrl: 'dot-toolbar-btn-overlay.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -42,9 +42,11 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         TabsModule
     ],
     templateUrl: './dot-experiments-reports.component.html',
-    styleUrls: ['./dot-experiments-reports.component.scss'],
     providers: [DotExperimentsReportsStore],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col w-full h-full'
+    }
 })
 export class DotExperimentsReportsComponent implements OnInit {
     private readonly store = inject(DotExperimentsReportsStore);

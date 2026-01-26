@@ -25,8 +25,8 @@
     (visibleChange)="onDialogHide()">
     @if (show) {
         <dot-content-types-form
-            (valid)="setDialogOkButtonState($event)"
-            (send)="handleFormSubmit($event)"
+            ($valid)="setDialogOkButtonState($event)"
+            ($send)="handleFormSubmit($event)"
             [contentType]="data"
             #form />
     }

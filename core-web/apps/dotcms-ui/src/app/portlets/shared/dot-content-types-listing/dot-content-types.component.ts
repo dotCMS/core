@@ -1,9 +1,17 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, ViewChild, ViewContainerRef, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    inject,
+    OnDestroy,
+    OnInit,
+    viewChild,
+    ViewContainerRef
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { map, pluck, take, takeUntil } from 'rxjs/operators';
+import { map, pluck, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -55,7 +63,6 @@ type DotRowActions = {
  */
 @Component({
     selector: 'dot-content-types',
-    styleUrls: ['./dot-content-types.component.scss'],
     templateUrl: 'dot-content-types.component.html',
     imports: [
         DotListingDataTableComponent,
@@ -87,9 +94,11 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private dotContentTypeStore = inject(DotContentTypeStore);
+    private cdr = inject(ChangeDetectorRef);
 
-    @ViewChild('listing', { static: false })
-    listing: DotListingDataTableComponent;
+    $listing = viewChild<DotListingDataTableComponent>('listing');
+    $dotDynamicDialog = viewChild.required<ViewContainerRef>('dotDynamicDialog');
+
     filterBy: string;
     showTable = false;
     paginatorExtraParams: { [key: string]: string };
@@ -99,8 +108,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     addToBundleIdentifier: string;
     addToMenuContentType: DotCMSContentType;
 
-    @ViewChild('dotDynamicDialog', { read: ViewContainerRef, static: true })
-    public dotDynamicDialog: ViewContainerRef;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -134,7 +141,11 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 this.setFilterByContentType(filterBy as string);
             }
 
-            this.showTable = true;
+            // Defer showTable change to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
+            setTimeout(() => {
+                this.showTable = true;
+                this.cdr.markForCheck();
+            });
         });
     }
 
@@ -163,9 +174,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
      */
     changeBaseTypeSelector(value: string) {
         value !== ''
-            ? this.listing.paginatorService.setExtraParams('type', value)
-            : this.listing.paginatorService.deleteExtraParams('type');
-        this.listing.loadFirstPage();
+            ? this.$listing().paginatorService.setExtraParams('type', value)
+            : this.$listing().paginatorService.deleteExtraParams('type');
+        this.$listing().loadFirstPage();
     }
 
     /**
@@ -362,7 +373,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             .pipe(take(1))
             .subscribe(
                 () => {
-                    this.listing.loadCurrentPage();
+                    this.$listing().loadCurrentPage();
                 },
                 (error) => this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
             );
@@ -376,10 +387,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     }
 
     private async showCloneContentTypeDialog(item: DotCMSContentType) {
-        const { DotContentTypeCopyDialogComponent } = await import(
-            './components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component'
-        );
-        const componentRef = this.dotDynamicDialog.createComponent(
+        const { DotContentTypeCopyDialogComponent } =
+            await import('./components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component');
+        const componentRef = this.$dotDynamicDialog().createComponent(
             DotContentTypeCopyDialogComponent
         );
 
@@ -395,15 +405,13 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
             }
         });
 
-        componentRef.instance.isSaving$ = this.dotContentTypeStore.isSaving$;
-        componentRef.instance.cancelBtn.pipe(takeUntil(this.dialogDestroy$)).subscribe(() => {
+        componentRef.setInput('isSaving$', this.dotContentTypeStore.isSaving$);
+        componentRef.instance.$cancelBtn.subscribe(() => {
             this.closeCopyContentTypeDialog();
         });
-        componentRef.instance.validFormFields
-            .pipe(takeUntil(this.dialogDestroy$))
-            .subscribe((formValues) => {
-                this.saveCloneContentTypeDialog(formValues);
-            });
+        componentRef.instance.$validFormFields.subscribe((formValues) => {
+            this.saveCloneContentTypeDialog(formValues);
+        });
     }
 
     private addToBundleContentType(item: DotCMSContentType) {
@@ -417,6 +425,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private closeCopyContentTypeDialog() {
         this.dialogDestroy$.next(true);
         this.dialogDestroy$.complete();
-        this.dotDynamicDialog.clear();
+        this.$dotDynamicDialog().clear();
     }
 }

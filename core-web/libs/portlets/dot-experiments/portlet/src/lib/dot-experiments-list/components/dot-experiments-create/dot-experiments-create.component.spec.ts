@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { Sidebar, DrawerModule } from 'primeng/drawer';
+import { Drawer, DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 
@@ -12,8 +12,7 @@ import {
     DotFieldValidationMessageComponent,
     DotSidebarDirective,
     DotSidebarHeaderComponent,
-    SIDEBAR_PLACEMENT,
-    SIDEBAR_SIZES
+    SIDEBAR_PLACEMENT
 } from '@dotcms/ui';
 import { DotExperimentsListStoreMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -75,25 +74,21 @@ describe('DotExperimentsCreateComponent', () => {
     });
 
     it('should has Sidebar Component (PrimeNg) and DotSidebarDirective', () => {
-        const SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE = {
-            position: SIDEBAR_PLACEMENT.RIGHT,
-            styleClass: SIDEBAR_SIZES.MD,
-            showCloseIcon: false
-        };
-
         spectator.detectChanges();
 
-        primeNgSidebar = spectator.query(Sidebar);
+        primeNgSidebar = spectator.query(Drawer);
         dotSidebarDirective = spectator.query(DotSidebarDirective);
 
         expect(primeNgSidebar).toExist();
         expect(dotSidebarDirective).toExist();
 
-        expect(primeNgSidebar.position).toBe(SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE.position);
-        expect(primeNgSidebar.styleClass).toBe(SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE.styleClass);
-        expect(primeNgSidebar.showCloseIcon).toBe(
-            SIDEBAR_CONFIG_BY_DOTSIDEBAR_DIRECTIVE.showCloseIcon
-        );
+        // Check properties set by the template
+        expect(primeNgSidebar.position()).toBe(SIDEBAR_PLACEMENT.RIGHT);
+        expect(primeNgSidebar.closable).toBe(false);
+
+        // Check properties set by DotSidebarDirective
+        expect(primeNgSidebar.dismissible).toBe(false);
+        expect(primeNgSidebar.closeOnEscape).toBe(false);
     });
     it('should has DotSidebarHeaderComponent', () => {
         dotSidebarHeaderComponent = spectator.query(DotSidebarHeaderComponent);
@@ -101,7 +96,7 @@ describe('DotExperimentsCreateComponent', () => {
     });
 
     it('should open the sidebar', () => {
-        primeNgSidebar = spectator.query(Sidebar);
+        primeNgSidebar = spectator.query(Drawer);
         expect(primeNgSidebar.visible).toBe(true);
     });
 

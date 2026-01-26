@@ -1,39 +1,20 @@
-<h5>{{ 'experiments.configure.coming.soon' | dm }}</h5>
+<h5 class="mt-2 mb-4 text-center font-semibold">{{ 'experiments.configure.coming.soon' | dm }}</h5>
 
-<div class="flex">
-    <p-card [header]="'experiments.configure.coming.soon.time.page' | dm" class="col-span-3">
-        <ng-template pTemplate="header">
-            <i class="pi pi-clock"></i>
-        </ng-template>
-        <span>
-            {{ 'experiments.configure.coming.soon.time.page.description' | dm }}
-        </span>
-    </p-card>
+<!-- Tailwind is used for layout + applying Lara CSS variables inline. -->
+<div class="w-full flex flex-wrap gap-4">
+    @for (card of cards; track card.titleKey) {
+        <p-card class="h-full flex-1 basis-[16rem] min-h-[15rem]">
+            <ng-template pTemplate="header">
+                <div
+                    class="min-h-20 flex items-center justify-center bg-[var(--color-palette-primary-100)] rounded-t-md">
+                    <i
+                        class="{{ card.icon }} text-[var(--color-palette-primary-500)] text-2xl!"
+                        aria-hidden="true"></i>
+                </div>
+            </ng-template>
 
-    <p-card [header]="'experiments.configure.coming.soon.number.pages' | dm" class="col-span-3">
-        <ng-template pTemplate="header">
-            <i class="pi pi-check-square"></i>
-        </ng-template>
-        <span>
-            {{ 'experiments.configure.coming.soon.number.pages.description' | dm }}
-        </span>
-    </p-card>
-
-    <p-card [header]="'experiments.configure.coming.soon.rule.based' | dm" class="col-span-3">
-        <ng-template pTemplate="header">
-            <i class="pi pi-chart-line"></i>
-        </ng-template>
-        <span>
-            {{ 'experiments.configure.coming.soon.rule.based.description' | dm }}
-        </span>
-    </p-card>
-
-    <p-card [header]="'experiments.configure.coming.soon.javascript' | dm" class="col-span-3">
-        <ng-template pTemplate="header">
-            <i class="pi pi-code"></i>
-        </ng-template>
-        <span>
-            {{ 'experiments.configure.coming.soon.javascript.description' | dm }}
-        </span>
-    </p-card>
+            <h6 class="mt-0 mb-4 font-semibold">{{ card.titleKey | dm }}</h6>
+            <p class="m-0 leading-6">{{ card.descriptionKey | dm }}</p>
+        </p-card>
+    }
 </div>

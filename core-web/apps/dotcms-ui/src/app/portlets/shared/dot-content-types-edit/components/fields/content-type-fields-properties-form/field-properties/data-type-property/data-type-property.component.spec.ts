@@ -1,4 +1,4 @@
-import { DebugElement } from '@angular/core';
+import { DebugElement, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -32,11 +32,14 @@ describe('DataTypePropertyComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [DataTypePropertyComponent],
             imports: [DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+            providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+            schemas: [NO_ERRORS_SCHEMA]
         });
 
         fixture = DOTTestBed.createComponent(DataTypePropertyComponent);
         comp = fixture.componentInstance;
+        const originalDetectChanges = fixture.detectChanges.bind(fixture);
+        fixture.detectChanges = () => originalDetectChanges(false);
 
         group = new UntypedFormGroup({
             name: new UntypedFormControl('')
@@ -66,47 +69,66 @@ describe('DataTypePropertyComponent', () => {
         fixture.detectChanges();
 
         const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
+        const labelTexts = fixture.debugElement
+            .queryAll(By.css('.flex label'))
+            .map((label) => label.nativeElement.textContent.trim());
 
         expect(4).toEqual(pRadioButtons.length);
-        expect('Text').toBe(pRadioButtons[0].componentInstance.label);
-        expect('TEXT').toBe(pRadioButtons[0].componentInstance.value);
-        expect('True-False').toBe(pRadioButtons[1].componentInstance.label);
-        expect('BOOL').toBe(pRadioButtons[1].componentInstance.value);
-        expect('Decimal').toBe(pRadioButtons[2].componentInstance.label);
-        expect('FLOAT').toBe(pRadioButtons[2].componentInstance.value);
-        expect('Whole-Number').toBe(pRadioButtons[3].componentInstance.label);
-        expect('INTEGER').toBe(pRadioButtons[3].componentInstance.value);
+        expect(labelTexts).toEqual(['Text', 'True-False', 'Decimal', 'Whole-Number']);
+        expect(pRadioButtons[0].componentInstance.value).toBe('TEXT');
+        expect(pRadioButtons[1].componentInstance.value).toBe('BOOL');
+        expect(pRadioButtons[2].componentInstance.value).toBe('FLOAT');
+        expect(pRadioButtons[3].componentInstance.value).toBe('INTEGER');
     });
 
     it('should have 4 values for Select Field', () => {
         comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableSelectField';
+        comp.ngOnInit();
         fixture.detectChanges();
 
         const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
+        const labelTexts = fixture.debugElement
+            .queryAll(By.css('.flex label'))
+            .map((label) => label.nativeElement.textContent.trim());
 
         expect(4).toEqual(pRadioButtons.length);
-        expect('Text').toBe(pRadioButtons[0].componentInstance.label);
-        expect('TEXT').toBe(pRadioButtons[0].componentInstance.value);
-        expect('True-False').toBe(pRadioButtons[1].componentInstance.label);
-        expect('BOOL').toBe(pRadioButtons[1].componentInstance.value);
-        expect('Decimal').toBe(pRadioButtons[2].componentInstance.label);
-        expect('FLOAT').toBe(pRadioButtons[2].componentInstance.value);
-        expect('Whole-Number').toBe(pRadioButtons[3].componentInstance.label);
-        expect('INTEGER').toBe(pRadioButtons[3].componentInstance.value);
+        expect(labelTexts).toEqual(['Text', 'True-False', 'Decimal', 'Whole-Number']);
+        expect(pRadioButtons[0].componentInstance.value).toBe('TEXT');
+        expect(pRadioButtons[1].componentInstance.value).toBe('BOOL');
+        expect(pRadioButtons[2].componentInstance.value).toBe('FLOAT');
+        expect(pRadioButtons[3].componentInstance.value).toBe('INTEGER');
     });
 
-    it('should have 4 values for Text Field', () => {
-        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableTextField';
-        fixture.detectChanges();
+    it('should have 3 values for Text Field', () => {
+        const textFixture = DOTTestBed.createComponent(DataTypePropertyComponent);
+        const textComp = textFixture.componentInstance;
+        const textGroup = new UntypedFormGroup({
+            name: new UntypedFormControl('')
+        });
 
-        const pRadioButtons = fixture.debugElement.queryAll(By.css('p-radiobutton'));
+        textComp.group = textGroup;
+        textComp.property = {
+            field: {
+                ...dotcmsContentTypeFieldBasicMock,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableTextField'
+            },
+            name: 'name',
+            value: 'value'
+        };
+
+        const originalDetectChanges = textFixture.detectChanges.bind(textFixture);
+        textFixture.detectChanges = () => originalDetectChanges(false);
+        textFixture.detectChanges();
+
+        const pRadioButtons = textFixture.debugElement.queryAll(By.css('p-radiobutton'));
+        const labelTexts = textFixture.debugElement
+            .queryAll(By.css('.flex label'))
+            .map((label) => label.nativeElement.textContent.trim());
 
         expect(3).toEqual(pRadioButtons.length);
-        expect('Text').toBe(pRadioButtons[0].componentInstance.label);
-        expect('TEXT').toBe(pRadioButtons[0].componentInstance.value);
-        expect('Decimal').toBe(pRadioButtons[1].componentInstance.label);
-        expect('FLOAT').toBe(pRadioButtons[1].componentInstance.value);
-        expect('Whole-Number').toBe(pRadioButtons[2].componentInstance.label);
-        expect('INTEGER').toBe(pRadioButtons[2].componentInstance.value);
+        expect(labelTexts).toEqual(['Text', 'Decimal', 'Whole-Number']);
+        expect(pRadioButtons[0].componentInstance.value).toBe('TEXT');
+        expect(pRadioButtons[1].componentInstance.value).toBe('FLOAT');
+        expect(pRadioButtons[2].componentInstance.value).toBe('INTEGER');
     });
 });

@@ -13,7 +13,12 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus, RangeOfDateAndTime, StepStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    SIDEBAR_SIZES
+} from '@dotcms/ui';
 
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
@@ -33,7 +38,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         DatePickerModule
     ],
     templateUrl: './dot-experiments-configuration-scheduling-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-scheduling-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
@@ -42,6 +46,7 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     form: FormGroup;
     scheduling: RangeOfDateAndTime;
     stepStatus = ComponentStatus;
+    sidebarSizes = SIDEBAR_SIZES;
 
     today = new Date();
     initialDate = new Date();

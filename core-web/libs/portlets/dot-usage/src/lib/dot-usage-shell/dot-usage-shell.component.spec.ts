@@ -1,5 +1,5 @@
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
-import { of, throwError, Subject } from 'rxjs';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';

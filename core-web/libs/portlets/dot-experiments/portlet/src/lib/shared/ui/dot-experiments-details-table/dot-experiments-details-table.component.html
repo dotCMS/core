@@ -1,28 +1,27 @@
-@if (!isLoading) {
-    @if (!isEmpty) {
+@if (!$isLoading()) {
+    @if (!$isEmpty()) {
         <div class="flex flex-col gap-2">
-            @if (title) {
+            @if ($title()) {
                 <div
-                    class="header-title flex flex-row flex-wrap items-center"
+                    class="m-0 text-base font-bold text-black flex flex-row flex-wrap items-center"
                     data-testId="header-title">
-                    <ng-container *dotStringTemplateOutlet="title">
-                        {{ title }}
+                    <ng-container *dotStringTemplateOutlet="$title()">
+                        {{ $title() }}
                     </ng-container>
                 </div>
             }
-            <div class="flex flex-col gap-4 details">
-                <div class="details__headers grid grid-cols-12 gap-4 grid-nogutter">
+            <div class="flex flex-col gap-4">
+                <div
+                    class="grid grid-cols-12 gap-4 py-1 px-3 text-base font-bold text-gray-800 bg-gray-100 rounded-md min-h-[35px]">
                     <ng-container
                         *ngTemplateOutlet="
                             headers || defaultHeaders;
-                            context: { $implicit: data }
+                            context: { $implicit: $data() }
                         " />
                 </div>
-                <div class="details__rows-wrapper flex flex-col gap-2">
-                    @for (row of data; track row) {
-                        <div
-                            class="details__row grid grid-cols-12 gap-4 grid-nogutter"
-                            data-testId="detail-row">
+                <div class="flex flex-col gap-2 bg-gray-100 rounded-md py-1 px-3">
+                    @for (row of $data(); track row) {
+                        <div class="grid grid-cols-12 gap-4 min-h-[35px]" data-testId="detail-row">
                             <ng-container
                                 *ngTemplateOutlet="
                                     rows || defaultRowsTemplate;
@@ -36,8 +35,8 @@
                 @if (data) {
                     @for (header of data[0] | keyvalue; track header; let last = $last) {
                         <div
-                            [ngClass]="{ 'justify-content-end': last }"
-                            class="flex col flex-wrap items-center capitalize"
+                            [ngClass]="{ 'justify-end': last }"
+                            class="flex flex-col flex-wrap items-center capitalize"
                             data-testId="default-header-columns">
                             {{ header.key }}
                         </div>
@@ -47,7 +46,7 @@
             <ng-template #defaultRowsTemplate let-row>
                 @for (r of row | keyvalue; track r) {
                     <div
-                        class="flex col flex-wrap items-center capitalize"
+                        class="flex flex-col flex-wrap items-center capitalize"
                         data-testId="default-row">
                         {{ r.value }}
                     </div>
@@ -55,12 +54,14 @@
             </ng-template>
         </div>
     } @else {
-        <div class="empty flex justify-center items-center flex-col" data-testId="empty-template">
-            <i class="empty__icon pi pi-table mb-2"></i>
-            <p class="empty__message m-0" data-testId="empty-title">
+        <div
+            class="h-[200px] flex justify-center items-center flex-col"
+            data-testId="empty-template">
+            <i class="material-icons text-red-500 mb-2">table_chart</i>
+            <p class="m-0 text-lg" data-testId="empty-title">
                 {{ 'experiments.reports.summary.empty.title' | dm }}
             </p>
-            <p class="empty__description m-0" data-testId="empty-description">
+            <p class="m-0 text-base text-gray-600" data-testId="empty-description">
                 {{ 'experiments.reports.summary.empty.description' | dm }}
             </p>
         </div>

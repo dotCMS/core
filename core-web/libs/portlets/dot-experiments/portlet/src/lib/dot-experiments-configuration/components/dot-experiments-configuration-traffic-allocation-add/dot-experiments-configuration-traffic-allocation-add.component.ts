@@ -2,13 +2,7 @@ import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import {
-    FormControl,
-    FormGroup,
-    FormsModule,
-    ReactiveFormsModule,
-    Validators
-} from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DrawerModule } from 'primeng/drawer';
@@ -18,7 +12,12 @@ import { SliderModule } from 'primeng/slider';
 import { take } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSidebarDirective, DotSidebarHeaderComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotSidebarDirective,
+    DotSidebarHeaderComponent,
+    SIDEBAR_SIZES
+} from '@dotcms/ui';
 
 import {
     ConfigurationTrafficStepViewModel,
@@ -33,15 +32,12 @@ import {
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,
-        //PrimeNg
         DrawerModule,
         ButtonModule,
         SliderModule,
-        InputTextModule,
-        FormsModule
+        InputTextModule
     ],
     templateUrl: './dot-experiments-configuration-traffic-allocation-add.component.html',
-    styleUrls: ['./dot-experiments-configuration-traffic-allocation-add.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationTrafficAllocationAddComponent implements OnInit {
@@ -50,6 +46,7 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
     form: FormGroup;
     trafficAllocation: string;
     stepStatus = ComponentStatus;
+    sidebarSizes = SIDEBAR_SIZES;
 
     vm$: Observable<ConfigurationTrafficStepViewModel> =
         this.dotExperimentsConfigurationStore.trafficStepVm$;
