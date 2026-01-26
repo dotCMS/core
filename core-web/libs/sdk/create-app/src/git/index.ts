@@ -72,3 +72,16 @@ export async function downloadDockerCompose(directory: string) {
 
     await downloadFile(dockerUrl, dockerComposePath);
 }
+
+export async function moveDockerComposeOneLevelUp(directory: string) {
+    const sourcePath = path.join(directory, 'docker-compose.yml');
+    const targetPath = path.join(directory, '..', 'docker-compose.yml');
+    await fs.rename(sourcePath, targetPath);
+}
+
+export async function moveDockerComposeBack(directory: string) {
+    const sourcePath = path.join(directory, '..', 'docker-compose.yml');
+    const targetPath = path.join(directory, 'docker-compose.yml');
+
+    await fs.rename(sourcePath, targetPath);
+}
