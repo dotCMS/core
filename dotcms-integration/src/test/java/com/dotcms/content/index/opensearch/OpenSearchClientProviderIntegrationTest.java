@@ -52,7 +52,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test direct provider with custom configuration
-     * This demonstrates how tests should use ConfigurableOpenSearchProvider directly for custom configs
+     *
+     * Given scenario: ConfigurableOpenSearchProvider with custom OpenSearch configuration for port 9201
+     * Expected: Should create provider and client successfully, different from singleton client
      */
     @Test
     public void test_directProvider_withCustomConfiguration_shouldWork() {
@@ -88,7 +90,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test direct provider with convenience configurations
-     * Shows how to use the convenience configuration methods with ConfigurableOpenSearchProvider
+     *
+     * Given scenario: Using convenience factory methods for local and production configurations
+     * Expected: Should create different clients with correct endpoint and TLS settings
      */
     @Test
     public void test_directProvider_withConvenienceConfigurations_shouldWork() {
@@ -130,7 +134,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test configuration from properties
-     * This tests the properties loading mechanism using local OpenSearch
+     *
+     * Given scenario: Setting OS_ENDPOINTS and OS_TLS_ENABLED properties manually
+     * Expected: Should create provider that reads properties and creates valid client
      */
     @Test
     public void test_loadConfiguration_fromProperties_shouldCreateValidConfig() {
@@ -163,7 +169,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test client functionality with cluster health check
-     * This test connects to the local OpenSearch instance on port 9201
+     *
+     * Given scenario: OpenSearch 3.x container running on localhost:9201 with opensearch-cluster name
+     * Expected: Should connect successfully and return health response with correct cluster info
      */
     @Test
     public void test_clientFunctionality_clusterHealth_shouldReturnValidResponse() {
@@ -225,6 +233,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test index operations using local OpenSearch
+     *
+     * Given scenario: Connected OpenSearch 3.x client with test index operations
+     * Expected: Should successfully create, verify, and delete test index
      */
     @Test
     public void test_clientFunctionality_indexOperations_shouldWorkCorrectly() {
@@ -298,7 +309,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Comprehensive connectivity test for local OpenSearch container
-     * This test provides detailed information about the OpenSearch cluster
+     *
+     * Given scenario: OpenSearch 3.x upgrade container with detailed configuration and logging
+     * Expected: Should provide comprehensive cluster info and confirm OpenSearch 3.x version
      */
     @Test
     public void test_localOpenSearchConnectivity_shouldProvideDetailedInfo() {
@@ -396,93 +409,10 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
     }
 
     /**
-     * Test OpenSearch 3.x version validation using Maven POM properties
-     * This test reads the endpoint from ES_ENDPOINTS_UPGRADE system property and validates the version
-     *
-     * Given Scenario: Integration tests with ES_ENDPOINTS_UPGRADE property from Maven POM
-     * Expected: Should connect to OpenSearch 3.x instance and return version starting with "3."
-     */
-    @Test
-    public void test_opensearch3x_versionValidation_fromMavenProperties() {
-        ConfigurableOpenSearchProvider provider = null;
-        try {
-            // Given Scenario: Read OpenSearch 3.x endpoint from Maven POM system property
-            String opensearchUpgradeEndpoint = Config.getStringProperty("ES_ENDPOINTS_UPGRADE", "");
-
-            Logger.info(this, "🔍 Testing OpenSearch 3.x version validation from Maven properties");
-            Logger.info(this, "🔍 DOT_ES_ENDPOINTS_UPGRADE property: " + opensearchUpgradeEndpoint);
-
-            // Verify the property is correctly set from Maven
-            assertNotNull("DOT_ES_ENDPOINTS_UPGRADE should not be null", opensearchUpgradeEndpoint);
-            assertTrue("DOT_ES_ENDPOINTS_UPGRADE should contain localhost:9201",
-                      opensearchUpgradeEndpoint.contains("localhost:9201"));
-
-            // Create configuration using the Maven property
-            OpenSearchClientConfig config = OpenSearchClientConfig.builder()
-                    .addEndpoints(opensearchUpgradeEndpoint)  // Use Maven property value
-                    .tlsEnabled(false)
-                    .connectionTimeout(Duration.ofSeconds(15))
-                    .socketTimeout(Duration.ofSeconds(15))
-                    .build();
-
-            provider = new ConfigurableOpenSearchProvider(config);
-            OpenSearchClient client = provider.getClient();
-
-            // Act - Make a request to extract OpenSearch version info
-            Logger.info(this, "📡 Making request to OpenSearch 3.x to extract version info...");
-            var infoResponse = client.info();
-
-            // Assert - Validate the response and version
-            assertNotNull("Info response should not be null", infoResponse);
-            assertNotNull("Version should not be null", infoResponse.version());
-            assertNotNull("Version number should not be null", infoResponse.version().number());
-
-            String version = infoResponse.version().number();
-            String buildHash = infoResponse.version().buildHash();
-            String buildDate = infoResponse.version().buildDate();
-            String luceneVersion = infoResponse.version().luceneVersion();
-
-            // Expected: Version should be 3.x
-            assertTrue("Expected OpenSearch 3.x but got version: " + version +
-                      ". Check that opensearch-upgrade container is running with correct image version.",
-                      version.startsWith("3."));
-
-            // Log detailed version information
-            Logger.info(this, "✅ OpenSearch Version Validation Results:");
-            Logger.info(this, "✅ - Version: " + version);
-            Logger.info(this, "✅ - Build Hash: " + buildHash.substring(0, Math.min(12, buildHash.length())) + "...");
-            Logger.info(this, "✅ - Build Date: " + buildDate);
-            Logger.info(this, "✅ - Lucene Version: " + luceneVersion);
-            Logger.info(this, "✅ - Endpoint Used: " + opensearchUpgradeEndpoint);
-            Logger.info(this, "✅ - Maven Property: DOT_ES_ENDPOINTS_UPGRADE");
-
-            // Additional cluster verification
-            var healthResponse = client.cluster().health();
-            assertEquals("Should connect to opensearch-cluster",
-                        "opensearch-cluster", healthResponse.clusterName());
-
-            Logger.info(this, "✅ Cluster Name Verified: " + healthResponse.clusterName());
-            Logger.info(this, "✅ OpenSearch 3.x version validation PASSED!");
-
-        } catch (OpenSearchException e) {
-            Logger.error(this, "❌ OpenSearch API error during version validation: " + e.getMessage());
-            Logger.error(this, "❌ Status: " + e.status());
-            Logger.error(this, "❌ Make sure opensearch container is running with OpenSearch 3.0.0 image");
-            fail("OpenSearch 3.x version validation failed. API error: " + e.getMessage());
-        } catch (IOException e) {
-            Logger.error(this, "❌ Connection error during version validation: " + e.getMessage());
-            Logger.error(this, "❌ Check that opensearch service is running on port 9201");
-            fail("Cannot connect to OpenSearch 3.x for version validation. Connection error: " + e.getMessage());
-        } catch (Exception e) {
-            Logger.error(this, "❌ Unexpected error during version validation: " + e.getMessage(), e);
-            fail("Unexpected error during OpenSearch 3.x version validation: " + e.getMessage());
-        } finally {
-            closeProvider(provider);
-        }
-    }
-
-    /**
      * Test provider close functionality
+     *
+     * Given scenario: ConfigurableOpenSearchProvider instance that needs to be closed
+     * Expected: Should close without throwing any exceptions
      */
     @Test
     public void test_closeProvider_shouldNotThrowException() {
@@ -499,6 +429,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test invalid configuration scenarios
+     *
+     * Given scenario: ConfigurableOpenSearchProvider with invalid endpoint URL format
+     * Expected: Should throw DotRuntimeException due to malformed URL
      */
     @Test(expected = DotRuntimeException.class)
     public void test_createProvider_withInvalidEndpoint_shouldThrowException() {
