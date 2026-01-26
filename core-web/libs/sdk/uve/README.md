@@ -44,6 +44,7 @@ With `@dotcms/uve`, framework SDKs are able to:
     -   [Accessing Style Values](#accessing-style-values)
     -   [Best Practices](#best-practices)
     -   [Complete Example](#complete-example)
+    -   [Current Capabilities and Limitations](#current-capabilities-and-limitations)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
@@ -496,7 +497,7 @@ The Style Editor is a powerful feature that enables content authors and develope
 **Key Benefits:**
 
 -   **Real-Time Visual Editing**: Modify component styles and see changes instantly in the editor
--   **Content-Specific Customization**: Different content types can have unique style schemas
+-   **Content-Specific Customization**: Different content types can have unique style schemas, and the same contentlet could have different styles depending if it is located in a diferent container or page
 -   **Developer-Controlled**: Developers define which properties are editable and how they're presented
 -   **Flexible Configuration**: Support for text inputs, dropdowns, radio buttons, and checkbox groups
 -   **Type-Safe**: Full TypeScript support with type inference for option values
@@ -1074,27 +1075,27 @@ function BlogPostEditor() {
 
 ### Accessing Style Values
 
-Style Editor values are managed internally by UVE and passed to your components through the `styleProperties` attribute. This attribute is available in your contentlet component props.
+Style Editor values are managed internally by UVE and passed to your components through the `dotStyleProperties` attribute. This attribute is available in your contentlet component props.
 
 #### In React Components
 
-When rendering contentlets, style properties are accessed through the `styleProperties` prop:
+When rendering contentlets, style properties are accessed through the `dotStyleProperties` prop:
 
 ```typescript
 import { DotCMSContentlet } from '@dotcms/types';
 
 interface ActivityProps {
     contentlet: DotCMSContentlet;
-    styleProperties?: Record<string, any>;
+    dotStyleProperties?: Record<string, any>;
 }
 
 function Activity(props: ActivityProps) {
-    const { title, description, styleProperties } = props; // Contentlet information
+    const { title, description, dotStyleProperties } = props; // Contentlet information
 
     // Access style values using dot notation or bracket notation
-    const fontSize = styleProperties?.['font-size'];
-    const textAlign = styleProperties?.text;
-    const layout = styleProperties?.layout;
+    const fontSize = dotStyleProperties?.['font-size'];
+    const textAlign = dotStyleProperties?.text;
+    const layout = dotStyleProperties?.layout;
 
     return (
         <div style={{ fontSize, textAlign }}>
@@ -1154,17 +1155,17 @@ Use the style values to conditionally render styles, classes, or component varia
 
 ```typescript
 function BlogPost(props) {
-    const { title, body, styleProperties } = props;
+    const { title, body, dotStyleProperties } = props;
 
     // Example: Apply dynamic font size
-    const fontSize = styleProperties?.['font-size'] || '16px';
+    const fontSize = dotStyleProperties?.['font-size'] || '16px';
 
     // Example: Apply layout classes
-    const layout = styleProperties?.layout || 'default';
+    const layout = dotStyleProperties?.layout || 'default';
     const layoutClass = `layout-${layout}`;
 
     // Example: Apply checkbox group values
-    const textStyles = styleProperties?.['text-style'] || {};
+    const textStyles = dotStyleProperties?.['text-style'] || {};
     const textStyleClasses = [
         textStyles.bold ? 'font-bold' : '',
         textStyles.italic ? 'font-italic' : '',
@@ -1182,7 +1183,7 @@ function BlogPost(props) {
 }
 ```
 
-**💡 Note:** The `styleProperties` prop is automatically passed to your contentlet components by the framework SDK when UVE is active and style schemas are registered.
+**💡 Note:** The `dotStyleProperties` prop is automatically passed to your contentlet components by the framework SDK when UVE is active and style schemas are registered.
 
 ### Best Practices
 
@@ -1331,13 +1332,13 @@ When using style properties, always provide fallback defaults:
 
 ```typescript
 // ✅ Good: Fallback values prevent errors
-const fontSize = styleProperties?.['font-size'] || '16px';
-const layout = styleProperties?.layout || 'default';
-const textStyles = styleProperties?.['text-style'] || {};
+const fontSize = dotStyleProperties?.['font-size'] || '16px';
+const layout = dotStyleProperties?.layout || 'default';
+const textStyles = dotStyleProperties?.['text-style'] || {};
 
 // ❌ Bad: No fallbacks (could cause errors)
-const fontSize = styleProperties?.['font-size'];
-const layout = styleProperties?.layout;
+const fontSize = dotStyleProperties?.['font-size'];
+const layout = dotStyleProperties?.layout;
 ```
 
 ### Complete Example
@@ -1538,24 +1539,24 @@ export function BlogPostStyleEditor() {
 
 // Example: Using style properties in a component
 export function BlogPostRenderer(props) {
-    const { title, body, styleProperties } = props;
+    const { title, body, dotStyleProperties } = props;
 
     // Extract style values with defaults
-    const headingSize = styleProperties?.['heading-font-size'] || '24px';
-    const bodySize = styleProperties?.['body-font-size'] || '16px';
-    const fontFamily = styleProperties?.['font-family'] || 'arial';
-    const lineHeight = styleProperties?.['line-height'] || '1.5';
-    const layout = styleProperties?.['page-layout'] || 'full-width';
-    const contentWidth = styleProperties?.['content-width'] || '1000px';
-    const sectionSpacing = styleProperties?.['section-spacing'] || 40;
-    const theme = styleProperties?.['color-theme'] || 'light';
-    const primaryColor = styleProperties?.['primary-color'] || '#007bff';
-    const backgroundColor = styleProperties?.['background-color'] || '#ffffff';
+    const headingSize = dotStyleProperties?.['heading-font-size'] || '24px';
+    const bodySize = dotStyleProperties?.['body-font-size'] || '16px';
+    const fontFamily = dotStyleProperties?.['font-family'] || 'arial';
+    const lineHeight = dotStyleProperties?.['line-height'] || '1.5';
+    const layout = dotStyleProperties?.['page-layout'] || 'full-width';
+    const contentWidth = dotStyleProperties?.['content-width'] || '1000px';
+    const sectionSpacing = dotStyleProperties?.['section-spacing'] || 40;
+    const theme = dotStyleProperties?.['color-theme'] || 'light';
+    const primaryColor = dotStyleProperties?.['primary-color'] || '#007bff';
+    const backgroundColor = dotStyleProperties?.['background-color'] || '#ffffff';
 
     // Extract checkbox group values
-    const textStyle = styleProperties?.['text-style'] || {};
-    const features = styleProperties?.features || {};
-    const responsive = styleProperties?.responsive || {};
+    const textStyle = dotStyleProperties?.['text-style'] || {};
+    const features = dotStyleProperties?.features || {};
+    const responsive = dotStyleProperties?.responsive || {};
 
     // Build CSS classes based on values
     const containerClasses = [
@@ -1615,6 +1616,23 @@ export function BlogPostRenderer(props) {
 -   ✅ Clear, descriptive labels
 -   ✅ Safe value extraction with defaults using `styleProperties`
 -   ✅ Dynamic styling based on style values
+
+### Current Capabilities and Limitations:
+
+When **defining styles** for a contentlet within a page using **Style Editor**, the following behaviors might occur:
+
+| Scenario                                          | Behavior                                                                          | Result                                      |
+|---------------------------------------------------|-----------------------------------------------------------------------------------|---------------------------------------------|
+| Same Contentlet, Different Containers, Same Page  | Page A: { Container_1: contentlet_1, Container_2: contentlet_1 }                  | 🎨 Styles are different                     |
+| Same Contentlet, Same Container, Different Pages  | Page A: { Container_1: contentlet_1 }, Page B: { Container_1: contentlet_1 }      | 🎨 Styles are different                     |
+| Copying a Page with Styled Content                | Creating Page B as a copy of Page A, where Page A includes styled content         | ✅ Styles preserved, 🎨 Styles are different |
+| Moving Styled Content to Same Container Type      | system-container → system-container                                               | ✅ Styles preserved                          |
+| Moving Styled Content to Different Container Type | system-container → custom-container                                               | ⚠️ Styles lost                              |
+| Adding, Deleting, or Moving Unstyled Content      | Performing any structural change on the page that does not involve styled content | if any: ✅ Styles preserved                  |
+
+> **NOTE:** (🎨 Styles are different) means the capability to define distinct styles, even when utilizing the identical Contentlet.
+
+The only known limitation is that moving a contentlet with defined styles between different container types (5th scenario), results in the loss of those styles. See the [technical details document](https://docs.google.com/document/d/1UiuJlIn8ZjybIB-0oHeoTLXZo1k-YExITEqEMfyvVlU/edit?tab=t.0) for our planned solution.
 
 ## Troubleshooting
 
