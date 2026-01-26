@@ -38,7 +38,7 @@ export class DotExperimentsUiHeaderComponent {
     $experiment = input<DotExperiment | null>(null, { alias: 'experiment' });
     $isLoading = input(true, { alias: 'isLoading' });
 
-    $goBack = output<boolean>({ alias: 'goBack' });
+    goBack = output<boolean>();
 
     runningUntilDateFormat = RUNNING_UNTIL_DATE_FORMAT;
     statusIcon = signal<string>('');
