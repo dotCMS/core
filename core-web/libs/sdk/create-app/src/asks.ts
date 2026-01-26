@@ -11,21 +11,31 @@ import type { SupportedFrontEndFrameworks } from './types';
  * Ask interactively if framework not specified
  */
 export async function askFramework(): Promise<SupportedFrontEndFrameworks> {
-    const ans = await inquirer.prompt<{ frameworks: SupportedFrontEndFrameworks[] }>([
+    const ans = await inquirer.prompt<{ frameworks: SupportedFrontEndFrameworks }>([
         {
-            type: 'checkbox',
+            type: 'select',
             name: 'frameworks',
-            message: 'Select the frontend framework:',
-            choices: FRAMEWORKS_CHOICES,
-            validate(selected) {
-                if (selected.length === 0) return 'Please select at least one framework.';
-                return true;
-            }
+            message: 'Select your frontend framework:',
+            choices: FRAMEWORKS_CHOICES
         }
     ]);
 
     // Return the first selected framework (checkbox returns array)
-    return ans.frameworks[0];
+    return ans.frameworks;
+}
+/**
+ * Ask user name of the project
+ */
+export async function askProjectName() {
+    const ans = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'projectName',
+            message: 'What is your project name ?',
+            default: `my-dotcms-app`
+        }
+    ]);
+    return ans.projectName;
 }
 
 /**
@@ -36,7 +46,7 @@ export async function askDirectory() {
         {
             type: 'input',
             name: 'directory',
-            message: 'Project directory:',
+            message: 'Where should we create your project?',
             default: `.`
         }
     ]);
@@ -51,7 +61,7 @@ export async function askDotcmsCloudUrl() {
         {
             type: 'input',
             name: 'url',
-            message: 'DotCMS instance URL:',
+            message: 'dotCMS instance URL:',
             default: `https://demo.dotcms.com`
         }
     ]);
@@ -74,13 +84,14 @@ export async function askUserNameForDotcmsCloud() {
 }
 
 /**
- * Ask user the username of the dotCMS instance
+ * Ask user the ulsername of the dotCMS instance
  */
 export async function askPasswordForDotcmsCloud() {
     const ans = await inquirer.prompt([
         {
-            type: 'input',
+            type: 'password',
             name: 'password',
+            mask: '•',
             message: 'Password:',
             default: `admin`
         }
@@ -93,16 +104,36 @@ export async function askPasswordForDotcmsCloud() {
  * Example:
  * user enters: "y/n"
  */
+// export async function askCloudOrLocalInstance(): Promise<boolean> {
+//     const ans = await inquirer.prompt([
+//         {
+//             type: 'confirm',
+//             name: 'confirm',
+//             message: `Running dotCMS in the cloud? If not, no worries — select No to spin up dotCMS using Docker.`,
+//             default: false
+//         }
+//     ]);
+//     return ans.confirm;
+// }
+//
+/**
+ * Ask if the user has cloud or want to set local
+ */
 export async function askCloudOrLocalInstance(): Promise<boolean> {
-    const ans = await inquirer.prompt([
+    const ans = await inquirer.prompt<{ isCloud: boolean }>([
         {
-            type: 'confirm',
-            name: 'confirm',
-            message: `Running dotCMS in the cloud? If not, no worries — select No to spin up dotCMS using Docker.`,
-            default: false
+            type: 'select',
+            name: 'isCloud',
+            message: 'Do you have an exsisting dotCMS instance?',
+            choices: [
+                { name: 'Yes - I have a dotCMS instance URL', value: true },
+                { name: 'No - Spin up dotCMS locally with Docker', value: false }
+            ]
         }
     ]);
-    return ans.confirm;
+
+    // Return the first selected framework (checkbox returns array)
+    return ans.isCloud;
 }
 
 /**
