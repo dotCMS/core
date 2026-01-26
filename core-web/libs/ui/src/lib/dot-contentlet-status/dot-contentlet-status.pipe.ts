@@ -1,19 +1,34 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotContentState } from '@dotcms/dotcms-models';
 
 @Pipe({
     name: 'dotContentletStatus',
     pure: true
 })
 export class DotContentletStatusPipe implements PipeTransform {
-    transform(value: DotCMSContentlet): string {
-        if (value?.archived) {
+    transform(value: DotContentState): string {
+        if (!value) {
+            return 'Draft';
+        }
+
+        const { live, working, archived, deleted, hasLiveVersion } = value;
+
+        // Check if deleted or archived
+        if (deleted || archived) {
             return 'Archived';
         }
 
-        if (value?.live) {
-            return 'Published';
+        // Check if live is true
+        if (live) {
+            if (hasLiveVersion && working) {
+                return 'Published';
+            }
+        } else {
+            // live is false or not set
+            if (hasLiveVersion) {
+                return 'Revision';
+            }
         }
 
         return 'Draft';

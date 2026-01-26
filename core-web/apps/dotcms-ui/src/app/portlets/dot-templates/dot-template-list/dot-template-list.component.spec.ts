@@ -48,6 +48,7 @@ import {
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
+    DotContentletStatusChipComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -506,6 +507,7 @@ describe('DotTemplateListComponent', () => {
                 DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
+                DotContentletStatusChipComponent,
                 HttpClientTestingModule,
                 DynamicDialogModule,
                 BrowserAnimationsModule
@@ -694,7 +696,7 @@ describe('DotTemplateListComponent', () => {
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
-        it('should pass data to the status elements', () => {
+        it('should pass data to the status chip component', () => {
             loadTableData();
 
             const state: DotContentState = {
@@ -704,25 +706,17 @@ describe('DotTemplateListComponent', () => {
                 hasLiveVersion: true
             };
 
-            const labels = {
-                archived: 'Archived',
-                published: 'Published',
-                revision: 'Revision',
-                draft: 'Draft'
-            };
-
             const lockedTemplateElement = fixture.debugElement.query(
                 By.css('[data-testid="123Locked"]')
             );
             expect(lockedTemplateElement).toBeTruthy();
             lockedTemplate = lockedTemplateElement.componentInstance;
 
-            const stateIcon = fixture.debugElement.query(By.css('dot-state-icon'));
-            expect(stateIcon).toBeTruthy();
+            const statusChip = fixture.debugElement.query(By.css('dot-contentlet-status-chip'));
+            expect(statusChip).toBeTruthy();
 
-            expect(stateIcon.attributes['size']).toEqual('14px');
-            expect(stateIcon.nativeNode.state).toEqual(state);
-            expect(stateIcon.nativeNode.labels).toEqual(labels);
+            const chipComponent = statusChip.componentInstance as DotContentletStatusChipComponent;
+            expect(chipComponent.state()).toEqual(state);
         });
 
         describe('row', () => {

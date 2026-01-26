@@ -16,7 +16,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotContentletStatusChipComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import { DotActionsMenuEventParams } from '../dot-pages.component';
 
@@ -45,7 +50,8 @@ type TableRowSelectEvent<T> = {
         TableModule,
         TooltipModule,
         RouterModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        DotContentletStatusChipComponent
     ]
 })
 export class DotPagesTableComponent {

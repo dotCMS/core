@@ -1,17 +1,17 @@
 <!-- ptabs is display flex by default -->
 <p-tabs [value]="0" class="h-full">
-    <p-tablist class="shrink-0">
-        <p-tab [value]="0" data-testId="builder">
+    <p-tablist class="shrink-0 w-full">
+        <p-tab [value]="0" data-testId="builder" class="grow text-center">
             {{ item.type === 'advanced' ? ('code' | dm) : ('design' | dm) }}
         </p-tab>
-        <p-tab [value]="1">
+        <p-tab [value]="1" class="grow text-center">
             {{ 'Permissions' | dm }}
         </p-tab>
-        <p-tab [value]="2">
+        <p-tab [value]="2" class="grow text-center">
             {{ 'History' | dm }}
         </p-tab>
     </p-tablist>
-    <p-tabpanels class="!p-0 overflow-hidden grow basis-0">
+    <p-tabpanels class="p-0 overflow-hidden grow basis-0">
         <p-tabpanel [value]="0" data-testId="builder" class="h-full block">
             @switch (item.type) {
                 @case ('advanced') {

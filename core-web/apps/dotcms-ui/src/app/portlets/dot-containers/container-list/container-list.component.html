@@ -115,10 +115,7 @@
                                 }
                             </td>
                             <td [ngStyle]="{ 'text-align': vm.tableColumns[1].textAlign }">
-                                <dot-state-icon
-                                    [labels]="vm.stateLabels"
-                                    [state]="getContainerState(rowData)"
-                                    size="14px"></dot-state-icon>
+                                <dot-contentlet-status-chip [state]="getContainerState(rowData)" />
                             </td>
                             <td [ngStyle]="{ 'text-align': vm.tableColumns[2].textAlign }">
                                 {{ rowData.friendlyName }}
