@@ -17,7 +17,7 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotConvertToBlockInfoComponent', () => {
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
+        TestBed.configureTestingModule({
             declarations: [DotConvertToBlockInfoComponent],
             imports: [DotMessagePipe, ButtonModule],
             providers: [
@@ -27,6 +27,8 @@ describe('DotConvertToBlockInfoComponent', () => {
                 }
             ]
         });
+
+        await TestBed.compileComponents();
     });
 
     it('should render info and learn more button', () => {

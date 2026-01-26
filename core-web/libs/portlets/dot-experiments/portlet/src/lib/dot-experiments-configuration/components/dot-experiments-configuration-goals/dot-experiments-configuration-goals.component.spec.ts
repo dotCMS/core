@@ -118,9 +118,7 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
         test('should render the card', () => {
             expect(spectator.queryAll(Card).length).toEqual(1);
             expect(spectator.query(byTestId('goals-card-name'))).toContainText('Goal');
-            expect(spectator.query(byTestId('goals-card-name'))).toHaveClass(
-                'after:content-[\'*\']'
-            );
+            expect(spectator.query(byTestId('goals-card-name'))).toHaveClass("after:content-['*']");
             expect(spectator.query(byTestId('goals-add-button'))).toExist();
         });
 

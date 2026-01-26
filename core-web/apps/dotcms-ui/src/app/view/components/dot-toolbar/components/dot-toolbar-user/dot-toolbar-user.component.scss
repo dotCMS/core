@@ -1,9 +1,0 @@
-@use "variables" as *;
-@use "mixins";
-@use "../../../../../../../../../libs/dotcms-scss/shared/colors";
-@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
-@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
-
-p-avatar {
-    cursor: pointer;
-}

@@ -14,7 +14,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -33,7 +33,7 @@ const SYSTEM_OPTIONS = JSON.stringify({
     allowGenerateImg: false
 });
 
-const MOCK_FIELD = {
+const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableBinaryField'

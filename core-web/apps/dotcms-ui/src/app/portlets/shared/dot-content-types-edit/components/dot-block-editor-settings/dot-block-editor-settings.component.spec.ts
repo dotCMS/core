@@ -10,6 +10,7 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
 import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
@@ -43,7 +44,7 @@ const mockFieldVariablesServiceEmpty = {
     delete: jest.fn().mockReturnValue(of([]))
 };
 
-const MOCK_FIELD = {
+const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
