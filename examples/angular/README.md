@@ -34,6 +34,7 @@ For the official Angular documentation, visit: [Angular Documentation](https://a
   - [Folder Structure](#folder-structure)
 - [Development Workflow](#development-workflow)
 - [Universal Visual Editor](#universal-visual-editor)
+- [Style Editor](#style-editor)
 - [Troubleshooting](#troubleshooting)
 - [Additional Resources](#additional-resources)
 
@@ -172,6 +173,144 @@ To enable the Universal Visual Editor in dotCMS, follow these steps:
 6. Now edit any page and you will see the UVE.
 
 If you want more information about the UVE, please refer to the [dotCMS UVE Documentation](https://dotcms.com/docs/latest/universal-visual-editor-uve).
+
+## Style Editor
+
+The Style Editor enables content editors to customize component appearance (typography, colors, layouts, etc.) directly in the Universal Visual Editor without code changes. Style properties are defined by developers and made editable through style editor schemas.
+
+### Defining a Style Editor Schema
+
+Create a schema file (e.g., `src/app/dotcms/style-editor-schemas/schemas.ts`) that defines editable style properties for your content types:
+
+```typescript
+import { defineStyleEditorSchema, styleEditorField } from '@dotcms/uve';
+
+export const BANNER_SCHEMA = defineStyleEditorSchema({
+    contentType: 'Banner', // Must match your dotCMS Content Type
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                styleEditorField.dropdown({
+                    id: 'title-size',
+                    label: 'Title Size',
+                    options: [
+                        { label: 'Small', value: 'text-4xl' },
+                        { label: 'Medium', value: 'text-5xl' },
+                        { label: 'Large', value: 'text-6xl' },
+                    ]
+                }),
+                styleEditorField.checkboxGroup({
+                    id: 'title-style',
+                    label: 'Title Style',
+                    options: [
+                        { label: 'Bold', key: 'bold' },
+                        { label: 'Italic', key: 'italic' },
+                    ]
+                }),
+            ]
+        },
+        {
+            title: 'Layout',
+            fields: [
+                styleEditorField.radio({
+                    id: 'text-alignment',
+                    label: 'Text Alignment',
+                    options: [
+                        { label: 'Left', value: 'left' },
+                        { label: 'Center', value: 'center' },
+                        { label: 'Right', value: 'right' },
+                    ]
+                }),
+            ]
+        },
+    ]
+});
+```
+
+### Field Types
+
+The Style Editor supports four field types:
+
+- **`styleEditorField.input()`** - Text or number input for custom values
+- **`styleEditorField.dropdown()`** - Dropdown with predefined options
+- **`styleEditorField.radio()`** - Radio buttons for single selection (supports images)
+- **`styleEditorField.checkboxGroup()`** - Multiple checkboxes (returns object with boolean values)
+
+### Registering Schemas
+
+Register your schemas in your page component's `ngOnInit` method:
+
+```typescript
+import { registerStyleEditorSchemas } from '@dotcms/uve';
+import { BANNER_SCHEMA, ACTIVITY_SCHEMA } from '../../style-editor-schemas/schemas';
+
+export class PageComponent implements OnInit {
+  ngOnInit() {
+    registerStyleEditorSchemas([BANNER_SCHEMA, ACTIVITY_SCHEMA]);
+    // ... rest of initialization
+  }
+}
+```
+
+### Using Style Properties in Components
+
+Style properties are automatically passed to your contentlet components via the `dotStyleProperties` property on the contentlet. Use Angular signals and computed properties to access them:
+
+```typescript
+import { Component, computed, input } from '@angular/core';
+
+@Component({
+  selector: 'app-banner',
+  // ...
+})
+export class BannerComponent {
+  contentlet = input.required<Banner>();
+
+  // Extract dotStyleProperties as a computed signal
+  dotStyleProperties = computed(() => 
+    this.contentlet().dotStyleProperties as BannerDotStyleProperties
+  );
+
+  // Extract individual style values with defaults
+  titleSize = computed(() => 
+    this.dotStyleProperties()?.['title-size'] || 'text-6xl'
+  );
+  titleStyle = computed(() => 
+    this.dotStyleProperties()?.['title-style'] || {}
+  );
+  textAlignment = computed(() => 
+    this.dotStyleProperties()?.['text-alignment'] || 'center'
+  );
+
+  // Build dynamic classes using computed signals
+  titleClasses = computed(() => {
+    const style = this.titleStyle();
+    const classes = [
+      this.titleSize(),
+      style.bold ? 'font-bold' : 'font-normal',
+      style.italic ? 'italic' : '',
+    ].filter(Boolean);
+    return classes.join(' ');
+  });
+
+  // Use in template
+  // <h2 [class]="titleClasses()">{{ contentlet().title }}</h2>
+}
+```
+
+**Value Types:**
+- **Input/Dropdown/Radio**: Returns a string (the selected value)
+- **Checkbox Group**: Returns an object with boolean values (e.g., `{ bold: true, italic: false }`)
+
+**Best Practices:**
+- Always provide default values when accessing style properties
+- Use `computed()` signals for reactive style property extraction
+- Use meaningful field IDs that match your styling logic
+- Group related fields into logical sections
+- The `contentType` in your schema must exactly match your dotCMS Content Type variable name
+
+For complete Style Editor documentation, see the [@dotcms/uve Style Editor guide](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/uve/README.md#style-editor).
 
 ## Troubleshooting
 
