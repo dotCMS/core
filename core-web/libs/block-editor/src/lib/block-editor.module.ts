@@ -9,8 +9,8 @@ import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogModule } from 'primeng/dynamicdialog';
-import { TextareaModule } from 'primeng/textarea';
 import { PaginatorModule } from 'primeng/paginator';
+import { TextareaModule } from 'primeng/textarea';
 
 import {
     DotContentSearchService,
@@ -25,7 +25,8 @@ import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotSpinnerComponent
+    DotSpinnerComponent,
+    DotContentletStatusChipComponent
 } from '@dotcms/ui';
 
 //Editor
@@ -72,7 +73,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         TiptapBubbleMenuDirective,
         DragHandleDirective,
         DotContextMenuComponent,
-        DotAddButtonComponent
+        DotAddButtonComponent,
+        DotContentletStatusChipComponent
     ],
     declarations: [
         EditorDirective,

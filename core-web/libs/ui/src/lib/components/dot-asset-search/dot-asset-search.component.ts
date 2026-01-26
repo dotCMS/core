@@ -72,7 +72,8 @@ export class DotAssetSearchComponent implements OnInit, AfterViewInit {
     ngAfterViewInit() {
         fromEvent(this.input.nativeElement, 'input')
             .pipe(takeUntilDestroyed(this.destroyRef), debounceTime(450))
-            .subscribe(({ target }) => {
+            .subscribe((event: Event) => {
+                const target = event.target as HTMLInputElement;
                 const value = (target as HTMLInputElement).value;
                 this.currentSearch = value;
                 this.store.searchContentlet({

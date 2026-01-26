@@ -457,6 +457,17 @@ describe('DotFolderListViewComponent', () => {
 
         describe('Status', () => {
             it('should have a published status', () => {
+                // Update firstItem to have all required properties for Published status
+                spectator.setInput('items', [
+                    {
+                        ...firstItem,
+                        live: true,
+                        working: true,
+                        hasLiveVersion: true
+                    }
+                ]);
+                spectator.detectChanges();
+
                 const statusColumn = spectator.query(byTestId('item-status'));
 
                 expect(statusColumn.textContent.trim()).toBe('Published');
@@ -483,7 +494,8 @@ describe('DotFolderListViewComponent', () => {
                         ...firstItem,
                         live: false,
                         archived: false,
-                        working: true
+                        working: false,
+                        hasLiveVersion: false
                     }
                 ]);
                 spectator.detectChanges();
@@ -1246,7 +1258,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should emit scroll event when table body is scrolled', () => {
             const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
-            const tableBody = spectator.query('.p-datatable-wrapper') as HTMLElement;
+            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
 
             const scrollEvent = new Event('scroll');
             tableBody.dispatchEvent(scrollEvent);
@@ -1255,7 +1267,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should add scroll event listener on ngAfterViewInit and emit scroll events', () => {
-            const tableBody = spectator.query('.p-datatable-wrapper') as HTMLElement;
+            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
             const addListenerSpy = jest.spyOn(tableBody, 'addEventListener');
 
             spectator.component.ngAfterViewInit();
@@ -1271,7 +1283,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should remove scroll event listener on ngOnDestroy and stop emitting', () => {
-            const tableBody = spectator.query('.p-datatable-wrapper') as HTMLElement;
+            const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
             const removeListenerSpy = jest.spyOn(tableBody, 'removeEventListener');
 
             spectator.component.ngOnDestroy();

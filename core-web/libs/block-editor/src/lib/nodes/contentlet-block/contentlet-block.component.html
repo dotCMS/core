@@ -13,7 +13,7 @@
 
         <ng-template pTemplate="footer">
             <div class="state">
-                <dot-state-icon [state]="data | contentletState" size="16px" />
+                <dot-contentlet-status-chip [state]="data | contentletState" />
                 @if (data.language) {
                     <dot-badge [bordered]="true">{{ data.language | lowercase }}</dot-badge>
                 }
