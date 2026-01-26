@@ -124,7 +124,13 @@ describe('DotUveStyleEditorFormComponent', () => {
                                 title: 'Test',
                                 contentType: 'test-content-type',
                                 dotStyleProperties: {
-                                    'font-size': fontSize
+                                    'font-size': fontSize,
+                                    'font-family': 'Arial',
+                                    'text-decoration': {
+                                        underline: false,
+                                        overline: false
+                                    },
+                                    alignment: 'left'
                                 }
                             }
                         ]
@@ -269,6 +275,7 @@ describe('DotUveStyleEditorFormComponent', () => {
     describe('rollback and form restoration', () => {
         beforeEach(() => {
             // Set up activeContentlet with initial style properties
+            // Include ALL fields from the schema to match the graphqlResponse structure
             mockUveStore.activeContentlet.set({
                 contentlet: {
                     identifier: 'test-id',
@@ -276,7 +283,13 @@ describe('DotUveStyleEditorFormComponent', () => {
                     title: 'Test',
                     contentType: 'test-content-type',
                     dotStyleProperties: {
-                        'font-size': 16
+                        'font-size': 16,
+                        'font-family': 'Arial',
+                        'text-decoration': {
+                            underline: false,
+                            overline: false
+                        },
+                        alignment: 'left'
                     }
                 },
                 container: {
@@ -306,7 +319,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             });
             spectator.detectChanges();
 
-            const form = spectator.component.$form();
+            let form = spectator.component.$form();
             expect(form?.get('font-size')?.value).toBe(16);
 
             // Mock saveStyleEditor to fail and simulate rollback by updating graphqlResponse
@@ -322,6 +335,10 @@ describe('DotUveStyleEditorFormComponent', () => {
             // Change form value (this triggers the save flow)
             form?.patchValue({ 'font-size': 20 });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100); // Wait for debounce + error handling
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get the NEW form reference after rollback (form is rebuilt, not patched)
+            form = spectator.component.$form();
 
             // Verify form is restored to rolled-back value
             expect(form?.get('font-size')?.value).toBe(16);
@@ -338,7 +355,6 @@ describe('DotUveStyleEditorFormComponent', () => {
             });
             spectator.detectChanges();
 
-            const form = spectator.component.$form();
             const rolledBackResponse = createMockGraphQLResponse(16);
 
             // Mock saveStyleEditor to always fail and rollback to 16
@@ -350,14 +366,61 @@ describe('DotUveStyleEditorFormComponent', () => {
             );
 
             // First failure: change from 16 to 20, then fail
+            let form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get the NEW form reference after first rollback (form is rebuilt)
+            form = spectator.component.$form();
             expect(form?.get('font-size')?.value).toBe(16); // Rolled back to 16
 
-            // Second failure: change from 16 to 24, then fail again
+            // Second failure: Get fresh form reference before patching
+            // This ensures we're patching the current form instance
+            form = spectator.component.$form();
             form?.patchValue({ 'font-size': 24 });
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get the NEW form reference after second rollback
+            form = spectator.component.$form();
             expect(form?.get('font-size')?.value).toBe(16); // Should rollback to 16, not 24
+        }));
+
+        it('should rebuild form instance on rollback (not patch existing form)', fakeAsync(() => {
+            // Create component with activeContentlet
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+
+            // Get initial form reference
+            const initialForm = spectator.component.$form();
+            expect(initialForm?.get('font-size')?.value).toBe(16);
+
+            // Mock saveStyleEditor to fail and simulate rollback
+            const rolledBackResponse = createMockGraphQLResponse(16);
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                throwError(() => {
+                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    return new Error('Save failed');
+                })
+            );
+
+            // Change form value to trigger save and rollback
+            initialForm?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get form reference after rollback
+            const rebuiltForm = spectator.component.$form();
+
+            // Verify form was REBUILT (new instance), not patched
+            expect(rebuiltForm).not.toBe(initialForm);
+            expect(rebuiltForm?.get('font-size')?.value).toBe(16);
         }));
     });
 });
