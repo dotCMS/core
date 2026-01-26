@@ -24,7 +24,6 @@ import {
 } from '../../../../../api/services/add-to-menu/add-to-menu.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
-import { DotFormSelectorComponent } from '../../../../dot-edit-page/content/components/dot-form-selector/dot-form-selector.component';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,
@@ -71,19 +70,25 @@ class DotMenuServiceMock {
             {
                 id: '123',
                 name: 'Menu 1',
+                label: 'Menu 1',
                 tabName: 'Name',
                 tabDescription: 'Description',
                 tabIcon: 'icon',
                 url: '/url/index',
+                active: false,
+                isOpen: false,
                 menuItems: []
             },
             {
                 id: '456',
                 name: 'Menu 2',
+                label: 'Menu 2',
                 tabName: 'Name 2',
                 tabDescription: 'Description 2',
                 tabIcon: 'icon2',
                 url: '/url/456',
+                active: false,
+                isOpen: false,
                 menuItems: []
             }
         ]);
@@ -116,12 +121,7 @@ describe('DotAddToMenuComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
-            imports: [
-                DotAddToMenuComponent,
-                BrowserAnimationsModule,
-                DotFormSelectorComponent,
-                HttpClientTestingModule
-            ],
+            imports: [DotAddToMenuComponent, BrowserAnimationsModule, HttpClientTestingModule],
             providers: [
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -149,19 +149,25 @@ describe('DotAddToMenuComponent', () => {
                 {
                     id: '123',
                     name: 'Menu 1',
+                    label: 'Menu 1',
                     tabName: 'Name',
                     tabDescription: 'Description',
                     tabIcon: 'icon',
                     url: '/url/index',
+                    active: false,
+                    isOpen: false,
                     menuItems: []
                 },
                 {
                     id: '456',
                     name: 'Menu 2',
+                    label: 'Menu 2',
                     tabName: 'Name 2',
                     tabDescription: 'Description 2',
                     tabIcon: 'icon2',
                     url: '/url/456',
+                    active: false,
+                    isOpen: false,
                     menuItems: []
                 }
             ])

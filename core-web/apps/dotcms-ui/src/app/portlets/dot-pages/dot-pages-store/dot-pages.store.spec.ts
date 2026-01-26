@@ -74,13 +74,43 @@ import {
 } from './dot-pages.store';
 
 import { PushPublishServiceMock } from '../../../view/components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
 import {
     CurrentUserDataMock,
     DotCurrentUserServiceMock
 } from '../../dot-starter/dot-starter-resolver.service.spec';
-import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
-import { favoritePagesInitialTestData } from '../dot-pages.component.spec';
+import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
+
+// Mock data for content types (replacement for removed dot-edit-page module)
+const contentTypeDataMock = [
+    {
+        id: 'test-content-type-id',
+        name: 'Test Content Type',
+        variable: 'testContentType'
+    }
+];
+
+export const favoritePagesInitialTestData = [
+    {
+        ...dotcmsContentletMock,
+        live: true,
+        baseType: 'CONTENT',
+        identifier: '123',
+        modDate: '2020-09-02 16:45:15.569',
+        title: 'preview1',
+        screenshot: 'test1',
+        url: '/index1?host_id=A&language_id=1&device_inode=123',
+        owner: 'admin'
+    },
+    {
+        ...dotcmsContentletMock,
+        title: 'preview2',
+        modDate: '2020-09-02 16:45:15.569',
+        identifier: '456',
+        screenshot: 'test2',
+        url: '/index2',
+        owner: 'admin2'
+    }
+];
 
 @Injectable()
 class MockESPaginatorService {
@@ -447,7 +477,7 @@ describe('DotPageStore', () => {
 
     it('should get all Page Types value in store and show dialog', () => {
         const expectedInputArray = [{ ...dotcmsContentTypeBasicMock, ...contentTypeDataMock[0] }];
-        jest.spyOn(dotPageTypesService, 'getPages').mockReturnValue(
+        jest.spyOn(dotPageTypesService, 'getPageContentTypes').mockReturnValue(
             of(expectedInputArray as unknown as DotCMSContentType[])
         );
         dotPageStore.getPageTypes();
@@ -455,8 +485,8 @@ describe('DotPageStore', () => {
         dotPageStore.state$.subscribe((data) => {
             expect(data.pageTypes).toEqual(expectedInputArray as unknown as DotCMSContentType[]);
         });
-        expect(dotPageTypesService.getPages).toHaveBeenCalledTimes(1);
-        expect(dialogService.open).toHaveBeenCalledWith(DotPagesCreatePageDialogComponent, {
+        expect(dotPageTypesService.getPageContentTypes).toHaveBeenCalledTimes(1);
+        expect(dialogService.open).toHaveBeenCalledWith(DotCreatePageDialogComponent, {
             header: 'create.page',
             width: '58rem',
             data: {
