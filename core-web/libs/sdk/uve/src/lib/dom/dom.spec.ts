@@ -371,9 +371,6 @@ describe('getContainersData', () => {
                     containerStructures: [{ contentTypeVar: 'type1' }, { contentTypeVar: 'type2' }],
                     container: {
                         maxContentlets: 5,
-                        parentPermissionable: {
-                            variantId: 'variant-1'
-                        },
                         path: '/test/path'
                     }
                 }
@@ -388,7 +385,6 @@ describe('getContainersData', () => {
 
         expect(result).toEqual({
             uuid: '123',
-            variantId: 'variant-1',
             acceptTypes: 'type1,type2',
             maxContentlets: 5,
             identifier: '/test/path'
