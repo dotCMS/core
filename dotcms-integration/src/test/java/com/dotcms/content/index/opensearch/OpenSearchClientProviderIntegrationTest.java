@@ -397,9 +397,9 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
 
     /**
      * Test OpenSearch 3.x version validation using Maven POM properties
-     * This test reads the endpoint from DOT_ES_ENDPOINTS system property and validates the version
+     * This test reads the endpoint from ES_ENDPOINTS_UPGRADE system property and validates the version
      *
-     * Given Scenario: Integration tests with DOT_ES_ENDPOINTS property from Maven POM
+     * Given Scenario: Integration tests with ES_ENDPOINTS_UPGRADE property from Maven POM
      * Expected: Should connect to OpenSearch 3.x instance and return version starting with "3."
      */
     @Test
@@ -407,7 +407,7 @@ public class OpenSearchClientProviderIntegrationTest extends IntegrationTestBase
         ConfigurableOpenSearchProvider provider = null;
         try {
             // Given Scenario: Read OpenSearch 3.x endpoint from Maven POM system property
-            String opensearchUpgradeEndpoint = Config.getStringProperty("DOT_ES_ENDPOINTS_UPGRADE", "");
+            String opensearchUpgradeEndpoint = Config.getStringProperty("ES_ENDPOINTS_UPGRADE", "");
 
             Logger.info(this, "🔍 Testing OpenSearch 3.x version validation from Maven properties");
             Logger.info(this, "🔍 DOT_ES_ENDPOINTS_UPGRADE property: " + opensearchUpgradeEndpoint);

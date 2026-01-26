@@ -379,7 +379,7 @@
                                 <name>${docker.image.search.upgrade}</name>
                                 <run>
                                     <env>
-                                        <cluster.name>opensearch-upgrade-cluster</cluster.name>
+                                        <cluster.name>opensearch-cluster</cluster.name>
                                         <discovery.type>single-node</discovery.type>
                                         <bootstrap.system_call_filter>false</bootstrap.system_call_filter>
                                         <bootstrap.memory_lock>true</bootstrap.memory_lock>
@@ -387,7 +387,7 @@
                                         <OPENSEARCH_JAVA_OPTS>-Xms512m -Xmx512m -XX:-UseContainerSupport</OPENSEARCH_JAVA_OPTS>
                                     </env>
                                     <ports>
-                                        <port>os.upgrade.port:9204</port>
+                                        <port>os.upgrade.port:9200</port>
                                     </ports>
                                     <volumes>
                                         <bind>
@@ -441,6 +441,7 @@
                                         <DOT_STARTER_DATA_LOAD>${docker.starter.volume.internal}/starter.zip</DOT_STARTER_DATA_LOAD>
                                         <file.encoding>UTF-8</file.encoding>
                                         <DOT_ES_ENDPOINTS>http://es:9200</DOT_ES_ENDPOINTS>
+                                        <DOT_ES_ENDPOINTS_UPGRADE>http://localhost:${os.upgrade.port}</DOT_ES_ENDPOINTS_UPGRADE>
                                         <DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>com.dotmarketing.db.SystemEnvDataSourceStrategy</DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS>
                                         <DOT_ANALYTICS_IDP_URL>http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/token</DOT_ANALYTICS_IDP_URL>
                                         <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
