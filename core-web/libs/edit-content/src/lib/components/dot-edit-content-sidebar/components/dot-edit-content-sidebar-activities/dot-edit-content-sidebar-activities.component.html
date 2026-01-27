@@ -1,38 +1,45 @@
 <!-- Activities List -->
-<section class="activities" role="log" aria-label="Content Activities">
+<section class="flex flex-col h-full relative" role="log" aria-label="Content Activities">
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="activities__content">
-            <p-dataView
+        <div class="flex-1 overflow-y-auto py-3 px-4">
+            <p-dataview
                 #dv
                 [value]="$activities()"
                 [rows]="10"
                 [layout]="'list'"
+                [style]="{ display: 'block' }"
                 [paginator]="false"
                 data-testid="activities-list">
-                <ng-template pTemplate="list" let-activities>
+                <ng-template #list let-activities>
                     @for (
                         activity of activities;
                         track activity.taskId + '_' + activity.createdDate
                     ) {
-                        <div class="activities__item-wrapper" #activityItem>
-                            <div class="activities__item" data-testid="activity-item">
-                                <div class="activities__header">
+                        <div
+                            class="relative [&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:absolute [&:not(:last-child)]:after:bottom-[-1rem] [&:not(:last-child)]:after:left-0 [&:not(:last-child)]:after:w-full [&:not(:last-child)]:after:h-px [&:not(:last-child)]:after:bg-[var(--gray-300)] animate-[fadeIn_0.2s_ease-out]"
+                            #activityItem>
+                            <div class="bg-[var(--gray-100)] p-1" data-testid="activity-item">
+                                <div class="flex items-center mb-1 gap-1">
                                     <p-avatar
                                         shape="circle"
                                         dotGravatar
                                         [email]="activity?.email"
-                                        styleClass="activities__avatar" />
-                                    <span class="activities__user" data-testid="activity-user">
+                                        [pt]="avatarPt" />
+                                    <span
+                                        class="text-sm font-semibold text-black mr-2"
+                                        data-testid="activity-user">
                                         {{ activity.postedBy }}
                                     </span>
-                                    <span class="activities__date" data-testid="activity-date">
+                                    <span
+                                        class="text-xs text-black ml-auto"
+                                        data-testid="activity-date">
                                         {{ activity.createdDate | dotRelativeDate }}
                                     </span>
                                 </div>
                                 <div
-                                    class="activities__description"
+                                    class="block text-[var(--gray-800)] text-sm leading-[1.4] break-words whitespace-pre-line"
                                     data-testid="activity-description">
                                     {{ activity.commentDescription }}
                                 </div>
@@ -40,35 +47,41 @@
                         </div>
                     }
                 </ng-template>
-                <ng-template pTemplate="empty">
-                    <span class="activities__empty" data-testid="empty-state">
+                <ng-template #empty>
+                    <span
+                        class="block text-[var(--gray-800)] text-sm bg-[var(--gray-100)]"
+                        data-testid="empty-state">
                         {{ 'edit.content.sidebar.activities.empty' | dm }}
                     </span>
                 </ng-template>
-            </p-dataView>
+            </p-dataview>
         </div>
         @if (!$hideForm()) {
-            <div class="activities__footer" data-testid="activities-footer">
+            <div
+                class="sticky bottom-0 z-[1] w-full bg-[var(--gray-100)] p-3 border-t border-[var(--gray-200)]"
+                data-testid="activities-footer">
                 <form
                     [formGroup]="form"
                     (ngSubmit)="onSubmit()"
-                    class="activities__form"
+                    class="flex flex-col gap-3"
                     data-testid="activities-form">
-                    <div class="activities__control">
+                    <div class="relative">
                         <textarea
                             pInputTextarea
                             [rows]="5"
                             autoResize="false"
                             formControlName="comment"
                             data-testid="activities-input"
-                            class="activities__input"></textarea>
+                            class="h-auto w-full resize-none text-sm leading-[1.4]"></textarea>
 
-                        <dot-field-validation-message [field]="form.get('comment')" />
+                        <dot-field-validation-message
+                            [field]="form.get('comment')"
+                            class="absolute bottom-[-0.75rem] left-0 [&_small]:animate-[fadeIn_0.2s_ease-out]" />
 
                         <!-- Character Counter -->
                         <div
-                            class="activities__char-counter"
-                            [class.activities__char-counter--limit]="isAtMaxLength()"
+                            class="mt-1 text-xs text-[var(--gray-600)] text-left transition-colors"
+                            [class.text-[var(--color-palette-red)]!]="isAtMaxLength()"
                             data-testid="activities-char-counter">
                             @if (!isAtMaxLength()) {
                                 {{ commentLength() }}/{{ commentMaxLength }}
@@ -88,25 +101,25 @@
                         </div>
                     </div>
 
-                    <div class="activities__actions">
-                        <button
-                            pButton
+                    <div class="flex justify-end gap-2">
+                        <p-button
                             type="button"
                             [disabled]="!form.dirty || !commentControl.value?.trim() || $isSaving()"
-                            class="p-button-sm p-button-secondary activities__clear"
+                            size="small"
+                            severity="secondary"
                             data-testid="activities-clear"
-                            (click)="clearComment()">
+                            (onClick)="clearComment()">
                             {{ 'edit.content.sidebar.activities.clear' | dm }}
-                        </button>
-                        <button
-                            pButton
+                        </p-button>
+                        <p-button
                             type="submit"
                             [loading]="$isSaving()"
                             [disabled]="$isSaving() || !commentControl.value?.trim()"
-                            class="p-button-sm p-button-primary activities__submit"
+                            size="small"
+                            severity="secondary"
                             data-testid="activities-submit">
                             {{ 'edit.content.sidebar.activities.send' | dm }}
-                        </button>
+                        </p-button>
                     </div>
                 </form>
             </div>

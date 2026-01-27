@@ -38,7 +38,8 @@
                             <dot-copy-button
                                 [copy]="contentlet.identifier"
                                 [label]="contentlet.shortyId"
-                                [tooltipText]="'Identifier' | dm"></dot-copy-button>
+                                [tooltipText]="'Identifier' | dm"
+                                customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case"></dot-copy-button>
                         }
                     </ng-template>
 
@@ -64,7 +65,8 @@
 
                 <!-- Workflow section -->
                 <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.workflow.title' | dm">
+                    [title]="'edit.content.sidebar.workflow.title' | dm"
+                    class="[&_.dot-section]:border-b-0">
                     <dot-edit-content-sidebar-workflow
                         [workflowSelection]="$workflowSelection()"
                         [(showDialog)]="$showDialog"
@@ -108,39 +110,48 @@
 <!-- Confirmation dialog for delete actions -->
 <p-confirmDialog />
 
+<!-- This is a custom control to hide the sidebar -->
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
-    <p-button
-        (onClick)="$store.toggleSidebar()"
-        [rounded]="true"
-        [text]="true"
-        [icon]="'pi pi-arrow-right'"
-        size="small"
-        ariaLabel="Toggle sidebar"
-        data-testId="toggle-button"
-        [pt]="toggleButtonPt">
-        <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg">
-            <rect
-                x="2.70588"
-                y="3.17658"
-                width="14.5882"
-                height="13.647"
-                rx="1.17647"
-                stroke="currentColor"
-                stroke-width="1.41176" />
-            <line
-                x1="12.3528"
-                y1="16.1223"
-                x2="12.3528"
-                y2="3.87806"
-                stroke="currentColor"
-                stroke-width="1.88235" />
-            <rect x="10.8887" y="3.77783" width="6.22222" height="12.4444" fill="currentColor" />
-        </svg>
-    </p-button>
+    <div
+        class="min-h-[50px] border-l border-[var(--gray-200)] flex items-center justify-center flex-0 min-w-[64px]">
+        <p-button
+            (onClick)="$store.toggleSidebar()"
+            [rounded]="true"
+            [text]="true"
+            [icon]="'pi pi-arrow-right'"
+            size="small"
+            ariaLabel="Toggle sidebar"
+            data-testId="toggle-button"
+            [pt]="toggleButtonPt">
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg">
+                <rect
+                    x="2.70588"
+                    y="3.17658"
+                    width="14.5882"
+                    height="13.647"
+                    rx="1.17647"
+                    stroke="currentColor"
+                    stroke-width="1.41176" />
+                <line
+                    x1="12.3528"
+                    y1="16.1223"
+                    x2="12.3528"
+                    y2="3.87806"
+                    stroke="currentColor"
+                    stroke-width="1.88235" />
+                <rect
+                    x="10.8887"
+                    y="3.77783"
+                    width="6.22222"
+                    height="12.4444"
+                    fill="currentColor" />
+            </svg>
+        </p-button>
+    </div>
 </ng-template>

@@ -41,7 +41,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     styleUrls: ['./dot-edit-content-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)] bg-[var(--gray-100)] shadow-md relative'
+        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)] bg-[var(--gray-100)] shadow-md relative min-w-0 max-w-full overflow-x-hidden'
     },
     providers: [ConfirmationService],
     imports: [
