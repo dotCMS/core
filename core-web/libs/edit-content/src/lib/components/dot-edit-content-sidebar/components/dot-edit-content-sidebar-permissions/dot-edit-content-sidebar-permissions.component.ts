@@ -40,8 +40,11 @@ export class DotEditContentSidebarPermissionsComponent implements OnDestroy {
 
     /**
      * Opens the permissions dialog with an iframe for the current contentlet.
+     * Prevents opening multiple instances if the user clicks the card repeatedly.
      */
     openPermissionsDialog(): void {
+        if (this.#permissionsDialogRef) return;
+
         const id = this.identifier();
         const langId = this.languageId();
         if (!id || !langId) return;
