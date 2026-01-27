@@ -1,5 +1,5 @@
 <p-card>
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <div class="thumbnail-container">
             <dot-contentlet-thumbnail
                 [contentlet]="contentlet"
@@ -8,12 +8,18 @@
                 data-testId="dot-contentlet-thumbnail" />
         </div>
     </ng-template>
-    <h2 *pTemplate="'title'" class="title" data-testId="dot-card-title">
-        {{ contentlet?.fileName || contentlet?.title }}
-    </h2>
-    <ng-template pTemplate="footer">
+    <ng-template #title>
+        <h2 class="title" data-testId="dot-card-title">
+            {{ contentlet?.fileName || contentlet?.title }}
+        </h2>
+    </ng-template>
+    <ng-template #footer>
         <div class="state">
-            <span class="badge" data-testId="dot-card-language">{{ contentlet?.language }}</span>
+            <p-chip
+                class="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                data-testId="dot-card-language">
+                {{ contentlet?.language }}
+            </p-chip>
             <dot-contentlet-status-chip [state]="contentlet" />
         </div>
     </ng-template>

@@ -9,11 +9,7 @@
                     <dot-spinner size="30px" />
                     Uploading video, wait until finished.
                 </div>
-                <button
-                    (click)="canceled.emit(true)"
-                    class="p-button-md p-button-outlined"
-                    pButton
-                    label="Cancel"></button>
+                <p-button (click)="canceled.emit(true)" label="Cancel" variant="outlined" />
             </div>
         </div>
     }

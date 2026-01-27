@@ -38,20 +38,8 @@
             </div>
         }
         <div class="form-action">
-            <button
-                (click)="hide.emit(true)"
-                [style]="{ width: '120px' }"
-                class="p-button-outlined"
-                pButton
-                type="button"
-                label="CANCEL"></button>
-            <button
-                [disabled]="form.invalid"
-                [style]="{ padding: '11.5px 24px' }"
-                class="p-button"
-                pButton
-                type="submit"
-                label="APPLY"></button>
+            <p-button (onClick)="hide.emit(true)" variant="outlined" label="CANCEL" />
+            <p-button [disabled]="form.invalid" label="APPLY" (onClick)="onSubmit()" />
         </div>
     </form>
 }

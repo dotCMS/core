@@ -6,15 +6,15 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { Checkbox } from 'primeng/checkbox';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { DynamicDialog } from 'primeng/dynamicdialog';
+import { InputText } from 'primeng/inputtext';
 import { Paginator } from 'primeng/paginator';
 import { Textarea } from 'primeng/textarea';
-import { Card } from 'primeng/card';
-import { Checkbox } from 'primeng/checkbox';
-import { InputText } from 'primeng/inputtext';
-import { Button } from 'primeng/button';
 
 import {
     DotContentSearchService,
