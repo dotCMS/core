@@ -26,7 +26,7 @@
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
             [class.dot-edit-content-tabview--single-tab]="$hasSingleTab()"
-            (onChange)="onActiveIndexChange($event)"
+            (valueChange)="onActiveIndexChange($event)"
             [value]="activeIndex"
             scrollable="false"
             class="dot-edit-content-tabview">
@@ -91,7 +91,7 @@
                     <div
                         class="dot-edit-content-actions__lock flex items-center gap-2"
                         [class.locked]="isContentLocked">
-                        <p-inputSwitch
+                        <p-toggleSwitch
                             [ngModel]="isContentLocked"
                             [disabled]="!canLock"
                             (onChange)="onContentLockChange($event)"

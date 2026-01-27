@@ -1,134 +1,36 @@
-@use "../../../../../dotcms-scss/shared/colors";
-@use "../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../dotcms-scss/shared/shadows";
-@use "../../../../../dotcms-scss/shared/spacing";
+/* PrimeNG/Lara + Tailwind handle styling for this component. */
 
-@use "variables" as *;
-
+/* Minimal custom styles only for specific overrides that cannot be achieved via Tailwind or PrimeNG passthrough. */
 :host {
-    display: flex;
-    width: 350px;
-    height: 100%;
-    padding-bottom: spacing.$spacing-0;
-    flex-direction: column;
-    align-items: flex-start;
-    border-left: 1px solid colors.$color-palette-gray-400;
-    background: colors.$color-palette-gray-100;
-    box-shadow: shadows.$shadow-m;
-    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: hidden;
 
     ::ng-deep {
+        /* Append content wrapper created by TabViewInsertDirective */
         .tabview-append-content {
             min-height: 50px;
-            border-left: 1px solid colors.$color-palette-black-op-10;
+            border-left: 1px solid var(--gray-200);
             display: flex;
             align-items: center;
             justify-content: center;
             flex: 0;
             min-width: 64px;
         }
-        .p-tabview-nav-container {
-            padding: 0;
-            border-bottom: solid 1px colors.$color-palette-gray-300;
-            border-right: none;
-            overflow: initial;
-            position: initial;
-            border-left: none;
+
+        /* Remove border from last section in tab panel */
+        dot-edit-content-sidebar-section:last-of-type .dot-section {
+            border-bottom: none;
         }
 
-        .p-tabview-nav-content .p-tabview-nav {
-            border: none;
-            min-height: 50px;
-            max-height: 52px;
-            min-width: auto;
-        }
-
-        .p-tabview-nav-content .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-            border-top: 2px solid transparent;
-        }
-
-        .p-tabview-nav-content {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            gap: spacing.$spacing-3;
-            overflow: visible;
-            justify-content: space-between;
-        }
-
+        /* Copy button styling override */
         dot-copy-button button.p-button:not(.p-button-icon-only).p-button-sm {
             padding: 0;
 
             .p-button-label {
-                font-size: fonts.$font-size-md;
+                font-size: 0.875rem; /* 14px base font size */
                 text-transform: none;
             }
-        }
-
-        .p-tabview {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-
-            .p-tabview-nav-container {
-                position: sticky;
-                top: 0;
-                z-index: 2;
-                background-color: colors.$color-palette-gray-100;
-            }
-
-            .p-tabview-panels {
-                height: calc(100% - 54px);
-                overflow: overlay;
-                transition: opacity 150ms ease-in-out;
-
-                &.p-tabview-panels-enter {
-                    opacity: 0;
-                }
-
-                &.p-tabview-panels-enter-active {
-                    opacity: 1;
-                }
-
-                &.p-tabview-panels-exit {
-                    opacity: 1;
-                }
-
-                &.p-tabview-panels-exit-active {
-                    opacity: 0;
-                }
-
-                .p-tabview-panel {
-                    height: 100%;
-
-                    dot-edit-content-sidebar-section:last-of-type .dot-section {
-                        border-bottom: none;
-                    }
-                }
-            }
-        }
-    }
-}
-
-.temporal-content {
-    padding-top: spacing.$spacing-3;
-    padding-left: spacing.$spacing-3;
-    display: flex;
-    width: 100%;
-}
-
-.content-sidebar {
-    overflow: auto;
-    width: 100%;
-}
-
-.content-sidebar__close {
-    button {
-        rect {
-            stroke: colors.$color-palette-primary;
-        }
-        path {
-            fill: colors.$color-palette-primary;
         }
     }
 }

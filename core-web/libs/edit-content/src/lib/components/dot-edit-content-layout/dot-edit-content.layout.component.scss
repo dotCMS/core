@@ -21,15 +21,17 @@
         "topBar topBar"
         "header sidebar"
         "body sidebar";
-    grid-template-columns: 1fr 0;
+    grid-template-columns: minmax(0, 1fr) 0;
     grid-template-rows: auto auto 1fr;
     padding-bottom: 0;
     height: 100%;
     width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
     transition: grid-template-columns $basic-speed ease-in-out;
 
     &.edit-content--with-sidebar {
-        grid-template-columns: 1fr 21.875rem;
+        grid-template-columns: minmax(0, 1fr) 21.875rem;
     }
 }
 
@@ -65,8 +67,12 @@
 
 .edit-content-layout__body {
     grid-area: body;
+    min-width: 0;
+    overflow-x: hidden;
 }
 
 .edit-content-layout__sidebar {
     grid-area: sidebar;
+    min-width: 0;
+    overflow-x: hidden;
 }
