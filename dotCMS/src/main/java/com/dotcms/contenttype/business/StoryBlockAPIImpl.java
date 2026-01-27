@@ -207,6 +207,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
 
                     refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                } else {
+                    final Object nestedContent = contentMap.get(CONTENT_KEY);
+                    if (nestedContent instanceof List) {
+                        refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                    }
                 }
             }
         }
