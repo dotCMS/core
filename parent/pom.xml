@@ -1723,7 +1723,10 @@
                                     <goal>stop</goal>
                                 </goals>
                                 <phase>validate</phase>
-                                <configuration/>
+                                <configuration>
+                                    <skip>false</skip>
+                                    <filter>${docker.filter}</filter>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

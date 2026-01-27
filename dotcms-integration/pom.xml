@@ -82,7 +82,7 @@
         <test.os.upgrade.endpoints>${test.os.upgrade.scheme}://${test.os.upgrade.host}:${os.upgrade.port}</test.os.upgrade.endpoints>
         <maven.failsafe.debugArgs/>
         <coreit.test.skip>true</coreit.test.skip>
-        <docker.filter>database,opensearch,opensearch-upgrade</docker.filter>
+        <docker.filter>database,opensearch</docker.filter>
           <!-- Force to use node v18.20.3 -->
         <node.js.version>v18.20.3</node.js.version>
     </properties>
@@ -504,7 +504,7 @@
                 <artifactId>docker-maven-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <filter>database,opensearch,opensearch-upgrade</filter>
+                    <filter>${docker.filter}</filter>
                     <!-- We do not start up dotcms only services -->
                     <imagesMap>
                         <database>
@@ -591,6 +591,41 @@
                         <configuration>
                             <includes>
                                 <include>**/QuickSuite.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>opensearch-upgrade</id>
+            <activation>
+                <property>
+                    <name>opensearch.upgrade.test</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <!-- Override Docker filter to run opensearch-test-upgrade container -->
+                <docker.filter>database,opensearch-upgrade</docker.filter>
+                <!-- Override ES endpoints to use opensearch-upgrade port -->
+                <test.es.endpoints>${test.os.upgrade.endpoints}</test.es.endpoints>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <!-- Override ES endpoints to use opensearch-upgrade -->
+                                <DOT_ES_ENDPOINTS>${test.os.upgrade.endpoints}</DOT_ES_ENDPOINTS>
+                                <!-- Additional properties for opensearch-upgrade testing -->
+                                <OS_ENDPOINTS>${test.os.upgrade.endpoints}</OS_ENDPOINTS>
+                                <OS_TLS_ENABLED>false</OS_TLS_ENABLED>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/OpenSearchUpgradeSuite.java</include>
                             </includes>
                         </configuration>
                     </plugin>
