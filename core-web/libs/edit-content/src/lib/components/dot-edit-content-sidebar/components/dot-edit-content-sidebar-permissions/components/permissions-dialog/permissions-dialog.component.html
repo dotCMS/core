@@ -1,4 +1,6 @@
-@if (iframeSrc(); as src) {
+@let src = iframeSrc();
+
+@if (src) {
     <iframe
         [src]="src"
         class="block w-full border-none"
