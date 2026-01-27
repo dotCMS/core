@@ -11,7 +11,6 @@ header {
         padding: 0;
         text-align: center;
         margin-block-end: $spacing-1;
-        color: var(--Color-Neutrals-Black, #14151a);
         font-style: normal;
         line-height: normal;
     }
@@ -19,7 +18,6 @@ header {
     p {
         margin: 0;
         padding: 0;
-        color: #000;
         text-align: center;
         font-size: $font-size-md;
         font-style: normal;
@@ -34,6 +32,17 @@ h2 {
     font-weight: $font-weight-medium-bold;
 }
 
+main {
+    width: 580px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+    background-color: $white;
+    border-radius: $border-radius-md;
+    padding-block-start: $spacing-4;
+}
+
 .dot-onboarding {
     padding-block-start: $spacing-4;
     flex: 1;
@@ -41,61 +50,40 @@ h2 {
     position: relative;
 }
 
-.button-link {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    cursor: pointer;
-    color: #515667;
-}
-
 .framework-container {
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    justify-content: space-between;
-    padding: 10.5px 17.5px;
-    align-items: flex-start;
-    gap: 14px;
-    align-self: stretch;
-}
-
-.titleFramework {
-    color: var(--table-body-row-color, #4b5563);
-    font-size: 17.5px;
-    font-style: normal;
-    font-weight: $font-weight-bold;
-    line-height: normal;
-}
-
-.paragraphFramework {
-    //display: flex;
-    text-align: start;
-    width: 360px;
-    //padding: var(--Spacing-Small, 4px) var(--spacing-medium-default, 8px);
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 40px 1fr 32px;
     align-items: center;
-    gap: var(--Spacing-Small, 4px);
-    font-size: $font-size-md;
-    font-style: normal;
-    font-weight: $font-weight-regular-bold;
-    line-height: normal;
-}
+    gap: $spacing-4;
+    border-bottom: solid 1px $color-palette-gray-200;
+    padding-block-end: $spacing-4;
+    padding-inline: $spacing-4;
 
-.commandClass {
-    display: flex;
-    text-align: justify;
-    white-space: nowrap;
-    width: 360px;
-    text-overflow: ellipsis;
-    margin-top: 7px;
-    padding: var(--Spacing-Small, 4px) var(--spacing-medium-default, 8px);
-    justify-content: center;
-    align-items: center;
-    gap: var(--Spacing-Small, 4px);
-    font-size: $font-size-lmd;
-    font-style: normal;
-    font-weight: $font-weight-regular-bold;
-    border-radius: var(--Radius-Small, 4px);
-    background: var(--Color-GrayScale-200, #f4f4f6);
-    line-height: normal;
+    h3 {
+        margin: 0;
+        padding: 0;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semi-bold;
+        line-height: normal;
+        color: $color-palette-gray-800;
+        margin-block-end: $spacing-1;
+    }
+
+    p {
+        margin: 0;
+        color: $color-palette-gray-800;
+    }
+
+    .command-text {
+        background: $color-palette-gray-200;
+        padding: $spacing-0 $spacing-2;
+        border-radius: $spacing-1;
+        font-family: $font-code;
+        font-size: $font-size-md;
+        color: $color-palette-gray-800;
+    }
+
+    .paragraph-text {
+        font-size: $font-size-md;
+    }
 }

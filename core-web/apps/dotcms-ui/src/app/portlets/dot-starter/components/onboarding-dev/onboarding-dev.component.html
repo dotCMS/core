@@ -1,64 +1,40 @@
-<div
-    style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #faf5ff 100%); height: 100%"
+<div style="background: linear-gradient(135deg, #d8e9ff 0%, #ffffff 70%, #faf5ff 100%); height: 100%"
     class="dot-onboarding relative">
     <p class="button-link flex items-center" (click)="resetUserProfile()">
         <img src="dotAdmin/assets/logos/sync.svg" alt="" />
         <span class="mx-1 underline">Not a developer?</span>
     </p>
-    <div class="">
-        <header>
-            <h1>Start with dotCMS headless development in minutes</h1>
-            <p>Seamlessly integrate dotCMS into your favorite technology stack.</p>
-        </header>
+    <header>
+        <h1>Start with dotCMS headless development in minutes</h1>
+        <p>Seamlessly integrate dotCMS into your favorite technology stack.</p>
+    </header>
+
+    <main>
         @for (framework of frameworks; track framework.id) {
-            <div style="width: 562px" class="framework-container mx-auto bg-white">
-                <div class="">
-                    <p-avatar
-                        [image]="framework.logo"
-                        size="large"
-                        shape="square"
-                        styleClass="bg-white w-40 h-40"></p-avatar>
-                </div>
-                <div class="flex-column">
-                    <h3 class="m-0 p-0 titleFramework">{{ framework.label }}</h3>
-                    @if (framework.cliCommand !== '') {
-                        <p class="commandClass">> {{ framework.cliCommand }}</p>
-                    } @else {
-                        <p class="paragraphFramework">
-                            Our interactive guide is coming soon. Try the fully configured
-                            <a
-                                target="_blank"
-                                style="text-decoration: none"
-                                href="{{ framework.githubUrl }}">
-                                {{ framework.label }} starter kit
-                            </a>
-                        </p>
-                    }
-                </div>
+        <div class="framework-container">
+            <img [src]="framework.logo" [alt]="framework.label" width="40" height="40" style="object-fit: contain" />
+            <div class="flex-column">
+                <h3>{{ framework.label }}</h3>
                 @if (framework.cliCommand !== '') {
-                    <div class="relative">
-                        <img
-                            (click)="copyToClipboard(framework)"
-                            [src]="'/dotAdmin/assets/logos/copy.svg'"
-                            class="bg-white cursor-pointer w-40 h-40" />
-                        @if (framework.copied) {
-                            <span
-                                style="top: 20px; left: 20px"
-                                class="absolute text-xs text-black px-2 py-1 rounded">
-                                Copied!
-                            </span>
-                        }
-                    </div>
+                <p class="command-text">{{ framework.cliCommand }}</p>
                 } @else {
-                    <div>
-                        <a target="_blank" href="{{ framework.githubUrl }}">
-                            <img
-                                [src]="'/dotAdmin/assets/logos/external-link.svg'"
-                                class="bg-white w-40 h-40" />
-                        </a>
-                    </div>
+                <p class="paragraph-text">
+                    Our interactive guide is coming soon. Try the fully configured
+                    <a target="_blank" style="text-decoration: none" href="{{ framework.githubUrl }}">
+                        {{ framework.label }} starter kit
+                    </a>
+                </p>
                 }
             </div>
+            @if (framework.cliCommand !== '') {
+            <dot-copy-button [copy]="framework.cliCommand" />
+            } @else {
+            <p-button
+                icon="pi pi-external-link"
+                styleClass="p-button-text p-button-sm"
+                (click)="openExternalLink(framework.githubUrl)" />
+            }
+        </div>
         }
-    </div>
+    </main>
 </div>

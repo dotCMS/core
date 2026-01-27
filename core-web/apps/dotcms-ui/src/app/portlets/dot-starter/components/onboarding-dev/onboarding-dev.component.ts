@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
-import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -16,6 +15,8 @@ import { TabViewModule } from 'primeng/tabview';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotCopyButtonComponent } from '@dotcms/ui';
+
 import { OnboardingFramework } from './models';
 
 @Component({
@@ -24,6 +25,7 @@ import { OnboardingFramework } from './models';
     styleUrls: ['./onboarding-dev.component.scss'],
     imports: [
         AccordionModule,
+        DotCopyButtonComponent,
         ButtonModule,
         CommonModule,
         FormsModule,
@@ -35,8 +37,7 @@ import { OnboardingFramework } from './models';
         RouterModule,
         TagModule,
         TooltipModule,
-        TabViewModule,
-        AvatarModule
+        TabViewModule
     ]
 })
 export class DotOnboardingDevComponent {
@@ -101,20 +102,14 @@ export class DotOnboardingDevComponent {
         this.eventEmitter.emit('reset-user-profile');
     }
 
+    public openExternalLink(url: string): void {
+        window.open(url, '_blank');
+    }
+
     public copyToClipboard(framework: OnboardingFramework): void {
         if (!framework.cliCommand) return;
-        navigator.clipboard.writeText(framework.cliCommand).then(
-            () => {
-                this.frameworks = this.frameworks.map((f) =>
-                    f.id === framework.id ? { ...f, copied: true } : { ...f, copied: false }
-                );
-                setTimeout(() => {
-                    this.frameworks = this.frameworks.map((f) => ({ ...f, copied: false }));
-                }, 1500);
-            },
-            (err) => {
-                console.error('Failed to copy:', err);
-            }
+        navigator.clipboard.writeText(framework.cliCommand).catch((err) =>
+            console.error('Failed to copy:', err)
         );
     }
 }
