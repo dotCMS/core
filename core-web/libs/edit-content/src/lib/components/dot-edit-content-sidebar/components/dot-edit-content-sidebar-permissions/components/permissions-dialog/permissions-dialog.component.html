@@ -1,0 +1,12 @@
+@if (iframeSrc(); as src) {
+    <iframe
+        [src]="src"
+        class="block w-full border-none"
+        [style.min-height]="'60vh'"
+        title="Content permissions"
+        data-testId="permissions-iframe"></iframe>
+} @else {
+    <p class="p-3 m-0 text-500" data-testId="permissions-empty">
+        No content selected. Permissions require a content item.
+    </p>
+}

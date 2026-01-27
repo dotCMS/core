@@ -15,19 +15,21 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
+import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
-    DotWorkflowState,
-    DotHistoryTimelineItemAction
+    DotHistoryTimelineItemAction,
+    DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
@@ -55,11 +57,15 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
-        DotEditContentSidebarHistoryComponent
+        DotEditContentSidebarHistoryComponent,
+        DotEditContentSidebarPermissionsComponent
     ]
 })
 export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly #dotMessageService = inject(DotMessageService);
+
+    #lastActiveTabIndex = 0;
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
     readonly $contentType = this.$store.contentType;
@@ -142,8 +148,7 @@ export class DotEditContentSidebarComponent {
      * @param $event - The event object containing the active index.
      */
     onActiveIndexChange($event: TabViewChangeEvent) {
-        const { index } = $event;
-        this.$store.setActiveSidebarTab(index);
+        this.$store.setActiveSidebarTab($event.index);
     }
 
     /**
