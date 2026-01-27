@@ -351,8 +351,12 @@ describe('getDotContentletAttributes', () => {
 
         const result = getDotContentletAttributes(contentlet, 'test-container');
 
-        expect(result['data-dot-style-properties']).toBe(JSON.stringify(styleProperties));
-        expect(JSON.parse(result['data-dot-style-properties']!)).toEqual(styleProperties);
+        const stylePropertiesAttr = result['data-dot-style-properties'];
+        expect(stylePropertiesAttr).toBe(JSON.stringify(styleProperties));
+        if (!stylePropertiesAttr) {
+            throw new Error('stylePropertiesAttr should be defined');
+        }
+        expect(JSON.parse(stylePropertiesAttr)).toEqual(styleProperties);
     });
 });
 
@@ -371,9 +375,6 @@ describe('getContainersData', () => {
                     containerStructures: [{ contentTypeVar: 'type1' }, { contentTypeVar: 'type2' }],
                     container: {
                         maxContentlets: 5,
-                        parentPermissionable: {
-                            variantId: 'variant-1'
-                        },
                         path: '/test/path'
                     }
                 }
@@ -388,7 +389,6 @@ describe('getContainersData', () => {
 
         expect(result).toEqual({
             uuid: '123',
-            variantId: 'variant-1',
             acceptTypes: 'type1,type2',
             maxContentlets: 5,
             identifier: '/test/path'

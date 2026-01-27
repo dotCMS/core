@@ -564,8 +564,7 @@ describe('EditEmaEditorComponent', () => {
                             uuid: '123',
                             acceptTypes: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123'],
-                            variantId: '123'
+                            contentletsId: ['123']
                         },
                         pageContainers: [
                             {
@@ -1326,8 +1325,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 2,
-                            contentletsId: ['123'],
-                            variantId: '123'
+                            contentletsId: ['123']
                         },
                         pageId: 'test',
                         position: 'after'
@@ -1406,8 +1404,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123'],
-                            variantId: '123'
+                            contentletsId: ['contentlet-identifier-123']
                         },
                         pageId: 'test',
                         position: 'before'
@@ -1483,8 +1480,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 2,
-                            contentletsId: ['123'],
-                            variantId: '123'
+                            contentletsId: ['123']
                         },
                         pageId: 'test',
                         position: 'after'
@@ -1563,8 +1559,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123'],
-                            variantId: '123'
+                            contentletsId: ['contentlet-identifier-123']
                         },
                         pageId: 'test',
                         position: 'before'
@@ -2021,7 +2016,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '123'
                                         },
                                         contentlet: {
@@ -2088,7 +2082,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '123'
                                         },
                                         contentlet: {
@@ -2136,7 +2129,6 @@ describe('EditEmaEditorComponent', () => {
                                         acceptTypes: 'Banner,Activity',
                                         identifier: '123',
                                         maxContentlets: 25,
-                                        variantId: 'DEFAULT',
                                         uuid: '123'
                                     }
                                 },
@@ -2159,7 +2151,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '456'
                                         },
                                         // Pivot contentlet
@@ -2213,7 +2204,6 @@ describe('EditEmaEditorComponent', () => {
                                         acceptTypes: 'Banner,Activity',
                                         identifier: '123',
                                         maxContentlets: 25,
-                                        variantId: 'DEFAULT',
                                         uuid: '123'
                                     }
                                 },
@@ -2236,7 +2226,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '456'
                                         },
                                         // Pivot contentlet
@@ -2298,7 +2287,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '456'
                                         },
                                         // Pivot contentlet
@@ -2362,7 +2350,6 @@ describe('EditEmaEditorComponent', () => {
                                                 acceptTypes: 'Banner,Activity,DotAsset',
                                                 identifier: '123',
                                                 maxContentlets: 25,
-                                                variantId: 'DEFAULT',
                                                 uuid: '456'
                                             }
                                         })
@@ -2436,7 +2423,6 @@ describe('EditEmaEditorComponent', () => {
                                                 acceptTypes: 'Banner,Activity,DotAsset',
                                                 identifier: '123',
                                                 maxContentlets: 25,
-                                                variantId: 'DEFAULT',
                                                 uuid: '456'
                                             },
                                             contentlet: {
@@ -2520,7 +2506,6 @@ describe('EditEmaEditorComponent', () => {
                                                 acceptTypes: 'Banner,Activity,DotAsset',
                                                 identifier: '123',
                                                 maxContentlets: 25,
-                                                variantId: 'DEFAULT',
                                                 uuid: '456'
                                             }
                                         })

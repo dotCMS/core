@@ -72,7 +72,6 @@ export interface ContainerPayload {
     identifier: string;
     contentletsId?: string[];
     maxContentlets: number;
-    variantId: string;
     uuid: string;
 }
 
