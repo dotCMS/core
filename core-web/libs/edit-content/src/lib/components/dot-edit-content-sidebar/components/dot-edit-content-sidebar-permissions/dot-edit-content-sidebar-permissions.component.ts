@@ -62,8 +62,14 @@ export class DotEditContentSidebarPermissionsComponent implements OnDestroy {
             resizable: false,
             position: 'center'
         });
-        this.#permissionsDialogRef.onClose.subscribe(() => {
-            this.#permissionsDialogRef = undefined;
+        this.#permissionsDialogRef.onClose.subscribe({
+            next: () => {
+                this.#permissionsDialogRef = undefined;
+            },
+            error: (error) => {
+                console.error('Error closing permissions dialog', error);
+                this.#permissionsDialogRef = undefined;
+            }
         });
     }
 }

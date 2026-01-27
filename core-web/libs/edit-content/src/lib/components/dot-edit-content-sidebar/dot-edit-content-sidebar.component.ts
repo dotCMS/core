@@ -15,7 +15,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DropdownModule } from 'primeng/dropdown';
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
@@ -63,9 +62,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 })
 export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
-    readonly #dotMessageService = inject(DotMessageService);
-
-    #lastActiveTabIndex = 0;
     readonly $identifier = this.$store.getCurrentContentIdentifier;
     readonly $formValues = this.$store.formValues;
     readonly $contentType = this.$store.contentType;
