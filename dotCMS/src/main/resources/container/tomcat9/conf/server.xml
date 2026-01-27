@@ -2,6 +2,28 @@
 
 <Server port="${CMS_SERVER_PORT:-8005}" shutdown="${CMS_SERVER_SHUTDOWN:-SHUTDOWN}">
   <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <!--
+    APR (Apache Portable Runtime) SSL Engine Configuration
+    =======================================================
+    The APR SSL Engine uses Tomcat Native library (libtcnative-1) with native OpenSSL
+    for improved SSL/TLS performance compared to Java JSSE.
+
+    FIPS Mode Auto-Detection:
+    - The container automatically detects FIPS-enabled environments at startup
+    - If FIPS mode is detected, CMS_SSL_ENGINE is automatically set to 'off'
+    - This prevents JVM crashes with OpenSSL 3.x in FIPS environments
+
+    Configuration Options:
+    1. CMS_SSL_ENGINE=on (default): Uses native APR SSL for best performance
+    2. CMS_SSL_ENGINE=off: Uses Java JSSE (required for FIPS/OpenSSL 3.x compatibility)
+    3. CMS_DISABLE_APR_SSL=true: Alternative way to disable APR SSL Engine
+
+    Performance Impact:
+    - APR SSL enabled: Better performance with native OpenSSL
+    - APR SSL disabled: Comparable performance with Java JSSE, better compatibility
+
+    If APR SSL is disabled, Tomcat automatically falls back to Java JSSE.
+  -->
   <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="${CMS_SSL_ENGINE:-on}" />
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
   <Service name="Catalina">
