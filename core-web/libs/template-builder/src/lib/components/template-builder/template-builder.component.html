@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <p-toolbar>
         <div class="p-toolbar-group-start">
-            <ng-content select="[toolbar-left]"></ng-content>
+            <ng-content select="[toolbar-left]" />
         </div>
         <div class="p-toolbar-group-end">
             <dotcms-add-widget
@@ -23,8 +23,8 @@
             <dotcms-template-builder-actions
                 (selectTheme)="openThemeSelectorDynamicDialog()"
                 [layoutProperties]="vm.layoutProperties"
-                data-testId="template-builder-actions"></dotcms-template-builder-actions>
-            <ng-content select="[toolbar-actions-right]"></ng-content>
+                data-testId="template-builder-actions" />
+            <ng-content select="[toolbar-actions-right]" />
         </div>
     </p-toolbar>
     <div
@@ -75,11 +75,7 @@
                         #rowElement
                         data-testId="row">
                         <div class="grid-stack-item-content grid-stack">
-                            @for (
-                                box of row.subGridOpts?.children;
-                                track identify(i, box);
-                                let i = $index
-                            ) {
+                            @for (box of row.subGridOpts?.children; track identify($index, box)) {
                                 <div
                                     [attr.gs-id]="box.id"
                                     [attr.gs-auto]="true"
@@ -87,7 +83,7 @@
                                     [attr.gs-y]="box.y"
                                     [attr.gs-w]="box.w"
                                     [attr.gs-h]="box.h"
-                                    [attr.data-testId]="'box-' + i"
+                                    [attr.data-testId]="'box-' + $index"
                                     class="grid-stack-item sub"
                                     #boxElement>
                                     <dotcms-template-builder-box
@@ -95,11 +91,11 @@
                                         (addContainer)="addContainer(box, row.id, $event)"
                                         (deleteContainer)="deleteContainer(box, row.id, $event)"
                                         (editClasses)="editBoxStyleClasses(row.id, box)"
-                                        [attr.data-testId]="'builder-box-' + i"
+                                        [attr.data-testId]="'builder-box-' + $index"
                                         [containerMap]="vm.containerMap"
                                         [items]="box.containers"
                                         [width]="box.w"
-                                        class="grid-stack-item-content"></dotcms-template-builder-box>
+                                        class="grid-stack-item-content" />
                                 </div>
                             }
                         </div>

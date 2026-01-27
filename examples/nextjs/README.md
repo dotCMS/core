@@ -52,6 +52,7 @@ The example above is a Next.js front end for the [dotCMS demo site](https://demo
     - [Understanding the Structure](#understanding-the-structure)
     - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
     - [How to Render Your Page](#how-to-render-your-page)
+    - [Style Editor](#style-editor)
 - [Conclusion](#conclusion)
 - [Learn More](#learn-more)
 
@@ -281,15 +282,15 @@ The process works as follows:
 Here's how the client is configured:
 
 ```js
-import { createDotCMSClient } from '@dotcms/client';
+import { createDotCMSClient } from "@dotcms/client";
 
 export const dotCMSClient = createDotCMSClient({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
     authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
     siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID,
     requestOptions: {
-        cache: 'no-cache'
-    }
+        cache: "no-cache",
+    },
 });
 ```
 
@@ -300,7 +301,7 @@ export const getDotCMSPage = async (path, searchParams) => {
     try {
         return await dotCMSClient.page.get(path, searchParams);
     } catch (e) {
-        console.error('ERROR FETCHING PAGE: ', e.message);
+        console.error("ERROR FETCHING PAGE: ", e.message);
         return null;
     }
 };
@@ -339,15 +340,15 @@ When a page is rendered:
 Here's how this looks in code:
 
 ```js
-'use client';
+"use client";
 
-import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
+import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
 // Define custom components for specific Content Types
 // The key is the Content Type variable name in dotCMS
 const pageComponents = {
     dotCMSProductContent: MyCustomDotCMSProductComponent,
-    dotCMSBlogPost: BlogPostComponent
+    dotCMSBlogPost: BlogPostComponent,
 };
 
 export function MyPage({ page }) {
@@ -385,7 +386,7 @@ const pageComponents = {
     // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
     DotCMSProduct: ProductComponent,
     // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-    DotCMSBlogPost: BlogPostComponent
+    DotCMSBlogPost: BlogPostComponent,
 };
 ```
 
@@ -424,6 +425,128 @@ This mapping should be passed to the `DotCMSLayoutBody` component as shown in th
 - [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
 - [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react/) - Complete reference for the React components library
+
+### Style Editor
+
+The Style Editor enables content editors to customize component appearance (typography, colors, layouts, etc.) directly in the Universal Visual Editor without code changes. Style properties are defined by developers and made editable through style editor schemas.
+
+#### Defining a Style Editor Schema
+
+Create a schema file (e.g., `src/utils/styleEditorSchemas.js`) that defines editable style properties for your content types:
+
+```js
+import { defineStyleEditorSchema, styleEditorField } from "@dotcms/uve";
+
+export const BANNER_SCHEMA = defineStyleEditorSchema({
+    contentType: 'Banner', // Must match your dotCMS Content Type
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                styleEditorField.dropdown({
+                    id: 'title-size',
+                    label: 'Title Size',
+                    options: [
+                        { label: 'Small', value: 'text-4xl' },
+                        { label: 'Medium', value: 'text-5xl' },
+                        { label: 'Large', value: 'text-6xl' },
+                    ]
+                }),
+                styleEditorField.checkboxGroup({
+                    id: 'title-style',
+                    label: 'Title Style',
+                    options: [
+                        { label: 'Bold', key: 'bold' },
+                        { label: 'Italic', key: 'italic' },
+                    ]
+                }),
+            ]
+        },
+        {
+            title: 'Layout',
+            fields: [
+                styleEditorField.radio({
+                    id: 'text-alignment',
+                    label: 'Text Alignment',
+                    options: [
+                        { label: 'Left', value: 'left' },
+                        { label: 'Center', value: 'center' },
+                        { label: 'Right', value: 'right' },
+                    ]
+                }),
+            ]
+        },
+    ]
+});
+```
+
+#### Field Types
+
+The Style Editor supports four field types:
+
+- **`styleEditorField.input()`** - Text or number input for custom values
+- **`styleEditorField.dropdown()`** - Dropdown with predefined options
+- **`styleEditorField.radio()`** - Radio buttons for single selection (supports images)
+- **`styleEditorField.checkboxGroup()`** - Multiple checkboxes (returns object with boolean values)
+
+#### Registering Schemas
+
+Register your schemas in your page component using the `useStyleEditorSchemas` hook:
+
+```js
+"use client";
+
+import { useStyleEditorSchemas } from "@dotcms/react";
+import { BANNER_SCHEMA, ACTIVITY_SCHEMA } from "@/utils/styleEditorSchemas";
+
+export function Page({ pageContent }) {
+    // Register schemas - makes them available in UVE edit mode
+    useStyleEditorSchemas([BANNER_SCHEMA, ACTIVITY_SCHEMA]);
+
+    return (
+        // Your page content
+    );
+}
+```
+
+#### Using Style Properties in Components
+
+Style properties are automatically passed to your contentlet components via the `dotStyleProperties` prop. Access them with defaults:
+
+```js
+function Banner({ title, caption, dotStyleProperties }) {
+    // Extract style properties with defaults
+    const titleSize = dotStyleProperties?.["title-size"] || "text-6xl";
+    const titleStyle = dotStyleProperties?.["title-style"] || {};
+    const textAlignment = dotStyleProperties?.["text-alignment"] || "center";
+
+    // Build dynamic classes
+    const titleClasses = [
+        titleSize,
+        titleStyle.bold ? "font-bold" : "font-normal",
+        titleStyle.italic ? "italic" : "",
+    ].filter(Boolean).join(" ");
+
+    return (
+        <div className={`text-${textAlignment}`}>
+            <h2 className={titleClasses}>{title}</h2>
+            <p>{caption}</p>
+        </div>
+    );
+}
+```
+
+**Value Types:**
+- **Input/Dropdown/Radio**: Returns a string (the selected value)
+- **Checkbox Group**: Returns an object with boolean values (e.g., `{ bold: true, italic: false }`)
+
+**Best Practices:**
+- Always provide default values when accessing style properties
+- Use meaningful field IDs that match your styling logic
+- Group related fields into logical sections
+- The `contentType` in your schema must exactly match your dotCMS Content Type variable name
+
+For complete Style Editor documentation, see the [@dotcms/uve Style Editor guide](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/uve/README.md#style-editor).
 
 ## Conclusion
 

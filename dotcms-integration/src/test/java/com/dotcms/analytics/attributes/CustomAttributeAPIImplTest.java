@@ -3,7 +3,6 @@ package com.dotcms.analytics.attributes;
 import com.dotcms.analytics.content.ReportResponse;
 import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.analytics.model.ResultSetItem;
-import com.dotcms.analytics.metrics.EventType;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
@@ -16,17 +15,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.*;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+/**
+ * Integration Test for {@link CustomAttributeAPIImpl} class.
+ */
 public class CustomAttributeAPIImplTest {
 
     @BeforeClass
@@ -494,31 +497,29 @@ public class CustomAttributeAPIImplTest {
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
      * is called with a query like (no filter here):
-     *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name", "request.custom.type"],
      *         "measures": ["request.count"]
      *     }
-     * </code>
+     * }</pre>
      *
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
     public void translateToFriendlyNamesWithOutFilter() throws DotDataException {
@@ -543,7 +544,7 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
@@ -605,19 +606,18 @@ public class CustomAttributeAPIImplTest {
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like this one:
-     *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name", "request.custom.type"],
      *         "measures": ["request.count"],
@@ -628,16 +628,14 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     *
+     * }</pre>
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
-    public void translateToFriendlyNamesWithoutFiltersValues() throws DotDataException, CustomAttributeProcessingException {
+    public void translateToFriendlyNamesWithoutFiltersValues() throws DotDataException {
 
         final String eventName = "Test_Event_" + System.currentTimeMillis();
 
@@ -665,26 +663,26 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like this one:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name", "request.custom.type"],
      *         "measures": ["request.count"],
@@ -696,17 +694,14 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     *
-     * Member is misspelling
-     *
+     * }</pre>
+     * Member is misspelling.
      * Should: return the same query the method goal is translated the custom attribute the query not validate it.
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
-    public void translateToFriendlyNamesWithoutFiltersMember() throws DotDataException, CustomAttributeProcessingException {
+    public void translateToFriendlyNamesWithoutFiltersMember() throws DotDataException {
 
         final String eventName = "Test_Event_" + System.currentTimeMillis();
 
@@ -735,7 +730,7 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
@@ -967,19 +962,19 @@ public class CustomAttributeAPIImplTest {
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name"],
      *         "measures": ["request.count"],
@@ -993,17 +988,15 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     * (The or is invalid is must be an array)
-     *
+     * }</pre>
+     * The OR is invalid, it must be an array.
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
-    public void translateToFriendlyNamesWithInvalidOrFilter() throws DotDataException, CustomAttributeProcessingException {
+    public void translateToFriendlyNamesWithInvalidOrFilter() throws DotDataException {
         final String eventName = "Test_Event_" + System.currentTimeMillis();
 
         final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
@@ -1033,26 +1026,26 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.name"],
      *         "measures": ["request.count"],
@@ -1066,13 +1059,11 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     * (The or is invalid is must be an array)
-     *
+     * }</pre>
+     * The OR is invalid, it must be an array.
      * Should:return the same query
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
     public void translateToFriendlyNamesWithInvalidOrFilterButNotCustomAttributes()
@@ -1107,19 +1098,19 @@ public class CustomAttributeAPIImplTest {
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name"],
      *         "measures": ["request.count"],
@@ -1133,18 +1124,16 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     * (The or is invalid is must be an array)
-     *
+     * }</pre>
+     * The OR is invalid, it must be an array.
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
     public void translateToFriendlyNamesWithInvalidAndFilter()
-            throws DotDataException, CustomAttributeProcessingException {
+            throws DotDataException {
         final String eventName = "Test_Event_" + System.currentTimeMillis();
 
         final CustomAttributeAPI customAttributeAPI = APILocator.getAnalyticsCustomAttribute();
@@ -1174,7 +1163,7 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
@@ -1248,30 +1237,30 @@ public class CustomAttributeAPIImplTest {
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event_1 as Event Type:
      *
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      *  and another call for custom_event_2:
      *
-     * <code>
+     * <pre>{@code
      * {
      *   name_2: "name_value",
      *   type_2: "type_value",
      *   anotherOne_2: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name"],
      *         "measures": ["request.count"],
@@ -1292,13 +1281,11 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     *
+     * }</pre>
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
     public void translateToFriendlyNamesWithMultiEventTypeValues() throws DotDataException {
@@ -1346,39 +1333,36 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
 
-
-
-
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event_1 as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      *  and another call for custom_event_2:
      *
-     * <code>
+     * <pre>{@code
      * {
      *   name_2: "name_value",
      *   type_2: "type_value",
      *   anotherOne_2: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name"],
      *         "measures": ["request.count"],
@@ -1399,13 +1383,11 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     *
+     * }</pre>
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
     public void translateToFriendlyNamesWithOrAndMultiEventTypeValues() throws DotDataException {
@@ -1453,36 +1435,36 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }
 
     /**
      * Method to test: {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)}
-     * WHen: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
+     * When: called the {@link CustomAttributeAPIImpl#checkCustomPayloadValidation(String, Map)} with a custom payload
      * and custom_event_1 as Event Type:
-     * <code>
+     * <pre>{@code
      * {
      *   name: "name_value",
      *   type: "type_value",
      *   anotherOne: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      *  and another call for custom_event_2:
      *
-     * <code>
+     * <pre>{@code
      * {
      *   name_2: "name_value",
      *   type_2: "type_value",
      *   anotherOne_2: "another_value"
      * }
-     * </code>
+     * }</pre>
      *
      * and then the {@link CustomAttributeAPIImpl#translateFromFriendlyName(String)} is called with a query like:
      *
-     * <code>
+     * <pre>{@code
      *     {
      *         "dimensions": ["request.custom.name"],
      *         "measures": ["request.count"],
@@ -1503,13 +1485,11 @@ public class CustomAttributeAPIImplTest {
      *             }
      *         ]
      *     }
-     * </code>
-     *
+     * }</pre>
      * Should: return a CustomAttributeProcessingException with a message as follows:
-     * "It is impossible to determine the EventType to resolve the custom attribute match"
+     * "You must filter by one Event Type in order to resolve custom attributes"
      *
-     * @throws DotDataException
-     * @throws IOException
+     * @throws DotDataException An error occurred while processing the custom attributes.
      */
     @Test
     public void translateToFriendlyNamesWithAndOperatorAndMultiEventTypeValues() throws DotDataException {
@@ -1557,7 +1537,7 @@ public class CustomAttributeAPIImplTest {
             customAttributeAPI.translateFromFriendlyName(query);
             throw new AssertionError("CustomAttributeProcessingException expected");
         } catch (CustomAttributeProcessingException e) {
-            assertEquals( "It is impossible to determine the EventType to resolve the custom attribute match",
+            assertEquals( "You must filter by one Event Type in order to resolve custom attributes",
                     e.getMessage());
         }
     }

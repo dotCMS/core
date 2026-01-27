@@ -5,8 +5,16 @@
         "types": [],
         "target": "ES2022",
         "useDefineForClassFields": false,
+<<<<<<< HEAD
         "incremental": true,
         "tsBuildInfoFile": "../../dist/out-tsc/.tsbuildinfo"
+=======
+        "module": "es2022",
+        "moduleResolution": "bundler",
+        "resolvePackageJsonExports": true,
+        "incremental": true,
+        "esModuleInterop": true
+>>>>>>> main
     },
     "files": ["src/main.ts", "src/polyfills.ts"],
     "exclude": ["**/*.stories.ts", "**/*.stories.js"]

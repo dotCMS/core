@@ -6,7 +6,6 @@ import {
     EditableContainerData
 } from '@dotcms/types';
 import {
-    DotAnalyticsAttributes,
     DotCMSContainerBound,
     DotCMSContentletBound,
     DotContainerAttributes,
@@ -280,27 +279,10 @@ export function getDotContentletAttributes(
         'data-dot-inode': contentlet?.inode,
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
-        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1'
-    };
-}
-
-/**
- * Helper function that returns an object containing analytics-specific data attributes.
- * These attributes are used by the DotCMS Analytics SDK to track content interactions.
- *
- * @param {DotCMSBasicContentlet} contentlet - The contentlet to get the analytics attributes for
- * @returns {DotAnalyticsAttributes} The analytics data attributes
- * @internal
- */
-export function getDotAnalyticsAttributes(
-    contentlet: DotCMSBasicContentlet
-): DotAnalyticsAttributes {
-    return {
-        'data-dot-analytics-identifier': contentlet?.identifier,
-        'data-dot-analytics-inode': contentlet?.inode,
-        'data-dot-analytics-basetype': contentlet?.baseType,
-        'data-dot-analytics-contenttype': contentlet?.contentType,
-        'data-dot-analytics-title': contentlet?.['widgetTitle'] || contentlet?.title
+        'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1',
+        ...(contentlet?.dotStyleProperties && {
+            'data-dot-style-properties': JSON.stringify(contentlet.dotStyleProperties)
+        })
     };
 }
 
@@ -336,6 +318,8 @@ export const getContainersData = (
     const acceptTypes =
         containerStructures?.map((structure) => structure.contentTypeVar).join(',') ?? '';
 
+    // TODO: Check if the variantId is needed and we need to find another way to get it.
+    // Since the parentPermissionable is not available after: https://github.com/dotCMS/core/pull/32890
     const variantId = container?.parentPermissionable?.variantId;
     const maxContentlets = container?.maxContentlets ?? 0;
     const path = container?.path;

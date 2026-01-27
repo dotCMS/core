@@ -1,53 +1,54 @@
 /**
  * API entity types for analytics responses
+ * TODO: Move dashboard specific types here (e.g. Engagement types)
  */
 
 /**
  * Total page views entity response
  */
 export interface TotalPageViewsEntity {
-    'request.totalRequest': string;
+    'EventSummary.totalEvents': string;
 }
 
 /**
  * Unique visitors entity response
  */
 export interface UniqueVisitorsEntity {
-    'request.totalUsers': string;
+    'EventSummary.uniqueVisitors': string;
 }
 
 /**
  * Top page performance entity response
  */
 export interface TopPagePerformanceEntity {
-    'request.totalRequest': string;
-    'request.pageTitle': string;
-    'request.path': string;
+    'EventSummary.totalEvents': string;
+    'EventSummary.title': string;
+    'EventSummary.identifier': string;
 }
 
 /**
  * Top performance table entity response
  */
-export interface TopPerformaceTableEntity {
-    'request.totalRequest': string;
-    'request.pageTitle': string;
-    'request.path': string;
+export interface TopPerformanceTableEntity {
+    'EventSummary.totalEvents': string;
+    'EventSummary.title': string;
+    'EventSummary.identifier': string;
 }
 
 /**
  * Page view timeline entity response
  */
 export interface PageViewTimeLineEntity {
-    'request.totalRequest': string;
-    'request.createdAt': string;
-    'request.createdAt.day': string;
+    'EventSummary.totalEvents': string;
+    'EventSummary.day': string;
+    'EventSummary.day.day': string;
 }
 
 /**
  * Page view device browsers entity response
  */
 export interface PageViewDeviceBrowsersEntity {
-    'request.totalRequest': string;
+    'request.count': string;
     'request.userAgent': string;
 }
 
@@ -57,6 +58,54 @@ export interface PageViewDeviceBrowsersEntity {
 export interface BrowserEntity {
     'request.userAgent': string;
     'request.totalRequest': string;
+}
+
+/**
+ * Total conversions entity response
+ */
+export interface TotalConversionsEntity {
+    'EventSummary.totalEvents': string;
+}
+
+/**
+ * Converting visitors entity response
+ */
+export interface ConvertingVisitorsEntity {
+    'EventSummary.uniqueVisitors': string;
+    'EventSummary.uniqueConvertingVisitors': string;
+}
+
+/**
+ * Content attribution entity response for content conversions table.
+ */
+export interface ContentAttributionEntity {
+    'ContentAttribution.eventType': string;
+    'ContentAttribution.identifier': string;
+    'ContentAttribution.title': string;
+    'ContentAttribution.sumConversions': string;
+    'ContentAttribution.sumEvents': string;
+}
+
+/**
+ * Top attributed content item for conversions overview.
+ */
+export interface TopAttributedContentItem {
+    conv_rate: string;
+    conversions: string;
+    event_type: string;
+    identifier: string;
+    title: string;
+}
+
+/**
+ * Conversions overview entity response for conversions overview table.
+ * Shows conversion names with their totals, rates, and top attributed content.
+ */
+export interface ConversionsOverviewEntity {
+    'Conversion.conversionName': string;
+    'Conversion.totalConversion': string;
+    'Conversion.convRate': string;
+    'Conversion.topAttributedContent': TopAttributedContentItem[];
 }
 
 /**
@@ -93,14 +142,17 @@ export type ApiDimensionField = (typeof ApiDimensionField)[keyof typeof ApiDimen
  * Defines the structure for chart datasets used in analytics components.
  */
 export interface ChartDataset {
+    type?: 'bar' | 'line';
     label: string;
     data: number[];
     borderColor?: string;
     backgroundColor?: string | string[];
     borderWidth?: number;
+    borderRadius?: number;
     fill?: boolean;
     tension?: number;
     cubicInterpolationMode?: 'default' | 'monotone';
+    order?: number;
 }
 
 /**

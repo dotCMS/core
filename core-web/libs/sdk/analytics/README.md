@@ -79,6 +79,67 @@ pageView(customData?: Record<string, unknown>): void
 -   **React**: In development (API may change)
 -   Custom data is optional and gets attached to the pageview event under the `custom` property alongside all automatically captured data.
 
+### Conversion Tracking
+
+The `conversion()` method tracks user conversions (purchases, downloads, sign-ups, etc.) from your application.
+
+**⚠️ IMPORTANT: Conversion events are business events that should only be tracked after a successful action or completed goal.** Tracking conversions on clicks or attempts (before success) diminishes their value as conversion metrics. Only track conversions when:
+
+-   ✅ Purchase is completed and payment is confirmed
+-   ✅ Download is successfully completed
+-   ✅ Sign-up form is submitted and account is created
+-   ✅ Form submission is successful and data is saved
+-   ✅ Any business goal is actually achieved
+
+**Method signature:**
+
+```typescript
+conversion(name: string): void
+conversion(name: string, options?: Record<string, unknown>): void
+```
+
+**Usage examples:**
+
+```typescript
+// Basic conversion tracking (after successful download)
+analytics.conversion('download');
+
+// Conversion with custom metadata (after successful purchase)
+analytics.conversion('purchase', {
+    value: 99.99,
+    currency: 'USD',
+    category: 'ecommerce',
+    productId: 'SKU-12345'
+});
+
+// Conversion with additional context (after successful signup)
+analytics.conversion('signup', {
+    source: 'homepage',
+    plan: 'premium'
+});
+```
+
+**Event payload structure:**
+
+```json
+{
+    "event_type": "conversion",
+    "local_time": "2025-10-01T16:08:33-04:00",
+    "data": {
+        "conversion": { "name": "download" },
+        "page": { "url": "...", "title": "..." },
+        "custom": { "value": 99.99, "currency": "USD", "source": "homepage" }
+    }
+}
+```
+
+**Important:**
+
+-   `name` is required and identifies the conversion type
+-   All properties in `options` go into the `custom` object
+-   Page data (url, title) is automatically added by the SDK
+-   **Only track conversions after successful completion of business goals**
+
 ### Custom Events
 
 The `track()` method allows you to track any custom user action with a unique event name and optional properties.
@@ -91,7 +152,7 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 **Important:**
 
--   `eventName` cannot be `"pageview"` (reserved for page view tracking)
+-   `eventName` cannot be `"pageview"` or `"conversion"` (reserved for specific tracking methods)
 -   `eventName` should be a descriptive string like `"button-click"`, `"form-submit"`, `"video-play"`, etc.
 -   `properties` is optional and can contain any custom data relevant to the event
 
@@ -108,13 +169,15 @@ track(eventName: string, properties?: Record<string, unknown>): void
 
 ## ⚙️ Configuration Options
 
-| Option | Type | Required | Default | Description |
-| -------------- | --------- | -------- | ----------------------------------- | -------------------------------------- |
-| `siteAuth` | `string` | ✅ | - | Site auth from dotCMS Analytics app |
-| `server` | `string` | ✅ | - | Your dotCMS server URL |
-| `debug` | `boolean` | ❌ | `false` | Enable verbose logging |
-| `autoPageView` | `boolean` | ❌ | React: `true` / Standalone: `false` | Auto track page views on route changes |
-| `queueConfig` | `QueueConfig` | ❌ | See below | Event batching configuration |
+| Option         | Type                        | Required | Default                             | Description                                                      |
+| -------------- | --------------------------- | -------- | ----------------------------------- | ---------------------------------------------------------------- |
+| `siteAuth`     | `string`                    | ✅       | -                                   | Site auth from dotCMS Analytics app                              |
+| `server`       | `string`                    | ✅       | -                                   | Your dotCMS server URL                                           |
+| `debug`        | `boolean`                   | ❌       | `false`                             | Enable verbose logging                                           |
+| `autoPageView` | `boolean`                   | ❌       | React: `true` / Standalone: `false` | Auto track page views on route changes                           |
+| `queueConfig`  | `QueueConfig`               | ❌       | See below                           | Event batching configuration                                     |
+| `impressions`  | `ImpressionConfig\|boolean` | ❌       | `false`                             | Content impression tracking (disabled by default)                |
+| `clicks`       | `boolean`                   | ❌       | `false`                             | Content click tracking with 300ms throttle (disabled by default) |
 
 ### Queue Configuration
 
@@ -165,6 +228,194 @@ const analytics = initializeContentAnalytics({
         eventBatchSize: 10, // Auto-send when 10 events queued
         flushInterval: 3000 // Or send every 3 seconds
     }
+});
+```
+
+### Impression Tracking Configuration
+
+The `impressions` option controls automatic tracking of content visibility:
+
+-   **`false` or `undefined` (default)**: Impression tracking disabled
+-   **`true`**: Enable tracking with default settings
+-   **`ImpressionConfig` object**: Enable tracking with custom settings
+
+| Option                | Type     | Default | Description                               |
+| --------------------- | -------- | ------- | ----------------------------------------- |
+| `visibilityThreshold` | `number` | `0.5`   | Min percentage visible (0.0 to 1.0)       |
+| `dwellMs`             | `number` | `750`   | Min time visible in milliseconds          |
+| `maxNodes`            | `number` | `1000`  | Max elements to track (performance limit) |
+
+**How it works:**
+
+-   ✅ Tracks contentlets marked with `dotcms-contentlet` class and `data-dot-*` attributes (e.g., `data-dot-identifier`, `data-dot-inode`, `data-dot-type`)
+-   ✅ Uses Intersection Observer API for high performance and battery efficiency
+-   ✅ Only fires when element is ≥50% visible for ≥750ms (configurable)
+-   ✅ Only tracks during active tab (respects page visibility)
+-   ✅ One impression per contentlet per session (no duplicates)
+-   ✅ Respects user consent settings
+-   ✅ Automatically disabled in dotCMS editor mode
+
+**Example: Enable with defaults**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: true // 50% visible, 750ms dwell, 1000 max nodes
+});
+```
+
+**Example: Custom thresholds**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: {
+        visibilityThreshold: 0.7, // Require 70% visible
+        dwellMs: 1000, // Must be visible for 1 second
+        maxNodes: 500 // Track max 500 elements
+    }
+});
+```
+
+**Example: Disable tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    impressions: false // Explicitly disabled (also default if omitted)
+});
+```
+
+### Click Tracking Configuration
+
+The `clicks` option controls automatic tracking of user interactions with content elements:
+
+-   **`false` or `undefined` (default)**: Click tracking disabled
+-   **`true`**: Enable tracking with default settings (300ms throttle)
+
+**How it works:**
+
+-   ✅ Tracks clicks on `<a>` and `<button>` elements within contentlets
+-   ✅ Contentlets must be marked with `dotcms-contentlet` class and `data-dot-*` attributes (e.g., `data-dot-identifier`, `data-dot-inode`, `data-dot-type`)
+-   ✅ Captures semantic attributes (`href`, `aria-label`, `data-*`) and excludes CSS classes
+-   ✅ Throttles rapid clicks to prevent duplicate tracking (300ms fixed)
+-   ✅ One click event per interaction
+-   ✅ Respects user consent settings
+-   ✅ Automatically disabled in dotCMS editor mode
+
+**Captured Data:**
+
+For each click, the SDK captures:
+
+-   **Content Info**: `identifier`, `inode`, `title`, `content_type`
+-   **Element Info**:
+    -   `text` - Button/link text (truncated to 100 chars)
+    -   `type` - Element type (`a` or `button`)
+    -   `id` - Element ID (required by backend, empty string if not present)
+    -   `class` - Element CSS classes (required by backend, empty string if not present)
+    -   `href` - Link destination as written in HTML (e.g., `/signup` not `http://...`, only for `<a>`, empty string for buttons)
+    -   `attributes` - Additional useful attributes (see below)
+-   **Position Info**:
+    -   `viewport_offset_pct` - Position relative to viewport (0-100%)
+    -   `dom_index` - Element position in DOM
+
+**Attributes Array:**
+
+> **Note**: The `attributes` field is formatted as an array of `'key:value'` strings (e.g., `['data-category:primary-cta', 'aria-label:Sign up']`) for efficient serialization and backend parsing.
+
+The `attributes` array captures additional semantic data in `'key:value'` string format:
+
+✅ **Included** (semantic/analytics value):
+
+-   `data-*` - Custom data attributes (e.g., `'data-category:primary-cta'`)
+-   `aria-*` - Accessibility attributes (e.g., `'aria-label:Sign up now'`)
+-   `title` - Element title
+-   `target` - Link target (e.g., `'target:_blank'`)
+-   Any other standard HTML attributes
+
+❌ **Excluded** (to avoid duplication):
+
+-   `class` - Already captured as top-level property
+-   `id` - Already captured as top-level property
+-   `href` - Already captured as top-level property
+-   `data-dot-*` - Internal SDK attributes (e.g., `data-dot-identifier`, `data-dot-inode`, `data-dot-type`)
+
+**Example: Enable click tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    clicks: true // Enable with 300ms throttle (fixed)
+});
+```
+
+**Example: Adding Custom Analytics Metadata**
+
+Use `data-*` attributes to enrich click tracking with custom metadata:
+
+```html
+<!-- Primary CTA with category -->
+<a
+    href="/signup"
+    id="cta-signup"
+    data-category="primary-cta"
+    data-campaign="summer-sale"
+    aria-label="Sign up for free trial">
+    Start Free Trial →
+</a>
+
+<!-- Product link with metadata -->
+<a href="/products/123" data-product-id="123" data-product-name="Premium Plan" data-price="29.99">
+    View Product
+</a>
+
+<!-- Button with custom tracking -->
+<button data-action="download" data-file-type="pdf" data-category="lead-magnet">
+    Download Whitepaper
+</button>
+```
+
+**Resulting Click Event:**
+
+```json
+{
+    "content": {
+        "identifier": "abc123",
+        "inode": "xyz789",
+        "title": "Product Page",
+        "content_type": "Page"
+    },
+    "element": {
+        "text": "Start Free Trial →",
+        "type": "a",
+        "id": "cta-signup",
+        "class": "btn btn-primary text-white",
+        "href": "/signup",
+        "attributes": [
+            "data-category:primary-cta",
+            "data-campaign:summer-sale",
+            "aria-label:Sign up for free trial",
+            "target:_blank"
+        ]
+    },
+    "position": {
+        "viewport_offset_pct": 45.2,
+        "dom_index": 2
+    }
+}
+```
+
+**Example: Disable tracking**
+
+```javascript
+const analytics = initializeContentAnalytics({
+    siteAuth: 'abc123',
+    server: 'https://your-dotcms.com',
+    clicks: false // Explicitly disabled (also default if omitted)
 });
 ```
 
@@ -297,10 +548,18 @@ interface DotCMSAnalytics {
 
     /**
      * Track a custom event
-     * @param eventName - Name of the custom event (cannot be "pageview")
+     * @param eventName - Name of the custom event (cannot be "pageview" or "conversion")
      * @param properties - Optional object with event-specific properties
      */
     track: (eventName: string, properties?: Record<string, unknown>) => void;
+
+    /**
+     * Track a conversion event (purchase, download, sign-up, etc.)
+     * ⚠️ IMPORTANT: Only track conversions after successful completion of business goals
+     * @param name - Name of the conversion (e.g., "purchase", "download", "signup")
+     * @param options - Optional object with conversion metadata (all properties go into custom object)
+     */
+    conversion: (name: string, options?: Record<string, unknown>) => void;
 }
 ```
 
@@ -389,6 +648,52 @@ When you call `track(eventName, properties)`, the following structure is sent:
     }]
 }
 ```
+
+### Conversion Event Structure
+
+When you call `conversion(name, options)`, the following structure is sent:
+
+```typescript
+{
+    context: {
+        site_key: string;      // Your site key
+        session_id: string;    // Current session ID
+        user_id: string;       // Anonymous user ID
+        device: {              // 🤖 AUTOMATIC - Device & Browser Info
+            screen_resolution: string;  // Screen size
+            language: string;           // Browser language
+            viewport_width: string;     // Viewport width
+            viewport_height: string;    // Viewport height
+        }
+    },
+    events: [{
+        event_type: "conversion",
+        local_time: string,    // ISO 8601 timestamp
+        data: {
+            conversion: {      // 🤖 AUTOMATIC - Conversion Info
+                name: string;  //    Your conversion name
+            },
+            page: {            // 🤖 AUTOMATIC - Page Information
+                url: string;   //    Full URL
+                title: string; //    Page title
+            },
+            custom?: {         // 👤 YOUR DATA (optional)
+                // All properties from options parameter
+                value?: number;
+                currency?: string;
+                category?: string;
+                // ... any other custom properties
+            }
+        }
+    }]
+}
+```
+
+**Key Points:**
+
+-   🤖 Conversion name and page data are captured **automatically**
+-   👤 All properties in `options` go into the `custom` object
+-   ⚠️ **Only track conversions after successful completion of business goals**
 
 ## Under the Hood
 

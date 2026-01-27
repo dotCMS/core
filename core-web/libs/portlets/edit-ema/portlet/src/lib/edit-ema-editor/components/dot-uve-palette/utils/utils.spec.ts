@@ -1,12 +1,21 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { MenuItemCommandEvent } from 'primeng/api';
+
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
 
 import {
     buildContentletsQuery,
-    buildContentletsResponse,
     buildESContentParams,
-    filterAndBuildFavoriteResponse,
+    buildPaletteContent,
+    buildPaletteFavorite,
+    buildPaletteMenuItems,
+    filterFormValues,
     getPaletteState,
     getSortActiveClass
 } from './index';
@@ -92,7 +101,125 @@ describe('Dot UVE Palette Utils', () => {
         });
     });
 
-    describe('filterAndBuildFavoriteResponse', () => {
+    describe('buildPaletteMenuItems', () => {
+        it('should return menu structure with sort and view sections', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].label).toBe('uve.palette.menu.sort.title');
+            expect(result[1].label).toBe('uve.palette.menu.view.title');
+        });
+
+        it('should include three sort options with correct labels', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems).toHaveLength(3);
+            expect(sortItems[0].label).toBe('uve.palette.menu.sort.option.popular');
+            expect(sortItems[1].label).toBe('uve.palette.menu.sort.option.a-to-z');
+            expect(sortItems[2].label).toBe('uve.palette.menu.sort.option.z-to-a');
+        });
+
+        it('should include two view options with correct labels', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const viewItems = result[1].items;
+
+            expect(viewItems).toHaveLength(2);
+            expect(viewItems[0].label).toBe('uve.palette.menu.view.option.grid');
+            expect(viewItems[1].label).toBe('uve.palette.menu.view.option.list');
+        });
+
+        it('should set active class for current sort option', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems[0].styleClass).toBe(''); // popular (usage ASC) not active
+            expect(sortItems[1].styleClass).toBe('active-menu-item'); // name ASC is active
+            expect(sortItems[2].styleClass).toBe(''); // name DESC not active
+        });
+
+        it('should set active class for current view mode', () => {
+            const mockCallbacks = {
+                viewMode: 'list' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const viewItems = result[1].items;
+
+            expect(viewItems[0].styleClass).toBe(''); // grid not active
+            expect(viewItems[1].styleClass).toBe('active-menu-item'); // list is active
+        });
+
+        it('should call onSortSelect when sort command is executed', () => {
+            const onSortSelect = jest.fn();
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect,
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            sortItems[0].command({} as unknown as MenuItemCommandEvent);
+
+            expect(onSortSelect).toHaveBeenCalledWith({ orderby: 'usage', direction: 'ASC' });
+        });
+
+        it('should call onViewSelect when view command is executed', () => {
+            const onViewSelect = jest.fn();
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            if (!result[1].items) {
+                throw new Error('View items should be defined');
+            }
+            const viewItems = result[1].items;
+
+            viewItems[1].command({} as unknown as MenuItemCommandEvent);
+
+            expect(onViewSelect).toHaveBeenCalledWith('list');
+        });
+    });
+
+    describe('buildPaletteFavorite', () => {
         const mockContentTypes: DotCMSContentType[] = [
             { id: '1', name: 'Blog', variable: 'blog' } as DotCMSContentType,
             { id: '2', name: 'News', variable: 'news' } as DotCMSContentType,
@@ -102,7 +229,7 @@ describe('Dot UVE Palette Utils', () => {
         ];
 
         it('should return all content types sorted alphabetically when no filter is provided', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
             });
 
@@ -112,10 +239,11 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.contenttypes[2].name).toBe('Blog');
             expect(result.contenttypes[3].name).toBe('News');
             expect(result.contenttypes[4].name).toBe('Product');
+            expect(result.status).toBe(DotPaletteListStatus.LOADED);
         });
 
         it('should filter content types by name (case-insensitive)', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'blog'
             });
@@ -125,7 +253,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should filter content types by partial name match', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'an'
             });
@@ -135,7 +263,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should return pagination metadata for first page', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 page: 1
             });
@@ -154,7 +282,7 @@ describe('Dot UVE Palette Utils', () => {
                 variable: `content${i}`
             })) as DotCMSContentType[];
 
-            const page1 = filterAndBuildFavoriteResponse({
+            const page1 = buildPaletteFavorite({
                 contentTypes: manyContentTypes,
                 page: 1
             });
@@ -163,7 +291,7 @@ describe('Dot UVE Palette Utils', () => {
             expect(page1.pagination.totalEntries).toBe(50);
             expect(page1.pagination.currentPage).toBe(1);
 
-            const page2 = filterAndBuildFavoriteResponse({
+            const page2 = buildPaletteFavorite({
                 contentTypes: manyContentTypes,
                 page: 2
             });
@@ -173,7 +301,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should handle empty filter string as no filter', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: ''
             });
@@ -182,17 +310,105 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should return empty array when filter matches no content types', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'nonexistent'
             });
 
             expect(result.contenttypes).toHaveLength(0);
             expect(result.pagination.totalEntries).toBe(0);
+            expect(result.status).toBe(DotPaletteListStatus.EMPTY);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is undefined', () => {
+            const result = buildPaletteFavorite({ contentTypes: mockContentTypes });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is empty', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: {}
+            });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark only allowed variables as enabled when allowedContentTypes is provided', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: { banner: true, blog: true }
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+
+            expect(byVariable.blog.disabled).toBeUndefined();
+            expect(byVariable.banner.disabled).toBeUndefined();
+            expect(byVariable.article.disabled).toBe(true);
+            expect(byVariable.news.disabled).toBe(true);
+            expect(byVariable.product.disabled).toBe(true);
+        });
+
+        it('should treat WIDGET baseType as allowed when allowedContentTypes is non-empty', () => {
+            const contentTypes = [
+                { id: '1', name: 'Alpha', variable: 'alpha' } as DotCMSContentType,
+                {
+                    id: '2',
+                    name: 'WidgetZ',
+                    variable: 'widgetZ',
+                    baseType: DotCMSBaseTypesContentTypes.WIDGET
+                } as DotCMSContentType,
+                { id: '3', name: 'Beta', variable: 'beta' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { alpha: true } // non-empty map is required
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+            expect(byVariable.alpha.disabled).toBeUndefined();
+            expect(byVariable.widgetZ.disabled).toBeUndefined(); // allowed because widget
+            expect(byVariable.beta.disabled).toBe(true);
+        });
+
+        it('should keep alphabetical order even when some favorites are disabled', () => {
+            const contentTypes = [
+                { id: '1', name: 'B', variable: 'b' } as DotCMSContentType,
+                { id: '2', name: 'A', variable: 'a' } as DotCMSContentType,
+                { id: '3', name: 'C', variable: 'c' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { b: true } // A and C will be disabled
+            });
+
+            expect(result.contenttypes.map((ct) => ct.name)).toEqual(['A', 'B', 'C']);
+        });
+
+        it('should not normalize variable matching (case-sensitive)', () => {
+            const contentTypes = [
+                { id: '1', name: 'Banner', variable: 'Banner' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { banner: true } // different casing
+            });
+
+            expect(result.contenttypes[0].disabled).toBe(true);
         });
 
         it('should use default page 1 when page is not provided', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
             });
 
@@ -200,7 +416,7 @@ describe('Dot UVE Palette Utils', () => {
         });
     });
 
-    describe('buildContentletsResponse', () => {
+    describe('buildPaletteContent', () => {
         it('should transform ES response into normalized format', () => {
             const esResponse = {
                 contentTook: 10,
@@ -214,11 +430,12 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 100
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.contentlets).toHaveLength(2);
             expect(result.contentlets).toEqual(esResponse.jsonObjectView.contentlets);
             expect(result.pagination.totalEntries).toBe(100);
+            expect(result.status).toBe(DotPaletteListStatus.LOADED);
         });
 
         it('should calculate correct page number for offset 0', () => {
@@ -231,7 +448,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 50
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.pagination.currentPage).toBe(1);
         });
@@ -246,7 +463,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 50
             };
 
-            const result = buildContentletsResponse(esResponse, 30);
+            const result = buildPaletteContent(esResponse, 30);
 
             expect(result.pagination.currentPage).toBe(2);
         });
@@ -261,7 +478,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 100
             };
 
-            const result = buildContentletsResponse(esResponse, 60);
+            const result = buildPaletteContent(esResponse, 60);
 
             expect(result.pagination.currentPage).toBe(3);
         });
@@ -279,7 +496,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 25
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.pagination.perPage).toBe(25);
         });
@@ -294,11 +511,12 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 0
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.contentlets).toHaveLength(0);
             expect(result.pagination.perPage).toBe(0);
             expect(result.pagination.totalEntries).toBe(0);
+            expect(result.status).toBe(DotPaletteListStatus.EMPTY);
         });
     });
 
@@ -471,6 +689,194 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.query).toBe(
                 `+contentType:Widget +deleted:false +variant:${DEFAULT_VARIANT_ID}`
             );
+        });
+    });
+
+    describe('filterNullAndUndefined', () => {
+        it('should filter out null values', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should filter out undefined values', () => {
+            const input = {
+                name: 'John',
+                age: undefined,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should keep false values as they are valid', () => {
+            const input = {
+                name: 'John',
+                active: false,
+                verified: false
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: false,
+                verified: false
+            });
+        });
+
+        it('should keep zero values as they are valid', () => {
+            const input = {
+                count: 0,
+                score: 0
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                count: 0,
+                score: 0
+            });
+        });
+
+        it('should keep empty strings as they are valid', () => {
+            const input = {
+                name: '',
+                description: ''
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: '',
+                description: ''
+            });
+        });
+
+        it('should recursively filter nested objects', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag2: null,
+                    tag3: false
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag3: false
+                }
+            });
+            expect(result.tags).not.toHaveProperty('tag2');
+        });
+
+        it('should filter out nested objects that become empty after filtering', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John'
+            });
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should keep arrays as they are', () => {
+            const input = {
+                items: [1, 2, 3],
+                tags: []
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                items: [1, 2, 3],
+                tags: []
+            });
+        });
+
+        it('should handle complex nested structures', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        sms: null,
+                        push: false
+                    },
+                    preferences: null
+                },
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        push: false
+                    }
+                }
+            });
+            expect(result).not.toHaveProperty('age');
+            expect(result.settings).not.toHaveProperty('preferences');
+            expect(result.settings.notifications).not.toHaveProperty('sms');
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should return empty object when all values are null or undefined', () => {
+            const input = {
+                name: null,
+                age: undefined,
+                active: null
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
+        });
+
+        it('should handle empty object', () => {
+            const input = {};
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
         });
     });
 });

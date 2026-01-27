@@ -5,7 +5,7 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { TooltipModule } from 'primeng/tooltip';
+import { TooltipModule, Tooltip } from 'primeng/tooltip';
 
 import {
     DotDevicesService,
@@ -251,7 +251,10 @@ describe('DotEditPageViewAsControllerSeoComponent', () => {
             const languageSelectorDe = de.query(By.css('dot-language-selector'));
             expect(languageSelector).not.toBeNull();
             expect(languageSelectorDe.attributes.appendTo).toBe('body');
-            expect(languageSelectorDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Access PrimeNG Tooltip directive to verify position
+            const tooltipDirective = languageSelectorDe.injector.get(Tooltip);
+            expect(tooltipDirective.tooltipPosition).toBe('bottom');
         });
 
         it('should emit changes in Language', () => {

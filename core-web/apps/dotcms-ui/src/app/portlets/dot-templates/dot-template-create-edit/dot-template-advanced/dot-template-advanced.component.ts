@@ -1,6 +1,5 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -48,7 +47,6 @@ interface MonacoEditor {
     templateUrl: './dot-template-advanced.component.html',
     styleUrls: ['./dot-template-advanced.scss'],
     imports: [
-        CommonModule,
         DotContainerSelectorComponent,
         DotTextareaContentComponent,
         DotPortletBaseComponent,
@@ -124,12 +122,10 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
         this.editor.executeEdits('source', [operation]);
     }
 
-    private setContainerId({ identifier, parentPermissionable }: DotContainer): string {
-        const regex = new RegExp('//' + parentPermissionable.hostname);
+    private setContainerId({ identifier, hostName }: DotContainer): string {
+        const regex = new RegExp('//' + hostName);
 
-        return identifier?.includes(parentPermissionable.hostname)
-            ? identifier.replace(regex, '')
-            : identifier;
+        return identifier?.includes(hostName) ? identifier.replace(regex, '') : identifier;
     }
 
     private getActions(disabled = true): DotPortletToolbarActions {

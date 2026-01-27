@@ -15,7 +15,7 @@ import { ConfirmationService } from 'primeng/api';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import {
     DotAlertConfirmService,
@@ -240,14 +240,16 @@ describe('DotEditPageStateControllerSeoComponent', () => {
 
                 await fixtureHost.whenRenderingDone();
 
-                expect(lockerDe.classes.warn).toBe(true, 'warn class');
+                expect(lockerDe.classes.warn).toBe(true);
                 expect(lockerDe.attributes.appendTo).toBe('target');
-                expect(lockerContainerDe.attributes['ng-reflect-content']).toBe(
-                    'Page locked by Some One'
-                );
-                expect(lockerContainerDe.attributes['ng-reflect-tooltip-position']).toBe('bottom');
-                expect(locker.modelValue).toBe(true, 'checked');
-                expect(locker.disabled).toBe(false, 'disabled');
+
+                // Access PrimeNG Tooltip directive to verify content and position
+                const tooltipDirective = lockerContainerDe.injector.get(Tooltip);
+                expect(tooltipDirective.content).toBe('Page locked by Some One');
+                expect(tooltipDirective.tooltipPosition).toBe('bottom');
+
+                expect(locker.modelValue).toBe(true);
+                expect(locker.disabled).toBe(false);
             });
 
             it('should have the lock switch in the "on" state', async () => {

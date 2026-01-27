@@ -1,8 +1,8 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-sidebar (onHide)="closeSidebar()" [(visible)]="vm.status.isOpen" dotSidebar>
         <dot-sidebar-header
             [actionButtonTpl]="actionHeaderBtnTpl"
-            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}"></dot-sidebar-header>
+            dotTitle="{{ 'experiments.configure.scheduling.name' | dm }}" />
         <div class="experiment-scheduling-add__form-wrapper flex flex-column">
             <form [formGroup]="form" class="p-fluid" data-testId="add-scheduling-form" novalidate>
                 <div class="field">
@@ -21,7 +21,7 @@
                         [stepMinute]="30"
                         id="initialDate"
                         data-testId="scheduling-startDate"
-                        formControlName="startDate"></p-calendar>
+                        formControlName="startDate" />
                 </div>
                 <div class="field">
                     <label for="endTime">
@@ -38,12 +38,11 @@
                         [stepMinute]="30"
                         id="endTime"
                         data-testId="scheduling-endDate"
-                        formControlName="endDate"></p-calendar>
+                        formControlName="endDate" />
                 </div>
             </form>
         </div>
     </p-sidebar>
-
     <ng-template #actionHeaderBtnTpl>
         <button
             (click)="save(vm.experimentId)"
@@ -54,4 +53,4 @@
             pButton
             type="submit"></button>
     </ng-template>
-</ng-container>
+}

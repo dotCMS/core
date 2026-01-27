@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-card>
         <ng-template pTemplate="title">
             <h2 class="flex align-items-center gap-1 uppercase" data-testId="traffic-card-title">
@@ -7,11 +7,10 @@
                     [size]="16"
                     class="inline-flex"
                     data-testId="traffic-step-done"
-                    name="check_circle"></dot-icon>
+                    name="check_circle" />
                 {{ 'experiments.configure.traffic.name' | dm }}
             </h2>
         </ng-template>
-
         <p-card>
             <div class="flex flex-row align-items-center align-content-between gap-2">
                 <div class="title flex flex-grow-1 flex-column">
@@ -36,6 +35,6 @@
             </div>
         </p-card>
     </p-card>
-</ng-container>
+}
 
-<ng-container dotDynamic></ng-container>
+<ng-container dotDynamic />

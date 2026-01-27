@@ -1,6 +1,5 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -36,7 +35,6 @@ export interface BlockEditorInput {
     templateUrl: './dot-block-editor-sidebar.component.html',
     styleUrls: ['./dot-block-editor-sidebar.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         BlockEditorModule,
         SidebarModule,

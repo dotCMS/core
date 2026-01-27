@@ -179,7 +179,8 @@ describe('DotTemplateAdvancedComponent', () => {
             expect(code.attributes.formControlName).toBe('body');
             expect(code.attributes.height).toBe('100%');
             expect(code.attributes.language).toBe('html');
-            expect(code.attributes['ng-reflect-show']).toBe('code');
+            const codeComponent = code.componentInstance as DotTextareaContentMockComponent;
+            expect(codeComponent.show).toEqual(['code']);
         });
     });
 
@@ -197,7 +198,7 @@ describe('DotTemplateAdvancedComponent', () => {
 
             container.triggerEventHandler('swap', {
                 identifier: '123',
-                parentPermissionable: { hostname: 'demo.com' }
+                hostName: 'demo.com'
             });
 
             expect(component.editor.executeEdits).toHaveBeenCalledWith('source', [

@@ -52,6 +52,7 @@ The example above is a Astro front end for the [dotCMS demo site](https://demo.d
   - [Understanding the Structure](#understanding-the-structure)
   - [How to Fetch Content from dotCMS](#how-to-fetch-content-from-dotcms)
   - [How to Render Your Page](#how-to-render-your-page)
+  - [Style Editor](#style-editor)
 - [Conclusion](#conclusion)
 - [Learn More](#learn-more)
 
@@ -60,12 +61,14 @@ The example above is a Astro front end for the [dotCMS demo site](https://demo.d
 Before you begin, make sure you have:
 
 ### System Requirements
+
 - **Node.js**: v18.20.8 (LTS) or later (v22+ recommended)
 - **NPM**, **Yarn**, or **pnpm** package manager
 - **Git** for version control
 - A code editor (VS Code, WebStorm, etc.)
 
 ### dotCMS Requirements
+
 - **dotCMS instance**: Access to a dotCMS instance (v25.05 or Evergreen recommended)
   - For testing: You can use [the dotCMS demo site](https://dev.dotcms.com/docs/demo-site)
   - For production: [Sign up for a dotCMS instance](https://www.dotcms.com/pricing)
@@ -73,6 +76,7 @@ Before you begin, make sure you have:
 - **API token**: With appropriate read permissions for your Astro app
 
 ### Knowledge Prerequisites
+
 - Basic understanding of React and Astro concepts
 - Familiarity with content management systems (prior dotCMS experience helpful but not required)
 
@@ -83,12 +87,12 @@ Before you begin, make sure you have:
 
 This example uses the following npm packages from dotCMS:
 
-| Package | Purpose | Description |
-|---------|---------|-------------|
-| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client) | API Communication | Core API client for fetching content from dotCMS |
-| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react) | UI Components | React components and hooks for rendering dotCMS content |
-| [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve) | Visual Editing | Universal Visual Editor integration |
-| [@dotcms/types](https://www.npmjs.com/package/@dotcms/types) | Type Safety | TypeScript type definitions for dotCMS |
+| Package                                                        | Purpose           | Description                                             |
+| -------------------------------------------------------------- | ----------------- | ------------------------------------------------------- |
+| [@dotcms/client](https://www.npmjs.com/package/@dotcms/client) | API Communication | Core API client for fetching content from dotCMS        |
+| [@dotcms/react](https://www.npmjs.com/package/@dotcms/react)   | UI Components     | React components and hooks for rendering dotCMS content |
+| [@dotcms/uve](https://www.npmjs.com/package/@dotcms/uve)       | Visual Editing    | Universal Visual Editor integration                     |
+| [@dotcms/types](https://www.npmjs.com/package/@dotcms/types)   | Type Safety       | TypeScript type definitions for dotCMS                  |
 
 ## Setup Guide
 
@@ -113,9 +117,9 @@ First, get a [dotCMS Site](https://www.dotcms.com/pricing). If you want to test 
 
 If using the demo site, you can log in with these credentials:
 
-| User Name | Password |
-|-----------|----------|
-| admin@dotcms.com | admin |
+| User Name        | Password |
+| ---------------- | -------- |
+| admin@dotcms.com | admin    |
 
 Once you have a site, you can log in with the credentials and start creating content.
 
@@ -146,12 +150,12 @@ To set up the Universal Visual Editor:
 
 ```json
 {
-    "config":[
-        {
-            "pattern":"(.*)",
-            "url":"http://localhost:3000"
-        }
-    ]
+  "config": [
+    {
+      "pattern": "(.*)",
+      "url": "http://localhost:3000"
+    }
+  ]
 }
 ```
 
@@ -196,7 +200,6 @@ pnpm dev
 ```
 
 You should see a message in your terminal indicating that the Astro app is running at `http://localhost:3000`. Open this URL in your browser to see your dotCMS-powered Astro site.
-
 
 ## Edit your page in the Universal Visual Editor
 
@@ -269,14 +272,14 @@ This project uses **Astro's file-based routing** with `.astro` components for SS
 
 #### 1. **Astro Pages (`src/pages/`)**
 
-* Astro automatically routes files in this folder.
-* Use `.astro` files for SSR-friendly rendering and route matching.
+- Astro automatically routes files in this folder.
+- Use `.astro` files for SSR-friendly rendering and route matching.
 
 **Examples:**
 
-* `/blog` → `pages/blog/index.astro`
-* `/blog/post/hello-world` → `pages/blog/post/[...post].astro`
-* `/about`, `/product/123` → `pages/[...slug].astro`
+- `/blog` → `pages/blog/index.astro`
+- `/blog/post/hello-world` → `pages/blog/post/[...post].astro`
+- `/about`, `/product/123` → `pages/[...slug].astro`
 
 Use `Astro.params` to access route params, e.g.:
 
@@ -287,30 +290,29 @@ const { slug } = Astro.params;
 
 #### 2. **Components (`src/components/`)**
 
-* `common/`: Shared layout elements like `Header`, `Footer`, `Layout`.
-* `ui/`: Visual widgets like `Card`, `Button`, `FilterToggle`.
-* `content-types/`: React renderers for dotCMS Content Types.
+- `common/`: Shared layout elements like `Header`, `Footer`, `Layout`.
+- `ui/`: Visual widgets like `Card`, `Button`, `FilterToggle`.
+- `content-types/`: React renderers for dotCMS Content Types.
 
 > You’ll need one component per dotCMS Content Type — for example: `Product.tsx`, `BlogPost.tsx`, `Banner.tsx`.
 
 #### 3. **Page Templates (`src/pages-templates/`)**
 
-* These are **React components** used inside `.astro` pages to handle:
-
-  * hooks (`useEditMode`)
-  * dynamic rendering based on CMS content type
-  * client-side logic for editor/live-preview
+- These are **React components** used inside `.astro` pages to handle:
+  - hooks (`useEditMode`)
+  - dynamic rendering based on CMS content type
+  - client-side logic for editor/live-preview
 
 #### 4. **Views (`src/views/`)**
 
-* Reusable **composite components**, not routed directly.
-* Use them to organize sections like `HeroWithProducts`, `DestinationSection`, etc.
+- Reusable **composite components**, not routed directly.
+- Use them to organize sections like `HeroWithProducts`, `DestinationSection`, etc.
 
 #### 5. **dotCMS Integration (`src/integrations/dotcms/`)**
 
-* `dotCMSClient.ts`: Fetch layer (REST or GraphQL)
-* `queries.ts`: Common CMS data queries
-* `isEditMode.ts`: Detect if in dotCMS UVE or Edit mode
+- `dotCMSClient.ts`: Fetch layer (REST or GraphQL)
+- `queries.ts`: Common CMS data queries
+- `isEditMode.ts`: Detect if in dotCMS UVE or Edit mode
 
 ### How the Content is Fetched from dotCMS
 
@@ -329,12 +331,12 @@ Here's how the client is configured:
 import { createDotCMSClient } from "@dotcms/client";
 
 export const dotCMSClient = createDotCMSClient({
-    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
-    authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
-    siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID,
-    requestOptions: {
-        cache: "no-cache",
-    }
+  dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST,
+  authToken: process.env.NEXT_PUBLIC_DOTCMS_AUTH_TOKEN,
+  siteId: process.env.NEXT_PUBLIC_DOTCMS_SITE_ID,
+  requestOptions: {
+    cache: "no-cache",
+  },
 });
 ```
 
@@ -342,12 +344,12 @@ And here's a typical page fetching function:
 
 ```js
 export const getDotCMSPage = async (path, searchParams) => {
-    try {
-        return await dotCMSClient.page.get(path, searchParams);
-    } catch (e) {
-        console.error("ERROR FETCHING PAGE: ", e.message);
-        return null;
-    }
+  try {
+    return await dotCMSClient.page.get(path, searchParams);
+  } catch (e) {
+    console.error("ERROR FETCHING PAGE: ", e.message);
+    return null;
+  }
 };
 ```
 
@@ -363,6 +365,7 @@ The rendering process for dotCMS content in Astro involves several key component
 4. **useEditableDotCMSPage**: A hook that makes the page editable in the UVE
 
 When a page is rendered:
+
 - The page data is fetched from dotCMS
 - The `useEditableDotCMSPage` hook prepares it for potential editing
 - The `DotCMSBodyLayout` component renders the page structure
@@ -378,25 +381,23 @@ import { DotCMSBodyLayout, useEditableDotCMSPage } from "@dotcms/react";
 // Define custom components for specific Content Types
 // The key is the Content Type variable name in dotCMS
 const dotComponents = {
-    dotCMSProductContent: MyCustomDotCMSProductComponent,
-    dotCMSBlogPost: BlogPostComponent
-}
+  dotCMSProductContent: MyCustomDotCMSProductComponent,
+  dotCMSBlogPost: BlogPostComponent,
+};
 
 export function MyPage({ page }) {
-    const { pageAsset, content } = useEditableDotCMSPage(page);
+  const { pageAsset, content } = useEditableDotCMSPage(page);
 
-    return (
-        <div>
-            <DotCMSBodyLayout
-                page={pageAsset}
-                components={dotComponents}
-            />
-        </div>
-    );
+  return (
+    <div>
+      <DotCMSBodyLayout page={pageAsset} components={dotComponents} />
+    </div>
+  );
 }
 ```
 
 > [!IMPORTANT]
+>
 > - The `useEditableDotCMSPage` hook will not modify the `page` object outside the editor
 > - The `DotCMSBodyLayout` component renders both the page structure and content
 > - Custom components defined in `dotComponents` will be used to render Content Types
@@ -404,6 +405,7 @@ export function MyPage({ page }) {
 Learn more about the `@dotcms/react` package [here](https://www.npmjs.com/package/@dotcms/react).
 
 ### How dotCMS Routes Pages
+
 dotCMS allows a single page to be accessed via multiple URL paths (e.g., / and /index for the same "Home" page). This flexibility means your Angular application needs to handle these variations.
 
 To ensure all paths to the same content are properly managed and to prevent 404/500 errors, we recommend using a catch-all route strategy in Angular.
@@ -413,7 +415,6 @@ How to Implement in Astro:
 Create a dynamic route using `[...slug].astro` in your `src/pages` directory. This catch-all route will handle any undefined paths, allowing you to fetch content from dotCMS based on the full URL. The `slug` parameter will contain the full path segments, which you can use to request the corresponding content from dotCMS.
 
 You can learn more about Astro routing strategies [here](https://docs.astro.build/en/guides/routing/)
-
 
 #### Content Type to React Component Mapping
 
@@ -431,8 +432,8 @@ const dotComponents = {
   // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
   DotCMSProduct: ProductComponent,
   // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-  DotCMSBlogPost: BlogPostComponent
-}
+  DotCMSBlogPost: BlogPostComponent,
+};
 ```
 
 **What happens at runtime:**
@@ -466,9 +467,134 @@ This pattern allows you to create custom rendering for each type of content in y
 This mapping should be passed to the `DotCMSBodyLayout` component as shown in the previous section.
 
 **Learn more about dotCMS Content and Components:**
+
 - [Understanding Content Types in dotCMS](https://dev.dotcms.com/docs/content-types) - In-depth explanation of content types and their structure
 - [Contentlets in dotCMS](https://dev.dotcms.com/docs/content#Contentlets) - Learn how individual content items (contentlets) work
 - [@dotcms/react Documentation](https://www.npmjs.com/package/@dotcms/react) - Complete reference for the React components library
+
+### Style Editor
+
+The Style Editor enables content editors to customize component appearance (typography, colors, layouts, etc.) directly in the Universal Visual Editor without code changes. Style properties are defined by developers and made editable through style editor schemas.
+
+#### Defining a Style Editor Schema
+
+Create a schema file (e.g., `src/integration/dotcms/styleEditorSchemas.ts`) that defines editable style properties for your content types:
+
+```typescript
+import { defineStyleEditorSchema, styleEditorField } from "@dotcms/uve";
+
+export const BANNER_SCHEMA = defineStyleEditorSchema({
+    contentType: 'Banner', // Must match your dotCMS Content Type
+    sections: [
+        {
+            title: 'Typography',
+            fields: [
+                styleEditorField.dropdown({
+                    id: 'title-size',
+                    label: 'Title Size',
+                    options: [
+                        { label: 'Small', value: 'text-4xl' },
+                        { label: 'Medium', value: 'text-5xl' },
+                        { label: 'Large', value: 'text-6xl' },
+                    ]
+                }),
+                styleEditorField.checkboxGroup({
+                    id: 'title-style',
+                    label: 'Title Style',
+                    options: [
+                        { label: 'Bold', key: 'bold' },
+                        { label: 'Italic', key: 'italic' },
+                    ]
+                }),
+            ]
+        },
+        {
+            title: 'Layout',
+            fields: [
+                styleEditorField.radio({
+                    id: 'text-alignment',
+                    label: 'Text Alignment',
+                    options: [
+                        { label: 'Left', value: 'left' },
+                        { label: 'Center', value: 'center' },
+                        { label: 'Right', value: 'right' },
+                    ]
+                }),
+            ]
+        },
+    ]
+});
+```
+
+#### Field Types
+
+The Style Editor supports four field types:
+
+- **`styleEditorField.input()`** - Text or number input for custom values
+- **`styleEditorField.dropdown()`** - Dropdown with predefined options
+- **`styleEditorField.radio()`** - Radio buttons for single selection (supports images)
+- **`styleEditorField.checkboxGroup()`** - Multiple checkboxes (returns object with boolean values)
+
+#### Registering Schemas
+
+Register your schemas in your page component using the `useStyleEditorSchemas` hook:
+
+```typescript
+import { useStyleEditorSchemas } from "@dotcms/react";
+import { BANNER_SCHEMA, ACTIVITY_SCHEMA } from "@/integration/dotcms/styleEditorSchemas";
+
+export const DotCMSPage = ({ pageResponse }) => {
+  // Register schemas - makes them available in UVE edit mode
+  useStyleEditorSchemas([BANNER_SCHEMA, ACTIVITY_SCHEMA]);
+
+  return (
+    // Your page content
+  );
+};
+```
+
+#### Using Style Properties in Components
+
+Style properties are automatically passed to your contentlet components via the `dotStyleProperties` prop. Access them with defaults:
+
+```typescript
+interface BannerProps extends DotCMSBasicContentlet {
+  dotStyleProperties?: Record<string, any>;
+}
+
+function Banner({ title, caption, dotStyleProperties }: BannerProps) {
+  // Extract style properties with defaults
+  const titleSize = dotStyleProperties?.["title-size"] || "text-6xl";
+  const titleStyle = dotStyleProperties?.["title-style"] || {};
+  const textAlignment = dotStyleProperties?.["text-alignment"] || "center";
+
+  // Build dynamic classes
+  const titleClasses = [
+    titleSize,
+    titleStyle.bold ? "font-bold" : "font-normal",
+    titleStyle.italic ? "italic" : "",
+  ].filter(Boolean).join(" ");
+
+  return (
+    <div className={`text-${textAlignment}`}>
+      <h2 className={titleClasses}>{title}</h2>
+      <p>{caption}</p>
+    </div>
+  );
+}
+```
+
+**Value Types:**
+- **Input/Dropdown/Radio**: Returns a string (the selected value)
+- **Checkbox Group**: Returns an object with boolean values (e.g., `{ bold: true, italic: false }`)
+
+**Best Practices:**
+- Always provide default values when accessing style properties
+- Use meaningful field IDs that match your styling logic
+- Group related fields into logical sections
+- The `contentType` in your schema must exactly match your dotCMS Content Type variable name
+
+For complete Style Editor documentation, see the [@dotcms/uve Style Editor guide](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/uve/README.md#style-editor).
 
 ## Conclusion
 
@@ -491,6 +617,6 @@ To deepen your understanding of this integration, explore these official dotCMS 
 - [Content in dotCMS](https://dev.dotcms.com/docs/content) - Understanding content types and content management in dotCMS
 
 Additional resources:
+
 - [dotCMS Developer Documentation](https://dev.dotcms.com/)
 - [Astro Documentation](https://astro.org/docs)
-

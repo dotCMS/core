@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
@@ -9,7 +8,7 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task/dot-workflow-task.
     selector: 'dot-portlet-detail',
     templateUrl: './dot-portlet-detail.component.html',
     styleUrls: ['./dot-portlet-detail.component.scss'],
-    imports: [CommonModule, DotWorkflowTaskComponent, DotContentletsComponent]
+    imports: [DotWorkflowTaskComponent, DotContentletsComponent]
 })
 export class DotPortletDetailComponent implements OnInit {
     private route = inject(ActivatedRoute);
@@ -18,7 +17,7 @@ export class DotPortletDetailComponent implements OnInit {
     isContent = false;
 
     ngOnInit() {
-        const currentPortlet: string = this.route.parent.parent.snapshot.params.id;
+        const currentPortlet: string = this.route.parent.snapshot.params.id;
         this.isWorkflow = currentPortlet === 'workflow';
         this.isContent = !this.isWorkflow;
     }

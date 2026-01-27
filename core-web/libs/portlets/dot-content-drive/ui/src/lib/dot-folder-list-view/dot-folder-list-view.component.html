@@ -1,4 +1,5 @@
 <p-table
+    #dataTable
     [value]="$items()"
     [tableStyle]="{ width: '100%' }"
     [paginator]="$showPagination()"
@@ -6,13 +7,15 @@
     [rowsPerPageOptions]="rowsPerPageOptions"
     [totalRecords]="$totalItems()"
     [lazy]="true"
+    [lazyLoadOnInit]="true"
     [scrollable]="true"
     [styleClass]="$styleClass()"
     [(selection)]="selectedItems"
     (selectionChange)="onSelectionChange()"
     (onPage)="onPage($event)"
     (onSort)="onSort($event)"
-    [first]="state.currentPageFirstRowIndex()"
+    [first]="$offset()"
+    (firstChange)="onFirstChange()"
     dataKey="identifier"
     sortMode="single"
     selectionMode="multiple"
@@ -22,18 +25,20 @@
     scrollHeight="flex">
     <ng-template pTemplate="header">
         <tr data-testId="header-row">
-            <th style="width: 2.5rem"><p-tableHeaderCheckbox data-testId="header-checkbox" /></th>
+            <th [style.width]="'3rem'">
+                <p-tableHeaderCheckbox data-testId="header-checkbox" />
+            </th>
             @for (column of HEADER_COLUMNS; track column.field) {
                 @if (column.sortable) {
                     <th
                         [pSortableColumn]="column.field"
-                        [width]="column.width"
+                        [style.width]="column.width"
                         data-testId="header-column-sortable">
                         {{ column.header | dm }}
                         <p-sortIcon [field]="column.field" data-testId="sort-icon" />
                     </th>
                 } @else {
-                    <th [width]="column.width" data-testId="header-column-not-sortable">
+                    <th [style.width]="column.width" data-testId="header-column-not-sortable">
                         {{ column.header | dm }}
                     </th>
                 }
@@ -43,11 +48,17 @@
 
     <ng-template pTemplate="body" let-item>
         @let status = item | dotContentletStatus;
+        @let isFolder = item.type === 'folder';
 
-        @if ($loading()) {
+        @if ($loading() || !$items().length) {
             <tr data-testId="loading-row" class="content-drive-table__loading-row">
-                @for (i of HEADER_COLUMNS; track i) {
-                    <td>
+                <td [style.width]="'3rem'" [style.padding-left]="'1rem'">
+                    <span class="skeleton-wrapper">
+                        <p-skeleton height="1.5rem" width="2.5rem" />
+                    </span>
+                </td>
+                @for (column of HEADER_COLUMNS; track column.field) {
+                    <td [style.width]="column.width">
                         <span class="skeleton-wrapper">
                             <p-skeleton height="1.5rem" width="100%" />
                         </span>
@@ -58,13 +69,16 @@
             <tr
                 class="content-drive-table__row"
                 [class.is-dragging]="state.isDragging()"
+                [class.is-drag-over]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
                 [draggable]="true"
                 (dragstart)="onDragStart($event, item)"
-                (dragend)="onDragEnd()">
+                (dragend)="onDragEnd()"
+                (dragover)="onDragOver($event, item)"
+                (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
                     <p-tableCheckbox [value]="item" />
                 </td>
@@ -72,43 +86,58 @@
                     <div
                         class="container-thumbnail hoverable"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
-                        <dot-contentlet-thumbnail
-                            [fieldVariable]="item?.contentType"
-                            [iconSize]="'48px'"
-                            [contentlet]="item"
-                            data-testId="contentlet-thumbnail"
-                            [attr.data-id]="item.identifier" />
+                        @if (!isFolder) {
+                            <dot-contentlet-thumbnail
+                                [fieldVariable]="item?.contentType"
+                                [iconSize]="'36px'"
+                                [contentlet]="item"
+                                data-testId="contentlet-thumbnail"
+                                [attr.data-table-id]="item.identifier" />
+                        } @else {
+                            <i class="pi pi-folder folder-icon" data-testId="folder-icon"></i>
+                        }
                     </div>
                     <span
                         data-testId="item-title-text"
                         class="truncate-text hoverable"
                         (click)="onDoubleClick(item); $event.stopPropagation()">
-                        {{ item.title }}
+                        {{ isFolder ? item.name : item.title }}
                     </span>
                     <span data-testId="lock-hint">
-                        @if (item.locked) {
-                            <i class="pi pi-lock" data-testId="lock-icon"></i>
-                        } @else {
-                            <i class="pi pi-lock-open" data-testId="lock-open-icon"></i>
+                        @if (!isFolder) {
+                            @if (item.locked) {
+                                <i class="pi pi-lock" data-testId="lock-icon"></i>
+                            } @else {
+                                <i class="pi pi-lock-open" data-testId="lock-open-icon"></i>
+                            }
                         }
                     </span>
                 </td>
                 <td data-testId="item-status">
-                    @if (status === 'Published') {
-                        <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
-                    } @else if (status === 'Archived') {
-                        <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
-                    } @else {
-                        <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
+                    @if (!isFolder) {
+                        @if (status === 'Published') {
+                            <p-chip styleClass="p-chip-sm p-chip-success" [label]="status" />
+                        } @else if (status === 'Archived') {
+                            <p-chip styleClass="p-chip-sm p-chip-danger" [label]="status" />
+                        } @else {
+                            <p-chip styleClass="p-chip-sm p-chip-warning" [label]="status" />
+                        }
                     }
                 </td>
                 <td data-testId="item-language">
-                    <p-chip
-                        styleClass="p-chip-sm p-chip-blue"
-                        [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
+                    @if (!isFolder) {
+                        <p-chip
+                            styleClass="p-chip-sm p-chip-blue"
+                            [label]="item.languageId | dotLocaleTag: state.languagesMap()" />
+                    }
                 </td>
-                <td data-testId="item-content-type">{{ item.contentType | dm }}</td>
-                <td data-testId="item-mod-user-name">{{ item.modUserName }}</td>
+
+                <td data-testId="item-content-type">
+                    {{ (isFolder ? 'Folder' : item.contentType) | dm }}
+                </td>
+                <td data-testId="item-mod-user-name">
+                    {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
+                </td>
                 <td data-testId="item-mod-date">{{ item.modDate | dotRelativeDate }}</td>
                 <td data-testId="item-actions" class="text-center">
                     <p-button

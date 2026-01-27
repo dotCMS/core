@@ -256,9 +256,10 @@ import com.dotmarketing.startup.runonce.Task250113CreatePostgresJobQueueTables;
 import com.dotmarketing.startup.runonce.Task250603UpdateIdentifierParentPathCheckTrigger;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodes;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTable;
-import com.dotmarketing.startup.runonce.Task251029RemoveContentTypesLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task250828CreateCustomAttributeTable;
-import com.dotmarketing.startup.runonce.Task250910AddAnalyticsDashboardPortletToMenu;
+import com.dotmarketing.startup.runonce.Task251029RemoveContentTypesLegacyPortletFromLayouts;
+import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTree;
+import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -591,6 +592,8 @@ public class TaskLocatorUtil {
         .add(Task250826AddIndexesToUniqueFieldsTable.class)
         .add(Task250828CreateCustomAttributeTable.class)
         .add(Task251029RemoveContentTypesLegacyPortletFromLayouts.class)
+        .add(Task251103AddStylePropertiesColumnInMultiTree.class)
+        .add(Task251212AddVersionColumnIndicesTable.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

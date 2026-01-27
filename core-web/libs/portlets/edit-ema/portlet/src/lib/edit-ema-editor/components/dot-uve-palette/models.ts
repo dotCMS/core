@@ -83,6 +83,8 @@ export interface DotPaletteSortOption {
  * Used by the store to manage search state.
  */
 export interface DotPaletteSearchParams {
+    /** Site identifier for context-aware filtering */
+    host: string;
     /** Page path or ID for context-aware filtering */
     pagePathOrId: string;
     /** Language ID for content */
@@ -111,7 +113,7 @@ export interface DotPaletteListState {
     /** Current search and filter parameters */
     searchParams: DotPaletteSearchParams;
     /** List of content types to display */
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSPaletteContentType[];
     /** List of contentlets (when drilling into a content type) */
     contentlets: DotCMSContentlet[];
     /** Pagination information */
@@ -129,7 +131,7 @@ export interface DotPaletteListState {
  */
 export interface DotContentTypeResponse {
     /** Array of content types */
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSPaletteContentType[];
     /** Pagination metadata */
     pagination: DotPagination;
 }
@@ -167,3 +169,10 @@ export const BASETYPES_FOR_WIDGET = [DotCMSBaseTypesContentTypes.WIDGET];
  * All base content types that can be added to favorites.
  */
 export const BASE_TYPES_FOR_FAVORITES = [...BASETYPES_FOR_CONTENT, ...BASETYPES_FOR_WIDGET];
+
+/**
+ * Content type for the palette.
+ */
+export interface DotCMSPaletteContentType extends DotCMSContentType {
+    disabled?: boolean;
+}

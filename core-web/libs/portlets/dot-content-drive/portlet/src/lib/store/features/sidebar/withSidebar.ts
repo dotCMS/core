@@ -10,12 +10,13 @@ import { Observable, of } from 'rxjs';
 
 import { inject } from '@angular/core';
 
-import { catchError, take, tap } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolder } from '@dotcms/dotcms-models';
 import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
+import { SYSTEM_HOST } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
 import { getFolderHierarchyByPath, getFolderNodesByPath } from '../../../utils/functions';
 import { buildTreeFolderNodes } from '../../../utils/tree-folder.utils';
@@ -42,7 +43,7 @@ export function withSidebar() {
              */
             loadFolders: () => {
                 const currentSite = store.currentSite();
-                if (!currentSite) {
+                if (!currentSite || currentSite.identifier === SYSTEM_HOST.identifier) {
                     return;
                 }
 
@@ -98,15 +99,15 @@ export function withSidebar() {
                 const host = hostname || store.currentSite()?.hostname;
                 const fullPath = `${host}${path}`;
 
-                return getFolderNodesByPath(fullPath, dotFolderService).pipe(
-                    tap(() => patchState(store, { path }))
-                );
+                return getFolderNodesByPath(fullPath, dotFolderService);
             },
             /**
              * Sets the selected node
              */
-            setSelectedNode: (node: DotFolderTreeNodeItem) => {
-                patchState(store, { selectedNode: node });
+            setSelectedNode: (selectedNode: DotFolderTreeNodeItem) => {
+                patchState(store, {
+                    selectedNode
+                });
             },
 
             /**

@@ -304,7 +304,7 @@ public class PageRenderUtil implements Serializable {
                     final long contentsSize = containerUuidPersona
                             .getSize(container, uniqueUUIDForRender, personalizedContentlet);
 
-                    if (container.getMaxContentlets() < contentsSize) {
+                    if (container.getMaxContentlets() <= contentsSize) {
 
                         Logger.debug(this, ()-> "Contentlet: "          + contentlet.getIdentifier()
                                 + ", has been skipped. Max contentlet capacity: " + container.getMaxContentlets()
@@ -321,6 +321,7 @@ public class PageRenderUtil implements Serializable {
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
                     this.addRelationships(contentlet);
+                    this.addStyles(contentlet, personalizedContentlet);
 
                     if (personalizedContentlet.getPersonalization().equals(includeContentFor)) {
 
@@ -342,7 +343,7 @@ public class PageRenderUtil implements Serializable {
         }
 
         return rawContainers;
-        }
+    }
 
     private String getUniqueUUIDForRender(String uniqueId, Container container) {
         if (needParseContainerPrefix(container, uniqueId)) {
@@ -525,6 +526,32 @@ public class PageRenderUtil implements Serializable {
         }
     }
 
+    /**
+     * Only applies when the FEATURE_FLAG_UVE_STYLE_EDITOR is enabled.
+     * Adds style properties from the MultiTree to the contentlet's data map.
+     * This ensures that contentlet styling metadata is properly scoped to its specific
+     * personalization and variant context.
+     *
+     * @param contentlet             The {@link Contentlet} to add style properties to
+     * @param personalizedContentlet The {@link PersonalizedContentlet} containing the style
+     *                               properties from the MultiTree relationship
+     */
+    private void addStyles(Contentlet contentlet, PersonalizedContentlet personalizedContentlet) {
+        // NOTE: Safe to modify contentlet.getMap() here because the contentlet is a COPY
+        // created by hydrate(), not the cached original instance.
+        // See: DotContentletTransformerImpl.hydrate() and copy()
+
+        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
+            return;
+        }
+
+        final Map<String, Object> styleProperties = personalizedContentlet.getStyleProperties();
+
+        if (UtilMethods.isSet(styleProperties) && !styleProperties.isEmpty()) {
+            contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+        }
+    }
+
     private boolean needParseContainerPrefix(final Container container, final String uniqueId) {
         return !ParseContainer.isParserContainerUUID(uniqueId) &&
                 (templateLayout == null || !templateLayout.existsContainer(container, uniqueId));
@@ -606,13 +633,18 @@ public class PageRenderUtil implements Serializable {
         final long resolveLanguageId = this.resolveLanguageId();
         try {
             if(null != timeMachineDate && hasPublishOrExpireDateSet(contentletIdentifier)){
-                // if a time machine date is provided we need to return regardless of the result.
+                //if a time-machine date is provided, we test for a match
                 Logger.debug(this, "Trying to find contentlet with Time Machine date");
-                return contentletAPI.findContentletByIdentifier(
+                Contentlet contentletMatchingTimeMachineDate = contentletAPI.findContentletByIdentifier(
                         contentletIdentifier,
                         resolveLanguageId,
                         variantName, timeMachineDate, user, mode.respectAnonPerms
                 );
+                if(null != contentletMatchingTimeMachineDate){
+                    return contentletMatchingTimeMachineDate;
+                }
+                //Now if no contentlet was found using time-machine Date, we'll try to find the latest live contentlet
+                return contentletAPI.findContentletByIdentifier(contentletIdentifier,true, resolveLanguageId, user, mode.respectAnonPerms);
             }
             //If no time machine date is provided, we will return the contentlet based on the mode.showLive
             return contentletAPI.findContentletByIdentifier(
@@ -698,6 +730,12 @@ public class PageRenderUtil implements Serializable {
                         true);
                 if(contentlet.isPresent()) {
                      return contentlet.get();
+                }
+                final Optional<Contentlet> live = contentletAPI.findContentletByIdentifierOrFallback(
+                        contentletIdentifier, true, languageId,
+                        user, true);
+                if(live.isPresent()){
+                    return live.get();
                 }
             }
             // No need to apply the Time Machine date, just return the contentlet based on the mode.showLive

@@ -1,5 +1,5 @@
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSUVEAction, StyleEditorProperties } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
@@ -53,6 +53,10 @@ export interface ActionPayload extends PositionPayload {
     newContentletId?: string;
 }
 
+export interface StyleEditorContentletPayload extends ActionPayload {
+    contentlet: ContentletPayload;
+}
+
 export interface PageContainer {
     personaTag?: string;
     identifier: string;
@@ -79,6 +83,7 @@ export interface ContentletPayload {
     contentType: string;
     baseType?: string;
     onNumberOfPages?: number;
+    dotStyleProperties?: StyleEditorProperties;
 }
 
 export interface SetUrlPayload {
@@ -90,6 +95,14 @@ export interface SavePagePayload {
     params?: DotPageApiParams;
     pageId: string;
     whenSaved?: () => void;
+}
+
+export interface SaveStylePropertiesPayload {
+    pageId: string;
+    containerUUID: string;
+    containerIdentifier: string;
+    contentletIdentifier: string;
+    styleProperties: StyleEditorProperties;
 }
 
 export interface NavigationBarItem {
@@ -225,8 +238,10 @@ export interface EditEmaDialogState {
 
 export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
 
-export interface DialogAction
-    extends Pick<EditEmaDialogState, 'actionPayload' | 'form' | 'clientAction'> {
+export interface DialogAction extends Pick<
+    EditEmaDialogState,
+    'actionPayload' | 'form' | 'clientAction'
+> {
     event: CustomEvent;
 }
 

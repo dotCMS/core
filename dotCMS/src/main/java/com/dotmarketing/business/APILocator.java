@@ -34,6 +34,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -46,6 +47,7 @@ import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.FieldAPIImpl;
 import com.dotcms.contenttype.business.StoryBlockAPI;
 import com.dotcms.contenttype.business.StoryBlockAPIImpl;
+import com.dotcms.cost.RequestCostApi;
 import com.dotcms.device.DeviceAPI;
 import com.dotcms.device.DeviceAPIImpl;
 import com.dotcms.dotpubsub.DotPubSubProvider;
@@ -708,12 +710,21 @@ public class APILocator extends Locator<APIIndex> {
 
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
-	 *
+	 * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
 	 * @return The {@link IndiciesAPI} class.
 	 */
+    @Deprecated(forRemoval = true)
 	public static IndiciesAPI getIndiciesAPI() {
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
+
+    /**
+     * Get the modern index Manger
+     * @return
+     */
+    public static VersionedIndicesAPI getVersionedIndicesAPI() {
+        return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
+    }
 
 	/**
 	 * Creates a single instance of the {@link ContentletIndexAPI} class.
@@ -1236,7 +1247,20 @@ public class APILocator extends Locator<APIIndex> {
 		return CDIUtils.getBeanThrows(HealthService.class);
 	}
 
-	/**
+
+    /**
+     * Retrieves an instance of RequestCostApi using CDI (Contexts and Dependency Injection). This method ensures that
+     * the instance is obtained through the CDI container and throws an exception if the bean cannot be found.
+     *
+     * @return an instance of RequestCostApi obtained from the CDI container
+     */
+    public static RequestCostApi getRequestCostAPI() {
+        return (RequestCostApi) getInstance(APIIndex.REQUEST_COST_API);
+
+    }
+
+
+    /**
 	 * Generates a unique instance of the specified dotCMS API.
 	 *
 	 * @param index
@@ -1395,7 +1419,8 @@ enum APIIndex
 	CONTENT_ANALYTICS_API,
 	JOB_QUEUE_MANAGER_API,
    AI_VISION_API,
-	ANALYTICS_CUSTOM_ATTRIBUTE_API;
+    REQUEST_COST_API,
+    ANALYTICS_CUSTOM_ATTRIBUTE_API;
 
 	Object create() {
 		switch(this) {
@@ -1490,9 +1515,11 @@ enum APIIndex
 			case ACHECKER_API: return new ACheckerAPIImpl();
 			case CONTENT_ANALYTICS_API: return CDIUtils.getBeanThrows(ContentAnalyticsAPI.class);
 			case JOB_QUEUE_MANAGER_API: return CDIUtils.getBeanThrows(JobQueueManagerAPI.class);
-         case AI_VISION_API:
-            return new OpenAIVisionAPIImpl();
-			case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
+            case REQUEST_COST_API:
+                return CDIUtils.getBeanThrows(RequestCostApi.class);
+            case AI_VISION_API:
+                return new OpenAIVisionAPIImpl();
+            case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}

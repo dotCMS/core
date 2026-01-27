@@ -6,6 +6,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
@@ -55,10 +56,12 @@ import { DynamicFieldPropertyDirective } from './components/fields/content-type-
 import { HintPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/hint-property';
 import { NamePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/name-property';
 import { RegexCheckPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/regex-check-property';
+import { RenderModePropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/render-mode-property';
 import { ValuesPropertyComponent } from './components/fields/content-type-fields-properties-form/field-properties/values-property';
 import { ContentTypeFieldsRowComponent } from './components/fields/content-type-fields-row';
 import { ContentTypeFieldsTabComponent } from './components/fields/content-type-fields-tab';
 import { DotContentTypeFieldsVariablesComponent } from './components/fields/dot-content-type-fields-variables/dot-content-type-fields-variables.component';
+import { DotFieldVariablesService } from './components/fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 import { FieldDragDropService } from './components/fields/service/field-drag-drop.service';
 import { FieldPropertyService } from './components/fields/service/field-properties.service';
 import { FieldService } from './components/fields/service/field.service';
@@ -111,13 +114,15 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         NamePropertyComponent,
         RegexCheckPropertyComponent,
         ValuesPropertyComponent,
-        DotBlockEditorSettingsComponent
+        DotBlockEditorSettingsComponent,
+        RenderModePropertyComponent
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
         ContentTypesLayoutComponent,
         ContentTypesFormComponent,
         ButtonModule,
+        CardModule,
         CheckboxModule,
         ConfirmDialogModule,
         CommonModule,
@@ -183,7 +188,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotWorkflowsActionsService,
         DotWorkflowsActionsSelectorFieldService,
         DotFeatureFlagResolver,
-        DotEditContentTypeCacheService
+        DotEditContentTypeCacheService,
+        DotFieldVariablesService
     ],
     schemas: []
 })

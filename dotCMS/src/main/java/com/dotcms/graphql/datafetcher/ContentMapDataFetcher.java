@@ -5,9 +5,10 @@ import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
-import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -75,10 +76,11 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final JSONObject contentMapInJSON = new JSONObject();
 
             // this only adds relationships to any json. We would need to return them with the transformations already
+            final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
             final JSONObject jsonWithRels = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
                     Boolean.toString(render), user, depth, false, contentlet,
-                    contentMapInJSON, null, 1, true, false,
+                    contentMapInJSON, null, currentLanguage.getId(), true, false,
                     true);
 
             HashMap<String,Object> result = new ObjectMapper().readValue(jsonWithRels.toString(), HashMap.class);
@@ -106,16 +108,26 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final String mapKey = entry.getKey();
             final Object rawValue = entry.getValue();
 
+            // Searches if the map contains any key ending with "_raw".
             if (mapKey.endsWith("_raw") && rawValue instanceof String) {
+                // Creates a baseKey variable deleting the "_raw" string at the end of the mapKey. i.e. blogContent_raw = blogContent
                 final String baseKey = mapKey.substring(0, mapKey.length() - 4);
 
+                // Checks if the baseKey exist in the map
                 if (hydratedMap.containsKey(baseKey)) {
+                    // Checks if the baseValue (hydrated) is not empty. If the baseValue is empty or null, we parse the rawValue instead.
+                    Object hydratedValue = hydratedMap.get(baseKey);
+                    final String baseValue = (hydratedValue == null || hydratedValue.toString().trim().isEmpty())
+                            ? rawValue.toString()
+                            : hydratedValue.toString();
+
+                    // Parse the baseValue as JSON
                     try {
                         @SuppressWarnings("unchecked")
-                        Map<String, Object> parsed = objectMapper.readValue((String) rawValue, Map.class);
+                        Map<String, Object> parsed = objectMapper.readValue(baseValue, Map.class);
                         hydratedMap.put(baseKey, parsed);
                     } catch (Exception e) {
-                        Logger.warn(this, () -> "Error parsing JSON for '" + mapKey + "': " + e.getMessage());
+                        Logger.warn(this, () -> "Error parsing JSON for '" + baseKey + "': " + e.getMessage());
                     }
                 }
             }
@@ -151,7 +163,6 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
      * </ul>
      *
      * @param request    the current HTTP request, used to extract the variant key if provided
-     * @param user       the user requesting the content, used for permissions and rendering
      * @param contentlet the contentlet to hydrate
      * @param render     whether renderable fields should be velocity-rendered
      * @return a hydrated content map including field values (rendered if requested)

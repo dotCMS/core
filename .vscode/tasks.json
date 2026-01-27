@@ -1,0 +1,81 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "🛠️ - Build Core",
+        "type": "shell",
+        "command": "if [ '${input:buildWithDocker}' = 'true' ]; then export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock && just build-quicker; else just build-core-only; fi",
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        },
+        "problemMatcher": [],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "⛴️ - Build Image",
+        "type": "shell",
+        "command": "export DOCKER_HOST=unix://$HOME/.docker/run/docker.sock && ./mvnw package -pl :dotcms-core -DskipTests docker:build",
+        "group": "build",
+        "problemMatcher": [],
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "📦 - Start/Stop",
+        "type": "shell",
+        "command": "${workspaceFolder}/.vscode/toggle-docker.sh ${input:dockerPort}",
+        "problemMatcher": [],
+        "isBackground": true,
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": false
+        }
+      },
+      {
+        "label": "🧪 - Integration Tests",
+        "type": "shell",
+        "command": "just test-integration-ide",
+        "problemMatcher": [],
+        "isBackground": true
+      }
+    ],
+    "inputs": [
+      {
+        "id": "buildWithDocker",
+        "type": "pickString",
+        "description": "Build with Docker image?",
+        "options": [
+          {
+            "label": "No Docker (faster)",
+            "value": "false"
+          },
+          {
+            "label": "With Docker",
+            "value": "true"
+          }
+        ],
+        "default": "false"
+      },
+      {
+        "id": "dockerPort",
+        "type": "promptString",
+        "description": "Docker HTTP port (for starting)",
+        "default": "7070"
+      }
+    ]
+  }

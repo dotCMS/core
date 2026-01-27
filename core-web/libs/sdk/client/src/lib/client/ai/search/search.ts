@@ -10,9 +10,10 @@ import {
     DotRequestOptions,
     DotCMSAISearchResponse
 } from '@dotcms/types';
+import { DotCMSAISearchRawResponse } from '@dotcms/types/internal';
 
 import { appendMappedParams } from '../../../utils/params/utils';
-import { BaseApiClient } from '../../base/base-api';
+import { BaseApiClient } from '../../base/api/base-api';
 import { DEFAULT_AI_CONFIG, DEFAULT_QUERY } from '../shared/const';
 import { OnFullfilled, OnRejected } from '../shared/types';
 
@@ -87,13 +88,18 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
     ): Promise<DotCMSAISearchResponse<T> | DotErrorAISearch> {
         return this.fetch<T>().then(
             (data) => {
+                const response: DotCMSAISearchResponse<T> = {
+                    ...data,
+                    results: data.dotCMSResults
+                };
                 if (typeof onfulfilled === 'function') {
-                    const result = onfulfilled(data);
-                    // Ensure we always return a value, fallback to formattedResponse if callback returns undefined
-                    return result ?? data;
+                    const result = onfulfilled(response);
+                    // Ensure we always return a value, fallback to data if callback returns undefined
+
+                    return result ?? response;
                 }
 
-                return data;
+                return response;
             },
             (error: unknown) => {
                 // Wrap error in DotCMSContentError
@@ -130,12 +136,12 @@ export class AISearch<T extends DotCMSBasicContentlet> extends BaseApiClient {
         );
     }
 
-    private fetch<T extends DotCMSBasicContentlet>(): Promise<DotCMSAISearchResponse<T>> {
+    private fetch<T extends DotCMSBasicContentlet>(): Promise<DotCMSAISearchRawResponse<T>> {
         const searchParams = this.buildSearchParams(this.#prompt, this.#params);
         const url = new URL('/api/v1/ai/search', this.dotcmsUrl);
         url.search = searchParams.toString();
 
-        return this.httpClient.request<DotCMSAISearchResponse<T>>(url.toString(), {
+        return this.httpClient.request<DotCMSAISearchRawResponse<T>>(url.toString(), {
             ...this.requestOptions,
             headers: {
                 ...this.requestOptions.headers

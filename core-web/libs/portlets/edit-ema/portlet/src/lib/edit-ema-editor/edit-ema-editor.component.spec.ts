@@ -9,7 +9,7 @@ import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -60,6 +60,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { DotCopyContentModalService, ModelCopyContentResponse, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -83,11 +84,12 @@ import {
     seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
+import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
+import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { EmaContentletToolsComponent } from './components/ema-contentlet-tools/ema-contentlet-tools.component';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
@@ -112,6 +114,7 @@ import {
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
+import * as uveUtils from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -133,11 +136,16 @@ const messagesMock = {
         'Note: If you edit auto-published content, changes apply immediately.'
 };
 
+const mockGlobalStore = {
+    currentSiteId: signal('demo.dotcms.com')
+};
+
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
         imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
+            MockComponent(DotUvePaletteComponent),
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
             MockComponent(DotEmaRunningExperimentComponent)
@@ -237,6 +245,10 @@ const createRouting = () =>
             }
         ],
         providers: [
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
+            },
             Router,
             DotSeoMetaTagsUtilService,
             DialogService,
@@ -437,7 +449,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should hide components when the store changes', () => {
-                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools', 'dialog']; // Test id of components that should hide when entering preview modes
+                const componentsToHide = ['dropzone', 'dialog']; // Test id of components that should hide when entering preview modes
 
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
@@ -572,7 +584,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -586,7 +598,11 @@ describe('EditEmaEditorComponent', () => {
                     const saveMock = jest.spyOn(store, 'savePage');
                     const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
-                    spectator.triggerEventHandler(EmaContentletToolsComponent, 'delete', payload);
+                    spectator.triggerEventHandler(
+                        DotUveContentletToolsComponent,
+                        'deleteContent',
+                        payload
+                    );
 
                     spectator.detectComponentChanges();
 
@@ -640,13 +656,13 @@ describe('EditEmaEditorComponent', () => {
                         By.css('[data-testId="ema-dialog"]')
                     );
 
-                    store.setEditorContentletArea(baseContentletPayload);
+                    store.setContentletArea(baseContentletPayload);
 
                     spectator.detectComponentChanges();
 
                     spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'edit',
+                        DotUveContentletToolsComponent,
+                        'editContent',
                         EDIT_ACTION_PAYLOAD_MOCK
                     );
 
@@ -695,7 +711,8 @@ describe('EditEmaEditorComponent', () => {
 
                     const pDialog = dialog.query(By.css('p-dialog'));
 
-                    expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                    // Access the PrimeNG Dialog component instance to verify visible property
+                    expect(pDialog.componentInstance.visible).toBe(true);
 
                     const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
 
@@ -798,7 +815,8 @@ describe('EditEmaEditorComponent', () => {
 
                         const pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(true);
                     });
 
                     it('should reload the page after saving the new navigation order', () => {
@@ -827,7 +845,8 @@ describe('EditEmaEditorComponent', () => {
 
                         const pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(false);
                     });
 
                     it('should advice the users when they can not save the new order', () => {
@@ -874,7 +893,8 @@ describe('EditEmaEditorComponent', () => {
 
                         let pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('true');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(true);
 
                         dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
 
@@ -886,9 +906,13 @@ describe('EditEmaEditorComponent', () => {
                             })
                         });
 
+                        spectator.detectChanges();
+
+                        dialog = spectator.debugElement.query(By.css("[data-testId='ema-dialog']"));
                         pDialog = dialog.query(By.css('p-dialog'));
 
-                        expect(pDialog.attributes['ng-reflect-visible']).toBe('false');
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        expect(pDialog.componentInstance.visible).toBe(false);
                     });
 
                     afterEach(() => jest.clearAllMocks());
@@ -909,7 +933,7 @@ describe('EditEmaEditorComponent', () => {
                             By.css('[data-testId="ema-dialog"]')
                         );
 
-                        store.setEditorContentletArea(baseContentletPayload);
+                        store.setContentletArea(baseContentletPayload);
 
                         editURLContentButton.triggerEventHandler('onClick', {});
 
@@ -1051,13 +1075,13 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
                         spectator.triggerEventHandler(
-                            EmaContentletToolsComponent,
-                            'edit',
+                            DotUveContentletToolsComponent,
+                            'editContent',
                             EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
                         );
 
@@ -1079,13 +1103,13 @@ describe('EditEmaEditorComponent', () => {
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
                         spectator.triggerEventHandler(
-                            EmaContentletToolsComponent,
-                            'edit',
+                            DotUveContentletToolsComponent,
+                            'editContent',
                             EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
                         );
 
@@ -1106,13 +1130,13 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
 
                         spectator.detectComponentChanges();
 
                         spectator.triggerEventHandler(
-                            EmaContentletToolsComponent,
-                            'edit',
+                            DotUveContentletToolsComponent,
+                            'editContent',
                             EDIT_ACTION_PAYLOAD_IN_MULTIPLE_PAGES
                         );
 
@@ -1128,7 +1152,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should trigger copy contentlet dialog', () => {
-                        store.setEditorContentletArea(CONTENTLET_MOCK);
+                        store.setContentletArea(CONTENTLET_MOCK);
                         window.dispatchEvent(
                             new MessageEvent('message', {
                                 origin: HOST,
@@ -1160,7 +1184,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1170,11 +1194,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1220,7 +1243,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const payload: ActionPayload = { ...PAYLOAD_MOCK };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1230,11 +1253,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1303,7 +1325,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1,
+                            maxContentlets: 2,
                             contentletsId: ['123'],
                             variantId: '123'
                         },
@@ -1311,7 +1333,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1321,11 +1343,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1392,7 +1413,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1402,11 +1423,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addContent',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'content',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1462,7 +1482,7 @@ describe('EditEmaEditorComponent', () => {
                             identifier: 'container-identifier-123',
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
-                            maxContentlets: 1,
+                            maxContentlets: 2,
                             contentletsId: ['123'],
                             variantId: '123'
                         },
@@ -1470,7 +1490,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'after'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1480,11 +1500,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addWidget',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'widget',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1551,7 +1570,7 @@ describe('EditEmaEditorComponent', () => {
                         position: 'before'
                     };
 
-                    store.setEditorContentletArea({
+                    store.setContentletArea({
                         x: 100,
                         y: 100,
                         width: 500,
@@ -1561,11 +1580,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'addWidget',
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type: 'widget',
                         payload
-                    );
+                    });
 
                     spectator.detectComponentChanges();
 
@@ -1599,7 +1617,7 @@ describe('EditEmaEditorComponent', () => {
 
             describe('drag and drop', () => {
                 describe('drag start', () => {
-                    it('should call the setEditorDragItem from the store for content-types and set the `dotcms/item` type ', () => {
+                    it('should call the setEditorDragItem from the store for content-types and set the `dotcms/item` type ', async () => {
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
                         const dataTransfer = {
                             writable: false,
@@ -1635,6 +1653,9 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragStart);
 
+                        // Wait for requestAnimationFrame to complete
+                        await new Promise((resolve) => requestAnimationFrame(resolve));
+
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
                             baseType: 'test',
                             contentType: 'test',
@@ -1651,7 +1672,7 @@ describe('EditEmaEditorComponent', () => {
                         expect(dataTransfer.value.setData).toHaveBeenCalledWith('dotcms/item', '');
                     });
 
-                    it('should call the setEditorDragItem from the store for contentlets', () => {
+                    it('should call the setEditorDragItem from the store for contentlets', async () => {
                         const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const setEditorDragItemSpy = jest.spyOn(store, 'setEditorDragItem');
@@ -1682,6 +1703,9 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragStart);
 
+                        // Wait for requestAnimationFrame to complete
+                        await new Promise((resolve) => requestAnimationFrame(resolve));
+
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
                             baseType: contentlet.baseType,
                             contentType: contentlet.contentType,
@@ -1695,7 +1719,7 @@ describe('EditEmaEditorComponent', () => {
                         });
                     });
 
-                    it('should call the setEditorDragItem from the store for contentlets and move', () => {
+                    it('should call the setEditorDragItem from the store for contentlets and move', async () => {
                         const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
 
                         const container = {
@@ -1733,6 +1757,9 @@ describe('EditEmaEditorComponent', () => {
                         });
 
                         window.dispatchEvent(dragStart);
+
+                        // Wait for requestAnimationFrame to complete
+                        await new Promise((resolve) => requestAnimationFrame(resolve));
 
                         expect(setEditorDragItemSpy).toHaveBeenCalledWith({
                             baseType: contentlet.baseType,
@@ -2289,12 +2316,19 @@ describe('EditEmaEditorComponent', () => {
                         window.dispatchEvent(drop);
 
                         spectator.detectChanges();
+                        spectator.detectComponentChanges();
 
-                        const dialog = spectator.debugElement.query(
-                            By.css('[data-testId="dialog"]')
+                        // Find the ema-dialog component first, then the p-dialog inside it
+                        const emaDialog = spectator.debugElement.query(
+                            By.css('[data-testId="ema-dialog"]')
                         );
 
-                        expect(dialog.attributes['ng-reflect-visible']).toBe('true');
+                        expect(emaDialog).toBeTruthy();
+
+                        // Access the PrimeNG Dialog component instance to verify visible property
+                        const pDialog = emaDialog.query(By.css('p-dialog[data-testId="dialog"]'));
+                        expect(pDialog).toBeTruthy();
+                        expect(pDialog.componentInstance.visible).toBe(true);
                         expect(resetEditorPropertiesSpy).toHaveBeenCalled();
                     });
 
@@ -2841,6 +2875,22 @@ describe('EditEmaEditorComponent', () => {
                             store.loadPageAsset({ url: 'index', clientHost: null });
                         });
 
+                        it('should call injectBaseTag with the right data', () => {
+                            const origin = window.location.origin;
+                            const injectBaseTagSpy = jest.spyOn(uveUtils, 'injectBaseTag');
+
+                            const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                            iframe.dispatchEvent(new Event('load'));
+
+                            spectator.detectChanges();
+
+                            expect(injectBaseTagSpy).toHaveBeenCalledWith({
+                                html: MOCK_RESPONSE_VTL.page.rendered,
+                                url: MOCK_RESPONSE_VTL.page.pageURI,
+                                origin
+                            });
+                        });
+
                         it('should add script and styles to iframe', () => {
                             const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
                             const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
@@ -3052,8 +3102,8 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectComponentChanges();
 
                     spectator.triggerEventHandler(
-                        EmaContentletToolsComponent,
-                        'edit',
+                        DotUveContentletToolsComponent,
+                        'editContent',
                         EDIT_ACTION_PAYLOAD_MOCK
                     );
 
@@ -3149,7 +3199,7 @@ describe('EditEmaEditorComponent', () => {
                     const mockAnchor = {
                         href,
                         getAttribute: jest.fn().mockReturnValue(href),
-                        closest: jest.fn().mockReturnValue({ getAttribute: () => href })
+                        closest: jest.fn().mockReturnValue({ href, getAttribute: () => href })
                     };
 
                     const mockEvent = {
@@ -3275,6 +3325,7 @@ describe('EditEmaEditorComponent', () => {
                         target: {
                             href: null,
                             closest: jest.fn().mockReturnValue({
+                                href: 'http://localhost:3000/fallback-page?test=123',
                                 getAttribute: jest
                                     .fn()
                                     .mockReturnValue('http://localhost:3000/fallback-page?test=123')

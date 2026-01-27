@@ -17,6 +17,11 @@ import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.PropertyUtils;
 
+/**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
+ */
+@Deprecated(forRemoval = true)
 public class IndiciesFactory {
 
 
@@ -40,7 +45,7 @@ public class IndiciesFactory {
                 if (info == null) {
                     final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
                     final DotConnect dc = new DotConnect();
-                    dc.setSQL("SELECT index_name,index_type FROM indicies");
+                    dc.setSQL("SELECT index_name,index_type FROM indicies WHERE index_version IS NULL");
                     final List<Map<String, Object>> results = dc.loadResults(conn);
                     for (Map<String, Object> rr : results) {
                         String name = (String) rr.get("index_name");

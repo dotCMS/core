@@ -8,6 +8,7 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
@@ -40,6 +41,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
@@ -79,6 +81,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             Lazy.of(() -> Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true));
     private static final String SELECT_MULTITREES_BY_VARIANT = "SELECT * FROM multi_tree WHERE variant_id = ?";
     private final Lazy<MultiTreeCache> multiTreeCache = Lazy.of(CacheLocator::getMultiTreeCache);
+    private static final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
@@ -101,7 +104,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
 
-    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id) values (?,?,?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id, style_properties) values (?,?,?,?,?,?,?,?::jsonb)";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = ? order by tree_order";
@@ -123,6 +126,8 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
                     "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND language_id = ?)";
+    private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE =
+            SELECT_ALL + "WHERE parent1 = ? AND style_properties IS NOT NULL";
 
     @WrapInTransaction
     @Override
@@ -658,7 +663,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * @param multiTrees {@link List} of {@link MultiTree} to safe
      * @param languageIdOpt {@link Optional} {@link Long}   optional language, if present will deletes only the contentlets that have a version on this language.
      *                                        Since it is by identifier, when deleting for instance in spanish, will remove the english and any other lang version too.
-     * @throws DotDataException 
+     * @throws DotDataException If there is an issue retrieving data from the DB.
      */
     @Override
     @WrapInTransaction
@@ -680,6 +685,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Logger.debug(MultiTreeAPIImpl.class, ()->String.format("Saving page's content: %s", multiTrees));
         Set<String> originalContentletIds = new HashSet<>();
         final DotConnect db = new DotConnect();
+
+        // Preserves already existing styles
+        preserveStylesBeforeSaving(pageId, multiTrees);
+
         if (languageIdOpt.isPresent()) {
             if (DbConnectionFactory.isMySql()) {
                 deleteMultiTreeToMySQL(pageId, personalization, languageIdOpt, variantId);
@@ -761,10 +770,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 throw new IllegalArgumentException(errorMsg);
             }
 
+            final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
+
             insertParams
                     .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                             tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
-                            copiedMultiTreeVariantId));
+                            copiedMultiTreeVariantId, stylePropertiesJson));
         }
         db.executeBatch(INSERT_SQL, insertParams);
     }
@@ -864,9 +875,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         if (!mTrees.isEmpty()) {
             final List<Params> insertParams = Lists.newArrayList();
             for (final MultiTree tree : mTrees) {
+                final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
+
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId(), stylePropertiesJson));
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
@@ -912,10 +925,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         Logger.debug(this, () -> String.format("_dbInsert -> Saving MultiTree: %s", multiTree));
 
-        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
-                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId()).loadResult();
+        final String stylePropertiesJson = serializeStyleProperties(multiTree.getStyleProperties());
+
+        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage())
+                .addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder())
+                .addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId())
+                .addParam(stylePropertiesJson)
+                .loadResult();
     }
 
+    /**
+     * Serializes styleProperties Map to JSON string for database storage.
+     * Returns null if the map is null or empty.
+     *
+     * @param styleProperties Map of style properties
+     * @return JSON string or null
+     */
+    private String serializeStyleProperties(final Map<String, Object> styleProperties) {
+        return Try.of(() -> UtilMethods.isSet(styleProperties)
+                        ? jsonMapper.writeValueAsString(styleProperties)
+                        : null)
+                .onFailure(e -> Logger.error(this, "Error serializing style properties: " + e.getMessage(), e))
+                .getOrNull();
+    }
 
     /**
      * Update the version_ts of all versions of the HTML Page with the given id. If a MultiTree Object
@@ -1101,13 +1134,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         for (final MultiTree multiTree : multiTrees) {
 
-            Container container   = null;
+            Container container;
             final String    containerId     = multiTree.getContainerAsID();
             final String    personalization = multiTree.getPersonalization();
 
             try {
 
-                container = liveMode?
+                container = liveMode ?
                         containerAPI.getLiveContainerById(containerId, systemUser, false):
                         containerAPI.getWorkingContainerById(containerId, systemUser, false);
 
@@ -1137,7 +1170,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 if (container != null) {
 
-                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization, multiTree.getTreeOrder()));
+                    myContents.add(
+                            new PersonalizedContentlet(multiTree.getContentlet(), personalization,
+                                    multiTree.getTreeOrder(), multiTree.getStyleProperties()));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);
@@ -1539,6 +1574,62 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         params.forEach(db::addParam);
         final List<Map<String, Object>> contentletData = db.loadObjectResults();
         return contentletData.stream().map(dataMap -> dataMap.get("child").toString()).collect(Collectors.toSet());
+    }
+
+    /**
+     * Restores the style properties for a list of MultiTree objects by looking up
+     * their existing values in the database.
+     * This prevents style data loss when overwriting existing records. It matches
+     * records based on the composite key of Container + Contentlet.
+     *
+     * @param pageId      The identifier of the page being processed.
+     * @param multiTrees  The list of MultiTree objects to be saved.
+     * NOTE: This list is modified in-place.
+     * The same list of multiTrees will be enriched with their original styles.
+     * @throws DotDataException If there is an issue retrieving data from the DB.
+     */
+    private void preserveStylesBeforeSaving(final String pageId, List<MultiTree> multiTrees) throws DotDataException {
+        // Gets existing multiTrees by Page from DB
+        final List<MultiTree> multiTreesFromDB = fetchStylesFromDB(pageId);
+
+        if (multiTreesFromDB.isEmpty()) {
+            return;
+        }
+
+        // Create a "Lookup Map" from the DB multiTrees.
+        // Key: Unique combination of Container + Contentlet
+        // Value: Contentlet styleProperties
+        final Map<String, Map<String, Object>> dbStyleMap = multiTreesFromDB.stream()
+                .collect(Collectors.toMap(
+                        mt -> mt.getContainer() + "_" + mt.getContentlet(),
+                        MultiTree::getStyleProperties,
+                        // In case of duplicates, keep last entrance value (shouldn't happen)
+                        (existing, replacement) -> replacement
+                ));
+
+        // Update the multiTrees list to preserve existing styleProperties
+        for (MultiTree multiTree : multiTrees) {
+            String key = multiTree.getContainer() + "_" + multiTree.getContentlet();
+
+            // If this relationship already existed in DB, preserves the old styles
+            if (dbStyleMap.containsKey(key)) {
+                multiTree.setStyleProperties(dbStyleMap.get(key));
+            }
+        }
+    }
+
+    /**
+     * Fetches the style properties from the database for a given page.
+     *
+     * @param pageId The ID of the page to fetch the style properties from.
+     * @return The list of MultiTree objects with the style properties.
+     * @throws DotDataException If there is an issue retrieving data from the DB.
+     */
+    protected List<MultiTree> fetchStylesFromDB(String pageId) throws DotDataException {
+        final DotConnect db = new DotConnect()
+                .setSQL(SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE)
+                .addParam(pageId);
+        return TransformerLocator.createMultiTreeTransformer(db.loadObjectResults()).asList();
     }
 
     /**

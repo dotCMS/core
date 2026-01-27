@@ -1,7 +1,14 @@
 package com.dotcms;
 
+import com.dotcms.content.index.VersionedIndicesAPITest;
+import com.dotcms.cost.RequestCostReportTest;
+import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
+import com.dotcms.contenttype.business.StoryBlockValidationTest;
+import com.dotcms.contenttype.test.StoryBlockUtilTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
@@ -20,6 +27,8 @@ import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
+import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
+import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -43,7 +52,16 @@ import org.junit.runners.Suite;
         Task250604UpdateFolderInodesTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
-        SecondaryCategoryPermissionTest.class
+        SecondaryCategoryPermissionTest.class,
+        RequestCostReportTest.class,
+        OpenAIVisionAPIImplTest.class,
+        ContentDriveHelperContentletAPIComparisonTest.class,
+        AppsAPIImplTest.class,
+        Task251103AddStylePropertiesColumnInMultiTreeTest.class,
+        StoryBlockValidationTest.class,
+        StoryBlockUtilTest.class,
+        VersionedIndicesAPITest.class,
+        Task251212AddVersionColumnIndicesTableTest.class
 })
 
 public class MainSuite3a {

@@ -1,11 +1,21 @@
+import { MenuItem } from 'primeng/api';
+
 import {
     DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSContentType,
     ESContent
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_PER_PAGE, DotPaletteSortOption, DotPaletteListStatus } from '../models';
+import {
+    DEFAULT_PER_PAGE,
+    DotCMSPaletteContentType,
+    DotPaletteListStatus,
+    DotPaletteSortOption,
+    DotPaletteViewMode,
+    DotUVEPaletteListTypes
+} from '../models';
 
 /**
  * Mock array for loading skeleton rows.
@@ -26,8 +36,8 @@ export const LOADING_ROWS_MOCK = Array.from({ length: DEFAULT_PER_PAGE }, (_, in
  * Sets all pagination values to 0 when data cannot be fetched.
  */
 export const EMPTY_PAGINATION = {
-    currentPage: 0,
-    perPage: 0,
+    currentPage: 1,
+    perPage: DEFAULT_PER_PAGE,
     totalEntries: 0
 };
 
@@ -36,7 +46,7 @@ export const EMPTY_PAGINATION = {
  * Used when an error occurs during content types fetch.
  */
 export const EMPTY_CONTENTTYPE_RESPONSE = {
-    contenttypes: [] as DotCMSContentType[],
+    contenttypes: [] as DotCMSPaletteContentType[],
     pagination: EMPTY_PAGINATION
 };
 
@@ -46,7 +56,8 @@ export const EMPTY_CONTENTTYPE_RESPONSE = {
  */
 export const EMPTY_CONTENTLET_RESPONSE = {
     contentlets: [] as DotCMSContentlet[],
-    pagination: EMPTY_PAGINATION
+    pagination: EMPTY_PAGINATION,
+    status: DotPaletteListStatus.EMPTY
 };
 
 export const DEFAULT_SORT_OPTIONS: DotPaletteSortOption = {
@@ -83,6 +94,65 @@ export function getSortActiveClass(
     return isActive ? 'active-menu-item' : '';
 }
 
+export function buildPaletteMenuItems({
+    viewMode,
+    currentSort,
+    onSortSelect,
+    onViewSelect
+}: {
+    viewMode: DotPaletteViewMode;
+    currentSort: DotPaletteSortOption;
+    onSortSelect: (sortOption: DotPaletteSortOption) => void;
+    onViewSelect: (viewMode: DotPaletteViewMode) => void;
+}): MenuItem[] {
+    return [
+        {
+            label: 'uve.palette.menu.sort.title',
+            items: [
+                {
+                    label: 'uve.palette.menu.sort.option.popular',
+                    command: () => onSortSelect({ orderby: 'usage', direction: 'ASC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'usage', direction: 'ASC' },
+                        currentSort
+                    )
+                },
+                {
+                    label: 'uve.palette.menu.sort.option.a-to-z',
+                    command: () => onSortSelect({ orderby: 'name', direction: 'ASC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'name', direction: 'ASC' },
+                        currentSort
+                    )
+                },
+                {
+                    label: 'uve.palette.menu.sort.option.z-to-a',
+                    command: () => onSortSelect({ orderby: 'name', direction: 'DESC' }),
+                    styleClass: getSortActiveClass(
+                        { orderby: 'name', direction: 'DESC' },
+                        currentSort
+                    )
+                }
+            ]
+        },
+        {
+            label: 'uve.palette.menu.view.title',
+            items: [
+                {
+                    label: 'uve.palette.menu.view.option.grid',
+                    command: () => onViewSelect('grid'),
+                    styleClass: viewMode === 'grid' ? 'active-menu-item' : ''
+                },
+                {
+                    label: 'uve.palette.menu.view.option.list',
+                    command: () => onViewSelect('list'),
+                    styleClass: viewMode === 'list' ? 'active-menu-item' : ''
+                }
+            ]
+        }
+    ];
+}
+
 /**
  * Determines the loading state for the palette based on data availability.
  * Returns LOADED if data exists, EMPTY if no data is present.
@@ -100,6 +170,42 @@ export function getPaletteState(
     elements: DotCMSContentType[] | DotCMSContentlet[]
 ): DotPaletteListStatus {
     return elements.length > 0 ? DotPaletteListStatus.LOADED : DotPaletteListStatus.EMPTY;
+}
+
+function sortContentTypesByName<T extends Pick<DotCMSContentType, 'name'>>(contentTypes: T[]): T[] {
+    return contentTypes.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function isAllowedFavoriteContentType({
+    contentType,
+    allowedContentTypes
+}: {
+    contentType: DotCMSContentType;
+    allowedContentTypes?: Record<string, true>;
+}): boolean {
+    if (!allowedContentTypes || Object.keys(allowedContentTypes).length === 0) {
+        // By UX rule: if we don't have an allowed map, everything is disabled
+        return false;
+    }
+
+    return (
+        allowedContentTypes[contentType.variable] === true ||
+        contentType.baseType === DotCMSBaseTypesContentTypes.WIDGET
+    );
+}
+
+function markDisabledFavorites({
+    contentTypes,
+    allowedContentTypes
+}: {
+    contentTypes: DotCMSPaletteContentType[];
+    allowedContentTypes?: Record<string, true>;
+}): DotCMSPaletteContentType[] {
+    return contentTypes.map((ct) =>
+        isAllowedFavoriteContentType({ contentType: ct, allowedContentTypes })
+            ? ct
+            : { ...ct, disabled: true }
+    );
 }
 
 /**
@@ -120,7 +226,7 @@ export function getPaletteState(
  *
  * @example
  * ```typescript
- * const result = filterAndBuildFavoriteResponse({
+ * const result = buildPaletteFavorite({
  *   contentTypes: allContentTypes,
  *   filter: 'blog',
  *   page: 2
@@ -131,29 +237,37 @@ export function getPaletteState(
  * // }
  * ```
  */
-export function filterAndBuildFavoriteResponse({
+export function buildPaletteFavorite({
     contentTypes,
     filter = '',
-    page = 1
+    page = 1,
+    allowedContentTypes
 }: {
-    contentTypes: DotCMSContentType[];
+    contentTypes: DotCMSPaletteContentType[];
     filter?: string;
     page?: number;
+    allowedContentTypes?: Record<string, true>;
 }): {
-    contenttypes: DotCMSContentType[];
+    contenttypes: DotCMSPaletteContentType[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
+    status: DotPaletteListStatus;
 } {
-    // Filter and sort all content types
-    const filteredContentTypes = contentTypes.filter(
-        (ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase())
+    // Filter + sort (A→Z) to keep pagination stable
+    const filteredContentTypes = sortContentTypesByName(
+        contentTypes.filter((ct) => !filter || ct.name.toLowerCase().includes(filter.toLowerCase()))
     );
-    filteredContentTypes.sort((a, b) => a.name.localeCompare(b.name));
 
-    // Calculate pagination slice
     const totalEntries = filteredContentTypes.length;
     const startIndex = (page - 1) * DEFAULT_PER_PAGE;
     const endIndex = page * DEFAULT_PER_PAGE;
-    const contenttypes = filteredContentTypes.slice(startIndex, endIndex);
+    const pageContentTypes = filteredContentTypes.slice(startIndex, endIndex);
+
+    // Favorites are stored locally, so we need to mark which are not allowed on this page.
+    // `allowedContentTypes` comes from containerStructures[*].contentTypeVar and matches contentType.variable.
+    const contenttypes = markDisabledFavorites({
+        contentTypes: pageContentTypes,
+        allowedContentTypes
+    });
 
     const pagination = {
         currentPage: page,
@@ -161,7 +275,7 @@ export function filterAndBuildFavoriteResponse({
         totalEntries
     };
 
-    return { contenttypes, pagination };
+    return { contenttypes, pagination, status: getPaletteState(contenttypes) };
 }
 
 /**
@@ -184,12 +298,13 @@ export function filterAndBuildFavoriteResponse({
  * // }
  * ```
  */
-export function buildContentletsResponse(
+export function buildPaletteContent(
     response: ESContent,
     offset: number
 ): {
     contentlets: DotCMSContentlet[];
     pagination: { currentPage: number; perPage: number; totalEntries: number };
+    status: DotPaletteListStatus;
 } {
     const contentlets = response.jsonObjectView.contentlets;
     const totalEntries = response.resultsSize;
@@ -197,7 +312,8 @@ export function buildContentletsResponse(
 
     return {
         contentlets,
-        pagination: { currentPage, perPage: contentlets.length, totalEntries }
+        pagination: { currentPage, perPage: contentlets.length, totalEntries },
+        status: getPaletteState(contentlets)
     };
 }
 
@@ -282,3 +398,90 @@ export const DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY = 'dot-uve-palette-layout-mode'
  * Key for storing the orderby in the local storage.
  */
 export const DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY = 'dot-uve-palette-sort-options';
+
+/**
+ * Object containing the empty message for the search state.
+ * @type {Object}
+ */
+export const EMPTY_MESSAGE_SEARCH = {
+    icon: 'pi pi-search',
+    title: 'uve.palette.empty.search.state.title',
+    message: 'uve.palette.empty.search.state.message'
+};
+
+export const EMPTY_MESSAGE_CONTENTLETS = {
+    icon: 'pi pi-folder-open',
+    title: 'uve.palette.empty.state.contentlets.title',
+    message: 'uve.palette.empty.state.contentlets.message'
+};
+
+/**
+ * Object containing empty messages for different list types.
+ * Each key corresponds to a DotUVEPaletteListTypes enum value.
+ * @type {Record<DotUVEPaletteListTypes, { icon: string; title: string; message: string }>}
+ */
+export const EMPTY_MESSAGES = {
+    [DotUVEPaletteListTypes.CONTENT]: {
+        icon: 'pi pi-folder-open',
+        title: 'uve.palette.empty.state.contenttypes.title',
+        message: 'uve.palette.empty.state.contenttypes.message'
+    },
+    [DotUVEPaletteListTypes.FAVORITES]: {
+        icon: 'pi pi-plus',
+        title: 'uve.palette.empty.state.favorites.title',
+        message: 'uve.palette.empty.state.favorites.message'
+    },
+    [DotUVEPaletteListTypes.WIDGET]: {
+        icon: 'pi pi-folder-open',
+        title: 'uve.palette.empty.state.widgets.title',
+        message: 'uve.palette.empty.state.widgets.message'
+    }
+};
+
+/**
+ * Filters out null and undefined values from an object recursively.
+ *
+ * Recursively processes nested objects (like checkbox groups) to remove null/undefined values.
+ * Preserves valid values including false, 0, empty strings, and empty arrays as they are
+ * meaningful values in form contexts.
+ *
+ * @param obj - The object to filter
+ * @returns A new object with null/undefined values removed, maintaining the structure of nested objects
+ *
+ * @example
+ * ```typescript
+ * const filtered = filterFormValues({
+ *   name: 'John',
+ *   age: null,
+ *   active: false,
+ *   tags: { tag1: true, tag2: null }
+ * });
+ * // Returns: { name: 'John', active: false, tags: { tag1: true } }
+ * ```
+ */
+export function filterFormValues<T extends Record<string, unknown>>(obj: T): Partial<T> {
+    const filtered: Partial<T> = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+        // Skip null and undefined values (but keep empty strings, false, 0, etc.)
+        if (value === null || value === undefined) {
+            continue;
+        }
+
+        // Handle nested objects (like checkbox groups)
+        if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
+            const filteredNested = filterFormValues(value as Record<string, unknown>);
+            // Only include nested object if it has at least one property
+            // (empty objects are filtered out)
+            if (Object.keys(filteredNested).length > 0) {
+                filtered[key as keyof T] = filteredNested as T[keyof T];
+            }
+        } else {
+            // Include non-null, non-undefined primitive values and arrays
+            // This includes false, 0, empty strings, etc. as they are valid values
+            filtered[key as keyof T] = value as T[keyof T];
+        }
+    }
+
+    return filtered;
+}
