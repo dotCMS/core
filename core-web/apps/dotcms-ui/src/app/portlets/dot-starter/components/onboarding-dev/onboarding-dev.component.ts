@@ -28,6 +28,7 @@ import { OnboardingFramework } from './models';
         DotCopyButtonComponent,
         ButtonModule,
         CommonModule,
+        ButtonModule,
         FormsModule,
         KnobModule,
         MarkdownModule,

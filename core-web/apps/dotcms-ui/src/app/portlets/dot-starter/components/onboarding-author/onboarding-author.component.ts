@@ -5,6 +5,7 @@ import { Component, DestroyRef, EventEmitter, inject, OnInit, Output } from '@an
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
+import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 
 import { map, mergeMap } from 'rxjs/operators';
@@ -26,7 +27,7 @@ import { DotAccountService } from '../../../../api/services/dot-account-service'
     styleUrls: ['./onboarding-author.component.scss'],
     providers: [DotAccountService],
     standalone: true,
-    imports: [AsyncPipe, DotMessagePipe, CheckboxModule, RouterLink]
+    imports: [ButtonModule, AsyncPipe, DotMessagePipe, CheckboxModule, RouterLink]
 })
 export class DotOnboardingAuthorComponent implements OnInit {
     private dotAccountService = inject(DotAccountService);
