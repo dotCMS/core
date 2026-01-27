@@ -15,11 +15,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { Listbox, ListboxModule } from 'primeng/listbox';
-import { SkeletonModule } from 'primeng/skeleton';
+import { AutoComplete } from 'primeng/autocomplete';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Listbox } from 'primeng/listbox';
+import { Skeleton } from 'primeng/skeleton';
 
 import { debounceTime, distinctUntilChanged, takeUntil, pluck } from 'rxjs/operators';
 
@@ -48,15 +48,7 @@ interface SearchResultItem {
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
     styleUrls: ['./dot-link-editor-popover.component.scss'],
-    imports: [
-        FormsModule,
-        ListboxModule,
-        AutoCompleteModule,
-        InputTextModule,
-        SkeletonModule,
-        ButtonModule,
-        EditorModalDirective
-    ]
+    imports: [FormsModule, Listbox, AutoComplete, InputText, Skeleton, Button, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
     @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;

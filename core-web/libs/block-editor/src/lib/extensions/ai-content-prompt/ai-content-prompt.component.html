@@ -129,9 +129,11 @@
         </form>
         <p-confirmDialog
             [style]="{ width: '500px' }"
-            acceptIcon="null"
             key="ai-image-prompt"
-            rejectButtonStyleClass="p-button-outlined"
-            rejectIcon="null" />
+            [pt]="{
+                rejectButton: { class: 'p-button-outlined' },
+                acceptButton: { icon: '' },
+                rejectButton: { icon: '' }
+            }" />
     </p-dialog>
 }

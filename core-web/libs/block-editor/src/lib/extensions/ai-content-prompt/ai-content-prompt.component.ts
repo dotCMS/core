@@ -6,12 +6,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
-import { TextareaModule } from 'primeng/textarea';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TooltipModule } from 'primeng/tooltip';
+import { Button } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { Textarea } from 'primeng/textarea';
+import { Skeleton } from 'primeng/skeleton';
+import { Tooltip } from 'primeng/tooltip';
 
 import { delay, filter } from 'rxjs/operators';
 
@@ -36,16 +36,16 @@ interface AIContentForm {
     selector: 'dot-ai-content-prompt',
     templateUrl: './ai-content-prompt.component.html',
     imports: [
-        DialogModule,
+        Dialog,
         ReactiveFormsModule,
-        TextareaModule,
+        Textarea,
         DotMessagePipe,
-        ButtonModule,
-        TooltipModule,
-        SkeletonModule,
+        Button,
+        Tooltip,
+        Skeleton,
         AsyncPipe,
         DotEmptyContainerComponent,
-        ConfirmDialogModule,
+        ConfirmDialog,
         DotCopyButtonComponent
     ],
     styleUrls: ['./ai-content-prompt.component.scss']

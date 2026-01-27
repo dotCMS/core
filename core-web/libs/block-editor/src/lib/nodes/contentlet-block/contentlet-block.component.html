@@ -1,28 +1,34 @@
 @if (data(); as data) {
-    <p-card>
-        <ng-template pTemplate="header">
-            <dot-contentlet-thumbnail
-                [width]="94"
-                [height]="94"
-                [iconSize]="'72px'"
-                [contentlet]="data" />
+    <p-card class="flex! flex-row! justify-center">
+        <ng-template #header>
+            <div class="box-border p-4! pr-0! flex items-center h-full">
+                <dot-contentlet-thumbnail
+                    [width]="94"
+                    [height]="94"
+                    [iconSize]="'72px'"
+                    [contentlet]="data"
+                    class="block relative w-[94px] h-[94px]" />
+            </div>
         </ng-template>
 
-        <h3 *pTemplate="'title'" class="title">{{ data.title }}</h3>
-        <span *pTemplate="'subtitle'">{{ data.contentType }}</span>
+        <ng-template #title>
+            <div class="overflow-hidden w-full m-0!">
+                <h3 class="m-0! overflow-hidden p-0! text-ellipsis whitespace-nowrap mb-2!">
+                    {{ data.title }}
+                </h3>
+            </div>
+        </ng-template>
 
-        <ng-template pTemplate="footer">
-            <div class="state">
+        <ng-template #subtitle>
+            <div class="flex flex-col">
+                <span class="mb-2!">{{ data.contentType }}</span>
                 <dot-contentlet-status-chip [state]="data | contentletState" />
-                @if (data.language) {
-                    <dot-badge [bordered]="true">{{ data.language | lowercase }}</dot-badge>
-                }
             </div>
         </ng-template>
     </p-card>
 } @else {
     <p-card>
-        <div class="spinner__container">
+        <div class="h-[94px] flex justify-center items-center">
             <dot-spinner />
         </div>
     </p-card>

@@ -46,14 +46,14 @@
     } @else {
         <p-select
             #dropdown
-            styleClass="bubble-menu-dropdown"
+            class="bubble-menu-dropdown"
             [(ngModel)]="dropdownItem"
             [options]="nodeTypeOptions"
             (onChange)="runConvertToCommand($event.value)"
             optionLabel="name"
             scrollHeight="300px"
             appendTo="body"
-            panelStyleClass="bubble-menu-dropdown-panel">
+            [pt]="{ panel: { class: 'bubble-menu-dropdown-panel' } }">
             <ng-template let-item pTemplate="item">
                 <div class="dropdown-item-content">
                     <div class="dropdown-item-icon">
