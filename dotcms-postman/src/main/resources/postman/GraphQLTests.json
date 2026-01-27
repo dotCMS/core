@@ -4623,7 +4623,7 @@
 							"response": []
 						},
 						{
-							"name": "Save Content With Basic Styles",
+							"name": "Create Content in the Page",
 							"event": [
 								{
 									"listen": "test",
@@ -4637,6 +4637,81 @@
 											"",
 											"// Parse JSON",
 											"const json = pm.response.json();",
+											"",
+											"pm.test(\"No errors returned\", function () {",
+											"    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+											"});",
+											"",
+											"pm.test(\"First entry is created\", function () {",
+											"    const contentlet = json.entity.find(item => item.contentletId === contentlet1);",
+											"    pm.expect(contentlet).to.exist;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ]\n    }\n]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"{{pageIdentifier}}",
+										"content"
+									]
+								},
+								"description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+							},
+							"response": []
+						},
+						{
+							"name": "Save Basic Content Styles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"// Parse JSON",
+											"const json = pm.response.json();",
+											"",
+											"pm.test(\"Entity array exists\", function () {",
+											"    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+											"});",
 											"",
 											"pm.test(\"No errors returned\", function () {",
 											"    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
@@ -4669,11 +4744,11 @@
 								}
 							],
 							"request": {
-								"method": "POST",
+								"method": "PUT",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    }\n]",
+									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"{{Contentlet_1}}\": {\n            \"width\": \"100px\",\n            \"color\": \"#FF0000\",\n            \"margin\": \"10px\"\n        }\n    }\n]",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4681,7 +4756,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/styles",
 									"host": [
 										"{{serverURL}}"
 									],
@@ -4690,10 +4765,10 @@
 										"v1",
 										"page",
 										"{{pageIdentifier}}",
-										"content"
+										"styles"
 									]
 								},
-								"description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+								"description": "Test when users make a request sending the style properties for some contentlets.  \nThis will save the style properties for the specified contentlets, in case style properties are empty the contentlet style properties will erased."
 							},
 							"response": []
 						},
