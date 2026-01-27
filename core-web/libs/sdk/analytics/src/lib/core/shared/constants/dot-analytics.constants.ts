@@ -235,12 +235,6 @@ export const TAB_ID_STORAGE_KEY = 'dot_analytics_tab_id';
 export const QUEUE_STORAGE_KEY_PREFIX = 'dot_analytics_queue';
 
 /**
- * Version number for persisted queue structure
- * Used for future-proofing and backward compatibility
- */
-export const QUEUE_STORAGE_VERSION = 1;
-
-/**
  * Maximum age in milliseconds for persisted events
  * Events older than this will be discarded (24 hours)
  */

@@ -18,6 +18,7 @@ import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
+import com.liferay.util.Xss;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -116,9 +117,9 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
      * Return the Analytics Js Code to inject
      *
      * Replaces template placeholders:
-     * - ${site_auth}: Analytics site key from the current host → data-analytics-auth
+     * - ${siteAuth}: Analytics site key from the current host → data-analytics-auth
      * - ${debug}: Debug mode flag (default: false) → data-analytics-debug
-     * - ${auto_page_view}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
+     * - ${autoPageView}: Auto page view tracking flag (default: true) → data-analytics-auto-page-view
      *
      * @param currentHost Host to use the {@link com.dotcms.analytics.app.AnalyticsApp}
      * @param request To get the Domain name
@@ -137,12 +138,13 @@ public class AnalyticsWebAPIImpl implements AnalyticsWebAPI {
             };
 
             final Map<String, String> placeholders = new HashMap<>();
-            placeholders.put("${site_auth}", getSecret.apply("siteAuth"));
+            // Escape user-provided values to prevent XSS attacks
+            placeholders.put("${siteAuth}", Xss.escapeHTMLAttrib(getSecret.apply("siteAuth")));
             placeholders.put("${debug}", getSecret.apply("debug"));
-            placeholders.put("${auto_page_view}", getSecret.apply("auto_page_view"));
-            placeholders.put("${content_impression}", getSecret.apply("content_impression"));
-            placeholders.put("${content_click}", getSecret.apply("content_click"));
-            placeholders.put("${advanced_config}", getSecret.apply("advanced_config"));
+            placeholders.put("${autoPageView}", getSecret.apply("autoPageView"));
+            placeholders.put("${contentImpression}", getSecret.apply("contentImpression"));
+            placeholders.put("${contentClick}", getSecret.apply("contentClick"));
+            placeholders.put("${advancedConfig}", Xss.escapeHTMLAttrib(getSecret.apply("advancedConfig")));
 
             placeholders.forEach((key, value) -> {
 

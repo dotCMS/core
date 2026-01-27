@@ -5,7 +5,6 @@ import {
     DEFAULT_QUEUE_CONFIG,
     MAX_EVENT_AGE_MS,
     QUEUE_STORAGE_KEY_PREFIX,
-    QUEUE_STORAGE_VERSION,
     TAB_ID_STORAGE_KEY
 } from '../constants';
 import { sendAnalyticsEvent } from '../http/dot-analytics.http';
@@ -18,6 +17,7 @@ import {
 } from '../models';
 import {
     createPluginLogger,
+    generateSecureId,
     getAnalyticsContext,
     safeSessionStorage
 } from '../utils/dot-analytics.utils';
@@ -75,44 +75,31 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
      * @returns Validated queue or null if invalid
      */
     const validatePersistedQueue = (data: unknown): PersistedQueue | null => {
-        if (!data || typeof data !== 'object') {
-            logger.warn('Invalid persisted queue: not an object');
+        const q = data as Partial<PersistedQueue>;
+
+        if (!q || typeof q !== 'object' || Array.isArray(q)) {
             return null;
         }
 
-        const queue = data as Partial<PersistedQueue>;
-
-        // Validate required fields
-        if (!Array.isArray(queue.events)) {
-            logger.warn('Invalid persisted queue: events is not an array');
+        // Validate minimal structural requirements
+        if (
+            typeof q.tabId !== 'string' ||
+            typeof q.timestamp !== 'number' ||
+            !Number.isFinite(q.timestamp) ||
+            !Array.isArray(q.events)
+        ) {
+            logger.warn('Invalid persisted queue: structural mismatch');
             return null;
         }
 
-        if (!queue.tabId || !queue.timestamp || !queue.version) {
-            logger.warn('Invalid persisted queue: missing required fields');
-            return null;
-        }
-
-        // Validate each event has required fields
-        const validEvents = queue.events.filter((event) => {
-            const isValid =
-                event &&
-                typeof event === 'object' &&
-                'event_type' in event &&
-                'local_time' in event &&
-                'data' in event;
-
-            if (!isValid) {
-                logger.warn('Skipping invalid event in persisted queue', event);
-            }
-
-            return isValid;
-        });
+        // Validate minimal event structure
+        const validEvents = q.events.filter(
+            (event) => event && typeof event === 'object' && 'event_type' in event
+        );
 
         return {
-            version: queue.version,
-            tabId: queue.tabId,
-            timestamp: queue.timestamp,
+            tabId: q.tabId,
+            timestamp: q.timestamp,
             events: validEvents
         };
     };
@@ -174,7 +161,6 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
         try {
             const key = getStorageKey();
             const queueData: PersistedQueue = {
-                version: QUEUE_STORAGE_VERSION,
                 tabId,
                 timestamp: Date.now(),
                 events: eventsForPersistence
@@ -208,10 +194,15 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
      * Send events immediately with keepalive mode
      * Used for sending persisted events on page load
      * @param events - Events to send
+     * @param useKeepalive - whether to use keepalive
+     * @returns Promise<boolean> - true if success
      */
-    const sendImmediately = (events: DotCMSEvent[]): void => {
+    const sendImmediately = async (
+        events: DotCMSEvent[],
+        useKeepalive = true
+    ): Promise<boolean> => {
         if (events.length === 0) {
-            return;
+            return true;
         }
 
         logger.info(`Sending ${events.length} persisted event(s) immediately`);
@@ -219,7 +210,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
         // Get current context (generates new one if needed)
         const context = getAnalyticsContext(config);
         const payload = { context, events };
-        sendAnalyticsEvent(payload, config, true); // keepalive = true
+        return sendAnalyticsEvent(payload, config, useKeepalive); // keepalive = useKeepalive
     };
 
     /**
@@ -309,7 +300,7 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
         initialize: (): void => {
             // 1. Load or generate persistent tab ID
             // Tab ID must remain constant across page navigations within the same browser tab
-            if (typeof window !== 'undefined' && typeof crypto !== 'undefined') {
+            if (typeof window !== 'undefined') {
                 // Try to load existing tab ID from sessionStorage
                 const storedTabId = safeSessionStorage.getItem(TAB_ID_STORAGE_KEY);
 
@@ -318,9 +309,20 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
                     tabId = storedTabId;
                     logger.debug(`Reusing Tab ID: ${tabId}`);
                 } else {
-                    // Generate new tab ID for this browser tab/window
-                    tabId = crypto.randomUUID();
-                    safeSessionStorage.setItem(TAB_ID_STORAGE_KEY, tabId);
+                    // Generate new tab ID (Robust check for crypto.randomUUID)
+                    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+                        tabId = crypto.randomUUID();
+                    } else {
+                        // Fallback for non-secure contexts or older browsers/environments
+                        tabId = generateSecureId('tab');
+                        logger.debug('crypto.randomUUID not available, using fallback generator');
+                    }
+
+                    try {
+                        safeSessionStorage.setItem(TAB_ID_STORAGE_KEY, tabId);
+                    } catch {
+                        // Ignore storage error for tab ID, will just generate a new one on next load
+                    }
                     logger.debug(`Generated new Tab ID: ${tabId}`);
                 }
             }
@@ -328,12 +330,18 @@ export const createAnalyticsQueue = (config: DotCMSAnalyticsConfig) => {
             // 2. Load persisted events from previous page (if any)
             const persisted = loadFromStorage();
             if (persisted && persisted.events.length > 0) {
-                // Send persisted events immediately with keepalive
-                // This ensures events from previous page navigation are sent
-                sendImmediately(persisted.events);
-
-                // Clear storage after processing
-                clearStorage();
+                // Send persisted events immediately WITHOUT keepalive (to confirm success)
+                // This ensures events from previous page navigation are sent reliably
+                sendImmediately(persisted.events, false).then((success) => {
+                    if (success) {
+                        // Clear storage ONLY after successful transmission
+                        clearStorage();
+                    } else {
+                        logger.warn(
+                            'Failed to send persisted events, keeping in storage for next retry'
+                        );
+                    }
+                });
             }
 
             // 3. Initialize smartQueue for new events

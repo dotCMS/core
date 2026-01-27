@@ -7,7 +7,7 @@ import { DotCMSAnalyticsConfig, DotCMSAnalyticsEventContext, DotCMSEvent } from 
 
 // Mock the HTTP utility
 jest.mock('../http/dot-analytics.http', () => ({
-    sendAnalyticsEvent: jest.fn()
+    sendAnalyticsEvent: jest.fn(() => Promise.resolve(true))
 }));
 
 // Mock @analytics/queue-utils
@@ -77,6 +77,9 @@ describe('createAnalyticsQueue', () => {
         // Setup window event listener spies
         addEventListenerSpy = jest.spyOn(window, 'addEventListener');
         removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
+
+        // Clear sessionStorage to prevent test leakage
+        sessionStorage.clear();
 
         // Mock crypto.randomUUID globally for all tests
         Object.defineProperty(globalThis, 'crypto', {
@@ -733,15 +736,13 @@ describe('createAnalyticsQueue', () => {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const stored = JSON.parse(mockSessionStorage[storageKey!]);
             expect(stored).toMatchObject({
-                version: 1,
                 tabId: 'test-tab-id-12345',
                 events: [mockEvent]
             });
         });
 
-        it('should load persisted events on initialize', () => {
+        it('should load persisted events on initialize', async () => {
             const persistedQueue = {
-                version: 1,
                 tabId: 'old-tab-id',
                 timestamp: Date.now(),
                 events: [mockEvent, mockEvent]
@@ -753,13 +754,16 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
+            // Wait for microtasks (promises in initialize)
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
             // Should have called sendAnalyticsEvent immediately for persisted events
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.objectContaining({
                     events: persistedQueue.events
                 }),
                 mockConfig,
-                true // keepalive for immediate send
+                false // keepalive for immediate send (matches WITHOUT keepalive comment in code)
             );
 
             // Should clear storage after loading
@@ -769,7 +773,6 @@ describe('createAnalyticsQueue', () => {
         it('should discard events older than 24 hours', () => {
             const oldTimestamp = Date.now() - 25 * 60 * 60 * 1000; // 25 hours ago
             const persistedQueue = {
-                version: 1,
                 tabId: 'old-tab-id',
                 timestamp: oldTimestamp,
                 events: [mockEvent]
@@ -843,7 +846,6 @@ describe('createAnalyticsQueue', () => {
 
         it('should handle missing required fields in persisted queue', () => {
             const invalidQueue = {
-                version: 1,
                 // Missing tabId
                 timestamp: Date.now(),
                 events: [mockEvent]
@@ -862,10 +864,9 @@ describe('createAnalyticsQueue', () => {
             expect(sessionStorageRemoveItem).toHaveBeenCalled();
         });
 
-        it('should validate event structure in persisted queue', () => {
+        it('should validate event structure in persisted queue', async () => {
             const invalidEvent = { foo: 'bar' }; // Missing required fields
             const persistedQueue = {
-                version: 1,
                 tabId: 'old-tab-id',
                 timestamp: Date.now(),
                 events: [mockEvent, invalidEvent, mockEvent]
@@ -877,13 +878,16 @@ describe('createAnalyticsQueue', () => {
             const queue = createAnalyticsQueue(mockConfig);
             queue.initialize();
 
+            // Wait for microtasks
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
             // Should send only valid events (2 out of 3)
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.objectContaining({
                     events: expect.arrayContaining([mockEvent])
                 }),
                 mockConfig,
-                true
+                false
             );
         });
 

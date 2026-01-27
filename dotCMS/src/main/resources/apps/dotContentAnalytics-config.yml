@@ -13,28 +13,28 @@ params:
     required: true
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
-  auto_page_view:
+  autoPageView:
     value: true
     hidden: false
     type: "BOOL"
     label: "Enable Auto Page Views"
     hint: "Automatically track page views. If not specified, it defaults to true."
     required: false
-  content_impression:
+  contentImpression:
     value: false
     hidden: false
     type: "BOOL"
     label: "Enable Content Impressions"
     hint: "Automatically track when contentlets are visible in the viewport. If not specified, it defaults to false."
     required: false
-  content_click:
+  contentClick:
     value: false
     hidden: false
     type: "BOOL"
     label: "Enable Content Clicks"
     hint: "Automatically track when users click on contentlets. If not specified, it defaults to false."
     required: false
-  advanced_config:
+  advancedConfig:
     value: ""
     hidden: false
     type: "STRING"

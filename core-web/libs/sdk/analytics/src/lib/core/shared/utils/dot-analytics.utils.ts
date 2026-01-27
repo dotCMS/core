@@ -118,8 +118,9 @@ const safeLocalStorage = {
     setItem: (key: string, value: string): void => {
         try {
             localStorage.setItem(key, value);
-        } catch {
+        } catch (e) {
             console.warn(`DotCMS Analytics [Core]: Could not save ${key} to localStorage`);
+            throw e;
         }
     }
 };
@@ -138,8 +139,9 @@ export const safeSessionStorage = {
     setItem: (key: string, value: string): void => {
         try {
             sessionStorage.setItem(key, value);
-        } catch {
+        } catch (e) {
             console.warn(`DotCMS Analytics [Core]: Could not save ${key} to sessionStorage`);
+            throw e;
         }
     },
     removeItem: (key: string): void => {
@@ -161,7 +163,11 @@ export const getUserId = (): string => {
 
     if (!userId) {
         userId = generateSecureId('user');
-        safeLocalStorage.setItem(USER_ID_KEY, userId);
+        try {
+            safeLocalStorage.setItem(USER_ID_KEY, userId);
+        } catch {
+            // Ignore storage errors for user ID (ephemeral user)
+        }
     }
 
     return userId;
@@ -298,26 +304,48 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
 
         if (advancedConfigAttr) {
             try {
-                // Handle both single and double quotes for JSON compatibility
-                const jsonStr = advancedConfigAttr.replace(/'/g, '"');
-                const parsedConfig = JSON.parse(jsonStr);
+                // 1. Try native JSON parse first (strict and correct)
+                const parsedConfig = JSON.parse(advancedConfigAttr);
                 advancedConfig = sanitizeAdvancedConfig(parsedConfig);
-            } catch (e) {
-                // eslint-disable-next-line no-console
-                console.error('Failed to parse data-analytics-config JSON:', e);
+            } catch {
+                try {
+                    // 2. Targeted fallback for VTL-style single-quoted JSON {'key': 'value'}
+                    // Only replace quotes around keys and values, preserving apostrophes in content
+                    const jsonStr = advancedConfigAttr
+                        .replace(/([{,]\s*)'(.+?)'(\s*:)/g, '$1"$2"$3') // Keys
+                        .replace(/(:\s*)'(.+?)'(\s*[,}\]])/g, '$1"$2"$3'); // Values (handles objects and arrays)
+
+                    const parsedConfig = JSON.parse(jsonStr);
+                    advancedConfig = sanitizeAdvancedConfig(parsedConfig);
+                } catch (e) {
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to parse data-analytics-config JSON:', e);
+                }
             }
         }
 
+        const serverAttr = script.getAttribute('data-analytics-server');
+        const debugAttr = script.getAttribute('data-analytics-debug');
+        const autoPageViewAttr = script.getAttribute('data-analytics-auto-page-view');
+        const siteAuthAttr = script.getAttribute('data-analytics-auth');
         const impressionsAttr = script.getAttribute('data-analytics-impressions');
         const clicksAttr = script.getAttribute('data-analytics-clicks');
 
         return {
-            server: script.getAttribute('data-analytics-server') || window.location.origin,
-            debug: script.getAttribute('data-analytics-debug') === 'true',
-            autoPageView: script.getAttribute('data-analytics-auto-page-view') === 'true',
-            siteAuth: script.getAttribute('data-analytics-auth') || '',
-            // Spread advanced config and override with explicit attributes if present
+            // 1. Default fallback values
+            server: window.location.origin,
+            debug: false,
+            autoPageView: false,
+            siteAuth: '',
+
+            // 2. Advanced config (JSON)
             ...advancedConfig,
+
+            // 3. Explicit attributes (highest priority)
+            ...(serverAttr && { server: serverAttr }),
+            ...(debugAttr && { debug: debugAttr === 'true' }),
+            ...(autoPageViewAttr && { autoPageView: autoPageViewAttr === 'true' }),
+            ...(siteAuthAttr && { siteAuth: siteAuthAttr }),
             ...(impressionsAttr && { impressions: impressionsAttr === 'true' }),
             ...(clicksAttr && { clicks: clicksAttr === 'true' })
         };
@@ -844,6 +872,14 @@ function sanitizeAdvancedConfig(config: unknown): Partial<DotCMSAnalyticsConfig>
 
     const cleanConfig: Partial<DotCMSAnalyticsConfig> = {};
     const c = config as Partial<DotCMSAnalyticsConfig>;
+
+    // Core validation
+    if (typeof c.server === 'string' && c.server.trim().length > 0) {
+        cleanConfig.server = c.server.trim();
+    }
+    if (typeof c.siteAuth === 'string' && c.siteAuth.trim().length > 0) {
+        cleanConfig.siteAuth = c.siteAuth.trim();
+    }
 
     // Queue validation
     if (c.queue !== undefined) {

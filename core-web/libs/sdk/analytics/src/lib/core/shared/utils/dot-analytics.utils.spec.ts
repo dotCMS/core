@@ -473,6 +473,62 @@ describe('Analytics Utils', () => {
             // Should contain valid dwellMs but ignore invalid visibilityThreshold
             expect(result.impressions).toEqual({ dwellMs: 100 });
         });
+
+        it('should handle apostrophes in valid JSON configuration without corruption', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            // Clear explicit server attribute to let JSON config win for 'server' field
+            script?.setAttribute('data-analytics-server', '');
+
+            const configWithApostrophe = {
+                server: "https://arcadio's-server.com"
+            };
+            script?.setAttribute('data-analytics-config', JSON.stringify(configWithApostrophe));
+
+            const result = getAnalyticsConfig();
+
+            expect(result.server).toBe("https://arcadio's-server.com");
+        });
+
+        it('should handle legacy VTL single-quoted JSON via fallback', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            // Clear explicit server attribute to let JSON config win for 'server' field
+            script?.setAttribute('data-analytics-server', '');
+
+            // Simulating VTL output: { 'server': 'https://vtl.com' }
+            script?.setAttribute(
+                'data-analytics-config',
+                "{ 'server': 'https://vtl-server.com', 'impressions': { 'dwellMs': 500 } }"
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result.server).toBe('https://vtl-server.com');
+            expect(result.impressions).toEqual({ dwellMs: 500 });
+        });
+
+        it('should ensure explicit attributes override JSON config values (debug, autoPageView, server, and siteAuth)', () => {
+            const script = document.querySelector('script[data-analytics-auth]');
+            script?.setAttribute('data-analytics-debug', 'true');
+            script?.setAttribute('data-analytics-auto-page-view', 'false');
+            script?.setAttribute('data-analytics-server', 'https://explicit.server.com');
+            script?.setAttribute('data-analytics-auth', 'explicit-site-key');
+            script?.setAttribute(
+                'data-analytics-config',
+                JSON.stringify({
+                    debug: false,
+                    autoPageView: true,
+                    server: 'https://json.server.com',
+                    siteAuth: 'json-site-key'
+                })
+            );
+
+            const result = getAnalyticsConfig();
+
+            expect(result.debug).toBe(true);
+            expect(result.autoPageView).toBe(false);
+            expect(result.server).toBe('https://explicit.server.com');
+            expect(result.siteAuth).toBe('explicit-site-key');
+        });
     });
 
     describe('getBrowserEventData', () => {
