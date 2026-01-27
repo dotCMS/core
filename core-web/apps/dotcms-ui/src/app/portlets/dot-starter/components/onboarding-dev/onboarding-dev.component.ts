@@ -6,7 +6,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
 import { AccordionModule } from 'primeng/accordion';
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { KnobModule } from 'primeng/knob';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
@@ -24,7 +23,6 @@ import { OnboardingFramework } from './models';
     selector: 'dot-onboarding-dev',
     templateUrl: './onboarding-dev.component.html',
     styleUrls: ['./onboarding-dev.component.scss'],
-    providers: [MessageService],
     imports: [
         AccordionModule,
         DotCopyButtonComponent,
