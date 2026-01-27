@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -89,6 +90,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
+        CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
