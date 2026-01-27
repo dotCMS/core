@@ -22,31 +22,8 @@
 
     &::ng-deep {
         .p-card {
-            background: colors.$white;
-            border: 1px solid $input-border-color;
-            color: colors.$black;
-
             &:hover {
                 outline: 2px solid colors.$color-palette-primary-400;
-            }
-
-            .p-card-body {
-                box-sizing: border-box;
-                min-width: 6.25 * $dot-editor-size;
-                padding: spacing.$spacing-3;
-                padding-right: spacing.$spacing-4;
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-
-                .p-card-content {
-                    padding: 0;
-                }
-
-                .p-card-subtitle {
-                    color: colors.$color-palette-gray-700;
-                    margin-top: spacing.$spacing-1;
-                }
             }
         }
     }
