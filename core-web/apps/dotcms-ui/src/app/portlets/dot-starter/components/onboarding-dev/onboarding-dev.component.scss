@@ -10,7 +10,6 @@ header {
         margin: 0;
         padding: 0;
         text-align: center;
-        margin-block-end: $spacing-1;
         font-style: normal;
         line-height: normal;
     }
@@ -86,4 +85,12 @@ main {
     .paragraph-text {
         font-size: $font-size-md;
     }
+}
+
+.button-link {
+    position: absolute;
+    background: transparent;
+    border: 0px;
+    top: 20px;
+    right: 20px;
 }
