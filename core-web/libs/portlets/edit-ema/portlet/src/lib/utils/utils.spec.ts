@@ -283,8 +283,7 @@ describe('utils functions', () => {
                     acceptTypes: 'test',
                     uuid: 'test',
                     maxContentlets: 1,
-                    contentletsId: ['test'],
-                    variantId: '1'
+                    contentletsId: ['test']
                 },
                 pageContainers: [
                     {
@@ -343,8 +342,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet to delete
@@ -387,8 +385,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet to delete
@@ -412,7 +409,6 @@ describe('utils functions', () => {
                 {
                     acceptTypes: 'test',
                     maxContentlets: 1,
-                    variantId: '1',
                     identifier: 'test',
                     uuid: 'test',
                     contentletsId: [],
@@ -440,8 +436,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 2,
-                variantId: '1'
+                maxContentlets: 2
             };
 
             // Contentlet position mark
@@ -490,8 +485,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 4,
-                variantId: '1'
+                maxContentlets: 4
             };
 
             // Contentlet to insert
@@ -541,8 +535,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1,
-                variantId: '1'
+                maxContentlets: 1
             };
 
             // Contentlet to insert
@@ -585,8 +578,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: [],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet position mark
@@ -616,8 +608,7 @@ describe('utils functions', () => {
                         contentletsId: ['new-contentlet-id'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
-                        variantId: '1'
+                        maxContentlets: 1
                     }
                 ]
             });
@@ -633,8 +624,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test123'],
                 maxContentlets: 2,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
             // Contentlet to insert
             const contentlet = {
@@ -663,8 +653,7 @@ describe('utils functions', () => {
                         contentletsId: ['test123', '000'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
-                        maxContentlets: 2,
-                        variantId: '1'
+                        maxContentlets: 2
                     }
                 ]
             });
@@ -677,8 +666,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: [],
                     acceptTypes: 'test',
-                    maxContentlets: 1,
-                    variantId: '1'
+                    maxContentlets: 1
                 }
             ];
 
@@ -687,8 +675,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: [],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -717,8 +704,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: ['contentlet1'],
                     acceptTypes: 'test',
-                    maxContentlets: 1,
-                    variantId: '1'
+                    maxContentlets: 1
                 }
             ];
 
@@ -727,8 +713,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['contentlet1'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -758,8 +743,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: ['contentlet1'],
                     acceptTypes: 'test',
-                    maxContentlets: 2,
-                    variantId: '1'
+                    maxContentlets: 2
                 }
             ];
 
@@ -768,8 +752,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['contentlet1'],
                 maxContentlets: 2,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -798,8 +781,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: ['contentlet1', 'contentlet2'],
                     acceptTypes: 'test',
-                    maxContentlets: 2,
-                    variantId: '1'
+                    maxContentlets: 2
                 }
             ];
 
@@ -808,8 +790,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['contentlet1', 'contentlet2'],
                 maxContentlets: 2,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -1141,7 +1122,6 @@ describe('utils functions', () => {
                         identifier: '123',
                         uuid: '123',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -1159,7 +1139,6 @@ describe('utils functions', () => {
                         identifier: '456',
                         uuid: '123',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -1177,7 +1156,6 @@ describe('utils functions', () => {
                         identifier: '123',
                         uuid: '456',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
