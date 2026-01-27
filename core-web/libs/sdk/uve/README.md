@@ -497,7 +497,7 @@ The Style Editor is a powerful feature that enables content authors and develope
 **Key Benefits:**
 
 -   **Real-Time Visual Editing**: Modify component styles and see changes instantly in the editor
--   **Content-Specific Customization**: Different content types can have unique style schemas, and the same contentlet could have different styles depending if it is located in a diferent container or page
+-   **Content-Specific Customization**: Different content types can have unique style schemas, and the same contentlet could have different styles depending on if it is located in a different container or page
 -   **Developer-Controlled**: Developers define which properties are editable and how they're presented
 -   **Flexible Configuration**: Support for text inputs, dropdowns, radio buttons, and checkbox groups
 -   **Type-Safe**: Full TypeScript support with type inference for option values
@@ -1614,7 +1614,7 @@ export function BlogPostRenderer(props) {
 -   ✅ Visual layout selection with images
 -   ✅ Checkbox groups for boolean flags
 -   ✅ Clear, descriptive labels
--   ✅ Safe value extraction with defaults using `styleProperties`
+-   ✅ Safe value extraction with defaults using `dotStyleProperties`
 -   ✅ Dynamic styling based on style values
 
 ### Current Capabilities and Limitations:
