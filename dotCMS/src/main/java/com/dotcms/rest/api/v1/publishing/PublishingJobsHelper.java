@@ -32,6 +32,41 @@ public class PublishingJobsHelper {
      */
     public static final int ASSET_PREVIEW_LIMIT = 3;
 
+    /**
+     * Set of statuses that indicate a bundle is actively being processed.
+     * Bundles with these statuses cannot be deleted to prevent data corruption.
+     */
+    public static final Set<Status> IN_PROGRESS_STATUSES = Set.of(
+            Status.BUNDLING,
+            Status.SENDING_TO_ENDPOINTS,
+            Status.PUBLISHING_BUNDLE
+    );
+
+    /**
+     * Statuses that are safe to purge (not in-progress).
+     * Default statuses used when no status filter is specified for bulk purge.
+     */
+    public static final Set<Status> SAFE_PURGE_STATUSES = Set.of(
+            // Terminal statuses
+            Status.SUCCESS,
+            Status.SUCCESS_WITH_WARNINGS,
+            Status.FAILED_TO_PUBLISH,
+            Status.FAILED_TO_BUNDLE,
+            Status.FAILED_TO_SENT,
+            Status.FAILED_TO_SEND_TO_ALL_GROUPS,
+            Status.FAILED_TO_SEND_TO_SOME_GROUPS,
+            Status.FAILED_INTEGRITY_CHECK,
+            Status.INVALID_TOKEN,
+            Status.LICENSE_REQUIRED,
+            // Queued status (can cancel)
+            Status.WAITING_FOR_PUBLISHING,
+            // Intermediate non-blocking statuses
+            Status.BUNDLE_REQUESTED,
+            Status.BUNDLE_SENT_SUCCESSFULLY,
+            Status.RECEIVED_BUNDLE,
+            Status.BUNDLE_SAVED_SUCCESSFULLY
+    );
+
     private final BundleAPI bundleAPI;
     private final PublisherAPI publisherAPI;
     private final PublishAuditUtil publishAuditUtil;
@@ -131,6 +166,31 @@ public class PublishingJobsHelper {
     public List<String> getValidStatusNames() {
         return Arrays.stream(Status.values())
                 .map(Status::name)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if the given status indicates the bundle is actively being processed.
+     *
+     * @param status The status to check
+     * @return true if the bundle is in progress and cannot be deleted
+     */
+    public boolean isInProgressStatus(final Status status) {
+        return status != null && IN_PROGRESS_STATUSES.contains(status);
+    }
+
+    /**
+     * Checks if any of the provided statuses are in-progress (cannot be purged).
+     *
+     * @param statuses List of statuses to check
+     * @return List of in-progress statuses found (empty if all are safe)
+     */
+    public List<Status> getInProgressStatuses(final List<Status> statuses) {
+        if (statuses == null) {
+            return List.of();
+        }
+        return statuses.stream()
+                .filter(IN_PROGRESS_STATUSES::contains)
                 .collect(Collectors.toList());
     }
 

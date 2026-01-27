@@ -21,6 +21,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import org.junit.AfterClass;
@@ -35,7 +36,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.*;
 
 /**
@@ -428,6 +431,133 @@ public class PublishingResourceIntegrationTest {
     }
 
     // =========================================================================
+    // PURGE ENDPOINT TESTS - Verify bulk delete by status
+    // =========================================================================
+
+    /**
+     * Given: Bundles with SUCCESS status exist
+     * When: Purge by SUCCESS status
+     * Then: Returns acknowledgment and bundles are deleted asynchronously
+     */
+    @Test
+    public void test_purgeByStatus_success() throws Exception {
+        // Create bundles to purge
+        final String bundle1 = createBundleWithStatus("purge-success-1", Status.SUCCESS);
+        final String bundle2 = createBundleWithStatus("purge-success-2", Status.SUCCESS);
+        // Create a bundle that should NOT be purged
+        final String keepBundle = createBundleWithStatus("purge-keep", Status.WAITING_FOR_PUBLISHING);
+
+        // Call purge
+        final ResponseEntityPurgeView result = callPurgeEndpoint("SUCCESS");
+
+        // Verify immediate acknowledgment
+        assertNotNull(result);
+        final Map<String, Object> entity = result.getEntity();
+        assertNotNull(entity.get("message"));
+        assertTrue(entity.get("message").toString().contains("Purge operation started"));
+        assertNotNull(entity.get("statusesRequested"));
+        assertTrue(((List<?>) entity.get("statusesRequested")).contains("SUCCESS"));
+
+        // Wait for async purge to complete and verify bundles are deleted
+        final BundleAPI bundleAPI = APILocator.getBundleAPI();
+        await().atMost(10, TimeUnit.SECONDS).until(() ->
+                bundleAPI.getBundleById(bundle1) == null &&
+                bundleAPI.getBundleById(bundle2) == null);
+
+        // Verify kept bundle still exists
+        assertNotNull("WAITING bundle should not be deleted", bundleAPI.getBundleById(keepBundle));
+
+        // Remove from cleanup list since already deleted
+        createdBundleIds.remove(bundle1);
+        createdBundleIds.remove(bundle2);
+    }
+
+    /**
+     * Given: Bundles with various statuses exist
+     * When: Purge without status parameter
+     * Then: Uses safe defaults (all terminal + queued, excludes in-progress)
+     */
+    @Test
+    public void test_purgeWithoutStatus_usesDefaults() throws Exception {
+        final String successBundle = createBundleWithStatus("purge-default-success", Status.SUCCESS);
+        final String failedBundle = createBundleWithStatus("purge-default-failed", Status.FAILED_TO_PUBLISH);
+
+        // Call purge without status (uses defaults)
+        final ResponseEntityPurgeView result = callPurgeEndpoint(null);
+
+        assertNotNull(result);
+        final Map<String, Object> entity = result.getEntity();
+        final List<?> statusesRequested = (List<?>) entity.get("statusesRequested");
+        assertNotNull(statusesRequested);
+        // Should include safe statuses
+        assertTrue("Should include SUCCESS", statusesRequested.contains("SUCCESS"));
+        assertTrue("Should include FAILED_TO_PUBLISH", statusesRequested.contains("FAILED_TO_PUBLISH"));
+        // Should NOT include in-progress statuses
+        assertFalse("Should NOT include BUNDLING", statusesRequested.contains("BUNDLING"));
+        assertFalse("Should NOT include SENDING_TO_ENDPOINTS", statusesRequested.contains("SENDING_TO_ENDPOINTS"));
+        assertFalse("Should NOT include PUBLISHING_BUNDLE", statusesRequested.contains("PUBLISHING_BUNDLE"));
+
+        // Wait for async purge
+        final BundleAPI bundleAPI = APILocator.getBundleAPI();
+        await().atMost(10, TimeUnit.SECONDS).until(() ->
+                bundleAPI.getBundleById(successBundle) == null &&
+                bundleAPI.getBundleById(failedBundle) == null);
+
+        createdBundleIds.remove(successBundle);
+        createdBundleIds.remove(failedBundle);
+    }
+
+    /**
+     * Given: Request to purge BUNDLING status
+     * When: Purge called
+     * Then: BadRequestException thrown (cannot purge in-progress)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_purge_rejectsInProgressStatus_bundling() throws Exception {
+        callPurgeEndpoint("BUNDLING");
+    }
+
+    /**
+     * Given: Request to purge SENDING_TO_ENDPOINTS status
+     * When: Purge called
+     * Then: BadRequestException thrown (cannot purge in-progress)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_purge_rejectsInProgressStatus_sending() throws Exception {
+        callPurgeEndpoint("SENDING_TO_ENDPOINTS");
+    }
+
+    /**
+     * Given: Request to purge PUBLISHING_BUNDLE status
+     * When: Purge called
+     * Then: BadRequestException thrown (cannot purge in-progress)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_purge_rejectsInProgressStatus_publishing() throws Exception {
+        callPurgeEndpoint("PUBLISHING_BUNDLE");
+    }
+
+    /**
+     * Given: Request to purge mix of safe and in-progress statuses
+     * When: Purge called
+     * Then: BadRequestException thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_purge_rejectsMixedStatuses() throws Exception {
+        callPurgeEndpoint("SUCCESS,BUNDLING");
+    }
+
+    /**
+     * Given: Request to purge invalid status
+     * When: Purge called
+     * Then: BadRequestException thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_purge_rejectsInvalidStatus() throws Exception {
+        callPurgeEndpoint("INVALID_STATUS_XYZ");
+    }
+
+    // =========================================================================
     // HELPER METHODS
     // =========================================================================
 
@@ -440,6 +570,11 @@ public class PublishingResourceIntegrationTest {
             String filter, String status) throws DotPublisherException {
         return publishingResource.listPublishingJobs(
                 mockAuthenticatedRequest(), response, page, perPage, filter, status);
+    }
+
+    private ResponseEntityPurgeView callPurgeEndpoint(String status) throws DotDataException {
+        return publishingResource.purgePublishingJobs(
+                mockAuthenticatedRequest(), response, status);
     }
 
     private String createBundleWithStatus(final String bundleName, final Status status)

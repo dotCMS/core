@@ -1,17 +1,28 @@
 package com.dotcms.rest.api.v1.publishing;
 
+import com.dotcms.api.system.event.message.MessageSeverity;
+import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
+import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.bundle.business.BundleDeleteResult;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.Pagination;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,7 +38,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +65,7 @@ public class PublishingResource {
 
     private final WebResource webResource;
     private final Lazy<PublishAuditAPI> publishAuditAPI;
+    private final Lazy<BundleAPI> bundleAPI;
     private final PublishingJobsHelper publishingJobsHelper;
 
     /**
@@ -60,6 +74,7 @@ public class PublishingResource {
     public PublishingResource() {
         this(new WebResource(),
              Lazy.of(PublishAuditAPI::getInstance),
+             Lazy.of(APILocator::getBundleAPI),
              new PublishingJobsHelper());
     }
 
@@ -68,14 +83,17 @@ public class PublishingResource {
      *
      * @param webResource          Web resource for authentication
      * @param publishAuditAPI      Audit API for retrieving publishing status
+     * @param bundleAPI            Bundle API for bundle operations
      * @param publishingJobsHelper Helper for transforming data to views
      */
     @VisibleForTesting
     public PublishingResource(final WebResource webResource,
                               final Lazy<PublishAuditAPI> publishAuditAPI,
+                              final Lazy<BundleAPI> bundleAPI,
                               final PublishingJobsHelper publishingJobsHelper) {
         this.webResource = webResource;
         this.publishAuditAPI = publishAuditAPI;
+        this.bundleAPI = bundleAPI;
         this.publishingJobsHelper = publishingJobsHelper;
     }
 
@@ -220,5 +238,207 @@ public class PublishingResource {
                 jobs.size(), validPage, totalCount, filter, status));
 
         return new ResponseEntityPublishingJobsView(jobs, pagination);
+    }
+
+    /**
+     * Bulk deletes publishing jobs by status.
+     *
+     * <p>This endpoint is designed for cleaning up terminal state bundles (completed/failed)
+     * or canceling queued bundles. It CANNOT purge in-progress bundles to prevent data
+     * corruption.</p>
+     *
+     * <h3>Safe to Purge:</h3>
+     * <ul>
+     *   <li>Terminal: SUCCESS, FAILED_TO_PUBLISH, FAILED_TO_BUNDLE, etc.</li>
+     *   <li>Queued: WAITING_FOR_PUBLISHING (cancels scheduled publishes)</li>
+     * </ul>
+     *
+     * <h3>Cannot Purge (400 Bad Request):</h3>
+     * <ul>
+     *   <li>BUNDLING - Creating bundle archive</li>
+     *   <li>SENDING_TO_ENDPOINTS - Transmitting to targets</li>
+     *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
+     * </ul>
+     *
+     * @param request  The HTTP request
+     * @param response The HTTP response
+     * @param status   Comma-separated status values to purge (optional)
+     * @return Acknowledgment message with purge details
+     */
+    @Operation(
+            summary = "Bulk delete publishing jobs by status",
+            description = "Removes all bundles matching the specified status filter. " +
+                    "Cannot purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE). " +
+                    "If no status specified, uses safe defaults (all terminal + queued statuses)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purge operation initiated (processes in background)",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityPurgeView.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid status value or attempted to purge in-progress statuses",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @DELETE
+    @Path("/purge")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityPurgeView purgePublishingJobs(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Comma-separated status values to purge. If omitted, uses safe defaults " +
+                            "(all terminal + queued, excludes in-progress). " +
+                            "Cannot include: BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE",
+                    example = "SUCCESS,FAILED_TO_PUBLISH"
+            )
+            @QueryParam("status") final String status) throws DotDataException {
+
+        // Initialize request context and authenticate user (requires backend user)
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User user = initData.getUser();
+
+        // Determine statuses to purge
+        final List<Status> statusList;
+        if (UtilMethods.isSet(status)) {
+            // Validate provided statuses
+            final List<String> invalidStatuses = publishingJobsHelper.getInvalidStatuses(status);
+            if (!invalidStatuses.isEmpty()) {
+                throw new BadRequestException(
+                        String.format("Invalid status value(s): %s. Valid values: %s",
+                                String.join(", ", invalidStatuses),
+                                String.join(", ", publishingJobsHelper.getValidStatusNames())));
+            }
+            statusList = publishingJobsHelper.parseStatuses(status);
+        } else {
+            // Use safe defaults
+            statusList = new ArrayList<>(PublishingJobsHelper.SAFE_PURGE_STATUSES);
+        }
+
+        // Check for in-progress statuses (400 Bad Request)
+        final List<Status> inProgressFound = publishingJobsHelper.getInProgressStatuses(statusList);
+        if (!inProgressFound.isEmpty()) {
+            throw new BadRequestException(
+                    String.format("Cannot purge bundles with in-progress statuses: %s. " +
+                                    "These statuses are excluded to prevent data corruption.",
+                            inProgressFound.stream()
+                                    .map(Status::name)
+                                    .collect(Collectors.joining(", "))));
+        }
+
+        Logger.info(this, String.format("Purging publishing jobs with statuses: %s by user: %s",
+                statusList.stream().map(Status::name).collect(Collectors.joining(", ")),
+                user.getUserId()));
+
+        // Execute purge asynchronously (consistent with legacy bulk delete pattern)
+        final DotSubmitter dotSubmitter = DotConcurrentFactory
+                .getInstance().getSubmitter(DotConcurrentFactory.DOT_SYSTEM_THREAD_POOL);
+
+        dotSubmitter.execute(() -> {
+            try {
+                final BundleDeleteResult result = bundleAPI.get()
+                        .deleteAllBundles(user, statusList.toArray(new Status[0]));
+
+                sendPurgeResultMessage(initData, result);
+
+            } catch (DotDataException e) {
+                Logger.error(this, "Error purging publishing jobs", e);
+                sendPurgeErrorMessage(initData, e);
+            }
+        });
+
+        // Return immediate acknowledgment
+        final List<String> statusNames = statusList.stream()
+                .map(Status::name)
+                .collect(Collectors.toList());
+
+        return new ResponseEntityPurgeView(Map.of(
+                "message", "Purge operation started. Results will be notified when complete.",
+                "statusesRequested", statusNames
+        ));
+    }
+
+    /**
+     * Sends success/warning message after purge completes.
+     */
+    private void sendPurgeResultMessage(final InitDataObject initData,
+                                         final BundleDeleteResult result) {
+        try {
+            final int deletedCount = result.getDeleteBundleSet().size();
+            final int failedCount = result.getFailedBundleSet().size();
+            final String userId = initData.getUser().getUserId();
+
+            final String message;
+            final MessageSeverity severity;
+
+            if (failedCount == 0) {
+                message = String.format("%d bundles purged successfully", deletedCount);
+                severity = MessageSeverity.INFO;
+            } else {
+                message = String.format("%d bundles purged successfully, %d failed", deletedCount, failedCount);
+                severity = MessageSeverity.WARNING;
+            }
+
+            final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(message)
+                            .setLife(DateUtil.SEVEN_SECOND_MILLIS)
+                            .setSeverity(severity)
+                            .create(),
+                    List.of(userId));
+
+            Logger.info(this, String.format("Purge completed: %s (user: %s)", message, userId));
+
+        } catch (Exception e) {
+            Logger.error(this, "Error sending purge result message", e);
+        }
+    }
+
+    /**
+     * Sends error message if purge fails.
+     */
+    private void sendPurgeErrorMessage(final InitDataObject initData,
+                                        final Exception e) {
+        try {
+            final String userId = initData.getUser().getUserId();
+            final String message = String.format("Purge operation failed: %s", e.getMessage());
+
+            final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+            systemMessageEventUtil.pushMessage(
+                    new SystemMessageBuilder()
+                            .setMessage(message)
+                            .setLife(DateUtil.TEN_SECOND_MILLIS)
+                            .setSeverity(MessageSeverity.ERROR)
+                            .create(),
+                    List.of(userId));
+
+        } catch (Exception ex) {
+            Logger.error(this, "Error sending purge error message", ex);
+        }
     }
 }

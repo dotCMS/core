@@ -11529,6 +11529,43 @@ paths:
       summary: List publishing jobs
       tags:
       - Publishing
+  /v1/publishing/purge:
+    delete:
+      description: "Removes all bundles matching the specified status filter. Cannot\
+        \ purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE).\
+        \ If no status specified, uses safe defaults (all terminal + queued statuses)."
+      operationId: purgePublishingJobs
+      parameters:
+      - description: "Comma-separated status values to purge. If omitted, uses safe\
+          \ defaults (all terminal + queued, excludes in-progress). Cannot include:\
+          \ BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE"
+        example: "SUCCESS,FAILED_TO_PUBLISH"
+        in: query
+        name: status
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPurgeView"
+          description: Purge operation initiated (processes in background)
+        "400":
+          content:
+            application/json: {}
+          description: Invalid status value or attempted to purge in-progress statuses
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Bulk delete publishing jobs by status
+      tags:
+      - Publishing
   /v1/publishqueue:
     delete:
       operationId: deleteAssetsByIdentifiers
@@ -25732,6 +25769,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublishingJobView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPurgeView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
