@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -220,5 +221,98 @@ public class PublishingResource {
                 jobs.size(), validPage, totalCount, filter, status));
 
         return new ResponseEntityPublishingJobsView(jobs, pagination);
+    }
+
+    /**
+     * Returns detailed status, endpoints, and timestamps for a specific publishing bundle.
+     *
+     * <p>This endpoint provides complete environment/endpoint breakdown with individual
+     * success/failure status, error messages, and stack traces for failed endpoints.</p>
+     *
+     * @param request   The HTTP request
+     * @param response  The HTTP response
+     * @param bundleId  The bundle identifier
+     * @return Detailed publishing job view with environment/endpoint breakdown
+     */
+    @Operation(
+            summary = "Get publishing job details",
+            description = "Returns detailed status, environments, endpoints, and timestamps " +
+                    "for a specific publishing bundle. Includes per-endpoint success/failure " +
+                    "status with error messages and stack traces for failed endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Publishing job details retrieved successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityPublishingJobDetailView.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid bundle ID format",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Bundle not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @GET
+    @Path("/{bundleId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityPublishingJobDetailView getPublishingJobDetails(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Bundle identifier",
+                    required = true,
+                    example = "f3d9a4b7-staging-bundle-2026-01-15"
+            )
+            @PathParam("bundleId") final String bundleId) throws DotPublisherException {
+
+        // Initialize request context and authenticate user
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        // Validate bundleId
+        if (!UtilMethods.isSet(bundleId)) {
+            throw new BadRequestException("Bundle ID is required");
+        }
+
+        // Retrieve audit status
+        final PublishAuditStatus auditStatus = publishAuditAPI.get()
+                .getPublishAuditStatus(bundleId);
+
+        if (auditStatus == null) {
+            throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+        }
+
+        // Transform to detailed view
+        final PublishingJobDetailView detailView = publishingJobsHelper.toPublishingJobDetailView(auditStatus);
+
+        Logger.debug(this, () -> String.format(
+                "Retrieved publishing job details for bundle '%s' with status '%s'",
+                bundleId, auditStatus.getStatus()));
+
+        return new ResponseEntityPublishingJobDetailView(detailView);
     }
 }
