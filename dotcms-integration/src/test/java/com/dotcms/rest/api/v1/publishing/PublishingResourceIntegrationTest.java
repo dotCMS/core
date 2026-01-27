@@ -30,6 +30,9 @@ import org.junit.Test;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.core.Response;
+
+import com.dotcms.rest.exception.ConflictException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
+
+import com.dotcms.rest.exception.NotFoundException;
 
 /**
  * Integration tests for PublishingResource - focuses on DATA CORRECTNESS and BUSINESS LOGIC.
@@ -520,5 +525,124 @@ public class PublishingResourceIntegrationTest {
 
         request.setAttribute(WebKeys.USER, adminUser);
         return request;
+    }
+
+    // =========================================================================
+    // DELETE ENDPOINT TESTS
+    // =========================================================================
+
+    /**
+     * Given: Bundle exists with terminal status (SUCCESS)
+     * When: DELETE request made
+     * Then: Bundle is deleted successfully (200)
+     */
+    @Test
+    public void test_deleteBundle_successfulDeletion() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-test-success", Status.SUCCESS);
+
+        final Response result = publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+
+        // Verify bundle no longer exists
+        assertNull(publishAuditAPI.getPublishAuditStatus(bundleId));
+        assertNull(APILocator.getBundleAPI().getBundleById(bundleId));
+
+        // Remove from cleanup list since already deleted
+        createdBundleIds.remove(bundleId);
+    }
+
+    /**
+     * Given: Bundle exists with queued status (WAITING_FOR_PUBLISHING)
+     * When: DELETE request made
+     * Then: Bundle is deleted successfully (200) - can cancel queued
+     */
+    @Test
+    public void test_deleteBundle_deletesQueuedBundle() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-queued", Status.WAITING_FOR_PUBLISHING);
+
+        final Response result = publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        createdBundleIds.remove(bundleId);
+    }
+
+    /**
+     * Given: Bundle exists with failed status
+     * When: DELETE request made
+     * Then: Bundle is deleted successfully (200)
+     */
+    @Test
+    public void test_deleteBundle_deletesFailedBundle() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-failed", Status.FAILED_TO_PUBLISH);
+
+        final Response result = publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        createdBundleIds.remove(bundleId);
+    }
+
+    /**
+     * Given: Bundle does not exist
+     * When: DELETE request made
+     * Then: NotFoundException thrown (404)
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_deleteBundle_notFound() throws Exception {
+        publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, "nonexistent-bundle-id-12345");
+    }
+
+    /**
+     * Given: Bundle exists with BUNDLING status (in-progress)
+     * When: DELETE request made
+     * Then: ConflictException thrown (409)
+     */
+    @Test(expected = ConflictException.class)
+    public void test_deleteBundle_conflictWhenBundling() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-bundling", Status.BUNDLING);
+
+        publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, bundleId);
+    }
+
+    /**
+     * Given: Bundle exists with SENDING_TO_ENDPOINTS status (in-progress)
+     * When: DELETE request made
+     * Then: ConflictException thrown (409)
+     */
+    @Test(expected = ConflictException.class)
+    public void test_deleteBundle_conflictWhenSending() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-sending", Status.SENDING_TO_ENDPOINTS);
+
+        publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, bundleId);
+    }
+
+    /**
+     * Given: Bundle exists with PUBLISHING_BUNDLE status (in-progress)
+     * When: DELETE request made
+     * Then: ConflictException thrown (409)
+     */
+    @Test(expected = ConflictException.class)
+    public void test_deleteBundle_conflictWhenPublishing() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-publishing", Status.PUBLISHING_BUNDLE);
+
+        publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, bundleId);
+    }
+
+    /**
+     * Given: Empty bundleId
+     * When: DELETE request made
+     * Then: BadRequestException thrown (400)
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_deleteBundle_emptyBundleId() throws Exception {
+        publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(), response, "");
     }
 }
