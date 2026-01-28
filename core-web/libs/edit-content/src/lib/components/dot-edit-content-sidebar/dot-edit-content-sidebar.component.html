@@ -102,6 +102,18 @@
                     data-testId="activities" />
             </ng-template>
         </p-tabPanel>
+
+        <p-tabPanel class="h-full flex-column tab-panel tab-panel--permissions">
+            <ng-template pTemplate="header">
+                <i class="pi pi-cog"></i>
+            </ng-template>
+            <ng-template pTemplate="content">
+                <dot-edit-content-sidebar-permissions
+                    [identifier]="$identifier() ?? ''"
+                    [languageId]="$contentlet()?.languageId ?? 0"
+                    data-testId="permissions" />
+            </ng-template>
+        </p-tabPanel>
     </p-tabView>
 </aside>
 
