@@ -437,6 +437,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
                 user,
                 respectFrontendRoles)) {
+            
+            if (contentlet.isHTMLPage()) {
+                try {
+                    final ContentType contentType = contentlet.getContentType();
+                    final com.dotcms.contenttype.model.field.Field urlField = contentType != null 
+                            ? contentType.fieldMap().get(HTMLPageAssetAPI.URL_FIELD) : null;
+                    
+                    if (urlField != null && UtilMethods.isSet(urlField.defaultValue())) {
+                        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                        if (identifier != null && UtilMethods.isSet(identifier.getAssetName())) {
+                            contentlet.setStringProperty(HTMLPageAssetAPI.URL_FIELD, identifier.getAssetName());
+                        }
+                    }
+                } catch (Exception e) {
+                    Logger.debug(this, "Could not populate URL for HTML Page: " + e.getMessage());
+                }
+            }
+            
             return contentlet;
         } else {
             final String userId = (user == null) ? "Unknown" : user.getUserId();
