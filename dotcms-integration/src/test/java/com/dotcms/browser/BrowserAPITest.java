@@ -19,12 +19,15 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -63,6 +66,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -1788,6 +1792,58 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should report all 10 contents as the total", 10, resultsOne.contentTotalCount);
         assertEquals("Should return 5 matching item as we defined a pageSize of 5.", 5, resultsOne.contentCount);
 
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: We're creating content under a folder and giving read access to a user then we request such content
+     * Expected Results: We should get back the requested content
+     * @throws Exception
+     */
+    @Test
+    public void test_getContent_Using_LimitedUser_WithRead_Permissions() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        //Give him access to the site and parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+        APILocator.getPermissionAPI().save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        //We need to assign Chris Publisher view permissions to the parent folder.
+        final Permission folderReadPermission = new Permission(folder.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+        APILocator.getPermissionAPI().save(folderReadPermission, folder, APILocator.systemUser(), false);
+
+        final File file = FileUtil.createTemporaryFile("content", ".txt", "content");
+        final Contentlet contentlet = new FileAssetDataGen(file)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        assertNotNull(contentlet.getIdentifier());
+        assertFalse(contentlet.isLive());
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false) // <-- This is key for this test!
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+        final PaginatedContents results = browserAPI.getPaginatedContents(query);
+        assertEquals("Should return 1 content item", 1, results.contentCount);
+        assertEquals("Should return exactly 1 item in list", 1, results.list.size());
+        assertEquals("Contentlet inode should match", contentlet.getInode(), results.list.get(0).get("inode"));
     }
 
 }
