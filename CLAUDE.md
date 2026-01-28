@@ -544,8 +544,9 @@ cd core-web && nx run dotcms-ui:serve                 # Separate Frontend dev se
 
 ### For Cursor:
 - This guide provides essential patterns immediately
+- Project rules: `.cursor/rules/` (`.mdc` files with globs/description); see `.cursor/rules/README.md`
 - Use `@docs/path/file.md` syntax for detailed patterns
-- Domain-specific rules trigger additional context when needed
+- Domain-specific rules load by file pattern or relevance (Java, Angular, tests, docs)
 
 ### Progressive Enhancement
 When editing ANY code:

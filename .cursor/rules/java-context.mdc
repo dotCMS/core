@@ -1,0 +1,43 @@
+---
+description: "Java, dotCMS backend, Maven, Config, Logger, REST API. Use when editing Java, pom.xml, or backend (dotCMS/src, services, REST)."
+globs: ["**/*.java", "**/pom.xml", "dotCMS/src/**/*"]
+alwaysApply: false
+---
+
+# Java Backend Context
+
+## Imports
+```java
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotcms.util.CollectionsUtils;
+```
+
+## Patterns
+- Config: `Config.getStringProperty("key", "default")` – never System.getProperty.
+- Logging: `Logger.info(this, "msg")` – never System.out.
+- Null: `UtilMethods.isSet(s)` before use.
+- APIs: `APILocator.getUserAPI()`, etc.
+- Exceptions: DotDataException, DotSecurityException.
+- Data classes: `@Value.Immutable` + builder.
+
+## Maven (CRITICAL)
+- Versions only in `bom/application/pom.xml`. Dependencies in `dotCMS/pom.xml` without versions.
+
+## Java
+- Core: Java 11 syntax. CLI: Java 21 ok. Runtime: Java 21.
+
+## Build
+```bash
+./mvnw install -pl :dotcms-core -DskipTests
+./mvnw -pl :dotcms-core -Pdocker-start -Dtomcat.port=8080
+./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+```
+
+## On-demand
+- `@docs/backend/JAVA_STANDARDS.md`
+- `@docs/backend/REST_API_PATTERNS.md`
+- `@docs/backend/MAVEN_BUILD_SYSTEM.md`
+- `@docs/backend/CONFIGURATION_PATTERNS.md`
+- `@docs/backend/DATABASE_PATTERNS.md`

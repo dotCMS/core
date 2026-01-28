@@ -1,0 +1,41 @@
+---
+description: dotCMS project navigation and critical reminders. Apply to every chat.
+alwaysApply: true
+---
+
+# dotCMS Development Guide
+
+## Primary Reference
+**CLAUDE.md** – main roadmap and quick patterns for both Claude and Cursor.
+
+## Project Structure
+
+```
+core/
+├── dotCMS/                    # Main backend Java code
+│   └── src/main/java/com/    # Java source files
+├── core-web/                  # Frontend (Angular/Nx monorepo)
+│   ├── apps/dotcms-ui/       # Main admin UI
+│   └── libs/                 # Shared libraries and SDKs
+├── dotcms-integration/        # Integration tests
+├── dotcms-postman/            # Postman API tests
+├── bom/application/pom.xml   # Dependency versions (ADD versions here)
+├── parent/pom.xml            # Plugin management
+└── .github/workflows/        # CI/CD pipelines
+```
+
+## Domain-Specific Rules (loaded by file pattern or relevance)
+- **Java / pom.xml**: `java-context.mdc` – Config, Logger, Maven, REST
+- **Frontend / core-web (Nx)**: `frontend-context.mdc` – Angular, SDK, Nx, docs/frontend index
+- **Tests (*.spec.ts, *Test.java)**: `test-context.mdc` – Spectator, data-testid
+- **Docs (docs/, *.md)**: `doc-updates.mdc` – where to update, DRY
+
+## Critical Reminders
+- **Java**: Config/Logger only; never System.out or System.getProperty
+- **Maven**: Versions only in `bom/application/pom.xml`
+- **Angular**: @if/@for, input()/output(), spectator.setInput(), data-testid
+- **Security**: No secrets in code; validate input
+
+## Documentation
+- Update `/docs/` when you find gaps; keep rules short; single source of truth.
+- See `doc-updates.mdc` when editing docs or CLAUDE.md.

@@ -1,0 +1,47 @@
+---
+description: "Nx monorepo frontend (core-web): Angular, TypeScript, SDK Angular/React. Use when editing apps, libs, or SDK in core-web."
+globs: ["core-web/**/*.ts", "core-web/**/*.tsx", "core-web/**/*.html", "core-web/**/*.scss", "core-web/**/*.css"]
+alwaysApply: false
+---
+
+# Frontend Context (core-web)
+
+**Nx monorepo** in `core-web/`: TypeScript, Angular apps/libs, and SDK for **Angular** and **React**. Full standards live in **`docs/frontend/`**. Index: **`@docs/frontend/README.md`** — load it for the full doc list and when to use each; then load the specific doc you need.
+
+## Stack
+- **Angular**: standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush, PrimeNG/PrimeFlex.
+- **SDK**: `sdk-angular`, `sdk-react`, `sdk-client`, `sdk-types`, etc.
+- **Apps**: `dotcms-ui`, `content-drive-ui`, `edit-ema-ui`, portlets, libs.
+
+## Nx commands (repo root or `core-web`)
+```bash
+cd core-web && yarn nx show projects
+cd core-web && yarn nx run dotcms-ui:serve
+cd core-web && yarn nx run <project>:test
+cd core-web && yarn nx run <project>:test -t testNamePattern="MyComponent"
+cd core-web && yarn nx affected -t build --exclude='tag:skip:build'
+cd core-web && yarn nx affected -t lint --exclude='tag:skip:lint'
+cd core-web && yarn nx affected -t test --exclude='tag:skip:test'
+```
+
+## When to load which doc (`@docs/frontend/...`)
+
+| If you are… | Load |
+|-------------|------|
+| Writing or refactoring components, templates, or Angular patterns | `@docs/frontend/ANGULAR_STANDARDS.md` |
+| Defining component structure, inputs/outputs, file layout | `@docs/frontend/COMPONENT_ARCHITECTURE.md` |
+| Adding or changing feature state (stores, async) | `@docs/frontend/STATE_MANAGEMENT.md` |
+| Writing or updating styles, BEM, PrimeFlex | `@docs/frontend/STYLING_STANDARDS.md` |
+| Writing or fixing tests (Spectator, Jest, data-testid) | `@docs/frontend/TESTING_FRONTEND.md` |
+| Using TypeScript (strict, inference, `unknown`, `as const`, `#` private) | `@docs/frontend/TYPESCRIPT_STANDARDS.md` |
+
+**Reference in chat**: e.g. `@docs/frontend/ANGULAR_STANDARDS.md` or `@docs/frontend/TESTING_FRONTEND.md` so the right doc is included in context.
+
+## Quick reminders (details in docs)
+- **Angular**: `$` prefix for signals, `$` suffix for observables; no `standalone: true`; OnPush; `[class.x]` / `[style.x]` (no ngClass/ngStyle); host in `host: {}`.
+- **State**: Prefer NgRx Signal Store; avoid manual signal soup in components. See `@docs/frontend/STATE_MANAGEMENT.md`.
+- **Testing**: Spectator + Jest/Vitest; `byTestId()`, `spectator.setInput()`, `spectator.detectChanges()`, `spectator.click()`; never set component inputs directly. See `@docs/frontend/TESTING_FRONTEND.md`.
+- **TypeScript**: Strict types, no `any` (use `unknown`), `as const` instead of enums, `#` for private. See `@docs/frontend/TYPESCRIPT_STANDARDS.md`.
+
+## Nx
+For workspace/graph/config: Nx MCP tools or `yarn nx show projects`; see `core-web/AGENTS.md`.
