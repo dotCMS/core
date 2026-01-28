@@ -53,8 +53,7 @@ export const PAYLOAD_MOCK: ActionPayload = {
         contentletsId: ['19c5ecc0c59b17b5780acd624ad52444', '2e5d54e6-7ea3-4d72-8577-b8731b206ca0'],
         identifier: '//demo.dotcms.com/application/containers/banner/',
         maxContentlets: 25,
-        uuid: '1',
-        variantId: '1'
+        uuid: '1'
     },
     contentlet: {
         identifier: '19c5ecc0c59b17b5780acd624ad52444',
@@ -416,8 +415,7 @@ export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
         acceptTypes: 'test',
         uuid: 'test',
         maxContentlets: 1,
-        contentletsId: ['123'],
-        variantId: '123'
+        contentletsId: ['123']
     },
     pageId: 'test',
     position: 'before'
@@ -605,8 +603,7 @@ export const EMA_DRAG_ITEM_CONTENTLET_MOCK: EmaDragItem = {
                 identifier: '321',
                 acceptTypes: 'kenobi,theChosenOne,yoda',
                 maxContentlets: 3,
-                uuid: '123',
-                variantId: '123'
+                uuid: '123'
             },
             contentlet: {
                 identifier: '321',
@@ -632,7 +629,6 @@ export const MOCK_CONTENTLET_AREA: ContentletArea = {
             acceptTypes: '',
             identifier: '',
             maxContentlets: 0,
-            variantId: '',
             uuid: ''
         },
         contentlet: {
@@ -649,8 +645,7 @@ export const ACTION_MOCK: ClientData = {
         acceptTypes: 'file',
         identifier: '789',
         maxContentlets: 100,
-        uuid: '2',
-        variantId: '1'
+        uuid: '2'
     }
 };
 
@@ -727,8 +722,7 @@ export const ACTION_PAYLOAD_MOCK: ActionPayload = {
         acceptTypes: 'test',
         uuid: 'uuid-123',
         maxContentlets: 1,
-        contentletsId: ['123'],
-        variantId: '123'
+        contentletsId: ['123']
     },
     pageId: 'test',
     position: 'after'
