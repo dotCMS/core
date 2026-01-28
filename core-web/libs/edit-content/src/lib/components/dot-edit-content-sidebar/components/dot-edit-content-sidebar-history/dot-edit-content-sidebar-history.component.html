@@ -40,7 +40,7 @@
                             (onScrollIndexChange)="onScrollIndexChange($event)"
                             styleClass="dot-edit-content-sidebar-history__scroller"
                             data-testid="history-timeline">
-                            <ng-template pTemplate="item" let-item let-index="index">
+                            <ng-template #item let-item let-index="index">
                                 <dot-history-timeline-item
                                     [item]="item"
                                     [itemIndex]="getRealIndex(item)"
@@ -107,7 +107,7 @@
                             (onScrollIndexChange)="onPushPublishScrollIndexChange($event)"
                             styleClass="dot-edit-content-sidebar-history__scroller"
                             data-testid="push-publish-timeline">
-                            <ng-template pTemplate="item" let-item let-index="index">
+                            <ng-template #item let-item let-index="index">
                                 <dot-pushpublish-timeline-item
                                     [item]="item"
                                     data-testid="pushpublish-timeline-item" />

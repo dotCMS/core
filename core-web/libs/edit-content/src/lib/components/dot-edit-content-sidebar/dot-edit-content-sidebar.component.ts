@@ -26,8 +26,8 @@ import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-co
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
-    DotWorkflowState,
-    DotHistoryTimelineItemAction
+    DotHistoryTimelineItemAction,
+    DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
@@ -38,11 +38,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 @Component({
     selector: 'dot-edit-content-sidebar',
     templateUrl: './dot-edit-content-sidebar.component.html',
-    styleUrls: ['./dot-edit-content-sidebar.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: {
-        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)] bg-[var(--gray-100)] shadow-md relative min-w-0 max-w-full overflow-x-hidden'
-    },
     providers: [ConfirmationService],
     imports: [
         DotMessagePipe,
@@ -59,7 +54,12 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        // bg-[var(--gray-100)]
+        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)]  shadow-md relative min-w-0 max-w-full overflow-x-hidden'
+    }
 })
 export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);

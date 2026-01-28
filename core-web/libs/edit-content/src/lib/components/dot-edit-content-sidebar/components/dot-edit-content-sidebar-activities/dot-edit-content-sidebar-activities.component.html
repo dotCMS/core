@@ -3,49 +3,55 @@
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="flex-1 overflow-y-auto py-3 px-4">
+        <div class="flex-1 overflow-y-auto py-3">
             <p-dataview
                 #dv
                 [value]="$activities()"
                 [rows]="10"
                 [layout]="'list'"
-                [style]="{ display: 'block' }"
+                [style]="{ display: 'block', border: 'none' }"
                 [paginator]="false"
                 data-testid="activities-list">
                 <ng-template #list let-activities>
-                    @for (
-                        activity of activities;
-                        track activity.taskId + '_' + activity.createdDate
-                    ) {
-                        <div
-                            class="relative [&:not(:last-child)]:after:content-[''] [&:not(:last-child)]:after:absolute [&:not(:last-child)]:after:bottom-[-1rem] [&:not(:last-child)]:after:left-0 [&:not(:last-child)]:after:w-full [&:not(:last-child)]:after:h-px [&:not(:last-child)]:after:bg-[var(--gray-300)] animate-[fadeIn_0.2s_ease-out]"
-                            #activityItem>
-                            <div class="bg-[var(--gray-100)] p-1" data-testid="activity-item">
-                                <div class="flex items-center mb-1 gap-1">
+                    <div class="flex flex-col gap-5">
+                        @for (
+                            activity of activities;
+                            track activity.taskId + '_' + activity.createdDate
+                        ) {
+                            <div
+                                class="activity-item flex flex-col border-b border-[var(--gray-200)] last:border-b-0 py-3 first:pt-0 animate-[fadeIn_0.2s_ease-out]"
+                                #activityItem
+                                data-testid="activity-item">
+                                <div class="flex items-start gap-3">
                                     <p-avatar
                                         shape="circle"
                                         dotGravatar
                                         [email]="activity?.email"
-                                        [pt]="avatarPt" />
-                                    <span
-                                        class="text-sm font-semibold text-black mr-2"
-                                        data-testid="activity-user">
-                                        {{ activity.postedBy }}
-                                    </span>
-                                    <span
-                                        class="text-xs text-black ml-auto"
-                                        data-testid="activity-date">
-                                        {{ activity.createdDate | dotRelativeDate }}
-                                    </span>
-                                </div>
-                                <div
-                                    class="block text-[var(--gray-800)] text-sm leading-[1.4] break-words whitespace-pre-line"
-                                    data-testid="activity-description">
-                                    {{ activity.commentDescription }}
+                                        [pt]="avatarPt"
+                                        class="flex-shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span
+                                                class="text-sm font-semibold text-[var(--gray-900)]"
+                                                data-testid="activity-user">
+                                                {{ activity.postedBy }}
+                                            </span>
+                                            <span
+                                                class="text-xs text-[var(--gray-600)] ml-auto shrink-0"
+                                                data-testid="activity-date">
+                                                {{ activity.createdDate | dotRelativeDate }}
+                                            </span>
+                                        </div>
+                                        <p
+                                            class="mt-1.5 text-sm text-[var(--gray-700)] leading-[1.4] break-words whitespace-pre-line"
+                                            data-testid="activity-description">
+                                            {{ activity.commentDescription }}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    }
+                        }
+                    </div>
                 </ng-template>
                 <ng-template #empty>
                     <span
@@ -58,7 +64,7 @@
         </div>
         @if (!$hideForm()) {
             <div
-                class="sticky bottom-0 z-[1] w-full bg-[var(--gray-100)] p-3 border-t border-[var(--gray-200)]"
+                class="sticky bottom-0 z-[1] w-full py-3 border-t border-[var(--gray-200)]"
                 data-testid="activities-footer">
                 <form
                     [formGroup]="form"
