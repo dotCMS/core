@@ -2,15 +2,15 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
-import { ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
+import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
 interface ContentSidebarInformation {
@@ -29,19 +29,22 @@ interface ContentSidebarInformation {
         CommonModule,
         RouterLink,
         TooltipModule,
-        ChipModule,
         SkeletonModule,
-        ContentletStatusPipe,
+        TagModule,
+        ContentletStatusTagPipe,
         DotRelativeDatePipe,
         DotMessagePipe,
         DotNameFormatPipe
     ],
     templateUrl: './dot-edit-content-sidebar-information.component.html',
-    styleUrl: './dot-edit-content-sidebar-information.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col gap-2'
+    }
 })
 export class DotEditContentSidebarInformationComponent {
     #dotMessageService = inject(DotMessageService);
+
     /**
      * Input that contains the data of the contentlet.
      */

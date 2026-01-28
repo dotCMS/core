@@ -53,7 +53,7 @@
         }
 
         @if (lockWarningMessage) {
-            <p-message severity="warning" data-testId="edit-content-layout__lock-warning">
+            <p-message severity="warn" data-testId="edit-content-layout__lock-warning">
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">
                         <i class="pi pi-exclamation-triangle"></i>
@@ -69,7 +69,7 @@
         @if (showSelectWorkflowWarning) {
             <p-message
                 styleClass="edit-content-layout__select-workflow-warning"
-                severity="warning"
+                severity="warn"
                 data-testId="edit-content-layout__select-workflow-warning">
                 <ng-template pTemplate>
                     <div class="flex w-full gap-1">

@@ -2,17 +2,17 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { Chip, ChipModule } from 'primeng/chip';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
 
-import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
+import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
 const messageServiceMock = new MockDotMessageService({
@@ -41,11 +41,12 @@ describe('DotEditContentSidebarInformationComponent', () => {
         component: DotEditContentSidebarInformationComponent,
         imports: [
             RouterTestingModule,
-            ChipModule,
+            TagModule,
             SkeletonModule,
             TooltipModule,
             DotNameFormatPipe,
-            ContentletStatusPipe,
+            ContentletStatusTagPipe,
+            DotRelativeDatePipe,
             DotMessagePipe
         ],
         providers: [
@@ -72,9 +73,9 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should show status chip', () => {
-            const chip = spectator.query(Chip);
-            expect(chip).toBeTruthy();
+        it('should show status tag', () => {
+            const tag = spectator.query('p-tag');
+            expect(tag).toBeTruthy();
         });
 
         it('should show json link', () => {
@@ -120,9 +121,9 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should not show status chip', () => {
-            const chip = spectator.query(Chip);
-            expect(chip).toBeTruthy();
+        it('should not show status tag', () => {
+            const tag = spectator.query('p-tag');
+            expect(tag).toBeFalsy();
         });
 
         it('should not show json link', () => {

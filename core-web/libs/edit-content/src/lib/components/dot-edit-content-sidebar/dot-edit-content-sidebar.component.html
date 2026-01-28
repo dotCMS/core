@@ -6,11 +6,12 @@
 @let isLoadingInformation = $store.isLoadingInformation();
 @let referencePagesCount = $store.information.relatedContent();
 
-<aside class="content-sidebar h-full">
+<aside class="overflow-auto w-full h-full">
     <p-tabs
         [value]="activeIndex"
-        (onChange)="onActiveIndexChange($event)"
-        styleClass="h-full flex flex-col"
+        (valueChange)="onActiveIndexChange($event)"
+        class="h-full flex flex-col"
+        [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
         <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
@@ -26,18 +27,18 @@
                 <i class="pi pi-comment"></i>
             </p-tab>
         </p-tablist>
-        <p-tabpanels>
-            <p-tabpanel [value]="0" class="flex flex-col tab-panel">
+        <p-tabpanels class="h-full">
+            <p-tabpanel [value]="0" class="flex flex-col h-full">
                 <!-- Information section -->
                 <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.general.title' | dm"
-                    class="h-full">
+                    [title]="'edit.content.sidebar.general.title' | dm">
                     <ng-template #sectionAction>
                         @if (!$store.isNew() && !$store.isCopyingLocale()) {
                             <dot-copy-button
                                 [copy]="contentlet.identifier"
                                 [label]="contentlet.shortyId"
-                                [tooltipText]="'Identifier' | dm"></dot-copy-button>
+                                [tooltipText]="'Identifier' | dm"
+                                customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
                         }
                     </ng-template>
 
@@ -63,7 +64,8 @@
 
                 <!-- Workflow section -->
                 <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.workflow.title' | dm">
+                    [title]="'edit.content.sidebar.workflow.title' | dm"
+                    class="[&_.dot-section]:border-b-0">
                     <dot-edit-content-sidebar-workflow
                         [workflowSelection]="$workflowSelection()"
                         [(showDialog)]="$showDialog"
@@ -75,7 +77,7 @@
                         data-testId="workflow" />
                 </dot-edit-content-sidebar-section>
             </p-tabpanel>
-            <p-tabpanel [value]="1" class="h-full flex-col tab-panel tab-panel--history">
+            <p-tabpanel [value]="1" class="h-full flex flex-col">
                 <!-- History section -->
                 <dot-edit-content-sidebar-history
                     [historyItems]="$versionsItems()"
@@ -91,7 +93,7 @@
                     (deletePushPublishHistory)="onDeletePushPublishHistory()"
                     data-testId="history" />
             </p-tabpanel>
-            <p-tabpanel [value]="2" class="h-full flex-col tab-panel tab-panel--activities">
+            <p-tabpanel [value]="2" class="h-full flex flex-col">
                 <!-- Activities section -->
                 <dot-edit-content-sidebar-activities
                     [initialContentletState]="$initialContentletState()"
@@ -107,13 +109,20 @@
 <!-- Confirmation dialog for delete actions -->
 <p-confirmDialog />
 
+<!-- This is a custom control to hide the sidebar -->
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
-    <div class="content-sidebar__close">
-        <button
-            class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
-            (click)="$store.toggleSidebar()"
-            data-testId="toggle-button">
+    <div
+        class="min-h-[50px] border-l border-[var(--gray-200)] flex items-center justify-center flex-0 min-w-[64px]">
+        <p-button
+            (onClick)="$store.toggleSidebar()"
+            [rounded]="true"
+            [text]="true"
+            [icon]="'pi pi-arrow-right'"
+            size="small"
+            ariaLabel="Toggle sidebar"
+            data-testId="toggle-button"
+            [pt]="toggleButtonPt">
             <svg
                 width="20"
                 height="20"
@@ -126,17 +135,22 @@
                     width="14.5882"
                     height="13.647"
                     rx="1.17647"
-                    stroke="#426BF0"
+                    stroke="currentColor"
                     stroke-width="1.41176" />
                 <line
                     x1="12.3528"
                     y1="16.1223"
                     x2="12.3528"
                     y2="3.87806"
-                    stroke="#426BF0"
+                    stroke="currentColor"
                     stroke-width="1.88235" />
-                <rect x="10.8887" y="3.77783" width="6.22222" height="12.4444" fill="#426BF0" />
+                <rect
+                    x="10.8887"
+                    y="3.77783"
+                    width="6.22222"
+                    height="12.4444"
+                    fill="currentColor" />
             </svg>
-        </button>
+        </p-button>
     </div>
 </ng-template>

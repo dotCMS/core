@@ -7,7 +7,9 @@ $tab-min-height: 52px;
 
 :host {
     min-width: 0;
+    max-width: 100%;
     overflow: auto;
+    overflow-x: hidden;
 
     ::ng-deep {
         dot-card-field {
