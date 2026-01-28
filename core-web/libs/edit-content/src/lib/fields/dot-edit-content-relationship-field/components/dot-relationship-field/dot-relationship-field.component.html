@@ -12,57 +12,50 @@
     [value]="data"
     [columns]="store.columns()"
     data-testid="relationship-field-table"
-    styleClass="dotTable p-datatable-relationship"
-    [paginator]="data.length > pagination.rowsPerPage"
+    class="dot-relationship-field-table"
+    [paginator]="false"
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
     [scrollable]="true"
     [reorderableColumns]="false"
     (onRowReorder)="onRowReorder($event)">
-    <ng-template pTemplate="header" styleClass="relative" let-columns>
+    <ng-template pTemplate="header" let-columns>
         <p-menu #menu [model]="$menuItems()" [popup]="true" appendTo="body" />
 
-        <tr class="relationship-field__table_header">
-            <!-- Drag handle column - fixed width -->
-            <th scope="col" class="drag-handle-column"></th>
+        <tr class="font-bold bg-[var(--gray-100)]">
+            <th scope="col" class="w-12 min-w-12"></th>
 
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <th scope="col" [class.title-column]="!isEmpty">
+                        <th scope="col" [class.w-48]="!isEmpty" [class.min-w-48]="!isEmpty">
                             {{ 'dot.file.relationship.field.table.title' | dm }}
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" [class.dynamic-column]="!isEmpty">
+                        <th scope="col" [class.min-w-32]="!isEmpty">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" [class.dynamic-column]="!isEmpty">
+                        <th scope="col" [class.min-w-32]="!isEmpty">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
                     @case ('image') {
-                        <th scope="col" [class.image-column]="!isEmpty">
-                            <p class="truncate-text capitalize">{{ column.header }}</p>
+                        <th scope="col" [class.w-24]="!isEmpty" [class.min-w-24]="!isEmpty">
+                            <p class="truncate capitalize">{{ column.header }}</p>
                         </th>
                     }
                     @default {
-                        <th scope="col" [class.dynamic-column]="!isEmpty">
+                        <th scope="col" [class.min-w-32]="!isEmpty">
                             <span class="capitalize">{{ column.header }}</span>
                         </th>
                     }
                 }
             }
 
-            <!-- Add button column - fixed width -->
-            <th
-                scope="col"
-                class="actions-column"
-                alignFrozen="right"
-                pFrozenColumn
-                [frozen]="true">
+            <th scope="col" class="w-16 min-w-16" alignFrozen="right" pFrozenColumn [frozen]="true">
                 <p-button
                     (onClick)="menu.toggle($event)"
                     size="small"
@@ -76,9 +69,9 @@
     <ng-template pTemplate="emptymessage">
         <tr>
             <td [colSpan]="$totalColumns()">
-                <div class="flex p-2 gap-2 justify-center">
+                <div class="flex p-2 gap-2 justify-center items-center">
                     <i class="pi pi-folder-open"></i>
-                    <p class="text-surface-500 dark:text-surface-300">
+                    <p class="text-[var(--gray-600)]">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
                     </p>
                 </div>
@@ -91,39 +84,37 @@
             [pReorderableRow]="index"
             [class.opacity-50]="isDisabled"
             [class.cursor-not-allowed]="isDisabled">
-            <!-- Drag handle column - fixed width -->
-
-            <td class="drag-handle-column">
+            <td class="w-12 min-w-12">
                 @if (!isDisabled) {
-                    <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
+                    <span class="pi pi-bars text-[var(--gray-600)]" pReorderableRowHandle></span>
                 } @else {
-                    <span class="pi pi-bars text-gray-500 cursor-not-allowed"></span>
+                    <span class="pi pi-bars text-[var(--gray-600)] cursor-not-allowed"></span>
                 }
             </td>
 
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td class="title-column" [class.cursor-not-allowed]="isDisabled">
-                            <p class="truncate-text">{{ item.title }}</p>
+                        <td class="w-48 min-w-48" [class.cursor-not-allowed]="isDisabled">
+                            <p class="truncate">{{ item.title }}</p>
                         </td>
                     }
                     @case ('language') {
-                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
+                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
                             {{ item.language | language }}
                         </td>
                     }
                     @case ('status') {
-                        <td class="dynamic-column" [class.cursor-not-allowed]="isDisabled">
+                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
                             <p-chip
-                                [styleClass]="'p-chip-sm ' + status.classes"
+                                [class]="'p-chip-sm ' + status.classes"
                                 [label]="status.label" />
                         </td>
                     }
                     @case ('image') {
-                        <td class="image-column" [class.cursor-not-allowed]="isDisabled">
-                            <div class="container-thumbnail">
+                        <td class="w-24 min-w-24" [class.cursor-not-allowed]="isDisabled">
+                            <div class="flex items-center justify-center">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'30px'"
                                     [contentlet]="item"
@@ -133,16 +124,15 @@
                         </td>
                     }
                     @default {
-                        <td class="dynamic-column">
-                            <p class="truncate-text">{{ item[column.nameField] }}</p>
+                        <td class="min-w-32">
+                            <p class="truncate">{{ item[column.nameField] }}</p>
                         </td>
                     }
                 }
             }
 
-            <!-- Delete button column - fixed width -->
             <td
-                class="actions-column"
+                class="w-16 min-w-16"
                 pFrozenColumn
                 alignFrozen="right"
                 [frozen]="true"
@@ -161,18 +151,18 @@
     <ng-template pTemplate="summary">
         @if (hintText || showPagination || hasError) {
             <div
-                class="flex items-center"
-                [class.justify-content-between]="hintText || hasError"
-                [class.justify-content-center]="!hintText && !hasError">
+                class="flex items-center pt-2"
+                [class.justify-between]="hintText || hasError"
+                [class.justify-center]="!hintText && !hasError">
                 @if (hasError) {
-                    <div class="error-message">
+                    <div class="text-[var(--color-palette-red)]">
                         @if (isRequired) {
                             <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                         }
                     </div>
                 }
                 @if (!hasError && hintText) {
-                    <div class="hint-message">
+                    <div class="text-[var(--gray-600)]">
                         <small [attr.data-testId]="'hint-' + field.variable">
                             {{ hintText }}
                         </small>

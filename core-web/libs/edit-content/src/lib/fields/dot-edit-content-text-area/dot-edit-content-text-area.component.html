@@ -9,9 +9,10 @@
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        <div class="dot-textarea__container flex flex-col gap-2">
-            <div class="dot-textarea__controls flex flex-wrap gap-2 justify-between">
+        <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap gap-2 justify-between">
                 <p-select
+                    class="min-w-40"
                     [class.ng-invalid]="fieldHasError"
                     [class.ng-dirty]="fieldHasError"
                     [options]="textAreaEditorOptions"
@@ -23,20 +24,16 @@
                     (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
             </div>
 
-            <div class="dot-text-area__editor">
+            <div class="flex flex-col min-h-0">
                 @if ($displayedEditor() === editorTypes.PlainText) {
                     <textarea
                         #textarea
-                        class="w-full"
+                        class="w-full min-h-[9.375rem] resize-y"
                         [id]="field.variable"
                         [formControlName]="field.variable"
                         [class.ng-invalid]="fieldHasError"
                         [class.ng-dirty]="fieldHasError"
                         [attr.data-testId]="field.variable"
-                        [style]="{
-                            'min-height': '9.375rem',
-                            resize: 'vertical'
-                        }"
                         pInputTextarea></textarea>
                 } @else {
                     <dot-edit-content-monaco-editor-control
@@ -49,14 +46,14 @@
     </dot-card-field-content>
     <dot-card-field-footer>
         @if (fieldHasError) {
-            <div class="error-message">
+            <div class="text-[var(--color-palette-red)]">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
                 }
             </div>
         }
         @if (!fieldHasError && field.hint) {
-            <div class="hint-message">
+            <div class="text-[var(--gray-600)]">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}
                 </small>
