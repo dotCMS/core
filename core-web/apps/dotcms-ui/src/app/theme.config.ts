@@ -13,10 +13,19 @@ import { DotUiColorsService } from '@dotcms/data-access';
  *
  * When colors are loaded from the server, DotUiColorsService.updatePrimeNGColors()
  * will dynamically update the palette using updatePrimaryPalette().
+ *
+ * Note: Secondary color is NOT defined here in semantic tokens because PrimeNG doesn't
+ * support dynamic updates for secondary semantic tokens (only primary can be updated at runtime).
+ * Components using severity="secondary" will use the default Lara preset value.
+ *
+ * However, secondary color IS updated dynamically via CSS variables (--color-palette-secondary-*)
+ * which are used by Angular components and custom PrimeNG styles that reference CSS variables.
  */
 export const CustomLaraPreset = definePreset(Lara, {
     semantic: {
         primary: DotUiColorsService.getDefaultPrimeNGPalette()
+        // Secondary could be added here, but it wouldn't be updatable at runtime
+        // secondary: DotUiColorsService.getDefaultSecondaryPalette() // Not implemented
     },
     components: {
         treeselect: {

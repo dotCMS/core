@@ -55,12 +55,25 @@ function parseHSL(hslString: string): HslObject {
  * **1. PrimeNG Theme (Modern Angular Components)**
  *    - Uses `updatePrimaryPalette()` to dynamically update PrimeNG design tokens
  *    - Updates CSS variables: `--p-primary-50` through `--p-primary-950`
- *    - Used by: Angular components with PrimeNG
+ *    - **Primary color only for PrimeNG semantic tokens**: PrimeNG components using
+ *      `severity="secondary"` use semantic tokens from the preset (not updatable at runtime)
+ *    - Used by: PrimeNG components with semantic tokens (primary only)
  *
- * **2. Legacy CSS Variables (JSP Portlets)**
+ * **2. CSS Variables (Angular Components & JSP Portlets)**
  *    - Sets CSS custom properties on HTML elements (main app or iframes)
- *    - Variables: `--color-palette-primary-*`, `--color-palette-primary-op-*`, etc.
- *    - Used by: Legacy JSP portlets loaded in iframes (dotcms.css, dotai.css)
+ *    - Variables: `--color-palette-primary-*`, `--color-palette-secondary-*`, etc.
+ *    - **Both primary and secondary**: Both colors are updated via CSS variables
+ *    - Used by:
+ *      - Angular components using CSS variables directly (e.g., `bg-(--color-palette-secondary-200)`)
+ *      - Custom PrimeNG styles (e.g., `.p-badge.p-badge-secondary` uses `$color-palette-secondary`)
+ *      - Legacy JSP portlets loaded in iframes (dotcms.css, dotai.css)
+ *
+ * **Important Notes:**
+ * - **Primary color**: Updated in both PrimeNG semantic tokens (dynamically) AND CSS variables
+ * - **Secondary color**: Updated in CSS variables (dynamically) for Angular components and custom styles
+ *   - CSS variables: `--color-palette-secondary-*` are updated dynamically and used by Angular components
+ *   - PrimeNG semantic tokens: Components using `severity="secondary"` use preset value (not updatable)
+ * - **Background color**: Updated ONLY in CSS variables
  *
  * **APIs:**
  * - `setColors(el, colors?)` - Updates both PrimeNG theme and legacy CSS variables
@@ -76,8 +89,11 @@ export class DotUiColorsService {
 
     /**
      * Sets colors and updates both approaches:
-     * 1. PrimeNG theme (via updatePrimaryPalette) - for Angular components
-     * 2. Legacy CSS variables (on HTML element) - for JSP portlets in iframes
+     * 1. PrimeNG theme (via updatePrimaryPalette) - for PrimeNG semantic tokens
+     *    - Only primary color is updated (secondary uses preset, not updatable)
+     * 2. CSS variables (on HTML element) - for Angular components and JSP portlets
+     *    - Both primary and secondary colors are updated via CSS variables
+     *    - Used by Angular components directly and custom PrimeNG styles
      *
      * @param el - HTML element to set CSS variables on
      *            - Main app: `document.documentElement`
@@ -107,22 +123,38 @@ export class DotUiColorsService {
      * Approach 1: Updates PrimeNG theme colors dynamically
      * Generates palette (50-950) from base colors and updates PrimeNG design tokens
      *
+     * **Important:** This only updates PrimeNG semantic tokens (used by components with
+     * `severity="primary"`). PrimeNG supports secondary as a severity type, but only
+     * primary can be updated dynamically via `updatePrimaryPalette()`. There is no
+     * equivalent `updateSecondaryPalette()` function.
+     *
+     * **Secondary color behavior:**
+     * - PrimeNG semantic tokens: Components using `severity="secondary"` use the preset
+     *   value (defined in theme.config.ts), not updatable at runtime
+     * - CSS variables: Secondary is updated dynamically via `setColor()` (line 95) and
+     *   used by Angular components and custom PrimeNG styles that reference CSS variables
+     *
      * @private
      */
     private updatePrimeNGColors(colors: DotUiColors): void {
         try {
-            // Update primary color palette
+            // Update primary color palette for PrimeNG semantic tokens
+            // PrimeNG only supports dynamic runtime updates for primary color semantic tokens
             const primaryPalette = this.generatePrimeNGPalette(colors.primary);
             updatePrimaryPalette(primaryPalette);
 
-            // Update secondary color if needed (using updatePreset for more control)
-            // Note: PrimeNG doesn't have a built-in secondary color in the preset,
-            // but we can store it for future use or custom components
-            if (colors.secondary && colors.secondary !== DEFAULT_COLORS.secondary) {
-                // Generate secondary palette for potential future use
-                // For now, we only update primary as that's what PrimeNG uses by default
-                this.generatePrimeNGPalette(colors.secondary);
-            }
+            // Note: Secondary color semantic tokens are NOT updated here because:
+            // 1. PrimeNG doesn't have updateSecondaryPalette() function for runtime updates
+            // 2. Secondary semantic tokens can only be defined in the initial preset (theme.config.ts)
+            // 3. PrimeNG components using severity="secondary" will use the preset value
+            //
+            // However, secondary CSS variables ARE updated in setColor() method (line 95),
+            // which are used by:
+            // - Angular components using CSS variables directly (e.g., bg-(--color-palette-secondary-200))
+            // - Custom PrimeNG styles (e.g., .p-badge.p-badge-secondary uses $color-palette-secondary)
+            // - Legacy JSP portlets
+            //
+            // If PrimeNG adds updateSecondaryPalette() in the future, it would be added here
         } catch (error) {
             // Silently fail if PrimeNG theming API is not available
             // This can happen during SSR or if PrimeNG hasn't initialized yet
@@ -235,7 +267,12 @@ export class DotUiColorsService {
 
     /**
      * Approach 2: Sets CSS variables for a color (primary/secondary)
-     * Generates HSL base, shades (100-900), and opacities (10-90) for JSP portlets
+     * Generates HSL base, shades (100-900), and opacities (10-90)
+     *
+     * Used by:
+     * - Angular components using CSS variables directly (e.g., `bg-(--color-palette-secondary-200)`)
+     * - Custom PrimeNG styles (e.g., `.p-badge.p-badge-secondary`)
+     * - Legacy JSP portlets (dotcms.css, dotai.css)
      *
      * @private
      */
