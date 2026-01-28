@@ -9,8 +9,8 @@ import { ConfirmationService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
-import { Textarea } from 'primeng/textarea';
 import { Skeleton } from 'primeng/skeleton';
+import { Textarea } from 'primeng/textarea';
 import { Tooltip } from 'primeng/tooltip';
 
 import { delay, filter } from 'rxjs/operators';

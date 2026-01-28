@@ -41,20 +41,16 @@
         </div>
 
         <div class="bubble-menu-actions">
-            <button
-                type="button"
-                pButton
-                class="bubble-menu-button p-button-outlined"
+            <p-button
                 (click)="cancelImageEditing()"
                 label="Cancel"
-                aria-label="Cancel editing"></button>
-            <button
-                type="submit"
-                pButton
-                class="bubble-menu-button bubble-menu-button--primary"
-                label="Apply"
+                aria-label="Cancel editing"
+                variant="outlined" />
+            <p-button
                 [disabled]="!imageForm.valid"
-                aria-label="Apply changes"></button>
+                type="submit"
+                label="Apply"
+                aria-label="Apply changes" />
         </div>
     </form>
 </div>

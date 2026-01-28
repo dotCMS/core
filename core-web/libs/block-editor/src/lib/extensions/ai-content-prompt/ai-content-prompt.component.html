@@ -48,28 +48,30 @@
                     [style]="{
                         display: generatedText.value ? 'flex' : 'none'
                     }">
-                    <button
-                        (click)="store.updateActiveIndex(vm.activeIndex - 1)"
+                    <p-button
+                        (onClick)="store.updateActiveIndex(vm.activeIndex - 1)"
                         [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
-                        class="p-button-text p-button-sm p-button-rounded"
-                        type="button"
+                        variant="text"
+                        size="small"
+                        [rounded]="true"
                         icon="pi pi-chevron-left"
-                        pButton></button>
+                        type="button" />
                     <span>
                         {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }}
                         {{ 'of' | dm }}
                         {{ vm.generatedContent?.length }}
                     </span>
-                    <button
-                        (click)="store.updateActiveIndex(vm.activeIndex + 1)"
+                    <p-button
+                        (onClick)="store.updateActiveIndex(vm.activeIndex + 1)"
                         [disabled]="
                             vm.activeIndex === vm.generatedContent?.length - 1 ||
                             vm.generatedContent?.length === 0
                         "
-                        class="p-button-text p-button-sm p-button-rounded"
-                        type="button"
+                        variant="text"
+                        size="small"
+                        [rounded]="true"
                         icon="pi pi-chevron-right"
-                        pButton></button>
+                        type="button" />
                 </div>
             }
 
@@ -81,14 +83,15 @@
                 pInputTextarea></textarea>
 
             <div class="ai-content__buttons">
-                <button
-                    (click)="closeDialog()"
+                <p-button
+                    (onClick)="closeDialog()"
                     [label]="'Cancel' | dm"
-                    class="p-button-text"
-                    pButton
-                    type="button"></button>
-                <button
-                    (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
+                    variant="text"
+                    type="button" />
+                <p-button
+                    (onClick)="
+                        store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)
+                    "
                     [disabled]="
                         vm.status === ComponentStatus.LOADING ||
                         !vm.generatedContent?.length ||
@@ -96,14 +99,13 @@
                     "
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     class="ml-auto"
-                    pButton
-                    type="button"></button>
-                <button
+                    type="button" />
+                <p-button
+                    (onClick)="store.generateContent(form.value.textPrompt)"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
                     [label]="submitButtonLabel | dm"
-                    class="p-button-outlined"
-                    pButton
-                    type="submit">
+                    variant="outlined"
+                    type="button">
                     @if (vm.status !== ComponentStatus.LOADING) {
                         <svg
                             fill="none"
@@ -124,7 +126,7 @@
                     } @else {
                         <i class="pi pi-spin pi-spinner"></i>
                     }
-                </button>
+                </p-button>
             </div>
         </form>
         <p-confirmDialog

@@ -21,7 +21,6 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
 import { Button } from 'primeng/button';
-import { Popover } from 'primeng/popover';
 import { Select } from 'primeng/select';
 
 import { catchError, take } from 'rxjs/operators';
@@ -76,7 +75,6 @@ const BUBBLE_MENU_VISIBLE_NODES = {
         Select,
         DotLinkEditorPopoverComponent,
         DotImageEditorPopoverComponent,
-        Popover,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
