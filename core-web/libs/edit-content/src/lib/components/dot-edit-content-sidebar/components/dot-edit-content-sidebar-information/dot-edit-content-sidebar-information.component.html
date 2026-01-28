@@ -45,7 +45,7 @@
                     {{ 'Created' | dm }}
                 </span>
                 <span
-                    class="text-sm text-[var(--gray-800)] leading-relaxed"
+                    class="text-sm text-[var(--gray-800)] leading-relaxed cursor-default"
                     [pTooltip]="contentlet?.ownerUserName"
                     tooltipPosition="bottom">
                     {{
@@ -57,7 +57,7 @@
                 </span>
                 @if (contentlet?.creationDate) {
                     <span
-                        class="text-xs text-[var(--gray-700)] leading-relaxed"
+                        class="text-xs text-[var(--gray-700)] leading-relaxed cursor-default"
                         data-testid="created-date"
                         [pTooltip]="contentlet?.creationDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -72,14 +72,14 @@
                     {{ 'Modified' | dm }}
                 </span>
                 <span
-                    class="text-sm text-[var(--gray-800)] leading-relaxed"
+                    class="text-sm text-[var(--gray-800)] leading-relaxed cursor-default"
                     [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.modUserName">
                     {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
                 @if (contentlet?.modDate) {
                     <span
-                        class="text-xs text-[var(--gray-700)] leading-relaxed"
+                        class="text-xs text-[var(--gray-700)] leading-relaxed cursor-default"
                         data-testid="modified-date"
                         [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -94,7 +94,7 @@
                     {{ 'Published' | dm }}
                 </span>
                 <span
-                    class="text-sm text-[var(--gray-800)] leading-relaxed"
+                    class="text-sm text-[var(--gray-800)] leading-relaxed cursor-default"
                     [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.publishUserName">
                     {{
@@ -105,7 +105,7 @@
                 </span>
                 @if (contentlet?.publishDate) {
                     <span
-                        class="text-xs text-[var(--gray-700)] leading-relaxed"
+                        class="text-xs text-[var(--gray-700)] leading-relaxed cursor-default"
                         data-testid="published-date"
                         [pTooltip]="contentlet?.publishDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
