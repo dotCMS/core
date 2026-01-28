@@ -1,15 +1,15 @@
 <div class="tabview-container">
-    <p-tabs value="0">
-        <p-tablist>
-            <p-tab [value]="0" [disabled]="disableTabs">
+    <p-tabs [value]="activeTab">
+        <p-tablist class="flex items-center flex-1">
+            <p-tab [value]="0" [disabled]="disableTabs" class="flex justify-center gap-2 grow">
                 <i class="pi pi-images"></i>
                 <span>Library</span>
             </p-tab>
-            <p-tab [value]="1" [disabled]="disableTabs">
+            <p-tab [value]="1" [disabled]="disableTabs" class="flex justify-center gap-2 grow">
                 <i class="pi pi-folder"></i>
                 <span>{{ 'Upload ' + type }}</span>
             </p-tab>
-            <p-tab [value]="2" [disabled]="disableTabs">
+            <p-tab [value]="2" [disabled]="disableTabs" class="flex justify-center gap-2 grow">
                 <i class="pi pi-link"></i>
                 <span>{{ type + ' URL' }}</span>
             </p-tab>

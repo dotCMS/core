@@ -81,3 +81,6 @@ export * from './lib/validators/dotValidators';
 
 // Animations
 export * from './lib/animations/fade.animations';
+
+// Theme
+export * from './lib/theme';

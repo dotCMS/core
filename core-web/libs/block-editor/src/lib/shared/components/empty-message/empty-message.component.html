@@ -1,11 +1,10 @@
 <p [innerHTML]="title"></p>
 
 @if (showBackBtn) {
-    <button
-        (mousedown)="back.emit()"
+    <p-button
+        (onClick)="back.emit()"
         [style]="{ padding: '.75rem 2rem', borderRadius: '2px' }"
-        pButton
-        class="p-button-outlined"
+        variant="outlined"
         label="Back"
-        type="submit"></button>
+        type="button" />
 }

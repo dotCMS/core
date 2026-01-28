@@ -30,6 +30,7 @@ form {
 .ai-image-prompt__input {
     display: flex;
     flex-direction: column;
+    gap: spacing.$spacing-1;
 
     > div {
         display: flex;
@@ -83,7 +84,9 @@ form {
 }
 
 .ai-image-prompt__orientation {
-    margin-bottom: 9rem;
+    display: flex;
+    flex-direction: column;
+    gap: spacing.$spacing-1;
 }
 
 .ai-image-prompt__rewritten-label {

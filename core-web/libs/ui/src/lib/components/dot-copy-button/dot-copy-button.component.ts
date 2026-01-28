@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
-import { TooltipModule } from 'primeng/tooltip';
+import { Button } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -16,7 +16,7 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss'],
-    imports: [TooltipModule, ButtonModule],
+    imports: [Tooltip, Button],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCopyButtonComponent {

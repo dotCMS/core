@@ -1,6 +1,7 @@
 import { CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
+import { Card } from 'primeng/card';
+import { Chip } from 'primeng/chip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -10,7 +11,7 @@ import { DotContentletStatusChipComponent } from '../../../dot-contentlet-status
     selector: 'dot-asset-card',
     templateUrl: './dot-asset-card.component.html',
     styleUrls: ['./dot-asset-card.component.scss'],
-    imports: [CardModule, DotContentletStatusChipComponent],
+    imports: [Card, Chip, DotContentletStatusChipComponent],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

@@ -15,11 +15,11 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { Listbox, ListboxModule } from 'primeng/listbox';
-import { SkeletonModule } from 'primeng/skeleton';
+import { Button } from 'primeng/button';
+import { Checkbox } from 'primeng/checkbox';
+import { InputText } from 'primeng/inputtext';
+import { Listbox } from 'primeng/listbox';
+import { Skeleton } from 'primeng/skeleton';
 
 import { debounceTime, distinctUntilChanged, takeUntil, pluck } from 'rxjs/operators';
 
@@ -48,15 +48,7 @@ interface SearchResultItem {
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
     styleUrls: ['./dot-link-editor-popover.component.scss'],
-    imports: [
-        FormsModule,
-        ListboxModule,
-        AutoCompleteModule,
-        InputTextModule,
-        SkeletonModule,
-        ButtonModule,
-        EditorModalDirective
-    ]
+    imports: [FormsModule, Listbox, InputText, Skeleton, Button, Checkbox, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
     @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
@@ -238,7 +230,14 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * The text content remains but the link formatting is removed.
      */
     protected removeLinkFromEditor() {
-        this.editor().chain().unsetLink().run();
+        const isImageNode = this.editor().isActive('dotImage');
+
+        if (isImageNode) {
+            this.editor().chain().focus().unsetImageLink().run();
+        } else {
+            this.editor().chain().focus().unsetLink().run();
+        }
+
         this.popover.hide();
     }
 
@@ -246,8 +245,8 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * Updates the target attribute of an existing link based on user preference.
      * Allows users to control whether links open in the same window or a new tab.
      */
-    protected updateLinkTargetAttribute(event: Event) {
-        const shouldOpenInNewWindow = (event.target as HTMLInputElement).checked;
+    protected updateLinkTargetAttribute(event: { checked: boolean }) {
+        const shouldOpenInNewWindow = event.checked;
         const newTargetValue = shouldOpenInNewWindow ? '_blank' : '_self';
 
         this.editor()
@@ -267,7 +266,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         this.searchContentletsByQuery(searchTerm).subscribe({
             next: (results) => {
                 this.searchResults.set(
-                    results.map((c) => ({
+                    (results || []).map((c) => ({
                         hasTitleImage: c.hasTitleImage,
                         inode: c.inode,
                         displayName: c.title,

@@ -19,6 +19,7 @@ export class AssetFormComponent {
     @Input() onHide: (value: boolean) => void;
 
     public disableTabs = false;
+    public activeTab = 0;
 
     public onPreventClose(value) {
         this.preventClose(value);

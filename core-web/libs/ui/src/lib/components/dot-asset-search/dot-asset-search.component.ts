@@ -16,7 +16,9 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { InputTextModule } from 'primeng/inputtext';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { InputText } from 'primeng/inputtext';
 
 import { debounceTime, skip, throttleTime } from 'rxjs/operators';
 
@@ -32,7 +34,14 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
     providers: [DotAssetSearchStore],
-    imports: [DotAssetCardListComponent, DotAssetCardListComponent, InputTextModule, CommonModule],
+    imports: [
+        DotAssetCardListComponent,
+        DotAssetCardListComponent,
+        InputText,
+        IconField,
+        InputIcon,
+        CommonModule
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetSearchComponent implements OnInit, AfterViewInit {

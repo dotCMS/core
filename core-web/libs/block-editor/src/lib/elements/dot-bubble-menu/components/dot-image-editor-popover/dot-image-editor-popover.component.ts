@@ -3,8 +3,8 @@ import { Props } from 'tippy.js';
 import { Component, ElementRef, HostListener, input, ViewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
 
 import { Editor } from '@tiptap/core';
 
@@ -18,7 +18,7 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
     selector: 'dot-image-editor-popover',
     templateUrl: './dot-image-editor-popover.component.html',
     styleUrls: ['./dot-image-editor-popover.component.scss'],
-    imports: [EditorModalDirective, InputTextModule, ReactiveFormsModule, ButtonModule]
+    imports: [EditorModalDirective, InputText, ReactiveFormsModule, Button]
 })
 export class DotImageEditorPopoverComponent {
     @ViewChild('popover', { read: EditorModalDirective })
