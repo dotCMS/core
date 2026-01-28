@@ -1,17 +1,28 @@
+
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { OnboardingDevComponent } from './onboarding-dev.component';
+import { DotMessageService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
-describe('OnboardingDevComponent', () => {
-    let component: OnboardingDevComponent;
-    let fixture: ComponentFixture<OnboardingDevComponent>;
+import { DotOnboardingDevComponent } from './onboarding-dev.component';
+
+describe('DotOnboardingDevComponent', () => {
+    let component: DotOnboardingDevComponent;
+    let fixture: ComponentFixture<DotOnboardingDevComponent>;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [OnboardingDevComponent]
+            imports: [DotOnboardingDevComponent],
+            providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+            ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(OnboardingDevComponent);
+        fixture = TestBed.createComponent(DotOnboardingDevComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
     });
