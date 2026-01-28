@@ -18872,10 +18872,10 @@ ng2-dragula@5.0.1:
   dependencies:
     tslib "^2.3.0"
 
-ngx-markdown@18.1.0:
-  version "18.1.0"
-  resolved "https://registry.yarnpkg.com/ngx-markdown/-/ngx-markdown-18.1.0.tgz#940dde1bf1a5bd9450343aed2387006329b5e27d"
-  integrity sha512-n4HFSm5oqVMXFuD+WXIVkI6NyxD8Oubr4B3c9U1J7Ptr6t9DVnkNBax3yxWc+8Wli+FXTuGEnDXzB3sp7E9paA==
+ngx-markdown@^20.1.0:
+  version "20.1.0"
+  resolved "https://registry.npmjs.org/ngx-markdown/-/ngx-markdown-20.1.0.tgz#e48b043e7ea00c63db2c3f48c5f45dbc7198d500"
+  integrity sha512-BLn6CTMO27cU0zeaJYoC1g5c1hAkrpE5oqVSQFGW0J5gq+gEuvTt4vrtNLc8Z+HYXtuuWmuhUWiXL/bYoiDJ+A==
   dependencies:
     tslib "^2.3.0"
   optionalDependencies:
@@ -18883,7 +18883,7 @@ ngx-markdown@18.1.0:
     emoji-toolkit ">= 8.0.0 < 10.0.0"
     katex "^0.16.0"
     mermaid ">= 10.6.0 < 12.0.0"
-    prismjs "^1.28.0"
+    prismjs "^1.30.0"
 
 ngx-tiptap@^12.0.0:
   version "12.0.0"
@@ -21299,7 +21299,7 @@ primeng@17.18.11:
   dependencies:
     tslib "^2.3.0"
 
-prismjs@^1.28.0, prismjs@^1.30.0:
+prismjs@^1.30.0:
   version "1.30.0"
   resolved "https://registry.yarnpkg.com/prismjs/-/prismjs-1.30.0.tgz#d9709969d9d4e16403f6f348c63553b19f0975a9"
   integrity sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==

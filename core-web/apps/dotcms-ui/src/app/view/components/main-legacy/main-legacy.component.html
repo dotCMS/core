@@ -10,18 +10,16 @@
         aria-label="Main navigation">
         <dot-main-nav />
     </aside>
-    <main class="layout__main">
-        <header class="layout__branding-bar" data-testid="branding-bar" role="banner">
-            <dot-toolbar />
-        </header>
-        <div
-            class="layout__viewport"
-            data-testid="content-viewport"
-            role="region"
-            aria-label="Main content area">
-            <router-outlet />
-        </div>
-    </main>
+    <header class="layout__branding-bar" data-testid="branding-bar" role="banner">
+        <dot-toolbar />
+    </header>
+    <div
+        class="layout__viewport"
+        data-testid="content-viewport"
+        role="region"
+        aria-label="Main content area">
+        <router-outlet />
+    </div>
 </div>
 
 <!-- After the router-outlet to make sure always shows up on top of any other dialog in the system -->
