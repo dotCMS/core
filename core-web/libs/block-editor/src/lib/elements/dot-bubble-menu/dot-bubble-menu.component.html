@@ -63,42 +63,42 @@
             size="small"
             (onClick)="editor().chain().focus().toggleBold().run()"
             [class.is-active]="editor().isActive('bold')">
-            <b class="text-lg font-bold">B</b>
+            <b class="font-bold bubble-menu-icon">B</b>
         </p-button>
         <p-button
             text
             size="small"
             (onClick)="editor().chain().focus().toggleUnderline().run()"
             [class.is-active]="editor().isActive('underline')">
-            <u class="text-lg font-bold">U</u>
+            <u class="font-bold bubble-menu-icon">U</u>
         </p-button>
         <p-button
             text
             size="small"
             (onClick)="editor().chain().focus().toggleItalic().run()"
             [class.is-active]="editor().isActive('italic')">
-            <i class="text-lg font-bold">I</i>
+            <i class="font-bold bubble-menu-icon">I</i>
         </p-button>
         <p-button
             text
             size="small"
             (onClick)="editor().chain().focus().toggleStrike().run()"
             [class.is-active]="editor().isActive('strike')">
-            <s class="text-lg font-bold">S</s>
+            <s class="font-bold bubble-menu-icon">S</s>
         </p-button>
         <p-button
             text
             size="small"
             (onClick)="editor().chain().focus().toggleSuperscript().run()"
             [class.is-active]="editor().isActive('superscript')">
-            <span class="material-icons text-lg">superscript</span>
+            <span class="material-icons bubble-menu-icon">superscript</span>
         </p-button>
         <p-button
             text
             size="small"
             (onClick)="editor().chain().focus().toggleSubscript().run()"
             [class.is-active]="editor().isActive('subscript')">
-            <span class="material-icons text-lg">subscript</span>
+            <span class="material-icons bubble-menu-icon">subscript</span>
         </p-button>
         <div class="divider"></div>
         <p-button

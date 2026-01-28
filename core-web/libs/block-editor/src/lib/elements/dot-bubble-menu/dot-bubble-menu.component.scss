@@ -29,4 +29,15 @@
         height: 1.5rem;
         margin: 0 spacing.$spacing-0;
     }
+
+    // Ensure material icons match PrimeNG small button icon size
+    .bubble-menu-icon {
+        font-size: common.$icon-sm;
+        width: common.$icon-sm-box;
+        height: common.$icon-sm-box;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
 }
