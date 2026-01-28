@@ -15,7 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { TabView, TabViewModule } from 'primeng/tabview';
+import { TabView, TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 
 import {
     DotContentletService,
@@ -38,9 +38,11 @@ import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
+import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
+import { Activity } from '../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
@@ -63,7 +65,8 @@ describe('DotEditContentSidebarComponent', () => {
         imports: [
             TabViewModule,
             DotEditContentSidebarActivitiesComponent,
-            DotEditContentSidebarHistoryComponent
+            DotEditContentSidebarHistoryComponent,
+            DotEditContentSidebarPermissionsComponent
         ], // I need the real components to be rendered in the p-template="content"
         providers: [
             DotEditContentStore,
@@ -86,7 +89,15 @@ describe('DotEditContentSidebarComponent', () => {
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
-            mockProvider(DialogService),
+            {
+                provide: DialogService,
+                useValue: {
+                    open: jest.fn().mockReturnValue({
+                        onClose: { subscribe: jest.fn() },
+                        close: jest.fn()
+                    })
+                }
+            },
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -129,6 +140,18 @@ describe('DotEditContentSidebarComponent', () => {
 
         dotEditContentService.getReferencePages.mockReturnValue(of(1));
         dotEditContentService.getActivities.mockReturnValue(of([]));
+
+        dotEditContentService.createActivity.mockReturnValue(
+            of({
+                commentDescription: '',
+                createdDate: 0,
+                email: '',
+                postedBy: '',
+                roleId: '',
+                taskId: '',
+                type: 'comment'
+            } satisfies Activity)
+        );
         dotEditContentService.getVersions.mockReturnValue(
             of({
                 entity: [],
@@ -212,9 +235,35 @@ describe('DotEditContentSidebarComponent', () => {
         });
     });
 
+    describe('Elements by data-testId', () => {
+        it('should have sidebar-tabs element', () => {
+            expect(spectator.query(byTestId('sidebar-tabs'))).toBeTruthy();
+        });
+
+        it('should have toggle-button element', () => {
+            expect(spectator.query(byTestId('toggle-button'))).toBeTruthy();
+        });
+
+        it('should render information section with data-testId when on info tab', () => {
+            expect(store.activeSidebarTab()).toBe(0);
+            const informationElement = spectator.query(byTestId('information'));
+            expect(informationElement).toBeTruthy();
+        });
+
+        it('should render workflow section with data-testId when on info tab', () => {
+            const workflowElement = spectator.query(byTestId('workflow'));
+            expect(workflowElement).toBeTruthy();
+        });
+
+        it('should render locales section with data-testId when on info tab', () => {
+            const localesElement = spectator.query(byTestId('locales'));
+            expect(localesElement).toBeTruthy();
+        });
+    });
+
     describe('Sidebar Controls', () => {
         it('should render toggle button', () => {
-            const toggleButton = spectator.query('[data-testId="toggle-button"]');
+            const toggleButton = spectator.query(byTestId('toggle-button'));
             expect(toggleButton).toBeTruthy();
         });
 
@@ -334,6 +383,56 @@ describe('DotEditContentSidebarComponent', () => {
                 expect(activitiesComponent).toBeTruthy();
             }));
 
+            it('should switch to permissions tab and render permissions content when clicking permissions tab', fakeAsync(() => {
+                spectator.detectChanges();
+                tick();
+
+                const tabView = spectator.query(byTestId('sidebar-tabs'));
+                expect(tabView).toBeTruthy();
+
+                const tabs = tabView.querySelectorAll('[role="tab"]');
+                expect(tabs.length).toBeGreaterThan(3);
+
+                const permissionsTabLink = tabs[3]; // Permissions is the fourth tab
+                expect(permissionsTabLink).toBeTruthy();
+
+                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+
+                // Start on info tab (0), then click permissions tab
+                expect(store.activeSidebarTab()).toBe(0);
+                spectator.click(permissionsTabLink);
+                tick();
+                spectator.detectChanges();
+
+                expect(storeSpy).toHaveBeenCalledWith(3);
+                expect(store.activeSidebarTab()).toBe(3);
+
+                const permissionsComponent = spectator.query(
+                    DotEditContentSidebarPermissionsComponent
+                );
+                expect(permissionsComponent).toBeTruthy();
+            }));
+
+            it('should open permissions dialog when clicking permissions card in permissions tab', fakeAsync(() => {
+                spectator.detectChanges();
+                tick();
+
+                // Switch to permissions tab first
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+
+                const dialogService = spectator.inject(DialogService);
+                const openSpy = jest.spyOn(dialogService, 'open');
+
+                const permissionsCard = spectator.query(byTestId('permissions-card'));
+                expect(permissionsCard).toBeTruthy();
+                spectator.click(permissionsCard);
+                tick();
+
+                expect(openSpy).toHaveBeenCalled();
+            }));
+
             it('should update store and render content when clicking history tab', fakeAsync(() => {
                 spectator.detectChanges();
                 tick();
@@ -435,6 +534,149 @@ describe('DotEditContentSidebarComponent', () => {
                 store.toggleSidebar();
                 tick();
                 expect(store.isSidebarOpen()).toBe(!initialState);
+            }));
+        });
+
+        describe('onActiveIndexChange', () => {
+            it('should call setActiveSidebarTab with index 0 when first tab is selected', fakeAsync(() => {
+                store.setActiveSidebarTab(1);
+                tick();
+                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                spectator.component.onActiveIndexChange({ index: 0 } as TabViewChangeEvent);
+                expect(storeSpy).toHaveBeenCalledWith(0);
+            }));
+
+            it('should call setActiveSidebarTab with index 4 when last tab (permissions) is selected', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                spectator.component.onActiveIndexChange({ index: 4 } as TabViewChangeEvent);
+                expect(storeSpy).toHaveBeenCalledWith(4);
+            }));
+
+            it('should call setActiveSidebarTab with the exact index from the event', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
+                spectator.component.onActiveIndexChange({ index: 2 } as TabViewChangeEvent);
+                expect(storeSpy).toHaveBeenCalledWith(2);
+            }));
+        });
+
+        describe('Event Handlers - Success', () => {
+            it('should call store.addComment when onCommentSubmitted is called with a comment', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'addComment');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue('test-identifier'),
+                    writable: true
+                });
+                component.onCommentSubmitted('My comment');
+                expect(storeSpy).toHaveBeenCalledWith({
+                    comment: 'My comment',
+                    identifier: 'test-identifier'
+                });
+            }));
+        });
+
+        describe('Event Handlers - Failure and Edge Cases', () => {
+            it('should NOT call loadVersions when onVersionsPageChange is called and identifier is undefined', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue(undefined),
+                    writable: true
+                });
+                component.onVersionsPageChange(1);
+                expect(storeSpy).not.toHaveBeenCalled();
+            }));
+
+            it('should NOT call loadVersions when onVersionsPageChange is called and identifier is empty string', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'loadVersions');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue(''),
+                    writable: true
+                });
+                component.onVersionsPageChange(1);
+                expect(storeSpy).not.toHaveBeenCalled();
+            }));
+
+            it('should NOT call loadPushPublishHistory when onPushPublishPageChange is called and identifier is undefined', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'loadPushPublishHistory');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue(undefined),
+                    writable: true
+                });
+                component.onPushPublishPageChange(2);
+                expect(storeSpy).not.toHaveBeenCalled();
+            }));
+
+            it('should NOT call deletePushPublishHistory when onDeletePushPublishHistory is called and identifier is undefined', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue(undefined),
+                    writable: true
+                });
+                component.onDeletePushPublishHistory();
+                expect(storeSpy).not.toHaveBeenCalled();
+            }));
+
+            it('should NOT call deletePushPublishHistory when onDeletePushPublishHistory is called and identifier is null', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'deletePushPublishHistory');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue(null),
+                    writable: true
+                });
+                component.onDeletePushPublishHistory();
+                expect(storeSpy).not.toHaveBeenCalled();
+            }));
+
+            it('should still call addComment when onCommentSubmitted is called even if identifier is undefined', fakeAsync(() => {
+                const storeSpy = jest.spyOn(store, 'addComment');
+                const component = spectator.component;
+                Object.defineProperty(component, '$identifier', {
+                    value: jest.fn().mockReturnValue(undefined),
+                    writable: true
+                });
+                component.onCommentSubmitted('Comment with no identifier');
+                expect(storeSpy).toHaveBeenCalledWith({
+                    comment: 'Comment with no identifier',
+                    identifier: undefined
+                });
+            }));
+        });
+
+        describe('Edge Cases - Tab Content Visibility', () => {
+            it('should NOT render permissions-card when on info tab (tab 0)', fakeAsync(() => {
+                expect(store.activeSidebarTab()).toBe(0);
+                spectator.detectChanges();
+                tick();
+                const permissionsCard = spectator.query(byTestId('permissions-card'));
+                expect(permissionsCard).toBeFalsy();
+            }));
+
+            it('should render permissions-card only when permissions tab (tab 3) is active', fakeAsync(() => {
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                const permissionsCard = spectator.query(byTestId('permissions-card'));
+                expect(permissionsCard).toBeTruthy();
+            }));
+
+            it('should render history section with data-testId when history tab is active', fakeAsync(() => {
+                store.setActiveSidebarTab(1);
+                tick();
+                spectator.detectChanges();
+                const historyElement = spectator.query(byTestId('history'));
+                expect(historyElement).toBeTruthy();
+            }));
+
+            it('should render activities section with data-testId when activities tab is active', fakeAsync(() => {
+                store.setActiveSidebarTab(2);
+                tick();
+                spectator.detectChanges();
+                const activitiesElement = spectator.query(byTestId('activities'));
+                expect(activitiesElement).toBeTruthy();
             }));
         });
     });
