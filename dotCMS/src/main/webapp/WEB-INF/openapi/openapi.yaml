@@ -11530,6 +11530,47 @@ paths:
       tags:
       - Publishing
   /v1/publishing/{bundleId}:
+    delete:
+      description: "Removes a specific bundle from the publishing queue. Cannot delete\
+        \ bundles that are actively publishing (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE)."
+      operationId: deletePublishingJob
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Success response with message
+                example:
+                  message: Bundle deleted successfully
+          description: Bundle deleted successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "409":
+          content:
+            application/json: {}
+          description: Cannot delete bundle while publishing is in progress
+      summary: Delete a publishing job
+      tags:
+      - Publishing
     get:
       description: "Returns detailed status, environments, endpoints, and timestamps\
         \ for a specific publishing bundle. Includes per-endpoint success/failure\

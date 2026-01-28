@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +49,16 @@ public class PublishingJobsHelper {
             Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode(),
             Status.FAILED_TO_BUNDLE.getCode(),
             Status.FAILED_INTEGRITY_CHECK.getCode()
+    );
+
+    /**
+     * Set of statuses that indicate a bundle is actively being processed.
+     * Bundles with these statuses cannot be deleted to prevent data corruption.
+     */
+    public static final Set<Status> IN_PROGRESS_STATUSES = Set.of(
+            Status.BUNDLING,
+            Status.SENDING_TO_ENDPOINTS,
+            Status.PUBLISHING_BUNDLE
     );
 
     private final BundleAPI bundleAPI;
@@ -160,6 +171,17 @@ public class PublishingJobsHelper {
         return Arrays.stream(Status.values())
                 .map(Status::name)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if the given status indicates the bundle is actively being processed.
+     * Bundles with in-progress status cannot be deleted to prevent data corruption.
+     *
+     * @param status The status to check
+     * @return true if the bundle is in progress and cannot be deleted
+     */
+    public boolean isInProgressStatus(final Status status) {
+        return status != null && IN_PROGRESS_STATUSES.contains(status);
     }
 
     /**
