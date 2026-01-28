@@ -1,17 +1,17 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService, DotRequestOptionsArgs } from '@dotcms/dotcms-js';
-import { DotPageContainer, DotWhatChanged } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotPageContainer, DotWhatChanged } from '@dotcms/dotcms-models';
 
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 @Injectable()
 export class DotEditPageService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private readonly dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
@@ -23,21 +23,17 @@ export class DotEditPageService {
      * @memberof DotEditPageService
      */
     save(pageId: string, content: DotPageContainer[]): Observable<string> {
-        const requestOptions: DotRequestOptionsArgs = {
-            method: 'POST',
-            body: content,
-            url: `v1/page/${pageId}/content`
-        };
-
+        const url = `/api/v1/page/${pageId}/content`;
         const currentVariantName = this.dotSessionStorageService.getVariationId();
 
+        let params = new HttpParams();
         if (currentVariantName) {
-            requestOptions.params = {
-                variantName: currentVariantName
-            };
+            params = params.set('variantName', currentVariantName);
         }
 
-        return this.coreWebService.requestView(requestOptions).pipe(pluck('entity'));
+        return this.http
+            .post<DotCMSResponse<string>>(url, content, { params })
+            .pipe(map((response) => response.entity));
     }
 
     /**
@@ -49,10 +45,10 @@ export class DotEditPageService {
      * @memberof DotEditPageService
      */
     whatChange(pageId: string, languageId: string): Observable<DotWhatChanged> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/page/${pageId}/render/versions?langId=${languageId}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<
+                DotCMSResponse<DotWhatChanged>
+            >(`/api/v1/page/${pageId}/render/versions?langId=${languageId}`)
+            .pipe(map((response) => response.entity));
     }
 }

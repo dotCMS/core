@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService, Site } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
+import { Site } from '@dotcms/dotcms-js';
 
 import { DotPageAsset, DotPageSelectorService } from './dot-page-selector.service';
 
@@ -121,11 +121,7 @@ describe('DotPageSelectorService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPageSelectorService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPageSelectorService]
         });
         dotPageSelectorService = TestBed.inject(DotPageSelectorService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -161,7 +157,7 @@ describe('DotPageSelectorService', () => {
         });
 
         const req = httpMock.expectOne(
-            `v1/page/search?path=about-us&onlyLiveSites=true&live=false`
+            `/api/v1/page/search?path=about-us&onlyLiveSites=true&live=false`
         );
 
         req.flush(mockGetPagedResponse);

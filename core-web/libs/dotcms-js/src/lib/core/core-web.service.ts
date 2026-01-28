@@ -26,6 +26,9 @@ import {
 } from './util/http-response-util';
 import { ResponseView } from './util/response-view';
 
+/**
+ * @deprecated Use the DotCMSResponse interface from @dotcms/dotcms-models instead.
+ */
 export interface DotCMSResponse<T> {
     contentlets?: T;
     entity?: T;

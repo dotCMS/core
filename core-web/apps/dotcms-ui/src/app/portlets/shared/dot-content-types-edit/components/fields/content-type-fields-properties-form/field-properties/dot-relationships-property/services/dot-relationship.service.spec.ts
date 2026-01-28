@@ -1,10 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotRelationshipService } from './dot-relationship.service';
 
@@ -27,22 +23,18 @@ describe('DotRelationshipService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotRelationshipService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotRelationshipService]
         });
         dotRelationshipService = TestBed.inject(DotRelationshipService);
         httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should load cardinalities', () => {
-        dotRelationshipService.loadCardinalities().subscribe((res: any) => {
+        dotRelationshipService.loadCardinalities().subscribe((res) => {
             expect(res).toEqual(cardinalities);
         });
 
-        const req = httpMock.expectOne('v1/relationships/cardinalities');
+        const req = httpMock.expectOne('/api/v1/relationships/cardinalities');
         expect(req.request.method).toBe('GET');
         req.flush({ entity: cardinalities });
     });

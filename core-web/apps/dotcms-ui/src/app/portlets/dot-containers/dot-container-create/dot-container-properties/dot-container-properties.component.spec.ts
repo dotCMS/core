@@ -1,7 +1,8 @@
 import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -61,6 +62,7 @@ import {
 } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
+    createFakeContentType,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService
@@ -181,11 +183,10 @@ const containerMockData = {
 };
 
 const mockContentTypes: DotCMSContentType[] = [
-    {
+    createFakeContentType({
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        defaultType: false,
-        description: 'Activities available at desitnations',
+        description: 'Activities available at destinations',
         detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
         fixed: false,
         folder: 'SYSTEM_FOLDER',
@@ -204,12 +205,11 @@ const mockContentTypes: DotCMSContentType[] = [
         workflows: [],
         fields: [],
         layout: []
-    },
-    {
+    }),
+    createFakeContentType({
         baseType: 'CONTENT',
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        defaultType: false,
-        description: 'Activities available at desitnations',
+        description: 'Activities available at destinations',
         detailPage: 'e5f131d2-1952-4596-bbbf-28fb28021b68',
         fixed: false,
         folder: 'SYSTEM_FOLDER',
@@ -228,14 +228,14 @@ const mockContentTypes: DotCMSContentType[] = [
         workflows: [],
         fields: [],
         layout: []
-    }
+    })
 ];
 
 describe('DotContainerPropertiesComponent', () => {
     let fixture: ComponentFixture<DotContainerPropertiesComponent>;
     let comp: DotContainerPropertiesComponent;
     let de: DebugElement;
-    let coreWebService: CoreWebService;
+    let httpTesting: HttpTestingController;
     let dotDialogService: DotAlertConfirmService;
     let dotRouterService: DotRouterService;
     const messageServiceMock = new MockDotMessageService(messages);
@@ -247,11 +247,27 @@ describe('DotContainerPropertiesComponent', () => {
                 DotContainerPropertiesComponent,
                 DotContentEditorComponent,
                 DotLoopEditorComponent,
-                DotTextareaContentMockComponent
+                DotTextareaContentMockComponent,
+                CommonModule,
+                DotMessagePipe,
+                SharedModule,
+                CheckboxModule,
+                InplaceModule,
+                ReactiveFormsModule,
+                MenuModule,
+                ButtonModule,
+                DotActionButtonComponent,
+                DotActionMenuButtonComponent,
+                DotAddToBundleComponent,
+                DynamicDialogModule,
+                DotAutofocusDirective,
+                BrowserAnimationsModule
             ],
             providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
+                { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: ActivatedRoute,
@@ -289,42 +305,34 @@ describe('DotContainerPropertiesComponent', () => {
                 LoggerService,
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
             ],
-            imports: [
-                CommonModule,
-                DotMessagePipe,
-                SharedModule,
-                CheckboxModule,
-                InplaceModule,
-                ReactiveFormsModule,
-                MenuModule,
-                ButtonModule,
-                DotActionButtonComponent,
-                DotActionMenuButtonComponent,
-                DotAddToBundleComponent,
-                HttpClientTestingModule,
-                DynamicDialogModule,
-                DotAutofocusDirective,
-                BrowserAnimationsModule
-            ],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
         fixture = TestBed.createComponent(DotContainerPropertiesComponent);
         comp = fixture.componentInstance;
         de = fixture.debugElement;
-        coreWebService = TestBed.inject(CoreWebService);
+        httpTesting = TestBed.inject(HttpTestingController);
         dotDialogService = TestBed.inject(DotAlertConfirmService);
         dotRouterService = TestBed.inject(DotRouterService);
     });
 
+    afterEach(() => {
+        // Flush any remaining requests (e.g., appconfiguration from DotcmsConfigService)
+        httpTesting?.match(() => true).forEach((req) => req.flush({}));
+    });
+
     describe('with data', () => {
         beforeEach(() => {
-            jest.spyOn<CoreWebService>(coreWebService, 'requestView').mockReturnValue(
-                of({
-                    entity: mockContentTypes,
-                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                })
-            );
             fixture.detectChanges();
+            // Mock the content types request
+            const req = httpTesting.expectOne((request) =>
+                request.url.includes('/api/v1/contenttype')
+            );
+            expect(req.request.method).toBe('GET');
+            req.flush({ entity: mockContentTypes });
+
+            // Mock the app configuration request from DotcmsConfigService
+            const configReq = httpTesting.match('/api/v1/appconfiguration');
+            configReq.forEach((r) => r.flush({ entity: {} }));
         });
 
         it('should focus on title field', async () => {
@@ -436,6 +444,17 @@ describe('DotContainerPropertiesComponent', () => {
             fixture.detectChanges();
             const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
             saveBtn.triggerEventHandler('click');
+
+            // Mock the update container request
+            const req = httpTesting.expectOne('/api/v1/containers/');
+            expect(req.request.method).toBe('PUT');
+            req.flush({
+                entity: {
+                    container: containerMockData.container.container,
+                    contentTypes: containerMockData.container.contentTypes
+                }
+            });
+
             tick(200);
             fixture.detectChanges();
             expect(de.query(By.css('[data-testId="saveBtn"]')).attributes.disabled).toBeDefined();
@@ -457,14 +476,26 @@ describe('DotContainerPropertiesComponent', () => {
             ).toEqual(false);
         }));
 
-        it('should redirect to containers list after save', () => {
+        it('should redirect to containers list after save', fakeAsync(() => {
             comp.form.get('title').setValue('Hello');
             fixture.detectChanges();
             const saveBtn = de.query(By.css('[data-testId="saveBtn"]'));
             saveBtn.triggerEventHandler('click');
+
+            // Mock the update container request
+            const req = httpTesting.expectOne('/api/v1/containers/');
+            expect(req.request.method).toBe('PUT');
+            req.flush({
+                entity: {
+                    container: containerMockData.container.container,
+                    contentTypes: containerMockData.container.contentTypes
+                }
+            });
+
+            tick();
             fixture.detectChanges();
             expect(dotRouterService.goToURL).toHaveBeenCalledWith('/containers');
             expect(dotRouterService.goToURL).toHaveBeenCalledTimes(1);
-        });
+        }));
     });
 });

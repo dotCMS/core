@@ -1,15 +1,17 @@
 import { describe, expect, it } from '@jest/globals';
 import { of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { CoreWebService, HttpCode, LoginService } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotDevice,
+    DotExperiment,
     DotExperimentStatus,
     DotPageMode,
     DotPageRenderState,
@@ -17,7 +19,6 @@ import {
     PageModelChangeEventType
 } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     dotcmsContentletMock,
     DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
@@ -47,7 +48,10 @@ import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
 const EXPERIMENT_MOCK = getExperimentMock(0);
-const getDotPageRenderStateMock = (favoritePage?: DotCMSContentlet, runningExperiment = null) => {
+const getDotPageRenderStateMock = (
+    favoritePage?: DotCMSContentlet,
+    runningExperiment?: DotExperiment
+) => {
     return new DotPageRenderState(
         mockUser(),
         mockDotRenderedPage(),
@@ -70,8 +74,9 @@ describe('DotPageStateService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
                 DotContentletLockerService,
                 DotHttpErrorManagerService,
@@ -87,7 +92,6 @@ describe('DotPageStateService', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
                 {
                     provide: LoginService,
@@ -168,7 +172,7 @@ describe('DotPageStateService', () => {
         });
 
         it('should get with url from queryParams with a Failing fetch from ES Search (favorite page)', () => {
-            const error500 = mockResponseView(500, '/test', null, {
+            const error500 = mockResponseView(500, '/test', undefined, {
                 message: 'error'
             });
             dotFavoritePageService.get = jest.fn().mockReturnValue(throwError(error500));
@@ -189,7 +193,7 @@ describe('DotPageStateService', () => {
 
     describe('Get Running Experiment', () => {
         it('should get running experiment', () => {
-            const mock = getDotPageRenderStateMock(null, EXPERIMENT_MOCK);
+            const mock = getDotPageRenderStateMock(undefined, EXPERIMENT_MOCK);
             dotExperimentsService.getByStatus = jest.fn().mockReturnValue(of([EXPERIMENT_MOCK]));
 
             service.get();
@@ -215,7 +219,7 @@ describe('DotPageStateService', () => {
         });
 
         it('should set running experiment to null if endpoint error', () => {
-            const error500 = mockResponseView(500, '/test', null, {
+            const error500 = mockResponseView(500, '/test', undefined, {
                 message: 'experiments.error.fetching.data'
             });
             const mock = getDotPageRenderStateMock();
@@ -360,7 +364,7 @@ describe('DotPageStateService', () => {
                 service.state$.subscribe(({ state }: DotPageRenderState) => {
                     expect(state.favoritePage).toBe(null);
                 });
-                service.setFavoritePageHighlight(null);
+                service.setFavoritePageHighlight(null as unknown as DotCMSContentlet);
             });
         });
 
