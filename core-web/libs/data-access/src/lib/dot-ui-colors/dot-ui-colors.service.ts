@@ -3,6 +3,8 @@ import ShadeGenerator from 'shade-generator';
 
 import { Injectable } from '@angular/core';
 
+import { updatePrimaryPalette } from '@primeuix/themes';
+
 import { DotUiColors } from '@dotcms/dotcms-js';
 
 // ShadeGenerator generates 20 colors and we only use 10, so we need to map the colors.
@@ -51,14 +53,23 @@ export class DotUiColorsService {
     private currentColors: DotUiColors = DEFAULT_COLORS;
 
     /**
-     * Set CSS variables colors
+     * Set colors for both PrimeNG theme and legacy CSS variables
      *
-     * @param DotUiColors colors
+     * This method updates:
+     * 1. PrimeNG theme using updatePrimaryPalette and updatePreset APIs
+     * 2. Legacy CSS custom properties for backward compatibility
+     *
+     * @param el - HTML element to set CSS variables on (usually document.documentElement)
+     * @param colors - Optional colors object. If not provided, uses current colors or defaults
      * @memberof DotUiColorsService
      */
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
+        // Update PrimeNG theme colors dynamically
+        this.updatePrimeNGColors();
+
+        // Maintain backward compatibility with legacy CSS variables
         if (this.currentColors.primary === DEFAULT_COLORS.primary) {
             this.setDefaultPrimaryColor(el);
         } else {
@@ -72,6 +83,150 @@ export class DotUiColorsService {
         }
 
         this.setColorBackground(el, this.currentColors.background);
+    }
+
+    /**
+     * Updates PrimeNG theme colors using the PrimeNG theming API
+     * 
+     * This method generates a complete color palette (50-950) from the base colors
+     * and updates PrimeNG's design tokens dynamically at runtime.
+     * 
+     * @private
+     */
+    private updatePrimeNGColors(): void {
+        try {
+            // Update primary color palette
+            const primaryPalette = this.generatePrimeNGPalette(this.currentColors.primary);
+            updatePrimaryPalette(primaryPalette);
+
+            // Update secondary color if needed (using updatePreset for more control)
+            // Note: PrimeNG doesn't have a built-in secondary color in the preset,
+            // but we can store it for future use or custom components
+            if (this.currentColors.secondary && this.currentColors.secondary !== DEFAULT_COLORS.secondary) {
+                const secondaryPalette = this.generatePrimeNGPalette(this.currentColors.secondary);
+                // Store secondary palette for potential future use
+                // For now, we only update primary as that's what PrimeNG uses by default
+            }
+        } catch (error) {
+            // Silently fail if PrimeNG theming API is not available
+            // This can happen during SSR or if PrimeNG hasn't initialized yet
+            console.warn('Failed to update PrimeNG colors:', error);
+        }
+    }
+
+    /**
+     * Generates a complete PrimeNG color palette (50-950) from a base hex color
+     * 
+     * PrimeNG expects a palette with shades from 50 (lightest) to 950 (darkest),
+     * where 500 is typically the base color.
+     * 
+     * @param hex - Base color in hex format (e.g., '#426BF0')
+     * @returns Record with keys '50' through '950' and hex color values
+     * @private
+     */
+    private generatePrimeNGPalette(hex: string): Record<string, string> {
+        const color = new TinyColor(hex);
+
+        if (!color.isValid) {
+            // Return default palette if color is invalid
+            return this.getDefaultPrimeNGPalette();
+        }
+
+        // Use ShadeGenerator to create the palette (reliable and consistent)
+        // PrimeNG's palette() function may have different return types, so we use
+        // ShadeGenerator as the primary method for consistency
+        return this.generatePaletteWithShadeGenerator(hex);
+    }
+
+    /**
+     * Generates palette using ShadeGenerator as fallback
+     * 
+     * @param hex - Base color in hex format
+     * @returns Record with PrimeNG palette format
+     * @private
+     */
+    private generatePaletteWithShadeGenerator(hex: string): Record<string, string> {
+        const shades = ShadeGenerator.hue(hex).shadesMap('hex');
+
+        // Map ShadeGenerator output to PrimeNG format (50-950)
+        return {
+            '50': shades['10'] || this.lighten(hex, 95),
+            '100': shades['30'] || this.lighten(hex, 85),
+            '200': shades['50'] || this.lighten(hex, 70),
+            '300': shades['70'] || this.lighten(hex, 50),
+            '400': shades['100'] || this.lighten(hex, 30),
+            '500': hex, // Base color
+            '600': shades['300'] || this.darken(hex, 10),
+            '700': shades['500'] || this.darken(hex, 20),
+            '800': shades['800'] || this.darken(hex, 30),
+            '900': shades['1000'] || this.darken(hex, 40),
+            '950': this.darken(hex, 50)
+        };
+    }
+
+    /**
+     * Returns the default PrimeNG primary palette generated from DEFAULT_COLORS.primary
+     * 
+     * This method generates the palette using the same logic as generatePrimeNGPalette
+     * to ensure consistency between the initial theme config and runtime updates.
+     * 
+     * @returns Default palette object generated from DEFAULT_COLORS.primary
+     * @private
+     */
+    private getDefaultPrimeNGPalette(): Record<string, string> {
+        // Generate palette from DEFAULT_COLORS.primary to ensure consistency
+        return this.generatePaletteWithShadeGenerator(DEFAULT_COLORS.primary);
+    }
+
+    /**
+     * Generates the default PrimeNG primary palette from DEFAULT_COLORS.primary
+     * 
+     * This is a public static method that can be used in theme.config.ts to ensure
+     * the initial preset uses the same default colors as the service.
+     * 
+     * @returns Default palette object for PrimeNG theme configuration
+     */
+    static getDefaultPrimeNGPalette(): Record<string, string> {
+        // Use the same generation logic as the service instance
+        const shades = ShadeGenerator.hue(DEFAULT_COLORS.primary).shadesMap('hex');
+
+        return {
+            '50': shades['10'] || new TinyColor(DEFAULT_COLORS.primary).lighten(95).toHexString(),
+            '100': shades['30'] || new TinyColor(DEFAULT_COLORS.primary).lighten(85).toHexString(),
+            '200': shades['50'] || new TinyColor(DEFAULT_COLORS.primary).lighten(70).toHexString(),
+            '300': shades['70'] || new TinyColor(DEFAULT_COLORS.primary).lighten(50).toHexString(),
+            '400': shades['100'] || new TinyColor(DEFAULT_COLORS.primary).lighten(30).toHexString(),
+            '500': DEFAULT_COLORS.primary, // Base color
+            '600': shades['300'] || new TinyColor(DEFAULT_COLORS.primary).darken(10).toHexString(),
+            '700': shades['500'] || new TinyColor(DEFAULT_COLORS.primary).darken(20).toHexString(),
+            '800': shades['800'] || new TinyColor(DEFAULT_COLORS.primary).darken(30).toHexString(),
+            '900': shades['1000'] || new TinyColor(DEFAULT_COLORS.primary).darken(40).toHexString(),
+            '950': new TinyColor(DEFAULT_COLORS.primary).darken(50).toHexString()
+        };
+    }
+
+    /**
+     * Lightens a hex color by a percentage
+     * 
+     * @param hex - Color in hex format
+     * @param amount - Percentage to lighten (0-100)
+     * @returns Lightened color in hex format
+     * @private
+     */
+    private lighten(hex: string, amount: number): string {
+        return new TinyColor(hex).lighten(amount).toHexString();
+    }
+
+    /**
+     * Darkens a hex color by a percentage
+     * 
+     * @param hex - Color in hex format
+     * @param amount - Percentage to darken (0-100)
+     * @returns Darkened color in hex format
+     * @private
+     */
+    private darken(hex: string, amount: number): string {
+        return new TinyColor(hex).darken(amount).toHexString();
     }
 
     private setColorBackground(el: HTMLElement, color: string): void {
