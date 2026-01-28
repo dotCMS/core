@@ -31,15 +31,14 @@
             <p-tabpanel [value]="0" class="flex flex-col h-full">
                 <!-- Information section -->
                 <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.general.title' | dm"
-                    class="h-full">
+                    [title]="'edit.content.sidebar.general.title' | dm">
                     <ng-template #sectionAction>
                         @if (!$store.isNew() && !$store.isCopyingLocale()) {
                             <dot-copy-button
                                 [copy]="contentlet.identifier"
                                 [label]="contentlet.shortyId"
                                 [tooltipText]="'Identifier' | dm"
-                                customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case"></dot-copy-button>
+                                customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
                         }
                     </ng-template>
 
