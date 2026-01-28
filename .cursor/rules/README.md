@@ -1,33 +1,33 @@
 # Cursor Project Rules
 
-Reglas del proyecto en `.cursor/rules/`. Cursor las aplica según el tipo de regla.
+Project rules live in `.cursor/rules/`. Cursor applies them according to the rule type.
 
-## Tipos de regla (frontmatter)
+## Rule types (frontmatter)
 
-| Tipo en Cursor | Frontmatter | Cuándo se aplica |
-|----------------|-------------|-------------------|
-| **Always Apply** | `alwaysApply: true` | En cada chat |
-| **Apply to Specific Files** | `globs: ["..."]` + `alwaysApply: false` | Cuando el archivo abierto/contexto coincide con el patrón |
-| **Apply Intelligently** | `description: "..."` + `alwaysApply: false` | Cuando el Agent considera la descripción relevante |
-| **Apply Manually** | Sin alwaysApply/globs | Solo si mencionas la regla con @ (ej. `@doc-updates`) |
+| Type in Cursor | Frontmatter | When it applies |
+|----------------|-------------|-----------------|
+| **Always Apply** | `alwaysApply: true` | On every chat |
+| **Apply to Specific Files** | `globs: ["..."]` + `alwaysApply: false` | When the open file/context matches the pattern |
+| **Apply Intelligently** | `description: "..."` + `alwaysApply: false` | When the Agent deems the description relevant |
+| **Apply Manually** | No alwaysApply/globs | Only if you mention the rule with @ (e.g. `@doc-updates`) |
 
-## Reglas actuales
+## Current rules
 
-- **dotcms-guide.mdc** – Always Apply. Navegación y recordatorios críticos.
+- **dotcms-guide.mdc** – Always Apply. Navigation and critical reminders.
 - **frontend-context.mdc** – Globs: `core-web/**/*.{ts,tsx,html,scss,css}`. Nx monorepo, Angular, SDK, docs/frontend index.
 - **java-context.mdc** – Globs: `**/*.java`, `**/pom.xml`, `dotCMS/src/**/*`. Config, Logger, Maven.
 - **test-context.mdc** – Globs: `**/*.spec.ts`, `**/*Test.java`, etc. Spectator, data-testid.
-- **doc-updates.mdc** – Globs: `**/*.md`, `docs/**/*`. Dónde actualizar docs, DRY.
+- **doc-updates.mdc** – Globs: `**/*.md`, `docs/**/*`. Where to update docs, DRY.
 
-## Buenas prácticas (Cursor docs)
+## Best practices (Cursor docs)
 
-- Reglas **cortas** (< 500 líneas; idealmente ~50 para recordatorios).
-- **Una preocupación** por regla; dividir si crecen.
-- **Descripciones** claras y con palabras clave para Apply Intelligently.
-- Usar **`.mdc`** (no `.md`) para que Cursor interprete bien `description`, `globs`, `alwaysApply`.
-- Detalles largos en **`/docs/`** y referenciar con `@docs/...` en lugar de copiar en la regla.
+- Keep rules **short** (< 500 lines; ideally ~50 for reminders).
+- **One concern** per rule; split if they grow.
+- **Descriptions** that are clear and keyword-rich for Apply Intelligently.
+- Use **`.mdc`** (not `.md`) so Cursor interprets `description`, `globs`, `alwaysApply` correctly.
+- Put long details in **`/docs/`** and reference with `@docs/...` instead of copying into the rule.
 
-## Referencia
+## Reference
 
-- [Cursor Rules (rule.md)](../rule.md) – Documentación oficial.
-- **CLAUDE.md** – Guía principal del repo; las reglas apuntan a `/docs/` para el detalle.
+- [Cursor Rules (rule.md)](../rule.md) – Official documentation.
+- **CLAUDE.md** – Main guide for the repo; rules point to `/docs/` for detail.
