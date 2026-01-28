@@ -6,7 +6,6 @@
         "@angular/core": "21.0.2",
         "@angular/forms": "21.0.2",
         "vite": "7.2.7",
-        "primeng": "^21.0.2",
         "@nx/vite": "21.6.9"
     },
     "type": "module",

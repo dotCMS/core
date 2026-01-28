@@ -1,9 +1,8 @@
 import { TinyColor } from '@ctrl/tinycolor';
+import { updatePrimaryPalette } from '@primeuix/themes';
 import ShadeGenerator from 'shade-generator';
 
 import { Injectable } from '@angular/core';
-
-import { updatePrimaryPalette } from '@primeuix/themes';
 
 import { DotUiColors } from '@dotcms/dotcms-js';
 
@@ -48,64 +47,81 @@ function parseHSL(hslString: string): HslObject {
     }
 }
 
+/**
+ * Service for managing UI colors in dotCMS
+ *
+ * Handles color updates for two different approaches:
+ *
+ * **1. PrimeNG Theme (Modern Angular Components)**
+ *    - Uses `updatePrimaryPalette()` to dynamically update PrimeNG design tokens
+ *    - Updates CSS variables: `--p-primary-50` through `--p-primary-950`
+ *    - Used by: Angular components with PrimeNG
+ *
+ * **2. Legacy CSS Variables (JSP Portlets)**
+ *    - Sets CSS custom properties on HTML elements (main app or iframes)
+ *    - Variables: `--color-palette-primary-*`, `--color-palette-primary-op-*`, etc.
+ *    - Used by: Legacy JSP portlets loaded in iframes (dotcms.css, dotai.css)
+ *
+ * **APIs:**
+ * - `setColors(el, colors?)` - Updates both PrimeNG theme and legacy CSS variables
+ * - `getColors()` - Gets current colors synchronously
+ *
+ * **Color Sources:**
+ * - Server config: `/api/v1/appconfiguration` (user-defined colors)
+ * - Fallback: `DEFAULT_COLORS` if server fails or user not authenticated
+ */
 @Injectable()
 export class DotUiColorsService {
     private currentColors: DotUiColors = DEFAULT_COLORS;
 
     /**
-     * Set colors for both PrimeNG theme and legacy CSS variables
+     * Sets colors and updates both approaches:
+     * 1. PrimeNG theme (via updatePrimaryPalette) - for Angular components
+     * 2. Legacy CSS variables (on HTML element) - for JSP portlets in iframes
      *
-     * This method updates:
-     * 1. PrimeNG theme using updatePrimaryPalette and updatePreset APIs
-     * 2. Legacy CSS custom properties for backward compatibility
-     *
-     * @param el - HTML element to set CSS variables on (usually document.documentElement)
-     * @param colors - Optional colors object. If not provided, uses current colors or defaults
-     * @memberof DotUiColorsService
+     * @param el - HTML element to set CSS variables on
+     *            - Main app: `document.documentElement`
+     *            - Iframes: `iframe.contentDocument.documentElement` (for JSP portlets)
+     * @param colors - Optional. Uses current colors or defaults if not provided
      */
     setColors(el: HTMLElement, colors?: DotUiColors): void {
         this.currentColors = colors || this.currentColors;
 
-        // Update PrimeNG theme colors dynamically
-        this.updatePrimeNGColors();
+        // Approach 1: Update PrimeNG theme for Angular components
+        this.updatePrimeNGColors(this.currentColors);
 
-        // Maintain backward compatibility with legacy CSS variables
-        if (this.currentColors.primary === DEFAULT_COLORS.primary) {
-            this.setDefaultPrimaryColor(el);
-        } else {
-            this.setColor(el, this.currentColors.primary, 'primary');
-        }
-
-        if (this.currentColors.secondary === DEFAULT_COLORS.secondary) {
-            this.setDefaultSecondaryColor(el);
-        } else {
-            this.setColor(el, this.currentColors.secondary, 'secondary');
-        }
-
+        // Approach 2: Set legacy CSS variables for JSP portlets
+        this.setColor(el, this.currentColors.primary, 'primary');
+        this.setColor(el, this.currentColors.secondary, 'secondary');
         this.setColorBackground(el, this.currentColors.background);
     }
 
     /**
-     * Updates PrimeNG theme colors using the PrimeNG theming API
-     * 
-     * This method generates a complete color palette (50-950) from the base colors
-     * and updates PrimeNG's design tokens dynamically at runtime.
-     * 
+     * Gets current colors synchronously
+     */
+    getColors(): DotUiColors {
+        return this.currentColors;
+    }
+
+    /**
+     * Approach 1: Updates PrimeNG theme colors dynamically
+     * Generates palette (50-950) from base colors and updates PrimeNG design tokens
+     *
      * @private
      */
-    private updatePrimeNGColors(): void {
+    private updatePrimeNGColors(colors: DotUiColors): void {
         try {
             // Update primary color palette
-            const primaryPalette = this.generatePrimeNGPalette(this.currentColors.primary);
+            const primaryPalette = this.generatePrimeNGPalette(colors.primary);
             updatePrimaryPalette(primaryPalette);
 
             // Update secondary color if needed (using updatePreset for more control)
             // Note: PrimeNG doesn't have a built-in secondary color in the preset,
             // but we can store it for future use or custom components
-            if (this.currentColors.secondary && this.currentColors.secondary !== DEFAULT_COLORS.secondary) {
-                const secondaryPalette = this.generatePrimeNGPalette(this.currentColors.secondary);
-                // Store secondary palette for potential future use
+            if (colors.secondary && colors.secondary !== DEFAULT_COLORS.secondary) {
+                // Generate secondary palette for potential future use
                 // For now, we only update primary as that's what PrimeNG uses by default
+                this.generatePrimeNGPalette(colors.secondary);
             }
         } catch (error) {
             // Silently fail if PrimeNG theming API is not available
@@ -115,13 +131,8 @@ export class DotUiColorsService {
     }
 
     /**
-     * Generates a complete PrimeNG color palette (50-950) from a base hex color
-     * 
-     * PrimeNG expects a palette with shades from 50 (lightest) to 950 (darkest),
-     * where 500 is typically the base color.
-     * 
-     * @param hex - Base color in hex format (e.g., '#426BF0')
-     * @returns Record with keys '50' through '950' and hex color values
+     * Generates PrimeNG color palette (50-950) from base hex color
+     *
      * @private
      */
     private generatePrimeNGPalette(hex: string): Record<string, string> {
@@ -139,10 +150,8 @@ export class DotUiColorsService {
     }
 
     /**
-     * Generates palette using ShadeGenerator as fallback
-     * 
-     * @param hex - Base color in hex format
-     * @returns Record with PrimeNG palette format
+     * Generates palette using ShadeGenerator
+     *
      * @private
      */
     private generatePaletteWithShadeGenerator(hex: string): Record<string, string> {
@@ -165,12 +174,8 @@ export class DotUiColorsService {
     }
 
     /**
-     * Returns the default PrimeNG primary palette generated from DEFAULT_COLORS.primary
-     * 
-     * This method generates the palette using the same logic as generatePrimeNGPalette
-     * to ensure consistency between the initial theme config and runtime updates.
-     * 
-     * @returns Default palette object generated from DEFAULT_COLORS.primary
+     * Returns default palette from DEFAULT_COLORS.primary
+     *
      * @private
      */
     private getDefaultPrimeNGPalette(): Record<string, string> {
@@ -179,12 +184,8 @@ export class DotUiColorsService {
     }
 
     /**
-     * Generates the default PrimeNG primary palette from DEFAULT_COLORS.primary
-     * 
-     * This is a public static method that can be used in theme.config.ts to ensure
-     * the initial preset uses the same default colors as the service.
-     * 
-     * @returns Default palette object for PrimeNG theme configuration
+     * Static method to generate default palette for theme.config.ts
+     * Ensures initial preset uses same defaults as service
      */
     static getDefaultPrimeNGPalette(): Record<string, string> {
         // Use the same generation logic as the service instance
@@ -206,11 +207,6 @@ export class DotUiColorsService {
     }
 
     /**
-     * Lightens a hex color by a percentage
-     * 
-     * @param hex - Color in hex format
-     * @param amount - Percentage to lighten (0-100)
-     * @returns Lightened color in hex format
      * @private
      */
     private lighten(hex: string, amount: number): string {
@@ -218,17 +214,17 @@ export class DotUiColorsService {
     }
 
     /**
-     * Darkens a hex color by a percentage
-     * 
-     * @param hex - Color in hex format
-     * @param amount - Percentage to darken (0-100)
-     * @returns Darkened color in hex format
      * @private
      */
     private darken(hex: string, amount: number): string {
         return new TinyColor(hex).darken(amount).toHexString();
     }
 
+    /**
+     * Sets background color CSS variable for JSP portlets
+     *
+     * @private
+     */
     private setColorBackground(el: HTMLElement, color: string): void {
         const colorBackground: TinyColor = new TinyColor(color);
 
@@ -237,6 +233,12 @@ export class DotUiColorsService {
         }
     }
 
+    /**
+     * Approach 2: Sets CSS variables for a color (primary/secondary)
+     * Generates HSL base, shades (100-900), and opacities (10-90) for JSP portlets
+     *
+     * @private
+     */
     private setColor(el: HTMLElement, hex: string, type: ColorType): void {
         const color = new TinyColor(hex);
 
@@ -244,14 +246,21 @@ export class DotUiColorsService {
             const baseColor = ShadeGenerator.hue(hex).shade('100').hsl();
             const baseColorHsl = parseHSL(baseColor);
 
+            // Set HSL base values (used by JSP CSS)
             el.style.setProperty(`--color-${type}-h`, baseColorHsl.hue);
             el.style.setProperty(`--color-${type}-s`, baseColorHsl.saturation);
 
+            // Generate shades and opacities for JSP portlets
             this.setShades(el, hex, type);
             this.setOpacities(el, baseColorHsl.saturation, type);
         }
     }
 
+    /**
+     * Generates CSS variables for color shades (100-900) for JSP portlets
+     *
+     * @private
+     */
     private setShades(el: HTMLElement, hex: string, type: ColorType) {
         const shades = ShadeGenerator.hue(hex).shadesMap('hsl');
 
@@ -261,42 +270,18 @@ export class DotUiColorsService {
         });
     }
 
+    /**
+     * Generates CSS variables for color opacities (10-90) for JSP portlets
+     * Used in dotcms.css and dotai.css for outlines, backgrounds, and shadows
+     *
+     * @private
+     */
     private setOpacities(el: HTMLElement, saturation: string, type: ColorType) {
         for (let i = 1; i < 10; i++) {
             el.style.setProperty(
                 `--color-palette-${type}-op-${i}0`,
-                `hsla(var(--color-primary-h), var(--color-primary-s), ${saturation}, 0.${i})`
+                `hsla(var(--color-${type}-h), var(--color-${type}-s), ${saturation}, 0.${i})`
             );
         }
-    }
-
-    private setDefaultPrimaryColor(el: HTMLElement): void {
-        el.style.setProperty(`--color-primary-h`, '226deg');
-        el.style.setProperty(`--color-primary-s`, '85%');
-
-        const saturations = [98, 96, 90, 78, 60, 48, 36, 27, 21];
-
-        saturations.forEach((saturation, index) => {
-            const level = `${index + 1}00`;
-            el.style.setProperty(
-                `--color-palette-primary-${level}`,
-                `hsl(var(--color-primary-h) var(--color-primary-s) ${saturation}%)`
-            );
-        });
-    }
-
-    private setDefaultSecondaryColor(el: HTMLElement): void {
-        el.style.setProperty(`--color-secondary-h`, '256deg');
-        el.style.setProperty(`--color-secondary-s`, '85%');
-
-        const saturations = [98, 94, 84, 71, 60, 51, 42, 30, 22];
-
-        saturations.forEach((saturation, index) => {
-            const level = `${index + 1}00`;
-            el.style.setProperty(
-                `--color-palette-secondary-${level}`,
-                `hsl(var(--color-secondary-h) var(--color-secondary-s) ${saturation}%)`
-            );
-        });
     }
 }

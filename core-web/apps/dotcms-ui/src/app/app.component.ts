@@ -1,10 +1,16 @@
+import { of } from 'rxjs';
+
 import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { of } from 'rxjs';
 import { catchError, map, take } from 'rxjs/operators';
 
-import { DEFAULT_COLORS, DotLicenseService, DotMessageService, DotUiColorsService } from '@dotcms/data-access';
+import {
+    DEFAULT_COLORS,
+    DotLicenseService,
+    DotMessageService,
+    DotUiColorsService
+} from '@dotcms/data-access';
 import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
