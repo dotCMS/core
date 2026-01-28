@@ -244,7 +244,6 @@ describe('DotUveStyleEditorFormComponent', () => {
                     acceptTypes: 'test',
                     identifier: 'test-container',
                     maxContentlets: 1,
-                    variantId: 'test-variant',
                     uuid: 'test-uuid'
                 },
                 language_id: '1',
@@ -296,7 +295,6 @@ describe('DotUveStyleEditorFormComponent', () => {
                     acceptTypes: 'test',
                     identifier: 'test-container',
                     maxContentlets: 1,
-                    variantId: 'test-variant',
                     uuid: 'test-uuid'
                 },
                 language_id: '1',

@@ -32,7 +32,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
+import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.NotFoundException;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,8 +43,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-
-import com.dotcms.rest.exception.NotFoundException;
 
 /**
  * Integration tests for PublishingResource - focuses on DATA CORRECTNESS and BUSINESS LOGIC.
@@ -433,6 +434,164 @@ public class PublishingResourceIntegrationTest {
     }
 
     // =========================================================================
+    // DETAIL ENDPOINT TESTS - GET /v1/publishing/{bundleId}
+    // =========================================================================
+
+    /**
+     * Given: Non-existent bundle ID
+     * When: getPublishingJobDetails is called
+     * Then: NotFoundException is thrown
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_getDetails_nonExistentBundle_returns404() throws Exception {
+        publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, "non-existent-bundle-id-xyz");
+    }
+
+    /**
+     * Given: Empty bundle ID
+     * When: getPublishingJobDetails is called
+     * Then: BadRequestException is thrown
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_getDetails_emptyBundleId_returns400() throws Exception {
+        publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, "");
+    }
+
+    /**
+     * Given: Bundle with known data exists
+     * When: getPublishingJobDetails is called
+     * Then: All response fields are correctly populated
+     */
+    @Test
+    public void test_getDetails_allFieldsPopulatedCorrectly() throws Exception {
+        final String bundleName = "detail-verification-bundle";
+        final String bundleId = createBundleWithStatus(bundleName, Status.SUCCESS);
+
+        final ResponseEntityPublishingJobDetailView result = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        final PublishingJobDetailView detail = result.getEntity();
+
+        // Verify all required fields
+        assertEquals("bundleId should match", bundleId, detail.bundleId());
+        assertEquals("bundleName should match", bundleName, detail.bundleName());
+        assertEquals("status should be SUCCESS", Status.SUCCESS, detail.status());
+        assertNotNull("timestamps should not be null", detail.timestamps());
+        assertNotNull("timestamps.createDate should not be null", detail.timestamps().createDate());
+        assertTrue("assetCount should be >= 0", detail.assetCount() >= 0);
+        assertTrue("numTries should be >= 0", detail.numTries() >= 0);
+        assertNotNull("environments list should not be null", detail.environments());
+    }
+
+    /**
+     * Given: Bundle with environment/endpoint data exists
+     * When: getPublishingJobDetails is called
+     * Then: Environment and endpoint details are populated correctly
+     */
+    @Test
+    public void test_getDetails_environmentsAndEndpointsPopulated() throws Exception {
+        final String bundleId = createBundleWithEnvironmentEndpoints("env-endpoint-test", Status.SUCCESS);
+
+        final ResponseEntityPublishingJobDetailView result = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        final PublishingJobDetailView detail = result.getEntity();
+
+        // Should have at least one environment
+        assertFalse("Should have environments", detail.environments().isEmpty());
+
+        final EnvironmentDetailView env = detail.environments().get(0);
+        assertNotNull("Environment id should not be null", env.id());
+        assertNotNull("Environment name should not be null", env.name());
+        assertFalse("Environment should have endpoints", env.endpoints().isEmpty());
+
+        final EndpointDetailView endpoint = env.endpoints().get(0);
+        assertNotNull("Endpoint id should not be null", endpoint.id());
+        assertNotNull("Endpoint serverName should not be null", endpoint.serverName());
+    }
+
+    /**
+     * Given: Bundle with timestamps exists
+     * When: getPublishingJobDetails is called
+     * Then: All timestamps are correctly populated
+     */
+    @Test
+    public void test_getDetails_timestampsPopulatedCorrectly() throws Exception {
+        final String bundleId = createBundleWithTimestamps("timestamps-test", Status.SUCCESS);
+
+        final ResponseEntityPublishingJobDetailView result = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        final TimestampsView timestamps = result.getEntity().timestamps();
+
+        assertNotNull("createDate should not be null", timestamps.createDate());
+        // bundleStart, bundleEnd, publishStart, publishEnd may be null based on status
+        // For SUCCESS, all timestamps should be set
+        assertNotNull("bundleStart should not be null for completed bundle", timestamps.bundleStart());
+        assertNotNull("bundleEnd should not be null for completed bundle", timestamps.bundleEnd());
+        assertNotNull("publishStart should not be null for completed bundle", timestamps.publishStart());
+        assertNotNull("publishEnd should not be null for completed bundle", timestamps.publishEnd());
+
+        // Verify timestamps are logically ordered
+        assertFalse("bundleEnd should not be before bundleStart",
+                timestamps.bundleEnd().isBefore(timestamps.bundleStart()));
+        assertFalse("publishEnd should not be before publishStart",
+                timestamps.publishEnd().isBefore(timestamps.publishStart()));
+    }
+
+    /**
+     * Given: Bundle with FAILED status and endpoint with stackTrace
+     * When: getPublishingJobDetails is called
+     * Then: stackTrace is included in the response for failed endpoints
+     */
+    @Test
+    public void test_getDetails_stackTraceIncludedForFailedEndpoints() throws Exception {
+        final String bundleId = createBundleWithFailedEndpoint("failed-stack-test");
+
+        final ResponseEntityPublishingJobDetailView result = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        final PublishingJobDetailView detail = result.getEntity();
+
+        // Find the endpoint with stackTrace
+        boolean foundStackTrace = false;
+        for (final EnvironmentDetailView env : detail.environments()) {
+            for (final EndpointDetailView endpoint : env.endpoints()) {
+                if (endpoint.stackTrace() != null && !endpoint.stackTrace().isEmpty()) {
+                    foundStackTrace = true;
+                    break;
+                }
+            }
+        }
+        assertTrue("Should find stackTrace for failed endpoint", foundStackTrace);
+    }
+
+    /**
+     * Given: Bundle with SUCCESS status and endpoint without failures
+     * When: getPublishingJobDetails is called
+     * Then: stackTrace is NOT included (null) in the response
+     */
+    @Test
+    public void test_getDetails_stackTraceNotIncludedForSuccessfulEndpoints() throws Exception {
+        final String bundleId = createBundleWithEnvironmentEndpoints("success-no-stack-test", Status.SUCCESS);
+
+        final ResponseEntityPublishingJobDetailView result = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId);
+
+        final PublishingJobDetailView detail = result.getEntity();
+
+        // All endpoints should have null stackTrace
+        for (final EnvironmentDetailView env : detail.environments()) {
+            for (final EndpointDetailView endpoint : env.endpoints()) {
+                assertNull("stackTrace should be null for successful endpoint: " + endpoint.id(),
+                        endpoint.stackTrace());
+            }
+        }
+    }
+
+    // =========================================================================
     // HELPER METHODS
     // =========================================================================
 
@@ -510,6 +669,115 @@ public class PublishingResourceIntegrationTest {
 
         publishAuditAPI.insertPublishAuditStatus(auditStatus);
         publishAuditAPI.updatePublishAuditStatus(bundleId, Status.SUCCESS, history);
+
+        return bundleId;
+    }
+
+    private String createBundleWithEnvironmentEndpoints(final String bundleName, final Status status)
+            throws DotDataException, DotPublisherException {
+
+        final Bundle bundle = new BundleDataGen()
+                .name(bundleName)
+                .owner(adminUser)
+                .nextPersisted();
+
+        final String bundleId = bundle.getId();
+        createdBundleIds.add(bundleId);
+
+        final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+        auditStatus.setStatus(status);
+        auditStatus.setStatusUpdated(new Date());
+
+        final PublishAuditHistory history = new PublishAuditHistory();
+
+        // Create mock environment/endpoint structure
+        final Map<String, Map<String, EndpointDetail>> endpointsMap = new HashMap<>();
+        final Map<String, EndpointDetail> endpoints = new HashMap<>();
+
+        final EndpointDetail detail = new EndpointDetail();
+        detail.setStatus(Status.SUCCESS.getCode());
+        detail.setInfo("Published successfully");
+        endpoints.put("endpoint-1", detail);
+
+        endpointsMap.put("environment-1", endpoints);
+        history.setEndpointsMap(endpointsMap);
+
+        auditStatus.setStatusPojo(history);
+
+        publishAuditAPI.insertPublishAuditStatus(auditStatus);
+        publishAuditAPI.updatePublishAuditStatus(bundleId, status, history);
+
+        return bundleId;
+    }
+
+    private String createBundleWithTimestamps(final String bundleName, final Status status)
+            throws DotDataException, DotPublisherException {
+
+        final Bundle bundle = new BundleDataGen()
+                .name(bundleName)
+                .owner(adminUser)
+                .nextPersisted();
+
+        final String bundleId = bundle.getId();
+        createdBundleIds.add(bundleId);
+
+        final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+        auditStatus.setStatus(status);
+        auditStatus.setStatusUpdated(new Date());
+
+        final PublishAuditHistory history = new PublishAuditHistory();
+
+        // Set all timestamps in logical order
+        final long baseTime = System.currentTimeMillis();
+        history.setBundleStart(new Date(baseTime));
+        history.setBundleEnd(new Date(baseTime + 1000));
+        history.setPublishStart(new Date(baseTime + 2000));
+        history.setPublishEnd(new Date(baseTime + 3000));
+
+        auditStatus.setStatusPojo(history);
+
+        publishAuditAPI.insertPublishAuditStatus(auditStatus);
+        publishAuditAPI.updatePublishAuditStatus(bundleId, status, history);
+
+        return bundleId;
+    }
+
+    private String createBundleWithFailedEndpoint(final String bundleName)
+            throws DotDataException, DotPublisherException {
+
+        final Bundle bundle = new BundleDataGen()
+                .name(bundleName)
+                .owner(adminUser)
+                .nextPersisted();
+
+        final String bundleId = bundle.getId();
+        createdBundleIds.add(bundleId);
+
+        final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+        auditStatus.setStatus(Status.FAILED_TO_PUBLISH);
+        auditStatus.setStatusUpdated(new Date());
+
+        final PublishAuditHistory history = new PublishAuditHistory();
+
+        // Create mock environment/endpoint structure with failure
+        final Map<String, Map<String, EndpointDetail>> endpointsMap = new HashMap<>();
+        final Map<String, EndpointDetail> endpoints = new HashMap<>();
+
+        final EndpointDetail failedDetail = new EndpointDetail();
+        failedDetail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
+        failedDetail.setInfo("Connection refused");
+        failedDetail.setStackTrace("java.net.ConnectException: Connection refused\n" +
+                "    at java.net.PlainSocketImpl.socketConnect(Native Method)\n" +
+                "    at java.net.AbstractPlainSocketImpl.doConnect(AbstractPlainSocketImpl.java:350)");
+        endpoints.put("endpoint-failed-1", failedDetail);
+
+        endpointsMap.put("environment-failed-1", endpoints);
+        history.setEndpointsMap(endpointsMap);
+
+        auditStatus.setStatusPojo(history);
+
+        publishAuditAPI.insertPublishAuditStatus(auditStatus);
+        publishAuditAPI.updatePublishAuditStatus(bundleId, Status.FAILED_TO_PUBLISH, history);
 
         return bundleId;
     }

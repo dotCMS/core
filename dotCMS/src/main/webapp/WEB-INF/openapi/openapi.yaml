@@ -11571,6 +11571,45 @@ paths:
       summary: Delete a publishing job
       tags:
       - Publishing
+    get:
+      description: "Returns detailed status, environments, endpoints, and timestamps\
+        \ for a specific publishing bundle. Includes per-endpoint success/failure\
+        \ status with error messages and stack traces for failed endpoints."
+      operationId: getPublishingJobDetails
+      parameters:
+      - description: Bundle identifier
+        example: f3d9a4b7-staging-bundle-2026-01-15
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPublishingJobDetailView"
+          description: Publishing job details retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid bundle ID format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+      summary: Get publishing job details
+      tags:
+      - Publishing
   /v1/publishqueue:
     delete:
       operationId: deleteAssetsByIdentifiers
@@ -21396,6 +21435,65 @@ components:
             type: string
           variable:
             type: string
+    EndpointDetailView:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Server address (hostname or IP)
+          example: staging1.example.com
+        id:
+          type: string
+          description: Unique endpoint identifier
+          example: endpoint-1
+        port:
+          type: string
+          description: Server port number
+          example: "443"
+        protocol:
+          type: string
+          description: Communication protocol
+          example: https
+        serverName:
+          type: string
+          description: Human-readable server name
+          example: Staging Server 1
+        stackTrace:
+          type: string
+          description: Stack trace for failed endpoints (only included for failures)
+        status:
+          type: string
+          description: "Publishing status for this endpoint (e.g., SUCCESS, FAILED_TO_SENT)"
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        statusMessage:
+          type: string
+          description: Status message with additional details
+          example: Everything ok
+      required:
+      - address
+      - id
+      - port
+      - protocol
+      - serverName
     EndpointForm:
       type: object
       properties:
@@ -21434,6 +21532,33 @@ components:
           type: string
         pushToAll:
           type: boolean
+    EnvironmentDetailView:
+      type: object
+      properties:
+        endpoints:
+          type: array
+          description: Endpoints within this environment with their status
+          items:
+            $ref: "#/components/schemas/EndpointDetailView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/EndpointDetailView"
+            last:
+              $ref: "#/components/schemas/EndpointDetailView"
+        id:
+          type: string
+          description: Unique environment identifier
+          example: env-staging-123
+        name:
+          type: string
+          description: Human-readable environment name
+          example: Staging Environment
+      required:
+      - endpoints
+      - id
+      - name
     EnvironmentForm:
       type: object
       properties:
@@ -22894,6 +23019,30 @@ components:
           $ref: "#/components/schemas/Condition"
         last:
           $ref: "#/components/schemas/Condition"
+    ImmutableListEndpointDetailView:
+      type: array
+      description: Endpoints within this environment with their status
+      items:
+        $ref: "#/components/schemas/EndpointDetailView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/EndpointDetailView"
+        last:
+          $ref: "#/components/schemas/EndpointDetailView"
+    ImmutableListEnvironmentDetailView:
+      type: array
+      description: Environments with their endpoints and status details
+      items:
+        $ref: "#/components/schemas/EnvironmentDetailView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/EnvironmentDetailView"
+        last:
+          $ref: "#/components/schemas/EnvironmentDetailView"
     ImmutableListJob:
       type: array
       items:
@@ -24413,6 +24562,75 @@ components:
           type: boolean
         tokenInvalid:
           type: boolean
+    PublishingJobDetailView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Total number of assets in the bundle
+          example: 47
+        bundleId:
+          type: string
+          description: Unique bundle identifier
+          example: f3d9a4b7-staging-bundle-2026-01-15
+        bundleName:
+          type: string
+          description: Human-readable bundle name
+          example: bundle-testName
+        environments:
+          type: array
+          description: Environments with their endpoints and status details
+          items:
+            $ref: "#/components/schemas/EnvironmentDetailView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/EnvironmentDetailView"
+            last:
+              $ref: "#/components/schemas/EnvironmentDetailView"
+        filterName:
+          type: string
+          description: Publishing filter name used
+          example: Live to Staging
+        numTries:
+          type: integer
+          format: int32
+          description: Number of publish attempts
+          example: 1
+        status:
+          type: string
+          description: Current publishing status
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        timestamps:
+          $ref: "#/components/schemas/TimestampsView"
+      required:
+      - assetCount
+      - bundleId
+      - environments
+      - numTries
+      - status
+      - timestamps
     PublishingJobView:
       type: object
       properties:
@@ -25749,6 +25967,29 @@ components:
           type: array
           items:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPublishingJobDetailView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PublishingJobDetailView"
         errors:
           type: array
           items:
@@ -28722,6 +28963,42 @@ components:
             type: string
           variable:
             type: string
+    TimestampsView:
+      type: object
+      description: Publishing job timestamps
+      properties:
+        bundleEnd:
+          type: string
+          format: date-time
+          description: When bundle creation completed (ISO 8601 format)
+          example: 2026-01-15T10:31:22Z
+        bundleStart:
+          type: string
+          format: date-time
+          description: When bundle creation started (ISO 8601 format)
+          example: 2026-01-15T10:30:00Z
+        createDate:
+          type: string
+          format: date-time
+          description: When the audit record was created (ISO 8601 format)
+          example: 2026-01-15T10:29:55Z
+        publishEnd:
+          type: string
+          format: date-time
+          description: When publishing to endpoints completed (ISO 8601 format)
+          example: 2026-01-15T10:31:18Z
+        publishStart:
+          type: string
+          format: date-time
+          description: When publishing to endpoints started (ISO 8601 format)
+          example: 2026-01-15T10:30:05Z
+        statusUpdated:
+          type: string
+          format: date-time
+          description: When the status was last updated (ISO 8601 format)
+          example: 2026-01-15T10:31:22Z
+      required:
+      - createDate
     TotalSession:
       type: object
       properties:
