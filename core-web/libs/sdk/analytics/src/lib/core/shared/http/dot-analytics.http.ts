@@ -13,7 +13,7 @@ export const sendAnalyticsEvent = async (
     payload: DotCMSAnalyticsRequestBody,
     config: DotCMSAnalyticsConfig,
     keepalive = false
-): Promise<void> => {
+): Promise<boolean> => {
     const logger = createPluginLogger('HTTP', config);
     const endpoint = `${config.server}${ANALYTICS_ENDPOINT}`;
     const body = JSON.stringify(payload);
@@ -36,8 +36,13 @@ export const sendAnalyticsEvent = async (
 
             // Fire and forget - don't await response with keepalive
             // The browser will send the request even if the page unloads
-            fetch(endpoint, fetchOptions);
-            return;
+            fetch(endpoint, fetchOptions).catch((err) => {
+                logger.error('Keepalive request failed (browser may have ignored it):', err);
+            });
+            // We can't know if it succeeded, but for keepalive=true contexts we usually assume "sent"
+            // or we return false since we can't confirm.
+            // However, the caller usually ignores the return value for keepalive.
+            return true;
         }
 
         // Normal request - await and check response
@@ -60,8 +65,12 @@ export const sendAnalyticsEvent = async (
                 // JSON parsing failed, log the HTTP status with parse error
                 logger.warn(`${baseErrorMessage} - Failed to parse error response:`, parseError);
             }
+            return false;
         }
+
+        return true;
     } catch (error) {
         logger.error('Error sending event:', error);
+        return false;
     }
 };

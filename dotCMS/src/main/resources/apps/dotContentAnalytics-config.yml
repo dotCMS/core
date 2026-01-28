@@ -1,7 +1,7 @@
 name: "Content Analytics"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/analytics.png"
 allowExtraParameters: false
-description: "Content Analytics allow developers and/or marketers to track user interactions across specified Sites in dotCMS."
+description: "The Content Analytics App allows you to track and analyze user interactions with your content (like impressions and clicks) across your dotCMS sites, helping you understand engagement and optimize your content strategy."
 
 params:
   siteAuth:
@@ -13,3 +13,92 @@ params:
     required: true
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
+
+  # Section Server-Rendered Pages
+  header_server:
+    type: "HEADING"
+    label: "Server-Rendered Pages Configuration"
+  info_server:
+    type: "INFO"
+    hint: "These settings apply ONLY to pages rendered by dotCMS servers (pages using dotCMS templates and layout)."
+  autoPageView:
+    value: true
+    hidden: false
+    type: "BOOL"
+    label: "Enable Auto Page Views"
+    hint: "Automatically track page views. If not specified, it defaults to true."
+    required: false
+  contentImpression:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable Content Impressions"
+    hint: "Automatically track when contentlets are visible in the viewport. If not specified, it defaults to false."
+    required: false
+  contentClick:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable Content Clicks"
+    hint: "Automatically track when users click on contentlets. If not specified, it defaults to false."
+    required: false
+  advancedConfig:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Advanced Configuration (JSON)"
+    hint: |
+        Allows you to enter a JSON object to fine-tune the SDK behavior. For example:
+
+        ```json
+        {
+          "queue": {
+            "eventBatchSize": 15,
+            "flushInterval": 5000
+          },
+          "impressions": {
+            "visibilityThreshold": 0.5,
+            "dwellMs": 750
+          }
+        }
+        ```
+
+        Refer to the documentation for all available settings.
+    required: false
+  debug:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable Debug Mode"
+    hint: "Enables debug mode in the browser console."
+    required: false
+
+  # Section Headless / Advanced
+  header_headless:
+    type: "HEADING"
+    label: "Headless & SPA Applications"
+  info_headless:
+    type: "INFO"
+    hint: |
+      **The settings above do NOT apply to headless implementations**
+
+      For headless sites (React, Angular, Vue, Next.js, etc.), you must:
+      1. Install the dotCMS Analytics SDK in your application
+      2. Initialize the SDK with your Site Auth key
+      3. Configure tracking in your application code
+
+      [View Headless Integration Guide](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/analytics/README.md)
+
+      **Quick Start for Popular Frameworks:**
+
+      React/Next.js:
+
+      `npm install @dotcms/analytics`
+
+      Angular:
+
+      `npm install @dotcms/analytics`
+
+      Vue/Nuxt:
+      
+      `npm install @dotcms/analytics`

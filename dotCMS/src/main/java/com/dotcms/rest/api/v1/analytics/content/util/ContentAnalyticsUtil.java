@@ -249,6 +249,25 @@ public class ContentAnalyticsUtil {
     }
 
     /**
+     * Retrieves all app secrets for the Content Analytics app for the given site.
+     *
+     * @param currentSite The site to retrieve secrets for
+     * @return Map of secret keys to Secret objects, or an empty map if not found
+     */
+    public static Map<String, Secret> getAppSecrets(final Host currentSite) {
+        try {
+            return APILocator.getAppsAPI()
+                    .getSecrets(CONTENT_ANALYTICS_APP_KEY, true, currentSite, APILocator.systemUser())
+                    .map(AppSecrets::getSecrets)
+                    .orElse(Collections.emptyMap());
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(ContentAnalyticsUtil.class,
+                    "Error retrieving app secrets for site: " + currentSite.getIdentifier(), e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
      * Retrieves the site key from Content Analytics app secrets for the given site.
      * This method looks up the app secrets and extracts the 'siteKey' value.
      *
