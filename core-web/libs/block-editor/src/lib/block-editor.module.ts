@@ -13,7 +13,6 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { DynamicDialog } from 'primeng/dynamicdialog';
 import { InputText } from 'primeng/inputtext';
-import { Paginator } from 'primeng/paginator';
 import { Textarea } from 'primeng/textarea';
 
 import {
@@ -69,7 +68,6 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotAssetSearchComponent,
         Dialog,
         Textarea,
-        Paginator,
         Card,
         Checkbox,
         InputText,

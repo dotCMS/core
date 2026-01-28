@@ -11,7 +11,6 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { Skeleton } from 'primeng/skeleton';
 import { Textarea } from 'primeng/textarea';
-import { Tooltip } from 'primeng/tooltip';
 
 import { delay, filter } from 'rxjs/operators';
 
@@ -41,7 +40,6 @@ interface AIContentForm {
         Textarea,
         DotMessagePipe,
         Button,
-        Tooltip,
         Skeleton,
         AsyncPipe,
         DotEmptyContainerComponent,

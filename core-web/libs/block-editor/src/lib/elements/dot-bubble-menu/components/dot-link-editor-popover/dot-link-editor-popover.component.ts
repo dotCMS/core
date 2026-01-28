@@ -15,7 +15,6 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoComplete } from 'primeng/autocomplete';
 import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { InputText } from 'primeng/inputtext';
@@ -49,16 +48,7 @@ interface SearchResultItem {
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
     styleUrls: ['./dot-link-editor-popover.component.scss'],
-    imports: [
-        FormsModule,
-        Listbox,
-        AutoComplete,
-        InputText,
-        Skeleton,
-        Button,
-        Checkbox,
-        EditorModalDirective
-    ]
+    imports: [FormsModule, Listbox, InputText, Skeleton, Button, Checkbox, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
     @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
