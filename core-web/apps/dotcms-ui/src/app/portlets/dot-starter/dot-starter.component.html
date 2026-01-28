@@ -1,5 +1,6 @@
 @if (showProfileSelection) {
     <div
+        data-testid="profile-selection"
         style="height: 100%"
         class="flex justify-content-center items-center flex-column main-container">
         <h1 class="text-center heading m-0">Welcome to dotCMS</h1>
@@ -9,7 +10,7 @@
             First, tell us about your role so we can personalize your experience.
         </p>
         <div class="flex justify-content-center">
-            <div class="card" (click)="setUserProfile('developer')">
+            <div data-testid="developer-card" class="card" (click)="setUserProfile('developer')">
                 <img
                     class="check-circle"
                     src="dotAdmin/assets/logos/check-circle.svg"
@@ -24,7 +25,7 @@
                     technical aspects.
                 </p>
             </div>
-            <div class="card mx-4" (click)="setUserProfile('marketer')">
+            <div data-testid="marketer-card" class="card mx-4" (click)="setUserProfile('marketer')">
                 <img class="check-circle" src="dotAdmin/assets/logos/check-circle.svg" />
                 <img class="block mx-auto" src="dotAdmin/assets/logos/marketer.svg" />
                 <h3 style="margin-top: 16px; margin-bottom: 16px" class="text-center card-heading">
@@ -41,9 +42,9 @@
 }
 
 @if (showDeveloperGuide) {
-    <dot-onboarding-dev (eventEmitter)="onUserProfileReset()" />
+    <dot-onboarding-dev data-testid="onboarding-dev" (eventEmitter)="onUserProfileReset()" />
 }
 
 @if (showMarketerGuide) {
-    <dot-onboarding-author (eventEmitter)="onUserProfileReset()" />
+    <dot-onboarding-author data-testid="onboarding-author" (eventEmitter)="onUserProfileReset()" />
 }
