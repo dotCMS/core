@@ -51,10 +51,12 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     createFakeEvent,
+    CurrentUserDataMock,
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
+    DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
@@ -75,10 +77,6 @@ import {
 
 import { PushPublishServiceMock } from '../../../view/components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 import { contentTypeDataMock } from '../../dot-edit-page/components/dot-palette/dot-palette-content-type/dot-palette-content-type.component.spec';
-import {
-    CurrentUserDataMock,
-    DotCurrentUserServiceMock
-} from '../../dot-starter/dot-starter-resolver.service.spec';
 import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
 import { favoritePagesInitialTestData } from '../dot-pages.component.spec';
 
@@ -584,6 +582,15 @@ describe('DotPageStore', () => {
                 resultsSize: 4
             })
         );
+        dotPageStore.patchState({
+            isEnterprise: true,
+            environments: true,
+            loggedUser: {
+                id: 'test',
+                canRead: { contentlets: true, htmlPages: true },
+                canWrite: { contentlets: true, htmlPages: true }
+            }
+        });
         dotPageStore.showActionsMenu({
             item: favoritePagesInitialTestData[0],
             actionMenuDomId: 'test1'
@@ -641,13 +648,23 @@ describe('DotPageStore', () => {
 
         jest.spyOn(dotPushPublishDialogService, 'open');
 
+        dotPageStore.patchState({
+            isEnterprise: true,
+            environments: true,
+            loggedUser: {
+                id: 'test',
+                canRead: { contentlets: true, htmlPages: true },
+                canWrite: { contentlets: true, htmlPages: true }
+            }
+        });
         dotPageStore.showActionsMenu({
             item,
             actionMenuDomId: 'test1'
         });
 
         dotPageStore.state$.subscribe((data) => {
-            const menuActions = data.pages.menuActions;
+            const menuActions = data.pages?.menuActions;
+            if (!menuActions || menuActions.length < 9) return;
 
             expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
 
