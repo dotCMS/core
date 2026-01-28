@@ -84,13 +84,15 @@ describe('DotOnboardingAuthorComponent', () => {
         });
 
         it('should call removeStarterPage when handleVisibility(true)', () => {
-            const dotAccountService = spectator.fixture.debugElement.injector.get(DotAccountService);
+            const dotAccountService =
+                spectator.fixture.debugElement.injector.get(DotAccountService);
             spectator.component.handleVisibility(true);
             expect(dotAccountService.removeStarterPage).toHaveBeenCalledTimes(1);
         });
 
         it('should call addStarterPage when handleVisibility(false)', () => {
-            const dotAccountService = spectator.fixture.debugElement.injector.get(DotAccountService);
+            const dotAccountService =
+                spectator.fixture.debugElement.injector.get(DotAccountService);
             spectator.component.handleVisibility(false);
             expect(dotAccountService.addStarterPage).toHaveBeenCalledTimes(1);
         });
