@@ -7,7 +7,8 @@ import { DotStarterComponent } from './dot-starter.component';
 
 @Component({
     selector: 'dot-onboarding-dev',
-    template: '<button data-testid="reset-profile" (click)="eventEmitter.emit(\'reset-user-profile\')">Reset</button>',
+    template:
+        '<button data-testid="reset-profile" (click)="eventEmitter.emit(\'reset-user-profile\')">Reset</button>',
     standalone: true
 })
 class StubOnboardingDev {
@@ -16,7 +17,8 @@ class StubOnboardingDev {
 
 @Component({
     selector: 'dot-onboarding-author',
-    template: '<button data-testid="reset-profile" (click)="eventEmitter.emit(\'reset-user-profile\')">Reset</button>',
+    template:
+        '<button data-testid="reset-profile" (click)="eventEmitter.emit(\'reset-user-profile\')">Reset</button>',
     standalone: true
 })
 class StubOnboardingAuthor {
@@ -29,10 +31,7 @@ describe('DotStarterComponent', () => {
     const createComponent = createComponentFactory({
         component: DotStarterComponent,
         overrideComponents: [
-            [
-                DotStarterComponent,
-                { set: { imports: [StubOnboardingDev, StubOnboardingAuthor] } }
-            ]
+            [DotStarterComponent, { set: { imports: [StubOnboardingDev, StubOnboardingAuthor] } }]
         ],
         providers: [provideRouter([])]
     });
@@ -53,8 +52,12 @@ describe('DotStarterComponent', () => {
             expect(spectator.query('h1.heading')?.textContent?.trim()).toBe('Welcome to dotCMS');
             expect(spectator.query('[data-testid="developer-card"]')).toBeTruthy();
             expect(spectator.query('[data-testid="marketer-card"]')).toBeTruthy();
-            expect(spectator.query('[data-testid="developer-card"] .card-heading')?.textContent?.trim()).toBe('Developer');
-            expect(spectator.query('[data-testid="marketer-card"] .card-heading')?.textContent?.trim()).toBe('Marketer');
+            expect(
+                spectator.query('[data-testid="developer-card"] .card-heading')?.textContent?.trim()
+            ).toBe('Developer');
+            expect(
+                spectator.query('[data-testid="marketer-card"] .card-heading')?.textContent?.trim()
+            ).toBe('Marketer');
             expect(spectator.query('dot-onboarding-dev')).toBeFalsy();
             expect(spectator.query('dot-onboarding-author')).toBeFalsy();
         });
