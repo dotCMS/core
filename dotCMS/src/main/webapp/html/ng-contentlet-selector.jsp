@@ -233,6 +233,14 @@
     <script type="text/javascript" src="/html/js/dojo/custom-build/dojo/dojo.js"></script>
     <script type="text/javascript" src="/html/js/dojo/custom-build/build/build.js"></script>
     <script type="text/javascript" src="/html/common/javascript.jsp"></script>
+    <!-- DWR Cookie Security Configuration -->
+    <script type="text/javascript">
+        window.dwrCookieSecurityConfig = {
+            secure: <%= Config.getBooleanProperty("DWRSESSIONID_SECURE", false) %>,
+            sameSite: '<%= Config.getStringProperty("DWRSESSIONID_SAMESITE", "") %>'
+        };
+    </script>
+    <script type="text/javascript" src="/html/js/dwr-cookie-security.js"></script>
     <script type="text/javascript" src="/dwr/engine.js"></script>
     <script type="text/javascript" src="/dwr/util.js"></script>
     <script type="text/javascript" src="/dwr/interface/LanguageAjax.js"></script>
