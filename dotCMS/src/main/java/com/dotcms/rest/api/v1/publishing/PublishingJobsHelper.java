@@ -2,10 +2,15 @@ package com.dotcms.rest.api.v1.publishing;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
+import com.dotcms.publisher.business.EndpointDetail;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublishAuditUtil;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotmarketing.business.APILocator;
@@ -32,9 +37,24 @@ public class PublishingJobsHelper {
      */
     public static final int ASSET_PREVIEW_LIMIT = 3;
 
+    /**
+     * Set of status codes that indicate a failure state.
+     * Stack traces are only included for these statuses.
+     */
+    private static final Set<Integer> FAILURE_STATUS_CODES = Set.of(
+            Status.FAILED_TO_SENT.getCode(),
+            Status.FAILED_TO_PUBLISH.getCode(),
+            Status.FAILED_TO_SEND_TO_ALL_GROUPS.getCode(),
+            Status.FAILED_TO_SEND_TO_SOME_GROUPS.getCode(),
+            Status.FAILED_TO_BUNDLE.getCode(),
+            Status.FAILED_INTEGRITY_CHECK.getCode()
+    );
+
     private final BundleAPI bundleAPI;
     private final PublisherAPI publisherAPI;
     private final PublishAuditUtil publishAuditUtil;
+    private final EnvironmentAPI environmentAPI;
+    private final PublishingEndPointAPI publishingEndPointAPI;
 
     /**
      * Default constructor using APILocator for dependencies.
@@ -42,23 +62,31 @@ public class PublishingJobsHelper {
     public PublishingJobsHelper() {
         this(APILocator.getBundleAPI(),
              APILocator.getPublisherAPI(),
-             PublishAuditUtil.getInstance());
+             PublishAuditUtil.getInstance(),
+             APILocator.getEnvironmentAPI(),
+             APILocator.getPublisherEndPointAPI());
     }
 
     /**
      * Constructor for testing with dependency injection.
      *
-     * @param bundleAPI        Bundle API for retrieving bundle metadata
-     * @param publisherAPI     Publisher API for filter lookup
-     * @param publishAuditUtil Utility for asset title resolution
+     * @param bundleAPI              Bundle API for retrieving bundle metadata
+     * @param publisherAPI           Publisher API for filter lookup
+     * @param publishAuditUtil       Utility for asset title resolution
+     * @param environmentAPI         Environment API for environment lookup
+     * @param publishingEndPointAPI  Publishing endpoint API for endpoint lookup
      */
     @VisibleForTesting
     public PublishingJobsHelper(final BundleAPI bundleAPI,
                                 final PublisherAPI publisherAPI,
-                                final PublishAuditUtil publishAuditUtil) {
+                                final PublishAuditUtil publishAuditUtil,
+                                final EnvironmentAPI environmentAPI,
+                                final PublishingEndPointAPI publishingEndPointAPI) {
         this.bundleAPI = bundleAPI;
         this.publisherAPI = publisherAPI;
         this.publishAuditUtil = publishAuditUtil;
+        this.environmentAPI = environmentAPI;
+        this.publishingEndPointAPI = publishingEndPointAPI;
     }
 
     /**
@@ -231,6 +259,160 @@ public class PublishingJobsHelper {
         } catch (IllegalArgumentException e) {
             Logger.warn(this, "Invalid status value: " + statusName);
             return Optional.empty();
+        }
+    }
+
+    // =========================================================================
+    // DETAIL VIEW METHODS - For GET /v1/publishing/{bundleId}
+    // =========================================================================
+
+    /**
+     * Transforms a PublishAuditStatus into a detailed PublishingJobDetailView
+     * with full environment/endpoint breakdown.
+     *
+     * @param auditStatus The raw audit status to transform
+     * @return A fully populated PublishingJobDetailView
+     */
+    public PublishingJobDetailView toPublishingJobDetailView(final PublishAuditStatus auditStatus) {
+        final String bundleId = auditStatus.getBundleId();
+        final Bundle bundle = getBundleSafely(bundleId);
+        final PublishAuditHistory history = auditStatus.getStatusPojo();
+
+        return PublishingJobDetailView.builder()
+                .bundleId(bundleId)
+                .bundleName(bundle != null ? bundle.getName() : null)
+                .status(auditStatus.getStatus())
+                .filterName(resolveFilterName(bundle))
+                .assetCount(auditStatus.getTotalNumberOfAssets())
+                .environments(buildEnvironmentDetails(history))
+                .timestamps(buildTimestamps(auditStatus, history))
+                .numTries(history != null ? history.getNumTries() : 0)
+                .build();
+    }
+
+    /**
+     * Builds the list of environment details with their endpoints from the audit history.
+     *
+     * @param history The audit history containing endpoint map
+     * @return List of environment detail views
+     */
+    private List<EnvironmentDetailView> buildEnvironmentDetails(final PublishAuditHistory history) {
+        if (history == null || !UtilMethods.isSet(history.getEndpointsMap())) {
+            return List.of();
+        }
+
+        final List<EnvironmentDetailView> environments = new ArrayList<>();
+
+        for (final Map.Entry<String, Map<String, EndpointDetail>> groupEntry :
+                history.getEndpointsMap().entrySet()) {
+
+            final String environmentId = groupEntry.getKey();
+            final Environment environment = getEnvironmentSafely(environmentId);
+
+            final List<EndpointDetailView> endpoints = groupEntry.getValue().entrySet().stream()
+                    .map(endpointEntry -> buildEndpointDetailView(
+                            endpointEntry.getKey(),
+                            endpointEntry.getValue()))
+                    .collect(Collectors.toList());
+
+            environments.add(EnvironmentDetailView.builder()
+                    .id(environmentId)
+                    .name(environment != null ? environment.getName() : environmentId)
+                    .endpoints(endpoints)
+                    .build());
+        }
+
+        return environments;
+    }
+
+    /**
+     * Builds the endpoint detail view from an endpoint ID and its status detail.
+     *
+     * @param endpointId The endpoint identifier
+     * @param detail     The endpoint status detail
+     * @return Endpoint detail view
+     */
+    private EndpointDetailView buildEndpointDetailView(final String endpointId,
+                                                       final EndpointDetail detail) {
+        final PublishingEndPoint endpoint = getEndpointSafely(endpointId);
+        final Status statusEnum = detail != null
+                ? PublishAuditStatus.getStatusObjectByCode(detail.getStatus())
+                : null;
+
+        return EndpointDetailView.builder()
+                .id(endpointId)
+                .serverName(endpoint != null && endpoint.getServerName() != null
+                        ? endpoint.getServerName().toString()
+                        : endpointId)
+                .address(endpoint != null ? endpoint.getAddress() : "")
+                .port(endpoint != null ? endpoint.getPort() : "")
+                .protocol(endpoint != null ? endpoint.getProtocol() : "")
+                .status(statusEnum)
+                .statusMessage(detail != null ? detail.getInfo() : null)
+                .stackTrace(shouldIncludeStackTrace(detail) ? detail.getStackTrace() : null)
+                .build();
+    }
+
+    /**
+     * Determines whether to include the stack trace in the response.
+     * Stack traces are only included for failure statuses.
+     *
+     * @param detail The endpoint detail
+     * @return true if stack trace should be included
+     */
+    private boolean shouldIncludeStackTrace(final EndpointDetail detail) {
+        if (detail == null || !UtilMethods.isSet(detail.getStackTrace())) {
+            return false;
+        }
+        return FAILURE_STATUS_CODES.contains(detail.getStatus());
+    }
+
+    /**
+     * Builds the timestamps view from audit status and history.
+     *
+     * @param auditStatus The audit status
+     * @param history     The audit history
+     * @return Timestamps view
+     */
+    private TimestampsView buildTimestamps(final PublishAuditStatus auditStatus,
+                                           final PublishAuditHistory history) {
+        return TimestampsView.builder()
+                .bundleStart(history != null ? toInstant(history.getBundleStart()) : null)
+                .bundleEnd(history != null ? toInstant(history.getBundleEnd()) : null)
+                .publishStart(history != null ? toInstant(history.getPublishStart()) : null)
+                .publishEnd(history != null ? toInstant(history.getPublishEnd()) : null)
+                .createDate(toInstant(auditStatus.getCreateDate()))
+                .statusUpdated(toInstant(auditStatus.getStatusUpdated()))
+                .build();
+    }
+
+    /**
+     * Safely retrieves an environment by ID, returning null if not found or on error.
+     *
+     * @param environmentId The environment ID
+     * @return Environment or null
+     */
+    private Environment getEnvironmentSafely(final String environmentId) {
+        try {
+            return environmentAPI.findEnvironmentById(environmentId);
+        } catch (Exception e) {
+            Logger.debug(this, "Unable to get environment: " + environmentId, e);
+            return null;
+        }
+    }
+
+    /**
+     * Safely retrieves a publishing endpoint by ID, returning null if not found or on error.
+     *
+     * @param endpointId The endpoint ID
+     * @return PublishingEndPoint or null
+     */
+    private PublishingEndPoint getEndpointSafely(final String endpointId) {
+        try {
+            return publishingEndPointAPI.findEndPointById(endpointId);
+        } catch (Exception e) {
+            Logger.debug(this, "Unable to get endpoint: " + endpointId, e);
+            return null;
         }
     }
 }
