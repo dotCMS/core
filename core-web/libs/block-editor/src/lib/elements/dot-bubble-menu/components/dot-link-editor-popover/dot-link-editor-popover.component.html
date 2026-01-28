@@ -36,7 +36,7 @@
             [options]="searchResults() || []"
             (onChange)="selectLink($event.value)"
             [listStyle]="{ height: '15.625rem' }">
-            <ng-template let-item pTemplate="item">
+            <ng-template #item let-item>
                 <div class="listbox-item">
                     @if (item.hasTitleImage) {
                         <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
@@ -50,7 +50,7 @@
                 </div>
             </ng-template>
 
-            <ng-template pTemplate="empty">
+            <ng-template #empty pTemplate="empty">
                 <div class="empty-message">
                     <span class="empty-message__text">
                         No results for
