@@ -4,34 +4,48 @@
 @let referencesPageCount = data.referencesPageCount;
 @let loading = data.loading;
 
-<div class="content-aside__information">
-    <div class="content-aside__status">
-        @if (contentlet | contentletStatus; as status) {
-            <p-chip [styleClass]="'p-chip-sm ' + status.classes" [label]="status.label" />
+<div class="flex flex-col gap-2 w-full">
+    <div class="w-full flex justify-between items-center">
+        @if (contentlet | contentletStatusTag; as status) {
+            <p-tag [severity]="status.severity" [value]="status.label" />
         }
         @if (contentlet?.inode) {
-            <a data-testid="json-link" [href]="$jsonUrl()" target="_blank" rel="noopener">json</a>
+            <a
+                data-testid="json-link"
+                class="text-sm text-[var(--gray-700)]"
+                [href]="$jsonUrl()"
+                target="_blank"
+                rel="noopener">
+                json
+            </a>
         }
     </div>
-    <div class="content-aside__metadata">
+    <div class="flex flex-col gap-2 w-full">
         @if (contentType) {
             <a
                 data-testid="content-type-link"
                 [pTooltip]="'edit.content.sidebar.information.go.to.content.type' | dm"
                 tooltipPosition="bottom"
-                class="sidebar-card sidebar-card__content-type"
+                class="no-underline! p-2 flex flex-col gap-0 bg-white rounded-lg w-full min-h-[60px] transition-colors hover:bg-[var(--color-palette-primary-100)]"
                 [routerLink]="'/content-types-angular/edit/' + contentType.variable"
                 target="_blank">
-                <span class="sidebar-card__title">{{ 'Content-Type' | dm }}</span>
-                <span class="sidebar-card__subtitle">{{ contentType.name }}</span>
+                <span class="font-bold text-[var(--gray-900)] leading-relaxed">
+                    {{ 'Content-Type' | dm }}
+                </span>
+                <span class="text-sm text-[var(--gray-800)] leading-relaxed">
+                    {{ contentType.name }}
+                </span>
             </a>
         }
 
-        <div class="sidebar-card sidebar-card__row">
-            <div class="sidebar-card__row-item">
-                <span class="sidebar-card__title">{{ 'Created' | dm }}</span>
+        <div class="p-0 flex flex-row flex-nowrap w-full bg-white rounded-lg">
+            <div
+                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-[var(--gray-200)] last:border-r-0">
+                <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed mb-0">
+                    {{ 'Created' | dm }}
+                </span>
                 <span
-                    class="sidebar-card__subtitle"
+                    class="text-sm text-[var(--gray-800)] leading-relaxed"
                     [pTooltip]="contentlet?.ownerUserName"
                     tooltipPosition="bottom">
                     {{
@@ -43,7 +57,7 @@
                 </span>
                 @if (contentlet?.creationDate) {
                     <span
-                        class="sidebar-card__date"
+                        class="text-xs text-[var(--gray-700)] leading-relaxed"
                         data-testid="created-date"
                         [pTooltip]="contentlet?.creationDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -52,17 +66,20 @@
                 }
             </div>
 
-            <div class="sidebar-card__row-item">
-                <span class="sidebar-card__title">{{ 'Modified' | dm }}</span>
+            <div
+                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-[var(--gray-200)] last:border-r-0">
+                <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed mb-0">
+                    {{ 'Modified' | dm }}
+                </span>
                 <span
-                    class="sidebar-card__subtitle"
+                    class="text-sm text-[var(--gray-800)] leading-relaxed"
                     [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.modUserName">
                     {{ contentlet?.modDate ? (contentlet?.modUserName | dotNameFormat) : '-' }}
                 </span>
                 @if (contentlet?.modDate) {
                     <span
-                        class="sidebar-card__date"
+                        class="text-xs text-[var(--gray-700)] leading-relaxed"
                         data-testid="modified-date"
                         [pTooltip]="contentlet?.modDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -71,10 +88,13 @@
                 }
             </div>
 
-            <div class="sidebar-card__row-item">
-                <span class="sidebar-card__title">{{ 'Published' | dm }}</span>
+            <div
+                class="flex flex-col flex-1 relative p-2 min-h-[76px] border-r border-[var(--gray-200)] last:border-r-0">
+                <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed mb-0">
+                    {{ 'Published' | dm }}
+                </span>
                 <span
-                    class="sidebar-card__subtitle"
+                    class="text-sm text-[var(--gray-800)] leading-relaxed"
                     [tooltipPosition]="'bottom'"
                     [pTooltip]="contentlet?.publishUserName">
                     {{
@@ -85,7 +105,7 @@
                 </span>
                 @if (contentlet?.publishDate) {
                     <span
-                        class="sidebar-card__date"
+                        class="text-xs text-[var(--gray-700)] leading-relaxed"
                         data-testid="published-date"
                         [pTooltip]="contentlet?.publishDate | date: 'MM/dd/yyyy HH:mm:ss'"
                         tooltipPosition="bottom">
@@ -97,12 +117,14 @@
     </div>
 </div>
 
-<div class="sidebar-references sidebar-card">
-    <span class="sidebar-card__title">{{ 'References' | dm }}</span>
+<div class="flex w-full min-h-[60px] p-2 flex flex-col gap-0 bg-white rounded-lg">
+    <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed">
+        {{ 'References' | dm }}
+    </span>
     @if (loading) {
-        <p-skeleton height="14px" />
+        <p-skeleton height="14px" class="min-h-[14px]" />
     } @else {
-        <span class="sidebar-card__subtitle" data-testid="references-count">
+        <span class="text-sm text-[var(--gray-800)] leading-relaxed" data-testid="references-count">
             @if (referencesPageCount && referencesPageCount !== '0') {
                 {{
                     'edit.content.sidebar.information.references-with.pages.tooltip'

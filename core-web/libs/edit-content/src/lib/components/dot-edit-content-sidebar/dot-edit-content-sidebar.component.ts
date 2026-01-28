@@ -26,8 +26,8 @@ import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-co
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
-    DotWorkflowState,
-    DotHistoryTimelineItemAction
+    DotHistoryTimelineItemAction,
+    DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
@@ -38,8 +38,6 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 @Component({
     selector: 'dot-edit-content-sidebar',
     templateUrl: './dot-edit-content-sidebar.component.html',
-    styleUrls: ['./dot-edit-content-sidebar.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [ConfirmationService],
     imports: [
         DotMessagePipe,
@@ -56,7 +54,12 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
         DotEditContentSidebarHistoryComponent
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        // bg-[var(--gray-100)]
+        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)]  shadow-md relative min-w-0 max-w-full overflow-x-hidden'
+    }
 })
 export class DotEditContentSidebarComponent {
     readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
@@ -139,12 +142,14 @@ export class DotEditContentSidebarComponent {
 
     /**
      * Handles the active index change event from the sidebar tabs.
-     * @param $event - The event object containing the active tab value.
-     * @param $event.value - The index of the active tab
+     * @param value - The index of the active tab
      */
-    onActiveIndexChange($event: { value: number }) {
-        const { value } = $event;
-        this.$store.setActiveSidebarTab(value);
+    onActiveIndexChange(value: number | string) {
+        const numberValue = Number(value);
+        if (isNaN(numberValue)) {
+            return;
+        }
+        this.$store.setActiveSidebarTab(numberValue);
     }
 
     /**
@@ -199,4 +204,28 @@ export class DotEditContentSidebarComponent {
             this.$store.deletePushPublishHistory(identifier);
         }
     }
+
+    /**
+     * Tabs passthrough (pt) configuration for PrimeNG v21 styling.
+     * Allows styling PrimeNG's internal elements with Tailwind classes.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full flex flex-col' },
+        navContainer: {
+            class: 'sticky top-0 z-[2] bg-[var(--gray-100)] p-0 border-b border-[var(--gray-300)]'
+        },
+        nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
+        navContent: { class: 'flex items-center w-full gap-3 overflow-visible justify-between' },
+        panels: {
+            class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
+        },
+        panel: { class: 'h-full' }
+    };
+
+    /**
+     * Button passthrough (pt) configuration for the toggle sidebar button.
+     */
+    readonly toggleButtonPt = {
+        root: { class: 'text-[var(--primary-color)]' }
+    };
 }

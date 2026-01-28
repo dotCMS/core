@@ -203,6 +203,11 @@ export class IframeFieldComponent implements OnDestroy {
             return;
         }
 
+        // Ignore messages that don't have the expected structure
+        if (!data || typeof data !== 'object' || !('type' in data)) {
+            return;
+        }
+
         switch (data.type) {
             case 'toggleFullscreen':
                 this.$isFullscreen.update((value) => !value);

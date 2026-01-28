@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -89,6 +90,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     templateUrl: './dot-edit-content-form.component.html',
     styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
+        CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
@@ -586,12 +588,15 @@ export class DotEditContentFormComponent implements OnInit {
      * This method is triggered by the PrimeNG Tabs component when the active tab changes.
      * It synchronizes the UI state with the store to maintain tab selection across renders.
      *
-     * @param {object} event - The change event containing the new active tab value
-     * @param {number} event.value - The index of the active tab
+     * @param value - The index of the active tab
      * @memberof DotEditContentFormComponent
      */
-    onActiveIndexChange(event: { value: number }) {
-        this.$store.setActiveTab(event.value);
+    onActiveIndexChange(value: number | string) {
+        const numberValue = Number(value);
+        if (isNaN(numberValue)) {
+            return;
+        }
+        this.$store.setActiveTab(numberValue);
     }
 
     /**
