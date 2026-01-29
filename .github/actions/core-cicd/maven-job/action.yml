@@ -238,6 +238,21 @@ runs:
         name: docker-build-context
         path: dotCMS/target/docker-build.tar
 
+    - id: build-docker-image-from-archive
+      name: Build Docker Image from Archive
+      if: ${{ inputs.generate-docker == 'true' }}
+      shell: bash
+      run: |
+        # Extract the build context from the tar archive
+        mkdir -p /tmp/docker-context
+        tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context
+
+        # Build the Docker image from the extracted context
+        docker build -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context
+
+        # Verify the image was created
+        docker images dotcms/dotcms-test:${{ inputs.version }}
+
     - id: save-docker-image
       name: Save Docker Image to Tar File
       if: ${{ inputs.generate-docker == 'true' }}
