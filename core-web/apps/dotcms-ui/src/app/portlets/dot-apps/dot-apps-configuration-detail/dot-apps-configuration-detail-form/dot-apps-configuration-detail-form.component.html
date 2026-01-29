@@ -18,6 +18,18 @@
         @for (field of $formFields(); track field) {
             <div [attr.data-testid]="field.name" class="field">
                 @switch (field.type) {
+                    @case ('HEADING') {
+                        <div class="dot-apps-configuration-detail__section-header">
+                            <h3>{{ field.label }}</h3>
+                        </div>
+                    }
+                    @case ('INFO') {
+                        <div class="dot-apps-configuration-detail__info-box">
+                            <markdown [externalLinks]="true">
+                                {{ field.hint || field.label }}
+                            </markdown>
+                        </div>
+                    }
                     @case ('BUTTON') {
                         <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
                         <div>
@@ -57,19 +69,24 @@
                             [field]="field" />
                     }
                     @case ('BOOL') {
-                        <p-checkbox
-                            [ngClass]="{
-                                required: field.required
-                            }"
-                            [id]="field.name"
-                            [label]="field.label"
-                            [formControlName]="field.name"
-                            [value]="field.value"
-                            binary="true" />
-                        <ng-container *ngTemplateOutlet="warningIcon; context: { field: field }" />
-                        <span class="p-field-hint">
-                            <markdown>{{ field.hint }}</markdown>
-                        </span>
+                        <div class="dot-apps-configuration-detail__bool-card">
+                            <p-checkbox
+                                [ngClass]="{
+                                    required: field.required
+                                }"
+                                [id]="field.name"
+                                [label]="field.label"
+                                [formControlName]="field.name"
+                                [value]="field.value"
+                                binary="true" />
+                            <ng-container
+                                *ngTemplateOutlet="warningIcon; context: { field: field }" />
+                            @if (field.hint) {
+                                <span class="p-field-hint">
+                                    <markdown [externalLinks]="true">{{ field.hint }}</markdown>
+                                </span>
+                            }
+                        </div>
                     }
                     @case ('SELECT') {
                         <ng-container *ngTemplateOutlet="labelField; context: { field: field }" />
@@ -82,7 +99,7 @@
                             }"
                             [options]="field.options" />
                         <span class="p-field-hint">
-                            <markdown>{{ field.hint }}</markdown>
+                            <markdown [externalLinks]="true">{{ field.hint }}</markdown>
                         </span>
                     }
                 }

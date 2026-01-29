@@ -22,8 +22,10 @@ import {
     DotCMSEventPageData,
     DotCMSEventUtmData,
     EnrichedAnalyticsPayload,
+    ImpressionConfig,
     JsonObject,
-    JsonValue
+    JsonValue,
+    QueueConfig
 } from '../models';
 
 // Export activity tracking functions from identity plugin
@@ -116,8 +118,9 @@ const safeLocalStorage = {
     setItem: (key: string, value: string): void => {
         try {
             localStorage.setItem(key, value);
-        } catch {
+        } catch (e) {
             console.warn(`DotCMS Analytics [Core]: Could not save ${key} to localStorage`);
+            throw e;
         }
     }
 };
@@ -136,8 +139,16 @@ export const safeSessionStorage = {
     setItem: (key: string, value: string): void => {
         try {
             sessionStorage.setItem(key, value);
-        } catch {
+        } catch (e) {
             console.warn(`DotCMS Analytics [Core]: Could not save ${key} to sessionStorage`);
+            throw e;
+        }
+    },
+    removeItem: (key: string): void => {
+        try {
+            sessionStorage.removeItem(key);
+        } catch {
+            console.warn(`DotCMS Analytics [Core]: Could not remove ${key} from sessionStorage`);
         }
     }
 };
@@ -152,7 +163,11 @@ export const getUserId = (): string => {
 
     if (!userId) {
         userId = generateSecureId('user');
-        safeLocalStorage.setItem(USER_ID_KEY, userId);
+        try {
+            safeLocalStorage.setItem(USER_ID_KEY, userId);
+        } catch {
+            // Ignore storage errors for user ID (ephemeral user)
+        }
     }
 
     return userId;
@@ -283,15 +298,62 @@ export const getAnalyticsConfig = (): DotCMSAnalyticsConfig => {
     ) as HTMLScriptElement;
 
     if (script) {
+        // Parse advanced configuration from data-analytics-config (JSON)
+        const advancedConfigAttr = script.getAttribute('data-analytics-config');
+        let advancedConfig: Partial<DotCMSAnalyticsConfig> = {};
+
+        if (advancedConfigAttr) {
+            try {
+                // 1. Try native JSON parse first (strict and correct)
+                const parsedConfig = JSON.parse(advancedConfigAttr);
+                advancedConfig = sanitizeAdvancedConfig(parsedConfig);
+            } catch {
+                try {
+                    // 2. Targeted fallback for VTL-style single-quoted JSON {'key': 'value'}
+                    // Only replace quotes around keys and values, preserving apostrophes in content
+                    const jsonStr = advancedConfigAttr
+                        .replace(/([{,]\s*)'(.+?)'(\s*:)/g, '$1"$2"$3') // Keys
+                        .replace(/(:\s*)'(.+?)'(\s*[,}\]])/g, '$1"$2"$3'); // Values (handles objects and arrays)
+
+                    const parsedConfig = JSON.parse(jsonStr);
+                    advancedConfig = sanitizeAdvancedConfig(parsedConfig);
+                } catch (e) {
+                    // eslint-disable-next-line no-console
+                    console.error('Failed to parse data-analytics-config JSON:', e);
+                }
+            }
+        }
+
+        const serverAttr = script.getAttribute('data-analytics-server');
+        const debugAttr = script.getAttribute('data-analytics-debug');
+        const autoPageViewAttr = script.getAttribute('data-analytics-auto-page-view');
+        const siteAuthAttr = script.getAttribute('data-analytics-auth');
+        const impressionsAttr = script.getAttribute('data-analytics-impressions');
+        const clicksAttr = script.getAttribute('data-analytics-clicks');
+
         return {
-            server: script.getAttribute('data-analytics-server') || window.location.origin,
-            debug: script.getAttribute('data-analytics-debug') === 'true',
-            autoPageView: script.getAttribute('data-analytics-auto-page-view') === 'true',
-            siteAuth: script.getAttribute('data-analytics-auth') || ''
+            // 1. Default fallback values
+            server: window.location.origin,
+            debug: false,
+            autoPageView: false,
+            siteAuth: '',
+
+            // 2. Advanced config (JSON)
+            ...advancedConfig,
+
+            // 3. Explicit attributes (highest priority)
+            ...(serverAttr && { server: serverAttr }),
+            ...(debugAttr && { debug: debugAttr === 'true' }),
+            ...(autoPageViewAttr && { autoPageView: autoPageViewAttr === 'true' }),
+            ...(siteAuthAttr && { siteAuth: siteAuthAttr }),
+            ...(impressionsAttr && { impressions: impressionsAttr === 'true' }),
+            ...(clicksAttr && { clicks: clicksAttr === 'true' })
         };
     }
 
     // No script found, return defaults with current domain as server
+    // eslint-disable-next-line no-console
+    console.warn('[DotCMS Analytics] Script wrapper not found - verify installation');
     return {
         server: window.location.origin,
         debug: false,
@@ -725,12 +787,28 @@ export const createContentletObserver = (
         }
     });
 
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: false,
-        characterData: false
-    });
+    // Handle case where document.body might not be available yet if script is in <head>
+    const target = document.body || document.documentElement;
+    if (target) {
+        observer.observe(target, {
+            childList: true,
+            subtree: true,
+            attributes: false,
+            characterData: false
+        });
+    } else {
+        // Fallback: wait for DOMContentLoaded if everything is null (rare)
+        window.addEventListener('DOMContentLoaded', () => {
+            if (document.body) {
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: false,
+                    characterData: false
+                });
+            }
+        });
+    }
 
     return observer;
 };
@@ -780,3 +858,87 @@ export const getEnhancedTrackingPlugins = (
         config.clicks && clickPlugin(config)
     ].filter(Boolean) as AnalyticsPlugin[];
 };
+
+/**
+ * Sanitizes the advanced configuration object to ensure only valid keys and types are allowed.
+ * Prevents pollution from unknown properties.
+ * @param config - The parsed JSON configuration object
+ * @returns A sanitized Partial<DotCMSAnalyticsConfig>
+ */
+function sanitizeAdvancedConfig(config: unknown): Partial<DotCMSAnalyticsConfig> {
+    if (typeof config !== 'object' || config === null) {
+        return {};
+    }
+
+    const cleanConfig: Partial<DotCMSAnalyticsConfig> = {};
+    const c = config as Partial<DotCMSAnalyticsConfig>;
+
+    // Core validation
+    if (typeof c.server === 'string' && c.server.trim().length > 0) {
+        cleanConfig.server = c.server.trim();
+    }
+    if (typeof c.siteAuth === 'string' && c.siteAuth.trim().length > 0) {
+        cleanConfig.siteAuth = c.siteAuth.trim();
+    }
+
+    // Queue validation
+    if (c.queue !== undefined) {
+        if (typeof c.queue === 'boolean') {
+            cleanConfig.queue = c.queue;
+        } else if (typeof c.queue === 'object' && c.queue !== null) {
+            const cleanQueue: QueueConfig = {};
+            if (typeof c.queue.eventBatchSize === 'number') {
+                cleanQueue.eventBatchSize = c.queue.eventBatchSize;
+            }
+            if (typeof c.queue.flushInterval === 'number') {
+                cleanQueue.flushInterval = c.queue.flushInterval;
+            }
+            // Only add if we found valid properties
+            if (Object.keys(cleanQueue).length > 0) {
+                cleanConfig.queue = cleanQueue;
+            }
+        }
+    }
+
+    // Impressions validation
+    if (c.impressions !== undefined) {
+        if (typeof c.impressions === 'boolean') {
+            cleanConfig.impressions = c.impressions;
+        } else if (typeof c.impressions === 'object' && c.impressions !== null) {
+            const cleanImpressions: ImpressionConfig = {};
+            if (typeof c.impressions.visibilityThreshold === 'number') {
+                cleanImpressions.visibilityThreshold = c.impressions.visibilityThreshold;
+            }
+            if (typeof c.impressions.dwellMs === 'number') {
+                cleanImpressions.dwellMs = c.impressions.dwellMs;
+            }
+            if (typeof c.impressions.maxNodes === 'number') {
+                cleanImpressions.maxNodes = c.impressions.maxNodes;
+            }
+            if (typeof c.impressions.throttleMs === 'number') {
+                cleanImpressions.throttleMs = c.impressions.throttleMs;
+            }
+            if (Object.keys(cleanImpressions).length > 0) {
+                cleanConfig.impressions = cleanImpressions;
+            }
+        }
+    }
+
+    // Simple booleans and other scalar types
+    if (typeof c.clicks === 'boolean') {
+        cleanConfig.clicks = c.clicks;
+    }
+    if (typeof c.autoPageView === 'boolean') {
+        cleanConfig.autoPageView = c.autoPageView;
+    }
+    if (typeof c.debug === 'boolean') {
+        cleanConfig.debug = c.debug;
+    }
+    // LogLevel validation
+    const allowedLogLevels = ['debug', 'info', 'warn', 'error'];
+    if (typeof c.logLevel === 'string' && allowedLogLevels.includes(c.logLevel)) {
+        cleanConfig.logLevel = c.logLevel as LogLevel;
+    }
+
+    return cleanConfig;
+}
