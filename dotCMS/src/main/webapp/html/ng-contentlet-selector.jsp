@@ -1,6 +1,7 @@
 <%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotcms.contenttype.transform.contenttype.StructureTransformer"%>
 <%@page import="com.dotcms.contenttype.model.type.BaseContentType"%>
+<%@ page import="com.dotmarketing.util.Config"%>
 
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
