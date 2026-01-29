@@ -61,7 +61,6 @@
                     }
                 ],
                 "styles": [
-                    "node_modules/prismjs/themes/prism-okaidia.css",
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeflex/primeflex.css",
