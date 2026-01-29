@@ -1,0 +1,27 @@
+---
+description: "Where to update documentation. Use when editing docs/, CLAUDE.md, .md/.mdc files, or when adding patterns that should be documented."
+globs: ["**/*.md", "**/*.mdc", "CLAUDE.md", "docs/**/*"]
+alwaysApply: false
+---
+
+# Documentation Updates
+
+## Single source of truth
+- **CLAUDE.md** – navigation and quick reference only.
+- **`/docs/`** – full patterns by domain (backend, frontend, testing, etc.).
+- **`.cursor/rules/`** – short reminders and globs; link to `/docs/`, don’t duplicate.
+
+## Where to update
+- **Java/Config/REST/DB** → `docs/backend/*.md`
+- **Angular/tests/styles** → `docs/frontend/*.md`
+- **Build/CI/Docker** → `docs/core/`, `docs/backend/MAVEN_BUILD_SYSTEM.md`, `docs/infrastructure/`
+- **Testing** → `docs/frontend/TESTING_FRONTEND.md`, `docs/testing/*.md`
+
+## When editing code
+- New Config usage → document in CONFIGURATION_PATTERNS.md.
+- New REST/API pattern → REST_API_PATTERNS.md.
+- New Angular/testing pattern → ANGULAR_STANDARDS.md or TESTING_FRONTEND.md.
+- Keep rules under ~50 lines; put details in `/docs/` and reference with `@docs/...`.
+
+## Quality
+- Use ✅/❌ examples. Cross-reference instead of duplicating. Same patterns for Claude and Cursor.
