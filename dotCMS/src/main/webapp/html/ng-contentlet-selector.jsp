@@ -23,6 +23,7 @@
 <%@ page import="com.dotmarketing.util.HostUtil" %>
 <%@ page import="com.dotmarketing.util.Constants" %>
 <%@ page import="com.dotcms.contenttype.exception.NotFoundInDbException" %>
+<%@ page import="com.dotmarketing.util.Config"%>
 
 <%
     String containerIdentifier = request.getParameter("container_id");
