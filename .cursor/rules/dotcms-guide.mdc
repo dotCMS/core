@@ -8,6 +8,22 @@ alwaysApply: true
 ## Primary Reference
 **CLAUDE.md** – main roadmap and quick patterns for both Claude and Cursor.
 
+## Project Structure
+
+```
+core/
+├── dotCMS/                    # Main backend Java code
+│   └── src/main/java/com/    # Java source files
+├── core-web/                  # Frontend (Angular/Nx monorepo)
+│   ├── apps/dotcms-ui/       # Main admin UI
+│   └── libs/                 # Shared libraries and SDKs
+├── dotcms-integration/        # Integration tests
+├── dotcms-postman/            # Postman API tests
+├── bom/application/pom.xml   # Dependency versions (ADD versions here)
+├── parent/pom.xml            # Plugin management
+└── .github/workflows/        # CI/CD pipelines
+```
+
 ## Domain-Specific Rules (loaded by file pattern or relevance)
 - **Java / pom.xml**: `java-context.mdc` – Config, Logger, Maven, REST
 - **Frontend / core-web (Nx)**: `frontend-context.mdc` – Angular, SDK, Nx commands, links to docs/frontend

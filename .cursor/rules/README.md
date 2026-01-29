@@ -26,8 +26,3 @@ Project rules live in `.cursor/rules/`. Cursor applies them according to the rul
 - **Descriptions** that are clear and keyword-rich for Apply Intelligently.
 - Use **`.mdc`** (not `.md`) so Cursor interprets `description`, `globs`, `alwaysApply` correctly.
 - Put long details in **`/docs/`** and reference with `@docs/...` instead of copying into the rule.
-
-## Reference
-
-- [Cursor Rules (rule.md)](../rule.md) – Official documentation.
-- **CLAUDE.md** – Main guide for the repo; rules point to `/docs/` for detail.
