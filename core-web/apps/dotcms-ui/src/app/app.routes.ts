@@ -107,7 +107,7 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'starter',
         loadChildren: () =>
-            import('@portlets/dot-starter/dot-starter.module').then((m) => m.DotStarterModule)
+            import('@portlets/dot-starter/dot-starter.routes').then((m) => m.dotStarterRoutes)
     },
     {
         canActivate: [MenuGuardService],

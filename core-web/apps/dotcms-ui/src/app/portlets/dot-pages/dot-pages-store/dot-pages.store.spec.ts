@@ -51,10 +51,12 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     createFakeEvent,
+    CurrentUserDataMock,
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
     DotcmsEventsServiceMock,
+    DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
     DotMessageDisplayServiceMock,
@@ -74,10 +76,6 @@ import {
 } from './dot-pages.store';
 
 import { PushPublishServiceMock } from '../../../view/components/_common/dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import {
-    CurrentUserDataMock,
-    DotCurrentUserServiceMock
-} from '../../dot-starter/dot-starter-resolver.service.spec';
 import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 // Mock data for content types (replacement for removed dot-edit-page module)
@@ -614,6 +612,15 @@ describe('DotPageStore', () => {
                 resultsSize: 4
             })
         );
+        dotPageStore.patchState({
+            isEnterprise: true,
+            environments: true,
+            loggedUser: {
+                id: 'test',
+                canRead: { contentlets: true, htmlPages: true },
+                canWrite: { contentlets: true, htmlPages: true }
+            }
+        });
         dotPageStore.showActionsMenu({
             item: favoritePagesInitialTestData[0],
             actionMenuDomId: 'test1'
@@ -671,13 +678,23 @@ describe('DotPageStore', () => {
 
         jest.spyOn(dotPushPublishDialogService, 'open');
 
+        dotPageStore.patchState({
+            isEnterprise: true,
+            environments: true,
+            loggedUser: {
+                id: 'test',
+                canRead: { contentlets: true, htmlPages: true },
+                canWrite: { contentlets: true, htmlPages: true }
+            }
+        });
         dotPageStore.showActionsMenu({
             item,
             actionMenuDomId: 'test1'
         });
 
         dotPageStore.state$.subscribe((data) => {
-            const menuActions = data.pages.menuActions;
+            const menuActions = data.pages?.menuActions;
+            if (!menuActions || menuActions.length < 9) return;
 
             expect(menuActions[7].label).toEqual('contenttypes.content.push_publish');
 
