@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 
-## Drops the dotCMS database in preperation for a new import
+## Drops the contents of the dotCMS database in preperation for a new import (only if requested)
 drop_db_tables () {
 
     echo "- DOT_IMPORT_DROP_DB - attempting to drop db schema"
@@ -160,24 +160,23 @@ export IMPORT_IN_PROCESS=$IMPORT_DATA_DIR/lock.txt
 export IMPORT_COMPLETE=$IMPORT_DATA_DIR/import_complete.txt
 
 if [ -z "$DOT_IMPORT_ENVIRONMENT" ]; then
-    echo "- No dotCMS env to import, starting normally"
     exit 0
 fi
 
 if [ -z "$DOT_IMPORT_API_TOKEN" -a -z "$DOT_IMPORT_USERNAME_PASSWORD" ]; then
     echo "- Set DOT_IMPORT_ENVIRONMENT, DOT_IMPORT_USERNAME_PASSWORD and/or DOT_IMPORT_API_TOKEN to import from another environment on first run"
-    echo 0
+    exit 0
 fi
 
 export DOT_IMPORT_HOST="${DOT_IMPORT_ENVIRONMENT#http://}"; DOT_IMPORT_HOST="${DOT_IMPORT_HOST#https://}"; DOT_IMPORT_HOST="${DOT_IMPORT_HOST%%/*}"; DOT_IMPORT_HOST="${DOT_IMPORT_HOST%%:*}"
 
-
-
+# Exit normally if already cloned
 if [ -f "$IMPORT_COMPLETE" ]; then
-  echo "- Cloning of $DOT_IMPORT_HOST completed.  Delete ${IMPORT_COMPLETE} to try again"
-  echo 0
+  echo "- Import of $DOT_IMPORT_HOST completed.  Delete ${IMPORT_COMPLETE} to try again."
+  exit 0
 fi
 
+# lock other pods out if importing
 if [ -f "$IMPORT_IN_PROCESS" ]; then
   # Get lock file age in minutes (portable for Linux and macOS)
   if stat -c %Y "$IMPORT_IN_PROCESS" >/dev/null 2>&1; then
@@ -200,36 +199,34 @@ if [ -f "$IMPORT_IN_PROCESS" ]; then
   sleep 180
   exit 1
 fi
-mkdir -p $IMPORT_DATA_DIR
-touch $IMPORT_IN_PROCESS
 
+mkdir -p $IMPORT_DATA_DIR && touch $IMPORT_IN_PROCESS
 
 HASHED_ENV=$(echo -n "$DOT_IMPORT_ENVIRONMENT" | md5sum | cut -d ' ' -f 1)
-
 
 export ASSETS_BACKUP_FILE="${IMPORT_DATA_DIR}/${HASHED_ENV}_assets.zip"
 export DB_BACKUP_FILE="${IMPORT_DATA_DIR}/${HASHED_ENV}_dotcms_db.sql.gz"
 
-# Step 1. download files if needed
+# Step 1. download db and assets (if needed)
 download_dotcms_db_assets || { echo "Unable to download dotcms backup"; rm $IMPORT_IN_PROCESS; exit 1; }
 
-# Step 2. wipe out database if needed
+# Step 2. wipe database clean (if requested)
 if [ "$DOT_IMPORT_DROP_DB" = "true" ]; then
     drop_db_tables || { echo "unable to drop the dotcms db schema"; rm $IMPORT_IN_PROCESS; exit 1; }
 fi
 
-# Step 3. import postgres
+# Step 3. import postgres db
 import_postgres || { echo "Unable to import postgres backup"; rm $IMPORT_IN_PROCESS; exit 1; }
 
-# Step 4. unpack assets
+# Step 4. unpack assets.zip
 unpack_assets || { echo "Unable to unzip assets"; rm $IMPORT_IN_PROCESS; exit 1; }
 
-# Step 5: exit 13 if the clone worked
+# Step 5: exit sig 13 if the clone worked
 if rm -f "$IMPORT_IN_PROCESS" && touch "$IMPORT_COMPLETE"; then
-  echo "dotCMS Environment $DOT_IMPORT_HOST Imported, exiting."
+  echo "dotCMS Environment $DOT_IMPORT_HOST Imported, happily exiting."
   exit 13
 fi
 
-# Otherwise, die
+# Otherwise, die ugly
 echo "Unable complete import"
 exit 1
