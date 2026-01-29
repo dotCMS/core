@@ -102,6 +102,9 @@
             "dependsOn": ["^build"],
             "inputs": ["production", "^production"]
         },
+        "serve": {
+            "dependsOn": []
+        },
         "test": {
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
         },
