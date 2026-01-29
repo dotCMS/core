@@ -14,9 +14,6 @@ if [ $exit_status -eq 13 ]; then
     exit 0;
 fi
 
-exit 0
-
-
 source /srv/20-copy-overriden-files.sh
 source /srv/25-generate-dev-ssl-cert.sh
 source /srv/30-override-config-props.sh

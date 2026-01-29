@@ -224,9 +224,12 @@ import_postgres || { echo "Unable to import postgres backup"; rm $IMPORT_IN_PROC
 # Step 4. unpack assets
 unpack_assets || { echo "Unable to unzip assets"; rm $IMPORT_IN_PROCESS; exit 1; }
 
+# Step 5: exit 13 if the clone worked
 if rm -f "$IMPORT_IN_PROCESS" && touch "$IMPORT_COMPLETE"; then
   echo "dotCMS Environment $DOT_IMPORT_HOST Imported, exiting."
   exit 13
 fi
+
+# Otherwise, die
 echo "Unable complete import"
 exit 1
