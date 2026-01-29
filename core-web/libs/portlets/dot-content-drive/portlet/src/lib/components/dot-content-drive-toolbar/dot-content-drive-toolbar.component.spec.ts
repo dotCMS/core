@@ -114,12 +114,11 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should add the invisible class to the tree toggler when tree is expanded', () => {
+        it('should not render the tree toggler when tree is expanded', () => {
             store.isTreeExpanded.mockReturnValue(true);
             spectator.detectChanges();
-            const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
-            expect(toggler).toBeDefined();
-            expect(toggler?.classes['invisible']).toBe(true);
+            const toggler = spectator.query('[data-testid="tree-toggler"]');
+            expect(toggler).toBeNull();
         });
     });
 
