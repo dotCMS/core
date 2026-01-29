@@ -1,6 +1,6 @@
 @let hasError = $hasError();
 
-<p-treeSelect
+<p-treeselect
     (onNodeSelect)="store.chooseNode($event)"
     (onNodeExpand)="store.loadChildren($event)"
     [formControl]="pathControl"
@@ -9,8 +9,8 @@
     [filter]="true"
     [options]="store.tree()"
     [virtualScroll]="true"
+    [scrollHeight]="'auto'"
     [virtualScrollItemSize]="50"
-    [scrollHeight]="'450px'"
     [virtualScrollOptions]="{
         autoSize: true,
         style: {
@@ -21,9 +21,12 @@
     }"
     filterBy="label"
     filterMode="lenient"
-    selectionMode="single">
+    [filterInputAutoFocus]="true"
+    selectionMode="single"
+    placeholder="Select Host/Folder"
+    class="w-full">
     <ng-template let-node pTemplate="default">
-        <span>{{ node.label | dotTruncatePath }}</span>
+        <span>{{ node?.label | dotTruncatePath }}</span>
     </ng-template>
     <ng-template let-item pTemplate="value">
         <span>//{{ item?.label }}</span>
@@ -31,4 +34,13 @@
     <ng-template pTemplate="triggericon">
         <i [class]="store.iconClasses()" class="pi"></i>
     </ng-template>
-</p-treeSelect>
+    <ng-template pTemplate="filtericon">
+        <i class="pi pi-search"></i>
+    </ng-template>
+    <ng-template pTemplate="closeicon">
+        <i class="pi pi-times"></i>
+    </ng-template>
+    <ng-template pTemplate="itemtogglericon" let-expanded>
+        <i class="pi" [class.pi-chevron-down]="expanded" [class.pi-chevron-right]="!expanded"></i>
+    </ng-template>
+</p-treeselect>
