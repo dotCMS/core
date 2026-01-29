@@ -36,8 +36,7 @@ RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends bash zip unzip wget libtcnative-1\
     tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg\
-    vim libarchive-tools postgresql-common libmimalloc2.0
-
+    vim libarchive-tools postgresql-common libmimalloc2.0 libarchive-tools 
 
 
 RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
