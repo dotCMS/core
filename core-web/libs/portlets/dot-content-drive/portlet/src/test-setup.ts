@@ -26,3 +26,13 @@ console.error = function (...data) {
 // We need to setup the ResizeObserver mock globally for testing
 // PrimeNG Tabs use this and fails if not setup
 setupResizeObserverMock();
+
+// Mock MutationObserver for PrimeNG components
+global.MutationObserver = class MutationObserver {
+    constructor(callback: MutationCallback) {}
+    disconnect() {}
+    observe(target: Node, options?: MutationObserverInit) {}
+    takeRecords(): MutationRecord[] {
+        return [];
+    }
+};
