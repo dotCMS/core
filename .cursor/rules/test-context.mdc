@@ -25,7 +25,7 @@ alwaysApply: false
 
 # Frontend (Nx, from repo root)
 cd core-web && yarn nx run <project>:test
-cd core-web && yarn nx run <project>:test -t testNamePattern="MyComponent"
+cd core-web && yarn nx run <project>:test -t MyComponent
 ```
 Replace `<project>` with the Nx project (e.g. `dotcms-ui`, `sdk-angular`, `edit-content`).
 

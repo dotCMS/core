@@ -71,7 +71,7 @@ All frontend code lives in **`core-web/`**. It is an Nx monorepo with TypeScript
 cd core-web && yarn nx show projects
 cd core-web && yarn nx run dotcms-ui:serve
 cd core-web && yarn nx run <project>:test
-cd core-web && yarn nx run <project>:test -t testNamePattern="MyComponent"
+cd core-web && yarn nx run <project>:test -t MyComponent
 cd core-web && yarn nx affected -t build --exclude='tag:skip:build'
 cd core-web && yarn nx affected -t lint --exclude='tag:skip:lint'
 cd core-web && yarn nx affected -t test --exclude='tag:skip:test'
