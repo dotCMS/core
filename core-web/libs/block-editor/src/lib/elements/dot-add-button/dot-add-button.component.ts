@@ -2,6 +2,8 @@ import { TiptapFloatingMenuDirective } from 'ngx-tiptap';
 
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
+import { Button } from 'primeng/button';
+
 import { Editor } from '@tiptap/core';
 import { PluginKey } from '@tiptap/pm/state';
 
@@ -13,16 +15,17 @@ import { PluginKey } from '@tiptap/pm/state';
             [editor]="$editor()"
             [pluginKey]="pluginKey"
             [tippyOptions]="tippyOptions">
-            <button
+            <p-button
                 class="add-button flex  items-center justify-center cursor-pointer"
-                (click)="onClick()">
-                <span class="pi pi-plus"></span>
-            </button>
+                (onClick)="onClick()"
+                size="small"
+                variant="text"
+                icon="pi pi-plus" />
         </div>
     `,
     styleUrls: ['./dot-add-button.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [TiptapFloatingMenuDirective]
+    imports: [TiptapFloatingMenuDirective, Button]
 })
 export class DotAddButtonComponent {
     $editor = input.required<Editor>({ alias: 'editor' });

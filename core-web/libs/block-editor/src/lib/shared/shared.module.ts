@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { ButtonModule } from 'primeng/button';
+import { Button } from 'primeng/button';
 
 // Shared
 import {
@@ -17,7 +17,7 @@ import {
 import { SuggestionsService } from './services';
 
 @NgModule({
-    imports: [CommonModule, FormsModule, ReactiveFormsModule, ButtonModule],
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, Button],
     declarations: [
         SuggestionsComponent,
         SuggestionListComponent,
