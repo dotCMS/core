@@ -11,6 +11,8 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteModule, AutoCompleteSelectEvent } from 'primeng/autocomplete';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 
 import { take } from 'rxjs/operators';
 
@@ -55,10 +57,12 @@ const MAX_LANGUAGES_SUGGESTIONS = 20;
  */
 @Component({
     selector: 'dot-language-variable-selector',
-    imports: [AutoCompleteModule, FormsModule, DotMessagePipe, DotHighlightPipe],
+    imports: [AutoCompleteModule, FormsModule, DotMessagePipe, DotHighlightPipe, IconFieldModule, InputIconModule],
     templateUrl: './dot-language-variable-selector.component.html',
-    styleUrl: './dot-language-variable-selector.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block w-[256px]'
+    }
 })
 export class DotLanguageVariableSelectorComponent {
     /**

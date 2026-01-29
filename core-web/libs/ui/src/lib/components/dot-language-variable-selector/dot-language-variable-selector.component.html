@@ -1,35 +1,40 @@
-<div class="dot-language-variable-selector">
-    <p-autoComplete
+<div class="relative min-w-[13rem]">
+    <p-iconfield>
+        <p-autoComplete
         #autoComplete
         [appendTo]="'body'"
-        class="dot-language-variable-selector__autocomplete"
-        data-testid="language-variable-selector-input"
         [placeholder]="'edit.content.wysiwyg-field.language-variable-placeholder' | dm"
         [(ngModel)]="$selectedItem"
         [ngModelOptions]="{ standalone: true }"
         [suggestions]="$filteredSuggestions()"
         [minLength]="1"
+        class="w-full"
         debounce="200"
-        (onHide)="onHideOverlay()"
+        inputStyleClass="w-full"
+        icon="pi pi-search"
         tooltipEvent="focus"
+        (onHide)="onHideOverlay()"
         (onSelect)="emitSelectLanguageVariable($event)"
         (completeMethod)="loadSuggestions()"
-        [styleClass]="'dot-language-variable-selector__autocomplete--with-icon'">
-        <ng-template let-variable pTemplate="item">
-            <div
-                class="dot-language-variable-selector__item"
-                data-testid="language-variable-suggestion-item">
+        data-testid="language-variable-selector-input">
+            <ng-template let-variable pTemplate="item">
                 <div
-                    class="dot-language-variable-selector__item-value"
-                    data-testid="language-variable-suggestion-value">
-                    {{ variable.value }}
+                    class="flex flex-col"
+                    data-testid="language-variable-suggestion-item">
+                    <div
+                        class="text-gray-900 font-semibold whitespace-nowrap overflow-hidden text-ellipsis group-hover:text-primary-500"
+                        data-testid="language-variable-suggestion-value">
+                        {{ variable.value }}
+                    </div>
+                    <div
+                        class="text-sm text-gray-500 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis"
+                        data-testid="language-variable-suggestion-key"
+                        [innerHTML]="variable.key | dotHighlight: $selectedItem()"></div>
                 </div>
-                <div
-                    class="dot-language-variable-selector__item-key"
-                    data-testid="language-variable-suggestion-key"
-                    [innerHTML]="variable.key | dotHighlight: $selectedItem()"></div>
-            </div>
-        </ng-template>
-    </p-autoComplete>
-    <i class="dot-language-variable-selector__search-icon pi pi-search"></i>
+            </ng-template>
+        </p-autoComplete>
+        <p-inputicon class="pi pi-search" />
+    </p-iconfield>
+
+    <!-- <i class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-primary-500 pi pi-search"></i> -->
 </div>
