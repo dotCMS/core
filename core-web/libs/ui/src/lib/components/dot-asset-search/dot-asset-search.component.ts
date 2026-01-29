@@ -34,14 +34,7 @@ import { DotAssetSearchStore } from './store/dot-asset-search.store';
     templateUrl: './dot-asset-search.component.html',
     styleUrls: ['./dot-asset-search.component.scss'],
     providers: [DotAssetSearchStore],
-    imports: [
-        DotAssetCardListComponent,
-        DotAssetCardListComponent,
-        InputText,
-        IconField,
-        InputIcon,
-        CommonModule
-    ],
+    imports: [DotAssetCardListComponent, InputText, IconField, InputIcon, CommonModule],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAssetSearchComponent implements OnInit, AfterViewInit {

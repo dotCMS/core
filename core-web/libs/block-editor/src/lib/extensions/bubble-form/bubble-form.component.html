@@ -39,7 +39,7 @@
         }
         <div class="form-action">
             <p-button (onClick)="hide.emit(true)" variant="outlined" label="CANCEL" />
-            <p-button [disabled]="form.invalid" label="APPLY" (onClick)="onSubmit()" />
+            <p-button [disabled]="form.invalid" label="APPLY" type="submit" />
         </div>
     </form>
 }
