@@ -18,7 +18,7 @@ h3 {
     text-transform: uppercase;
     font-size: fonts.$font-size-md;
     margin: (0.5 * $dot-editor-size) $dot-editor-size;
-    color: #999999;
+    color: colors.$black;
 }
 
 .suggestion-list-container {

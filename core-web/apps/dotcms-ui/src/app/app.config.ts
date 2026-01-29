@@ -12,7 +12,7 @@ import {
     withRouterConfig
 } from '@angular/router';
 
-import { providePrimeNG } from 'primeng/config';
+import { provideDotCMSTheme } from '@dotcms/ui';
 
 import { appRoutes } from './app.routes';
 import { NGFACES_MODULES } from './modules';
@@ -20,21 +20,13 @@ import { ENV_PROVIDERS } from './providers';
 import { DotCustomReuseStrategyService } from './shared/dot-custom-reuse-strategy/dot-custom-reuse-strategy.service';
 import { DotDirectivesModule } from './shared/dot-directives.module';
 import { SharedModule } from './shared/shared.module';
-import { CustomLaraPreset } from './theme.config';
 import { DotLoginPageResolver } from './view/components/login/dot-login-page-resolver.service';
 
 export const appConfig: ApplicationConfig = {
     providers: [
         // Core Angular providers
         provideAnimationsAsync(),
-        providePrimeNG({
-            theme: {
-                preset: CustomLaraPreset,
-                options: {
-                    darkModeSelector: false
-                }
-            }
-        }),
+        provideDotCMSTheme(),
         provideAnimations(),
         provideHttpClient(),
         provideRouter(
