@@ -172,7 +172,7 @@ export DOT_IMPORT_HOST="${DOT_IMPORT_ENVIRONMENT#http://}"; DOT_IMPORT_HOST="${D
 
 # Exit normally if already cloned
 if [ -f "$IMPORT_COMPLETE" ]; then
-  echo "- Import of $DOT_IMPORT_HOST completed.  Delete ${IMPORT_COMPLETE} to try again."
+  echo "dotCMS environment already inited.  Delete ${IMPORT_COMPLETE} to import again."
   exit 0
 fi
 
