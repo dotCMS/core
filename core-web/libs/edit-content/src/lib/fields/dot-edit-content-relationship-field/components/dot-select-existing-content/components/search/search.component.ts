@@ -294,7 +294,7 @@ export class SearchComponent {
      *
      * @param filterType - The type of filter to remove ('language' | 'site' | 'folder')
      */
-    removeFilter(filterType: 'language' | 'site' | 'folder') {
+    removeFilter(filterType: string) {
         if (filterType === 'language') {
             this.form.get('systemSearchableFields.languageId')?.setValue(-1);
         } else {
