@@ -1,16 +1,12 @@
-<p-toolbar
-    class="bg-[--color-palette-gray-100] border-none border-b border-[--color-palette-gray-300] gap-1 h-full px-3 py-1 justify-start">
+<p-toolbar class="gap-1 h-full px-3 justify-start border-none!">
     <div
-        class="grid w-full items-center transition-all duration-300 ease-in-out gap-y-1"
+        class="grid w-full items-center transition-all duration-300 ease-in-out gap-y-1 py-3"
         [class.gap-x-1]="!$treeExpanded()"
         [class.gap-x-0]="$treeExpanded()"
         [class]="'grid-cols-[min-content_1fr] grid-rows-2'">
-        <dot-content-drive-tree-toggler
-            data-testid="tree-toggler"
-            class="flex transition-all duration-300 ease-in-out row-start-1 col-start-1"
-            [class.invisible]="$treeExpanded()"
-            [class.w-0]="$treeExpanded()"
-            [class.min-w-0]="$treeExpanded()" />
+        @if (!$treeExpanded()) {
+            <dot-content-drive-tree-toggler data-testid="tree-toggler" />
+        }
 
         <div
             class="grid items-center w-full gap-1 row-start-1 col-start-2"
