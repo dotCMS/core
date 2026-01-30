@@ -1,13 +1,18 @@
 import { tapResponse } from '@ngrx/operators';
-import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
+import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { tap, exhaustMap, switchMap, map, filter } from 'rxjs/operators';
+import { exhaustMap, filter, map, switchMap, tap } from 'rxjs/operators';
 
-import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    CustomTreeNode,
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
 export const PEER_PAGE_LIMIT = 7000;
@@ -132,7 +137,7 @@ export const HostFolderFiledStore = signalStore(
                         const hasPaths = path.includes('/');
 
                         if (!hasPaths) {
-                            const response = {
+                            const response: CustomTreeNode = {
                                 node: sites.find((item) => item.data.hostname === path),
                                 tree: null
                             };
