@@ -1,5 +1,7 @@
 package com.dotmarketing.common.util;
 
+import static com.liferay.util.StringPool.SPACE;
+
 import com.dotcms.contenttype.business.ContentTypeFactory;
 import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
@@ -13,9 +15,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.SecurityThreatLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -26,18 +34,6 @@ import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
-
-import static com.liferay.util.StringPool.SPACE;
 
 
 
@@ -133,7 +129,7 @@ public class SQLUtil {
 			"title","upper(title)","filename", "moddate", "tagname","pageUrl",
 			"category_name","category_velocity_var_name","status","workflow_step.name","assigned_to",
 			"mod_date","structuretype,upper(name)","upper(name)",
-			"category_key", "page_url","name","velocity_var_name",
+			"category_key", "page_url", "name", "velocity_var_name", "tree_order",
 			"description","category_","sort_order","hostName", "keywords",
 			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
 			"parent_relation_name","inode");

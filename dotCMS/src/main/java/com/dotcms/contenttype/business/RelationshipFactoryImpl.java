@@ -574,24 +574,36 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
 
     public List<Contentlet> dbRelatedContentByParent(final String parentIdentifier,
             final String relationType, final boolean live,
-            final String orderBy, final int limit, final int offset) throws DotDataException {
+            final String orderByIn, final int limit, final int offset) throws DotDataException {
 
-        final StringBuilder query = new StringBuilder("select c.inode "
-                + "from tree t join contentlet c on t.child = c.identifier "
-                + "join contentlet_version_info cvi on c.identifier = cvi.identifier "
-                + " where t.parent = ? "
-                + " and "+ (live? "cvi.live_inode": "cvi.working_inode") + "= c.inode "
-                + "  and t.relation_type = ? ");
+        String liveOrWorking = live ? "cvi.live_inode" : "cvi.working_inode";
+        String orderBy = SQLUtil.sanitizeSortBy(orderByIn);
+        // we only include contentlet for sorting
+        boolean includeContentlet = !("sort_order".equalsIgnoreCase(orderBy) || "tree_order".equalsIgnoreCase(orderBy));
 
-        if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-            query.append(" order by c.")
-                    .append(orderBy);
+        final StringBuilder query = new StringBuilder("select " + liveOrWorking + " as inode ")
+                .append(" from contentlet_version_info cvi, tree t ");
+
+        if (includeContentlet) {
+            query.append(", contentlet c ");
+        }
+
+        query.append(" where t.parent= ? "
+                + " and t.relation_type = ? "
+                + " and  " + liveOrWorking + " is not null "
+                + " and t.child = cvi.identifier ");
+
+        if (includeContentlet) {
+            query.append(" and " + liveOrWorking + " = c.inode ");
+        }
+
+        if (includeContentlet) {
+            query.append(" order by c.").append(orderBy);
         } else {
             query.append(" order by t.tree_order, cvi.version_ts");
         }
 
-        final DotConnect dc = new DotConnect();
-        dc.setSQL(query.toString());
+        final DotConnect dc = new DotConnect(query.toString());
         dc.addParam(parentIdentifier);
         dc.addParam(relationType);
 
@@ -625,18 +637,34 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
     @SuppressWarnings("unchecked")
     public List<Contentlet> dbRelatedContentByChild(final String childIdentifier,
             final String relationType, final boolean live,
-            final String orderBy, final int limit, final int offset) throws DotDataException {
+            final String orderByIn, final int limit, final int offset) throws DotDataException {
 
-        final StringBuilder query = new StringBuilder("select c.inode "
-                + "from tree t join contentlet c on t.parent = c.identifier "
-                + "join contentlet_version_info cvi on c.identifier = cvi.identifier "
-                + " where t.child = ? "
-                + " and "+ (live? "cvi.live_inode": "cvi.working_inode") + "= c.inode "
-                + "  and t.relation_type = ? ");
+        String orderBy = SQLUtil.sanitizeSortBy(orderByIn);
+        String liveOrWorking = live ? "cvi.live_inode" : "cvi.working_inode";
 
-        if (UtilMethods.isSet(orderBy) && !(orderBy.trim().equals("sort_order") || orderBy.trim().equals("tree_order"))) {
-            query.append(" order by c.")
-                    .append(orderBy);
+        // we only include contentlet for sorting
+        boolean includeContentlet = !("sort_order".equalsIgnoreCase(orderBy) || "tree_order".equalsIgnoreCase(orderBy));
+
+        final StringBuilder query = new StringBuilder();
+
+        query.append(" select " + liveOrWorking + " as inode ");
+        query.append(" from tree t, contentlet_version_info cvi ");
+
+        if (includeContentlet) {
+            query.append(" , contentlet c ");
+        }
+
+        query.append(" where t.child = ? "
+                + " and t.relation_type = ? "
+                + " and  " + liveOrWorking + " is not null "
+                + " and t.parent = cvi.identifier ");
+
+        if (includeContentlet) {
+            query.append(" and " + liveOrWorking + " = c.inode ");
+        }
+
+        if (includeContentlet) {
+            query.append(" order by c.").append(orderBy);
         } else {
             query.append(" order by t.tree_order, cvi.version_ts");
         }
