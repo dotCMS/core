@@ -7,6 +7,11 @@ import { FRAMEWORKS } from '../constants';
 import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from '../types';
 
 /**
+ * Maximum allowed length for project names (typical filesystem limit)
+ */
+const MAX_PROJECT_NAME_LENGTH = 255;
+
+/**
  * Framework aliases to accept common variations
  */
 const FRAMEWORK_ALIASES: Record<string, SupportedFrontEndFrameworks> = {
@@ -168,7 +173,9 @@ export function validateProjectName(projectName: string | undefined): string | u
 
     // Invalid filesystem characters (cross-platform)
     const invalidChars = /[<>:"|?*]/;
-    const hasControlChar = [...trimmed].some((c) => c.charCodeAt(0) < 32);
+    // Control characters (ASCII 0-31) checked separately to avoid regex complexity
+    const CONTROL_CHAR_THRESHOLD = 32; // ASCII control characters are 0-31
+    const hasControlChar = [...trimmed].some((c) => c.charCodeAt(0) < CONTROL_CHAR_THRESHOLD);
     if (invalidChars.test(trimmed) || hasControlChar) {
         throw new Error(
             chalk.red(`❌ Invalid project name: "${projectName}"`) +
@@ -217,18 +224,20 @@ export function validateProjectName(projectName: string | undefined): string | u
     }
 
     // Length validation
-    if (trimmed.length > 255) {
+    if (trimmed.length > MAX_PROJECT_NAME_LENGTH) {
         throw new Error(
             chalk.red('❌ Project name too long') +
                 '\n\n' +
-                chalk.white(`Maximum: 255 characters (you provided: ${trimmed.length})\n\n`) +
+                chalk.white(
+                    `Maximum: ${MAX_PROJECT_NAME_LENGTH} characters (you provided: ${trimmed.length})\n\n`
+                ) +
                 chalk.gray('Please use a shorter name')
         );
     }
 
     // Warning for hidden files
     if (trimmed.startsWith('.') && trimmed.length > 1) {
-        console.log(
+        console.warn(
             chalk.yellow('\n⚠️  Warning: Project name starts with a dot') +
                 '\n' +
                 chalk.gray('This will create a hidden directory on Unix systems\n')
@@ -256,8 +265,12 @@ export function escapeShellPath(filePath: string): string {
         return filePath;
     }
 
-    // Check if escaping needed
-    const needsEscaping = /[\s'"`$!&*(){};<>?*|\\[\]]/.test(filePath);
+    // Check if escaping needed (brackets moved to end to avoid ESLint warnings)
+    // Platform-specific: Windows paths use backslashes natively, Unix paths need backslash escaping
+    const needsEscaping =
+        process.platform === 'win32'
+            ? /[\s'"`$!&*(){};<>?*|\n\r\t[\]]/.test(filePath) // Skip backslash on Windows
+            : /[\s'"`$!&*(){};<>?*|\\\n\r\t[\]]/.test(filePath); // Include backslash on Unix
 
     if (needsEscaping) {
         // Use double quotes, escape internal quotes and backslashes
@@ -287,7 +300,7 @@ export function validateConflictingParameters(options: DotCmsCliOptions): void {
 
     // Warn about conflict
     if (cloudParams.length > 0) {
-        console.log(
+        console.warn(
             chalk.yellow('\n⚠️  Warning: Conflicting parameters detected\n') +
                 chalk.white('You provided ') +
                 chalk.cyan('--local') +

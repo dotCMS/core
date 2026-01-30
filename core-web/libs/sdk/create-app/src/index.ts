@@ -75,54 +75,156 @@ program
         // welcome cli
         printWelcomeScreen();
 
-        // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
-        const validatedFramework = validateAndNormalizeFramework(options.framework);
-        validateUrl(options.url);
-        validateConflictingParameters(options);
-        validateProjectName(projectName);
+        try {
+            // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
+            const validatedFramework = validateAndNormalizeFramework(options.framework);
+            validateUrl(options.url);
+            validateConflictingParameters(options);
+            validateProjectName(projectName);
 
-        const projectNameFinal = projectName ?? (await askProjectName());
-        const directoryInput = options.directory ?? (await askDirectory());
-        const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-        const selectedFramework = validatedFramework ?? (await askFramework());
-        const isCloudInstanceSelected =
-            options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
+            const projectNameFinal = projectName ?? (await askProjectName());
+            // Validate project name from interactive prompt as well
+            validateProjectName(projectNameFinal);
+            const directoryInput = options.directory ?? (await askDirectory());
+            const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
+            const selectedFramework = validatedFramework ?? (await askFramework());
+            const isCloudInstanceSelected =
+                options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
 
-        if (isCloudInstanceSelected) {
-            const urlDotcmsInstance = options.url ?? (await askDotcmsCloudUrl());
-            const userNameDotCmsInstance = options.username ?? (await askUserNameForDotcmsCloud());
-            const passwordDotCmsInstance = options.password ?? (await askPasswordForDotcmsCloud());
+            if (isCloudInstanceSelected) {
+                const urlDotcmsInstance = options.url ?? (await askDotcmsCloudUrl());
+                const userNameDotCmsInstance =
+                    options.username ?? (await askUserNameForDotcmsCloud());
+                const passwordDotCmsInstance =
+                    options.password ?? (await askPasswordForDotcmsCloud());
 
-            const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
-            const emaConfigApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
-            const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
-            const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
+                const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
+                const emaConfigApiURL =
+                    getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
+                const demoSiteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_DEMO_SITE;
+                const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
-            const spinner = ora(`⏳ Connecting to dotCMS...`).start();
+                const spinner = ora(`⏳ Connecting to dotCMS...`).start();
 
-            const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL, 5);
+                const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL, 5);
 
-            if (!checkIfDotcmsIsRunning) {
+                if (!checkIfDotcmsIsRunning) {
+                    spinner.fail(
+                        'dotCMS is not running on the following url ' +
+                            urlDotcmsInstance +
+                            '. Please check the url and try again.'
+                    );
+                    return;
+                }
+
+                spinner.succeed('Connected to dotCMS sucessfully');
+
+                const dotcmsToken = await DotCMSApi.getAuthToken({
+                    payload: {
+                        user: userNameDotCmsInstance,
+                        password: passwordDotCmsInstance,
+                        expirationDays: '30',
+                        label: 'token for frontend app'
+                    },
+                    url: tokenApiUrl
+                });
+
+                if (!dotcmsToken.ok) {
+                    spinner.fail('Failed to get authentication token from Dotcms.');
+                    return;
+                } else {
+                    spinner.succeed('Generated API autentication token');
+                }
+
+                const demoSite = await DotCMSApi.getDemoSiteIdentifier({
+                    siteName: 'demo.dotcms.com',
+                    authenticationToken: dotcmsToken.val,
+                    url: demoSiteApiURL
+                });
+
+                if (!demoSite.ok) {
+                    spinner.fail('Failed to get demo site identifier from Dotcms.');
+                    return;
+                } else {
+                    spinner.succeed(
+                        `Reterived site: Demo Site (${demoSite.val.entity.identifier})`
+                    );
+                }
+
+                const setUpUVE = await DotCMSApi.setupUVEConfig({
+                    payload: {
+                        configuration: {
+                            hidden: false,
+                            value: getUVEConfigValue(
+                                `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
+                            )
+                        }
+                    },
+                    siteId: demoSite.val.entity.identifier,
+                    authenticationToken: dotcmsToken.val,
+                    url: emaConfigApiURL
+                });
+
+                if (!setUpUVE.ok) {
+                    spinner.fail('Failed to setup UVE configuration in Dotcms.');
+                    return;
+                } else {
+                    spinner.succeed(`Configured the Universal Visual Editor`);
+                }
+                await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
+                console.log(chalk.white(`✅ Project setup complete!`));
+                const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
+                displayFinalSteps({
+                    host: urlDotcmsInstance,
+                    relativePath,
+                    token: dotcmsToken.val,
+                    siteId: demoSite.val.entity.identifier,
+                    selectedFramework: selectedFramework
+                });
+                return;
+            }
+
+            const spinner = ora(`Starting dotCMS with Docker`).start();
+
+            // STEP 2 — Download docker-compose
+            const downloaded = await downloadTheDockerCompose({
+                directory: finalDirectory
+            });
+            if (!downloaded.ok) {
+                spinner.fail('Failed to download Docker Compose file.');
+                return;
+            }
+
+            // STEP 3 — Run docker-compose
+            const ran = await runDockerCompose({ directory: finalDirectory });
+            if (!ran.ok) {
                 spinner.fail(
-                    'dotCMS is not running on the following url ' +
-                        urlDotcmsInstance +
-                        '. Please check the url and try again.'
+                    'Failed to start dotCMS ensure docker is running and ports 8082, 8443, 9200, and 9600 are free.'
                 );
                 return;
             }
 
-            spinner.succeed('Connected to dotCMS sucessfully');
+            spinner.succeed('dotCMS containers started successfully.');
+
+            spinner.start('Verifying if dotCMS is running...');
+
+            const checkIfDotcmsIsRunning = await isDotcmsRunning();
+
+            if (!checkIfDotcmsIsRunning) {
+                spinner.fail('dotCMS is not running. Please check the docker containers.');
+                return;
+            }
+            spinner.succeed('dotCMS is running locally at http://localhost:8082');
+            spinner.succeed('Default credentials: admin@dotcms.com / admin');
 
             const dotcmsToken = await DotCMSApi.getAuthToken({
                 payload: {
-                    user: userNameDotCmsInstance,
-                    password: passwordDotCmsInstance,
+                    user: DOTCMS_USER.username,
+                    password: DOTCMS_USER.password,
                     expirationDays: '30',
                     label: 'token for frontend app'
-                },
-                url: tokenApiUrl
+                }
             });
-
             if (!dotcmsToken.ok) {
                 spinner.fail('Failed to get authentication token from Dotcms.');
                 return;
@@ -132,10 +234,8 @@ program
 
             const demoSite = await DotCMSApi.getDemoSiteIdentifier({
                 siteName: 'demo.dotcms.com',
-                authenticationToken: dotcmsToken.val,
-                url: demoSiteApiURL
+                authenticationToken: dotcmsToken.val
             });
-
             if (!demoSite.ok) {
                 spinner.fail('Failed to get demo site identifier from Dotcms.');
                 return;
@@ -153,8 +253,7 @@ program
                     }
                 },
                 siteId: demoSite.val.entity.identifier,
-                authenticationToken: dotcmsToken.val,
-                url: emaConfigApiURL
+                authenticationToken: dotcmsToken.val
             });
 
             if (!setUpUVE.ok) {
@@ -163,110 +262,28 @@ program
             } else {
                 spinner.succeed(`Configured the Universal Visual Editor`);
             }
+            // required since git requires empty directory
+            moveDockerComposeOneLevelUp(finalDirectory);
             await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
+            moveDockerComposeBack(finalDirectory);
             console.log(chalk.white(`✅ Project setup complete!`));
             const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
             displayFinalSteps({
-                host: urlDotcmsInstance,
+                host: 'http://localhost:8082',
                 relativePath,
                 token: dotcmsToken.val,
                 siteId: demoSite.val.entity.identifier,
                 selectedFramework: selectedFramework
             });
-            return;
-        }
-
-        const spinner = ora(`Starting dotCMS with Docker`).start();
-
-        // STEP 2 — Download docker-compose
-        const downloaded = await downloadTheDockerCompose({
-            directory: finalDirectory
-        });
-        if (!downloaded.ok) {
-            spinner.fail('Failed to download Docker Compose file.');
-            return;
-        }
-
-        // STEP 3 — Run docker-compose
-        const ran = await runDockerCompose({ directory: finalDirectory });
-        if (!ran.ok) {
-            spinner.fail(
-                'Failed to start dotCMS ensure docker is running and ports 8082, 8443, 9200, and 9600 are free.'
-            );
-            return;
-        }
-
-        spinner.succeed('dotCMS containers started successfully.');
-
-        spinner.start('Verifying if dotCMS is running...');
-
-        const checkIfDotcmsIsRunning = await isDotcmsRunning();
-
-        if (!checkIfDotcmsIsRunning) {
-            spinner.fail('dotCMS is not running. Please check the docker containers.');
-            return;
-        }
-        spinner.succeed('dotCMS is running locally at http://localhost:8082');
-        spinner.succeed('Default credentials: admin@dotcms.com / admin');
-
-        const dotcmsToken = await DotCMSApi.getAuthToken({
-            payload: {
-                user: DOTCMS_USER.username,
-                password: DOTCMS_USER.password,
-                expirationDays: '30',
-                label: 'token for frontend app'
+        } catch (error) {
+            // Handle validation and other errors gracefully
+            if (error instanceof Error) {
+                console.error(error.message);
+            } else {
+                console.error(chalk.red('❌ An unexpected error occurred'));
             }
-        });
-        if (!dotcmsToken.ok) {
-            spinner.fail('Failed to get authentication token from Dotcms.');
-            return;
-        } else {
-            spinner.succeed('Generated API autentication token');
+            process.exit(1);
         }
-
-        const demoSite = await DotCMSApi.getDemoSiteIdentifier({
-            siteName: 'demo.dotcms.com',
-            authenticationToken: dotcmsToken.val
-        });
-        if (!demoSite.ok) {
-            spinner.fail('Failed to get demo site identifier from Dotcms.');
-            return;
-        } else {
-            spinner.succeed(`Reterived site: Demo Site (${demoSite.val.entity.identifier})`);
-        }
-
-        const setUpUVE = await DotCMSApi.setupUVEConfig({
-            payload: {
-                configuration: {
-                    hidden: false,
-                    value: getUVEConfigValue(
-                        `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
-                    )
-                }
-            },
-            siteId: demoSite.val.entity.identifier,
-            authenticationToken: dotcmsToken.val
-        });
-
-        if (!setUpUVE.ok) {
-            spinner.fail('Failed to setup UVE configuration in Dotcms.');
-            return;
-        } else {
-            spinner.succeed(`Configured the Universal Visual Editor`);
-        }
-        // required since git requires empty directory
-        moveDockerComposeOneLevelUp(finalDirectory);
-        await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
-        moveDockerComposeBack(finalDirectory);
-        console.log(chalk.white(`✅ Project setup complete!`));
-        const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
-        displayFinalSteps({
-            host: 'http://localhost:8082',
-            relativePath,
-            token: dotcmsToken.val,
-            siteId: demoSite.val.entity.identifier,
-            selectedFramework: selectedFramework
-        });
     });
 
 export async function createApp() {
