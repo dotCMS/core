@@ -1,1 +1,60 @@
 @use "variables" as *;
+
+// Styles for icon-only button when used inside input fields
+:host {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+// Ensure the button integrates properly within p-inputIcon
+:host ::ng-deep {
+    .p-button-icon-only {
+        width: 2rem;
+        height: 2rem;
+        min-width: 2rem;
+        min-height: 2rem;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        // Transparent text button styling
+        background: transparent !important;
+        border: none !important;
+        color: var(--p-button-text-primary-color, var(--p-primary-color));
+
+        &:hover {
+            background: var(
+                --p-button-text-primary-hover-background,
+                rgba(0, 0, 0, 0.04)
+            ) !important;
+            border: none !important;
+            color: var(--p-button-text-primary-color, var(--p-primary-color));
+        }
+
+        &:focus {
+            background: var(
+                --p-button-text-primary-hover-background,
+                rgba(0, 0, 0, 0.04)
+            ) !important;
+            border: none !important;
+            color: var(--p-button-text-primary-color, var(--p-primary-color));
+            box-shadow: var(--p-button-focus-ring-shadow);
+        }
+
+        &:active {
+            background: var(
+                --p-button-text-primary-active-background,
+                rgba(0, 0, 0, 0.08)
+            ) !important;
+            border: none !important;
+            color: var(--p-button-text-primary-color, var(--p-primary-color));
+        }
+
+        .p-button-icon {
+            margin: 0;
+        }
+    }
+}

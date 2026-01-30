@@ -41,7 +41,31 @@ export class DotCopyButtonComponent {
     customClass = input('');
 
     // Final CSS class to be added to the button
-    $clazz = computed(() => `p-button p-button-sm p-button-text ${this.customClass()}`);
+    // When label is empty, use icon-only button styling for input field integration
+    // When label exists, use text button for standalone usage
+    $clazz = computed(() => {
+        const baseClasses = 'p-button p-button-sm';
+        if (!this.label()) {
+            // Icon-only: solid button for input field integration
+            return `${baseClasses} p-button-icon-only ${this.customClass()}`;
+        } else {
+            // With label: text button for standalone usage
+            return `${baseClasses} p-button-text ${this.customClass()}`;
+        }
+    });
+
+    /**
+     * PrimeNG passthrough configuration for icon-only button styling.
+     * Uses Tailwind classes for transparent background and proper sizing.
+     */
+    readonly iconOnlyPt = {
+        root: {
+            class: '!w-8 !h-8 !min-w-8 !min-h-8 !p-0 !bg-transparent !border-none'
+        },
+        icon: {
+            class: '!m-0'
+        }
+    };
 
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);
