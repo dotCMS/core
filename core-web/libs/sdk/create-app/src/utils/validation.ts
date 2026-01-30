@@ -1,8 +1,10 @@
 import chalk from 'chalk';
 
+import path from 'path';
+
 import { FRAMEWORKS } from '../constants';
 
-import type { SupportedFrontEndFrameworks } from '../types';
+import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from '../types';
 
 /**
  * Framework aliases to accept common variations
@@ -109,5 +111,194 @@ export function validateUrl(url: string | undefined): void {
             );
         }
         throw error;
+    }
+}
+
+/**
+ * Validates project name for filesystem safety and best practices
+ *
+ * @param projectName - The project name from CLI flag or prompt
+ * @returns Validated project name (preserves original casing)
+ * @throws Error if project name is invalid
+ */
+export function validateProjectName(projectName: string | undefined): string | undefined {
+    if (projectName === undefined || projectName === null) {
+        return undefined; // Will be prompted interactively
+    }
+
+    const trimmed = projectName.trim();
+
+    // Empty or whitespace-only
+    if (trimmed.length === 0) {
+        throw new Error(
+            chalk.red('❌ Invalid project name: cannot be empty') +
+                '\n\n' +
+                chalk.white('Project name must contain at least one character\n\n') +
+                chalk.cyan('Valid examples:\n') +
+                chalk.gray('  • my-dotcms-app\n') +
+                chalk.gray('  • my_project\n') +
+                chalk.gray('  • MyProject123')
+        );
+    }
+
+    // Path traversal check
+    if (
+        trimmed === '.' ||
+        trimmed === '..' ||
+        trimmed.includes('../') ||
+        trimmed.includes('..\\')
+    ) {
+        throw new Error(
+            chalk.red(`❌ Invalid project name: "${projectName}"`) +
+                '\n\n' +
+                chalk.white('Project name cannot contain path traversal patterns (..)\n\n') +
+                chalk.gray('Use the --directory flag to specify the parent directory')
+        );
+    }
+
+    // Absolute path check
+    if (path.isAbsolute(trimmed)) {
+        throw new Error(
+            chalk.red(`❌ Invalid project name: "${projectName}"`) +
+                '\n\n' +
+                chalk.white('Project name cannot be an absolute path\n\n') +
+                chalk.gray('Use the --directory flag to specify the location')
+        );
+    }
+
+    // Invalid filesystem characters (cross-platform)
+    const invalidChars = /[<>:"|?*]/;
+    const hasControlChar = [...trimmed].some((c) => c.charCodeAt(0) < 32);
+    if (invalidChars.test(trimmed) || hasControlChar) {
+        throw new Error(
+            chalk.red(`❌ Invalid project name: "${projectName}"`) +
+                '\n\n' +
+                chalk.white('Project name contains invalid characters\n\n') +
+                chalk.white('Avoid: < > : " | ? * and control characters\n\n') +
+                chalk.cyan('Valid examples:\n') +
+                chalk.gray('  • my-project\n') +
+                chalk.gray('  • my_project\n') +
+                chalk.gray('  • project-123')
+        );
+    }
+
+    // Windows reserved names
+    const reservedNames = [
+        'CON',
+        'PRN',
+        'AUX',
+        'NUL',
+        'COM1',
+        'COM2',
+        'COM3',
+        'COM4',
+        'COM5',
+        'COM6',
+        'COM7',
+        'COM8',
+        'COM9',
+        'LPT1',
+        'LPT2',
+        'LPT3',
+        'LPT4',
+        'LPT5',
+        'LPT6',
+        'LPT7',
+        'LPT8',
+        'LPT9'
+    ];
+    if (reservedNames.includes(trimmed.toUpperCase())) {
+        throw new Error(
+            chalk.red(`❌ Invalid project name: "${projectName}"`) +
+                '\n\n' +
+                chalk.white('This is a reserved system name on Windows\n\n') +
+                chalk.gray('Please choose a different name')
+        );
+    }
+
+    // Length validation
+    if (trimmed.length > 255) {
+        throw new Error(
+            chalk.red('❌ Project name too long') +
+                '\n\n' +
+                chalk.white(`Maximum: 255 characters (you provided: ${trimmed.length})\n\n`) +
+                chalk.gray('Please use a shorter name')
+        );
+    }
+
+    // Warning for hidden files
+    if (trimmed.startsWith('.') && trimmed.length > 1) {
+        console.log(
+            chalk.yellow('\n⚠️  Warning: Project name starts with a dot') +
+                '\n' +
+                chalk.gray('This will create a hidden directory on Unix systems\n')
+        );
+    }
+
+    return projectName; // Return original to preserve user's casing
+}
+
+/**
+ * Escapes a file path for safe use in shell commands across platforms
+ * Handles spaces, special characters, and cross-platform compatibility
+ *
+ * @param filePath - The file path to escape
+ * @returns Shell-safe escaped path
+ */
+export function escapeShellPath(filePath: string): string {
+    if (!filePath) return '""';
+
+    // Already quoted - return as-is (idempotent)
+    if (
+        (filePath.startsWith('"') && filePath.endsWith('"')) ||
+        (filePath.startsWith("'") && filePath.endsWith("'"))
+    ) {
+        return filePath;
+    }
+
+    // Check if escaping needed
+    const needsEscaping = /[\s'"`$!&*(){};<>?*|\\[\]]/.test(filePath);
+
+    if (needsEscaping) {
+        // Use double quotes, escape internal quotes and backslashes
+        const escaped = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `"${escaped}"`;
+    }
+
+    return filePath; // Simple path - no escaping needed
+}
+
+/**
+ * Validates CLI options for conflicting parameters
+ * Warns user when both local and cloud parameters are provided
+ *
+ * @param options - CLI options to validate
+ */
+export function validateConflictingParameters(options: DotCmsCliOptions): void {
+    const isLocalSet = options.local === true;
+
+    if (!isLocalSet) return; // No conflict possible
+
+    // Check for cloud parameters
+    const cloudParams: string[] = [];
+    if (options.url) cloudParams.push('--url');
+    if (options.username) cloudParams.push('--username');
+    if (options.password) cloudParams.push('--password');
+
+    // Warn about conflict
+    if (cloudParams.length > 0) {
+        console.log(
+            chalk.yellow('\n⚠️  Warning: Conflicting parameters detected\n') +
+                chalk.white('You provided ') +
+                chalk.cyan('--local') +
+                chalk.white(' flag along with cloud parameters: ') +
+                chalk.cyan(cloudParams.join(', ')) +
+                '\n\n' +
+                chalk.gray('The ') +
+                chalk.gray.bold('--local') +
+                chalk.gray(' flag will be used (Docker deployment)') +
+                '\n' +
+                chalk.gray('Cloud parameters will be ignored\n')
+        );
     }
 }

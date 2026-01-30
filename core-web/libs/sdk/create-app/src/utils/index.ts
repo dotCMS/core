@@ -6,6 +6,8 @@ import { Err, Ok, Result } from 'ts-results';
 
 import https from 'https';
 
+import { escapeShellPath } from './validation';
+
 import {
     ANGULAR_DEPENDENCIES,
     ANGULAR_DEPENDENCIES_DEV,
@@ -135,7 +137,8 @@ export function finalStepsForNextjs({
     console.log(chalk.greenBright('📋 Next Steps:\n'));
 
     console.log(
-        chalk.white('1. Navigate to your project:\n') + chalk.gray(`   $ cd ${projectPath}\n`)
+        chalk.white('1. Navigate to your project:\n') +
+            chalk.gray(`   $ cd ${escapeShellPath(projectPath)}\n`)
     );
 
     console.log(
@@ -187,7 +190,8 @@ export function finalStepsForAstro({
     console.log(chalk.greenBright('📋 Next Steps:\n'));
 
     console.log(
-        chalk.white('1. Navigate to your project:\n') + chalk.gray(`   $ cd ${projectPath}\n`)
+        chalk.white('1. Navigate to your project:\n') +
+            chalk.gray(`   $ cd ${escapeShellPath(projectPath)}\n`)
     );
 
     console.log(
@@ -240,7 +244,7 @@ export function finalStepsForAngularAndAngularSSR({
 
     console.log(
         chalk.white('1. Navigate to your environments directory:\n') +
-            chalk.gray(`   $ cd ${projectPath}/src/environments\n`)
+            chalk.gray(`   $ cd ${escapeShellPath(projectPath)}/src/environments\n`)
     );
 
     console.log(

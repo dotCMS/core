@@ -39,7 +39,12 @@ import {
     getUVEConfigValue,
     installDependenciesForProject
 } from './utils';
-import { validateAndNormalizeFramework, validateUrl } from './utils/validation';
+import {
+    validateAndNormalizeFramework,
+    validateConflictingParameters,
+    validateProjectName,
+    validateUrl
+} from './utils/validation';
 
 import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 
@@ -73,6 +78,8 @@ program
         // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
         const validatedFramework = validateAndNormalizeFramework(options.framework);
         validateUrl(options.url);
+        validateConflictingParameters(options);
+        validateProjectName(projectName);
 
         const projectNameFinal = projectName ?? (await askProjectName());
         const directoryInput = options.directory ?? (await askDirectory());
