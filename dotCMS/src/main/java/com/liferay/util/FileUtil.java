@@ -33,6 +33,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import javax.servlet.ServletContext;
 import java.io.BufferedReader;
@@ -59,13 +60,7 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -559,10 +554,36 @@ public class FileUtil {
 		return listFiles(dir, false);
 	}
 
+	/**
+	 * Lists the file handles from the specified directory or file. If the input
+	 * is a directory, the method retrieves file handles from the directory, and
+	 * optionally its subdirectories, based on the provided parameters.
+	 *
+	 * @param fileName the name or path of the file or directory to list file handles from
+	 * @param includeSubDirs a flag indicating whether subdirectories should also be included
+	 *                       when processing a directory
+	 * @return an array of {@code File} objects representing the file handles found
+	 *         in the specified location
+	 * @deprecated Use a more modern method for handling files, as getFilesByPattern(File directory, String pattern)
+	 */
+	@Deprecated
 	public static File[] listFileHandles(String fileName, Boolean includeSubDirs) {
 		return listFileHandles(new File(fileName), includeSubDirs);
 	}
 
+	/**
+	 * Lists the file handles from the specified directory or file. If the input
+	 * is a directory, the method retrieves file handles from the directory, and
+	 * optionally its subdirectories, based on the provided parameters.
+	 *
+	 * @param dir the name or path of the file or directory to list file handles from
+	 * @param includeSubDirs a flag indicating whether subdirectories should also be included
+	 *                       when processing a directory
+	 * @return an array of {@code File} objects representing the file handles found
+	 *         in the specified location
+	 * @deprecated Use a more modern method for handling files, as getFilesByPattern(File directory, String pattern)
+	 */
+	@Deprecated
 	public static File[] listFileHandles(File dir, boolean includeSubDirs) {
 
 		if(!dir.exists() || ! dir.isDirectory()){
@@ -611,6 +632,22 @@ public class FileUtil {
 		}
 
 		return files.toArray(new String[0]);
+	}
+
+	/**
+	 * Retrieves a collection of files from the specified directory that match a given pattern.
+	 * The method searches recursively within the directory and retrieves all files,
+	 * matching the default pattern.
+	 *
+	 * @param directory the directory to search for files; must be a valid directory
+	 * @return a collection of files from the specified directory that match the pattern
+	 */
+	public static Collection<File> getFilesByPattern(File directory, String pattern) {
+		return FileUtils.listFiles(
+				directory,
+				new WildcardFileFilter(pattern),  // e.g., "*.txt"
+				TrueFileFilter.INSTANCE
+		);
 	}
 
 	public static void mkdirs(String pathName) {

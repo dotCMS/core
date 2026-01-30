@@ -87,4 +87,5 @@ This maintenance release includes the following code fixes:
 81. https://github.com/dotCMS/core/issues/33767 : [TASK] Backport security fix #33767
 82. https://github.com/dotCMS/core/issues/34278 : [DEFECT] PublisherQueueJob (StatefulJob) updates Elasticsearch index but fails to commit DB changes when processing large batches #34278
 83. https://github.com/dotCMS/core/issues/33434 : [DEFECT] #editContentlet macro doesn't properly escape apostrophes #33434
+84. https://github.com/dotCMS/core/issues/34131 : Log Files view does not display log files from subdirectories #34131
 
