@@ -1,13 +1,11 @@
-<p-toolbar class="gap-1 h-full px-3  justify-start border-none! ">
+<p-toolbar class="gap-1 h-full px-3 justify-start border-none!">
     <div
         class="grid w-full items-center transition-all duration-300 ease-in-out gap-y-1 py-3"
         [class.gap-x-1]="!$treeExpanded()"
         [class.gap-x-0]="$treeExpanded()"
         [class]="'grid-cols-[min-content_1fr] grid-rows-2'">
         @if (!$treeExpanded()) {
-            <dot-content-drive-tree-toggler
-                data-testid="tree-toggler"
-              />
+            <dot-content-drive-tree-toggler data-testid="tree-toggler" />
         }
 
         <div

@@ -1,9 +1,8 @@
-import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { By } from '@angular/platform-browser';
 
 import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
 
