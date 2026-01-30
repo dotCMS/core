@@ -27,7 +27,6 @@ const MOCK_CONTENTLET_AREA: ContentletArea = {
             acceptTypes: 'test',
             identifier: 'container-identifier-123',
             maxContentlets: 5,
-            variantId: 'variant-123',
             uuid: 'uuid-123',
             contentletsId: ['contentlet-identifier-123']
         },
@@ -57,7 +56,6 @@ const MOCK_EMPTY_CONTENTLET_AREA: ContentletArea = {
             acceptTypes: 'test',
             identifier: 'container-identifier-123',
             maxContentlets: 5,
-            variantId: 'variant-123',
             uuid: 'uuid-123'
         },
         language_id: '1',

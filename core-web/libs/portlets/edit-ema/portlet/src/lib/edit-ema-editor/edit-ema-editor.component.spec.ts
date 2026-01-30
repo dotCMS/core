@@ -113,8 +113,8 @@ import {
 } from '../shared/mocks';
 import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 import * as uveUtils from '../utils';
+import { SDK_EDITOR_SCRIPT_SOURCE, TEMPORAL_DRAG_ITEM } from '../utils';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -564,8 +564,7 @@ describe('EditEmaEditorComponent', () => {
                             uuid: '123',
                             acceptTypes: 'test',
                             maxContentlets: 1,
-                            contentletsId: ['123'],
-                            variantId: '123'
+                            contentletsId: ['123']
                         },
                         pageContainers: [
                             {
@@ -615,6 +614,350 @@ describe('EditEmaEditorComponent', () => {
                     expect(saveMock).toHaveBeenCalledWith([
                         { contentletsId: [], identifier: '123', personaTag: undefined, uuid: '123' }
                     ]);
+                });
+            });
+
+            describe('checkAndResetActiveContentlet', () => {
+                let resetActiveContentletSpy: jest.SpyInstance;
+
+                beforeEach(() => {
+                    resetActiveContentletSpy = jest.spyOn(store, 'resetActiveContentlet');
+                });
+
+                afterEach(() => {
+                    resetActiveContentletSpy.mockClear();
+                });
+
+                describe('on delete', () => {
+                    it('should reset activeContentlet when deleting the active contentlet', () => {
+                        const activeContentlet: ActionPayload = {
+                            pageId: '123',
+                            language_id: '1',
+                            container: {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                acceptTypes: 'test',
+                                maxContentlets: 1,
+                                contentletsId: ['contentlet-1']
+                            },
+                            pageContainers: [
+                                {
+                                    identifier: 'container-1',
+                                    uuid: 'uuid-1',
+                                    contentletsId: ['contentlet-1']
+                                }
+                            ],
+                            contentlet: {
+                                identifier: 'contentlet-1',
+                                inode: 'inode-1',
+                                title: 'Test',
+                                contentType: 'test'
+                            }
+                        };
+
+                        store.setActiveContentlet(activeContentlet);
+
+                        const payload: ActionPayload = {
+                            pageId: '123',
+                            language_id: '1',
+                            container: {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                acceptTypes: 'test',
+                                maxContentlets: 1,
+                                contentletsId: ['contentlet-1']
+                            },
+                            pageContainers: [
+                                {
+                                    identifier: 'container-1',
+                                    uuid: 'uuid-1',
+                                    contentletsId: ['contentlet-1']
+                                }
+                            ],
+                            contentlet: {
+                                identifier: 'contentlet-1',
+                                inode: 'inode-1',
+                                title: 'Test',
+                                contentType: 'test'
+                            }
+                        };
+
+                        store.setContentletArea({
+                            x: 100,
+                            y: 100,
+                            width: 500,
+                            height: 500,
+                            payload
+                        });
+
+                        spectator.detectChanges();
+
+                        const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                        spectator.triggerEventHandler(
+                            DotUveContentletToolsComponent,
+                            'deleteContent',
+                            payload
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        confirmDialog
+                            .querySelector('.p-confirm-dialog-accept')
+                            .dispatchEvent(new Event('click'));
+
+                        expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should not reset activeContentlet when deleting a different contentlet', () => {
+                        const activeContentlet: ActionPayload = {
+                            pageId: '123',
+                            language_id: '1',
+                            container: {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                acceptTypes: 'test',
+                                maxContentlets: 1,
+                                contentletsId: ['contentlet-1', 'contentlet-2']
+                            },
+                            pageContainers: [
+                                {
+                                    identifier: 'container-1',
+                                    uuid: 'uuid-1',
+                                    contentletsId: ['contentlet-1', 'contentlet-2']
+                                }
+                            ],
+                            contentlet: {
+                                identifier: 'contentlet-1',
+                                inode: 'inode-1',
+                                title: 'Test',
+                                contentType: 'test'
+                            }
+                        };
+
+                        store.setActiveContentlet(activeContentlet);
+
+                        const payload: ActionPayload = {
+                            pageId: '123',
+                            language_id: '1',
+                            container: {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                acceptTypes: 'test',
+                                maxContentlets: 1,
+                                contentletsId: ['contentlet-1', 'contentlet-2']
+                            },
+                            pageContainers: [
+                                {
+                                    identifier: 'container-1',
+                                    uuid: 'uuid-1',
+                                    contentletsId: ['contentlet-1', 'contentlet-2']
+                                }
+                            ],
+                            contentlet: {
+                                identifier: 'contentlet-2',
+                                inode: 'inode-2',
+                                title: 'Other',
+                                contentType: 'test'
+                            }
+                        };
+
+                        store.setContentletArea({
+                            x: 100,
+                            y: 100,
+                            width: 500,
+                            height: 500,
+                            payload
+                        });
+
+                        spectator.detectChanges();
+
+                        const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+
+                        spectator.triggerEventHandler(
+                            DotUveContentletToolsComponent,
+                            'deleteContent',
+                            payload
+                        );
+
+                        spectator.detectComponentChanges();
+
+                        confirmDialog
+                            .querySelector('.p-confirm-dialog-accept')
+                            .dispatchEvent(new Event('click'));
+
+                        expect(resetActiveContentletSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('on move', () => {
+                    it('should reset activeContentlet when moving it to a different container', () => {
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
+                        const activeContentlet: ActionPayload = {
+                            pageId: '123',
+                            language_id: '1',
+                            container: {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                acceptTypes: 'Banner,Activity',
+                                maxContentlets: 25,
+                                contentletsId: [contentlet.identifier]
+                            },
+                            pageContainers: [
+                                {
+                                    identifier: 'container-1',
+                                    uuid: 'uuid-1',
+                                    contentletsId: [contentlet.identifier]
+                                }
+                            ],
+                            contentlet: {
+                                identifier: contentlet.identifier,
+                                inode: contentlet.inode,
+                                title: contentlet.title,
+                                contentType: contentlet.contentType
+                            }
+                        };
+
+                        store.setActiveContentlet(activeContentlet);
+
+                        const savePageSpy = jest.spyOn(store, 'savePage');
+
+                        store.setEditorDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: contentlet.identifier
+                                    },
+                                    container: {
+                                        acceptTypes: 'Banner,Activity',
+                                        identifier: 'container-1',
+                                        maxContentlets: 25,
+                                        uuid: 'uuid-1'
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: 'container-2',
+                                            maxContentlets: 25,
+                                            uuid: 'uuid-2'
+                                        },
+                                        contentlet: {
+                                            identifier: '456',
+                                            title: 'Pivot',
+                                            inode: 'pivot-inode',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePageSpy).toHaveBeenCalled();
+                        expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should not reset activeContentlet when moving it within the same container', () => {
+                        const contentlet = CONTENTLETS_MOCK_FOR_EDITOR[0];
+                        const activeContentlet: ActionPayload = {
+                            pageId: '123',
+                            language_id: '1',
+                            container: {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                acceptTypes: 'Banner,Activity',
+                                maxContentlets: 25,
+                                contentletsId: [contentlet.identifier, '456']
+                            },
+                            pageContainers: [
+                                {
+                                    identifier: 'container-1',
+                                    uuid: 'uuid-1',
+                                    contentletsId: [contentlet.identifier, '456']
+                                }
+                            ],
+                            contentlet: {
+                                identifier: contentlet.identifier,
+                                inode: contentlet.inode,
+                                title: contentlet.title,
+                                contentType: contentlet.contentType
+                            }
+                        };
+
+                        store.setActiveContentlet(activeContentlet);
+
+                        const savePageSpy = jest.spyOn(store, 'savePage');
+
+                        store.setEditorDragItem({
+                            baseType: contentlet.baseType,
+                            contentType: contentlet.contentType,
+                            draggedPayload: {
+                                item: {
+                                    contentlet: {
+                                        ...contentlet,
+                                        identifier: contentlet.identifier
+                                    },
+                                    container: {
+                                        acceptTypes: 'Banner,Activity',
+                                        identifier: 'container-1',
+                                        maxContentlets: 25,
+                                        uuid: 'uuid-1'
+                                    }
+                                },
+                                type: 'contentlet',
+                                move: true
+                            }
+                        });
+
+                        const drop = new Event('drop');
+
+                        Object.defineProperty(drop, 'target', {
+                            writable: false,
+                            value: {
+                                dataset: {
+                                    dropzone: 'true',
+                                    position: 'before',
+                                    payload: JSON.stringify({
+                                        container: {
+                                            acceptTypes: 'Banner,Activity',
+                                            identifier: 'container-1',
+                                            maxContentlets: 25,
+                                            uuid: 'uuid-1'
+                                        },
+                                        contentlet: {
+                                            identifier: '456',
+                                            title: 'Pivot',
+                                            inode: 'pivot-inode',
+                                            contentType: 'Banner'
+                                        }
+                                    })
+                                }
+                            }
+                        });
+
+                        window.dispatchEvent(drop);
+
+                        expect(savePageSpy).toHaveBeenCalled();
+                        expect(resetActiveContentletSpy).not.toHaveBeenCalled();
+                    });
                 });
             });
 
@@ -1326,8 +1669,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 2,
-                            contentletsId: ['123'],
-                            variantId: '123'
+                            contentletsId: ['123']
                         },
                         pageId: 'test',
                         position: 'after'
@@ -1406,8 +1748,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123'],
-                            variantId: '123'
+                            contentletsId: ['contentlet-identifier-123']
                         },
                         pageId: 'test',
                         position: 'before'
@@ -1483,8 +1824,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 2,
-                            contentletsId: ['123'],
-                            variantId: '123'
+                            contentletsId: ['123']
                         },
                         pageId: 'test',
                         position: 'after'
@@ -1563,8 +1903,7 @@ describe('EditEmaEditorComponent', () => {
                             acceptTypes: 'test',
                             uuid: 'uuid-123',
                             maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123'],
-                            variantId: '123'
+                            contentletsId: ['contentlet-identifier-123']
                         },
                         pageId: 'test',
                         position: 'before'
@@ -2021,7 +2360,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '123'
                                         },
                                         contentlet: {
@@ -2088,7 +2426,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '123'
                                         },
                                         contentlet: {
@@ -2136,7 +2473,6 @@ describe('EditEmaEditorComponent', () => {
                                         acceptTypes: 'Banner,Activity',
                                         identifier: '123',
                                         maxContentlets: 25,
-                                        variantId: 'DEFAULT',
                                         uuid: '123'
                                     }
                                 },
@@ -2159,7 +2495,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '456'
                                         },
                                         // Pivot contentlet
@@ -2213,7 +2548,6 @@ describe('EditEmaEditorComponent', () => {
                                         acceptTypes: 'Banner,Activity',
                                         identifier: '123',
                                         maxContentlets: 25,
-                                        variantId: 'DEFAULT',
                                         uuid: '123'
                                     }
                                 },
@@ -2236,7 +2570,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '456'
                                         },
                                         // Pivot contentlet
@@ -2298,7 +2631,6 @@ describe('EditEmaEditorComponent', () => {
                                             acceptTypes: 'Banner,Activity',
                                             identifier: '123',
                                             maxContentlets: 25,
-                                            variantId: 'DEFAULT',
                                             uuid: '456'
                                         },
                                         // Pivot contentlet
@@ -2362,7 +2694,6 @@ describe('EditEmaEditorComponent', () => {
                                                 acceptTypes: 'Banner,Activity,DotAsset',
                                                 identifier: '123',
                                                 maxContentlets: 25,
-                                                variantId: 'DEFAULT',
                                                 uuid: '456'
                                             }
                                         })
@@ -2436,7 +2767,6 @@ describe('EditEmaEditorComponent', () => {
                                                 acceptTypes: 'Banner,Activity,DotAsset',
                                                 identifier: '123',
                                                 maxContentlets: 25,
-                                                variantId: 'DEFAULT',
                                                 uuid: '456'
                                             },
                                             contentlet: {
@@ -2520,7 +2850,6 @@ describe('EditEmaEditorComponent', () => {
                                                 acceptTypes: 'Banner,Activity,DotAsset',
                                                 identifier: '123',
                                                 maxContentlets: 25,
-                                                variantId: 'DEFAULT',
                                                 uuid: '456'
                                             }
                                         })
