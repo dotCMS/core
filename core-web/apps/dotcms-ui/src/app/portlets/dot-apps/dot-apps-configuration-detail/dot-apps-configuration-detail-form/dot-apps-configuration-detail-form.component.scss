@@ -66,3 +66,50 @@
         }
     }
 }
+
+.dot-apps-configuration-detail {
+    &__section-header {
+        align-items: center;
+        border-bottom: 2px solid $color-palette-secondary-100;
+        display: flex;
+        gap: $spacing-2;
+        margin: $spacing-6 0 $spacing-4;
+        padding-bottom: $spacing-2;
+
+        h3 {
+            font-size: $font-size-xl;
+            font-weight: 500;
+            margin: 0;
+        }
+    }
+
+    &__info-box {
+        background-color: $color-palette-primary-100;
+        border: 1px solid $color-palette-primary-200;
+        border-radius: $border-radius-md;
+        margin-bottom: $spacing-4;
+        padding: $spacing-3 $spacing-4;
+        color: $color-palette-primary-700;
+    }
+
+    &__bool-card {
+        &:hover {
+            border-color: $color-palette-primary;
+        }
+
+        p-checkbox {
+            display: flex;
+            align-items: center;
+
+            ::ng-deep {
+                .p-checkbox-label {
+                    margin-bottom: 0;
+                }
+            }
+        }
+
+        .p-field-hint {
+            display: block;
+        }
+    }
+}
