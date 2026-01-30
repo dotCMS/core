@@ -11,7 +11,7 @@ dotCMS is a **Universal Content Management System** - a large-scale enterprise J
 
 **Tech Stack:**
 - **Backend**: Java 21 runtime (Java 11 syntax for core), Maven 3.9+, JAX-RS REST APIs
-- **Frontend**: Angular 19+, TypeScript 5.6+, Nx 20.5+, PrimeNG 17.18+
+- **Frontend**: Angular 20+, TypeScript 5.6+, Nx 20.5+, PrimeNG 17.18+
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, Tomcat 9
 - **Testing**: JUnit 5, Jest, Spectator, Playwright, Postman
 

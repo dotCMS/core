@@ -9,7 +9,7 @@ alwaysApply: false
 **Nx monorepo** in `core-web/`: TypeScript, Angular apps/libs, and SDK for **Angular** and **React**. Full standards live in **`docs/frontend/`**. Index: **`@docs/frontend/README.md`** — load it for the full doc list and when to use each; then load the specific doc you need.
 
 ## Stack
-- **Angular**: standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush, PrimeNG/PrimeFlex (Angular 19+/20+).
+- **Angular**: standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, OnPush, PrimeNG/PrimeFlex (Angular 20+).
 - **SDK**: `sdk-angular`, `sdk-react`, `sdk-client`, `sdk-types`, etc.
 - **Apps**: `dotcms-ui`, `content-drive-ui`, `edit-ema-ui`, portlets, libs.
 
