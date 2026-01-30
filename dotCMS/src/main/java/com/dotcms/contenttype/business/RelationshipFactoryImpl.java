@@ -579,7 +579,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         String liveOrWorking = live ? "cvi.live_inode" : "cvi.working_inode";
         String orderBy = SQLUtil.sanitizeSortBy(orderByIn);
         // we only include contentlet for sorting
-        boolean includeContentlet = !("sort_order".equalsIgnoreCase(orderBy) || "tree_order".equalsIgnoreCase(orderBy));
+        boolean includeContentlet =
+                UtilMethods.isSet(orderBy) && !("sort_order".equalsIgnoreCase(orderBy) || "tree_order".equalsIgnoreCase(
+                        orderBy));
 
         final StringBuilder query = new StringBuilder("select " + liveOrWorking + " as inode ")
                 .append(" from contentlet_version_info cvi, tree t ");
@@ -643,7 +645,9 @@ public class RelationshipFactoryImpl implements RelationshipFactory{
         String liveOrWorking = live ? "cvi.live_inode" : "cvi.working_inode";
 
         // we only include contentlet for sorting
-        boolean includeContentlet = !("sort_order".equalsIgnoreCase(orderBy) || "tree_order".equalsIgnoreCase(orderBy));
+        boolean includeContentlet =
+                UtilMethods.isSet(orderBy) && !("sort_order".equalsIgnoreCase(orderBy) || "tree_order".equalsIgnoreCase(
+                        orderBy));
 
         final StringBuilder query = new StringBuilder();
 
