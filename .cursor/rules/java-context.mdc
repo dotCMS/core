@@ -1,6 +1,6 @@
 ---
 description: "Java, dotCMS backend, Maven, Config, Logger, REST API. Use when editing Java, pom.xml, or backend (dotCMS/src, services, REST)."
-globs: ["**/*.java", "**/pom.xml", "dotCMS/src/**/*"]
+globs: **/*.java, **/pom.xml, dotCMS/src/**/*
 alwaysApply: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: "Nx monorepo frontend (core-web): Angular, TypeScript, SDK Angular/React. Use when editing apps, libs, or SDK in core-web."
-globs: ["core-web/**/*.ts", "core-web/**/*.tsx", "core-web/**/*.html", "core-web/**/*.scss", "core-web/**/*.css"]
+globs: core-web/**/*.ts, core-web/**/*.tsx, core-web/**/*.html, core-web/**/*.scss, core-web/**/*.css
 alwaysApply: false
 ---
 
