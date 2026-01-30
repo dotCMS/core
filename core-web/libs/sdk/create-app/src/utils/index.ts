@@ -19,15 +19,45 @@ import {
 
 import type { SupportedFrontEndFrameworks } from '../types';
 
-export async function fetchWithRetry(url: string, retries = 5, delay = 5000) {
+export async function fetchWithRetry(
+    url: string,
+    retries = 5,
+    delay = 5000,
+    requestTimeout = 10000 // Per-request timeout in milliseconds
+) {
+    const errors: string[] = [];
+
     for (let i = 0; i < retries; i++) {
         try {
-            return await axios.get(url, { timeout: 5000 });
+            return await axios.get(url, {
+                timeout: requestTimeout,
+                validateStatus: (status) => status === 200
+            });
         } catch (err) {
-            console.log(`dotCMS still not up 😴 ${i + 1}. Retrying in ${delay / 1000}s...`);
+            // Track error for debugging
+            const errorMsg = axios.isAxiosError(err)
+                ? err.response?.statusText || err.code || err.message
+                : String(err);
+            errors.push(`Attempt ${i + 1}: ${errorMsg}`);
 
-            if (i === retries - 1) throw err; // throw after last attempt
+            if (i === retries - 1) {
+                // Last attempt failed - provide comprehensive error
+                throw new Error(
+                    chalk.red(`Failed to connect to dotCMS after ${retries} attempts\n\n`) +
+                        chalk.white(`URL: ${url}\n\n`) +
+                        chalk.yellow('Troubleshooting steps:\n') +
+                        chalk.white('  1. Verify the URL is correct and accessible\n') +
+                        chalk.white('  2. Check that dotCMS instance is running\n') +
+                        chalk.white('  3. Ensure no firewall is blocking the connection\n') +
+                        chalk.white('  4. Try accessing the URL in your browser\n\n') +
+                        chalk.gray('Error history:\n' + errors.map((e) => `  • ${e}`).join('\n'))
+                );
+            }
 
+            console.log(
+                chalk.yellow(`⏳ dotCMS not ready (attempt ${i + 1}/${retries})`) +
+                    chalk.gray(` - Retrying in ${delay / 1000}s...`)
+            );
             await new Promise((r) => setTimeout(r, delay));
         }
     }

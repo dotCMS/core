@@ -88,12 +88,28 @@ API Token : YOUR_API_TOKEN
 create-dotcms-app <project-name> [options]
 ```
 
-| Option                   | Description                                                                                                     |
-|--------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `-f, --framework <name>` | Skip prompts and directly choose a framework. Must be one of: `nextjs`, `angular`, `angular-ssr`, `astro`, etc. |
-| `-d, --directory`        | Project Directory                                                                                               |
-| `--local`                | Use local dotCMS instance using docker:                                                                         |
-| `-u, --username`         | dotCMS instance username (skip in case of local)                                                                |
-| `-p, --password`         | dotCMS instance password (skip in case of local)
-| `--url`                  | dotCMS instance url (skip in case of local)                                                                     |
-| `-V, --version`          | Show CLI version                                                                                                |
+| Option                   | Description                                                                                                                                                           |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-f, --framework <name>` | Skip prompts and directly choose a framework. Supported: `nextjs`, `angular`, `angular-ssr`, `astro`. Case-insensitive. Aliases: `next`, `ng`, `next.js`, `angular-server` |
+| `-d, --directory`        | Project Directory                                                                                                                                                     |
+| `--local`                | Use local dotCMS instance using docker                                                                                                                                |
+| `-u, --username`         | dotCMS instance username (skip in case of local)                                                                                                                      |
+| `-p, --password`         | dotCMS instance password (skip in case of local)                                                                                                                      |
+| `--url`                  | dotCMS instance URL (skip in case of local). Must include protocol (http:// or https://)                                                                              |
+| `-V, --version`          | Show CLI version                                                                                                                                                      |
+
+### Framework Aliases
+
+For convenience, the CLI accepts common framework name variations (case-insensitive):
+
+- `next`, `next.js`, `Next.js` → `nextjs`
+- `ng`, `Angular` → `angular`
+- `angular-server` → `angular-ssr`
+
+### URL Format
+
+When using `--url`, make sure to include the full URL with protocol:
+
+✅ **Valid:** `https://demo.dotcms.com`, `http://localhost:8082`
+❌ **Invalid:** `demo.dotcms.com`, `localhost:8082` (missing protocol)
+

@@ -39,6 +39,7 @@ import {
     getUVEConfigValue,
     installDependenciesForProject
 } from './utils';
+import { validateAndNormalizeFramework, validateUrl } from './utils/validation';
 
 import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 
@@ -68,10 +69,15 @@ program
     .action(async (projectName: string, options: DotCmsCliOptions) => {
         // welcome cli
         printWelcomeScreen();
+
+        // ✅ VALIDATE ALL CLI FLAGS IMMEDIATELY - BEFORE ANY INTERACTIVE PROMPTS
+        const validatedFramework = validateAndNormalizeFramework(options.framework);
+        validateUrl(options.url);
+
         const projectNameFinal = projectName ?? (await askProjectName());
         const directoryInput = options.directory ?? (await askDirectory());
         const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
-        const selectedFramework = options.framework ?? (await askFramework());
+        const selectedFramework = validatedFramework ?? (await askFramework());
         const isCloudInstanceSelected =
             options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
 
@@ -87,7 +93,7 @@ program
 
             const spinner = ora(`⏳ Connecting to dotCMS...`).start();
 
-            const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL);
+            const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL, 5);
 
             if (!checkIfDotcmsIsRunning) {
                 spinner.fail(
@@ -323,10 +329,10 @@ async function runDockerCompose({
     }
 }
 
-async function isDotcmsRunning(url?: string): Promise<boolean> {
+async function isDotcmsRunning(url?: string, retries = 60): Promise<boolean> {
     try {
         // console.log(chalk.cyan("Waiting for DotCMS to be up ...."));
-        const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, 40, 5000);
+        const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, retries, 5000);
         if (res && res.status === 200) {
             // console.log(chalk.green("✔ DotCMS container started sucessfully!\n"));
             return true;

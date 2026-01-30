@@ -124,7 +124,7 @@ export async function askCloudOrLocalInstance(): Promise<boolean> {
         {
             type: 'select',
             name: 'isCloud',
-            message: 'Do you have an exsisting dotCMS instance?',
+            message: 'Do you have an existing dotCMS instance?',
             choices: [
                 { name: 'Yes - I have a dotCMS instance URL', value: true },
                 { name: 'No - Spin up dotCMS locally with Docker', value: false }
