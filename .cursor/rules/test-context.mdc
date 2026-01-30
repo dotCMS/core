@@ -1,6 +1,6 @@
 ---
 description: "Testing with Spectator, Jest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
-globs: ["**/*.spec.ts", "**/*.test.ts", "**/*.spec.js", "**/test/**/*", "**/*Test.java"]
+globs: **/*.spec.ts, **/*.test.ts, **/test/**/*, **/*Test.java
 alwaysApply: false
 ---
 
