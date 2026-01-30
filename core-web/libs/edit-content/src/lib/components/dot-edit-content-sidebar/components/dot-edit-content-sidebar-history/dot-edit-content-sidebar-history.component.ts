@@ -5,6 +5,7 @@ import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
@@ -32,6 +33,7 @@ import {
     imports: [
         ScrollerModule,
         SkeletonModule,
+        TimelineModule,
         TooltipModule,
         ButtonModule,
         MenuModule,
@@ -212,10 +214,32 @@ export class DotEditContentSidebarHistoryComponent {
 
     /**
      * Get the real index of an item in the history array
-     * This is needed because p-scroller's template index is virtual
      */
     getRealIndex(item: DotCMSContentletVersion): number {
         return this.$historyItems().indexOf(item);
+    }
+
+    /**
+     * Get modifier class for the timeline marker (halo/glow by state).
+     * Live: green + green glow, draft: yellow + yellow glow, default: gray + gray glow.
+     */
+    getTimelineMarkerClass(item: DotCMSContentletVersion): string {
+        if (item.live) return 'timeline-marker--live';
+        if (item.working) return 'timeline-marker--draft';
+        return 'timeline-marker--default';
+    }
+
+    /**
+     * Handle scroll on timeline content to load more items when near bottom
+     */
+    onTimelineScroll(event: Event): void {
+        const el = event.target as HTMLElement;
+        if (!el) return;
+        const threshold = 100;
+        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+        if (nearBottom && this.$hasMoreItems() && !this.$isLoading()) {
+            this.loadNextPage();
+        }
     }
 
     /**
