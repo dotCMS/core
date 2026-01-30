@@ -29,9 +29,15 @@ setupResizeObserverMock();
 
 // Mock MutationObserver for PrimeNG components
 global.MutationObserver = class MutationObserver {
-    constructor(callback: MutationCallback) {}
-    disconnect() {}
-    observe(target: Node, options?: MutationObserverInit) {}
+    constructor() {
+        //mock constructor
+    }
+    disconnect() {
+        //mock disconnect
+    }
+    observe() {
+        //mock observe
+    }
     takeRecords(): MutationRecord[] {
         return [];
     }
