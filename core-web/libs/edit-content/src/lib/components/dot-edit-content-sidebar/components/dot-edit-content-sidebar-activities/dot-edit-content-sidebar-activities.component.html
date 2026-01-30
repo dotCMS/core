@@ -1,9 +1,9 @@
 <!-- Activities List -->
-<section class="flex flex-col h-full relative" role="log" aria-label="Content Activities">
+<section class="flex flex-col h-full min-h-0 relative" role="log" aria-label="Content Activities">
     @if ($isLoading()) {
         <dot-edit-content-sidebar-activities-skeleton data-testid="loading-state" />
     } @else {
-        <div class="flex-1 overflow-y-auto py-3">
+        <div class="flex-1 min-h-0 overflow-y-auto py-3">
             <p-dataview
                 #dv
                 [value]="$activities()"
