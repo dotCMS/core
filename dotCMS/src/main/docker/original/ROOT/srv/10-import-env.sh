@@ -3,42 +3,33 @@
 
 ## Drops the contents of the dotCMS database in preperation for a new import (only if requested)
 drop_db_tables () {
-
-    echo "- DOT_IMPORT_DROP_DB - attempting to drop db schema"
-      # Extract hostname and database name from JDBC URL (jdbc:postgresql://host/dbname)
-      DB_HOST="${DB_BASE_URL#jdbc:postgresql://}"  # Remove prefix -> host/dbname
-      DB_HOST="${DB_HOST%%/*}"                      # Remove /dbname -> host
-      DB_NAME="${DB_BASE_URL##*/}"                  # Remove everything before last / -> dbname
-
-      # Export password for psql (avoids password prompt)
-      export PGPASSWORD="${DB_PASSWORD}"
-
+      echo "- DOT_IMPORT_DROP_DB - attempting to drop db schema"
       psql -h "${DB_HOST}" -d "${DB_NAME}" -U "${DB_USERNAME}" -c "DROP SCHEMA public CASCADE;CREATE SCHEMA public;GRANT ALL ON SCHEMA public TO public;"
-      # Clear the password from environment
-      unset PGPASSWORD
-
 }
 
+## This checks active connections to the dotCMS database - we can only proceed if there are no connections
+check_active_connections() {
+  # Export password for psql (avoids password prompt)
 
+  ACTIVE=$(psql -h "$DB_HOST" -d "$DB_NAME" -U "$DB_USERNAME" -qtAX -c \
+    "SELECT count(*) FROM pg_stat_activity 
+     WHERE datname = '$DB_NAME' 
+     AND pid != pg_backend_pid()
+     AND state != 'idle'" 2>/dev/null || echo "0")
+  
+  if [ "$ACTIVE" -gt 0 ]; then
+    echo "ERROR: Database has $ACTIVE active connections"
+    echo "Cannot import while database is in use"
+    echo "This script is designed for initial deployment only"
+    echo "Stop all pods before performing refresh"
+    exit 1
+  fi
+}
 
 ## Imports the dotcms_db.sql.gz file into the postgres database specified by the DB_BASE_URL environment variable.
 import_postgres () {
 
     if [ -s $DB_BACKUP_FILE ]; then
-
-      if [ -z $DB_BASE_URL ]; then
-          echo "DB_BASE_URL environment variable not set, cannont continue without importing database"
-          return 0
-      fi
-
-      # Extract hostname and database name from JDBC URL (jdbc:postgresql://host/dbname)
-      DB_HOST="${DB_BASE_URL#jdbc:postgresql://}"  # Remove prefix -> host/dbname
-      DB_HOST="${DB_HOST%%/*}"                      # Remove /dbname -> host
-      DB_NAME="${DB_BASE_URL##*/}"                  # Remove everything before last / -> dbname
-
-      # Export password for psql (avoids password prompt)
-      export PGPASSWORD="${DB_PASSWORD}"
-
       # Check if database already has data (inode table exists with records)
       INODE_COUNT=$(psql -h "${DB_HOST}" -d "${DB_NAME}" -U "${DB_USERNAME}" -qtAX -c \
         "SELECT CASE WHEN EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'inode')
@@ -49,12 +40,8 @@ import_postgres () {
           return 0
       fi
 
-
       # Run the query using psql
       cat $DB_BACKUP_FILE | gzip -d | psql -h "${DB_HOST}" -d "${DB_NAME}" -U "${DB_USERNAME}" 
-
-      # Clear the password from environment
-      unset PGPASSWORD
 
     fi
 
@@ -96,10 +83,8 @@ download_dotcms_db_assets () {
 
     if [ ! -s "$ASSETS_BACKUP_FILE" ]; then
         rm -rf $ASSETS_BACKUP_FILE.tmp
-        echo "- Downloading ASSETS"
-        echo "AUTH_HEADER: $AUTH_HEADER"
-        echo "wget --no-check-certificate --header=\"$AUTH_HEADER\" -t 1 -O ${ASSETS_BACKUP_FILE}.tmp  ${DOT_IMPORT_ENVIRONMENT}/api/v1/maintenance/_downloadAssets\?oldAssets=${DOT_IMPORT_ALL_ASSETS}\&maxSize=${DOT_IMPORT_MAX_ASSET_SIZE}"
-        
+        echo "- Downloading ASSETS from ${DOT_IMPORT_ENVIRONMENT}"
+
         wget --no-check-certificate --header="$AUTH_HEADER" -t 1 -O ${ASSETS_BACKUP_FILE}.tmp  ${DOT_IMPORT_ENVIRONMENT}/api/v1/maintenance/_downloadAssets\?oldAssets=${DOT_IMPORT_ALL_ASSETS}\&maxSize=${DOT_IMPORT_MAX_ASSET_SIZE}
         if [ -s ${ASSETS_BACKUP_FILE}.tmp ]; then
           mv ${ASSETS_BACKUP_FILE}.tmp $ASSETS_BACKUP_FILE
@@ -156,8 +141,15 @@ export DOT_IMPORT_NON_LIVE_ASSETS=${DOT_IMPORT_NON_LIVE_ASSETS:-"false"}
 export DOT_IMPORT_MAX_ASSET_SIZE=${DOT_IMPORT_MAX_ASSET_SIZE:-"100mb"}
 export SHARED_DATA_DIR=${SHARED_DATA_DIR:-"/data/shared"}
 export IMPORT_DATA_DIR=${IMPORT_DATA_DIR:-"$SHARED_DATA_DIR/import"}
-export IMPORT_IN_PROCESS=$IMPORT_DATA_DIR/lock.txt
 export IMPORT_COMPLETE=$IMPORT_DATA_DIR/import_complete.txt
+# Extract hostname and database name from JDBC URL (jdbc:postgresql://host/dbname)
+export DB_HOST="${DB_BASE_URL#jdbc:postgresql://}"  # Remove prefix -> host/dbname
+export DB_HOST="${DB_HOST%%/*}"                      # Remove /dbname -> host
+export DB_NAME="${DB_BASE_URL##*/}"                  # Remove everything before last / -> dbname
+export PGPASSWORD="${DB_PASSWORD}"
+
+# Clear the password from environment on exit
+trap "unset PGPASSWORD" EXIT
 
 if [ -z "$DOT_IMPORT_ENVIRONMENT" ]; then
     exit 0
@@ -168,6 +160,13 @@ if [ -z "$DOT_IMPORT_API_TOKEN" -a -z "$DOT_IMPORT_USERNAME_PASSWORD" ]; then
     exit 0
 fi
 
+if [ -z $DB_BASE_URL ]; then
+    echo "DB_BASE_URL environment variable not set, cannot continue without importing database"
+    exit 0
+fi
+
+mkdir -p $IMPORT_DATA_DIR
+
 export DOT_IMPORT_HOST="${DOT_IMPORT_ENVIRONMENT#http://}"; DOT_IMPORT_HOST="${DOT_IMPORT_HOST#https://}"; DOT_IMPORT_HOST="${DOT_IMPORT_HOST%%/*}"; DOT_IMPORT_HOST="${DOT_IMPORT_HOST%%:*}"
 
 # Exit normally if already cloned
@@ -176,13 +175,15 @@ if [ -f "$IMPORT_COMPLETE" ]; then
   exit 0
 fi
 
-# lock other pods out if importing
-if [ -f "$IMPORT_IN_PROCESS" ]; then
+LOCK_DIR="$IMPORT_DATA_DIR/.lock"
+if mkdir "$LOCK_DIR" 2>/dev/null; then
+  trap "rm -rf '$LOCK_DIR' 2>/dev/null; unset PGPASSWORD" EXIT
+else
   # Get lock file age in minutes (portable for Linux and macOS)
-  if stat -c %Y "$IMPORT_IN_PROCESS" >/dev/null 2>&1; then
-    FILE_MTIME=$(stat -c %Y "$IMPORT_IN_PROCESS")  # Linux
+  if stat -c %Y "$LOCK_DIR" >/dev/null 2>&1; then
+    FILE_MTIME=$(stat -c %Y "$LOCK_DIR")  # Linux
   else
-    FILE_MTIME=$(stat -f %m "$IMPORT_IN_PROCESS")  # macOS
+    FILE_MTIME=$(stat -f %m "$LOCK_DIR")  # macOS
   fi
   CURRENT_TIME=$(date +%s)
   LOCK_AGE_MINUTES=$(( (CURRENT_TIME - FILE_MTIME) / 60 ))
@@ -190,39 +191,39 @@ if [ -f "$IMPORT_IN_PROCESS" ]; then
   # Check if import process file is older than 30 minutes (stale lock)
   if [ "$LOCK_AGE_MINUTES" -ge 30 ]; then
     echo "ERROR: Import process appears stale (lock file is ${LOCK_AGE_MINUTES} minutes old). Removing lock file."
-    rm -f "$IMPORT_IN_PROCESS"
+    rm -rf "$LOCK_DIR"
     exit 1
   fi
-  echo "ERROR: Lock file found: ${IMPORT_IN_PROCESS} (${LOCK_AGE_MINUTES} minutes old)."
+  echo "ERROR: Lock found: ${LOCK_DIR} (${LOCK_AGE_MINUTES} minutes old)."
   echo " Delete lock file or wait until it's 30 minutes old and try again"
   echo " sleeping for 3m"
   sleep 180
   exit 1
 fi
 
-mkdir -p $IMPORT_DATA_DIR && touch $IMPORT_IN_PROCESS
 
-HASHED_ENV=$(echo -n "$DOT_IMPORT_ENVIRONMENT" | md5sum | cut -d ' ' -f 1)
+HASHED_ENV=$(echo -n "$DOT_IMPORT_ENVIRONMENT" | tr -cs 'a-zA-Z0-9' '_')
+
 
 export ASSETS_BACKUP_FILE="${IMPORT_DATA_DIR}/${HASHED_ENV}_assets.zip"
 export DB_BACKUP_FILE="${IMPORT_DATA_DIR}/${HASHED_ENV}_dotcms_db.sql.gz"
 
 # Step 1. download db and assets (if needed)
-download_dotcms_db_assets || { echo "Unable to download dotcms backup"; rm $IMPORT_IN_PROCESS; exit 1; }
+download_dotcms_db_assets || { echo "Unable to download dotcms backup";  exit 1; }
 
 # Step 2. wipe database clean (if requested)
 if [ "$DOT_IMPORT_DROP_DB" = "true" ]; then
-    drop_db_tables || { echo "unable to drop the dotcms db schema"; rm $IMPORT_IN_PROCESS; exit 1; }
+    drop_db_tables || { echo "unable to drop the dotcms db schema";  exit 1; }
 fi
 
 # Step 3. import postgres db
-import_postgres || { echo "Unable to import postgres backup"; rm $IMPORT_IN_PROCESS; exit 1; }
+import_postgres || { echo "Unable to import postgres backup";  exit 1; }
 
 # Step 4. unpack assets.zip
-unpack_assets || { echo "Unable to unzip assets"; rm $IMPORT_IN_PROCESS; exit 1; }
+unpack_assets || { echo "Unable to unzip assets"; exit 1; }
 
 # Step 5: exit sig 13 if the clone worked
-if rm -f "$IMPORT_IN_PROCESS" && touch "$IMPORT_COMPLETE"; then
+if rm -rf "$LOCK_DIR" && touch "$IMPORT_COMPLETE"; then
   echo "dotCMS Environment $DOT_IMPORT_HOST Imported, happily exiting."
   exit 13
 fi
