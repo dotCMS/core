@@ -11,6 +11,7 @@ import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-edito
 import { DotUVEPaletteListTypes } from './models';
 
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
+import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-style-editor-empty-state/dot-yve-style-editor-empty-state.component';
 
 /**
  * Standalone palette component used by the EMA editor to display and switch
@@ -25,7 +26,8 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
         TabViewModule,
         DotUvePaletteListComponent,
         TooltipModule,
-        DotUveStyleEditorFormComponent
+        DotUveStyleEditorFormComponent,
+        DotUveStyleEditorEmptyStateComponent
     ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
