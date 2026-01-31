@@ -44,14 +44,15 @@ export class DotCopyButtonComponent {
     // When label is empty, use icon-only button styling for input field integration
     // When label exists, use text button for standalone usage
     $clazz = computed(() => {
-        const baseClasses = 'p-button p-button-sm';
-        if (!this.label()) {
-            // Icon-only: solid button for input field integration
-            return `${baseClasses} p-button-icon-only ${this.customClass()}`;
+        const baseClasses = 'p-button p-button-text p-button-sm ';
+
+        if (this.label()) {
+            return `${baseClasses} ${this.customClass()}`;
         } else {
-            // With label: text button for standalone usage
-            return `${baseClasses} p-button-text ${this.customClass()}`;
+            return `${baseClasses} w-9 h-9 min-w-9 p-0 ${this.customClass()}`;
         }
+
+        return `${baseClasses} ${this.customClass()}`;
     });
 
     /**
