@@ -113,7 +113,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     ],
     host: {
         class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
-    },
+    }
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);

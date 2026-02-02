@@ -1,7 +1,10 @@
-<form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
+<form
+    (ngSubmit)="onSubmit()"
+    [formGroup]="form"
+    class="h-full flex flex-col justify-center items-start">
     @if (store.allowFileNameEdit()) {
-        <div class="editor-mode__input-container">
-            <label class="p-label-input-required" data-testId="editor-label" for="file-name">
+        <div class="w-full flex flex-col gap-2">
+            <label class="p-label-input-required" data-testid="editor-label" for="file-name">
                 {{ 'dot.file.field.action.create.new.file.label' | dm }}
             </label>
             <input
@@ -11,50 +14,54 @@
                 pInputText
                 placeholder="Ex. template.html"
                 type="text"
-                data-testId="editor-file-name" />
-            <div class="error-message">
+                data-testid="editor-file-name" />
+            <div class="min-h-6 flex justify-start">
                 @let error = store.error();
                 @if (error) {
-                    <small class="p-invalid" data-testId="error-msg">
+                    <small class="p-invalid" data-testid="error-msg">
                         {{ error | dm: [store.allowFiles()] }}
                     </small>
                 } @else {
                     <dot-field-validation-message
                         [field]="nameField"
                         [patternErrorMessage]="'dot.file.field.error.type.file.not.extension'"
-                        data-testId="error-message" />
+                        data-testid="error-message" />
                 }
             </div>
         </div>
     }
-    <div class="file-field__editor-container">
+    <div class="flex flex-col flex-1 w-full gap-2">
         <ngx-monaco-editor
-            [class.file-field__code-editor--disabled]="form.disabled"
+            class="block flex-grow w-full min-h-[30rem] border border-gray-400 rounded-md overflow-auto relative"
+            [class.bg-gray-200]="form.disabled"
+            [class.opacity-50]="form.disabled"
+            [class.code-editor-disabled]="form.disabled"
             [options]="store.monacoConfig()"
             (init)="onEditorInit($event)"
-            class="file-field__code-editor"
-            data-testId="code-editor"
+            data-testid="code-editor"
             formControlName="content" />
 
         @let file = store.file();
-        <div [class.editor-mode__helper--visible]="file.mimeType" class="editor-mode__helper">
+        <div
+            class="flex items-center gap-2 text-gray-700 text-sm"
+            [class.invisible]="!file.mimeType">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ file.mimeType }}</small>
         </div>
     </div>
-    <div class="editor-mode__actions">
+    <div class="w-full flex gap-2 items-center justify-end">
         <p-button
             (click)="cancelUpload()"
             [label]="'dot.common.cancel' | dm"
             aria-label="Cancel button"
-            data-testId="cancel-button"
+            data-testid="cancel-button"
             styleClass="p-button-outlined"
             type="button" />
 
         <p-button
             [label]="'dot.common.save' | dm"
             aria-label="Import button"
-            data-testId="import-button"
+            data-testid="import-button"
             type="submit" />
     </div>
 </form>
