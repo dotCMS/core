@@ -1,6 +1,6 @@
 @let historicalVersionInode = $historicalVersionInode();
 
-<section role="region" aria-label="Content Version History">
+<section class="h-full flex flex-col min-h-0" role="region" aria-label="Content Version History">
     <dot-sidebar-accordion
         [initialActiveTab]="'versions'"
         (activeTabChange)="onAccordionTabChange($event)">
@@ -8,7 +8,7 @@
         <dot-sidebar-accordion-tab
             id="versions"
             [label]="'edit.content.sidebar.history.versions' | dm">
-            <div class="dot-edit-content-sidebar-history">
+            <div class="dot-edit-content-sidebar-history flex flex-col h-full min-h-0">
                 @if ($isLoading()) {
                     <!-- Loading state -->
                     <div
@@ -32,7 +32,7 @@
                 } @else {
                     <!-- History content -->
                     <div
-                        class="p-2"
+                        class="flex-1 min-h-0 overflow-y-auto p-2"
                         (scroll)="onTimelineScroll($event)"
                         data-testid="history-timeline-container">
                         <p-timeline
@@ -85,7 +85,8 @@
                     data-testid="push-publish-menu-button" />
                 <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
             </div>
-            <div class="dot-edit-content-sidebar-history__push-publish">
+            <div
+                class="dot-edit-content-sidebar-history__push-publish flex flex-col h-full min-h-0">
                 @if ($isLoading()) {
                     <!-- Loading state for push publish -->
                     <div
@@ -109,7 +110,8 @@
                         [hideContactUsLink]="true" />
                 } @else {
                     <!-- Push Publish History content -->
-                    <div class="dot-edit-content-sidebar-history__push-publish-content">
+                    <div
+                        class="dot-edit-content-sidebar-history__push-publish-content flex-1 min-h-0 overflow-y-auto">
                         <p-scroller
                             [items]="$pushPublishHistoryItems()"
                             [itemSize]="83"

@@ -1,3 +1,11 @@
+/* Fill tab panel so the open accordion tab uses full height */
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
 /* Timeline marker: base + halo/glow by state */
 .timeline-marker {
     display: block;

@@ -30,6 +30,9 @@ import {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-history',
+    host: {
+        class: 'flex flex-col h-full min-h-0'
+    },
     imports: [
         ScrollerModule,
         SkeletonModule,
