@@ -291,11 +291,7 @@ describe('withEditor', () => {
                         ...store.editor(),
                         activeContentlet: {
                             identifier: 'test-id',
-                            inode: 'test-inode',
-                            title: 'Test',
-                            contentType: 'testContentType'
-                        },
-                        activeContentlet: {
+
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -332,11 +328,7 @@ describe('withEditor', () => {
                         ...store.editor(),
                         activeContentlet: {
                             identifier: 'test-id',
-                            inode: 'test-inode',
-                            title: 'Test',
-                            contentType: 'testContentType'
-                        },
-                        activeContentlet: {
+
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -372,11 +364,7 @@ describe('withEditor', () => {
                         ...store.editor(),
                         activeContentlet: {
                             identifier: 'test-id',
-                            inode: 'test-inode',
-                            title: 'Test',
-                            contentType: 'type2'
-                        },
-                        activeContentlet: {
+
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -413,11 +401,7 @@ describe('withEditor', () => {
                         ...store.editor(),
                         activeContentlet: {
                             identifier: 'test-id',
-                            inode: 'test-inode',
-                            title: 'Test',
-                            contentType: 'testContentType'
-                        },
-                        activeContentlet: {
+
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -671,8 +655,7 @@ describe('withEditor', () => {
                         identifier: 'test-container-id',
                         uuid: 'test-container-uuid',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
-                        variantId: '1'
+                        maxContentlets: 1
                     },
                     contentlet: {
                         identifier: 'test-contentlet-id',
@@ -696,8 +679,7 @@ describe('withEditor', () => {
                         identifier: 'test-container-id',
                         uuid: 'test-container-uuid',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
-                        variantId: '1'
+                        maxContentlets: 1
                     },
                     contentlet: {
                         identifier: 'test-contentlet-id',
@@ -724,8 +706,7 @@ describe('withEditor', () => {
                         identifier: 'test-container-id',
                         uuid: 'test-container-uuid',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
-                        variantId: '1'
+                        maxContentlets: 1
                     },
                     contentlet: {
                         identifier: 'test-contentlet-id',
@@ -776,8 +757,7 @@ describe('withEditor', () => {
                         contentletsId: [],
                         identifier: 'container-identifier-123',
                         maxContentlets: 1,
-                        uuid: 'uuid-123',
-                        variantId: '123'
+                        uuid: 'uuid-123'
                     },
                     contentlet: {
                         contentType: 'test',
@@ -817,9 +797,10 @@ describe('withEditor', () => {
         });
 
         describe('getCurrentTreeNode', () => {
-            it('should return the current TreeNode', () => {
+            it('should return the current TreeNode with variantId from store.$variantId()', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
 
+                // When variantId is not set in pageParams, $variantId() returns empty string
                 expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
@@ -827,7 +808,33 @@ describe('withEditor', () => {
                     personalization: 'dot:persona:dot:persona',
                     relationType: 'uuid-123',
                     treeOrder: '-1',
-                    variantId: '123'
+                    variantId: '' // Uses store.$variantId() which comes from pageParams()?.variantId ?? ''
+                });
+            });
+
+            it('should use variantId from store.$variantId() when variantId is set in pageParams', () => {
+                const { container, contentlet } = ACTION_PAYLOAD_MOCK;
+                const testVariantId = 'test-variant-id-123';
+
+                // Set variantId in pageParams
+                patchState(store, {
+                    pageParams: {
+                        ...store.pageParams(),
+                        variantId: testVariantId
+                    }
+                });
+
+                const result = store.getCurrentTreeNode(container, contentlet);
+
+                expect(result.variantId).toBe(testVariantId);
+                expect(result).toEqual({
+                    containerId: 'container-identifier-123',
+                    contentId: 'contentlet-identifier-123',
+                    pageId: '123',
+                    personalization: 'dot:persona:dot:persona',
+                    relationType: 'uuid-123',
+                    treeOrder: '-1',
+                    variantId: testVariantId
                 });
             });
         });

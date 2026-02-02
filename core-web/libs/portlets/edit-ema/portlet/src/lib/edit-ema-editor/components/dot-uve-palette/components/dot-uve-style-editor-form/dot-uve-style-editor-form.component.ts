@@ -10,14 +10,14 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounceTime, distinctUntilChanged, share, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -96,25 +96,29 @@ export class DotUveStyleEditorFormComponent {
         return sections.map((_, index) => index);
     });
 
-    readonly #rollbackDetectionEffect = effect(() => {
-        const isRollback = this.$isRollback();
+    // readonly #rollbackDetectionEffect = effect(() => {
+    //     const isRollback = this.$isRollback();
 
-        // When rollback is detected, restore form from the rolled-back state
-        if (isRollback) {
-            untracked(() => {
-                this.#restoreFormFromRollback();
-            });
-        }
-    });
+    //     // When rollback is detected, restore form from the rolled-back state
+    //     if (isRollback) {
+    //         untracked(() => {
+    //             this.#restoreFormFromRollback();
+    //         });
+    //     }
+    // });
 
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
 
         if (schema) {
             this.#buildForm(schema);
-            this.#listenToFormChanges();
         }
     });
+
+    constructor() {
+        // Use switchMap to automatically cancel pending saves when form is rebuilt
+        this.#listenToFormChanges();
+    }
 
     /**
      * Builds a form from the schema using the form builder service
@@ -132,12 +136,16 @@ export class DotUveStyleEditorFormComponent {
     /**
      * Restores form values from the rolled-back graphqlResponse state.
      * Used when rollback occurs to sync form with restored state.
+     *
+     * This method rebuilds the entire form (rather than patching) to trigger
+     * the switchMap in #listenToFormChanges, which automatically cancels any
+     * pending debounced saves from the old form instance.
      */
     #restoreFormFromRollback(): void {
-        const form = this.#form();
-        const activeContentlet = this.#uveStore.editor().activeContentlet;
+        const activeContentlet = this.#uveStore.editor.activeContentlet();
+        const schema = this.$schema();
 
-        if (!form || !activeContentlet) {
+        if (!activeContentlet || !schema) {
             return;
         }
 
@@ -156,11 +164,11 @@ export class DotUveStyleEditorFormComponent {
                 activeContentlet
             );
 
-            if (styleProperties) {
-                // Update form values without triggering valueChanges
-                // Use patchValue with emitEvent: false to prevent triggering form changes
-                form.patchValue(styleProperties, { emitEvent: false });
-            }
+            // Rebuild the ENTIRE form with rolled-back values
+            // This causes the #form signal to change, which triggers switchMap in #listenToFormChanges
+            // to cancel the old subscription (including any pending debounced saves)
+            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties || undefined);
+            this.#form.set(restoredForm);
         } catch (error) {
             console.error('Error restoring form from rollback:', error);
         }
@@ -170,28 +178,35 @@ export class DotUveStyleEditorFormComponent {
      * Listens to form changes and handles:
      * 1. Immediate updates to iframe (no debounce)
      * 2. Debounced API calls to save style properties
+     *
+     * Uses switchMap to automatically cancel pending saves when the form is rebuilt
+     * (e.g., during rollback restoration). This is a clean reactive approach that
+     * eliminates the need for flags, timeouts, or manual subscription management.
      */
     #listenToFormChanges(): void {
-        const form = this.#form();
-        if (!form) {
-            return;
-        }
-
-        // Share the valueChanges observable to avoid multiple subscriptions
-        const formValueChanges$ = form.valueChanges.pipe(
-            share(),
-            takeUntilDestroyed(this.#destroyRef)
-        );
-
-        formValueChanges$
+        // Convert the form signal to an observable
+        // When the form signal changes (rebuilt during rollback), switchMap cancels the old subscription
+        toObservable(this.$form)
             .pipe(
-                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
-                tap((formValues) => this.#updateIframeImmediately(formValues)),
-                debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
+                // Filter out null forms
+                filter((form): form is FormGroup => form !== null),
+                // Switch to the new form's valueChanges
+                // This automatically unsubscribes from the previous form's valueChanges
+                // and cancels any pending debounced saves
+                switchMap((form) =>
+                    form.valueChanges.pipe(
+                        distinctUntilChanged(
+                            (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
+                        ),
+                        tap((formValues) => this.#updateIframeImmediately(formValues)),
+                        debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
+                    )
+                ),
+                takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((formValues: Record<string, unknown>) =>
-                this.#saveStyleProperties(formValues)
-            );
+            .subscribe((formValues: Record<string, unknown>) => {
+                this.#saveStyleProperties(formValues);
+            });
     }
 
     /**
@@ -212,17 +227,19 @@ export class DotUveStyleEditorFormComponent {
                 return;
             }
 
-            // Update the internal response (mutates the pageAsset in place)
-            // Since $customGraphqlResponse is computed from graphqlResponse(),
-            // updating the internal response will automatically reflect in the computed
+            // Deep clone the graphqlResponse before mutating to prevent affecting history entries
+            // This ensures that mutations don't affect the stored state in history
+            const clonedResponse = structuredClone(internalGraphqlResponse);
+
+            // Update the cloned response (mutates the clone in place)
             const updatedInternalResponse = updateStylePropertiesInGraphQL(
-                internalGraphqlResponse,
+                clonedResponse,
                 activeContentlet,
                 formValues
             );
 
             // Optimistic update: Update state WITHOUT saving to history
-            // History is only saved when we actually call the API (in #saveStylePropertiesToApi)
+            // History is only saved when we actually call the API (in #saveStyleProperties)
             this.#uveStore.setGraphqlResponse(updatedInternalResponse);
 
             // Send updated response to iframe immediately for instant feedback
@@ -287,6 +304,11 @@ export class DotUveStyleEditorFormComponent {
                     });
                 },
                 error: (error) => {
+                    // Restore form values from rolled-back state
+                    // Rollback already happened synchronously in store's error handler,
+                    // so we can restore the form immediately
+                    this.#restoreFormFromRollback();
+
                     // Error toast - rollback already handled in store
                     this.#messageService.add({
                         severity: 'error',

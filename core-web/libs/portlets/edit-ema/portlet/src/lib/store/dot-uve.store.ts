@@ -147,6 +147,9 @@ export const UVEStore = signalStore(
         $graphqlWithParams: store.$graphqlWithParams,
         setGraphqlResponse: (response) => store.setGraphqlResponse(response),
         rollbackGraphqlResponse: () => store.rollbackGraphqlResponse(),
+        clearHistory: () => store.clearHistory(),
+        addHistory: (response) => store.addHistory(response),
+        graphqlResponse: () => store.graphqlResponse(),
         $customGraphqlResponse: store.$customGraphqlResponse
     })),  // Save methods (depends on client)
     withFeature((store) => withLock({

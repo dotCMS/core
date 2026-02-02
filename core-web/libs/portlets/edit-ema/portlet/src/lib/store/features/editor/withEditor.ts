@@ -288,6 +288,15 @@ export function withEditor() {
                         }
                     });
                 },
+                resetActiveContentlet() {
+                    const editor = store.editor();
+                    patchState(store, {
+                        editor: {
+                            ...editor,
+                            activeContentlet: null
+                        }
+                    });
+                },
                 resetContentletArea() {
                     const editor = store.editor();
                     patchState(store, {
@@ -327,14 +336,13 @@ export function withEditor() {
                 ): DotTreeNode {
                     const { identifier: contentId } = contentlet;
                     const {
-                        variantId,
                         uuid: relationType,
                         contentletsId,
                         identifier: containerId
                     } = container;
 
                     const { personalization, id: pageId } = store.$pageData();
-
+                    const variantId = store.$variantId();
                     const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
 
                     return {

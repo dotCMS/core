@@ -25,6 +25,9 @@ export interface WithSaveDeps {
     $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
     setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
     rollbackGraphqlResponse: () => boolean;
+    clearHistory: () => void;
+    addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     $customGraphqlResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; graphqlRequest: { query: string; variables: Record<string, string> } } | null>;
 }
 
@@ -204,12 +207,18 @@ export function withSave(deps: WithSaveDeps) {
                     return dotPageApiService.saveStyleProperties(payload).pipe(
                         tap({
                             next: () => {
-                                // Success - optimistic update remains, no rollback needed
+                                // Success - clear history and set current state as the new base (last saved state)
+                                // This ensures future rollbacks always go back to this saved state
+                                const currentResponse = deps.graphqlResponse();
+                                if (currentResponse) {
+                                    deps.clearHistory();
+                                    deps.addHistory(currentResponse);
+                                }
                             },
                             error: (error) => {
                                 console.error('Error saving style properties:', error);
 
-                                // Rollback the optimistic update
+                                // Rollback the optimistic update to the last saved state
                                 const rolledBack = deps.rollbackGraphqlResponse();
 
                                 if (!rolledBack) {
@@ -233,7 +242,7 @@ export function withSave(deps: WithSaveDeps) {
                         catchError((error) => {
                             console.error('Error saving style properties:', error);
                             // Re-throw error so component can handle it (show toast, etc.)
-                            // Rollback is already handled in tapResponse error callback
+                            // Rollback is already handled in tap error callback
                             return throwError(() => error);
                         })
                     );
