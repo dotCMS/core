@@ -1,6 +1,9 @@
-<form (ngSubmit)="onSubmit()" [formGroup]="form" class="editor-mode__form">
+@let allowFileNameEdit = $allowFileNameEdit();
+@let cancel = $cancel;
+
+<form (ngSubmit)="onSubmit()" [formGroup]="form" class="flex h-full w-full flex-col items-start justify-center gap-4">
     @if (allowFileNameEdit) {
-        <div class="editor-mode__input-container">
+        <div class="flex w-full flex-col gap-2">
             <label class="p-label-input-required" data-testId="editor-label" for="file-name">
                 {{ 'dot.binary.field.action.create.new.file.label' | dm }}
             </label>
@@ -9,10 +12,11 @@
                 autocomplete="off"
                 formControlName="name"
                 pInputText
+                class="w-full"
                 placeholder="Ex. template.html"
                 type="text"
                 data-testId="editor-file-name" />
-            <div class="error-message">
+            <div class="flex min-h-6 items-start">
                 <dot-field-validation-message
                     [field]="form.get('name')"
                     [patternErrorMessage]="'dot.binary.field.error.type.file.not.extension'"
@@ -20,22 +24,26 @@
             </div>
         </div>
     }
-    <div class="binary-field__editor-container">
+    <div class="flex w-full flex-1 flex-col items-start gap-2">
         <ngx-monaco-editor
             (init)="onEditorInit()"
-            [ngClass]="{ 'binary-field__code-editor--disabled': form.disabled }"
+            [class.bg-gray-200]="form.disabled"
+            [class.opacity-50]="form.disabled"
+            [class.cursor-not-allowed]="form.disabled"
             [options]="monacoOptions()"
-            class="binary-field__code-editor"
+            class="block w-full min-h-80 flex-1 overflow-auto rounded-md border border-gray-400"
             #editorRef
             data-testId="code-editor"
             formControlName="content" />
 
-        <div [ngClass]="{ 'editor-mode__helper--visible': mimeType }" class="editor-mode__helper">
+        <div
+            [class.visible]="!!mimeType"
+            class="invisible flex items-center gap-2 text-sm text-gray-700">
             <i class="pi pi-info-circle"></i>
             <small>Mime Type: {{ mimeType }}</small>
         </div>
     </div>
-    <div class="editor-mode__actions">
+    <div class="flex w-full items-center justify-end gap-2">
         <p-button
             (click)="cancel.emit()"
             [label]="'dot.common.cancel' | dm"

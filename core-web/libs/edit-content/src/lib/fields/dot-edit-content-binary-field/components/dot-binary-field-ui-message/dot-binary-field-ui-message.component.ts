@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostBinding, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -9,18 +9,15 @@ import { UiMessageI } from '../../interfaces';
     selector: 'dot-binary-field-ui-message',
     imports: [CommonModule, DotMessagePipe],
     templateUrl: './dot-binary-field-ui-message.component.html',
-    styleUrls: ['./dot-binary-field-ui-message.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryFieldUiMessageComponent {
-    @Input() uiMessage: UiMessageI;
+    $uiMessage = input<UiMessageI>(undefined, { alias: 'uiMessage' });
 
     /**
      * Whether the component is disabled.
      *
      * @memberof DotBinaryFieldUiMessageComponent
      */
-    @Input()
-    @HostBinding('class.disabled')
-    disabled = false;
+    $disabled = input<boolean>(false, { alias: 'disabled' });
 }
