@@ -83,7 +83,7 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="flex items-center w-full min-h-[52px]"
+        class="flex items-center w-full min-h-[52px] pr-4"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         <!-- Left group for lock controls -->
@@ -147,46 +147,41 @@
                 }
             }
 
-            <!-- Sidebar toggle always visible -->
-            <div
-                class="flex items-center border-l border-gray-300 transition-all duration-200 ease-in-out overflow-hidden min-h-[52px] min-w-16 justify-center"
-                data-testId="sidebar-toggle"
-                [class.opacity-0]="showSidebar"
-                [class.translate-x-full]="showSidebar"
-                [class.max-w-0]="showSidebar"
-                [class.p-0]="showSidebar"
-                [class.m-0]="showSidebar"
-                [class.border-l-0]="showSidebar"
-                [class.min-w-0]="showSidebar">
-                <button
-                    class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only text-primary transition-all duration-200 ease-in-out"
-                    (click)="$store.toggleSidebar()"
-                    data-testId="sidebar-toggle-button">
-                    <svg
-                        class="stroke-current"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <rect
-                            x="2.70588"
-                            y="3.17659"
-                            width="14.5882"
-                            height="13.6471"
-                            rx="1.17647"
-                            stroke="currentColor"
-                            stroke-width="1.41176" />
-                        <line
-                            x1="12.3528"
-                            y1="16.1223"
-                            x2="12.3528"
-                            y2="3.87797"
-                            stroke="currentColor"
-                            stroke-width="1.88235" />
-                    </svg>
-                </button>
-            </div>
+            @if (!showSidebar) {
+                <!-- Sidebar toggle: only rendered when sidebar is collapsed to avoid white space when open -->
+                <div
+                    class="flex items-center border-l border-gray-300 min-h-[52px] min-w-16 justify-center"
+                    data-testId="sidebar-toggle">
+                    <button
+                        class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only text-primary"
+                        (click)="$store.toggleSidebar()"
+                        data-testId="sidebar-toggle-button">
+                        <svg
+                            class="stroke-current"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 20 20"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <rect
+                                x="2.70588"
+                                y="3.17659"
+                                width="14.5882"
+                                height="13.6471"
+                                rx="1.17647"
+                                stroke="currentColor"
+                                stroke-width="1.41176" />
+                            <line
+                                x1="12.3528"
+                                y1="16.1223"
+                                x2="12.3528"
+                                y2="3.87797"
+                                stroke="currentColor"
+                                stroke-width="1.88235" />
+                        </svg>
+                    </button>
+                </div>
+            }
         </div>
     </div>
 </ng-template>
