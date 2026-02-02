@@ -21,7 +21,7 @@ export interface PageContextComputed {
     $isPreviewMode: Signal<boolean>;
     $isLiveMode: Signal<boolean>;
     $pageURI: Signal<string>;
-    $variantId: Signal<string>;
+    $variantId: Signal<string | undefined>;
     $canEditPage: Signal<boolean>;
 }
 
@@ -79,7 +79,7 @@ export function withPageContext() {
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
-                    $variantId: computed(() => pageParams()?.variantId ?? ''),
+                    $variantId: computed(() => pageParams()?.variantId ?? undefined), // Passing undefined because sending an empty string causes API errors.
                     $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
                 } satisfies PageContextComputed;
             }
