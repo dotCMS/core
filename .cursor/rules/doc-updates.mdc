@@ -1,6 +1,6 @@
 ---
 description: "Where to update documentation. Use when editing docs/, CLAUDE.md, .md/.mdc files, or when adding patterns that should be documented."
-globs: ["**/*.md", "**/*.mdc", "CLAUDE.md", "docs/**/*"]
+globs: **/*.mdc,CLAUDE.md,docs/**/*
 alwaysApply: false
 ---
 
