@@ -1,4 +1,4 @@
-<div #tableContainer class="category-field__search-list">
+<div #tableContainer >
     @if (!$isLoading()) {
         <p-table
             data-testId="categories-table"
@@ -11,7 +11,7 @@
             (onHeaderCheckboxToggle)="onHeaderCheckboxToggle($event)"
             (onRowSelect)="onSelectItem($event)"
             (onRowUnselect)="onRemoveItem($event)"
-            styleClass="dotTable">
+           >
             <ng-template pTemplate="header">
                 <tr data-testId="table-header">
                     <th id="checkbox" scope="col" data-testId="table-header-checkbox">
