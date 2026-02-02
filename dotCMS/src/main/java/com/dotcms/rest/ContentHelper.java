@@ -769,4 +769,23 @@ public class ContentHelper {
         return jsonArray;
     }
 
+    /**
+     * Extracts the value of the language id from a luceneQuery
+     * **/
+    public Long extractLanguageIdFromQuery(String query, SearchForm searchForm) {
+        String languageId = null;
+        String languageIdStr = "languageId";
+
+        if (query.contains(languageIdStr)) {
+            int index = query.indexOf(languageIdStr) + languageIdStr.length() + 1; // +1 for ':'
+            try {
+                languageId = query.substring(index, query.indexOf(" ", index));
+            } catch (StringIndexOutOfBoundsException e) {
+                languageId = query.substring(index);
+            }
+        }
+
+        return UtilMethods.isSet(languageId) ? Long.parseLong(languageId) : searchForm.getLanguageId();
+    }
+
 }
