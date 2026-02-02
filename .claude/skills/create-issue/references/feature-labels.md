@@ -32,7 +32,8 @@ This reference provides the complete list of `dotCMS : [Feature]` labels availab
 - `dotCMS : Upgrade` - System upgrades, migration, update processes
 - `dotCMS : Viewtools` - Frontend rendering, view layer, template tools
 - `dotCMS : Workflow` - Workflow engine, content approval processes, workflow steps
-
+- `dotCMS Cloud : Usage` - View and understand your dotCMS Cloud usage
+ 
 ## Feature Label Selection Logic
 
 When analyzing the task description, match keywords and concepts to select the most appropriate feature label:
