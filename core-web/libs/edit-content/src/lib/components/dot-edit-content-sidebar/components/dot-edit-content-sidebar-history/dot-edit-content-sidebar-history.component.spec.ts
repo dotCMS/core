@@ -4,8 +4,6 @@ import { DatePipe } from '@angular/common';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ScrollerLazyLoadEvent } from 'primeng/scroller';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 import {
@@ -232,22 +230,26 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
     });
 
-    describe('Scroll Events', () => {
+    describe('Scroll Events (timeline lazy load)', () => {
+        function createNearBottomScrollEvent(): Event {
+            const target = {
+                scrollHeight: 500,
+                scrollTop: 400,
+                clientHeight: 100
+            };
+            return { target } as unknown as Event;
+        }
+
         beforeEach(() => {
             spectator.setInput('historyPagination', mockPagination);
             spectator.setInput('historyItems', mockHistoryItems);
             spectator.detectChanges();
         });
 
-        it('should emit pageChange when loading next page', fakeAsync(() => {
+        it('should emit pageChange when scroll is near bottom', fakeAsync(() => {
             const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
-            const scrollEvent: ScrollerLazyLoadEvent = {
-                first: 0,
-                last: mockHistoryItems.length - 3
-            };
-
-            spectator.component.onScrollIndexChange(scrollEvent);
+            spectator.component.onTimelineScroll(createNearBottomScrollEvent());
             tick();
 
             expect(spy).toHaveBeenCalledWith(2);
@@ -257,12 +259,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
             const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
-            const scrollEvent: ScrollerLazyLoadEvent = {
-                first: 0,
-                last: mockHistoryItems.length - 3
-            };
-
-            spectator.component.onScrollIndexChange(scrollEvent);
+            spectator.component.onTimelineScroll(createNearBottomScrollEvent());
 
             expect(spy).not.toHaveBeenCalled();
         });
@@ -419,15 +416,19 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.detectChanges();
             });
 
-            it('should emit pushPublishPageChange when loading next page', fakeAsync(() => {
+            function createNearBottomScrollEvent(): Event {
+                const target = {
+                    scrollHeight: 500,
+                    scrollTop: 400,
+                    clientHeight: 100
+                };
+                return { target } as unknown as Event;
+            }
+
+            it('should emit pushPublishPageChange when scroll is near bottom', fakeAsync(() => {
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                const scrollEvent: ScrollerLazyLoadEvent = {
-                    first: 0,
-                    last: mockPushPublishHistoryItems.length - 3
-                };
-
-                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
                 tick();
 
                 expect(spy).toHaveBeenCalledWith(2);
@@ -437,12 +438,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 spectator.setInput('status', ComponentStatus.LOADING);
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                const scrollEvent: ScrollerLazyLoadEvent = {
-                    first: 0,
-                    last: mockPushPublishHistoryItems.length - 3
-                };
-
-                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
 
                 expect(spy).not.toHaveBeenCalled();
             });
@@ -457,12 +453,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
                 const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
 
-                const scrollEvent: ScrollerLazyLoadEvent = {
-                    first: 0,
-                    last: mockPushPublishHistoryItems.length - 3
-                };
-
-                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                spectator.component.onPushPublishTimelineScroll(createNearBottomScrollEvent());
 
                 expect(spy).not.toHaveBeenCalled();
             });
