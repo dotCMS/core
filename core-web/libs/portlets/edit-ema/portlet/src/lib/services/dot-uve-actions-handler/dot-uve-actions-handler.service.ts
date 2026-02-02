@@ -259,7 +259,6 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
                 schemas: StyleEditorFormSchema[];
             }) => {
-                console.log('registerStyleSchemas')
                 const { schemas } = payload;
                 uveStore.setStyleSchemas(schemas);
             },

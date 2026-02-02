@@ -60,7 +60,6 @@ export class DotUvePaletteComponent {
     readonly $variantId = computed(() => this.uveStore.$variantId());
     readonly $showStyleEditorTab = computed(() => this.uveStore.$canEditStyles());
     readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
-        console.log('styleSchema in the palette component')
         return this.uveStore.$styleSchema()
     });
 

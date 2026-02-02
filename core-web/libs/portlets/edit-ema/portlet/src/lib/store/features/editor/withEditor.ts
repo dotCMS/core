@@ -91,7 +91,6 @@ export function withEditor() {
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
-                    console.log('styleSchema')
                     const activeContentlet = store.editor().activeContentlet;
                     const styleSchemas = store.editor().styleSchemas;
                     const contentSchema = styleSchemas.find(
@@ -251,7 +250,6 @@ export function withEditor() {
                     });
                 },
                 setContentletArea(contentArea: ContentletArea) {
-                    console.log('setContentletArea')
                     const editor = store.editor();
                     const currentArea = editor.contentArea;
                     const isSameX = currentArea?.x === contentArea?.x;
@@ -310,7 +308,6 @@ export function withEditor() {
                     });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
-                    console.log('getPageSavePayload')
                     const { containers, languageId, id, personaTag } = store.$pageData();
 
                     const { contentletsId } = containers.find((container) =>
