@@ -17,7 +17,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SkeletonModule } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
+import { TableModule, TableRowSelectEvent, TableRowUnSelectEvent } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime } from 'rxjs/operators';
@@ -29,8 +29,7 @@ import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } fr
 import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
 import {
     DotCategoryFieldKeyValueObj,
-    DotTableHeaderCheckboxSelectEvent,
-    DotTableRowSelectEvent
+    DotTableHeaderCheckboxSelectEvent
 } from '../../models/dot-category-field.models';
 import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skeleton.component';
 
@@ -135,21 +134,21 @@ export class DotCategoryFieldSearchListComponent implements AfterViewInit, OnDes
     /**
      * This method is called when an item is selected.
      *
-     * @param {$event: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>} $event - The event object containing the selected item data.
+     * @param {TableRowSelectEvent<DotCategoryFieldKeyValueObj>} $event - The event object containing the selected item data.
      * @return {void}
      */
-    onSelectItem({ data }: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
-        this.itemChecked.emit(data);
+    onSelectItem({ data }: TableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
+        this.itemChecked.emit(data as DotCategoryFieldKeyValueObj);
     }
 
     /**
      * Removes an item from the list.
      *
-     * @param {DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>} $event - The event that triggered the item removal.
+     * @param {TableRowUnSelectEvent<DotCategoryFieldKeyValueObj>} $event - The event that triggered the item removal.
      * @return {void}
      */
-    onRemoveItem({ data: { key } }: DotTableRowSelectEvent<DotCategoryFieldKeyValueObj>): void {
-        this.removeItem.emit(key);
+    onRemoveItem({ data }: TableRowUnSelectEvent<DotCategoryFieldKeyValueObj>): void {
+        this.removeItem.emit((data as DotCategoryFieldKeyValueObj).key);
     }
 
     /**
