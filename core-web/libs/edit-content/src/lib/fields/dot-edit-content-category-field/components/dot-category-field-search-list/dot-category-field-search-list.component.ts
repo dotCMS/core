@@ -47,7 +47,6 @@ import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skele
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-category-field-search-list.component.html',
-    styleUrl: './dot-category-field-search-list.component.scss',
     host: {
         '[class.category-field__search-list--empty]': '$tableIsEmpty()'
     },
