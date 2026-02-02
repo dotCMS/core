@@ -37,3 +37,10 @@
             0 0 4px 2px rgba(156, 163, 175, 0.12);
     }
 }
+
+/* Timeline connector line: thin light gray (Versions and Push Publish) */
+::ng-deep .dot-edit-content-sidebar-history .p-timeline-event-connector,
+::ng-deep .dot-edit-content-sidebar-history__push-publish-content .p-timeline-event-connector {
+    background-color: #e5e7eb !important; /* gray-200 */
+    width: 2px;
+}

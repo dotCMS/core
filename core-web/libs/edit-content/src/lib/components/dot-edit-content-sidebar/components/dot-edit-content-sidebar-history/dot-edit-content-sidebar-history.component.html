@@ -111,21 +111,31 @@
                 } @else {
                     <!-- Push Publish History content -->
                     <div
-                        class="dot-edit-content-sidebar-history__push-publish-content flex-1 min-h-0 overflow-y-auto">
-                        <p-scroller
-                            [items]="$pushPublishHistoryItems()"
-                            [itemSize]="83"
-                            [lazy]="true"
-                            scrollHeight="100%"
-                            (onScrollIndexChange)="onPushPublishScrollIndexChange($event)"
-                            styleClass="dot-edit-content-sidebar-history__scroller"
+                        class="dot-edit-content-sidebar-history__push-publish-content flex-1 min-h-0 overflow-y-auto p-2"
+                        (scroll)="onPushPublishTimelineScroll($event)"
+                        data-testid="push-publish-timeline-container">
+                        <p-timeline
+                            [value]="$pushPublishHistoryItems()"
+                            layout="vertical"
+                            [pt]="{
+                                eventOpposite: {
+                                    class: 'p-0! flex-none!'
+                                }
+                            }"
                             data-testid="push-publish-timeline">
-                            <ng-template #item let-item let-index="index">
+                            <ng-template pTemplate="marker" let-item>
+                                <span
+                                    class="timeline-marker timeline-marker--default"
+                                    [attr.data-testid]="
+                                        'pushpublish-timeline-marker-' + getPushPublishIndex(item)
+                                    "></span>
+                            </ng-template>
+                            <ng-template pTemplate="content" let-item>
                                 <dot-pushpublish-timeline-item
                                     [item]="item"
                                     data-testid="pushpublish-timeline-item" />
                             </ng-template>
-                        </p-scroller>
+                        </p-timeline>
                     </div>
                 }
             </div>
