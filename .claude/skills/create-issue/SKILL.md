@@ -77,6 +77,8 @@ Available teams:
 - **Falcon** 
 - **Maintenance**
 - **Scout**
+- **Platform**
+
 
 Use the AskUserQuestion tool with these exact options:
 ```json
@@ -88,11 +90,11 @@ Use the AskUserQuestion tool with these exact options:
     "options": [
       {"label": "Falcon (Recommended)"},
       {"label": "Maintenance"},
-      {"label": "Scout"}
+      {"label": "Scout"},
+      {"label": "Platform"}
     ]
   }]
 }
-```
 
 Extract the team name from the user's response and use it in step 8.
 
