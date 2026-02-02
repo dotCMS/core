@@ -33,7 +33,9 @@ export interface DotThumbnailOptions {
     selector: 'dot-temp-file-thumbnail',
     imports: [CommonModule],
     templateUrl: './dot-temp-file-thumbnail.component.html',
-    styleUrls: ['./dot-temp-file-thumbnail.component.scss'],
+    host: {
+        class: 'flex h-full w-full items-center justify-center'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotTempFileThumbnailComponent implements OnInit {
@@ -52,7 +54,7 @@ export class DotTempFileThumbnailComponent implements OnInit {
     }
 
     get metadata(): DotFileMetadata {
-        return this.tempFile.metadata;
+        return this.tempFile.metadata || this.fallbackMetadata;
     }
 
     get extension(): string {
@@ -89,5 +91,19 @@ export class DotTempFileThumbnailComponent implements OnInit {
         }
 
         return CONTENT_THUMBNAIL_TYPE[this.fileType] || CONTENT_THUMBNAIL_TYPE.icon;
+    }
+
+    private get fallbackMetadata(): DotFileMetadata {
+        return {
+            contentType: this.tempFile?.mimeType || '',
+            fileSize: this.tempFile?.length || 0,
+            isImage: this.tempFile?.image || false,
+            length: this.tempFile?.length || 0,
+            modDate: 0,
+            name: this.tempFile?.fileName || '',
+            sha256: '',
+            title: this.tempFile?.fileName || '',
+            version: 0
+        };
     }
 }

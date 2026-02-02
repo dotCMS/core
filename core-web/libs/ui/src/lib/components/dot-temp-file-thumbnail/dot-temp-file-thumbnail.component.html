@@ -6,10 +6,15 @@
                 [src]="src"
                 [title]="name"
                 [alt]="name"
+                class="h-full w-full object-cover"
                 data-testId="thumbnail-image" />
         }
         @case (CONTENT_THUMBNAIL_TYPE.video) {
-            <video (error)="handleError()" controls data-testId="thumbnail-video">
+            <video
+                (error)="handleError()"
+                class="h-full w-full"
+                controls
+                data-testId="thumbnail-video">
                 <source [src]="src" />
             </video>
         }
@@ -19,12 +24,14 @@
                 [src]="src"
                 [title]="name"
                 [alt]="name"
+                class="h-full w-full object-cover"
                 data-testId="thumbnail-pdf" />
         }
         @default {
             <i
                 [ngClass]="['pi', icon]"
                 [ngStyle]="{ 'font-size': iconSize, color: 'var(--color-palette-secondary-400)' }"
+                class="leading-none"
                 data-testId="thumbnail-icon"></i>
         }
     }
