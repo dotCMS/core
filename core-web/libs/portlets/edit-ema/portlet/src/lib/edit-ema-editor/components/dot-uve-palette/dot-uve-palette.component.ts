@@ -59,7 +59,10 @@ export class DotUvePaletteComponent {
     readonly $languageId = computed(() => this.uveStore.$languageId());
     readonly $variantId = computed(() => this.uveStore.$variantId());
     readonly $showStyleEditorTab = computed(() => this.uveStore.$canEditStyles());
-    readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => this.uveStore.$styleSchema());
+    readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
+        console.log('styleSchema in the palette component')
+        return this.uveStore.$styleSchema()
+    });
 
     /**
      * Active tab - read from local state, not global store.

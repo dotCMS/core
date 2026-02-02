@@ -95,6 +95,7 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
 
+
                 uveStore.setContentletArea({
                     x: coords.x,
                     y: coords.y,
@@ -258,6 +259,7 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: (payload: {
                 schemas: StyleEditorFormSchema[];
             }) => {
+                console.log('registerStyleSchemas')
                 const { schemas } = payload;
                 uveStore.setStyleSchemas(schemas);
             },
