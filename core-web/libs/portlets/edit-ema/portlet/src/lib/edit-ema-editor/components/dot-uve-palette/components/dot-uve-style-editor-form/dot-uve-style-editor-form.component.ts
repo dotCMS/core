@@ -68,6 +68,7 @@ export class DotUveStyleEditorFormComponent {
 
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
+
     /**
      * Tracks rollback detection using linkedSignal.
      * Returns true when currentIndex decreases (undo operation detected).
@@ -124,12 +125,13 @@ export class DotUveStyleEditorFormComponent {
      * Builds a form from the schema using the form builder service
      */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const activeContentlet = this.#uveStore.editor().activeContentlet;
+        const activeContentlet = this.#uveStore.editor.activeContentlet();
 
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
 
         const form = this.#formBuilder.buildForm(schema, initialValues);
+
         this.#form.set(form);
     }
 
@@ -214,7 +216,7 @@ export class DotUveStyleEditorFormComponent {
      * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
      */
     #updateIframeImmediately(formValues: Record<string, unknown>): void {
-        const activeContentlet = this.#uveStore.editor().activeContentlet;
+        const activeContentlet = this.#uveStore.editor.activeContentlet();
 
         if (!activeContentlet) {
             return;
@@ -259,7 +261,7 @@ export class DotUveStyleEditorFormComponent {
      * Saves current state to history before API call, so rollback can restore to this point
      */
     #saveStyleProperties(formValues: Record<string, unknown>): void {
-        const activeContentlet = this.#uveStore.editor().activeContentlet;
+        const activeContentlet = this.#uveStore.editor.activeContentlet();
 
         if (!activeContentlet) {
             return;

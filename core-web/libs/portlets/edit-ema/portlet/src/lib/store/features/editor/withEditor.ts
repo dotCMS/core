@@ -91,9 +91,9 @@ export function withEditor() {
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
-                    console.log('styleSchema')
-                    const activeContentlet = store.editor().activeContentlet;
-                    const styleSchemas = store.editor().styleSchemas;
+                    console.log('styleSchemaaaa')
+                    const activeContentlet = store.editor.activeContentlet();
+                    const styleSchemas = store.editor.styleSchemas();
                     const contentSchema = styleSchemas.find(
                         (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
                     );
