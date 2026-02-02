@@ -18,10 +18,7 @@
 
 <!-- TODO: Handle the error, no form -->
 @if (form) {
-    <form
-        [formGroup]="form"
-        data-testId="edit-content-form"
-        class="p-fluid h-full">
+    <form [formGroup]="form" data-testId="edit-content-form" class="p-fluid h-full">
         <p-tabs
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
@@ -152,14 +149,16 @@
                 <div
                     class="flex items-center border-l border-gray-300 min-h-[52px] min-w-16 justify-center"
                     data-testId="sidebar-toggle">
-                    <button
-                        class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only text-primary"
+                    <p-button
+                        [rounded]="true"
+                        [text]="true"
                         (click)="$store.toggleSidebar()"
+                        [size]="'large'"
                         data-testId="sidebar-toggle-button">
                         <svg
-                            class="stroke-current"
-                            width="20"
-                            height="20"
+                            class="stroke-current w-6 h-6"
+                            width="24"
+                            height="24"
                             viewBox="0 0 20 20"
                             fill="none"
                             xmlns="http://www.w3.org/2000/svg">
@@ -179,7 +178,7 @@
                                 stroke="currentColor"
                                 stroke-width="1.88235" />
                         </svg>
-                    </button>
+                    </p-button>
                 </div>
             }
         </div>
