@@ -87,8 +87,8 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  */
 @Component({
     selector: 'dot-edit-content-form',
+
     templateUrl: './dot-edit-content-form.component.html',
-    styleUrls: ['./dot-edit-content-form.component.scss'],
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -110,7 +110,10 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
                 animate('250ms ease-in', style({ opacity: 1 }))
             ])
         ])
-    ]
+    ],
+    host: {
+        class: 'min-w-0 max-w-full overflow-auto overflow-x-hidden'
+    },
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);

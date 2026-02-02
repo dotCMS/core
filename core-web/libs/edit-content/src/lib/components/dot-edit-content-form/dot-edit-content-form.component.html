@@ -21,7 +21,7 @@
     <form
         [formGroup]="form"
         data-testId="edit-content-form"
-        class="p-fluid dot-edit-content-form h-100">
+        class="p-fluid h-full">
         <p-tabs
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
@@ -56,11 +56,13 @@
 
         <!-- Template for the tab tabPanel -->
         <ng-template #tabPanelTemplate let-tab="tab">
-            <div class="dot-edit-content-form__layout">
+            <div class="p-4">
                 @for (row of tab.layout; track row) {
-                    <div class="dot-edit-content-form__layout-row" data-testId="row">
+                    <div
+                        class="grid grid-flow-col auto-cols-[minmax(0,1fr)] gap-4 mb-4 last:mb-0"
+                        data-testId="row">
                         @for (column of row.columns; track column) {
-                            <div class="dot-edit-content-form__layout-column" data-testId="column">
+                            <div class="flex flex-col gap-4" data-testId="column">
                                 @for (field of column.fields; track field) {
                                     <dot-edit-content-field
                                         [contentType]="contentType"
@@ -81,16 +83,17 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="dot-edit-content-actions flex items-center w-full"
+        class="flex items-center w-full min-h-[52px]"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         <!-- Left group for lock controls -->
-        <div class="dot-edit-content-actions__left flex items-center">
+        <div class="flex items-center gap-4">
             @if (!$store.isViewingHistoricalVersion()) {
                 @if (canLock) {
                     <div
-                        class="dot-edit-content-actions__lock flex items-center gap-2"
-                        [class.locked]="isContentLocked">
+                        class="flex items-center gap-2"
+                        [class.locked]="isContentLocked"
+                        data-testid="content-lock-controls">
                         <p-toggleSwitch
                             [ngModel]="isContentLocked"
                             [disabled]="!canLock"
@@ -104,7 +107,7 @@
         </div>
 
         <!-- Right group for all other actions -->
-        <div class="dot-edit-content-actions__right flex items-center">
+        <div class="flex items-center gap-4 ml-auto">
             @if ($store.isViewingHistoricalVersion()) {
                 <!-- Historical version actions - only Restore -->
                 <button
@@ -146,14 +149,21 @@
 
             <!-- Sidebar toggle always visible -->
             <div
-                class="dot-edit-content-actions__sidebar-toggle flex items-center"
+                class="flex items-center border-l border-gray-300 transition-all duration-200 ease-in-out overflow-hidden min-h-[52px] min-w-16 justify-center"
                 data-testId="sidebar-toggle"
-                [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
+                [class.opacity-0]="showSidebar"
+                [class.translate-x-full]="showSidebar"
+                [class.max-w-0]="showSidebar"
+                [class.p-0]="showSidebar"
+                [class.m-0]="showSidebar"
+                [class.border-l-0]="showSidebar"
+                [class.min-w-0]="showSidebar">
                 <button
-                    class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+                    class="p-button p-button-sm p-button-text p-button-rounded p-button-icon-only text-primary transition-all duration-200 ease-in-out"
                     (click)="$store.toggleSidebar()"
                     data-testId="sidebar-toggle-button">
                     <svg
+                        class="stroke-current"
                         width="20"
                         height="20"
                         viewBox="0 0 20 20"
@@ -165,14 +175,14 @@
                             width="14.5882"
                             height="13.6471"
                             rx="1.17647"
-                            stroke="#426BF0"
+                            stroke="currentColor"
                             stroke-width="1.41176" />
                         <line
                             x1="12.3528"
                             y1="16.1223"
                             x2="12.3528"
                             y2="3.87797"
-                            stroke="#426BF0"
+                            stroke="currentColor"
                             stroke-width="1.88235" />
                     </svg>
                 </button>
