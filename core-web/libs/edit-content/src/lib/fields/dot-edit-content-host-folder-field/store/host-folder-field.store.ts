@@ -147,7 +147,7 @@ export const HostFolderFiledStore = signalStore(
 
                         return dotBrowsingService.buildTreeByPaths(path);
                     }),
-                    tap(({ node, tree }) => {
+                    tap(({ node, tree }: CustomTreeNode) => {
                         const changes: Partial<HostFolderFiledState> = {};
                         if (node) {
                             changes.nodeSelected = node;
@@ -157,7 +157,7 @@ export const HostFolderFiledStore = signalStore(
                             const currentTree = store.tree();
 
                             const newTree = currentTree.map((item) => {
-                                if (item.data.hostname === tree.parent.hostName) {
+                                if (item.data?.hostname === tree?.parent?.hostName) {
                                     return {
                                         ...item,
                                         children: [...tree.folders]
