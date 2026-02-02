@@ -188,7 +188,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
 
     protected readonly $contentletEditData = computed(() => {
-        const { container, contentlet: contentletPayload } = this.uveStore.editor().selectedContentlet ?? {};
+        const { container, contentlet: contentletPayload } = this.uveStore.editor().activeContentlet ?? {};
         // Removed pageAPIResponse - use normalized accessors
 
         const contentType = this.$contenttypes().find(
@@ -497,18 +497,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 })
             )
             .subscribe((resultContentlet: DotCMSContentlet) => {
-                // Only update selected contentlet if content was actually copied (new inode)
+                // Only update active contentlet if content was actually copied (new inode)
                 if (resultContentlet.inode !== contentlet.inode) {
-                    this.uveStore.setSelectedContentlet({
-                        container,
-                        contentlet: {
-                            identifier: resultContentlet.identifier,
-                            inode: resultContentlet.inode,
-                            title: resultContentlet.title,
-                            contentType: resultContentlet.contentType,
-                            onNumberOfPages: 1 // Because we just copied the contentlet to the same page
-                        } as ContentletPayload
-                    } as Pick<ClientData, 'container' | 'contentlet'>);
+                    const newContentletPayload: ContentletPayload = {
+                        identifier: resultContentlet.identifier,
+                        inode: resultContentlet.inode,
+                        title: resultContentlet.title,
+                        contentType: resultContentlet.contentType,
+                        onNumberOfPages: 1 // Because we just copied the contentlet to the same page
+                    };
+                    this.uveStore.setActiveContentlet(
+                        this.uveStore.getPageSavePayload({ container, contentlet: newContentletPayload })
+                    );
                 }
 
                 // Update formData with the new inode if content was copied
@@ -522,7 +522,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected onCancel(): void {
-        this.uveStore.setSelectedContentlet(undefined);
+        this.uveStore.resetActiveContentlet();
     }
 
     ngOnInit(): void {
@@ -557,9 +557,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     handleSelectedContentlet(
-        selectedContentlet: Pick<ClientData, 'container' | 'contentlet'>
+        selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined
     ): void {
-        this.uveStore.setSelectedContentlet(selectedContentlet);
+        if (selectedContentlet?.container && selectedContentlet?.contentlet) {
+            this.uveStore.setActiveContentlet(
+                this.uveStore.getPageSavePayload(selectedContentlet)
+            );
+        } else {
+            this.uveStore.resetActiveContentlet();
+        }
     }
 
     private setupDragDrop(): void {

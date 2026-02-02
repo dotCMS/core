@@ -68,7 +68,6 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
-        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }
@@ -290,8 +289,6 @@ describe('withEditor', () => {
                     editor: {
                         ...store.editor(),
                         activeContentlet: {
-                            identifier: 'test-id',
-
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -299,8 +296,7 @@ describe('withEditor', () => {
                                 identifier: 'test-container-id',
                                 uuid: 'test-container-uuid',
                                 acceptTypes: 'test',
-                                maxContentlets: 1,
-                                variantId: '1'
+                                maxContentlets: 1
                             },
                             contentlet: {
                                 identifier: 'test-contentlet-id',
@@ -311,7 +307,6 @@ describe('withEditor', () => {
                         },
                         styleSchemas: []
                     }
-
                 });
 
                 expect(store.$styleSchema()).toBeUndefined();
@@ -327,8 +322,6 @@ describe('withEditor', () => {
                     editor: {
                         ...store.editor(),
                         activeContentlet: {
-                            identifier: 'test-id',
-
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -336,8 +329,7 @@ describe('withEditor', () => {
                                 identifier: 'test-container-id',
                                 uuid: 'test-container-uuid',
                                 acceptTypes: 'test',
-                                maxContentlets: 1,
-                                variantId: '1'
+                                maxContentlets: 1
                             },
                             contentlet: {
                                 identifier: 'test-contentlet-id',
@@ -345,10 +337,9 @@ describe('withEditor', () => {
                                 title: 'Test Contentlet',
                                 contentType: 'testContentType'
                             }
+                        },
+                        styleSchemas: [mockSchema]
                     }
-
-                    },
-                    styleSchemas: [mockSchema]
                 });
 
                 expect(store.$styleSchema()).toEqual(mockSchema);
@@ -363,8 +354,6 @@ describe('withEditor', () => {
                     editor: {
                         ...store.editor(),
                         activeContentlet: {
-                            identifier: 'test-id',
-
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -372,8 +361,7 @@ describe('withEditor', () => {
                                 identifier: 'test-container-id',
                                 uuid: 'test-container-uuid',
                                 acceptTypes: 'test',
-                                maxContentlets: 1,
-                                variantId: '1'
+                                maxContentlets: 1
                             },
                             contentlet: {
                                 identifier: 'test-contentlet-id',
@@ -384,7 +372,6 @@ describe('withEditor', () => {
                         },
                         styleSchemas: [schema1, schema2, schema3]
                     }
-
                 });
 
                 expect(store.$styleSchema()).toEqual(schema2);
@@ -400,8 +387,6 @@ describe('withEditor', () => {
                     editor: {
                         ...store.editor(),
                         activeContentlet: {
-                            identifier: 'test-id',
-
                             language_id: '1',
                             pageContainers: [],
                             pageId: '123',
@@ -409,8 +394,7 @@ describe('withEditor', () => {
                                 identifier: 'test-container-id',
                                 uuid: 'test-container-uuid',
                                 acceptTypes: 'test',
-                                maxContentlets: 1,
-                                variantId: '1'
+                                maxContentlets: 1
                             },
                             contentlet: {
                                 identifier: 'test-contentlet-id',

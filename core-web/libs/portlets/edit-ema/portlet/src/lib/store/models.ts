@@ -27,7 +27,7 @@ import {
     EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
-import { ActionPayload, ClientData, DotPageAssetParams } from '../shared/models';
+import { ActionPayload, DotPageAssetParams } from '../shared/models';
 
 /**
  * Page type classification enum
@@ -58,12 +58,6 @@ export interface EditorUIState {
     // Contentlet management
     activeContentlet: ActionPayload | null;
     contentArea: ContentletArea | null;
-
-    /**
-     * Currently selected contentlet for quick-edit sidebar
-     * MOVED FROM TOP-LEVEL: selectedPayload → selectedContentlet
-     */
-    selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | null;
 
     // UI panel preferences (user-configurable)
     panels: {
@@ -161,7 +155,6 @@ export interface UVEState {
 
     // Note: isClientReady removed from UVEState (only in ClientConfigState via withClient)
     // Note: viewParams moved to view.viewParams
-    // Note: selectedPayload renamed to editor.selectedContentlet
 }
 
 /**

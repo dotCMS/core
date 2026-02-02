@@ -217,7 +217,6 @@ const baseUVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
-        selectedContentlet: null,
         ogTags: null,
         styleSchemas: []
     }),

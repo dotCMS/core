@@ -62,7 +62,7 @@ export function withLock(deps: WithLockDeps) {
                         patchState(store, {
                             editor: {
                                 ...editor,
-                                selectedContentlet: null
+                                activeContentlet: null
                             },
                             lockLoading: false
                         });
@@ -96,7 +96,7 @@ export function withLock(deps: WithLockDeps) {
                         patchState(store, {
                             editor: {
                                 ...editor,
-                                selectedContentlet: null
+                                activeContentlet: null
                             },
                             lockLoading: false
                         });

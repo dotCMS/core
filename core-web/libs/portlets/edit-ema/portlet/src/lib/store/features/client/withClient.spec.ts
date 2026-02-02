@@ -37,7 +37,6 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
-        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }

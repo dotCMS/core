@@ -673,9 +673,9 @@ describe('UVEStore', () => {
             });
         });
 
-        describe('setSelectedContentlet', () => {
-            it('should set selectedContentlet in editor state', () => {
-                const selectedData = {
+        describe('setActiveContentlet and resetActiveContentlet', () => {
+            it('should set activeContentlet in editor state', () => {
+                const payload = {
                     container: {
                         identifier: 'container-123',
                         uuid: 'uuid-123',
@@ -688,17 +688,19 @@ describe('UVEStore', () => {
                         inode: 'inode-456',
                         title: 'Test Blog Post',
                         contentType: 'Blog'
-                    }
+                    },
+                    language_id: '1',
+                    pageId: 'page-1',
+                    pageContainers: []
                 };
 
-                store.setSelectedContentlet(selectedData);
+                store.setActiveContentlet(payload);
 
-                expect(store.editor().selectedContentlet).toEqual(selectedData);
+                expect(store.editor().activeContentlet).toEqual(payload);
             });
 
-            it('should set selectedContentlet to null when passed undefined', () => {
-                // First set some data
-                const selectedData = {
+            it('should clear activeContentlet when resetActiveContentlet is called', () => {
+                const payload = {
                     container: {
                         identifier: 'container-123',
                         uuid: 'uuid-123',
@@ -709,72 +711,18 @@ describe('UVEStore', () => {
                     contentlet: {
                         identifier: 'contentlet-456',
                         inode: 'inode-456',
-                        title: 'Test Blog Post',
+                        title: 'Test',
                         contentType: 'Blog'
-                    }
-                };
-                store.setSelectedContentlet(selectedData);
-                expect(store.editor().selectedContentlet).toEqual(selectedData);
-
-                // Then clear it
-                store.setSelectedContentlet(undefined);
-
-                expect(store.editor().selectedContentlet).toBeNull();
-            });
-
-            it('should preserve other editor properties when setting selectedContentlet', () => {
-                const initialBounds = store.editor().bounds;
-                const initialState = store.editor().state;
-                const initialPanels = store.editor().panels;
-
-                const selectedData = {
-                    container: {
-                        identifier: 'container-789',
-                        uuid: 'uuid-789',
-                        acceptTypes: 'News',
-                        maxContentlets: 5,
-                        variantId: 'DEFAULT'
                     },
-                    contentlet: {
-                        identifier: 'contentlet-012',
-                        inode: 'inode-012',
-                        title: 'Breaking News',
-                        contentType: 'News'
-                    }
+                    language_id: '1',
+                    pageId: 'page-1',
+                    pageContainers: []
                 };
+                store.setActiveContentlet(payload);
+                expect(store.editor().activeContentlet).not.toBeNull();
 
-                store.setSelectedContentlet(selectedData);
-
-                const editor = store.editor();
-                expect(editor.selectedContentlet).toEqual(selectedData);
-                expect(editor.bounds).toEqual(initialBounds);
-                expect(editor.state).toEqual(initialState);
-                expect(editor.panels).toEqual(initialPanels);
-            });
-
-            it('should allow clearing selectedContentlet by passing undefined', () => {
-                // Set initial value
-                store.setSelectedContentlet({
-                    container: {
-                        identifier: 'test',
-                        uuid: 'test',
-                        acceptTypes: 'test',
-                        maxContentlets: 1,
-                        variantId: 'DEFAULT'
-                    },
-                    contentlet: {
-                        identifier: 'test',
-                        inode: 'test',
-                        title: 'Test Content',
-                        contentType: 'test'
-                    }
-                });
-                expect(store.editor().selectedContentlet).not.toBeNull();
-
-                // Clear it
-                store.setSelectedContentlet(undefined);
-
-                expect(store.editor().selectedContentlet).toBeNull();
+                store.resetActiveContentlet();
+                expect(store.editor().activeContentlet).toBeNull();
             });
         });
     });

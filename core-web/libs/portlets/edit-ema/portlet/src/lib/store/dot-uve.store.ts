@@ -20,7 +20,6 @@ import { Orientation, PageType, TranslateProps, UVEState } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
-import { ClientData } from '../shared/models';
 import { normalizeQueryParams } from '../utils';
 
 // Some properties can be computed
@@ -52,7 +51,6 @@ const initialState: UVEState = {
         state: EDITOR_STATE.IDLE,
         activeContentlet: null,
         contentArea: null,
-        selectedContentlet: null,
         panels: {
             palette: {
                 open: true
@@ -118,16 +116,6 @@ export const UVEStore = signalStore(
                     containers: pageAPIResponse?.containers,
                     vanityUrl: pageAPIResponse?.vanityUrl,
                     numberContents: pageAPIResponse?.numberContents
-                });
-            },
-            setSelectedContentlet(selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined) {
-                const editor = store.editor();
-
-                patchState(store, {
-                    editor: {
-                        ...editor,
-                        selectedContentlet: selectedContentlet ?? null
-                    }
                 });
             }
         };

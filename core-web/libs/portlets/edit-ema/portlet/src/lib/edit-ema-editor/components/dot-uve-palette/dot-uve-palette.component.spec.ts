@@ -53,7 +53,6 @@ const mockUVEStore = {
         bounds: [],
         state: 'IDLE',
         contentArea: null,
-        selectedContentlet: null,
         panels: {
             palette: { open: true },
             rightSidebar: { open: false }
