@@ -68,6 +68,7 @@ When analyzing the task description, match keywords and concepts to select the m
 - **Upgrade/Migration/Update** → `dotCMS : Upgrade`
 - **Version/History/Rollback** → `dotCMS : Time Machine`
 - **Workflow/Approval/Steps** → `dotCMS : Workflow`
+- **License/Cloud usage/Cloud pricing/dotcms usage stats/Cloud Anywhere** → `dotCMS Cloud : Usage`
 
 ### Selection Strategy
 
