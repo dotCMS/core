@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, Signal } from '@angular/core';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { withFlags } from './flags/withFlags';
@@ -21,7 +21,7 @@ export interface PageContextComputed {
     $isPreviewMode: Signal<boolean>;
     $isLiveMode: Signal<boolean>;
     $pageURI: Signal<string>;
-    $variantId: Signal<string | undefined>;
+    $variantId: Signal<string>;
     $canEditPage: Signal<boolean>;
 }
 
@@ -79,7 +79,7 @@ export function withPageContext() {
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
-                    $variantId: computed(() => pageParams()?.variantId ?? undefined), // Passing undefined because sending an empty string causes API errors.
+                    $variantId: computed(() => pageParams()?.variantId ?? DEFAULT_VARIANT_ID),
                     $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
                 } satisfies PageContextComputed;
             }
