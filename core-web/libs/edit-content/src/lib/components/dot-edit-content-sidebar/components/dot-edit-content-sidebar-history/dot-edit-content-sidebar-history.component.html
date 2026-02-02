@@ -31,16 +31,27 @@
                         [hideContactUsLink]="true" />
                 } @else {
                     <!-- History content -->
-                    <div class="dot-edit-content-sidebar-history__content">
-                        <p-scroller
-                            [items]="$historyItems()"
-                            [itemSize]="83"
-                            [lazy]="true"
-                            scrollHeight="100%"
-                            (onScrollIndexChange)="onScrollIndexChange($event)"
-                            styleClass="dot-edit-content-sidebar-history__scroller"
+                    <div
+                        class="p-2"
+                        (scroll)="onTimelineScroll($event)"
+                        data-testid="history-timeline-container">
+                        <p-timeline
+                            [value]="$historyItems()"
+                            layout="vertical"
+                            [pt]="{
+                                eventOpposite: {
+                                    class: 'p-0! flex-none!'
+                                }
+                            }"
                             data-testid="history-timeline">
-                            <ng-template #item let-item let-index="index">
+                            <ng-template pTemplate="marker" let-item>
+                                <span
+                                    [class]="'timeline-marker ' + getTimelineMarkerClass(item)"
+                                    [attr.data-testid]="
+                                        'timeline-marker-' + getRealIndex(item)
+                                    "></span>
+                            </ng-template>
+                            <ng-template pTemplate="content" let-item>
                                 <dot-history-timeline-item
                                     [item]="item"
                                     [itemIndex]="getRealIndex(item)"
@@ -53,7 +64,7 @@
                                     "
                                     (actionTriggered)="timelineItemAction.emit($event)" />
                             </ng-template>
-                        </p-scroller>
+                        </p-timeline>
                     </div>
                 }
             </div>
