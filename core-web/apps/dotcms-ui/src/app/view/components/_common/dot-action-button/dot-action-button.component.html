@@ -1,16 +1,17 @@
-@if (isHaveOptions()) {
-    <p-menu [model]="model" #menu appendTo="body" popup="popup" />
+@if ($isHaveOptions()) {
+    <p-menu [model]="model()" #menu appendTo="body" [popup]="true" />
 }
 
 <p-button
     (click)="buttonOnClick($event)"
-    [disabled]="disabled"
-    [icon]="icon"
+    [disabled]="disabled()"
+    [icon]="icon()"
+    [rounded]="true"
     data-testid="dot-action-button"
-    class="p-button-rounded"></p-button>
+    class=""></p-button>
 
-@if (label) {
-    <p [class.action-button__label--disabled]="disabled" class="action-button__label">
-        {{ label }}
+@if (label()) {
+    <p [class.action-button__label--disabled]="disabled()" class="action-button__label">
+        {{ label() }}
     </p>
 }

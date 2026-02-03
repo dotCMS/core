@@ -1,10 +1,12 @@
 import {
+    ChangeDetectionStrategy,
     Component,
-    Input,
-    OnChanges,
-    SimpleChanges,
     ViewEncapsulation,
-    inject
+    effect,
+    inject,
+    input,
+    signal,
+    untracked
 } from '@angular/core';
 
 import { SplitButtonModule } from 'primeng/splitbutton';
@@ -19,28 +21,37 @@ import { DotActionButtonComponent } from '../../_common/dot-action-button/dot-ac
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-action-header',
-    styleUrls: ['./action-header.component.scss'],
     templateUrl: 'action-header.component.html',
-    imports: [SplitButtonModule, DotActionButtonComponent, DotMessagePipe]
+    imports: [SplitButtonModule, DotActionButtonComponent, DotMessagePipe],
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ActionHeaderComponent implements OnChanges {
+export class ActionHeaderComponent {
     private dotMessageService = inject(DotMessageService);
     private dotDialogService = inject(DotAlertConfirmService);
 
-    @Input() selectedItems = [];
+    selectedItems = input<unknown[]>([]);
+    options = input<ActionHeaderOptions>();
 
-    @Input() options: ActionHeaderOptions;
+    public dynamicOverflow = signal('visible');
 
-    public dynamicOverflow = 'visible';
+    private wrappedCommands = new WeakSet();
 
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes.selected) {
-            this.hideDinamycOverflow();
-        }
+    constructor() {
+        effect(() => {
+            const items = this.selectedItems();
+            untracked(() => {
+                this.hideDinamycOverflow(items);
+            });
+        });
 
-        if (this.hasSecondary(changes)) {
-            this.setCommandWrapper(changes.options.currentValue.secondary);
-        }
+        effect(() => {
+            const opts = this.options();
+            if (opts?.secondary) {
+                untracked(() => {
+                    this.setCommandWrapper(opts.secondary);
+                });
+            }
+        });
     }
 
     /**
@@ -49,8 +60,9 @@ export class ActionHeaderComponent implements OnChanges {
      * @memberof ActionHeaderComponent
      */
     handlePrimaryAction(): void {
-        if (this.options.primary.command) {
-            this.options.primary.command();
+        const opts = this.options();
+        if (opts?.primary?.command) {
+            opts.primary.command();
         }
     }
 
@@ -59,7 +71,10 @@ export class ActionHeaderComponent implements OnChanges {
             actionButton.model
                 .filter((model) => model.deleteOptions)
                 .forEach((model) => {
-                    if (typeof model.command === 'function') {
+                    if (
+                        typeof model.command === 'function' &&
+                        !this.wrappedCommands.has(model.command)
+                    ) {
                         const callback = model.command;
                         model.command = ($event) => {
                             const originalEvent = $event;
@@ -68,8 +83,8 @@ export class ActionHeaderComponent implements OnChanges {
                                 accept: () => {
                                     callback(originalEvent);
                                 },
-                                header: model.deleteOptions.confirmHeader,
-                                message: model.deleteOptions.confirmMessage,
+                                header: model.deleteOptions?.confirmHeader,
+                                message: model.deleteOptions?.confirmMessage,
                                 footerLabel: {
                                     accept: this.dotMessageService.get(
                                         'contenttypes.action.delete'
@@ -78,25 +93,18 @@ export class ActionHeaderComponent implements OnChanges {
                                 }
                             });
                         };
+                        this.wrappedCommands.add(model.command);
                     }
                 });
         });
     }
 
-    private hideDinamycOverflow(): void {
-        this.dynamicOverflow = '';
-        if (this.selectedItems.length) {
+    private hideDinamycOverflow(items: unknown[]): void {
+        this.dynamicOverflow.set('');
+        if (items.length) {
             setTimeout(() => {
-                this.dynamicOverflow = 'visible';
+                this.dynamicOverflow.set('visible');
             }, 300);
         }
-    }
-
-    private hasSecondary(changes: SimpleChanges): boolean {
-        return (
-            changes.options &&
-            changes.options.currentValue &&
-            changes.options.currentValue.secondary
-        );
     }
 }

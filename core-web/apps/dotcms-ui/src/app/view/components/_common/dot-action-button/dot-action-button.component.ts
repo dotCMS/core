@@ -1,14 +1,10 @@
 import {
+    ChangeDetectionStrategy,
     Component,
-    EventEmitter,
-    HostBinding,
-    HostListener,
-    Input,
-    OnChanges,
-    OnInit,
-    Output,
-    SimpleChanges,
-    ViewChild
+    computed,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -23,60 +19,27 @@ import { Menu, MenuModule } from 'primeng/menu';
  */
 @Component({
     selector: 'dot-action-button',
-    styleUrls: ['./dot-action-button.component.scss'],
     templateUrl: 'dot-action-button.component.html',
-    imports: [ButtonModule, MenuModule]
+    imports: [ButtonModule, MenuModule],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '[class.action-button--no-label]': '$isNotLabeled()',
+        '(click)': 'onHostClick($event)'
+    }
 })
-export class DotActionButtonComponent implements OnInit, OnChanges {
-    @ViewChild('menu')
-    menu: Menu;
+export class DotActionButtonComponent {
+    $menu = viewChild<Menu>('menu');
 
-    @Input()
-    disabled: boolean;
+    disabled = input<boolean>(false);
+    icon = input<string>('pi pi-plus');
+    label = input<string>('');
+    model = input<MenuItem[]>([]);
+    selected = input<boolean>(false);
 
-    @Input()
-    icon: string;
+    press = output<MouseEvent>();
 
-    @Input()
-    label: string;
-
-    @Input()
-    model: MenuItem[];
-
-    @Input()
-    selected: boolean;
-
-    @Output()
-    press: EventEmitter<MouseEvent> = new EventEmitter();
-
-    @HostBinding('class.action-button--no-label')
-    isNotLabeled = true;
-
-    @HostListener('click', ['$event'])
-    public onClick(event: MouseEvent): void {
-        event.stopPropagation();
-    }
-
-    ngOnInit(): void {
-        this.isNotLabeled = !this.label;
-        this.icon = this.icon ? `${this.icon}` : 'pi pi-plus';
-    }
-
-    ngOnChanges(changes: SimpleChanges) {
-        if (changes.label && changes.label.currentValue) {
-            this.isNotLabeled = !changes.label.currentValue;
-        }
-    }
-
-    /**
-     * Check if the component have options for the sub menu
-     *
-     * @returns boolean
-     * @memberof DotActionButtonComponent
-     */
-    isHaveOptions(): boolean {
-        return !!(this.model && this.model.length);
-    }
+    $isNotLabeled = computed(() => !this.label());
+    $isHaveOptions = computed(() => !!(this.model() && this.model().length));
 
     /**
      * Handle the click to the main button
@@ -85,6 +48,16 @@ export class DotActionButtonComponent implements OnInit, OnChanges {
      * @memberof DotActionButtonComponent
      */
     buttonOnClick($event: MouseEvent): void {
-        this.isHaveOptions() ? this.menu.toggle($event) : this.press.emit($event);
+        this.$isHaveOptions() ? this.$menu()?.toggle($event) : this.press.emit($event);
+    }
+
+    /**
+     * Stop propagation for host click
+     *
+     * @param {MouseEvent} event
+     * @memberof DotActionButtonComponent
+     */
+    onHostClick(event: MouseEvent): void {
+        event.stopPropagation();
     }
 }

@@ -1,73 +1,47 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
+import { Button } from 'primeng/button';
+import { Menu } from 'primeng/menu';
 
 import { DotActionButtonComponent } from './dot-action-button.component';
 
-describe('ActionButtonComponent', () => {
-    let comp: DotActionButtonComponent;
-    let fixture: ComponentFixture<DotActionButtonComponent>;
-    let de: DebugElement;
+describe('DotActionButtonComponent', () => {
+    let spectator: Spectator<DotActionButtonComponent>;
+    const createComponent = createComponentFactory({
+        component: DotActionButtonComponent,
+        imports: [BrowserAnimationsModule, RouterTestingModule]
+    });
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            imports: [
-                DotActionButtonComponent,
-                BrowserAnimationsModule,
-                MenuModule,
-                ButtonModule,
-                RouterTestingModule.withRoutes([
-                    {
-                        component: DotActionButtonComponent,
-                        path: 'test'
-                    }
-                ])
-            ]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotActionButtonComponent);
-        de = fixture.debugElement;
-        comp = fixture.componentInstance;
-    }));
-
-    it('should have no-label class by default', () => {
-        fixture.detectChanges();
-        expect(de.nativeElement.classList).toContain('action-button--no-label');
+    beforeEach(() => {
+        spectator = createComponent();
     });
 
     it('should have no-label class by default', () => {
-        comp.label = 'Hello World';
-        fixture.detectChanges();
-        expect(de.nativeElement.classList).not.toContain('action-button--no-label');
+        expect(spectator.element.classList).toContain('action-button--no-label');
+    });
+
+    it('should NOT have no-label class when label is set', () => {
+        spectator.setInput('label', 'Hello World');
+        expect(spectator.element.classList).not.toContain('action-button--no-label');
     });
 
     it('should have only button in default state', () => {
-        fixture.detectChanges();
-        expect(fixture.debugElement.query(By.css('p-button'))).toBeTruthy();
-        expect(fixture.debugElement.query(By.css('.action-button__label')) === null).toBe(
-            true,
-            'label hidden by default'
-        );
-        expect(fixture.debugElement.query(By.css('p-menu')) === null).toBe(
-            true,
-            'menu hidden by default'
-        );
+        expect(spectator.query('p-button')).toExist();
+        expect(spectator.query('.action-button__label')).not.toExist();
+        expect(spectator.query('p-menu')).not.toExist();
     });
 
     it('should have label', () => {
-        comp.label = 'Hello World';
-        fixture.detectChanges();
-        const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(label.nativeElement.textContent.trim()).toBe('Hello World');
+        spectator.setInput('label', 'Hello World');
+        expect(spectator.query('.action-button__label')).toHaveText('Hello World');
     });
 
     it('should have p-menu and pass the model to it', () => {
-        const model = [
+        const model: MenuItem[] = [
             {
                 command: () => {
                     //
@@ -77,31 +51,20 @@ describe('ActionButtonComponent', () => {
             }
         ];
 
-        comp.model = model;
-        fixture.detectChanges();
-        const menu = fixture.debugElement.query(By.css('p-menu'));
-        expect(menu).toBeDefined();
-
-        expect(menu.componentInstance.model).toEqual(
-            model,
-            'model its being pass to primeng component'
-        );
+        spectator.setInput('model', model);
+        const menu = spectator.query(Menu);
+        expect(menu).toExist();
+        expect(menu.model).toEqual(model);
     });
 
     it('should emit event on button click', () => {
-        let res;
-
-        comp.press.subscribe((event) => {
-            res = event;
-        });
-
-        const button = fixture.debugElement.query(By.css('p-button'));
-        button.nativeNode.click();
-        expect(res).toBeDefined();
+        const pressSpy = jest.spyOn(spectator.component.press, 'emit');
+        spectator.click(byTestId('dot-action-button'));
+        expect(pressSpy).toHaveBeenCalled();
     });
 
     it('should toggle the menu on button click', () => {
-        const model = [
+        const model: MenuItem[] = [
             {
                 command: () => {
                     //
@@ -111,26 +74,21 @@ describe('ActionButtonComponent', () => {
             }
         ];
 
-        comp.model = model;
-        fixture.detectChanges();
+        spectator.setInput('model', model);
+        const toggleSpy = jest.spyOn(spectator.component.$menu()!, 'toggle');
 
-        jest.spyOn(comp.menu, 'toggle');
-
-        const button = fixture.debugElement.query(By.css('p-button'));
-        button.nativeNode.click();
-        expect(comp.menu.toggle).toHaveBeenCalledTimes(1);
+        spectator.click(byTestId('dot-action-button'));
+        expect(toggleSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should set button to disabled state', () => {
-        comp.disabled = true;
-        comp.label = 'Label';
-        fixture.detectChanges();
-        const button = fixture.debugElement.query(By.css('p-button'));
-        const label = fixture.debugElement.query(By.css('.action-button__label'));
-        expect(button.componentInstance.disabled).toBe(true);
-        expect(label.nativeElement.classList).toContain(
-            'action-button__label--disabled',
-            'Label disabled class'
-        );
+        spectator.setInput('disabled', true);
+        spectator.setInput('label', 'Label');
+
+        const button = spectator.query(Button);
+        const label = spectator.query('.action-button__label');
+
+        expect(button.disabled).toBe(true);
+        expect(label).toHaveClass('action-button__label--disabled');
     });
 });
