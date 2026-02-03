@@ -15,6 +15,6 @@
             [innerHTML]="error || 'Enter a valid url'"
             [class.hide]="!isInvalid || form.pristine"
             class="error-message"></span>
-        <button [disabled]="form.invalid || disableAction" type="submit" pButton>Insert</button>
+        <p-button [disabled]="form.invalid || disableAction" label="Insert" type="submit" />
     </div>
 </form>

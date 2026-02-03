@@ -6,11 +6,14 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // DotCMS JS
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
-import { DynamicDialogModule } from 'primeng/dynamicdialog';
-import { PaginatorModule } from 'primeng/paginator';
-import { TextareaModule } from 'primeng/textarea';
+import { Button } from 'primeng/button';
+import { Card } from 'primeng/card';
+import { Checkbox } from 'primeng/checkbox';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { DynamicDialog } from 'primeng/dynamicdialog';
+import { InputText } from 'primeng/inputtext';
+import { Textarea } from 'primeng/textarea';
 
 import {
     DotContentSearchService,
@@ -44,7 +47,6 @@ import {
 import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared';
-import { PrimengModule } from './shared/primeng.module';
 import { SharedModule } from './shared/shared.module';
 
 const initTranslations = (dotMessageService: DotMessageService) => {
@@ -57,17 +59,19 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         FormsModule,
         ReactiveFormsModule,
         SharedModule,
-        PrimengModule,
-        DynamicDialogModule,
+        DynamicDialog,
         AssetFormModule,
         DotFieldRequiredDirective,
         UploadPlaceholderComponent,
         DotMessagePipe,
-        ConfirmDialogModule,
+        ConfirmDialog,
         DotAssetSearchComponent,
-        DialogModule,
-        TextareaModule,
-        PaginatorModule,
+        Dialog,
+        Textarea,
+        Card,
+        Checkbox,
+        InputText,
+        Button,
         DotSpinnerComponent,
         DotBubbleMenuComponent,
         TiptapBubbleMenuDirective,

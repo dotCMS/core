@@ -3,7 +3,7 @@
     [target]="target()"
     [appendTo]="'body'"
     (onShow)="onContextMenuShow()">
-    <ng-template pTemplate="item" let-item>
+    <ng-template #item let-item>
         <a
             pRipple
             class="flex items-center justify-between p-menuitem-link"

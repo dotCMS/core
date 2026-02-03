@@ -1,15 +1,14 @@
 @if (label !== status.ERROR) {
-    <button
-        (click)="byClick.emit()"
+    <p-button
+        (onClick)="byClick.emit()"
         [disabled]="isCompleted || isLoading"
         [loading]="isLoading"
-        [ngClass]="{ completed: isCompleted }"
-        pButton>
+        [ngClass]="{ completed: isCompleted }">
         @if (isCompleted) {
-            <i class="pi pi-check" pButtonIcon></i>
+            <i class="pi pi-check"></i>
         }
-        <span pButtonLabel>{{ title }}</span>
-    </button>
+        <span>{{ title }}</span>
+    </p-button>
 } @else {
     <div class="alert">
         <i class="pi pi-exclamation-circle"></i>

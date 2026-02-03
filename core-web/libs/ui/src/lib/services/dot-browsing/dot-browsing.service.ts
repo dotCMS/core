@@ -4,12 +4,12 @@ import { Injectable, inject } from '@angular/core';
 
 import { filter, map } from 'rxjs/operators';
 
-import { DotSiteService, DotFolderService } from '@dotcms/data-access';
+import { DotFolderService, DotSiteService } from '@dotcms/data-access';
 import {
-    DotFolder,
-    TreeNodeItem,
+    ContentByFolderParams,
     CustomTreeNode,
-    ContentByFolderParams
+    DotFolder,
+    TreeNodeItem
 } from '@dotcms/dotcms-models';
 
 /**
@@ -142,7 +142,11 @@ export class DotBrowsingService {
                             }
                         }
 
-                        rta.tree = { path: node.parent.path, folders: node.folders };
+                        rta.tree = {
+                            path: node.parent.path,
+                            folders: node.folders,
+                            parent: node.parent
+                        };
 
                         return rta;
                     },

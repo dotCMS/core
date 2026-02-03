@@ -1,0 +1,29 @@
+@use "variables" as *;
+@import "mixins";
+@import "dotcms-theme/utils/_mixins.scss";
+
+.layout {
+    display: grid;
+    grid-template-areas:
+        "navigation branding-bar"
+        "navigation content-viewport";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.layout__navigation {
+    grid-area: navigation;
+    background-color: $brand-background;
+}
+
+.layout__branding-bar {
+    grid-area: branding-bar;
+}
+
+.layout__viewport {
+    grid-area: content-viewport;
+    overflow-y: auto;
+}
