@@ -11,10 +11,11 @@ import {
 
 import {
     buildContentletsQuery,
-    buildPaletteContent,
     buildESContentParams,
+    buildPaletteContent,
     buildPaletteFavorite,
     buildPaletteMenuItems,
+    filterFormValues,
     getPaletteState,
     getSortActiveClass
 } from './index';
@@ -688,6 +689,194 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.query).toBe(
                 `+contentType:Widget +deleted:false +variant:${DEFAULT_VARIANT_ID}`
             );
+        });
+    });
+
+    describe('filterNullAndUndefined', () => {
+        it('should filter out null values', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should filter out undefined values', () => {
+            const input = {
+                name: 'John',
+                age: undefined,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should keep false values as they are valid', () => {
+            const input = {
+                name: 'John',
+                active: false,
+                verified: false
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: false,
+                verified: false
+            });
+        });
+
+        it('should keep zero values as they are valid', () => {
+            const input = {
+                count: 0,
+                score: 0
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                count: 0,
+                score: 0
+            });
+        });
+
+        it('should keep empty strings as they are valid', () => {
+            const input = {
+                name: '',
+                description: ''
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: '',
+                description: ''
+            });
+        });
+
+        it('should recursively filter nested objects', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag2: null,
+                    tag3: false
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag3: false
+                }
+            });
+            expect(result.tags).not.toHaveProperty('tag2');
+        });
+
+        it('should filter out nested objects that become empty after filtering', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John'
+            });
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should keep arrays as they are', () => {
+            const input = {
+                items: [1, 2, 3],
+                tags: []
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                items: [1, 2, 3],
+                tags: []
+            });
+        });
+
+        it('should handle complex nested structures', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        sms: null,
+                        push: false
+                    },
+                    preferences: null
+                },
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        push: false
+                    }
+                }
+            });
+            expect(result).not.toHaveProperty('age');
+            expect(result.settings).not.toHaveProperty('preferences');
+            expect(result.settings.notifications).not.toHaveProperty('sms');
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should return empty object when all values are null or undefined', () => {
+            const input = {
+                name: null,
+                age: undefined,
+                active: null
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
+        });
+
+        it('should handle empty object', () => {
+            const input = {};
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
         });
     });
 });

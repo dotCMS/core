@@ -15,7 +15,7 @@
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
         <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
-        <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
+        <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.18.1</bytebuddy.version>
         <batik.version>1.17</batik.version>
@@ -26,7 +26,7 @@
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
-
+        <opensearch.version>3.3.0</opensearch.version>
     </properties>
     <dependencyManagement>
 
@@ -838,6 +838,41 @@
                 <groupId>redis.clients</groupId>
                 <artifactId>jedis</artifactId>
                 <version>4.4.6</version>
+            </dependency>
+
+            <!-- OpenSearch 3.x Modern Client -->
+            <dependency>
+                <groupId>org.opensearch.client</groupId>
+                <artifactId>opensearch-java</artifactId>
+                <version>${opensearch.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents.client5</groupId>
+                        <artifactId>httpclient5</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents.core5</groupId>
+                        <artifactId>httpcore5</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents.client5</groupId>
+                <artifactId>httpclient5</artifactId>
+                <version>5.5</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>5.3.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5-h2</artifactId>
+                <version>5.3.4</version>
             </dependency>
 
             <dependency>

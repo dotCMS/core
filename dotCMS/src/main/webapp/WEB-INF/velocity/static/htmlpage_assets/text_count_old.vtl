@@ -1,0 +1,50 @@
+## Text Count V2
+<style>
+    #legacy-custom-field-body .${fieldId}_countWrapper{
+        margin: 0;
+    }
+    #${fieldId}Count_tag{
+        display: none;
+    }
+    .${fieldId}_countWrapper {
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        color: #6c7389;
+        font-size: 0.875rem;
+        line-height: 0.875rem;
+        margin-top: -1.1rem;
+    }
+    .${fieldId}_maxChar {
+        padding: 0 5px;
+    }
+</style>
+
+<div class="${fieldId}_countWrapper">
+    <div id="${fieldId}-counter-text">
+        <span id="charactersRemaining-${fieldId}">$maxChar</span> characters
+    </div>
+    <div>Recommended Max $maxChar characters</div>
+</div>
+
+<script>
+    DotCustomFieldApi.ready(() => {  // WAIT UNTIL ALL IS READY
+        function updateCharacterCount() {
+            const textEntered = DotCustomFieldApi.get('${fieldId}') || ''; // READ A VALUE
+            const counter = textEntered.length;
+            const countRemaining = document.getElementById('charactersRemaining-${fieldId}');
+            const counterText = document.getElementById('${fieldId}-counter-text');
+            
+            countRemaining.textContent = counter;
+            counterText.style.color = counter <= $maxChar ? "#6c7389" : "red";
+        }
+
+        // Initial count
+        updateCharacterCount();
+
+        // Watch for changes
+        DotCustomFieldApi.onChangeField('${fieldId}', (value) => {
+            updateCharacterCount();
+        });
+    });
+</script>

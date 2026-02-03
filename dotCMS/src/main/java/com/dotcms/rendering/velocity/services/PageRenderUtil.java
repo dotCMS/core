@@ -548,7 +548,7 @@ public class PageRenderUtil implements Serializable {
         // created by hydrate(), not the cached original instance.
         // See: DotContentletTransformerImpl.hydrate() and copy()
 
-        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", false)) {
+        if (!Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true)) {
             return;
         }
 

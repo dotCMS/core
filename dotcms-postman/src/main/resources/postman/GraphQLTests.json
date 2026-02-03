@@ -4576,81 +4576,6 @@
 							"response": []
 						},
 						{
-							"name": "Save Content With Basic Styles Copy",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
-											"",
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
-											"});",
-											"",
-											"// Parse JSON",
-											"const json = pm.response.json();",
-											"",
-											"pm.test(\"No errors returned\", function () {",
-											"    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
-											"});",
-											"",
-											"pm.test(\"Contentlet_1 has correct styleProperties\", function () {",
-											"    const first = json.entity.find(item => item.contentletId === contentlet1);",
-											"    pm.expect(first).to.exist;",
-											"    pm.expect(first.styleProperties).to.be.an(\"object\");",
-											"    pm.expect(first.styleProperties.width).to.eql(\"100px\");",
-											"    pm.expect(first.styleProperties.color).to.eql(\"#FF0000\");",
-											"    pm.expect(first.styleProperties.margin).to.eql(\"10px\");",
-											"});"
-										],
-										"type": "text/javascript",
-										"packages": {},
-										"requests": {}
-									}
-								},
-								{
-									"listen": "prerequest",
-									"script": {
-										"exec": [
-											""
-										],
-										"type": "text/javascript",
-										"packages": {},
-										"requests": {}
-									}
-								}
-							],
-							"request": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ],\n        \"styleProperties\": {\n            \"{{Contentlet_1}}\": {\n                \"width\": \"100px\",\n                \"color\": \"#FF0000\",\n                \"margin\": \"10px\"\n            }\n        }\n    }\n]",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"v1",
-										"page",
-										"{{pageIdentifier}}",
-										"content"
-									]
-								},
-								"description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
-							},
-							"response": []
-						},
-						{
 							"name": "Turn ON Style Editor",
 							"event": [
 								{
@@ -4660,7 +4585,9 @@
 											"pm.test(\"Status code is 200\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});",
-											""
+											"",
+											"// Wait for cache to invalidate",
+											"setTimeout(function(){}, 5000);"
 										],
 										"type": "text/javascript",
 										"packages": {},
@@ -4692,6 +4619,156 @@
 										""
 									]
 								}
+							},
+							"response": []
+						},
+						{
+							"name": "Create Content in the Page",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"// Parse JSON",
+											"const json = pm.response.json();",
+											"",
+											"pm.test(\"No errors returned\", function () {",
+											"    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+											"});",
+											"",
+											"pm.test(\"First entry is created\", function () {",
+											"    const contentlet = json.entity.find(item => item.contentletId === contentlet1);",
+											"    pm.expect(contentlet).to.exist;",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"contentletsId\": [\n            \"{{Contentlet_1}}\"\n        ]\n    }\n]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/content",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"{{pageIdentifier}}",
+										"content"
+									]
+								},
+								"description": "Test when users make a request sending the style properties for some contentlets.\nThis will save the style properties for the specified contentlets, in case style properties are not send the contentlet style properties will be null."
+							},
+							"response": []
+						},
+						{
+							"name": "Save Basic Content Styles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"// Parse JSON",
+											"const json = pm.response.json();",
+											"",
+											"pm.test(\"Entity array exists\", function () {",
+											"    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+											"});",
+											"",
+											"pm.test(\"No errors returned\", function () {",
+											"    pm.expect(json.errors).to.be.an(\"array\").that.is.empty;",
+											"});",
+											"",
+											"pm.test(\"Contentlet_1 has correct styleProperties\", function () {",
+											"    const first = json.entity.find(item => item.contentletId === contentlet1);",
+											"    pm.expect(first).to.exist;",
+											"    pm.expect(first.dotStyleProperties).to.be.an(\"object\");",
+											"    pm.expect(first.dotStyleProperties.width).to.eql(\"100px\");",
+											"    pm.expect(first.dotStyleProperties.color).to.eql(\"#FF0000\");",
+											"    pm.expect(first.dotStyleProperties.margin).to.eql(\"10px\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "[\n    {\n        \"identifier\": \"SYSTEM_CONTAINER\",\n        \"uuid\": \"1\",\n        \"{{Contentlet_1}}\": {\n            \"width\": \"100px\",\n            \"color\": \"#FF0000\",\n            \"margin\": \"10px\"\n        }\n    }\n]",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/page/{{pageIdentifier}}/styles",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"page",
+										"{{pageIdentifier}}",
+										"styles"
+									]
+								},
+								"description": "Test when users make a request sending the style properties for some contentlets.  \nThis will save the style properties for the specified contentlets, in case style properties are empty the contentlet style properties will erased."
 							},
 							"response": []
 						},
@@ -4757,10 +4834,10 @@
 											"",
 											"// Checking Style Values as a top level field",
 											"pm.test(\"Top level Styles have correct width\", function () {",
-											"    pm.expect(targetContentlet.styleProperties).to.not.be.null;",
-											"    pm.expect(targetContentlet.styleProperties.width).to.eql('100px');",
-											"    pm.expect(targetContentlet.styleProperties.color).to.eql('#FF0000');",
-											"    pm.expect(targetContentlet.styleProperties.margin).to.eql('10px');",
+											"    pm.expect(targetContentlet.dotStyleProperties).to.not.be.null;",
+											"    pm.expect(targetContentlet.dotStyleProperties.width).to.eql('100px');",
+											"    pm.expect(targetContentlet.dotStyleProperties.color).to.eql('#FF0000');",
+											"    pm.expect(targetContentlet.dotStyleProperties.margin).to.eql('10px');",
 											"});"
 										],
 										"type": "text/javascript",
@@ -4780,7 +4857,7 @@
 								"body": {
 									"mode": "graphql",
 									"graphql": {
-										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"styleProperties\")\n          styleProperties\n        }\n      }\n    }\n  }\n}\n",
+										"query": "query getPageData($url: String!) {\n  page(url: $url) {\n    containers {\n      containerContentlets {\n        uuid\n        contentlets {\n          identifier\n          title\n          styles: _map(key: \"dotStyleProperties\")\n          dotStyleProperties\n        }\n      }\n    }\n  }\n}\n",
 										"variables": "{\n  \"url\": \"{{pageUrl}}\"\n}"
 									}
 								},
@@ -6103,7 +6180,7 @@
 					"response": []
 				},
 				{
-					"name": "RequestVanityURLBaseType_ReturnsAllFields Copy",
+					"name": "RequestVanityURLBaseType_ReturnsAllFields",
 					"event": [
 						{
 							"listen": "test",
@@ -9442,7 +9519,7 @@
 			"name": "Cats",
 			"item": [
 				{
-					"name": "No value for cats field should return empty list Copy",
+					"name": "No value for cats field should return empty list",
 					"item": [
 						{
 							"name": "pre_ImportBundleWithContext",

@@ -1,7 +1,15 @@
 import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
 
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    NgZone
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CardModule } from 'primeng/card';
@@ -13,6 +21,15 @@ import { map } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
+import {
+    CHART_ANIMATION,
+    CHART_TRANSITIONS,
+    createAnimationState,
+    createLineDrawAnimationPlugin,
+    LINE_DRAW_ANIMATION_DURATION,
+    resetAnimationState,
+    TOOLTIP_STYLE
+} from '../../plugins';
 import {
     ChartData,
     ChartOptions,
@@ -27,7 +44,8 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  */
 const CHART_TYPE_HEIGHTS = {
     line: '21.875rem',
-    pie: '23.125rem'
+    pie: '23.125rem',
+    doughnut: '23.125rem'
 } as const;
 
 /**
@@ -53,6 +71,7 @@ const CHART_TYPE_HEIGHTS = {
 export class DotAnalyticsDashboardChartComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #breakpointObserver = inject(BreakpointObserver);
+    readonly #ngZone = inject(NgZone);
 
     readonly #isMobile$ = this.#breakpointObserver
         .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Tablet])
@@ -60,6 +79,19 @@ export class DotAnalyticsDashboardChartComponent {
 
     /** Signal to track if we're on mobile/small screen */
     protected readonly $isMobile = toSignal(this.#isMobile$, { initialValue: false });
+
+    /** Animation state for line drawing effect */
+    #animationState = createAnimationState();
+
+    constructor() {
+        // Reset animation when status changes to trigger animation on data load
+        effect(() => {
+            const status = this.$status();
+            if (status === ComponentStatus.LOADED) {
+                resetAnimationState(this.#animationState);
+            }
+        });
+    }
 
     // Required inputs
     /** Chart type (line, pie, doughnut, bar). For combo charts, use 'bar' or 'line' as base. */
@@ -72,10 +104,53 @@ export class DotAnalyticsDashboardChartComponent {
     readonly $title = input.required<string>({ alias: 'title' });
 
     /** Component status for loading/error states */
-    readonly $status = input<ComponentStatus>(ComponentStatus.LOADED, { alias: 'status' });
+    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
 
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
+
+    /** Whether to animate line charts with drawing effect */
+    readonly $animated = input<boolean>(true, { alias: 'animated' });
+
+    /** Custom height for the chart (e.g., '100%', '15rem'). If not provided, uses type-based default. */
+    readonly $customHeight = input<string | undefined>(undefined, { alias: 'height' });
+
+    /**
+     * Check if chart has line datasets (for reveal animation).
+     * True if chart type is 'line' OR if any dataset in combo chart is type 'line'.
+     * Bar-only charts use Chart.js default animation (grow from bottom).
+     */
+    readonly #hasLineDatasets = computed(() => {
+        const chartType = this.$type();
+        if (chartType === 'line') return true;
+
+        // Check if any dataset in combo chart is type 'line'
+        const datasets = (this.$data()?.datasets as ComboChartDataset[]) || [];
+
+        return datasets.some((ds) => ds.type === 'line');
+    });
+
+    /**
+     * Plugin for line drawing animation.
+     * Uses clip to progressively reveal line charts from left to right.
+     * Runs outside Angular's zone to avoid triggering change detection on each frame.
+     */
+    readonly #lineDrawPlugin = createLineDrawAnimationPlugin(
+        () => ({
+            enabled: this.#hasLineDatasets() && this.$animated(),
+            duration: LINE_DRAW_ANIMATION_DURATION
+        }),
+        this.#animationState,
+        this.#ngZone
+    );
+
+    /**
+     * Plugins array - only includes lineDrawPlugin when chart has line datasets.
+     * Bar-only charts get empty plugins to use native Chart.js animation.
+     */
+    protected readonly $plugins = computed(() => {
+        return this.#hasLineDatasets() ? [this.#lineDrawPlugin] : [];
+    });
 
     /**
      * Auto-detect if this is a combo chart based on datasets.
@@ -92,8 +167,13 @@ export class DotAnalyticsDashboardChartComponent {
         );
     });
 
-    /** Chart height determined automatically by chart type */
+    /** Chart height - uses custom height if provided, otherwise falls back to type-based default */
     protected readonly $height = computed(() => {
+        const customHeight = this.$customHeight();
+        if (customHeight) {
+            return customHeight;
+        }
+
         const type = this.$type();
 
         return (
@@ -118,9 +198,31 @@ export class DotAnalyticsDashboardChartComponent {
         const showLegend =
             isCombo || chartType === 'pie' || chartType === 'doughnut' || hasMultipleDatasets;
 
+        // Line charts: disable built-in animation for smooth tooltip transitions
+        // (same behavior as sparkline component)
+        // Bar charts: use explicit animation for grow-from-bottom effect
+        const isLineChart = chartType === 'line';
+        const isBarChart = chartType === 'bar';
+
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            // Line charts: duration 0 for smooth tooltip (uses custom line draw plugin)
+            // Bar charts: grow from bottom animation
+            // Other charts: use Chart.js default
+            animation: isLineChart ? CHART_ANIMATION : undefined,
+            // Bar charts: animate Y values from bottom (grow up)
+            ...(isBarChart && {
+                animations: {
+                    y: {
+                        from: (ctx: { chart: Chart }) => ctx.chart.scales['y'].getPixelForValue(0),
+                        duration: 1000,
+                        easing: 'easeOutQuart' as const
+                    }
+                }
+            }),
+            // Smooth hover transitions (centralized config)
+            transitions: CHART_TRANSITIONS,
             interaction: {
                 mode: 'index' as const,
                 intersect: false,
@@ -145,6 +247,8 @@ export class DotAnalyticsDashboardChartComponent {
                 tooltip: {
                     mode: 'index' as const,
                     intersect: false,
+                    // Centralized tooltip styling
+                    ...TOOLTIP_STYLE,
                     callbacks: {
                         label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
                             this.#getTooltipLabel(context),
@@ -333,7 +437,7 @@ export class DotAnalyticsDashboardChartComponent {
                 },
                 y1: {
                     type: 'linear',
-                    display: true,
+                    display: false,
                     position: 'right',
                     beginAtZero: true,
                     grid: { drawOnChartArea: false },

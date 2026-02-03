@@ -1,8 +1,10 @@
 import { InferInputSignals } from '@ngneat/spectator';
-import { createComponentFactory, Spectator, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { FormGroup } from '@angular/forms';
 
 import { Accordion, AccordionModule } from 'primeng/accordion';
@@ -10,11 +12,13 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
@@ -29,8 +33,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                     label: 'Font Size',
                     type: 'input',
                     config: {
-                        inputType: 'number',
-                        defaultValue: 16
+                        inputType: 'number'
                     }
                 },
                 {
@@ -41,8 +44,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Arial', value: 'Arial' },
                             { label: 'Helvetica', value: 'Helvetica' }
-                        ],
-                        defaultValue: 'Arial'
+                        ]
                     }
                 }
             ]
@@ -58,11 +60,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Underline', value: 'underline' },
                             { label: 'Overline', value: 'overline' }
-                        ],
-                        defaultValue: {
-                            underline: true,
-                            overline: false
-                        }
+                        ]
                     }
                 },
                 {
@@ -73,8 +71,7 @@ const createMockSchema = (): StyleEditorFormSchema => ({
                         options: [
                             { label: 'Left', value: 'left' },
                             { label: 'Right', value: 'right' }
-                        ],
-                        defaultValue: 'left'
+                        ]
                     }
                 }
             ]
@@ -87,6 +84,12 @@ describe('DotUveStyleEditorFormComponent', () => {
     let mockUveStore: {
         currentIndex: ReturnType<typeof signal<number>>;
         activeContentlet: ReturnType<typeof signal<ActionPayload | null>>;
+        graphqlResponse: ReturnType<typeof signal<DotCMSPageAsset | null>>;
+        $customGraphqlResponse: ReturnType<typeof computed<DotCMSPageAsset | null>>;
+        saveStyleEditor: jest.Mock;
+        rollbackGraphqlResponse: jest.Mock;
+        addHistory: jest.Mock;
+        setGraphqlResponse: jest.Mock;
     };
 
     const createComponent = createComponentFactory({
@@ -105,10 +108,52 @@ describe('DotUveStyleEditorFormComponent', () => {
         ]
     });
 
+    const createMockGraphQLResponse = (fontSize: number): DotCMSPageAsset =>
+        ({
+            page: {
+                identifier: 'test-page',
+                title: 'Test Page'
+            },
+            containers: {
+                'test-container': {
+                    contentlets: {
+                        'uuid-test-uuid': [
+                            {
+                                identifier: 'test-id',
+                                inode: 'test-inode',
+                                title: 'Test',
+                                contentType: 'test-content-type',
+                                dotStyleProperties: {
+                                    'font-size': fontSize,
+                                    'font-family': 'Arial',
+                                    'text-decoration': {
+                                        underline: false,
+                                        overline: false
+                                    },
+                                    alignment: 'left'
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        }) as unknown as DotCMSPageAsset;
+
     beforeEach(() => {
+        const graphqlResponseSignal = signal<DotCMSPageAsset | null>(null);
+        const customGraphqlResponseComputed = computed(() => graphqlResponseSignal());
+
         mockUveStore = {
             currentIndex: signal(0),
-            activeContentlet: signal(null)
+            activeContentlet: signal(null),
+            graphqlResponse: graphqlResponseSignal,
+            $customGraphqlResponse: customGraphqlResponseComputed,
+            saveStyleEditor: jest.fn(),
+            rollbackGraphqlResponse: jest.fn().mockReturnValue(true),
+            addHistory: jest.fn(),
+            setGraphqlResponse: jest.fn((response: DotCMSPageAsset | null) => {
+                graphqlResponseSignal.set(response);
+            })
         };
 
         spectator = createComponent({
@@ -152,70 +197,6 @@ describe('DotUveStyleEditorFormComponent', () => {
         });
     });
 
-    describe('form controls', () => {
-        it('should create form controls for input field', () => {
-            const form = spectator.component.$form();
-            expect(form).toBeTruthy();
-
-            const fontSizeControl = form?.get('font-size');
-            expect(fontSizeControl).toBeTruthy();
-            expect(fontSizeControl?.value).toBe(16);
-        });
-
-        it('should create form controls for dropdown field', () => {
-            const form = spectator.component.$form();
-            const fontFamilyControl = form?.get('font-family');
-            expect(fontFamilyControl).toBeTruthy();
-            expect(fontFamilyControl?.value).toBe('Arial');
-        });
-
-        it('should create form group for checkboxGroup field', () => {
-            const form = spectator.component.$form();
-            const textDecorationGroup = form?.get('text-decoration') as FormGroup;
-            expect(textDecorationGroup).toBeTruthy();
-            expect(textDecorationGroup).toBeInstanceOf(FormGroup);
-
-            const underlineControl = textDecorationGroup.get('underline');
-            const overlineControl = textDecorationGroup.get('overline');
-            expect(underlineControl?.value).toBe(true);
-            expect(overlineControl?.value).toBe(false);
-        });
-
-        it('should create form controls for radio field', () => {
-            const form = spectator.component.$form();
-            const alignmentControl = form?.get('alignment');
-            expect(alignmentControl).toBeTruthy();
-            expect(alignmentControl?.value).toBe('left');
-        });
-    });
-
-    describe('default values', () => {
-        it('should use defaultValue for input field when provided', () => {
-            const form = spectator.component.$form();
-            const fontSizeControl = form?.get('font-size');
-            expect(fontSizeControl?.value).toBe(16);
-        });
-
-        it('should use defaultValue for dropdown field when provided', () => {
-            const form = spectator.component.$form();
-            const fontFamilyControl = form?.get('font-family');
-            expect(fontFamilyControl?.value).toBe('Arial');
-        });
-
-        it('should use defaultValue for checkboxGroup field when provided', () => {
-            const form = spectator.component.$form();
-            const textDecorationGroup = form?.get('text-decoration') as FormGroup;
-            expect(textDecorationGroup.get('underline')?.value).toBe(true);
-            expect(textDecorationGroup.get('overline')?.value).toBe(false);
-        });
-
-        it('should use defaultValue for radio field when provided', () => {
-            const form = spectator.component.$form();
-            const alignmentControl = form?.get('alignment');
-            expect(alignmentControl?.value).toBe('left');
-        });
-    });
-
     describe('field rendering', () => {
         it('should render input field component', () => {
             const inputField = spectator.query('dot-uve-style-editor-field-input');
@@ -250,19 +231,19 @@ describe('DotUveStyleEditorFormComponent', () => {
                 alignment: 'right'
             };
 
+            // Set activeContentlet BEFORE creating component
             mockUveStore.activeContentlet.set({
                 contentlet: {
                     identifier: 'test-id',
                     inode: 'test-inode',
                     title: 'Test',
                     contentType: 'test-content-type',
-                    styleProperties
+                    dotStyleProperties: styleProperties
                 },
                 container: {
                     acceptTypes: 'test',
                     identifier: 'test-container',
                     maxContentlets: 1,
-                    variantId: 'test-variant',
                     uuid: 'test-uuid'
                 },
                 language_id: '1',
@@ -270,7 +251,13 @@ describe('DotUveStyleEditorFormComponent', () => {
                 pageId: 'test-page'
             });
 
-            spectator.setInput('schema', createMockSchema());
+            // Create a NEW component instance with the schema already set
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
             spectator.detectChanges();
 
             const form = spectator.component.$form();
@@ -282,61 +269,32 @@ describe('DotUveStyleEditorFormComponent', () => {
             expect(textDecorationGroup.get('underline')?.value).toBe(false);
             expect(textDecorationGroup.get('overline')?.value).toBe(true);
         });
+    });
 
-        it('should use default values when activeContentlet is null', () => {
-            mockUveStore.activeContentlet.set(null);
-
-            spectator.setInput('schema', createMockSchema());
-            spectator.detectChanges();
-
-            const form = spectator.component.$form();
-            expect(form?.get('font-size')?.value).toBe(16);
-            expect(form?.get('font-family')?.value).toBe('Arial');
-            expect(form?.get('alignment')?.value).toBe('left');
-        });
-
-        it('should use default values when activeContentlet has no styleProperties', () => {
-            mockUveStore.activeContentlet.set({
-                contentlet: {
-                    identifier: 'test-id',
-                    inode: 'test-inode',
-                    title: 'Test',
-                    contentType: 'test-content-type'
-                },
-                container: {
-                    acceptTypes: 'test',
-                    identifier: 'test-container',
-                    maxContentlets: 1,
-                    variantId: 'test-variant',
-                    uuid: 'test-uuid'
-                },
-                language_id: '1',
-                pageContainers: [],
-                pageId: 'test-page'
-            });
-
-            spectator.setInput('schema', createMockSchema());
-            spectator.detectChanges();
-
-            const form = spectator.component.$form();
-            expect(form?.get('font-size')?.value).toBe(16);
-            expect(form?.get('font-family')?.value).toBe('Arial');
-        });
-
-        it('should use default values when styleProperties is empty object', () => {
+    describe('rollback and form restoration', () => {
+        beforeEach(() => {
+            // Set up activeContentlet with initial style properties
+            // Include ALL fields from the schema to match the graphqlResponse structure
             mockUveStore.activeContentlet.set({
                 contentlet: {
                     identifier: 'test-id',
                     inode: 'test-inode',
                     title: 'Test',
                     contentType: 'test-content-type',
-                    styleProperties: {}
+                    dotStyleProperties: {
+                        'font-size': 16,
+                        'font-family': 'Arial',
+                        'text-decoration': {
+                            underline: false,
+                            overline: false
+                        },
+                        alignment: 'left'
+                    }
                 },
                 container: {
                     acceptTypes: 'test',
                     identifier: 'test-container',
                     maxContentlets: 1,
-                    variantId: 'test-variant',
                     uuid: 'test-uuid'
                 },
                 language_id: '1',
@@ -344,12 +302,123 @@ describe('DotUveStyleEditorFormComponent', () => {
                 pageId: 'test-page'
             });
 
-            spectator.setInput('schema', createMockSchema());
+            // Set initial graphqlResponse
+            const initialResponse = createMockGraphQLResponse(16);
+            mockUveStore.graphqlResponse.set(initialResponse);
+        });
+
+        it('should restore form values after rollback on save failure', fakeAsync(() => {
+            // Create component with activeContentlet
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
             spectator.detectChanges();
 
-            const form = spectator.component.$form();
+            let form = spectator.component.$form();
             expect(form?.get('font-size')?.value).toBe(16);
-            expect(form?.get('font-family')?.value).toBe('Arial');
-        });
+
+            // Mock saveStyleEditor to fail and simulate rollback by updating graphqlResponse
+            const rolledBackResponse = createMockGraphQLResponse(16);
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                throwError(() => {
+                    // Simulate store's rollback behavior: update graphqlResponse to rolled-back state
+                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    return new Error('Save failed');
+                })
+            );
+
+            // Change form value (this triggers the save flow)
+            form?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100); // Wait for debounce + error handling
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get the NEW form reference after rollback (form is rebuilt, not patched)
+            form = spectator.component.$form();
+
+            // Verify form is restored to rolled-back value
+            expect(form?.get('font-size')?.value).toBe(16);
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalled();
+        }));
+
+        it('should handle consecutive rollback failures correctly', fakeAsync(() => {
+            // Create component with activeContentlet
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+
+            const rolledBackResponse = createMockGraphQLResponse(16);
+
+            // Mock saveStyleEditor to always fail and rollback to 16
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                throwError(() => {
+                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    return new Error('Save failed');
+                })
+            );
+
+            // First failure: change from 16 to 20, then fail
+            let form = spectator.component.$form();
+            form?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get the NEW form reference after first rollback (form is rebuilt)
+            form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(16); // Rolled back to 16
+
+            // Second failure: Get fresh form reference before patching
+            // This ensures we're patching the current form instance
+            form = spectator.component.$form();
+            form?.patchValue({ 'font-size': 24 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get the NEW form reference after second rollback
+            form = spectator.component.$form();
+            expect(form?.get('font-size')?.value).toBe(16); // Should rollback to 16, not 24
+        }));
+
+        it('should rebuild form instance on rollback (not patch existing form)', fakeAsync(() => {
+            // Create component with activeContentlet
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+
+            // Get initial form reference
+            const initialForm = spectator.component.$form();
+            expect(initialForm?.get('font-size')?.value).toBe(16);
+
+            // Mock saveStyleEditor to fail and simulate rollback
+            const rolledBackResponse = createMockGraphQLResponse(16);
+            mockUveStore.saveStyleEditor.mockReturnValue(
+                throwError(() => {
+                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    return new Error('Save failed');
+                })
+            );
+
+            // Change form value to trigger save and rollback
+            initialForm?.patchValue({ 'font-size': 20 });
+            tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
+            spectator.detectChanges(); // Ensure change detection runs after rollback
+
+            // Get form reference after rollback
+            const rebuiltForm = spectator.component.$form();
+
+            // Verify form was REBUILT (new instance), not patched
+            expect(rebuiltForm).not.toBe(initialForm);
+            expect(rebuiltForm?.get('font-size')?.value).toBe(16);
+        }));
     });
 });

@@ -1,9 +1,9 @@
 package com.dotcms;
 
-import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
+import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
@@ -27,6 +27,7 @@ import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFiel
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
+import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -57,7 +58,8 @@ import org.junit.runners.Suite;
         AppsAPIImplTest.class,
         Task251103AddStylePropertiesColumnInMultiTreeTest.class,
         StoryBlockValidationTest.class,
-        StoryBlockUtilTest.class
+        StoryBlockUtilTest.class,
+        Task251212AddVersionColumnIndicesTableTest.class,
 })
 
 public class MainSuite3a {
