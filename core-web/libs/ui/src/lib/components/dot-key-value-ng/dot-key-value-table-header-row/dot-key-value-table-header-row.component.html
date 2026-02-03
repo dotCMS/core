@@ -62,7 +62,7 @@
                 <label for="key-value-input-row-hidden-input" class="mb-1">
                     {{ 'keyValue.hidden_header.label' | dm }}
                 </label>
-                <p-inputSwitch
+                <p-toggleSwitch
                     class="inline-block mt-2"
                     [formControl]="hiddenControl"
                     id="key-value-input-row-hidden-input"
@@ -71,15 +71,14 @@
         </th>
     }
     <th class="relative w-16 min-w-12" scope="col">
-        <button
+        <p-button
             (click)="saveVariable()"
             icon="pi pi-plus"
             [text]="true"
-            class="absolute top-9"
+            styleClass="absolute top-9"
             #saveButton
             size="small"
             data-testId="save-button"
-            type="button"
-            pButton></button>
+            type="button" />
     </th>
 </tr>

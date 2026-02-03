@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -210,7 +210,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should load the component with switch button', () => {
             spectator.detectChanges();
-            const switchInput = spectator.query(InputSwitch);
+            const switchInput = spectator.query(ToggleSwitch);
             expect(switchInput).toBeTruthy();
         });
 

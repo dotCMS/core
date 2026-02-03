@@ -35,7 +35,7 @@
     @if (showHiddenField) {
         <td class="dot-key-value-table-row__variables-hidden">
             @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
-                <p-inputSwitch
+                <p-toggleSwitch
                     class="dot-key-value-table-row__hidden-switch"
                     [formControl]="hiddenControl"
                     data-testId="dot-key-value-hidden-switch" />
