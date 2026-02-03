@@ -20,38 +20,34 @@ export function withLayout() {
         {
             state: type<UVEState>()
         },
-        withComputed(({ pageAPIResponse }) => ({
+        withComputed(({ page, containers, layout, template }) => ({
             $layoutProps: computed<LayoutProps>(() => {
-                const response = pageAPIResponse();
+                const pageData = page();
+                const containersData = containers();
+                const layoutData = layout();
+                const templateData = template();
 
                 return {
                     containersMap: mapContainerStructureToDotContainerMap(
-                        response?.containers ?? {}
+                        containersData ?? {}
                     ),
-                    layout: response?.layout,
+                    layout: layoutData,
                     template: {
-                        identifier: response?.template?.identifier,
+                        identifier: templateData?.identifier,
                         // The themeId should be here, in the old store we had a bad reference and we were saving all the templates with themeId undefined
-                        themeId: response?.template?.theme,
-                        anonymous: response?.template?.anonymous || false
+                        themeId: templateData?.theme,
+                        anonymous: templateData?.anonymous || false
                     },
-                    pageId: response?.page.identifier
+                    pageId: pageData?.identifier
                 };
-            }),
-            $canEditLayout: computed<boolean>(() => {
-                const { page, template } = pageAPIResponse() ?? {};
-
-                return page?.canEdit || template?.drawed;
             })
+            // $canEditLayout moved to withPageContext (Phase 4.2 - shared permission)
         })),
         withMethods((store) => {
             return {
                 updateLayout: (layout: DotCMSLayout) => {
                     patchState(store, {
-                        pageAPIResponse: {
-                            ...store.pageAPIResponse(),
-                            layout
-                        }
+                        layout
                     });
                 }
             };

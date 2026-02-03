@@ -5,9 +5,10 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
+import { signalStore, withState, withFeature } from '@ngrx/signals';
 import { of } from 'rxjs';
 
+import { computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import {
@@ -33,7 +34,7 @@ import { withLoad } from './withLoad';
 
 import { DotPageApiParams, DotPageApiService } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     dotPropertiesServiceMock,
     getNewVanityUrl,
@@ -49,7 +50,7 @@ import {
     TEMPORARY_REDIRECT_VANITY_URL,
     VTL_BASE_QUERY_PARAMS
 } from '../../../shared/mocks';
-import { UVEState } from '../../models';
+import { Orientation, PageType, UVEState } from '../../models';
 import { withClient } from '../client/withClient';
 
 const buildPageAPIResponseFromMock =
@@ -72,20 +73,54 @@ const pageParams: DotPageApiParams = {
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: null,
+    // Normalized page response properties
+    page: null,
+    site: null,
+    template: null,
+    layout: null,
+    containers: null,
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams,
     status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
+    pageType: PageType.TRADITIONAL,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested view state
+    view: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        viewParams: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
     withClient(),
-    withLoad()
+    withFeature((store) => withLoad({
+        resetClientConfiguration: () => store.resetClientConfiguration(),
+        getWorkflowActions: (inode) => {}, // Mock implementation
+        graphqlRequest: () => store.graphqlRequest(),
+        $graphqlWithParams: computed(() => store.$graphqlWithParams()),
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+    }))
 );
 
 describe('withLoad', () => {
@@ -172,13 +207,17 @@ describe('withLoad', () => {
         describe('load', () => {
             it('should load the store with the base data', () => {
                 store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
-                expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_HEADLESS);
+                expect(store.page()).toEqual(MOCK_RESPONSE_HEADLESS.page);
+                expect(store.site()).toEqual(MOCK_RESPONSE_HEADLESS.site);
+                expect(store.template()).toEqual(MOCK_RESPONSE_HEADLESS.template);
+                expect(store.layout()).toEqual(MOCK_RESPONSE_HEADLESS.layout);
+                expect(store.containers()).toEqual(MOCK_RESPONSE_HEADLESS.containers);
                 expect(store.isEnterprise()).toBe(true);
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
-                expect(store.isTraditionalPage()).toBe(false);
+                expect(store.pageType()).toBe(PageType.HEADLESS);
                 expect(store.isClientReady()).toBe(false);
             });
 
@@ -189,14 +228,18 @@ describe('withLoad', () => {
 
                 store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
 
-                expect(store.pageAPIResponse()).toEqual(MOCK_RESPONSE_VTL);
+                expect(store.page()).toEqual(MOCK_RESPONSE_VTL.page);
+                expect(store.site()).toEqual(MOCK_RESPONSE_VTL.site);
+                expect(store.template()).toEqual(MOCK_RESPONSE_VTL.template);
+                expect(store.layout()).toEqual(MOCK_RESPONSE_VTL.layout);
+                expect(store.containers()).toEqual(MOCK_RESPONSE_VTL.containers);
                 expect(store.isEnterprise()).toBe(true);
                 expect(store.currentUser()).toEqual(CurrentUserDataMock);
                 expect(store.experiment()).toBe(getDraftExperimentMock());
                 expect(store.languages()).toBe(mockLanguageArray);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
-                expect(store.isTraditionalPage()).toBe(true);
-                expect(store.isClientReady()).toBe(true);
+                expect(store.pageType()).toBe(PageType.TRADITIONAL);
+                expect(store.isClientReady()).toBe(false);
             });
 
             it('should update the pageParams with the vanity URL on permanent redirect', () => {

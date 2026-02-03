@@ -1,0 +1,11 @@
+@use "variables" as *;
+
+:host {
+    display: flex;
+    align-items: center;
+}
+
+div {
+    min-width: 40px;
+    text-align: center;
+}

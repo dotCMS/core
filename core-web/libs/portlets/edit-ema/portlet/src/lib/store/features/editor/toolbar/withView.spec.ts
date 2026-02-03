@@ -1,8 +1,9 @@
 import { expect, describe } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState, withComputed, withFeature } from '@ngrx/signals';
 import { of } from 'rxjs';
 
+import { computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -10,13 +11,13 @@ import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models'
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
-import { withUVEToolbar } from './withUVEToolbar';
+import { withView } from './withView';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
-import { UVE_STATUS } from '../../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
-import { Orientation, UVEState } from '../../../models';
+import { Orientation, PageType, UVEState } from '../../../models';
 
 const pageParams = {
     url: 'test-url',
@@ -29,28 +30,70 @@ const pageParams = {
 const initialState: UVEState = {
     isEnterprise: true,
     languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
+    flags: {
+        FEATURE_FLAG_UVE_TOGGLE_LOCK: false  // Disable toggle lock to test old unlock button behavior
+    },
     currentUser: mockCurrentUser,
     experiment: null,
     errorCode: null,
     pageParams,
     status: UVE_STATUS.LOADED,
-    isTraditionalPage: false,
-    isClientReady: false,
-    viewParams: {
-        orientation: undefined,
-        seo: undefined,
-        device: undefined
+    pageType: PageType.HEADLESS,
+    // Normalized page response properties
+    page: MOCK_RESPONSE_HEADLESS.page,
+    site: MOCK_RESPONSE_HEADLESS.site,
+    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
+    template: MOCK_RESPONSE_HEADLESS.template,
+    layout: MOCK_RESPONSE_HEADLESS.layout,
+    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
+    containers: MOCK_RESPONSE_HEADLESS.containers,
+    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
+    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested view state
+    view: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        viewParams: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
     }
 };
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withUVEToolbar()
+    // Add mock $isPageLocked computed that reacts to page state (must come before withView)
+    withComputed((store) => ({
+        $isPageLocked: computed(() => {
+            const page = store.page();
+            const currentUser = store.currentUser();
+            const isLockedByOther = page?.locked && page?.lockedBy !== currentUser?.userId;
+            return isLockedByOther || false;
+        })
+    })),
+    // Use withFeature to access store and pass reactive dependency
+    withFeature((store) => withView({
+        $isPageLocked: () => store.$isPageLocked()  // Call the computed above
+    }))
 );
 
-describe('withEditor', () => {
+describe('withView', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
     let store: InstanceType<typeof uveStoreMock>;
 
@@ -122,12 +165,9 @@ describe('withEditor', () => {
                     ).id;
 
                     patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                variantId: variantID
-                            }
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: variantID
                         },
                         experiment: currentExperiment,
                         pageParams: {
@@ -154,12 +194,9 @@ describe('withEditor', () => {
                     ).id;
 
                     patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                variantId: variantID
-                            }
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: variantID
                         },
                         experiment: currentExperiment,
                         pageParams: {
@@ -187,12 +224,9 @@ describe('withEditor', () => {
                     ).id;
 
                     patchState(store, {
-                        pageAPIResponse: {
-                            ...MOCK_RESPONSE_HEADLESS,
-                            viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
-                                variantId: variantID
-                            }
+                        viewAs: {
+                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            variantId: variantID
                         },
                         experiment: currentExperiment,
                         pageParams: {
@@ -230,12 +264,9 @@ describe('withEditor', () => {
                         ...store.pageParams(),
                         mode: UVE_MODE.EDIT
                     },
-                    pageAPIResponse: {
-                        ...store.pageAPIResponse(),
-                        viewAs: {
-                            ...store.pageAPIResponse().viewAs,
-                            variantId: DEFAULT_VARIANT_ID
-                        }
+                    viewAs: {
+                        ...store.viewAs(),
+                        variantId: DEFAULT_VARIANT_ID
                     }
                 });
                 expect(store.$showWorkflowsActions()).toBe(true);
@@ -243,12 +274,9 @@ describe('withEditor', () => {
 
             it('should return false when not in preview mode and is not default variant', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...store.pageAPIResponse(),
-                        viewAs: {
-                            ...store.pageAPIResponse().viewAs,
-                            variantId: 'some-other-variant'
-                        }
+                    viewAs: {
+                        ...store.viewAs(),
+                        variantId: 'some-other-variant'
                     }
                 });
                 expect(store.$showWorkflowsActions()).toBe(false);
@@ -258,12 +286,9 @@ describe('withEditor', () => {
         describe('$unlockButton', () => {
             it('should be null if the page is not locked', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...store.pageAPIResponse(),
-                        page: {
-                            ...store.pageAPIResponse().page,
-                            locked: false
-                        }
+                    page: {
+                        ...store.page(),
+                        locked: false
                     }
                 });
 
@@ -272,13 +297,10 @@ describe('withEditor', () => {
 
             it('should be null if the page is locked by the current user', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...store.pageAPIResponse(),
-                        page: {
-                            ...store.pageAPIResponse().page,
-                            locked: true,
-                            lockedBy: mockCurrentUser.userId
-                        }
+                    page: {
+                        ...store.page(),
+                        locked: true,
+                        lockedBy: mockCurrentUser.userId
                     },
                     pageParams: {
                         ...store.pageParams(),
@@ -291,14 +313,11 @@ describe('withEditor', () => {
 
             it('should return the unlock button if the page is locked but mode is preview', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...store.pageAPIResponse(),
-                        page: {
-                            ...store.pageAPIResponse().page,
-                            locked: true,
-                            lockedBy: '123',
-                            lockedByName: 'John Doe'
-                        }
+                    page: {
+                        ...store.page(),
+                        locked: true,
+                        lockedBy: '123',
+                        lockedByName: 'John Doe'
                     },
                     pageParams: {
                         ...store.pageParams(),
@@ -307,7 +326,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$unlockButton()).toEqual({
-                    inode: store.pageAPIResponse().page.inode,
+                    inode: store.page().inode,
                     disabled: false,
                     loading: false,
                     info: {
@@ -319,14 +338,11 @@ describe('withEditor', () => {
 
             it('should return the unlock button if the page is locked but mode is live', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...store.pageAPIResponse(),
-                        page: {
-                            ...store.pageAPIResponse().page,
-                            locked: true,
-                            lockedBy: '123',
-                            lockedByName: 'John Doe'
-                        }
+                    page: {
+                        ...store.page(),
+                        locked: true,
+                        lockedBy: '123',
+                        lockedByName: 'John Doe'
                     },
                     pageParams: {
                         ...store.pageParams(),
@@ -335,7 +351,7 @@ describe('withEditor', () => {
                 });
 
                 expect(store.$unlockButton()).toEqual({
-                    inode: store.pageAPIResponse().page.inode,
+                    inode: store.page().inode,
                     disabled: false,
                     loading: false,
                     info: {
@@ -347,15 +363,12 @@ describe('withEditor', () => {
 
             it('should show label and icon when page is lock for editing and has unlock permission', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            locked: true,
-                            canLock: true,
-                            lockedByName: 'John Doe',
-                            lockedBy: '456'
-                        }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        canLock: true,
+                        lockedByName: 'John Doe',
+                        lockedBy: '456'
                     },
                     pageParams: {
                         ...store.pageParams(),
@@ -364,7 +377,7 @@ describe('withEditor', () => {
                     status: UVE_STATUS.LOADED
                 });
                 expect(store.$unlockButton()).toEqual({
-                    inode: store.pageAPIResponse().page.inode,
+                    inode: store.page().inode,
                     disabled: false,
                     loading: false,
                     info: {
@@ -376,15 +389,12 @@ describe('withEditor', () => {
 
             it('should be disabled if the page is locked by another user and cannot be unlocked', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            locked: true,
-                            lockedBy: '123',
-                            lockedByName: 'John Doe',
-                            canLock: false
-                        }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: '123',
+                        lockedByName: 'John Doe',
+                        canLock: false
                     },
                     pageParams: {
                         ...store.pageParams(),
@@ -399,7 +409,7 @@ describe('withEditor', () => {
                         message: 'editpage.locked-by',
                         args: ['John Doe']
                     },
-                    inode: store.pageAPIResponse().page.inode,
+                    inode: store.page().inode,
                     loading: false
                 });
             });
@@ -412,10 +422,10 @@ describe('withEditor', () => {
                 const iphone = mockDotDevices[0];
 
                 store.setDevice(iphone);
-                expect(store.device()).toBe(iphone);
-                expect(store.orientation()).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
+                expect(store.view().device).toBe(iphone);
+                expect(store.view().orientation).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
 
-                expect(store.viewParams()).toEqual({
+                expect(store.view().viewParams).toEqual({
                     device: iphone.inode,
                     orientation: Orientation.LANDSCAPE,
                     seo: null
@@ -426,10 +436,10 @@ describe('withEditor', () => {
                 const iphone = mockDotDevices[0];
 
                 store.setDevice(iphone, Orientation.PORTRAIT);
-                expect(store.device()).toBe(iphone);
-                expect(store.orientation()).toBe(Orientation.PORTRAIT);
+                expect(store.view().device).toBe(iphone);
+                expect(store.view().orientation).toBe(Orientation.PORTRAIT);
 
-                expect(store.viewParams()).toEqual({
+                expect(store.view().viewParams).toEqual({
                     device: iphone.inode,
                     orientation: Orientation.PORTRAIT,
                     seo: null
@@ -439,13 +449,17 @@ describe('withEditor', () => {
 
         describe('setOrientation', () => {
             it('should set the orientation and the view params', () => {
-                store.setOrientation(Orientation.PORTRAIT);
-                expect(store.orientation()).toBe(Orientation.PORTRAIT);
+                // First set a device so viewParams is not null
+                store.setDevice(mockDotDevices[0]);
 
-                expect(store.viewParams()).toEqual({
-                    device: store.viewParams().device,
+                // Now change orientation
+                store.setOrientation(Orientation.PORTRAIT);
+                expect(store.view().orientation).toBe(Orientation.PORTRAIT);
+
+                expect(store.view().viewParams).toEqual({
+                    device: store.view().viewParams.device,
                     orientation: Orientation.PORTRAIT,
-                    seo: undefined
+                    seo: null
                 });
             });
 
@@ -456,11 +470,11 @@ describe('withEditor', () => {
 
                     store.clearDeviceAndSocialMedia();
 
-                    expect(store.device()).toBe(null);
-                    expect(store.socialMedia()).toBe(null);
-                    expect(store.isEditState()).toBe(true);
-                    expect(store.orientation()).toBe(null);
-                    expect(store.viewParams()).toEqual({
+                    expect(store.view().device).toBe(null);
+                    expect(store.view().socialMedia).toBe(null);
+                    expect(store.view().isEditState).toBe(true);
+                    expect(store.view().orientation).toBe(null);
+                    expect(store.view().viewParams).toEqual({
                         device: null,
                         orientation: null,
                         seo: null
@@ -473,11 +487,11 @@ describe('withEditor', () => {
             it('should set the seo, update viewparams, and remove device and orientation', () => {
                 store.setSEO('seo');
 
-                expect(store.socialMedia()).toBe('seo');
-                expect(store.device()).toBe(null);
-                expect(store.orientation()).toBe(null);
+                expect(store.view().socialMedia).toBe('seo');
+                expect(store.view().device).toBe(null);
+                expect(store.view().orientation).toBe(null);
 
-                expect(store.viewParams()).toEqual({
+                expect(store.view().viewParams).toEqual({
                     device: null,
                     orientation: null,
                     seo: 'seo'

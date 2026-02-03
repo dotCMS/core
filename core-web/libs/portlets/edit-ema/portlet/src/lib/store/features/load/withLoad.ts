@@ -1,9 +1,9 @@
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
@@ -11,28 +11,56 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLanguagesService, DotLicenseService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DotCMSPageAsset } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams } from '../../../shared/models';
 import { isForwardOrPage } from '../../../utils';
-import { UVEState } from '../../models';
-import { withClient } from '../client/withClient';
-import { withWorkflow } from '../workflow/withWorkflow';
+import { PageType, UVEState } from '../../models';
+
+/**
+ * Interface defining the methods provided by withLoad
+ * Use this as props type in dependent features
+ *
+ * @export
+ * @interface WithLoadMethods
+ */
+export interface WithLoadMethods {
+    // Methods
+    updatePageParams: (params: Partial<DotPageAssetParams>) => void;
+    loadPageAsset: RxMethod<Partial<DotPageAssetParams>>;
+    reloadCurrentPage: RxMethod<Partial<DotPageAssetParams> | void>;
+}
+
+/**
+ * Dependencies interface for withLoad
+ * These are methods/computeds from other features that withLoad needs
+ */
+export interface WithLoadDeps {
+    resetClientConfiguration: () => void;
+    getWorkflowActions: (inode: string) => void;
+    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
+    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    addHistory: (state: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+}
 
 /**
  * Add load and reload method to the store
  *
+ * Dependencies: Requires methods from withClient and withWorkflow
+ * Pass these via the deps parameter when wrapping with withFeature
+ *
  * @export
+ * @param deps - Dependencies from other features (provided by withFeature wrapper)
  * @return {*}
  */
-export function withLoad() {
+export function withLoad(deps: WithLoadDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
         },
-        withClient(),
-        withWorkflow(),
         withMethods((store) => {
             return {
                 updatePageParams: (params: Partial<DotPageAssetParams>) => {
@@ -74,10 +102,9 @@ export function withLoad() {
                             };
                         }),
                         tap((pageParams) => {
-                            store.resetClientConfiguration();
+                            deps.resetClientConfiguration();
                             patchState(store, {
                                 status: UVE_STATUS.LOADING,
-                                isClientReady: false,
                                 pageParams
                             });
                         }),
@@ -110,9 +137,9 @@ export function withLoad() {
                                     .pipe(take(1), shareReplay()),
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
-                                tap(({ pageAsset }) =>
-                                    store.getWorkflowActions(pageAsset?.page?.inode)
-                                ),
+                                tap(({ pageAsset }) => {
+                                    deps.getWorkflowActions(pageAsset?.page?.inode);
+                                }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;
                                     console.error('Error UVEStore', err);
@@ -148,18 +175,25 @@ export function withLoad() {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            const isTraditionalPage = !pageParams.clientHost;
-
-                                            store.addHistory({ pageAsset });
+                                            deps.addHistory({ pageAsset });
 
                                             patchState(store, {
-                                                pageAPIResponse: pageAsset,
+                                                page: pageAsset?.page,
+                                                site: pageAsset?.site,
+                                                viewAs: pageAsset?.viewAs,
+                                                template: pageAsset?.template,
+                                                layout: pageAsset?.layout,
+                                                urlContentMap: pageAsset?.urlContentMap,
+                                                containers: pageAsset?.containers,
+                                                vanityUrl: pageAsset?.vanityUrl,
+                                                numberContents: pageAsset?.numberContents,
                                                 isEnterprise,
                                                 currentUser,
                                                 experiment,
                                                 languages,
-                                                isClientReady: isTraditionalPage,
-                                                isTraditionalPage,
+                                                pageType: pageParams.clientHost
+                                                    ? PageType.HEADLESS
+                                                    : PageType.TRADITIONAL,
                                                 status: UVE_STATUS.LOADED
                                             });
                                         })
@@ -188,21 +222,31 @@ export function withLoad() {
                             }
                         }),
                         switchMap(() => {
-                            const pageRequest = !store.graphql()
+                            const pageRequest = !deps.graphqlRequest()
                                 ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(store.$graphqlWithParams()).pipe(
-                                      tap((response) => store.setGraphqlResponse(response)),
+                                : dotPageApiService.getGraphQLPage(deps.$graphqlWithParams()).pipe(
+                                      tap((response) => deps.setGraphqlResponse(response)),
                                       map((response) => response.pageAsset)
                                   );
 
                             return pageRequest.pipe(
-                                tap((pageAPIResponse) => {
-                                    patchState(store, { pageAPIResponse });
-                                    store.getWorkflowActions(pageAPIResponse.page.inode);
+                                tap((pageAsset) => {
+                                    patchState(store, {
+                                        page: pageAsset?.page,
+                                        site: pageAsset?.site,
+                                        viewAs: pageAsset?.viewAs,
+                                        template: pageAsset?.template,
+                                        layout: pageAsset?.layout,
+                                        urlContentMap: pageAsset?.urlContentMap,
+                                        containers: pageAsset?.containers,
+                                        vanityUrl: pageAsset?.vanityUrl,
+                                        numberContents: pageAsset?.numberContents
+                                    });
+                                    deps.getWorkflowActions(pageAsset.page.inode);
                                 }),
-                                switchMap((pageAPIResponse) => {
+                                switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(
-                                        pageAPIResponse.page.identifier
+                                        pageAsset.page.identifier
                                     );
                                 }),
                                 tap((languages) => {

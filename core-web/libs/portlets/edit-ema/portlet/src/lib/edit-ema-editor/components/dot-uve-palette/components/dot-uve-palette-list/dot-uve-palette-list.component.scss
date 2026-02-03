@@ -36,8 +36,8 @@
     // Search and options controls bar
     .dot-uve-palette-list__controls {
         display: flex;
-        gap: $spacing-1;
-        padding: $spacing-width-m;
+        gap: 0;
+        padding: $spacing-2;
         flex-shrink: 0;
     }
 
@@ -46,8 +46,8 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         grid-auto-rows: 6.875rem;
-        gap: $spacing-width-m;
-        padding: 0 $spacing-width-m;
+        gap: $spacing-1;
+        padding: 0 $spacing-2;
         overflow-y: auto;
         overflow-x: hidden;
         padding-bottom: $spacing-1;

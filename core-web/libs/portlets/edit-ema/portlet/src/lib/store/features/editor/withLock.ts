@@ -7,17 +7,31 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DotContentletLockerService, DotMessageService } from '@dotcms/data-access';
 
 import { UVEState } from '../../models';
-import { withLoad } from '../load/withLoad';
 
 interface WithLockState {
     lockLoading: boolean;
 }
 
 /**
+ * Dependencies interface for withLock
+ * These are methods from other features that withLock needs
+ */
+export interface WithLockDeps {
+    reloadCurrentPage: () => void;
+}
+
+/**
  * Signal store feature that adds lock functionality to the UVE store.
  * Provides methods to lock/unlock pages and handles loading states and user notifications.
+ *
+ * Dependencies: Requires methods from withLoad
+ * Pass these via the deps parameter when wrapping with withFeature
+ *
+ * @export
+ * @param deps - Dependencies from other features (provided by withFeature wrapper)
+ * @return {*}
  */
-export function withLock() {
+export function withLock(deps: WithLockDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>()
@@ -25,7 +39,6 @@ export function withLock() {
         withState<WithLockState>({
             lockLoading: false
         }),
-        withLoad(),
         withMethods((store) => {
             const messageService = inject(MessageService);
             const dotMessageService = inject(DotMessageService);
@@ -45,8 +58,15 @@ export function withLock() {
                             summary: dotMessageService.get('edit.ema.page.lock'),
                             detail: dotMessageService.get('edit.ema.page.lock.success')
                         });
-                        store.reloadCurrentPage();
-                        patchState(store, { lockLoading: false });
+                        const editor = store.editor();
+                        patchState(store, {
+                            editor: {
+                                ...editor,
+                                activeContentlet: null
+                            },
+                            lockLoading: false
+                        });
+                        deps.reloadCurrentPage();
                     },
                     error: () => {
                         messageService.add({
@@ -72,8 +92,15 @@ export function withLock() {
                             summary: dotMessageService.get('edit.ema.page.unlock'),
                             detail: dotMessageService.get('edit.ema.page.unlock.success')
                         });
-                        store.reloadCurrentPage();
-                        patchState(store, { lockLoading: false });
+                        const editor = store.editor();
+                        patchState(store, {
+                            editor: {
+                                ...editor,
+                                activeContentlet: null
+                            },
+                            lockLoading: false
+                        });
+                        deps.reloadCurrentPage();
                     },
                     error: () => {
                         messageService.add({
@@ -103,7 +130,7 @@ export function withLock() {
 
                     // If page is locked but NOT by current user, show confirmation
                     if (isLocked && !isLockedByCurrentUser) {
-                        const lockedBy = store.pageAPIResponse().page.lockedByName;
+                        const lockedBy = store.page().lockedByName;
 
                         confirmationService.confirm({
                             header: dotMessageService.get('uve.editor.unlock.confirm.header'),

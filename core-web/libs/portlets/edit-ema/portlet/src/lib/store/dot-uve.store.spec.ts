@@ -19,6 +19,7 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotMessageService,
+    DotPageLayoutService,
     DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
@@ -26,29 +27,25 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
-    MockDotMessageService,
+    CurrentUserDataMock,
+    DotLanguagesServiceMock,
+    getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
-    getDraftExperimentMock,
-    DotLanguagesServiceMock,
-    CurrentUserDataMock,
+    MockDotMessageService,
     mockLanguageArray
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
-import { Orientation } from './models';
+import { Orientation, PageType } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, PERSONA_KEY } from '../shared/consts';
+import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import {
-    BASE_SHELL_ITEMS,
-    BASE_SHELL_PROPS_RESPONSE,
     dotPropertiesServiceMock,
     HEADLESS_BASE_QUERY_PARAMS,
-    MOCK_RESPONSE_HEADLESS,
-    MOCK_RESPONSE_VTL,
-    VTL_BASE_QUERY_PARAMS
+    MOCK_RESPONSE_HEADLESS
 } from '../shared/mocks';
 import { normalizeQueryParams } from '../utils';
 
@@ -145,6 +142,13 @@ describe('UVEStore', () => {
                 }
             },
             {
+                provide: DotPageLayoutService,
+                useValue: {
+                    save: jest.fn().mockReturnValue(of({})),
+                    updateFromRowToContainers: jest.fn().mockReturnValue([])
+                }
+            },
+            {
                 provide: WINDOW,
                 useValue: window
             }
@@ -179,319 +183,432 @@ describe('UVEStore', () => {
             });
         });
 
-        describe('$shellProps', () => {
-            describe('Headless Page', () => {
-                beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
-
-                it('should return the shell props for Headless Pages', () => {
-                    expect(store.$shellProps()).toEqual(BASE_SHELL_PROPS_RESPONSE);
-                });
-
-                it('should return the shell props with property item disable when loading', () => {
-                    store.setUveStatus(UVE_STATUS.LOADING);
-                    const baseItems = BASE_SHELL_ITEMS.slice(0, BASE_SHELL_ITEMS.length - 1);
-
-                    expect(store.$shellProps()).toEqual({
-                        ...BASE_SHELL_PROPS_RESPONSE,
-                        items: [
-                            ...baseItems,
-                            {
-                                icon: 'pi-ellipsis-v',
-                                label: 'editema.editor.navbar.properties',
-                                id: 'properties',
-                                isDisabled: true
-                            }
-                        ]
-                    });
-                });
-
-                it('should return the error for 404', () => {
-                    patchState(store, { errorCode: 404 });
-
-                    expect(store.$shellProps()).toEqual({
-                        ...BASE_SHELL_PROPS_RESPONSE,
-                        error: {
-                            code: 404,
-                            pageInfo: COMMON_ERRORS['404']
-                        }
-                    });
-                });
-
-                it('should return the error for 403', () => {
-                    patchState(store, { errorCode: 403 });
-
-                    expect(store.$shellProps()).toEqual({
-                        ...BASE_SHELL_PROPS_RESPONSE,
-                        error: {
-                            code: 403,
-                            pageInfo: COMMON_ERRORS['403']
-                        }
-                    });
-                });
-
-                it('should return the error for 401', () => {
-                    patchState(store, { errorCode: 401 });
-
-                    expect(store.$shellProps()).toEqual({
-                        ...BASE_SHELL_PROPS_RESPONSE,
-                        error: {
-                            code: 401,
-                            pageInfo: null
-                        }
-                    });
-                });
-
-                it('should return layout, rules and experiments as disabled when isEnterprise is false', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
-                    );
-
-                    patchState(store, { isEnterprise: false });
-
-                    const shellProps = store.$shellProps();
-                    const layoutItem = shellProps.items.find((item) => item.id === 'layout');
-                    const rulesItem = shellProps.items.find((item) => item.id === 'rules');
-                    const experimentsItem = shellProps.items.find(
-                        (item) => item.id === 'experiments'
-                    );
-
-                    expect(layoutItem.isDisabled).toBe(true);
-                    expect(rulesItem.isDisabled).toBe(true);
-                    expect(experimentsItem.isDisabled).toBe(true);
-                });
-
-                it('should return rules and experiments as disable when page cannot be edited', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            page: {
-                                ...MOCK_RESPONSE_VTL.page,
-                                canEdit: false
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-
-                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
-                    const experiments = store
-                        .$shellProps()
-                        .items.find((item) => item.id === 'experiments');
-
-                    expect(rules.isDisabled).toBe(true);
-                    expect(experiments.isDisabled).toBe(true);
-                });
-
-                it('should return rules as disabled when page does not have the canSeeRules property and cannot edit and is not enterprise', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            page: {
-                                ...MOCK_RESPONSE_VTL.page,
-                                canSeeRules: undefined,
-                                canEdit: false
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-                    patchState(store, { isEnterprise: false });
-
-                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
-                    expect(rules.isDisabled).toBe(true);
-                });
-
-                it('should return rules as not disabled when page does not have the canSeeRules property and can edit and is enterprise', () => {
-                    const pageWithoutCanSeeRules = MOCK_RESPONSE_VTL.page;
-                    // delete the canSeeRules property
-                    delete pageWithoutCanSeeRules.canSeeRules;
-
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            page: {
-                                ...pageWithoutCanSeeRules,
-                                canEdit: true
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-
-                    const rules = store.$shellProps().items.find((item) => item.id === 'rules');
-                    expect(rules.isDisabled).toBe(false);
-                });
+        describe('$currentLanguage', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+            it('should return the current language object', () => {
+                expect(store.$currentLanguage()).toEqual(MOCK_RESPONSE_HEADLESS.viewAs.language);
             });
 
-            describe('VTL Page', () => {
-                it('should return the shell props for Legacy Pages', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-
-                    expect(store.$shellProps()).toEqual({
-                        canRead: true,
-                        error: null,
-                        seoParams: {
-                            siteId: MOCK_RESPONSE_VTL.site.identifier,
-                            languageId: 1,
-                            currentUrl: '/test-url',
-                            requestHostName: 'http://localhost'
-                        },
-                        items: [
-                            {
-                                icon: 'pi-file',
-                                label: 'editema.editor.navbar.content',
-                                href: 'content',
-                                id: 'content'
-                            },
-                            {
-                                icon: 'pi-table',
-                                label: 'editema.editor.navbar.layout',
-                                href: 'layout',
-                                id: 'layout',
-                                isDisabled: false,
-                                tooltip: null
-                            },
-                            {
-                                icon: 'pi-sliders-h',
-                                label: 'editema.editor.navbar.rules',
-                                id: 'rules',
-                                href: `rules/${MOCK_RESPONSE_VTL.page.identifier}`,
-                                isDisabled: false
-                            },
-                            {
-                                iconURL: 'experiments',
-                                label: 'editema.editor.navbar.experiments',
-                                href: `experiments/${MOCK_RESPONSE_VTL.page.identifier}`,
-                                id: 'experiments',
-                                isDisabled: false
-                            },
-                            {
-                                icon: 'pi-th-large',
-                                label: 'editema.editor.navbar.page-tools',
-                                id: 'page-tools'
-                            },
-                            {
-                                icon: 'pi-ellipsis-v',
-                                label: 'editema.editor.navbar.properties',
-                                id: 'properties',
-                                isDisabled: false
-                            }
-                        ]
-                    });
+            it('should return undefined when viewAs is not available', () => {
+                patchState(store, {
+                    viewAs: undefined
                 });
-
-                it('should return item for layout as disable and with a tooltip', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            template: {
-                                ...MOCK_RESPONSE_VTL.template,
-                                drawed: false
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-
-                    const layoutItem = store
-                        .$shellProps()
-                        .items.find((item) => item.id === 'layout');
-
-                    expect(layoutItem.isDisabled).toBe(true);
-                    expect(layoutItem.tooltip).toBe(
-                        'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
-                    );
-                });
-
-                it('should return item for layout as disable', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            page: {
-                                ...MOCK_RESPONSE_VTL.page,
-                                canEdit: false
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-
-                    const layoutItem = store
-                        .$shellProps()
-                        .items.find((item) => item.id === 'layout');
-
-                    expect(layoutItem.isDisabled).toBe(true);
-                });
-            });
-
-            describe('currentUrl', () => {
-                it('should not add a initial slash if the url has one', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            page: {
-                                ...MOCK_RESPONSE_VTL.page,
-                                pageURI: '/test-url'
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-                    const seoParams = store.$shellProps().seoParams;
-
-                    expect(seoParams.currentUrl).toEqual('/test-url');
-                });
-
-                it('should add a initial slash if the url does not have one', () => {
-                    jest.spyOn(dotPageApiService, 'get').mockImplementation(
-                        buildPageAPIResponseFromMock({
-                            ...MOCK_RESPONSE_VTL,
-                            page: {
-                                ...MOCK_RESPONSE_VTL.page,
-                                pageURI: 'test-url'
-                            }
-                        })
-                    );
-
-                    store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
-                    const seoParams = store.$shellProps().seoParams;
-
-                    expect(seoParams.currentUrl).toEqual('/test-url');
-                });
+                expect(store.$currentLanguage()).toBeUndefined();
             });
         });
 
-        describe('$isPreviewMode', () => {
-            it("should return true when the preview is 'true'", () => {
-                store.loadPageAsset({ mode: UVE_MODE.PREVIEW });
+        describe('$canEditLayout', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
 
-                expect(store.$isPreviewMode()).toBe(true);
+            it('should return true when has permission and in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$canEditLayout()).toBe(true);
             });
 
-            it("should return false when the preview is not 'true'", () => {
-                store.loadPageAsset({ mode: null });
+            it('should return false when not in EDIT mode even with permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$canEditLayout()).toBe(false);
+            });
 
-                expect(store.$isPreviewMode()).toBe(false);
+            it('should return false when page is locked', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'other-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user',
+                        loginAs: false
+                    }
+                });
+                expect(store.$canEditLayout()).toBe(false);
+            });
+
+            it('should return false when experiment is running', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getRunningExperimentMock()
+                });
+                expect(store.$canEditLayout()).toBe(false);
+            });
+
+            it('should return false when no permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false,
+                        locked: false
+                    },
+                    template: {
+                        ...MOCK_RESPONSE_HEADLESS.template,
+                        drawed: false
+                    }
+                });
+                expect(store.$canEditLayout()).toBe(false);
             });
         });
 
-        describe('$isLiveMode', () => {
-            it("should return true when the live is 'true'", () => {
-                store.loadPageAsset({ mode: UVE_MODE.LIVE });
 
-                expect(store.$isLiveMode()).toBe(true);
+        describe('$mode', () => {
+            it('should return EDIT when mode is EDIT', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                expect(store.$mode()).toBe(UVE_MODE.EDIT);
             });
 
-            it("should return false when the live is not 'true'", () => {
-                store.loadPageAsset({ mode: null });
+            it('should return PREVIEW when mode is PREVIEW', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                expect(store.$mode()).toBe(UVE_MODE.PREVIEW);
+            });
 
-                expect(store.$isLiveMode()).toBe(false);
+            it('should return LIVE when mode is LIVE', () => {
+                store.updatePageParams({ mode: UVE_MODE.LIVE });
+                expect(store.$mode()).toBe(UVE_MODE.LIVE);
+            });
+
+            it('should return UNKNOWN when mode is undefined', () => {
+                store.updatePageParams({ mode: undefined });
+                expect(store.$mode()).toBe(UVE_MODE.UNKNOWN);
             });
         });
+
+
+
+        describe('$canEditPageContent', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return false when not in EDIT mode even with permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    }
+                });
+                expect(store.$canEditPageContent()).toBe(false);
+            });
+
+            it('should return false when in EDIT mode but no permission', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false
+                    }
+                });
+                expect(store.$canEditPageContent()).toBe(false);
+            });
+
+            it('should return true when has permission and in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock()
+                });
+                expect(store.$canEditPageContent()).toBe(true);
+            });
+        });
+
+        describe('$canEditStyles', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when feature enabled, has permission, and in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageType: PageType.HEADLESS, // PageType.HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getDraftExperimentMock(),
+                    flags: {
+                        ...store.flags(),
+                        FEATURE_FLAG_UVE_STYLE_EDITOR: true
+                    }
+                });
+                expect(store.$canEditStyles()).toBe(true);
+            });
+
+            it('should return false when not in EDIT mode', () => {
+                store.updatePageParams({ mode: UVE_MODE.PREVIEW });
+                patchState(store, {
+                    pageType: PageType.HEADLESS, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    }
+                });
+                expect(store.$canEditStyles()).toBe(false);
+            });
+
+            it('should return false when page is locked', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageType: PageType.HEADLESS, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'other-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user',
+                        loginAs: false
+                    }
+                });
+                expect(store.$canEditStyles()).toBe(false);
+            });
+
+            it('should return false when experiment is running', () => {
+                store.updatePageParams({ mode: UVE_MODE.EDIT });
+                patchState(store, {
+                    pageType: PageType.HEADLESS, // HEADLESS
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    },
+                    experiment: getRunningExperimentMock()
+                });
+                expect(store.$canEditStyles()).toBe(false);
+            });
+        });
+
+        describe('$pageURI', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return the page URI from page response', () => {
+                expect(store.$pageURI()).toBe(MOCK_RESPONSE_HEADLESS.page.pageURI);
+            });
+
+            it('should return empty string when page is not available', () => {
+                patchState(store, {
+                    page: null
+                });
+                expect(store.$pageURI()).toBe('');
+            });
+        });
+
+        describe('$variantId', () => {
+            it('should return variant ID from page params', () => {
+                store.updatePageParams({ variantId: 'test-variant-123' });
+                expect(store.$variantId()).toBe('test-variant-123');
+            });
+
+            it('should return empty string when no variant ID', () => {
+                store.updatePageParams({ variantId: undefined });
+                expect(store.$variantId()).toBe('');
+            });
+        });
+
+        describe('$enableInlineEdit', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when in edit state and enterprise is enabled', () => {
+                patchState(store, {
+                    isEnterprise: true,
+                    view: {
+                        ...store.view(),
+                        isEditState: true
+                    }
+                });
+                expect(store.$enableInlineEdit()).toBe(true);
+            });
+
+            it('should return false when not in edit state', () => {
+                patchState(store, {
+                    isEnterprise: true,
+                    view: {
+                        ...store.view(),
+                        isEditState: false
+                    }
+                });
+                expect(store.$enableInlineEdit()).toBe(false);
+            });
+
+            it('should return false when enterprise is not enabled', () => {
+                patchState(store, {
+                    isEnterprise: false,
+                    view: {
+                        ...store.view(),
+                        isEditState: true
+                    }
+                });
+                expect(store.$enableInlineEdit()).toBe(false);
+            });
+
+            it('should return false when neither condition is met', () => {
+                patchState(store, {
+                    isEnterprise: false,
+                    view: {
+                        ...store.view(),
+                        isEditState: false
+                    }
+                });
+                expect(store.$enableInlineEdit()).toBe(false);
+            });
+        });
+
+        describe('$isPageLocked', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when page is locked by another user', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'another-user-id'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user-id',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$isPageLocked()).toBe(true);
+            });
+
+            it('should return false when page is locked by current user', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'current-user-id'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user-id',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$isPageLocked()).toBe(false);
+            });
+
+            it('should return false when page is not locked', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: false
+                    }
+                });
+
+                expect(store.$isPageLocked()).toBe(false);
+            });
+        });
+
+
+        describe('$isLockFeatureEnabled', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when feature flag is enabled', () => {
+                patchState(store, {
+                    flags: {
+                        ...store.flags(),
+                        FEATURE_FLAG_UVE_TOGGLE_LOCK: true
+                    }
+                });
+
+                expect(store.$isLockFeatureEnabled()).toBe(true);
+            });
+
+            it('should return false when page cannot be locked', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canLock: false
+                    }
+                });
+
+                expect(store.$isLockFeatureEnabled()).toBe(false);
+            });
+        });
+
+
+        describe('$hasAccessToEditMode', () => {
+            beforeEach(() => store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS));
+
+            it('should return true when page can be edited and is not locked by another user', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: false
+                    }
+                });
+
+                expect(store.$hasAccessToEditMode()).toBe(true);
+            });
+
+            it('should return false when page cannot be edited', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: false,
+                        locked: false
+                    }
+                });
+
+                expect(store.$hasAccessToEditMode()).toBe(false);
+            });
+
+            it('should return false when page is locked by another user', () => {
+                patchState(store, {
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        canEdit: true,
+                        locked: true,
+                        lockedBy: 'another-user'
+                    },
+                    currentUser: {
+                        ...CurrentUserDataMock,
+                        userId: 'current-user',
+                        loginAs: false
+                    }
+                });
+
+                expect(store.$hasAccessToEditMode()).toBe(false);
+            });
+        });
+
+        // Phase 2: $shellProps moved to DotEmaShellComponent - these tests are deprecated
+
+        // Duplicate tests - already tested above in Phase 5 additions (lines 267-289)
+
 
         describe('$friendlyParams', () => {
             it('should return a readable user params', () => {
@@ -509,7 +626,13 @@ describe('UVEStore', () => {
 
                 const expected = normalizeQueryParams({ ...pageParams, ...viewParams });
 
-                patchState(store, { pageParams, viewParams });
+                patchState(store, {
+                    pageParams,
+                    view: {
+                        ...store.view(),
+                        viewParams
+                    }
+                });
                 expect(store.$friendlyParams()).toEqual(expected);
             });
         });
@@ -536,8 +659,66 @@ describe('UVEStore', () => {
 
                 store.updatePageResponse(pageAPIResponse);
 
-                expect(store.pageAPIResponse()).toEqual(pageAPIResponse);
+                expect(store.page()).toEqual(pageAPIResponse.page);
+                expect(store.site()).toEqual(pageAPIResponse.site);
+                expect(store.viewAs()).toEqual(pageAPIResponse.viewAs);
+                expect(store.template()).toEqual(pageAPIResponse.template);
+                expect(store.layout()).toEqual(pageAPIResponse.layout);
+                expect(store.containers()).toEqual(pageAPIResponse.containers);
                 expect(store.status()).toBe(UVE_STATUS.LOADED);
+            });
+        });
+
+        describe('setActiveContentlet and resetActiveContentlet', () => {
+            it('should set activeContentlet in editor state', () => {
+                const payload = {
+                    container: {
+                        identifier: 'container-123',
+                        uuid: 'uuid-123',
+                        acceptTypes: 'Blog,News',
+                        maxContentlets: 10,
+                        variantId: 'DEFAULT'
+                    },
+                    contentlet: {
+                        identifier: 'contentlet-456',
+                        inode: 'inode-456',
+                        title: 'Test Blog Post',
+                        contentType: 'Blog'
+                    },
+                    language_id: '1',
+                    pageId: 'page-1',
+                    pageContainers: []
+                };
+
+                store.setActiveContentlet(payload);
+
+                expect(store.editor.activeContentlet()).toEqual(payload);
+            });
+
+            it('should clear activeContentlet when resetActiveContentlet is called', () => {
+                const payload = {
+                    container: {
+                        identifier: 'container-123',
+                        uuid: 'uuid-123',
+                        acceptTypes: 'Blog,News',
+                        maxContentlets: 10,
+                        variantId: 'DEFAULT'
+                    },
+                    contentlet: {
+                        identifier: 'contentlet-456',
+                        inode: 'inode-456',
+                        title: 'Test',
+                        contentType: 'Blog'
+                    },
+                    language_id: '1',
+                    pageId: 'page-1',
+                    pageContainers: []
+                };
+                store.setActiveContentlet(payload);
+                expect(store.editor.activeContentlet()).not.toBeNull();
+
+                store.resetActiveContentlet();
+                expect(store.editor.activeContentlet()).toBeNull();
             });
         });
     });

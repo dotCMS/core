@@ -1,10 +1,10 @@
 import {
+    patchState,
     signalStoreFeature,
-    withMethods,
-    withComputed,
-    withState,
     type,
-    patchState
+    withComputed,
+    withMethods,
+    withState
 } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
@@ -22,7 +22,7 @@ import {
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
-import { Orientation, UVEState } from '../../../models';
+import { Orientation, PageType, UVEState } from '../../../models';
 import { withFlags } from '../../flags/withFlags';
 import { EditorToolbarState, PersonaSelectorProps, UVEToolbarProps } from '../models';
 
@@ -57,28 +57,27 @@ export function withUVEToolbar() {
                 const url = params?.url;
 
                 const experiment = store.experiment?.();
-                const pageAPIResponse = store.pageAPIResponse();
                 const pageAPIQueryParams = getFullPageURL({ url, params });
 
                 const pageAPI = `/api/v1/page/${
-                    store.isTraditionalPage() ? 'render' : 'json'
+                    store.pageType() === PageType.TRADITIONAL ? 'render' : 'json'
                 }/${pageAPIQueryParams}`;
 
                 const bookmarksUrl = createFavoritePagesURL({
                     languageId: Number(params?.language_id),
                     pageURI: url,
-                    siteId: pageAPIResponse?.site?.identifier
+                    siteId: store.site()?.identifier
                 });
 
                 const isPageLocked = computeIsPageLocked(
-                    pageAPIResponse?.page,
+                    store.page() ?? null,
                     store.currentUser()
                 );
-                const shouldShowUnlock = isPageLocked && pageAPIResponse?.page.canLock;
+                const shouldShowUnlock = isPageLocked && store.page()?.canLock;
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
 
                 const unlockButton = {
-                    inode: pageAPIResponse?.page.inode,
+                    inode: store.page()?.inode,
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
@@ -89,7 +88,7 @@ export function withUVEToolbar() {
                     ? {
                           deviceSelector: {
                               apiLink: `${clientHost}${pageAPI}`,
-                              hideSocialMedia: !store.isTraditionalPage()
+                              hideSocialMedia: store.pageType() === PageType.HEADLESS
                           }
                       }
                     : null;
@@ -100,16 +99,16 @@ export function withUVEToolbar() {
                         apiUrl: pageAPI
                     },
                     preview: prevewItem,
-                    currentLanguage: pageAPIResponse?.viewAs.language,
+                    currentLanguage: store.viewAs()?.language,
                     urlContentMap: store.isEditState()
-                        ? (pageAPIResponse?.urlContentMap ?? null)
+                        ? (store.urlContentMap() ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.pageAPIResponse()?.urlContentMap;
+                return store.urlContentMap() ?? null;
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
@@ -118,22 +117,21 @@ export function withUVEToolbar() {
                     return null;
                 }
 
-                const pageAPIResponse = store.pageAPIResponse();
                 const currentUser = store.currentUser();
 
-                const isLocked = computeIsPageLocked(pageAPIResponse.page, currentUser);
+                const isLocked = computeIsPageLocked(store.page() ?? null, currentUser);
                 const info = {
-                    message: pageAPIResponse.page.canLock
+                    message: store.page()?.canLock
                         ? 'editpage.toolbar.page.release.lock.locked.by.user'
                         : 'editpage.locked-by',
-                    args: [pageAPIResponse.page.lockedByName]
+                    args: [store.page()?.lockedByName]
                 };
 
-                const disabled = !pageAPIResponse.page.canLock;
+                const disabled = !store.page()?.canLock;
 
                 return isLocked
                     ? {
-                          inode: pageAPIResponse.page.inode,
+                          inode: store.page()?.inode,
                           loading: store.status() === UVE_STATUS.LOADING,
                           info,
                           disabled
@@ -141,8 +139,7 @@ export function withUVEToolbar() {
                     : null;
             }),
             $toggleLockOptions: computed<ToggleLockOptions | null>(() => {
-                const pageAPIResponse = store.pageAPIResponse();
-                const page = pageAPIResponse.page;
+                const page = store.page() ?? null;
                 const currentUser = store.currentUser();
 
                 // Only show lock controls when feature flag is enabled AND in edit mode
@@ -153,8 +150,8 @@ export function withUVEToolbar() {
                     return null;
                 }
 
-                const isLocked = !!page.locked;
-                const isLockedByCurrentUser = page.lockedBy === currentUser?.userId;
+                const isLocked = !!page?.locked;
+                const isLockedByCurrentUser = page?.lockedBy === currentUser?.userId;
 
                 // Show overlay when page is unlocked or locked by another user
                 const showOverlay = !isLocked || !isLockedByCurrentUser;
@@ -163,7 +160,7 @@ export function withUVEToolbar() {
                 const showBanner = isLocked && !isLockedByCurrentUser;
 
                 return {
-                    inode: page.inode,
+                    inode: page?.inode,
                     isLocked,
                     lockedBy: page.lockedByName,
                     canLock: page.canLock ?? false,
@@ -173,28 +170,26 @@ export function withUVEToolbar() {
                 };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
-                const pageAPIResponse = store.pageAPIResponse();
 
                 return {
-                    pageId: pageAPIResponse?.page.identifier,
-                    value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
+                    pageId: store.page()?.identifier,
+                    value: store.viewAs()?.persona ?? DEFAULT_PERSONA
                 };
             }),
             $apiURL: computed<string>(() => {
                 const params = store.pageParams();
                 const pageURL = getFullPageURL({ url: params.url, params });
 
-                const pageType = store.isTraditionalPage() ? 'render' : 'json';
+                const pageType = store.pageType() === PageType.TRADITIONAL ? 'render' : 'json';
                 const pageAPI = `/api/v1/page/${pageType}/${pageURL}`;
 
                 return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
-                const pageAPIResponse = store.pageAPIResponse();
                 const mode = store.pageParams()?.mode;
 
-                if (!getIsDefaultVariant(pageAPIResponse?.viewAs.variantId)) {
-                    const variantId = pageAPIResponse.viewAs.variantId;
+                if (!getIsDefaultVariant(store.viewAs()?.variantId)) {
+                    const variantId = store.viewAs()?.variantId;
 
                     const currentExperiment = store.experiment?.();
 
@@ -227,7 +222,7 @@ export function withUVEToolbar() {
                 const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
                 const isDefaultVariant = getIsDefaultVariant(
-                    store.pageAPIResponse()?.viewAs.variantId
+                    store.viewAs()?.variantId
                 );
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;

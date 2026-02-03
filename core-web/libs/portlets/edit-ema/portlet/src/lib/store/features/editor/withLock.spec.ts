@@ -1,7 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState, withFeature } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
+
+import { computed } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -25,8 +27,9 @@ import {
 import { withLock } from './withLock';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
+import { EDITOR_STATE } from '../../../shared/enums';
 import { dotPropertiesServiceMock, MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
-import { UVEState } from '../../models';
+import { Orientation, PageType, UVEState } from '../../models';
 import { withLoad } from '../load/withLoad';
 
 const mockLockResponse: DotContentletLockResponse = {
@@ -38,21 +41,61 @@ const mockLockResponse: DotContentletLockResponse = {
 const initialState: UVEState = {
     isEnterprise: false,
     languages: [],
-    pageAPIResponse: MOCK_RESPONSE_HEADLESS,
+    // Normalized page response properties
+    page: MOCK_RESPONSE_HEADLESS.page,
+    site: MOCK_RESPONSE_HEADLESS.site,
+    template: MOCK_RESPONSE_HEADLESS.template,
+    layout: MOCK_RESPONSE_HEADLESS.layout,
+    containers: MOCK_RESPONSE_HEADLESS.containers,
+    viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
+    vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
+    urlContentMap: MOCK_RESPONSE_HEADLESS.urlContentMap,
+    numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
     currentUser: null,
     experiment: null,
     errorCode: null,
     pageParams: null,
     status: null,
-    isTraditionalPage: true,
-    isClientReady: false
+    pageType: PageType.TRADITIONAL,
+    // Phase 3: Nested editor state
+    editor: {
+        dragItem: null,
+        bounds: [],
+        state: EDITOR_STATE.IDLE,
+        activeContentlet: null,
+        contentArea: null,
+        panels: {
+            palette: { open: true },
+            rightSidebar: { open: false }
+        },
+        ogTags: null,
+        styleSchemas: []
+    },
+    // Phase 3: Nested view state
+    view: {
+        device: null,
+        orientation: Orientation.LANDSCAPE,
+        socialMedia: null,
+        viewParams: null,
+        isEditState: true,
+        isPreviewModeActive: false,
+        ogTagsResults: null
+    }
 };
 
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withLoad(),
-    withLock()
+    withFeature((store) => withLoad({
+        resetClientConfiguration: () => {},
+        getWorkflowActions: () => {},
+        graphqlRequest: () => null,
+        $graphqlWithParams: computed(() => null),
+        setGraphqlResponse: () => {}
+    })),
+    withFeature((store) => withLock({
+        reloadCurrentPage: () => store.reloadCurrentPage()
+    }))
 );
 
 describe('withLock', () => {
@@ -182,12 +225,9 @@ describe('withLock', () => {
 
             it('should show confirmation dialog when page is locked by another user', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            lockedByName: 'Another User'
-                        }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        lockedByName: 'Another User'
                     }
                 });
 
@@ -206,12 +246,9 @@ describe('withLock', () => {
 
             it('should unlock page when user confirms unlocking page locked by another user', () => {
                 patchState(store, {
-                    pageAPIResponse: {
-                        ...MOCK_RESPONSE_HEADLESS,
-                        page: {
-                            ...MOCK_RESPONSE_HEADLESS.page,
-                            lockedByName: 'Another User'
-                        }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        lockedByName: 'Another User'
                     }
                 });
 

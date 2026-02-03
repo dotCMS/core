@@ -42,8 +42,6 @@ export class EditEmaNavigationBarComponent {
 
     uveStore = inject(UVEStore);
 
-    $editorProps = this.uveStore.$editorProps;
-
     $params = this.uveStore.pageParams;
 
     /**
