@@ -68,11 +68,6 @@ public class PublishingJobsHelper {
             Status.PUBLISHING_BUNDLE
     );
 
-    /**
-     * Set of valid operation values for push bundle.
-     */
-    private static final Set<String> VALID_OPERATIONS = Set.of("publish", "expire", "publishexpire");
-
     private final BundleAPI bundleAPI;
     private final PublisherAPI publisherAPI;
     private final PublishAuditUtil publishAuditUtil;
@@ -484,60 +479,6 @@ public class PublishingJobsHelper {
             throw new BadRequestException(String.format(
                     "Invalid date format: '%s'. Expected ISO 8601 with timezone offset (e.g., 2025-03-15T14:30:00-05:00)",
                     dateStr));
-        }
-    }
-
-    /**
-     * Validates the push bundle form inputs.
-     *
-     * <p>Validation rules:
-     * <ul>
-     *   <li>operation is required and must be: publish, expire, or publishexpire</li>
-     *   <li>publishDate is required for publish and publishexpire operations</li>
-     *   <li>expireDate is required for expire and publishexpire operations</li>
-     *   <li>environments is required and must have at least one ID</li>
-     *   <li>filterKey is required</li>
-     * </ul>
-     *
-     * @param form The form to validate
-     * @throws BadRequestException if validation fails
-     */
-    public void validatePushBundleForm(final PushBundleForm form) {
-        if (form == null) {
-            throw new BadRequestException("Request body is required");
-        }
-
-        // Validate operation
-        if (!UtilMethods.isSet(form.getOperation())) {
-            throw new BadRequestException("Operation is required. Valid values: publish, expire, publishexpire");
-        }
-        final String operation = form.getOperation().toLowerCase();
-        if (!VALID_OPERATIONS.contains(operation)) {
-            throw new BadRequestException(String.format(
-                    "Invalid operation: '%s'. Valid values: publish, expire, publishexpire",
-                    form.getOperation()));
-        }
-
-        // Validate publishDate for publish and publishexpire
-        if (("publish".equals(operation) || "publishexpire".equals(operation))
-                && !UtilMethods.isSet(form.getPublishDate())) {
-            throw new BadRequestException("publishDate is required for " + operation + " operation");
-        }
-
-        // Validate expireDate for expire and publishexpire
-        if (("expire".equals(operation) || "publishexpire".equals(operation))
-                && !UtilMethods.isSet(form.getExpireDate())) {
-            throw new BadRequestException("expireDate is required for " + operation + " operation");
-        }
-
-        // Validate environments
-        if (!UtilMethods.isSet(form.getEnvironments()) || form.getEnvironments().isEmpty()) {
-            throw new BadRequestException("At least one environment ID is required");
-        }
-
-        // Validate filterKey
-        if (!UtilMethods.isSet(form.getFilterKey())) {
-            throw new BadRequestException("filterKey is required");
         }
     }
 

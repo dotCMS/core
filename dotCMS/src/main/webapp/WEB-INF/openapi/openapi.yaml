@@ -11548,6 +11548,9 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PushBundleForm"
+        description: "Push configuration including operation type, dates, environments,\
+          \ and filter"
+        required: true
       responses:
         "200":
           content:

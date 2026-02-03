@@ -537,6 +537,14 @@ public class PublishingResource {
                     example = "550e8400-e29b-41d4-a716-446655440000"
             )
             @PathParam("bundleId") final String bundleId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Push configuration including operation type, dates, environments, and filter",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = PushBundleForm.class)
+                    )
+            )
             final PushBundleForm form) throws DotDataException, DotPublisherException {
 
         // 1. Authenticate backend user
@@ -554,7 +562,10 @@ public class PublishingResource {
         }
 
         // 3. Validate form inputs
-        publishingJobsHelper.validatePushBundleForm(form);
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+        form.checkValid();
 
         // 4. Get and validate bundle exists
         final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
