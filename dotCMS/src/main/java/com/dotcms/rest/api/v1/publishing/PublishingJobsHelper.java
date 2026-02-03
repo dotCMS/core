@@ -13,12 +13,19 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPI;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -61,11 +68,17 @@ public class PublishingJobsHelper {
             Status.PUBLISHING_BUNDLE
     );
 
+    /**
+     * Set of valid operation values for push bundle.
+     */
+    private static final Set<String> VALID_OPERATIONS = Set.of("publish", "expire", "publishexpire");
+
     private final BundleAPI bundleAPI;
     private final PublisherAPI publisherAPI;
     private final PublishAuditUtil publishAuditUtil;
     private final EnvironmentAPI environmentAPI;
     private final PublishingEndPointAPI publishingEndPointAPI;
+    private final PermissionAPI permissionAPI;
 
     /**
      * Default constructor using APILocator for dependencies.
@@ -75,7 +88,8 @@ public class PublishingJobsHelper {
              APILocator.getPublisherAPI(),
              PublishAuditUtil.getInstance(),
              APILocator.getEnvironmentAPI(),
-             APILocator.getPublisherEndPointAPI());
+             APILocator.getPublisherEndPointAPI(),
+             APILocator.getPermissionAPI());
     }
 
     /**
@@ -86,18 +100,21 @@ public class PublishingJobsHelper {
      * @param publishAuditUtil       Utility for asset title resolution
      * @param environmentAPI         Environment API for environment lookup
      * @param publishingEndPointAPI  Publishing endpoint API for endpoint lookup
+     * @param permissionAPI          Permission API for permission checks
      */
     @VisibleForTesting
     public PublishingJobsHelper(final BundleAPI bundleAPI,
                                 final PublisherAPI publisherAPI,
                                 final PublishAuditUtil publishAuditUtil,
                                 final EnvironmentAPI environmentAPI,
-                                final PublishingEndPointAPI publishingEndPointAPI) {
+                                final PublishingEndPointAPI publishingEndPointAPI,
+                                final PermissionAPI permissionAPI) {
         this.bundleAPI = bundleAPI;
         this.publisherAPI = publisherAPI;
         this.publishAuditUtil = publishAuditUtil;
         this.environmentAPI = environmentAPI;
         this.publishingEndPointAPI = publishingEndPointAPI;
+        this.permissionAPI = permissionAPI;
     }
 
     /**
@@ -436,5 +453,145 @@ public class PublishingJobsHelper {
             Logger.debug(this, "Unable to get endpoint: " + endpointId, e);
             return null;
         }
+    }
+
+    // =========================================================================
+    // PUSH BUNDLE HELPER METHODS - For POST /v1/publishing/push/{bundleId}
+    // =========================================================================
+
+    /**
+     * Parses an ISO 8601 date string with timezone offset to a Date object.
+     *
+     * <p>Accepts formats like:
+     * <ul>
+     *   <li>{@code 2025-03-15T14:30:00-05:00} (Eastern Time)</li>
+     *   <li>{@code 2025-03-15T19:30:00+00:00} (UTC)</li>
+     *   <li>{@code 2025-03-15T19:30:00Z} (UTC with Z)</li>
+     * </ul>
+     *
+     * @param dateStr The ISO 8601 date string to parse
+     * @return The parsed Date, or null if dateStr is null/empty
+     * @throws BadRequestException if the date format is invalid
+     */
+    public Date parseISO8601Date(final String dateStr) {
+        if (!UtilMethods.isSet(dateStr)) {
+            return null;
+        }
+        try {
+            final OffsetDateTime odt = OffsetDateTime.parse(dateStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return Date.from(odt.toInstant());
+        } catch (DateTimeParseException e) {
+            throw new BadRequestException(String.format(
+                    "Invalid date format: '%s'. Expected ISO 8601 with timezone offset (e.g., 2025-03-15T14:30:00-05:00)",
+                    dateStr));
+        }
+    }
+
+    /**
+     * Validates the push bundle form inputs.
+     *
+     * <p>Validation rules:
+     * <ul>
+     *   <li>operation is required and must be: publish, expire, or publishexpire</li>
+     *   <li>publishDate is required for publish and publishexpire operations</li>
+     *   <li>expireDate is required for expire and publishexpire operations</li>
+     *   <li>environments is required and must have at least one ID</li>
+     *   <li>filterKey is required</li>
+     * </ul>
+     *
+     * @param form The form to validate
+     * @throws BadRequestException if validation fails
+     */
+    public void validatePushBundleForm(final PushBundleForm form) {
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        // Validate operation
+        if (!UtilMethods.isSet(form.getOperation())) {
+            throw new BadRequestException("Operation is required. Valid values: publish, expire, publishexpire");
+        }
+        final String operation = form.getOperation().toLowerCase();
+        if (!VALID_OPERATIONS.contains(operation)) {
+            throw new BadRequestException(String.format(
+                    "Invalid operation: '%s'. Valid values: publish, expire, publishexpire",
+                    form.getOperation()));
+        }
+
+        // Validate publishDate for publish and publishexpire
+        if (("publish".equals(operation) || "publishexpire".equals(operation))
+                && !UtilMethods.isSet(form.getPublishDate())) {
+            throw new BadRequestException("publishDate is required for " + operation + " operation");
+        }
+
+        // Validate expireDate for expire and publishexpire
+        if (("expire".equals(operation) || "publishexpire".equals(operation))
+                && !UtilMethods.isSet(form.getExpireDate())) {
+            throw new BadRequestException("expireDate is required for " + operation + " operation");
+        }
+
+        // Validate environments
+        if (!UtilMethods.isSet(form.getEnvironments()) || form.getEnvironments().isEmpty()) {
+            throw new BadRequestException("At least one environment ID is required");
+        }
+
+        // Validate filterKey
+        if (!UtilMethods.isSet(form.getFilterKey())) {
+            throw new BadRequestException("filterKey is required");
+        }
+    }
+
+    /**
+     * Validates environment IDs and checks user permissions.
+     *
+     * <p>For each environment ID:
+     * <ul>
+     *   <li>Looks up the environment by ID</li>
+     *   <li>Checks if the user has PERMISSION_USE on the environment</li>
+     *   <li>Adds valid environments to the result list</li>
+     * </ul>
+     *
+     * @param environmentIds List of environment IDs to validate
+     * @param user           The user performing the operation
+     * @return List of valid Environment objects the user has permission to use
+     * @throws ForbiddenException if the user lacks permission on all environments
+     */
+    public List<Environment> validateEnvironmentPermissions(final List<String> environmentIds,
+                                                             final User user) {
+        if (!UtilMethods.isSet(environmentIds) || environmentIds.isEmpty()) {
+            return List.of();
+        }
+
+        final List<Environment> validEnvironments = new ArrayList<>();
+        final List<String> noPermissionEnvs = new ArrayList<>();
+
+        for (final String envId : environmentIds) {
+            try {
+                final Environment environment = environmentAPI.findEnvironmentById(envId);
+                if (environment == null) {
+                    Logger.warn(this, String.format("Environment not found: %s", envId));
+                    continue;
+                }
+
+                if (permissionAPI.doesUserHavePermission(environment, PermissionAPI.PERMISSION_USE, user)) {
+                    validEnvironments.add(environment);
+                } else {
+                    noPermissionEnvs.add(envId);
+                    Logger.debug(this, String.format("User '%s' lacks PERMISSION_USE on environment '%s'",
+                            user.getUserId(), envId));
+                }
+            } catch (Exception e) {
+                Logger.warn(this, String.format("Error checking environment '%s': %s", envId, e.getMessage()));
+            }
+        }
+
+        // If user lacks permission on ALL requested environments, throw Forbidden
+        if (validEnvironments.isEmpty() && !noPermissionEnvs.isEmpty()) {
+            throw new ForbiddenException(String.format(
+                    "User lacks permission on environment(s): %s",
+                    String.join(", ", noPermissionEnvs)));
+        }
+
+        return validEnvironments;
     }
 }
