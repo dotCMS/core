@@ -40,7 +40,7 @@ export class ActionHeaderComponent {
         effect(() => {
             const items = this.selectedItems();
             untracked(() => {
-                this.hideDinamycOverflow(items);
+                this.hideDynamicOverflow(items);
             });
         });
 
@@ -99,7 +99,7 @@ export class ActionHeaderComponent {
         });
     }
 
-    private hideDinamycOverflow(items: unknown[]): void {
+    private hideDynamicOverflow(items: unknown[]): void {
         this.dynamicOverflow.set('');
         if (items.length) {
             setTimeout(() => {

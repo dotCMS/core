@@ -31,13 +31,13 @@ describe('DotActionButtonComponent', () => {
 
     it('should have only button in default state', () => {
         expect(spectator.query('p-button')).toExist();
-        expect(spectator.query('.action-button__label')).not.toExist();
+        expect(spectator.query(byTestId('dot-action-button-label'))).not.toExist();
         expect(spectator.query('p-menu')).not.toExist();
     });
 
     it('should have label', () => {
         spectator.setInput('label', 'Hello World');
-        expect(spectator.query('.action-button__label')).toHaveText('Hello World');
+        expect(spectator.query(byTestId('dot-action-button-label'))).toHaveText('Hello World');
     });
 
     it('should have p-menu and pass the model to it', () => {
@@ -86,9 +86,10 @@ describe('DotActionButtonComponent', () => {
         spectator.setInput('label', 'Label');
 
         const button = spectator.query(Button);
-        const label = spectator.query('.action-button__label');
+        const label = spectator.query(byTestId('dot-action-button-label'));
 
         expect(button.disabled).toBe(true);
-        expect(label).toHaveClass('action-button__label--disabled');
+        expect(label).toHaveClass('text-gray-400');
+        expect(label).toHaveClass('cursor-not-allowed');
     });
 });

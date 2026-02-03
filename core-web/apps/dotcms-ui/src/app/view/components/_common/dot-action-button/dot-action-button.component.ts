@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,11 +21,12 @@ import { Menu, MenuModule } from 'primeng/menu';
 @Component({
     selector: 'dot-action-button',
     templateUrl: 'dot-action-button.component.html',
-    imports: [ButtonModule, MenuModule],
+    imports: [ButtonModule, MenuModule, NgClass],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[class.action-button--no-label]': '$isNotLabeled()',
-        '(click)': 'onHostClick($event)'
+        '(click)': 'onHostClick($event)',
+        class: 'inline-flex flex-col items-center'
     }
 })
 export class DotActionButtonComponent {
@@ -34,7 +36,6 @@ export class DotActionButtonComponent {
     icon = input<string>('pi pi-plus');
     label = input<string>('');
     model = input<MenuItem[]>([]);
-    selected = input<boolean>(false);
 
     press = output<MouseEvent>();
 

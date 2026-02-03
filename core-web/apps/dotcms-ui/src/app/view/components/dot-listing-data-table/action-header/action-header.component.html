@@ -31,6 +31,7 @@
                     @for (action of options().secondary; track action) {
                         <p-splitButton
                             [model]="action.model"
+                            [outlined]="true"
                             secondary
                             label="{{ action.label }}"
                             class="inverted" />
