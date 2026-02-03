@@ -6,7 +6,6 @@ import {
     effect,
     inject,
     input,
-    linkedSignal,
     signal,
     untracked
 } from '@angular/core';
@@ -17,7 +16,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounceTime, distinctUntilChanged, filter, switchMap, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -34,6 +33,7 @@ import {
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { filterFormValues } from '../../utils';
 
@@ -69,26 +69,6 @@ export class DotUveStyleEditorFormComponent {
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
     /**
-     * Tracks rollback detection using linkedSignal.
-     * Returns true when currentIndex decreases (undo operation detected).
-     * The previous parameter contains both the source (currentIndex) and the computed value from last run.
-     */
-    readonly $isRollback = linkedSignal({
-        source: this.#uveStore.currentIndex,
-        computation: (currentIndex: number, previous?: { source: number; value: boolean }) => {
-            // First run: no previous value, not a rollback
-            if (!previous) {
-                return false;
-            }
-
-            const previousIndex = previous.source;
-
-            // Rollback detected: index decreased from a valid position
-            return previousIndex >= 0 && currentIndex < previousIndex;
-        }
-    });
-
-    /**
      * Computed property that returns an array of all section indices to keep all tabs open by default
      */
     $activeTabIndices = computed(() => {
@@ -96,17 +76,13 @@ export class DotUveStyleEditorFormComponent {
         return sections.map((_, index) => index);
     });
 
-    // readonly #rollbackDetectionEffect = effect(() => {
-    //     const isRollback = this.$isRollback();
-
-    //     // When rollback is detected, restore form from the rolled-back state
-    //     if (isRollback) {
-    //         untracked(() => {
-    //             this.#restoreFormFromRollback();
-    //         });
-    //     }
-    // });
-
+    /**
+     * Effect that observes changes in the schema and rebuilds the form accordingly.
+     *
+     * This effect is triggered whenever the schema changes, ensuring that the most
+     * up-to-date schema is used to construct the form. It uses `untracked` to avoid
+     * causing unnecessary dependency tracking on this.$schema().
+     */
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
 
@@ -116,7 +92,6 @@ export class DotUveStyleEditorFormComponent {
     });
 
     constructor() {
-        // Use switchMap to automatically cancel pending saves when form is rebuilt
         this.#listenToFormChanges();
     }
 
@@ -129,8 +104,14 @@ export class DotUveStyleEditorFormComponent {
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
 
-        const form = this.#formBuilder.buildForm(schema, initialValues);
-        this.#form.set(form);
+        // Clear form first so the template destroys the form block and unbinds old controls.
+        // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName
+        this.#form.set(null);
+
+        queueMicrotask(() => {
+            const form = this.#formBuilder.buildForm(schema, initialValues);
+            this.#form.set(form);
+        });
     }
 
     /**
@@ -193,19 +174,28 @@ export class DotUveStyleEditorFormComponent {
                 // Switch to the new form's valueChanges
                 // This automatically unsubscribes from the previous form's valueChanges
                 // and cancels any pending debounced saves
-                switchMap((form) =>
+                mergeMap((form) =>
                     form.valueChanges.pipe(
                         distinctUntilChanged(
                             (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
                         ),
-                        tap((formValues) => this.#updateIframeImmediately(formValues)),
+                        // Capture activeContentlet at the time of form change (before debounce)
+                        // This ensures we use the correct contentlet even if the user switches
+                        // to a different contentlet during the debounce period
+                        map((formValues) => ({
+                            formValues,
+                            activeContentlet: this.#uveStore.activeContentlet()
+                        })),
+                        tap(({ formValues, activeContentlet }) =>
+                            this.#updateIframeImmediately(formValues, activeContentlet)
+                        ),
                         debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
                     )
                 ),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((formValues: Record<string, unknown>) => {
-                this.#saveStyleProperties(formValues);
+            .subscribe(({ formValues, activeContentlet }) => {
+                this.#saveStyleProperties(formValues, activeContentlet);
             });
     }
 
@@ -213,9 +203,10 @@ export class DotUveStyleEditorFormComponent {
      * Immediately updates the iframe with new form values (no debounce)
      * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
      */
-    #updateIframeImmediately(formValues: Record<string, unknown>): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
-
+    #updateIframeImmediately(
+        formValues: Record<string, unknown>,
+        activeContentlet: ActionPayload | null
+    ): void {
         if (!activeContentlet) {
             return;
         }
@@ -258,9 +249,10 @@ export class DotUveStyleEditorFormComponent {
      * Saves style properties to API with debounce
      * Saves current state to history before API call, so rollback can restore to this point
      */
-    #saveStyleProperties(formValues: Record<string, unknown>): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
-
+    #saveStyleProperties(
+        formValues: Record<string, unknown>,
+        activeContentlet: ActionPayload
+    ): void {
         if (!activeContentlet) {
             return;
         }
