@@ -1,16 +1,14 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, inject } from '@angular/core';
 
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
-import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
 
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -29,7 +27,6 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
         TabViewModule,
         DotUvePaletteListComponent,
         TooltipModule,
-        DotUveStyleEditorFormComponent,
         DotRowReorderComponent,
     ],
     templateUrl: './dot-uve-palette.component.html',
@@ -58,10 +55,6 @@ export class DotUvePaletteComponent {
     readonly $pagePath = computed(() => this.uveStore.$pageURI());
     readonly $languageId = computed(() => this.uveStore.$languageId());
     readonly $variantId = computed(() => this.uveStore.$variantId());
-    readonly $showStyleEditorTab = computed(() => this.uveStore.$canEditStyles());
-    readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
-        return this.uveStore.$styleSchema()
-    });
 
     /**
      * Active tab - read from local state, not global store.
@@ -75,14 +68,7 @@ export class DotUvePaletteComponent {
     @Output() onNodeSelect = new EventEmitter<{ selector: string; type: string }>();
 
     constructor() {
-        // Effect: When activeContentlet changes, switch to STYLE_EDITOR tab
-        // This maintains cross-component coordination without storing tab state globally
-        effect(() => {
-            const activeContentlet = this.uveStore.editor.activeContentlet();
-            if (activeContentlet) {
-                patchState(this.#localState, { currentTab: UVE_PALETTE_TABS.STYLE_EDITOR });
-            }
-        });
+        // Tab management is now handled locally without effects
     }
 
     /**

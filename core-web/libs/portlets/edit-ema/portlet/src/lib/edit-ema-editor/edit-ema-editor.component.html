@@ -44,13 +44,13 @@
                     (click)="togglePalette()"
                     data-testId="uve-toolbar-palette-toggle">
                     <img
-                        src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
                         alt="Left Panel Open"
                         [class.hidden]="!$paletteOpen"
                         draggable="false"
                         data-testId="palette-open-icon" />
                     <img
-                        src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
                         alt="Left Panel Close"
                         [class.hidden]="$paletteOpen"
                         draggable="false"
@@ -106,14 +106,14 @@
                     (click)="toggleRightSidebar()"
                     data-testId="right-sidebar-toggle">
                     <img
-                        src="./assets/edit-uve-toolbar/left_panel_open.svg"
+                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
                         alt="Right Panel Open"
                         [class.hidden]="!$rightSidebarOpen"
                         class="flip-horizontal"
                         draggable="false"
                         data-testId="right-sidebar-open-icon" />
                     <img
-                        src="./assets/edit-uve-toolbar/left_panel_close.svg"
+                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
                         alt="Right Panel Close"
                         [class.hidden]="$rightSidebarOpen"
                         class="flip-horizontal"
@@ -196,11 +196,51 @@
 
 @if (uveStore.$mode() === UVE_MODE.EDIT) {
     <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen">
-        <dot-uve-contentlet-quick-edit
-            [data]="$contentletEditData()"
-            [loading]="$isSubmitting()"
-            (submit)="onFormSubmit($event)"
-            (cancel)="onCancel()" />
+        <p-tabView [activeIndex]="$rightSidebarActiveTab()" (onChange)="handleRightSidebarTabChange($event)">
+            <p-tabPanel>
+                <ng-template pTemplate="header">
+                    <div class="tab-header" pTooltip="Content Editor" tooltipPosition="bottom">
+                        <i class="pi pi-pencil"></i>
+                    </div>
+                </ng-template>
+                @if ($rightSidebarActiveTab() === 0) {
+                    <dot-uve-contentlet-quick-edit
+                        [data]="$contentletEditData()"
+                        [loading]="$isSubmitting()"
+                        (submit)="onFormSubmit($event)"
+                        (cancel)="onCancel()" />
+                }
+            </p-tabPanel>
+            @if ($showStyleEditorTab()) {
+                <p-tabPanel>
+                    <ng-template pTemplate="header">
+                        <div class="tab-header" pTooltip="Style Editor" tooltipPosition="bottom">
+                            <i class="pi pi-palette"></i>
+                        </div>
+                    </ng-template>
+                    @if ($rightSidebarActiveTab() === 1) {
+                        <div
+                            class="w-full h-full flex flex-column justify-content-center align-items-center gap-2">
+                            @if ($styleSchema()) {
+                                <dot-uve-style-editor-form [schema]="$styleSchema()" />
+                            } @else {
+                                <span>No styles to show yet.</span>
+                                <span>
+                                    <strong>Select a contentlet</strong>
+                                    to begin styling.
+                                    <a
+                                        href="https://dev.dotcms.com/docs/style-editor"
+                                        target="_blank"
+                                        rel="noopener">
+                                        Learn more
+                                    </a>
+                                </span>
+                            }
+                        </div>
+                    }
+                </p-tabPanel>
+            }
+        </p-tabView>
     </div>
 }
 

@@ -22,6 +22,7 @@ import {
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { patchState, signalState } from '@ngrx/signals';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -30,6 +31,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -64,6 +66,7 @@ import {
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
+import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
@@ -71,6 +74,7 @@ import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-ifram
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
+import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
@@ -147,9 +151,11 @@ const MESSAGE_KEY = {
         DotUveContentletQuickEditComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
+        DotUveStyleEditorFormComponent,
         DotUveIframeComponent,
         ButtonModule,
         ToolbarModule,
+        TabViewModule,
         InputGroupModule,
         InputGroupAddonModule,
         DotUveZoomControlsComponent,
@@ -186,6 +192,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly dotPaletteListStore = inject(DotPaletteListStore);
 
     protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
+
+    /**
+     * Right sidebar tab management using NgRx signalState (similar to palette component).
+     * Tabs: 0 = Contentlet Quick Edit, 1 = Style Editor
+     */
+    readonly #rightSidebarTabState = signalState({
+        currentTab: 0
+    });
+
+    readonly $rightSidebarActiveTab = this.#rightSidebarTabState.currentTab;
+    readonly $showStyleEditorTab = computed(() => this.uveStore.$canEditStyles());
+    readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
+        return this.uveStore.$styleSchema();
+    });
 
     protected readonly $contentletEditData = computed(() => {
         const { container, contentlet: contentletPayload } = this.uveStore.editor.activeContentlet() ?? {};
@@ -341,15 +361,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.view().ogTagsResults));
 
     get $paletteOpen() {
-        return this.uveStore.editor().panels.palette.open;
+        return this.uveStore.editor.panels.palette.open();
     }
     get $rightSidebarOpen() {
-        return this.uveStore.editor().panels.rightSidebar.open;
+        return this.uveStore.editor.panels.rightSidebar.open();
     }
     readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     get $contentArea() {
-        return this.uveStore.editor().contentArea;
+        return this.uveStore.editor.contentArea();
     }
     readonly $allowContentDelete = this.uveStore.$allowContentDelete;
     readonly $isDragging = this.uveStore.$isDragging;
@@ -450,6 +470,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.iframeMessenger.requestBounds();
     });
 
+
+    /**
+     * Handle right sidebar tab changes
+     */
+    protected handleRightSidebarTabChange(event: TabViewChangeEvent): void {
+        patchState(this.#rightSidebarTabState, { currentTab: event.index });
+    }
 
     /**
      * Save the contentlet form with the given form data
