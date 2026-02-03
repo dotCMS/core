@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 
-import { ButtonModule } from 'primeng/button';
-import { TooltipModule } from 'primeng/tooltip';
+import { Button } from 'primeng/button';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 
@@ -16,7 +16,7 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss'],
-    imports: [TooltipModule, ButtonModule],
+    imports: [Tooltip, Button],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCopyButtonComponent {
@@ -41,7 +41,32 @@ export class DotCopyButtonComponent {
     customClass = input('');
 
     // Final CSS class to be added to the button
-    $clazz = computed(() => `p-button p-button-sm p-button-text ${this.customClass()}`);
+    // When label is empty, use icon-only button styling for input field integration
+    // When label exists, use text button for standalone usage
+    $clazz = computed(() => {
+        const baseClasses = 'p-button p-button-text p-button-sm ';
+
+        if (this.label()) {
+            return `${baseClasses} ${this.customClass()}`;
+        } else {
+            return `${baseClasses} w-9 h-9 min-w-9 p-0 ${this.customClass()}`;
+        }
+
+        return `${baseClasses} ${this.customClass()}`;
+    });
+
+    /**
+     * PrimeNG passthrough configuration for icon-only button styling.
+     * Uses Tailwind classes for transparent background and proper sizing.
+     */
+    readonly iconOnlyPt = {
+        root: {
+            class: '!w-8 !h-8 !min-w-8 !min-h-8 !p-0 !bg-transparent !border-none'
+        },
+        icon: {
+            class: '!m-0'
+        }
+    };
 
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);

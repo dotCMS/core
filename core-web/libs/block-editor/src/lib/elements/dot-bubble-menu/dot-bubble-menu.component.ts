@@ -20,8 +20,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 
-import { PopoverModule } from 'primeng/popover';
-import { Select, SelectModule } from 'primeng/select';
+import { Button } from 'primeng/button';
+import { Select } from 'primeng/select';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -71,10 +71,10 @@ const BUBBLE_MENU_VISIBLE_NODES = {
     imports: [
         TiptapBubbleMenuDirective,
         FormsModule,
-        SelectModule,
+        Button,
+        Select,
         DotLinkEditorPopoverComponent,
         DotImageEditorPopoverComponent,
-        PopoverModule,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush

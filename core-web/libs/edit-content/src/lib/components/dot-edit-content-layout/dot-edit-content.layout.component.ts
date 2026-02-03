@@ -11,7 +11,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
@@ -86,6 +86,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessageModule,
+        DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,

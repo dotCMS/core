@@ -16,8 +16,8 @@
         (keydown)="handleSearchInputKeyDown($event)" />
 
     @if (showLoading()) {
-        <p-listbox [options]="[1, 2, 3]" [listStyle]="{ height: '15.625rem' }">
-            <ng-template let-item pTemplate="item">
+        <div class="loading-skeleton-container" [style.height]="'15.625rem'">
+            @for (item of [1, 2, 3]; track item) {
                 <div class="listbox-item">
                     <p-skeleton width="48px" height="48px" />
                     <div class="skeleton-lines">
@@ -25,18 +25,18 @@
                         <p-skeleton width="40%" height="14px" />
                     </div>
                 </div>
-            </ng-template>
-        </p-listbox>
+            }
+        </div>
     }
 
     @if (showSearchResults()) {
         <p-listbox
             #resultListbox
             optionLabel="displayName"
-            [options]="searchResults()"
+            [options]="searchResults() || []"
             (onChange)="selectLink($event.value)"
             [listStyle]="{ height: '15.625rem' }">
-            <ng-template let-item pTemplate="item">
+            <ng-template #item let-item>
                 <div class="listbox-item">
                     @if (item.hasTitleImage) {
                         <img [src]="'/dA/' + item.inode" alt="icon" class="listbox-item__img" />
@@ -50,12 +50,17 @@
                 </div>
             </ng-template>
 
-            <ng-template pTemplate="empty">
+            <ng-template pTemplate="empty" #empty>
                 <div class="empty-message">
                     <span class="empty-message__text">
                         No results for
                         <br />
                         <b>{{ searchQuery() }}</b>
+                        <br />
+                        <br />
+                        Press
+                        <kbd>Enter</kbd>
+                        to use the typed link
                     </span>
                 </div>
             </ng-template>
@@ -75,27 +80,25 @@
                 </a>
             </div>
             <div class="current-link-view__checkbox-container">
-                <input
-                    type="checkbox"
-                    id="openInNewWindow"
+                <p-checkbox
                     [checked]="linkTargetAttribute() === '_blank'"
-                    (change)="updateLinkTargetAttribute($event)"
-                    class="current-link-view__checkbox" />
+                    (onChange)="updateLinkTargetAttribute($event)"
+                    [binary]="true"
+                    [inputId]="'openInNewWindow'" />
                 <label for="openInNewWindow">Open link in new window</label>
             </div>
             <div class="current-link-view__actions">
-                <button
-                    pButton
+                <p-button
                     type="button"
-                    class="p-button-outlined current-link-view__action-button"
-                    (click)="copyExistingLinkToClipboard()"
-                    label="Copy Link"></button>
-                <button
-                    pButton
+                    variant="outlined"
+                    size="small"
+                    (onClick)="copyExistingLinkToClipboard()"
+                    label="Copy Link" />
+                <p-button
                     type="button"
-                    class="current-link-view__action-button"
-                    (click)="removeLinkFromEditor()"
-                    label="Remove Link"></button>
+                    size="small"
+                    (onClick)="removeLinkFromEditor()"
+                    label="Remove Link" />
             </div>
         </div>
     }
