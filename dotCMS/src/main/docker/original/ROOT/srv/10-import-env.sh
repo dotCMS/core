@@ -9,7 +9,6 @@ drop_db_tables () {
 
 ## This checks active connections to the dotCMS database - we can only proceed if there are no connections
 check_active_connections() {
-  # Export password for psql (avoids password prompt)
 
   ACTIVE=$(psql -h "$DB_HOST" -d "$DB_NAME" -U "$DB_USERNAME" -qtAX -c \
     "SELECT count(*) FROM pg_stat_activity 
@@ -142,6 +141,9 @@ export DOT_IMPORT_MAX_ASSET_SIZE=${DOT_IMPORT_MAX_ASSET_SIZE:-"100mb"}
 export SHARED_DATA_DIR=${SHARED_DATA_DIR:-"/data/shared"}
 export IMPORT_DATA_DIR=${IMPORT_DATA_DIR:-"$SHARED_DATA_DIR/import"}
 export IMPORT_COMPLETE=$IMPORT_DATA_DIR/import_complete.txt
+export DOT_IMPORT_ALL_ASSETS=${DOT_IMPORT_ALL_ASSETS:-"false"}
+
+
 # Extract hostname and database name from JDBC URL (jdbc:postgresql://host/dbname)
 export DB_HOST="${DB_BASE_URL#jdbc:postgresql://}"  # Remove prefix -> host/dbname
 export DB_HOST="${DB_HOST%%/*}"                      # Remove /dbname -> host
@@ -211,18 +213,21 @@ export DB_BACKUP_FILE="${IMPORT_DATA_DIR}/${HASHED_ENV}_dotcms_db.sql.gz"
 # Step 1. download db and assets (if needed)
 download_dotcms_db_assets || { echo "Unable to download dotcms backup";  exit 1; }
 
-# Step 2. wipe database clean (if requested)
+# Step 2. check no active connections
+check_active_connections || { echo "There are active connections to the db, cannot proceed.";  exit 1; }
+
+# Step 3. wipe database clean (if requested)
 if [ "$DOT_IMPORT_DROP_DB" = "true" ]; then
     drop_db_tables || { echo "unable to drop the dotcms db schema";  exit 1; }
 fi
 
-# Step 3. import postgres db
+# Step 4. import postgres db
 import_postgres || { echo "Unable to import postgres backup";  exit 1; }
 
-# Step 4. unpack assets.zip
+# Step 5. unpack assets.zip
 unpack_assets || { echo "Unable to unzip assets"; exit 1; }
 
-# Step 5: exit sig 13 if the clone worked
+# Step 6: exit sig 13 if the clone worked
 if rm -rf "$LOCK_DIR" && touch "$IMPORT_COMPLETE"; then
   echo "dotCMS Environment $DOT_IMPORT_HOST Imported, happily exiting."
   exit 13
