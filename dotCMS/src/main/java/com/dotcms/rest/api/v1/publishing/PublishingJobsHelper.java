@@ -19,7 +19,13 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -198,16 +204,6 @@ public class PublishingJobsHelper {
     }
 
     /**
-     * Checks if the given status indicates the bundle is actively being processed.
-     *
-     * @param status The status to check
-     * @return true if the bundle is in progress and cannot be deleted
-     */
-    public boolean isInProgressStatus(final Status status) {
-        return status != null && IN_PROGRESS_STATUSES.contains(status);
-    }
-
-    /**
      * Checks if any of the provided statuses are in-progress (cannot be purged).
      *
      * @param statuses List of statuses to check
@@ -220,6 +216,17 @@ public class PublishingJobsHelper {
         return statuses.stream()
                 .filter(IN_PROGRESS_STATUSES::contains)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Checks if the given status indicates the bundle is actively being processed.
+     * Bundles with in-progress status cannot be deleted to prevent data corruption.
+     *
+     * @param status The status to check
+     * @return true if the bundle is in progress and cannot be deleted
+     */
+    public boolean isInProgressStatus(final Status status) {
+        return status != null && IN_PROGRESS_STATUSES.contains(status);
     }
 
     /**

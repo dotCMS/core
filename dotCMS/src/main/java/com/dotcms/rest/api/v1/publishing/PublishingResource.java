@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.publishing;
 
+import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
@@ -16,7 +18,10 @@ import com.dotcms.rest.Pagination;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
@@ -39,6 +44,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -332,6 +338,123 @@ public class PublishingResource {
                 bundleId, auditStatus.getStatus()));
 
         return new ResponseEntityPublishingJobDetailView(detailView);
+    }
+
+    /**
+     * Deletes a specific publishing job/bundle.
+     *
+     * <p>This endpoint removes a bundle from the publishing queue. It is designed for
+     * canceling queued/scheduled publishes or cleaning up terminal state bundles.
+     * Bundles that are actively publishing cannot be deleted to prevent data inconsistency.</p>
+     *
+     * <h3>Deletable Statuses:</h3>
+     * <ul>
+     *   <li>Terminal: SUCCESS, FAILED_TO_PUBLISH, FAILED_TO_BUNDLE, etc.</li>
+     *   <li>Queued: WAITING_FOR_PUBLISHING</li>
+     * </ul>
+     *
+     * <h3>Non-Deletable Statuses (409 Conflict):</h3>
+     * <ul>
+     *   <li>BUNDLING - Creating bundle archive</li>
+     *   <li>SENDING_TO_ENDPOINTS - Transmitting to targets</li>
+     *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
+     * </ul>
+     *
+     * @param request   The HTTP request
+     * @param response  The HTTP response
+     * @param bundleId  The bundle identifier to delete
+     * @return Success message on deletion
+     */
+    @Operation(
+            summary = "Delete a publishing job",
+            description = "Removes a specific bundle from the publishing queue. " +
+                    "Cannot delete bundles that are actively publishing (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Bundle deleted successfully",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(type = "object",
+                                    description = "Success response with message",
+                                    example = "{\"message\": \"Bundle deleted successfully\"}")
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - insufficient permissions",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Bundle not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Cannot delete bundle while publishing is in progress",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @DELETE
+    @Path("/{bundleId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public Response deletePublishingJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Bundle identifier",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathParam("bundleId") final String bundleId) throws DotDataException, DotPublisherException {
+
+        // Initialize request context and authenticate user (requires backend user)
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final User user = initData.getUser();
+
+        // Validate bundleId is provided
+        if (!UtilMethods.isSet(bundleId)) {
+            throw new BadRequestException("Bundle ID is required");
+        }
+
+        // Check if bundle exists (either in audit or bundle table)
+        final PublishAuditStatus auditStatus = publishAuditAPI.get().getPublishAuditStatus(bundleId);
+        final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
+
+        if (auditStatus == null && bundle == null) {
+            throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+        }
+
+        // Check if bundle is in-progress (cannot delete)
+        if (auditStatus != null && publishingJobsHelper.isInProgressStatus(auditStatus.getStatus())) {
+            throw new ConflictException(String.format(
+                    "Cannot delete bundle while publishing is in progress (status: %s). " +
+                    "Wait for publish to complete or fail.",
+                    auditStatus.getStatus().name()));
+        }
+
+        // Delete bundle and all dependencies
+        bundleAPI.get().deleteBundleAndDependencies(bundleId, user);
+
+        Logger.info(this, String.format("Deleted publishing job '%s' by user '%s'",
+                bundleId, user.getUserId()));
+
+        return Response.ok(Map.of("message", "Bundle deleted successfully")).build();
     }
 
     /**

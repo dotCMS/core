@@ -2,10 +2,11 @@ package com.dotcms.telemetry.collectors.content;
 
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
-import com.dotcms.telemetry.collectors.DBMetricType;
-import javax.enterprise.context.ApplicationScoped;
 import com.dotcms.telemetry.MetricsProfile;
 import com.dotcms.telemetry.ProfileType;
+import com.dotcms.telemetry.collectors.DBMetricType;
+import com.dotmarketing.business.APILocator;
+import javax.enterprise.context.ApplicationScoped;
 
 /**
  * Collects the count of contentlets which have at least one live version in a non-default Language
@@ -35,9 +36,10 @@ public class LiveNotDefaultLanguageContentsDatabaseMetricType implements DBMetri
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COUNT(DISTINCT identifier) AS value " +
+        long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        return "SELECT COUNT(identifier) AS value " +
                 "FROM contentlet_version_info " +
                 "WHERE live_inode IS NOT null " +
-                    "AND lang NOT IN (SELECT default_language_id FROM company)";
+                "AND lang = " + langId;
     }
 }
