@@ -82,19 +82,19 @@ public class ContentHelperTest extends UnitTestBase {
 
         // Test 1: languageId in the middle of the query
         SearchForm searchForm1 = new SearchForm.Builder().languageId(1).build();
-        String query1 = "+contentType:Blog languageId:2 +live:true";
+        String query1 = "+contentType:Blog +languageId:2 +live:true";
         Long result1 = contentHelper.extractLanguageIdFromQuery(query1, searchForm1);
         assertEquals("Should extract languageId from middle of query", Long.valueOf(2L), result1);
 
         // Test 2: languageId at the end of the query
         SearchForm searchForm2 = new SearchForm.Builder().languageId(1).build();
-        String query2 = "+contentType:Blog +live:true languageId:3";
+        String query2 = "+contentType:Blog +live:true +languageId:3";
         Long result2 = contentHelper.extractLanguageIdFromQuery(query2, searchForm2);
         assertEquals("Should extract languageId from end of query", Long.valueOf(3L), result2);
 
         // Test 3: languageId at the start of the query
         SearchForm searchForm3 = new SearchForm.Builder().languageId(1).build();
-        String query3 = "languageId:5 +contentType:Blog +live:true";
+        String query3 = "+languageId:5 +contentType:Blog +live:true";
         Long result3 = contentHelper.extractLanguageIdFromQuery(query3, searchForm3);
         assertEquals("Should extract languageId from start of query", Long.valueOf(5L), result3);
 
@@ -106,19 +106,19 @@ public class ContentHelperTest extends UnitTestBase {
 
         // Test 5: Query with multiple spaces around languageId
         SearchForm searchForm5 = new SearchForm.Builder().languageId(1).build();
-        String query5 = "+contentType:Blog   languageId:7   +live:true";
+        String query5 = "+contentType:Blog   +languageId:7   +live:true";
         Long result5 = contentHelper.extractLanguageIdFromQuery(query5, searchForm5);
         assertEquals("Should handle multiple spaces correctly", Long.valueOf(7L), result5);
 
         // Test 6: Complex query with multiple fields
         SearchForm searchForm6 = new SearchForm.Builder().languageId(1).build();
-        String query6 = "+contentType:BlogPost +Blog.title:test* languageId:4 +live:true +deleted:false";
+        String query6 = "+contentType:BlogPost +Blog.title:test* +languageId:4 +live:true +deleted:false";
         Long result6 = contentHelper.extractLanguageIdFromQuery(query6, searchForm6);
         assertEquals("Should extract languageId from complex query", Long.valueOf(4L), result6);
 
         // Test 7: Query with parentheses and OR operator
         SearchForm searchForm7 = new SearchForm.Builder().languageId(1).build();
-        String query7 = "+(contentType:Blog OR contentType:News) languageId:8 +live:true";
+        String query7 = "+(contentType:Blog OR contentType:News) +languageId:8 +live:true";
         Long result7 = contentHelper.extractLanguageIdFromQuery(query7, searchForm7);
         assertEquals("Should handle queries with parentheses and operators", Long.valueOf(8L), result7);
 
