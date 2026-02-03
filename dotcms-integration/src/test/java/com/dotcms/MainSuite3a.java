@@ -8,6 +8,7 @@ import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
+import com.dotcms.telemetry.collectors.MetricStatsCollectorConnectionLeakTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithArchivedExperimentsMetricTypeTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithDraftExperimentsMetricTypeTest;
@@ -45,6 +46,7 @@ import org.junit.runners.Suite;
         CountVariantsInAllEndedExperimentsMetricTypeTest.class,
         CountVariantsInAllRunningExperimentsMetricTypeTest.class,
         CountVariantsInAllScheduledExperimentsMetricTypeTest.class,
+        MetricStatsCollectorConnectionLeakTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,

@@ -743,4 +743,54 @@ public class DbConnectionFactory {
         }
     }
 
+    /**
+     * Executes an operation with connection management but WITHOUT transaction semantics.
+     *
+     * <p>This method is designed for read-only operations (SELECT queries) that don't
+     * require transaction management. It provides connection lifecycle management only:
+     * opens a connection if needed, executes the operation, and closes the connection
+     * if it was opened by this call.</p>
+     *
+     * <p>This is semantically equivalent to the {@code @CloseDBIfOpened} annotation but
+     * works correctly on CDI beans where ByteBuddy annotations don't fire due to Weld proxies.</p>
+     *
+     * <p><b>Usage Example:</b></p>
+     * <pre>
+     * return DbConnectionFactory.wrapConnection(() -&gt; {
+     *     return APILocator.getMetricsAPI().getValue("SELECT COUNT(*) FROM contentlet");
+     * });
+     * </pre>
+     *
+     * <p><b>When to use this vs LocalTransaction.wrapReturn():</b></p>
+     * <ul>
+     *   <li>Use this for read-only SELECT queries that don't need transactions</li>
+     *   <li>Use LocalTransaction.wrapReturn() for operations that modify data</li>
+     * </ul>
+     *
+     * @param delegate the operation to execute with connection management
+     * @param <T> the return type of the operation
+     * @return the result of the operation
+     * @throws DotDataException if a database error occurs
+     * @see com.dotmarketing.db.CloseDBIfOpened
+     * @see com.dotmarketing.db.LocalTransaction#wrapReturn
+     */
+    public static <T> T wrapConnection(final com.dotcms.util.ReturnableDelegate<T> delegate) throws DotDataException {
+        final boolean isNewConnection = !connectionExists();
+
+        try {
+            return delegate.execute();
+        } catch (final Throwable e) {
+            if (e instanceof DotDataException) {
+                throw (DotDataException) e;
+            }
+            throw new DotDataException("Error executing operation with connection", e);
+        } finally {
+            if (isNewConnection && connectionExists()) {
+                Logger.debug(DbConnectionFactory.class,
+                    "Closing connection opened by wrapConnection()");
+                closeSilently();
+            }
+        }
+    }
+
 }

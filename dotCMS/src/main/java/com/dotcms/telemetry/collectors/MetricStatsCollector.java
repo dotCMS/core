@@ -10,7 +10,6 @@ import com.dotcms.telemetry.business.TimeoutConfig;
 import com.dotcms.telemetry.cache.MetricCacheConfig;
 import com.dotcms.telemetry.cache.MetricCacheManager;
 import com.dotcms.telemetry.util.MetricCaches;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
@@ -111,8 +110,6 @@ public class MetricStatsCollector {
         final ExecutorService executor = Executors.newSingleThreadExecutor();
 
         try {
-            openDBConnection();
-
             // Get active profile - use override if provided, otherwise use default from config
             final ProfileType activeProfile = profileOverride != null ? profileOverride : config.getActiveProfile();
             Logger.debug(this, () -> String.format("Collecting metrics for profile: %s%s",
@@ -241,7 +238,6 @@ public class MetricStatsCollector {
         } finally {
             // Shutdown executor and close DB connection
             executor.shutdownNow();
-            DbConnectionFactory.closeSilently();
         }
 
         MetricCaches.flushAll();
@@ -317,9 +313,5 @@ public class MetricStatsCollector {
         }
 
         return metricStatsOptional;
-    }
-
-    private void openDBConnection() {
-        DbConnectionFactory.getConnection();
     }
 }
