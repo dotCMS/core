@@ -651,7 +651,7 @@ describe('withEditor', () => {
 
                 store.setActiveContentlet(mockContentlet);
 
-                expect(store.editor().activeContentlet).toEqual(mockContentlet);
+                expect(store.editor.activeContentlet()).toEqual(mockContentlet);
             });
 
             it('should open palette and set current tab to STYLE_EDITOR', () => {
@@ -702,7 +702,7 @@ describe('withEditor', () => {
 
                 store.setActiveContentlet(mockContentlet);
 
-                expect(store.editor().activeContentlet).toEqual(mockContentlet);
+                expect(store.editor.activeContentlet()).toEqual(mockContentlet);
                 expect(store.editor().panels.palette.open).toBe(true);
                 // Tab switching to STYLE_EDITOR now handled by DotUvePaletteComponent via effect
             });

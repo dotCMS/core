@@ -1,6 +1,6 @@
-import { signalState, patchState } from '@ngrx/signals';
+import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, EventEmitter, computed, inject, Output, effect } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Output, computed, effect, inject } from '@angular/core';
 
 import { TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
 import { TooltipModule } from 'primeng/tooltip';
@@ -78,7 +78,7 @@ export class DotUvePaletteComponent {
         // Effect: When activeContentlet changes, switch to STYLE_EDITOR tab
         // This maintains cross-component coordination without storing tab state globally
         effect(() => {
-            const activeContentlet = this.uveStore.editor().activeContentlet;
+            const activeContentlet = this.uveStore.editor.activeContentlet();
             if (activeContentlet) {
                 patchState(this.#localState, { currentTab: UVE_PALETTE_TABS.STYLE_EDITOR });
             }

@@ -188,7 +188,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $contenttypes = this.dotPaletteListStore.contenttypes;
 
     protected readonly $contentletEditData = computed(() => {
-        const { container, contentlet: contentletPayload } = this.uveStore.editor().activeContentlet ?? {};
+        const { container, contentlet: contentletPayload } = this.uveStore.editor.activeContentlet() ?? {};
         // Removed pageAPIResponse - use normalized accessors
 
         const contentType = this.$contenttypes().find(

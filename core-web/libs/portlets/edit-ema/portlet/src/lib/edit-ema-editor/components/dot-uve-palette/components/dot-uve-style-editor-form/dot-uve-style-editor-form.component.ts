@@ -130,9 +130,13 @@ export class DotUveStyleEditorFormComponent {
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
 
-        const form = this.#formBuilder.buildForm(schema, initialValues);
-
-        this.#form.set(form);
+        // Clear form first so the template destroys the form block and unbinds old controls.
+        // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName
+        this.#form.set(null);
+        queueMicrotask(() => {
+            const form = this.#formBuilder.buildForm(schema, initialValues);
+            this.#form.set(form);
+        });
     }
 
     /**

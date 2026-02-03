@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
@@ -22,9 +22,9 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
-    MockDotMessageService,
+    CurrentUserDataMock,
     DotLanguagesServiceMock,
-    CurrentUserDataMock
+    MockDotMessageService
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
@@ -33,10 +33,10 @@ import { Orientation } from './models';
 import { DotPageApiService } from '../services/dot-page-api.service';
 import { EDITOR_STATE } from '../shared/enums';
 import {
+    ACTION_MOCK,
     dotPropertiesServiceMock,
     EMA_DRAG_ITEM_CONTENTLET_MOCK,
     getBoundsMock,
-    ACTION_MOCK,
     MOCK_CONTENTLET_AREA,
     MOCK_RESPONSE_HEADLESS
 } from '../shared/mocks';
@@ -288,7 +288,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             // Set active contentlet - should auto-open palette
             store.setActiveContentlet(mockContentlet);
 
-            expect(store.editor().activeContentlet).toEqual(mockContentlet);
+            expect(store.editor.activeContentlet()).toEqual(mockContentlet);
             expect(store.editor().panels.palette.open).toBe(true); // Auto-opened
         });
 

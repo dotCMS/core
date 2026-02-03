@@ -27,12 +27,12 @@ import { LoginService } from '@dotcms/dotcms-js';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
-    MockDotMessageService,
+    CurrentUserDataMock,
+    DotLanguagesServiceMock,
+    getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
-    getDraftExperimentMock,
-    DotLanguagesServiceMock,
-    CurrentUserDataMock,
+    MockDotMessageService,
     mockLanguageArray
 } from '@dotcms/utils-testing';
 
@@ -40,16 +40,12 @@ import { UVEStore } from './dot-uve.store';
 import { Orientation, PageType } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api.service';
-import { COMMON_ERRORS, PERSONA_KEY } from '../shared/consts';
+import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import {
-    BASE_SHELL_ITEMS,
-    BASE_SHELL_PROPS_RESPONSE,
     dotPropertiesServiceMock,
     HEADLESS_BASE_QUERY_PARAMS,
-    MOCK_RESPONSE_HEADLESS,
-    MOCK_RESPONSE_VTL,
-    VTL_BASE_QUERY_PARAMS
+    MOCK_RESPONSE_HEADLESS
 } from '../shared/mocks';
 import { normalizeQueryParams } from '../utils';
 
@@ -696,7 +692,7 @@ describe('UVEStore', () => {
 
                 store.setActiveContentlet(payload);
 
-                expect(store.editor().activeContentlet).toEqual(payload);
+                expect(store.editor.activeContentlet()).toEqual(payload);
             });
 
             it('should clear activeContentlet when resetActiveContentlet is called', () => {
@@ -719,10 +715,10 @@ describe('UVEStore', () => {
                     pageContainers: []
                 };
                 store.setActiveContentlet(payload);
-                expect(store.editor().activeContentlet).not.toBeNull();
+                expect(store.editor.activeContentlet()).not.toBeNull();
 
                 store.resetActiveContentlet();
-                expect(store.editor().activeContentlet).toBeNull();
+                expect(store.editor.activeContentlet()).toBeNull();
             });
         });
     });
