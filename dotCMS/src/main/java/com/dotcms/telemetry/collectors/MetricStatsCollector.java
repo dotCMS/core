@@ -180,7 +180,14 @@ public class MetricStatsCollector {
                     } catch (final TimeoutException e) {
                         // Metric exceeded timeout
                         flags[0] = true; // timedOut
-                        future.cancel(true);  // Interrupt the task
+
+                        // Check if task completed during timeout - avoid race condition
+                        // where task finishes just after timeout fires but before cancel() executes.
+                        // Interrupting a completing task can orphan the DB connection.
+                        if (!future.isDone()) {
+                            future.cancel(true);  // Interrupt the task
+                        }
+
                         errors.add(new MetricCalculationError(metricType.getMetric(),
                                 String.format("Timeout after %dms", timeoutConfig.getMetricTimeoutMillis())));
                         Logger.warn(this, String.format("Metric '%s' timed out after %dms",
@@ -236,8 +243,25 @@ public class MetricStatsCollector {
                 }
             }
         } finally {
-            // Shutdown executor and close DB connection
-            executor.shutdownNow();
+            // Gracefully shutdown executor to allow running tasks to complete cleanup
+            // This prevents interruption of wrapConnection() finally blocks that would orphan DB connections
+            executor.shutdown();
+            try {
+                // Wait up to 5 seconds for running tasks to complete
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    // Force shutdown if tasks don't complete
+                    Logger.warn(this, "Executor did not terminate gracefully - forcing shutdown");
+                    executor.shutdownNow();
+                    // Wait a bit more for tasks to respond to interruption
+                    if (!executor.awaitTermination(2, TimeUnit.SECONDS)) {
+                        Logger.error(this, "Executor did not terminate after forced shutdown");
+                    }
+                }
+            } catch (InterruptedException e) {
+                Logger.error(this, "Interrupted while waiting for executor shutdown", e);
+                executor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
 
         MetricCaches.flushAll();

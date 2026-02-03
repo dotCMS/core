@@ -786,9 +786,19 @@ public class DbConnectionFactory {
             throw new DotDataException("Error executing operation with connection", e);
         } finally {
             if (isNewConnection && connectionExists()) {
-                Logger.debug(DbConnectionFactory.class,
-                    "Closing connection opened by wrapConnection()");
-                closeSilently();
+                // Preserve interrupted status but ensure connection cleanup completes
+                // This prevents orphaned connections when timeout fires during cleanup
+                final boolean wasInterrupted = Thread.interrupted();
+                try {
+                    Logger.debug(DbConnectionFactory.class,
+                        "Closing connection opened by wrapConnection()");
+                    closeSilently();
+                } finally {
+                    // Restore interrupted flag after cleanup
+                    if (wasInterrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
             }
         }
     }
