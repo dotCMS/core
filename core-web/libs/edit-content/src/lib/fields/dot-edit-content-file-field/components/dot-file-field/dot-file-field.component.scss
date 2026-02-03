@@ -4,10 +4,6 @@
     container-name: dotFileField;
 }
 
-input[type="file"] {
-    display: none;
-}
-
 /* Active state when dragging over drop zone (theme variable; not valid in [class.x] binding) */
 .dot-file-field__drop-zone--active {
     border-color: var(--color-palette-secondary-500);
