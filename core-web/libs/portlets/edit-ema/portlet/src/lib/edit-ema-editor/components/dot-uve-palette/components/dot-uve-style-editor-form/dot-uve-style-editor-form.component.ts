@@ -160,20 +160,24 @@ export class DotUveStyleEditorFormComponent {
      * 1. Immediate updates to iframe (no debounce)
      * 2. Debounced API calls to save style properties
      *
-     * Uses switchMap to automatically cancel pending saves when the form is rebuilt
-     * (e.g., during rollback restoration). This is a clean reactive approach that
-     * eliminates the need for flags, timeouts, or manual subscription management.
+     * Uses mergeMap to subscribe to each form's valueChanges when the form signal changes
+     * (e.g., during rollback restoration). mergeMap keeps all subscriptions active, so both
+     * old and new forms' valueChanges will be processed. This ensures that pending debounced
+     * saves from the old form will still complete, while also processing changes from the new form.
+     * This is a clean reactive approach that eliminates the need for flags, timeouts, or
+     * manual subscription management.
      */
     #listenToFormChanges(): void {
         // Convert the form signal to an observable
-        // When the form signal changes (rebuilt during rollback), switchMap cancels the old subscription
+        // When the form signal changes (rebuilt during rollback), mergeMap subscribes to the new form's valueChanges
+        // while keeping the old form's subscription active
         toObservable(this.$form)
             .pipe(
                 // Filter out null forms
                 filter((form): form is FormGroup => form !== null),
-                // Switch to the new form's valueChanges
-                // This automatically unsubscribes from the previous form's valueChanges
-                // and cancels any pending debounced saves
+                // Merge with the new form's valueChanges
+                // mergeMap keeps all inner subscriptions active, so both old and new forms'
+                // valueChanges will be processed, including any pending debounced saves
                 mergeMap((form) =>
                     form.valueChanges.pipe(
                         distinctUntilChanged(
