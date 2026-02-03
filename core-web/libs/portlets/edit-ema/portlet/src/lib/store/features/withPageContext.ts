@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, Signal } from '@angular/core';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { withFlags } from './flags/withFlags';
@@ -79,7 +79,7 @@ export function withPageContext() {
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
-                    $variantId: computed(() => pageParams()?.variantId ?? ''),
+                    $variantId: computed(() => pageParams()?.variantId ?? DEFAULT_VARIANT_ID),
                     $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
                 } satisfies PageContextComputed;
             }

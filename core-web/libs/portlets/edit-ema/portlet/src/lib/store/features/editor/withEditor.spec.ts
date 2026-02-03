@@ -7,7 +7,7 @@ import { computed, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DotDeviceListItem } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotDeviceListItem } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { mockDotDevices, seoOGTagsMock } from '@dotcms/utils-testing';
@@ -930,7 +930,7 @@ describe('withEditor', () => {
             it('should return the current TreeNode with variantId from store.$variantId()', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
 
-                // When variantId is not set in pageParams, $variantId() returns empty string
+                // When variantId is not set in pageParams, $variantId() returns DEFAULT_VARIANT_ID
                 expect(store.getCurrentTreeNode(container, contentlet)).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
@@ -938,7 +938,7 @@ describe('withEditor', () => {
                     personalization: 'dot:persona:dot:persona',
                     relationType: 'uuid-123',
                     treeOrder: '-1',
-                    variantId: '' // Uses store.$variantId() which comes from pageParams()?.variantId ?? ''
+                    variantId: DEFAULT_VARIANT_ID
                 });
             });
 
