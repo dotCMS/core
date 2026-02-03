@@ -1,65 +1,66 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { SplitButton, SplitButtonModule } from 'primeng/splitbutton';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { ActionHeaderComponent } from './action-header.component';
 
-import { DOTTestBed } from '../../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../_common/dot-action-button/dot-action-button.component';
 
-xdescribe('ActionHeaderComponent', () => {
-    let comp: ActionHeaderComponent;
-    let fixture: ComponentFixture<ActionHeaderComponent>;
-    let de: DebugElement;
+describe('ActionHeaderComponent', () => {
+    let spectator: Spectator<ActionHeaderComponent>;
 
-    beforeEach(waitForAsync(() => {
-        const messageServiceMock = new MockDotMessageService({
-            selected: 'selected'
-        });
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: jest.fn(), // deprecated
+            removeListener: jest.fn(), // deprecated
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn()
+        }))
+    });
 
-        DOTTestBed.configureTestingModule({
-            declarations: [ActionHeaderComponent],
-            imports: [
-                BrowserAnimationsModule,
-                DotActionButtonComponent,
-                RouterTestingModule.withRoutes([
-                    {
-                        component: ActionHeaderComponent,
-                        path: 'test'
-                    }
-                ])
-            ],
-            providers: [
-                { provide: DotMessageService, useValue: messageServiceMock },
-                DotAlertConfirmService
-            ]
-        });
+    const messageServiceMock = new MockDotMessageService({
+        selected: 'selected'
+    });
 
-        fixture = DOTTestBed.createComponent(ActionHeaderComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement.query(By.css('.action-header'));
-    }));
+    const createComponent = createComponentFactory({
+        component: ActionHeaderComponent,
+        imports: [
+            BrowserAnimationsModule,
+            RouterTestingModule,
+            DotActionButtonComponent,
+            SplitButtonModule
+        ],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: DotAlertConfirmService, useValue: {} }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+    });
 
     it('should render default state correctly', () => {
-        const actionButton: DebugElement = de.query(By.css('.action-header__primary-button'));
-        const groupActions: DebugElement = de.query(By.css('.action-header__secondary-button'));
-        expect(actionButton).toBeNull();
-        expect(groupActions).toBeNull();
+        expect(spectator.query('dot-action-button')).not.toExist();
+        expect(spectator.query('p-splitButton')).not.toExist();
     });
 
     it('should show the number of items selected', () => {
-        comp.selectedItems = [{ key: 'value' }, { key: 'value' }];
-        fixture.detectChanges();
-        const selectedItemsCounter: DebugElement = de.query(
-            By.css('.action-header__selected-items-counter')
-        );
-        expect(de.nativeElement.className).toContain('selected');
-        expect(selectedItemsCounter.nativeElement.textContent).toBe('2 selected');
+        spectator.setInput('selectedItems', [{ key: 'value' }, { key: 'value' }]);
+        const selectedItemsCounter = spectator.query('span.mr-3');
+        expect(spectator.query('.flex-row-reverse')).toHaveClass('selected');
+        expect(selectedItemsCounter).toHaveText('2 selected');
     });
 
     it('should show action-button', () => {
@@ -79,10 +80,8 @@ xdescribe('ActionHeaderComponent', () => {
                 ]
             }
         };
-        comp.options = options;
-        fixture.detectChanges();
-        const actionButton = de.query(By.css('.action-header__primary-button'));
-        expect(actionButton).not.toBeNull();
+        spectator.setInput('options', options );
+        expect(spectator.query('dot-action-button')).toExist();
     });
 
     it('should trigger the methods in the action buttons', () => {
@@ -112,23 +111,13 @@ xdescribe('ActionHeaderComponent', () => {
                 }
             ]
         };
-        comp.options = options;
-        comp.selectedItems = [{ key: 'value' }, { key: 'value' }];
+        spectator.setInput('options', options);
+        spectator.setInput('selectedItems', [{ key: 'value' }]);
 
-        const actionButton: DebugElement = de.query(By.css('.action-header__secondary-button'));
-        actionButton.triggerEventHandler('click', {});
-
-        fixture.detectChanges();
-
-        const splitButtons = de.query(By.all()).nativeElement.querySelectorAll('.p-menuitem-link');
-        const primaryButton = splitButtons[0];
-        const secondaryButton = splitButtons[1];
-
-        primaryButton.click();
-        secondaryButton.click();
-
-        expect(primarySpy).toHaveBeenCalled();
-        expect(secondarySpy).toHaveBeenCalled();
+        const splitButtons = spectator.queryAll(SplitButton);
+        expect(splitButtons.length).toBe(2);
+        expect(splitButtons[0].model).toEqual(options.secondary[0].model);
+        expect(splitButtons[1].model).toEqual(options.secondary[1].model);
     });
 
     it('should not break when when no primary action is passed', () => {
@@ -145,11 +134,10 @@ xdescribe('ActionHeaderComponent', () => {
                 ]
             }
         };
-        comp.options = options;
-        fixture.detectChanges();
+        spectator.setInput('options', options);
 
         expect(() => {
-            comp.handlePrimaryAction();
-        }).not.toThrowError();
+            spectator.component.handlePrimaryAction();
+        }).not.toThrow();
     });
 });
