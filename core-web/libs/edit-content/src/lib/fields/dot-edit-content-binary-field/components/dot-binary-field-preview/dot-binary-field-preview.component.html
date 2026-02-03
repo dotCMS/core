@@ -22,41 +22,40 @@
             </code>
         </div>
     } @else {
-      
-            <div
-                class="flex h-full w-full min-w-0 shrink items-center justify-center bg-gray-200 min-[500px]:max-w-70 min-[500px]:flex-none">
-                @if (tempFile) {
-                    <dot-temp-file-thumbnail
-                        [tempFile]="tempFile"
-                        [iconSize]="'48px'"
-                        class="flex h-full w-full items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:object-center [&_video]:h-full [&_video]:w-full"
-                        data-testId="temp-file-thumbnail" />
-                } @else {
-                    <dot-contentlet-thumbnail
-                        [fieldVariable]="contentlet?.fieldVariable"
-                        [iconSize]="'48px'"
-                        [contentlet]="contentlet"
-                        [playableVideo]="true"
-                        class="flex h-full w-full items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:object-center"
-                        data-testId="contentlet-thumbnail" />
-                }
-            </div>
-            <div class="hidden min-w-37.5 flex-1 flex-col gap-2 overflow-hidden p-2 pr-6 min-[500px]:flex">
-                <span class="truncate text-base font-semibold text-black">{{ title }}</span>
-                @if (metadata.width && metadata.height) {
-                    <div class="flex items-center gap-1 text-sm">
-                        <i class="pi pi-arrows-alt"></i>
-                        <span class="truncate">{{ metadata.width }} x {{ metadata.height }}</span>
-                    </div>
-                }
-                @if (metadata.fileSize) {
-                    <div class="flex items-center gap-1 text-sm">
-                        <i class="pi pi-file"></i>
-                        <span class="truncate">{{ metadata.fileSize | dotFileSizeFormat }}</span>
-                    </div>
-                }
-            </div>
-
+        <div
+            class="flex h-full w-full min-w-0 shrink items-center justify-center bg-gray-200 min-[500px]:max-w-70 min-[500px]:flex-none">
+            @if (tempFile) {
+                <dot-temp-file-thumbnail
+                    [tempFile]="tempFile"
+                    [iconSize]="'48px'"
+                    class="flex h-full w-full items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:object-center [&_video]:h-full [&_video]:w-full"
+                    data-testId="temp-file-thumbnail" />
+            } @else {
+                <dot-contentlet-thumbnail
+                    [fieldVariable]="contentlet?.fieldVariable"
+                    [iconSize]="'48px'"
+                    [contentlet]="contentlet"
+                    [playableVideo]="true"
+                    class="flex h-full w-full items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:object-center"
+                    data-testId="contentlet-thumbnail" />
+            }
+        </div>
+        <div
+            class="hidden min-w-37.5 flex-1 flex-col gap-2 overflow-hidden p-2 pr-6 min-[500px]:flex">
+            <span class="truncate text-base font-semibold text-black">{{ title }}</span>
+            @if (metadata.width && metadata.height) {
+                <div class="flex items-center gap-1 text-sm">
+                    <i class="pi pi-arrows-alt"></i>
+                    <span class="truncate">{{ metadata.width }} x {{ metadata.height }}</span>
+                </div>
+            }
+            @if (metadata.fileSize) {
+                <div class="flex items-center gap-1 text-sm">
+                    <i class="pi pi-file"></i>
+                    <span class="truncate">{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                </div>
+            }
+        </div>
     }
 
     <div class="absolute right-0 top-0 hidden flex-col gap-1 pt-2 min-[500px]:flex">
@@ -70,7 +69,7 @@
         @if (contentlet) {
             <p-button
                 (click)="downloadAsset()"
-            [disabled]="disabled"
+                [disabled]="disabled"
                 styleClass="p-button-rounded p-button-sm p-button-outlined"
                 data-testId="download-btn"
                 icon="pi pi-download" />

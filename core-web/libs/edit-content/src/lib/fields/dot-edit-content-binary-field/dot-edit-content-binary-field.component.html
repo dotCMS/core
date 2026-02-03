@@ -44,7 +44,11 @@
                         class="hidden"
                         type="file" />
                 </div>
-                @if (systemOptions().allowURLImport || systemOptions().allowCodeWrite || systemOptions().allowGenerateImg) {
+                @if (
+                    systemOptions().allowURLImport ||
+                    systemOptions().allowCodeWrite ||
+                    systemOptions().allowGenerateImg
+                ) {
                     <div class="flex flex-col items-start justify-center gap-4">
                         @if (systemOptions().allowURLImport) {
                             <p-button

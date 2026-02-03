@@ -1,7 +1,10 @@
 @let allowFileNameEdit = $allowFileNameEdit();
 @let cancel = $cancel;
 
-<form (ngSubmit)="onSubmit()" [formGroup]="form" class="flex h-full w-full flex-col items-start justify-center gap-4">
+<form
+    (ngSubmit)="onSubmit()"
+    [formGroup]="form"
+    class="flex h-full w-full flex-col items-start justify-center gap-4">
     @if (allowFileNameEdit) {
         <div class="flex w-full flex-col gap-2">
             <label class="p-label-input-required" data-testId="editor-label" for="file-name">
