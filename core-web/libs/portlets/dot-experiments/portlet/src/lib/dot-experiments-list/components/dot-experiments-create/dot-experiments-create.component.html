@@ -60,14 +60,12 @@
         </div>
     </p-drawer>
     <ng-template #actionHeaderBtnTpl>
-        <button
+        <p-button
             (click)="handleSubmit(vm.pageId)"
             [disabled]="!form.valid"
             [loading]="vm.isSaving"
             data-testId="add-experiment-button"
-            form="new-experiment-form"
             label="{{ 'experiments.action.add' | dm }}"
-            pButton
-            type="submit"></button>
+            type="button" />
     </ng-template>
 }

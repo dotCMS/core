@@ -22,6 +22,7 @@
                         (keydown.space)="$goToContainer.emit(experiment); $event.preventDefault()"
                         data-testId="experiment-row"
                         role="button"
+                        class="cursor-pointer"
                         tabindex="0">
                         <td data-testId="experiment-row__name">
                             {{ experiment.name }}
