@@ -7,51 +7,65 @@
         [appendTo]="'body'"
         class="p-fluid"
         (visibleChange)="closeDialog()">
-        <form class="form" [formGroup]="form" novalidate>
-            @switch (action()) {
-                @case ('Export') {
-                    <div class="field">
-                        <label dotFieldRequired for="export-password">{{ 'Password' | dm }}</label>
-                        <p-password
-                            [placeholder]="'apps.confirmation.export.password.label' | dm"
-                            inputId="export-password"
-                            dotAutofocus
-                            autocomplete="new-password"
-                            formControlName="password"
-                            [feedback]="false"
-                            [toggleMask]="true" />
-                    </div>
+        @if (form) {
+            <form class="form" [formGroup]="form" novalidate>
+                @switch (action()) {
+                    @case ('Export') {
+                        @if (form.get('password')) {
+                            <div class="field">
+                                <label dotFieldRequired for="export-password">
+                                    {{ 'Password' | dm }}
+                                </label>
+                                <p-password
+                                    [placeholder]="'apps.confirmation.export.password.label' | dm"
+                                    inputId="export-password"
+                                    dotAutofocus
+                                    autocomplete="new-password"
+                                    formControlName="password"
+                                    [feedback]="false"
+                                    [toggleMask]="true" />
+                            </div>
+                        }
+                    }
+                    @case ('Import') {
+                        <div class="field">
+                            <label dotFieldRequired for="import-file">
+                                {{ 'Upload-File' | dm }}
+                            </label>
+                            <p-fileupload
+                                mode="basic"
+                                [chooseLabel]="'dot.common.choose' | dm"
+                                chooseIcon="pi pi-upload"
+                                accept=".tar.gz,.export"
+                                (onSelect)="onFileSelect($event)"
+                                (onClear)="onFileClear()" />
+                        </div>
+                        @if (form.get('password')) {
+                            <div class="field">
+                                <label dotFieldRequired for="import-password">
+                                    {{ 'Password' | dm }}
+                                </label>
+                                <p-password
+                                    [placeholder]="'apps.confirmation.import.password.label' | dm"
+                                    inputId="import-password"
+                                    autocomplete="new-password"
+                                    formControlName="password"
+                                    [feedback]="false"
+                                    [toggleMask]="true" />
+                            </div>
+                        }
+                        @if (form.get('importFile')) {
+                            <input type="hidden" name="importFile" formControlName="importFile" />
+                        }
+                    }
                 }
-                @case ('Import') {
-                    <div class="field">
-                        <label dotFieldRequired for="import-file">{{ 'Upload-File' | dm }}</label>
-                        <p-fileupload
-                            mode="basic"
-                            [chooseLabel]="'dot.common.choose' | dm"
-                            chooseIcon="pi pi-upload"
-                            accept=".tar.gz,.export"
-                            (onSelect)="onFileSelect($event)"
-                            (onClear)="onFileClear()" />
-                    </div>
-                    <div class="field">
-                        <label dotFieldRequired for="import-password">{{ 'Password' | dm }}</label>
-                        <p-password
-                            [placeholder]="'apps.confirmation.import.password.label' | dm"
-                            inputId="import-password"
-                            autocomplete="new-password"
-                            formControlName="password"
-                            [feedback]="false"
-                            [toggleMask]="true" />
-                    </div>
-                    <input type="hidden" name="fileHidden" formControlName="importFile" />
-                }
-            }
 
-            <!-- Error Message Display -->
-            @if (errorMessage()) {
-                <span class="text-red-500">{{ errorMessage() }}</span>
-            }
-        </form>
+                <!-- Error Message Display -->
+                @if (errorMessage()) {
+                    <span class="text-red-500">{{ errorMessage() }}</span>
+                }
+            </form>
+        }
         @if (dialogActions) {
             <ng-template #footer>
                 @if (dialogActions.cancel) {

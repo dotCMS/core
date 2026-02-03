@@ -47,7 +47,7 @@ export class DotAppsImportExportDialogComponent {
     readonly dialogHeaderKey = this.#store.dialogHeaderKey;
     readonly isLoading = this.#store.isLoading;
 
-    form: UntypedFormGroup;
+    form: UntypedFormGroup = this.#fb.group({});
     dialogActions: DotDialogActions;
     #selectedFile: File | null = null;
 
