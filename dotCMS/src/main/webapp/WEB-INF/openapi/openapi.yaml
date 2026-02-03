@@ -11529,6 +11529,52 @@ paths:
       summary: List publishing jobs
       tags:
       - Publishing
+  /v1/publishing/push/{bundleId}:
+    post:
+      description: "Queues an existing bundle for publishing to specified environments.\
+        \ The bundle must exist and have assets already added. Supports publish, expire,\
+        \ and publishexpire operations with ISO 8601 date/time format."
+      operationId: pushBundle
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushBundleForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPushBundleResultView"
+          description: Bundle successfully queued for publishing
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (missing required fields, invalid operation,\
+            \ invalid date format)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - no permission to use specified environments
+        "404":
+          content:
+            application/json: {}
+          description: Bundle or environment not found
+      summary: Push bundle to environments
+      tags:
+      - Publishing
   /v1/publishing/{bundleId}:
     delete:
       description: "Removes a specific bundle from the publishing queue. Cannot delete\
@@ -23079,17 +23125,10 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
-        \ *.pdf)"
-      example:
-      - '*.jpg'
-      - '*.png'
-      - '*.pdf'
+      description: List of environment IDs the bundle was pushed to
       items:
         type: string
-        description: "List of file patterns that are allowed in this folder (e.g.,\
-          \ *.jpg, *.pdf)"
-        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+        description: List of environment IDs the bundle was pushed to
       properties:
         empty:
           type: boolean
@@ -24737,6 +24776,81 @@ components:
       - limit
       - offset
       - orderBy
+    PushBundleForm:
+      type: object
+      description: Form for pushing a bundle to environments
+      properties:
+        environments:
+          type: array
+          description: List of environment IDs to push the bundle to
+          example:
+          - env-123
+          - env-456
+          items:
+            type: string
+            description: List of environment IDs to push the bundle to
+            example: "[\"env-123\",\"env-456\"]"
+        expireDate:
+          type: string
+          description: Scheduled expire date in ISO 8601 format with timezone offset
+          example: 2025-04-15T14:30:00-05:00
+        filterKey:
+          type: string
+          description: Push publishing filter key
+          example: ForcePush.yml
+        operation:
+          type: string
+          description: "Operation type: publish, expire, or publishexpire"
+          example: publish
+        publishDate:
+          type: string
+          description: Scheduled publish date in ISO 8601 format with timezone offset
+          example: 2025-03-15T14:30:00-05:00
+      required:
+      - environments
+      - filterKey
+      - operation
+    PushBundleResultView:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          description: Bundle identifier
+          example: 550e8400-e29b-41d4-a716-446655440000
+        environments:
+          type: array
+          description: List of environment IDs the bundle was pushed to
+          items:
+            type: string
+            description: List of environment IDs the bundle was pushed to
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        expireDate:
+          type: string
+          description: Scheduled expire date in ISO 8601 format
+          example: 2025-04-15T14:30:00-05:00
+        filterKey:
+          type: string
+          description: Filter key used for publishing
+          example: ForcePush.yml
+        operation:
+          type: string
+          description: Operation type performed
+          example: publish
+        publishDate:
+          type: string
+          description: Scheduled publish date in ISO 8601 format
+          example: 2025-03-15T14:30:00-05:00
+      required:
+      - bundleId
+      - environments
+      - filterKey
+      - operation
     PushPublishBean:
       type: object
       properties:
@@ -26015,6 +26129,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PublishingJobView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPushBundleResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PushBundleResultView"
         errors:
           type: array
           items:

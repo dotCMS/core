@@ -6,11 +6,15 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.Pagination;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
@@ -36,6 +40,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
 import javax.ws.rs.core.Response;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -63,6 +68,8 @@ public class PublishingResource {
     private final WebResource webResource;
     private final Lazy<PublishAuditAPI> publishAuditAPI;
     private final Lazy<BundleAPI> bundleAPI;
+    private final Lazy<com.dotcms.publishing.PublisherAPI> publisherAPI;
+    private final Lazy<com.dotcms.publisher.business.PublisherAPI> publisherQueueAPI;
     private final PublishingJobsHelper publishingJobsHelper;
 
     /**
@@ -72,6 +79,8 @@ public class PublishingResource {
         this(new WebResource(),
              Lazy.of(PublishAuditAPI::getInstance),
              Lazy.of(APILocator::getBundleAPI),
+             Lazy.of(APILocator::getPublisherAPI),
+             Lazy.of(com.dotcms.publisher.business.PublisherAPI::getInstance),
              new PublishingJobsHelper());
     }
 
@@ -81,16 +90,22 @@ public class PublishingResource {
      * @param webResource          Web resource for authentication
      * @param publishAuditAPI      Audit API for retrieving publishing status
      * @param bundleAPI            Bundle API for bundle operations
+     * @param publisherAPI         Publisher API for filter lookup
+     * @param publisherQueueAPI    Publisher Queue API for bundle queue operations
      * @param publishingJobsHelper Helper for transforming data to views
      */
     @VisibleForTesting
     public PublishingResource(final WebResource webResource,
                               final Lazy<PublishAuditAPI> publishAuditAPI,
                               final Lazy<BundleAPI> bundleAPI,
+                              final Lazy<com.dotcms.publishing.PublisherAPI> publisherAPI,
+                              final Lazy<com.dotcms.publisher.business.PublisherAPI> publisherQueueAPI,
                               final PublishingJobsHelper publishingJobsHelper) {
         this.webResource = webResource;
         this.publishAuditAPI = publishAuditAPI;
         this.bundleAPI = bundleAPI;
+        this.publisherAPI = publisherAPI;
+        this.publisherQueueAPI = publisherQueueAPI;
         this.publishingJobsHelper = publishingJobsHelper;
     }
 
@@ -445,5 +460,174 @@ public class PublishingResource {
                 bundleId, user.getUserId()));
 
         return Response.ok(Map.of("message", "Bundle deleted successfully")).build();
+    }
+
+    /**
+     * Pushes a bundle to specified environments for publishing.
+     *
+     * <p>This endpoint schedules an existing bundle (with assets already added)
+     * for push publishing to one or more environments. Supports three operations:
+     * publish, expire, and publishexpire (publish then auto-expire).</p>
+     *
+     * <h3>Operations:</h3>
+     * <ul>
+     *   <li><b>publish</b> - Publish content to target environments</li>
+     *   <li><b>expire</b> - Unpublish/expire content from target environments</li>
+     *   <li><b>publishexpire</b> - Publish now and schedule automatic expiration</li>
+     * </ul>
+     *
+     * <h3>Date Format:</h3>
+     * <p>All dates must be in ISO 8601 format with timezone offset:
+     * {@code YYYY-MM-DDTHH:mm:ss±HH:MM} (e.g., {@code 2025-03-15T14:30:00-05:00})</p>
+     *
+     * @param request   The HTTP request
+     * @param response  The HTTP response
+     * @param bundleId  The existing bundle identifier
+     * @param form      Push configuration (operation, dates, environments, filter)
+     * @return Push result with confirmation of queued bundle
+     */
+    @Operation(
+            summary = "Push bundle to environments",
+            description = "Queues an existing bundle for publishing to specified environments. " +
+                    "The bundle must exist and have assets already added. Supports publish, " +
+                    "expire, and publishexpire operations with ISO 8601 date/time format."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Bundle successfully queued for publishing",
+                    content = @Content(
+                            mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityPushBundleResultView.class)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request (missing required fields, invalid operation, invalid date format)",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Forbidden - no permission to use specified environments",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Bundle or environment not found",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            )
+    })
+    @POST
+    @Path("/push/{bundleId}")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityPushBundleResultView pushBundle(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "Bundle identifier",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathParam("bundleId") final String bundleId,
+            final PushBundleForm form) throws DotDataException, DotPublisherException {
+
+        // 1. Authenticate backend user
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        final User user = initData.getUser();
+
+        // 2. Validate bundleId
+        if (!UtilMethods.isSet(bundleId)) {
+            throw new BadRequestException("Bundle ID is required");
+        }
+
+        // 3. Validate form inputs
+        publishingJobsHelper.validatePushBundleForm(form);
+
+        // 4. Get and validate bundle exists
+        final Bundle bundle = bundleAPI.get().getBundleById(bundleId);
+        if (bundle == null) {
+            throw new NotFoundException(String.format("Bundle not found: %s", bundleId));
+        }
+
+        // 5. Validate environments and permissions
+        final List<Environment> validEnvs = publishingJobsHelper.validateEnvironmentPermissions(
+                form.getEnvironments(), user);
+        if (validEnvs.isEmpty()) {
+            throw new NotFoundException("No valid environments found or user lacks permission");
+        }
+
+        // 6. Get filter and extract forcePush (falls back to default filter if not found)
+        final FilterDescriptor filter = publisherAPI.get().getFilterDescriptorByKey(form.getFilterKey());
+        final boolean forcePush = (boolean) filter.getFilters()
+                .getOrDefault(FilterDescriptor.FORCE_PUSH_KEY, false);
+
+        // 7. Parse dates
+        final Date publishDate = publishingJobsHelper.parseISO8601Date(form.getPublishDate());
+        final Date expireDate = publishingJobsHelper.parseISO8601Date(form.getExpireDate());
+
+        // 8. Update bundle with settings
+        bundle.setForcePush(forcePush);
+        bundle.setFilterKey(form.getFilterKey());
+        bundleAPI.get().saveBundleEnvironments(bundle, validEnvs);
+
+        // 9. Execute operation based on type
+        final String operation = form.getOperation().toLowerCase();
+        switch (operation) {
+            case "publish":
+                bundle.setPublishDate(publishDate);
+                bundleAPI.get().updateBundle(bundle);
+                publisherQueueAPI.get().publishBundleAssets(bundleId, publishDate);
+                break;
+            case "expire":
+                bundle.setExpireDate(expireDate);
+                bundleAPI.get().updateBundle(bundle);
+                publisherQueueAPI.get().unpublishBundleAssets(bundleId, expireDate);
+                break;
+            case "publishexpire":
+                bundle.setPublishDate(publishDate);
+                bundle.setExpireDate(expireDate);
+                bundleAPI.get().updateBundle(bundle);
+                publisherQueueAPI.get().publishAndExpireBundleAssets(bundleId, publishDate, expireDate, user);
+                break;
+            default:
+                throw new BadRequestException(String.format(
+                        "Invalid operation: '%s'. Valid values: publish, expire, publishexpire",
+                        form.getOperation()));
+        }
+
+        // 10. Fire publisher queue immediately (2-second delay for responsive UX)
+        publisherQueueAPI.get().firePublisherQueueNow(
+                Map.of("deliveryStrategy", DeliveryStrategy.ALL_ENDPOINTS));
+
+        // 11. Build and return result (return actual valid environments, not requested)
+        final List<String> validEnvIds = validEnvs.stream()
+                .map(Environment::getId)
+                .collect(Collectors.toList());
+        final PushBundleResultView result = PushBundleResultView.builder()
+                .bundleId(bundleId)
+                .operation(operation)
+                .publishDate(form.getPublishDate())
+                .expireDate(form.getExpireDate())
+                .environments(validEnvIds)
+                .filterKey(form.getFilterKey())
+                .build();
+
+        Logger.info(this, String.format("Pushed bundle '%s' to %d environment(s) by user '%s'",
+                bundleId, validEnvs.size(), user.getUserId()));
+
+        return new ResponseEntityPushBundleResultView(result);
     }
 }
