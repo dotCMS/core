@@ -776,7 +776,7 @@ public class ContentHelper {
         String languageId = null;
         String languageIdStr = "languageId";
 
-        if (query.contains(languageIdStr)) {
+        if (UtilMethods.isSet(query) && query.contains(languageIdStr)) {
             int index = query.indexOf(languageIdStr) + languageIdStr.length() + 1; // +1 for ':'
             try {
                 languageId = query.substring(index, query.indexOf(" ", index));
