@@ -9,7 +9,7 @@ import { DotRuleEngineContainerComponent } from '../features/rule-engine/contain
     templateUrl: './dot-rules.component.html',
     imports: [DotRuleEngineContainerComponent],
     host: {
-        class: 'flex w-full min-h-full h-full mr-20'
+        class: 'flex w-full min-h-full h-full'
     }
 })
 export class DotRulesComponent {

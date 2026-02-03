@@ -65,9 +65,13 @@
                 <div
                     class="mr-2 relative flex flex-row justify-end items-center basis-[30%] max-w-[30%]">
                     <span
-                        class="mt-1 mr-8 transition-opacity duration-[2000ms] delay-[1000ms] saved:opacity-0 saving:opacity-100 saving:delay-0"
-                        title="{{ getStatusText() }}">
-                        {{ getStatusText(30) }}
+                        [class.opacity-0]="saved"
+                        [class.opacity-100]="saving"
+                        [class.delay-0]="saving"
+                        [class.delay-500]="!saving"
+                        class="mt-1 mr-8 transition-opacity duration-1500"
+                        [title]="statusText()">
+                        {{ statusTextTruncated() }}
                     </span>
                     <p-toggleSwitch
                         (onChange)="setRuleEnabledState($event)"
