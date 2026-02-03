@@ -20,16 +20,16 @@
             </p>
             <form [formGroup]="form" class="p-fluid" novalidate>
                 <div class="field">
-                    <p-slider [max]="100" [min]="1" formControlName="trafficAllocation"></p-slider>
+                    <p-slider [max]="100" [min]="1" formControlName="trafficAllocation" />
                     <div class="flex justify-end items-baseline gap-2 mt-3">
                         <input
-                            (keyup)="checkAllocationRange()"
                             [max]="100"
                             [min]="1"
+                            [value]="form.get('trafficAllocation').value"
+                            (input)="onTrafficAllocationInput($event)"
                             id="trafficAllocation"
-                            class="w-[55px] text-center"
+                            class="w-fit text-center"
                             data-testId="traffic-allocation-input"
-                            formControlName="trafficAllocation"
                             maxlength="3"
                             pInputText
                             type="number" />

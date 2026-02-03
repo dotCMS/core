@@ -79,15 +79,14 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
     }
 
     /**
-     * Check allocation is higher than 100
-     * @returns void
-     * @memberof DotExperimentsConfigurationTrafficAllocationAddComponent
+     * Sync input value with form control and clamp to valid range (1–100).
+     * Keeps p-slider and input in sync when user types.
      */
-    checkAllocationRange() {
-        this.form.setValue({
-            trafficAllocation:
-                this.form.value.trafficAllocation > 100 ? 100 : this.form.value.trafficAllocation
-        });
+    onTrafficAllocationInput(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const raw = input.value.trim();
+        const num = raw === '' ? 1 : Math.min(100, Math.max(1, Number(raw) || 1));
+        this.form.patchValue({ trafficAllocation: num }, { emitEvent: true });
     }
 
     private initForm() {
