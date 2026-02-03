@@ -156,7 +156,7 @@
         <version.versions.plugin>2.8.1</version.versions.plugin>
         <version.maven.plugin.plugin>3.8.1</version.maven.plugin.plugin>
         <version.war.plugin>3.2.3</version.war.plugin>
-        <version.docker-maven.plugin>0.43.4</version.docker-maven.plugin>
+        <version.docker-maven.plugin>0.48.0</version.docker-maven.plugin>
         <test.working.dir>${project.build.directory}/testdata</test.working.dir>
         <test.temp.dir>${test.working.dir}/temp</test.temp.dir>
 

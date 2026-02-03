@@ -38,14 +38,14 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    mapContainerStructureToArrayOfContainers,
-    getPersonalization,
     areContainersEquals,
+    getContentTypeVarRecord,
     getEditorStates,
-    sanitizeURL,
-    getWrapperMeasures,
     getFullPageURL,
-    getContentTypeVarRecord
+    getPersonalization,
+    getWrapperMeasures,
+    mapContainerStructureToArrayOfContainers,
+    sanitizeURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
@@ -318,6 +318,11 @@ export function withEditor() {
                             open: true,
                             currentTab: UVE_PALETTE_TABS.STYLE_EDITOR
                         }
+                    });
+                },
+                resetActiveContentlet() {
+                    patchState(store, {
+                        activeContentlet: null
                     });
                 },
                 resetContentletArea() {

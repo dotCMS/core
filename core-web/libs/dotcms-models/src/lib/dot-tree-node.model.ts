@@ -4,6 +4,6 @@ export interface DotTreeNode {
     pageId: string;
     relationType: string;
     treeOrder: string;
-    variantId: string;
+    variantId?: string;
     personalization?: string;
 }
