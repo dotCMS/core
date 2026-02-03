@@ -9,13 +9,12 @@ import {
     computed,
     DestroyRef,
     ElementRef,
-    EventEmitter,
     forwardRef,
     inject,
-    Input,
+    input,
     OnDestroy,
     OnInit,
-    Output,
+    output,
     signal,
     Signal,
     ViewChild
@@ -104,7 +103,6 @@ type SystemOptionsType = {
         }
     ],
     templateUrl: './dot-edit-content-binary-field.component.html',
-    styleUrls: ['./dot-edit-content-binary-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentBinaryFieldComponent
@@ -133,18 +131,13 @@ export class DotEditContentBinaryFieldComponent
 
     value: string | null = null;
 
-    @Input({ required: true })
-    set field(contentTypeField: DotCMSContentTypeField) {
-        this.$field.set(contentTypeField);
-    }
-    @Input({ required: true }) contentlet: DotCMSContentlet;
-    @Input() imageEditor = false;
-
-    $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $imageEditor = input<boolean>(false, { alias: 'imageEditor' });
     $variable = computed(() => this.$field()?.variable);
     $disabled = signal<boolean>(false);
 
-    @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
+    $valueUpdated = output<{ value: string; fileName: string }>();
     @ViewChild('inputFile') inputFile: ElementRef;
     readonly dialogFullScreenStyles = { height: '90%', width: '90%' };
     readonly dialogHeaderMap = {
@@ -197,7 +190,7 @@ export class DotEditContentBinaryFieldComponent
             )
             .subscribe(({ value, fileName }) => {
                 this.tempId = value; // If the value changes, it means that a new file was uploaded
-                this.valueUpdated.emit({ value, fileName });
+                this.$valueUpdated.emit({ value, fileName });
 
                 if (this.onChange) {
                     this.onChange(value);
@@ -220,12 +213,13 @@ export class DotEditContentBinaryFieldComponent
     ngAfterViewInit() {
         this.setFieldVariables();
 
-        if (!this.contentlet || !this.getValue() || !this.checkMetadata()) {
+        const contentlet = this.$contentlet();
+        if (!contentlet || !this.getValue() || !this.checkMetadata()) {
             return;
         }
 
         this.#dotBinaryFieldStore.setFileFromContentlet({
-            ...this.contentlet,
+            ...contentlet,
             value: this.getValue(),
             fieldVariable: this.variable
         });
@@ -391,8 +385,9 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     onEditImage() {
+        const contentlet = this.$contentlet();
         this.#dotBinaryFieldEditImageService.openImageEditor({
-            inode: this.contentlet?.inode,
+            inode: contentlet?.inode,
             tempId: this.tempId,
             variable: this.variable
         });
@@ -500,11 +495,11 @@ export class DotEditContentBinaryFieldComponent
      * @memberof DotEditContentBinaryFieldComponent
      */
     private checkMetadata(): boolean {
-        const { baseType } = this.contentlet;
+        const { baseType } = this.$contentlet();
         const isFileAsset = baseType === DotCMSBaseTypesContentTypes.FILEASSET;
         const key = isFileAsset ? 'metaData' : this.variable + 'MetaData';
 
-        return !!this.contentlet[key];
+        return !!this.$contentlet()[key];
     }
 
     private parseToTempFile(selectedImage: DotGeneratedAIImage) {
@@ -532,6 +527,7 @@ export class DotEditContentBinaryFieldComponent
             return this.value;
         }
 
-        return this.contentlet?.[this.variable] ?? this.$field().defaultValue;
+        const contentlet = this.$contentlet();
+        return contentlet?.[this.variable] ?? this.$field().defaultValue;
     }
 }

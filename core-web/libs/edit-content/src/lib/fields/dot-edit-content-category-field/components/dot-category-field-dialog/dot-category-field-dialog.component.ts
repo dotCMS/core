@@ -43,7 +43,6 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         NgClass
     ],
     templateUrl: './dot-category-field-dialog.component.html',
-    styleUrl: './dot-category-field-dialog.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldDialogComponent implements OnInit, OnDestroy {

@@ -7,9 +7,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
             <div class="field-error-marker"></div>
         }
 
-        <ng-content select="dot-card-field-label" />
-        <ng-content select="dot-card-field-content" />
-        <ng-content select="dot-card-field-footer" />
+        <div class="flex flex-col gap-2">
+            <ng-content select="dot-card-field-label" />
+            <ng-content select="dot-card-field-content" />
+            <ng-content select="dot-card-field-footer" />
+        </div>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })

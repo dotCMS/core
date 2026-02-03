@@ -1,5 +1,9 @@
-<form (ngSubmit)="onSubmit()" [formGroup]="form" class="url-mode__form" data-testId="form">
-    <div class="url-mode__input-container">
+<form
+    (ngSubmit)="onSubmit()"
+    [formGroup]="form"
+    class="flex flex-col gap-3 justify-center items-start"
+    data-testid="form">
+    <div class="w-full flex flex-col gap-2">
         <label for="url-input">{{ 'dot.file.field.action.import.from.url' | dm }}</label>
         <input
             id="url-input"
@@ -9,43 +13,43 @@
             pInputText
             placeholder="https://www.dotcms.com/image.png"
             aria-label="URL input field"
-            data-testId="url-input" />
-        <div class="error-messsage__container">
+            data-testid="url-input" />
+        <div class="min-h-6">
             @let error = store.error();
             @if (error) {
-                <small class="p-invalid" data-testId="error-msg">
+                <small class="p-invalid" data-testid="error-msg">
                     {{ error | dm: [store.allowFiles()] }}
                 </small>
             } @else {
                 <dot-field-validation-message
                     [message]="'dot.file.field.action.import.from.url.error.message' | dm"
                     [field]="form.controls.url"
-                    data-testId="error-message" />
+                    data-testid="error-message" />
             }
         </div>
     </div>
-    <div class="url-mode__actions">
+    <div class="w-full flex gap-2 items-center justify-end">
         <p-button
             (click)="cancelUpload()"
             [label]="'dot.common.cancel' | dm"
             styleClass="p-button-outlined"
             type="button"
             aria-label="Cancel button"
-            data-testId="cancel-button" />
+            data-testid="cancel-button" />
         <div class="w-28">
             @if (store.isLoading()) {
                 <p-button
                     [icon]="'pi pi-spin pi-spinner'"
                     type="button"
                     aria-label="Loading button"
-                    data-testId="loading-button" />
+                    data-testid="loading-button" />
             } @else {
                 <p-button
                     [label]="'dot.common.import' | dm"
                     [icon]="'pi pi-download'"
                     type="submit"
                     aria-label="Import button"
-                    data-testId="import-button" />
+                    data-testid="import-button" />
             }
         </div>
     </div>
