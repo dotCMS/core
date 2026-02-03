@@ -25,10 +25,8 @@
                         <input
                             [max]="100"
                             [min]="1"
-                            [value]="form.get('trafficAllocation').value"
-                            (input)="onTrafficAllocationInput($event)"
+                            formControlName="trafficAllocationInput"
                             id="trafficAllocation"
-                            class="w-fit text-center"
                             data-testId="traffic-allocation-input"
                             maxlength="3"
                             pInputText
