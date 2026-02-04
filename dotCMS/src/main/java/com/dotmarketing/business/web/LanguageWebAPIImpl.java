@@ -52,24 +52,24 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     // only try internal session and attributes
     private Language currentLanguage(HttpServletRequest httpRequest) {
         HttpSession sessionOpt = httpRequest.getSession(false);
+        Language lang = null;
 
-        try{
-            if(sessionOpt !=null){
-                if(sessionOpt.getAttribute("tm_lang")!=null){
-                    return langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
-                }else{
-                    return langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+        try {
+            if (sessionOpt != null) {
+                if (sessionOpt.getAttribute("tm_lang") != null) {
+                    lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
+                } else {
+                    lang = langAPI.getLanguage(
+                            (String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
                 }
+            } else if (UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))) {
+                lang = langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
             }
-            else if(UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))){
-                return langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
-            }
-        }
-        catch(Exception e){
-            // no log
+        } catch (Exception e) {
+            Logger.debug(this.getClass(), "Error getting language from session/request", e);
         }
 
-        return langAPI.getDefaultLanguage();
+        return lang != null ? lang : langAPI.getDefaultLanguage();
     }
 
 
