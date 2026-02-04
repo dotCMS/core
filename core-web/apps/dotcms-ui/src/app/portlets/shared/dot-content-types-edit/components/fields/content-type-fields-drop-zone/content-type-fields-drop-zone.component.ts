@@ -10,7 +10,6 @@ import {
     OnInit,
     Renderer2,
     SimpleChanges,
-    effect,
     inject,
     input,
     output,
@@ -80,24 +79,13 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
-    private _loading: boolean;
+    private _loading = false;
 
     get loading(): boolean {
         return this._loading;
     }
 
     readonly $loading = input<boolean>(false, { alias: 'loading' });
-
-    constructor() {
-        effect(() => {
-            const loading = this.$loading();
-            if (loading) {
-                this.dotLoadingIndicatorService.show();
-            } else {
-                this.dotLoadingIndicatorService.hide();
-            }
-        });
-    }
 
     get isFieldWithSettings() {
         return [
@@ -223,9 +211,24 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         if (changes.$layout && changes.$layout.currentValue) {
             this.fieldRows = structuredClone(changes.$layout.currentValue);
         }
+        
+        if (changes.$loading) {
+            const loading = changes.$loading.currentValue;
+            this._loading = loading;
+            
+            // Use setTimeout to defer loading indicator changes until after current change detection cycle
+            setTimeout(() => {
+                if (loading) {
+                    this.dotLoadingIndicatorService.show();
+                } else {
+                    this.dotLoadingIndicatorService.hide();
+                }
+            }, 0);
+        }
     }
 
     ngOnDestroy(): void {
+        this.dotLoadingIndicatorService.hide();
         this.destroy$.next(true);
         this.destroy$.complete();
     }
