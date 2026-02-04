@@ -80,7 +80,7 @@ describe('ActionHeaderComponent', () => {
                 ]
             }
         };
-        spectator.setInput('options', options );
+        spectator.setInput('options', options);
         expect(spectator.query('dot-action-button')).toExist();
     });
 
