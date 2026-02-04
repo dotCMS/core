@@ -8,7 +8,6 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
-    DotCMSLayout,
     DotCMSPage,
     DotCMSPageAssetContainers,
     DotCMSSite,
@@ -116,7 +115,6 @@ export interface UVEState {
     page: DotCMSPage | null;
     site: DotCMSSite | null;
     template: DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null;
-    layout: DotCMSLayout | null;
     containers: DotCMSPageAssetContainers | null;
 
     // Optional properties (from API - may not be present even when loaded)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withState, withFeature } from '@ngrx/signals';
+import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
 import { of, throwError } from 'rxjs';
 
 import { computed } from '@angular/core';
@@ -45,7 +45,6 @@ const initialState: UVEState = {
     page: MOCK_RESPONSE_HEADLESS.page,
     site: MOCK_RESPONSE_HEADLESS.site,
     template: MOCK_RESPONSE_HEADLESS.template,
-    layout: MOCK_RESPONSE_HEADLESS.layout,
     containers: MOCK_RESPONSE_HEADLESS.containers,
     viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
     vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,

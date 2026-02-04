@@ -9,7 +9,7 @@ import {
 
 import { computed, Signal } from '@angular/core';
 
-import { DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSLayout, DotCMSPageAsset } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVEState } from '../../models';
@@ -47,6 +47,9 @@ export interface WithClientMethods {
     graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     isClientReady: () => boolean;
     legacyGraphqlResponse: () => boolean;
+
+    // Computed: layout from graphqlResponse.pageAsset (single source of truth)
+    layout: () => DotCMSLayout | null;
 
     // Methods
     setIsClientReady: (isClientReady: boolean) => void;
@@ -140,6 +143,9 @@ export function withClient() {
         }),
         withComputed((store) => {
             return {
+                layout: computed<DotCMSLayout | null>(
+                    () => store.graphqlResponse()?.pageAsset?.layout ?? null
+                ),
                 $customGraphqlResponse: computed(() => {
                     if (!store.graphqlResponse()) {
                         return null;

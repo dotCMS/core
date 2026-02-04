@@ -1,9 +1,10 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { signalStore, withState } from '@ngrx/signals';
+import { signalStore, withFeature, withState } from '@ngrx/signals';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { withClient } from '../client/withClient';
 import { withLayout } from './withLayout';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
@@ -21,7 +22,6 @@ const initialState: UVEState = {
     page: MOCK_RESPONSE_HEADLESS.page,
     site: MOCK_RESPONSE_HEADLESS.site,
     template: MOCK_RESPONSE_HEADLESS.template,
-    layout: MOCK_RESPONSE_HEADLESS.layout,
     containers: MOCK_RESPONSE_HEADLESS.containers,
     viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
     vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
@@ -59,7 +59,11 @@ const initialState: UVEState = {
     }
 };
 
-export const uveStoreMock = signalStore(withState<UVEState>(initialState), withLayout());
+export const uveStoreMock = signalStore(
+    withState<UVEState>(initialState),
+    withFeature(() => withClient()),
+    withLayout()
+);
 
 describe('withLayout', () => {
     let spectator: SpectatorService<InstanceType<typeof uveStoreMock>>;
@@ -72,6 +76,7 @@ describe('withLayout', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
+        store.setGraphqlResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     describe('withComputed', () => {

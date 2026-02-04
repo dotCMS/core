@@ -175,6 +175,7 @@ export function withLoad(deps: WithLoadDeps) {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
+                                            deps.setGraphqlResponse({ pageAsset });
                                             deps.addHistory({ pageAsset });
 
                                             patchState(store, {
@@ -182,7 +183,6 @@ export function withLoad(deps: WithLoadDeps) {
                                                 site: pageAsset?.site,
                                                 viewAs: pageAsset?.viewAs,
                                                 template: pageAsset?.template,
-                                                layout: pageAsset?.layout,
                                                 urlContentMap: pageAsset?.urlContentMap,
                                                 containers: pageAsset?.containers,
                                                 vanityUrl: pageAsset?.vanityUrl,
@@ -231,18 +231,18 @@ export function withLoad(deps: WithLoadDeps) {
 
                             return pageRequest.pipe(
                                 tap((pageAsset) => {
+                                    deps.setGraphqlResponse({ pageAsset });
                                     patchState(store, {
                                         page: pageAsset?.page,
                                         site: pageAsset?.site,
                                         viewAs: pageAsset?.viewAs,
                                         template: pageAsset?.template,
-                                        layout: pageAsset?.layout,
                                         urlContentMap: pageAsset?.urlContentMap,
                                         containers: pageAsset?.containers,
                                         vanityUrl: pageAsset?.vanityUrl,
                                         numberContents: pageAsset?.numberContents
                                     });
-                                    deps.getWorkflowActions(pageAsset.page.inode);
+                                    deps.getWorkflowActions(pageAsset?.page?.inode);
                                 }),
                                 switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(

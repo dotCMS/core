@@ -1,12 +1,13 @@
 import { describe, expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService, SpyObject } from '@ngneat/spectator/jest';
-import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
+import { withClient } from '../client/withClient';
 import { withWorkflow } from './withWorkflow';
 
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
@@ -28,7 +29,6 @@ const initialState: UVEState = {
     page: null,
     site: null,
     template: null,
-    layout: null,
     containers: null,
     currentUser: null,
     experiment: null,
@@ -65,14 +65,15 @@ const initialState: UVEState = {
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
+    withFeature(() => withClient()),
     withWorkflow(),
     withMethods((store) => ({
         setPageAPIResponse: (pageAPIResponse: DotCMSPageAsset) => {
+            store.setGraphqlResponse({ pageAsset: pageAPIResponse });
             patchState(store, {
                 page: pageAPIResponse.page,
                 site: pageAPIResponse.site,
                 template: pageAPIResponse.template,
-                layout: pageAPIResponse.layout,
                 containers: pageAPIResponse.containers,
                 viewAs: pageAPIResponse.viewAs,
                 vanityUrl: pageAPIResponse.vanityUrl,

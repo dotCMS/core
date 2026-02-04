@@ -39,7 +39,6 @@ const initialState: UVEState = {
     site: null,
     viewAs: null,
     template: null,
-    layout: null,
     urlContentMap: null,
     containers: null,
     vanityUrl: null,
@@ -105,13 +104,13 @@ export const UVEStore = signalStore(
                 });
             },
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
+                store.setGraphqlResponse({ pageAsset: pageAPIResponse });
                 patchState(store, {
                     status: UVE_STATUS.LOADED,
                     page: pageAPIResponse?.page,
                     site: pageAPIResponse?.site,
                     viewAs: pageAPIResponse?.viewAs,
                     template: pageAPIResponse?.template,
-                    layout: pageAPIResponse?.layout,
                     urlContentMap: pageAPIResponse?.urlContentMap,
                     containers: pageAPIResponse?.containers,
                     vanityUrl: pageAPIResponse?.vanityUrl,

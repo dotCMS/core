@@ -1,13 +1,20 @@
-import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
+import { signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
 
-import { DotCMSLayout } from '@dotcms/types';
+import { DotCMSLayout, DotCMSPageAsset } from '@dotcms/types';
 
 import { LayoutProps } from './models';
 
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
+
+/** WithLayout requires withClient (provides layout computed, graphqlResponse, setGraphqlResponse). */
+interface LayoutStoreDeps {
+    layout: () => DotCMSLayout | null;
+    graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
+    setGraphqlResponse: (r: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+}
 
 /**
  * Add computed properties to the store to handle the Layout UI
@@ -20,11 +27,14 @@ export function withLayout() {
         {
             state: type<UVEState>()
         },
-        withComputed(({ page, containers, layout, template }) => ({
+        withComputed((store) => {
+            const s = store as typeof store & LayoutStoreDeps;
+            const { page, containers, template } = store;
+            return {
             $layoutProps: computed<LayoutProps>(() => {
                 const pageData = page();
                 const containersData = containers();
-                const layoutData = layout();
+                const layoutData = s.layout();
                 const templateData = template();
 
                 return {
@@ -41,14 +51,19 @@ export function withLayout() {
                     pageId: pageData?.identifier
                 };
             })
-            // $canEditLayout moved to withPageContext (Phase 4.2 - shared permission)
-        })),
+            };
+        }),
         withMethods((store) => {
+            const s = store as typeof store & LayoutStoreDeps;
             return {
                 updateLayout: (layout: DotCMSLayout) => {
-                    patchState(store, {
-                        layout
-                    });
+                    const resp = s.graphqlResponse();
+                    if (resp) {
+                        s.setGraphqlResponse({
+                            ...resp,
+                            pageAsset: { ...resp.pageAsset, layout }
+                        });
+                    }
                 }
             };
         })

@@ -42,7 +42,6 @@ const initialState: UVEState = {
     page: MOCK_RESPONSE_HEADLESS.page,
     site: MOCK_RESPONSE_HEADLESS.site,
     template: MOCK_RESPONSE_HEADLESS.template,
-    layout: MOCK_RESPONSE_HEADLESS.layout,
     containers: MOCK_RESPONSE_HEADLESS.containers,
     viewAs: MOCK_RESPONSE_HEADLESS.viewAs,
     vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,

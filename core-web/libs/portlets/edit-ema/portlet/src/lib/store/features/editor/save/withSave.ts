@@ -86,7 +86,6 @@ export function withSave(deps: WithSaveDeps) {
                                                     site: pageAsset?.site,
                                                     viewAs: pageAsset?.viewAs,
                                                     template: pageAsset?.template,
-                                                    layout: pageAsset?.layout,
                                                     urlContentMap: pageAsset?.urlContentMap,
                                                     containers: pageAsset?.containers,
                                                     vanityUrl: pageAsset?.vanityUrl,
@@ -123,8 +122,11 @@ export function withSave(deps: WithSaveDeps) {
                         }),
                         switchMap((sortedRows) => {
                             const page = store.page();
-                            const layoutData = store.layout();
+                            const layoutData = deps.graphqlResponse()?.pageAsset?.layout;
                             const template = store.template();
+                            if (!layoutData) {
+                                return EMPTY;
+                            }
 
                             return dotPageLayoutService.save(page.identifier, {
                                 layout: {
@@ -168,7 +170,6 @@ export function withSave(deps: WithSaveDeps) {
                                             site: pageRender?.site,
                                             viewAs: pageRender?.viewAs,
                                             template: pageRender?.template,
-                                            layout: pageRender?.layout,
                                             urlContentMap: pageRender?.urlContentMap,
                                             containers: pageRender?.containers,
                                             vanityUrl: pageRender?.vanityUrl,

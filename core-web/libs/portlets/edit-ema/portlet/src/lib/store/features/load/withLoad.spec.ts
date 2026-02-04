@@ -5,7 +5,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@ngneat/spectator/jest';
-import { signalStore, withState, withFeature } from '@ngrx/signals';
+import { signalStore, withFeature, withState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { computed } from '@angular/core';
@@ -77,7 +77,6 @@ const initialState: UVEState = {
     page: null,
     site: null,
     template: null,
-    layout: null,
     containers: null,
     currentUser: null,
     experiment: null,
@@ -119,7 +118,8 @@ export const uveStoreMock = signalStore(
         getWorkflowActions: (inode) => {}, // Mock implementation
         graphqlRequest: () => store.graphqlRequest(),
         $graphqlWithParams: computed(() => store.$graphqlWithParams()),
-        setGraphqlResponse: (response) => store.setGraphqlResponse(response)
+        setGraphqlResponse: (response) => store.setGraphqlResponse(response),
+        addHistory: (state) => store.addHistory(state)
     }))
 );
 
