@@ -32,7 +32,7 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotContentletCanLock, DotContentletDepths } from '@dotcms/dotcms-models';
-import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
+import { createFakeContentlet, MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
@@ -290,37 +290,12 @@ describe('DotEditContentSidebarComponent', () => {
                 const dotWorkflowService = spectator.inject(DotWorkflowService);
                 const dotEditContentService = spectator.inject(DotEditContentService);
 
-                const mockContentlet = {
+                const mockContentlet = createFakeContentlet({
                     inode: '123',
                     contentType: 'testContentType',
-                    archived: false,
-                    baseType: 'CONTENT',
-                    folder: 'SYSTEM_FOLDER',
-                    hasTitleImage: false,
-                    host: 'demo.dotcms.com',
-                    hostName: 'demo.dotcms.com',
                     identifier: '123-456',
-                    languageId: 1,
-                    live: true,
-                    locked: false,
-                    modDate: new Date().toISOString(),
-                    modUser: 'admin',
-                    modUserName: 'Admin User',
-                    owner: 'admin',
-                    permissionId: '123',
-                    permissionType: 'CONTENT',
-                    title: 'Test Content',
-                    working: true,
-                    URL_MAP_FOR_CONTENT: '/test',
-                    sortOrder: 0,
-                    stInode: '123-stInode',
-                    structure: {
-                        name: 'Test Structure',
-                        inode: '456'
-                    },
-                    titleImage: '',
-                    url: '/test-content'
-                };
+                    title: 'Test Content'
+                });
 
                 dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
@@ -389,37 +364,12 @@ describe('DotEditContentSidebarComponent', () => {
                 const dotWorkflowService = spectator.inject(DotWorkflowService);
                 const dotEditContentService = spectator.inject(DotEditContentService);
 
-                const mockContentlet = {
+                const mockContentlet = createFakeContentlet({
                     inode: '456',
                     contentType: 'testContentType',
-                    archived: false,
-                    baseType: 'CONTENT',
-                    folder: 'SYSTEM_FOLDER',
-                    hasTitleImage: false,
-                    host: 'demo.dotcms.com',
-                    hostName: 'demo.dotcms.com',
                     identifier: '456-789',
-                    languageId: 1,
-                    live: true,
-                    locked: false,
-                    modDate: new Date().toISOString(),
-                    modUser: 'admin',
-                    modUserName: 'Admin User',
-                    owner: 'admin',
-                    permissionId: '456',
-                    permissionType: 'CONTENT',
-                    title: 'Existing Content',
-                    working: true,
-                    URL_MAP_FOR_CONTENT: '/existing',
-                    sortOrder: 0,
-                    stInode: '456-stInode',
-                    structure: {
-                        name: 'Test Structure',
-                        inode: '456'
-                    },
-                    titleImage: '',
-                    url: '/existing-content'
-                };
+                    title: 'Existing Content'
+                });
 
                 dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
@@ -454,37 +404,12 @@ describe('DotEditContentSidebarComponent', () => {
                 const dotWorkflowService = spectator.inject(DotWorkflowService);
                 const dotEditContentService = spectator.inject(DotEditContentService);
 
-                const mockContentlet = {
+                const mockContentlet = createFakeContentlet({
                     inode: '789',
                     contentType: 'testContentType',
-                    archived: false,
-                    baseType: 'CONTENT',
-                    folder: 'SYSTEM_FOLDER',
-                    hasTitleImage: false,
-                    host: 'demo.dotcms.com',
-                    hostName: 'demo.dotcms.com',
                     identifier: '789-012',
-                    languageId: 1,
-                    live: true,
-                    locked: false,
-                    modDate: new Date().toISOString(),
-                    modUser: 'admin',
-                    modUserName: 'Admin User',
-                    owner: 'admin',
-                    permissionId: '789',
-                    permissionType: 'CONTENT',
-                    title: 'Reset Content',
-                    working: true,
-                    URL_MAP_FOR_CONTENT: '/reset',
-                    sortOrder: 0,
-                    stInode: '789-stInode',
-                    structure: {
-                        name: 'Test Structure',
-                        inode: '456'
-                    },
-                    titleImage: '',
-                    url: '/reset-content'
-                };
+                    title: 'Reset Content'
+                });
 
                 dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
                 dotContentTypeService.getContentTypeWithRender.mockReturnValue(
@@ -541,44 +466,17 @@ describe('DotEditContentSidebarComponent', () => {
 
     describe('Tabs Behavior', () => {
         beforeEach(fakeAsync(() => {
-            // Mock the services needed for initializeExistingContent
             const dotContentTypeService = spectator.inject(DotContentTypeService);
             const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
             const dotWorkflowService = spectator.inject(DotWorkflowService);
             const dotEditContentService = spectator.inject(DotEditContentService);
 
-            // Mock contentlet response with all required DotCMSContentlet properties
-            const mockContentlet = {
+            const mockContentlet = createFakeContentlet({
                 inode: '123',
                 contentType: 'testContentType',
-                archived: false,
-                baseType: 'CONTENT',
-                folder: 'SYSTEM_FOLDER',
-                hasTitleImage: false,
-                host: 'demo.dotcms.com',
-                hostName: 'demo.dotcms.com',
                 identifier: '123-456',
-                languageId: 1,
-                live: true,
-                locked: false,
-                modDate: new Date().toISOString(),
-                modUser: 'admin',
-                modUserName: 'Admin User',
-                owner: 'admin',
-                permissionId: '123',
-                permissionType: 'CONTENT',
-                title: 'Test Content',
-                working: true,
-                URL_MAP_FOR_CONTENT: '/test',
-                sortOrder: 0,
-                stInode: '123-stInode',
-                structure: {
-                    name: 'Test Structure',
-                    inode: '456'
-                },
-                titleImage: '',
-                url: '/test-content'
-            };
+                title: 'Test Content'
+            });
 
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
             dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -591,8 +489,10 @@ describe('DotEditContentSidebarComponent', () => {
                 of({ locked: false, canLock: true } as DotContentletCanLock)
             );
 
-            // Initialize existing content
-            store.initializeExistingContent('123');
+            store.initializeExistingContent({
+                inode: '123',
+                depth: DotContentletDepths.TWO
+            });
             tick();
             spectator.detectChanges();
         }));
