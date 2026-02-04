@@ -1,41 +1,43 @@
-<p-autoComplete
-    (completeMethod)="search($event)"
-    (keydown.enter)="onKeyEnter($event)"
-    (keydown.tab)="$event.preventDefault()"
-    (onClear)="onClear()"
-    (onSelect)="onSelect($event)"
-    [minLength]="2"
-    [ngModel]="val"
-    [suggestions]="suggestions$ | async"
-    [placeholder]="'page.selector.placeholder' | dm"
-    #autoComplete
-    inputStyleClass="w-full"
-    appendTo="body"
-    class="w-full"
-    data-testId="p-autoComplete"
-    field="label">
-    <ng-template let-item pTemplate="item">
-        <div class="flex max-w-[380px]">
-            @if (searchType === 'site') {
-                <span class="truncate text-left">{{ item.label }}</span>
-            } @else {
-                <span class="basis-1/2 truncate text-left">
-                    {{ item.payload.path }}
-                </span>
-                <span class="basis-1/2 truncate text-left pl-1">
-                    {{ item.payload.hostName }}
-                </span>
-            }
-        </div>
-    </ng-template>
-</p-autoComplete>
+<div class="relative">
+    <p-autoComplete
+        (completeMethod)="search($event)"
+        (keydown.enter)="onKeyEnter($event)"
+        (keydown.tab)="$event.preventDefault()"
+        (onClear)="onClear()"
+        (onSelect)="onSelect($event)"
+        [minLength]="2"
+        [ngModel]="val"
+        [suggestions]="suggestions$ | async"
+        [placeholder]="'page.selector.placeholder' | dm"
+        #autoComplete
+        inputStyleClass="w-full"
+        appendTo="body"
+        class="w-full"
+        data-testId="p-autoComplete"
+        field="label">
+        <ng-template let-item pTemplate="item">
+            <div class="flex max-w-95">
+                @if (searchType === 'site') {
+                    <span class="truncate text-left">{{ item.label }}</span>
+                } @else {
+                    <span class="basis-1/2 truncate text-left">
+                        {{ item.payload.path }}
+                    </span>
+                    <span class="basis-1/2 truncate text-left pl-1">
+                        {{ item.payload.hostName }}
+                    </span>
+                }
+            </div>
+        </ng-template>
+    </p-autoComplete>
+    <dot-field-helper
+        class="absolute top-1 right-1"
+        [message]="
+            (folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm
+        "></dot-field-helper>
+</div>
 <small
     class="block mt-1"
     [class]="isError ? 'p-invalid' : 'p-info'"
     [textContent]="message"
     data-testId="message"></small>
-<dot-field-helper
-    class="absolute top-0 right-0"
-    [message]="
-        (folderSearch ? 'page.selector.folder.hint' : 'page.selector.hint') | dm
-    "></dot-field-helper>
