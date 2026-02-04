@@ -28,7 +28,7 @@
             </div>
 
             @if ($dialogActions() && $stepsVisible()) {
-                <footer class="dot-wizard__footer">
+                <footer class="dot-wizard__footer mt-5">
                     @if ($dialogActions().cancel) {
                         <button
                             (click)="$dialogActions().cancel?.action()"
