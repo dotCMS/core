@@ -95,14 +95,14 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(timelineChart).toExist();
         });
 
-        it('should render pie chart component', () => {
-            const deviceChart = spectator.query(byTestId('analytics-device-chart'));
-            expect(deviceChart).toExist();
+        it('should render pageview report when pageview tab is active', () => {
+            const pageviewReport = spectator.query('dot-analytics-dashboard-pageview-report');
+            expect(pageviewReport).toExist();
         });
 
-        it('should render table component', () => {
-            const table = spectator.query(byTestId('analytics-table'));
-            expect(table).toExist();
+        it('should render tab panels for each report type', () => {
+            const tabPanels = spectator.queryAll('p-tabpanel');
+            expect(tabPanels.length).toBeGreaterThanOrEqual(1);
         });
 
         it('should render filters component', () => {
