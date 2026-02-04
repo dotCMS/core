@@ -260,7 +260,7 @@ services:
 
   ch_server:
     container_name: ch_server
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:25.8
     ports:
       - "${CH_HOST_PORT:-8124}:8123"
     ulimits:
