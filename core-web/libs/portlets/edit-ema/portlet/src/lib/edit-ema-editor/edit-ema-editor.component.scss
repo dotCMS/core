@@ -75,6 +75,14 @@ dot-results-seo-tool {
     &.open {
         width: 25rem;
     }
+
+    ::ng-deep {
+        .p-tabview-panels {
+            height: 100%;
+            flex: 1;
+            overflow: hidden;
+        }
+    }
 }
 
 .canvas-viewport {

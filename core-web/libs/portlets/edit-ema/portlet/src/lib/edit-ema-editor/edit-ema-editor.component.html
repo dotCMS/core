@@ -196,7 +196,7 @@
 
 @if (uveStore.$mode() === UVE_MODE.EDIT) {
     <div class="right-sidebar-wrapper" [class.open]="$rightSidebarOpen">
-        <p-tabView [activeIndex]="$rightSidebarActiveTab()" (onChange)="handleRightSidebarTabChange($event)">
+        <p-tabView styleClass="flex flex-column w-full h-full" [activeIndex]="$rightSidebarActiveTab()" (onChange)="handleRightSidebarTabChange($event)">
             <p-tabPanel>
                 <ng-template pTemplate="header">
                     <div class="tab-header" pTooltip="Content Editor" tooltipPosition="bottom">
@@ -224,17 +224,7 @@
                             @if ($styleSchema()) {
                                 <dot-uve-style-editor-form [schema]="$styleSchema()" />
                             } @else {
-                                <span>No styles to show yet.</span>
-                                <span>
-                                    <strong>Select a contentlet</strong>
-                                    to begin styling.
-                                    <a
-                                        href="https://dev.dotcms.com/docs/style-editor"
-                                        target="_blank"
-                                        rel="noopener">
-                                        Learn more
-                                    </a>
-                                </span>
+                                <dot-uve-style-editor-empty-state />
                             }
                         </div>
                     }

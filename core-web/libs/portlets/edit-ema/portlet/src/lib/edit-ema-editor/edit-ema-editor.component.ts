@@ -1,3 +1,4 @@
+import { patchState, signalState } from '@ngrx/signals';
 import { EMPTY, Observable, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
@@ -22,7 +23,6 @@ import {
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { patchState, signalState } from '@ngrx/signals';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -116,6 +116,7 @@ import {
     insertContentletInContainer,
     shouldNavigate
 } from '../utils';
+import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 
 // Message keys constants
 const MESSAGE_KEY = {
@@ -149,6 +150,7 @@ const MESSAGE_KEY = {
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
         DotUveContentletQuickEditComponent,
+        DotUveStyleEditorEmptyStateComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
         DotUveStyleEditorFormComponent,
@@ -162,7 +164,7 @@ const MESSAGE_KEY = {
         ClipboardModule,
         OverlayPanelModule,
         TooltipModule,
-        DotMessagePipe
+        DotMessagePipe,
     ],
     providers: [
         DotPaletteListStore,
@@ -470,6 +472,21 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.iframeMessenger.requestBounds();
     });
 
+    /**
+     * Reset activeContentlet when page is unlocked
+     *
+     * Business Rule: When a page is unlocked (isLocked === false), any active contentlet
+     * selection should be cleared to prevent editing conflicts.
+     */
+    readonly $resetActiveContentletOnUnlockEffect = effect(() => {
+        const toggleLockOptions = this.$toggleLockOptions();
+        const activeContentlet = this.uveStore.editor.activeContentlet();
+
+        // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
+        if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
+            this.uveStore.resetActiveContentlet();
+        }
+    });
 
     /**
      * Handle right sidebar tab changes
