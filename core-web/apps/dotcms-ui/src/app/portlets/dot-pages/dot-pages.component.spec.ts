@@ -1,6 +1,6 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockComponent, MockProvider } from 'ng-mocks';
-import { Subject, of } from 'rxjs';
+import { MockComponent, MockInstance, MockProvider } from 'ng-mocks';
+import { of, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
@@ -22,7 +22,7 @@ import { DotAddToBundleComponent } from '@dotcms/ui';
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
 import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.component';
-import { DotPagesComponent, DotActionsMenuEventParams } from './dot-pages.component';
+import { DotActionsMenuEventParams, DotPagesComponent } from './dot-pages.component';
 import { DotPageActionsService } from './services/dot-page-actions.service';
 import { DotCMSPagesStore } from './store/store';
 
@@ -102,7 +102,14 @@ describe('DotPagesComponent', () => {
         detectChanges: false
     });
 
+    MockInstance.scope();
+
     beforeEach(() => {
+        // MockComponent(DotPagesTableComponent) uses viewChild(signal); provide contextMenu so the mock instance has a valid signal (ng-mocks #8634).
+        MockInstance(DotPagesTableComponent, () => ({
+            contextMenu: signal(undefined)
+        }));
+
         // Replace heavy child components with mocks/stubs.
         TestBed.overrideComponent(DotPagesComponent, {
             set: {
