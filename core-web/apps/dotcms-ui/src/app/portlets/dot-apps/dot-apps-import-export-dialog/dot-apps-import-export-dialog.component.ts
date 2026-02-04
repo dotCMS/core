@@ -22,7 +22,6 @@ import { DotAppsImportExportDialogStore } from './store/dot-apps-import-export-d
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
-    styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
     imports: [
         ReactiveFormsModule,
         DialogModule,
@@ -50,6 +49,7 @@ export class DotAppsImportExportDialogComponent {
     form: UntypedFormGroup = this.#fb.group({});
     dialogActions: DotDialogActions;
     #selectedFile: File | null = null;
+    #formValueChangesSubscription?: ReturnType<typeof this.form.valueChanges.subscribe>;
 
     // Effect to react to action changes to setup the form
     actionsEffect = effect(() => {
@@ -90,6 +90,9 @@ export class DotAppsImportExportDialogComponent {
      * Sets dialog form based on action Import/Export
      */
     private setDialogForm(action: dialogAction): void {
+        // Unsubscribe from previous form value changes
+        this.#formValueChangesSubscription?.unsubscribe();
+
         if (action === dialogAction.EXPORT) {
             this.form = this.#fb.group({
                 password: new UntypedFormControl('', Validators.required)
@@ -103,7 +106,7 @@ export class DotAppsImportExportDialogComponent {
             this.setImportDialogActions();
         }
 
-        this.form.valueChanges.subscribe(() => {
+        this.#formValueChangesSubscription = this.form.valueChanges.subscribe(() => {
             this.dialogActions = {
                 ...this.dialogActions,
                 accept: {
