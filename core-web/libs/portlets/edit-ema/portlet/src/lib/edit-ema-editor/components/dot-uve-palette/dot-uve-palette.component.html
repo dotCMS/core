@@ -46,17 +46,7 @@
                         @if ($styleSchema()) {
                             <dot-uve-style-editor-form [schema]="$styleSchema()" />
                         } @else {
-                            <span>No styles to show yet.</span>
-                            <span>
-                                <strong>Select a contentlet</strong>
-                                to begin styling.
-                                <a
-                                    href="https://dev.dotcms.com/docs/style-editor"
-                                    target="_blank"
-                                    rel="noopener">
-                                    Learn more
-                                </a>
-                            </span>
+                            <dot-uve-style-editor-empty-state />
                         }
                     </div>
                 }

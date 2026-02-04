@@ -5,6 +5,7 @@ import {
     createRoutingFactory,
     mockProvider
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
@@ -58,7 +59,12 @@ import {
     DotcmsEventsService,
     LoginService
 } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
+    DotCMSTempFile,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -1014,6 +1020,136 @@ describe('EditEmaEditorComponent', () => {
                         expect(savePageSpy).toHaveBeenCalled();
                         expect(resetActiveContentletSpy).not.toHaveBeenCalled();
                     });
+                });
+            });
+
+            describe('resetActiveContentletOnUnlock', () => {
+                let resetActiveContentletSpy: jest.SpyInstance;
+
+                beforeEach(() => {
+                    resetActiveContentletSpy = jest.spyOn(store, 'resetActiveContentlet');
+
+                    // Enable the toggle lock feature flag by patching store flags directly
+                    // Since flags are loaded in onInit, we patch them after store initialization
+                    const currentFlags = store.flags();
+                    patchState(store, {
+                        flags: {
+                            ...currentFlags,
+                            [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: true
+                        }
+                    });
+                    spectator.detectChanges();
+                });
+
+                afterEach(() => {
+                    resetActiveContentletSpy.mockClear();
+                });
+
+                it('should reset activeContentlet when page is unlocked', () => {
+                    const activeContentlet: ActionPayload = {
+                        pageId: '123',
+                        language_id: '1',
+                        container: {
+                            identifier: 'container-1',
+                            uuid: 'uuid-1',
+                            acceptTypes: 'test',
+                            maxContentlets: 1,
+                            contentletsId: ['contentlet-1']
+                        },
+                        pageContainers: [
+                            {
+                                identifier: 'container-1',
+                                uuid: 'uuid-1',
+                                contentletsId: ['contentlet-1']
+                            }
+                        ],
+                        contentlet: {
+                            identifier: 'contentlet-1',
+                            inode: 'inode-1',
+                            title: 'Test Contentlet',
+                            contentType: 'test'
+                        }
+                    };
+
+                    // First, ensure page starts in locked state
+                    const initialResponse = store.pageAPIResponse();
+                    store.updatePageResponse({
+                        ...initialResponse,
+                        page: {
+                            ...initialResponse.page,
+                            locked: true,
+                            lockedBy: 'current-user',
+                            lockedByName: 'Current User'
+                        }
+                    });
+                    spectator.detectChanges();
+
+                    // Set active contentlet AFTER page is locked
+                    store.setActiveContentlet(activeContentlet);
+                    spectator.detectChanges();
+
+                    // Verify activeContentlet is set
+                    expect(store.activeContentlet()).toEqual(activeContentlet);
+                    expect(resetActiveContentletSpy).not.toHaveBeenCalled();
+
+                    // Verify toggleLockOptions has a value (feature flag enabled)
+                    expect(store.$toggleLockOptions()).not.toBeNull();
+                    expect(store.$toggleLockOptions()?.isLocked).toBe(true);
+
+                    // Unlock the page (this should trigger the effect)
+                    const lockedResponse = store.pageAPIResponse();
+                    store.updatePageResponse({
+                        ...lockedResponse,
+                        page: {
+                            ...lockedResponse.page,
+                            locked: false,
+                            lockedBy: '',
+                            lockedByName: ''
+                        }
+                    });
+                    // Call detectChanges multiple times to ensure effect runs
+                    spectator.detectChanges();
+                    spectator.detectChanges();
+
+                    // Verify resetActiveContentlet was called when unlocked
+                    expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
+                    expect(store.activeContentlet()).toBeNull();
+                });
+
+                it('should not reset activeContentlet when page is unlocked but no activeContentlet exists', () => {
+                    // Don't set activeContentlet
+                    expect(store.activeContentlet()).toBeNull();
+
+                    // Set page as locked first
+                    const currentResponse = store.pageAPIResponse();
+                    store.updatePageResponse({
+                        ...currentResponse,
+                        page: {
+                            ...currentResponse.page,
+                            locked: true,
+                            lockedBy: 'current-user',
+                            lockedByName: 'Current User'
+                        }
+                    });
+                    spectator.detectChanges();
+
+                    // Unlock the page
+                    const lockedResponse = store.pageAPIResponse();
+                    store.updatePageResponse({
+                        ...lockedResponse,
+                        page: {
+                            ...lockedResponse.page,
+                            locked: false,
+                            lockedBy: '',
+                            lockedByName: ''
+                        }
+                    });
+                    // Call detectChanges multiple times to ensure effect runs
+                    spectator.detectChanges();
+                    spectator.detectChanges();
+
+                    // Verify resetActiveContentlet was not called (no activeContentlet to reset)
+                    expect(resetActiveContentletSpy).not.toHaveBeenCalled();
                 });
             });
 

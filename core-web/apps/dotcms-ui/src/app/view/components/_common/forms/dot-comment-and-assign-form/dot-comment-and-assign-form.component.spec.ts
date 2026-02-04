@@ -11,7 +11,7 @@ import { By } from '@angular/platform-browser';
 import { Select, SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
-import { DotRolesService, DotFormatDateService } from '@dotcms/data-access';
+import { DotFormatDateService, DotRolesService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
@@ -83,6 +83,16 @@ describe('DotAssigneeFormComponent', () => {
             { label: mockProcessedRoles[1].name, value: mockProcessedRoles[1].id }
         ]);
         expect(textArea).toBeNull();
+    });
+
+    it('should enable filter on role dropdown when assignable', () => {
+        component.data = { assignable: true, roleId: '123', roleHierarchy: false };
+        fixture.detectChanges();
+        dropdown = fixture.debugElement.query(By.css('p-dropdown')).componentInstance;
+
+        expect(dropdown.filter).toBe(true);
+        expect(dropdown.filterBy).toBe('label');
+        expect(dropdown.filterPlaceholder).toBeDefined();
     });
 
     describe('both fields', () => {
