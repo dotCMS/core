@@ -27,7 +27,8 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-analytics-dashboard-metrics.component.html',
-    animations: [fadeInContent]
+    animations: [fadeInContent],
+    host: { class: 'block w-full' }
 })
 export class DotAnalyticsDashboardMetricsComponent {
     // Inputs
@@ -68,7 +69,9 @@ export class DotAnalyticsDashboardMetricsComponent {
             value: trend,
             isPositive,
             prefix: isPositive ? '+' : '',
-            class: isPositive ? 'metric-trend--positive' : 'metric-trend--negative'
+            class: isPositive
+                ? 'inline-flex items-center gap-1 text-base text-green-600'
+                : 'inline-flex items-center gap-1 text-base text-red-600'
         };
     });
 

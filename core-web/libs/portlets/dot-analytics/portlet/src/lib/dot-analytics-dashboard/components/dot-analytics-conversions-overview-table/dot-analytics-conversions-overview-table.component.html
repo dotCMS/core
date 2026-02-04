@@ -12,7 +12,7 @@
 
     @if (isLoading) {
         <!-- Loading State -->
-        <div class="flex flex-column gap-3 p-4" data-testid="conversions-overview-loading">
+        <div class="flex flex-col gap-3 p-4" data-testid="conversions-overview-loading">
             @for (i of [1, 2, 3]; track i) {
                 <div class="flex gap-3">
                     <div class="flex-1 h-6 bg-gray-200 rounded"></div>

@@ -13,18 +13,16 @@
 <!-- Header template to avoid repetition -->
 <ng-template #metricHeader>
     <div class="flex justify-between items-start">
-        <h3
-            class="text-sm text-gray-600 uppercase font-semibold tracking-wide m-0"
-            data-testid="metric-title">
+        <h3 class="text-sm text-gray-600 tracking-wide m-0" data-testid="metric-title">
             {{ metricName | dm }}
         </h3>
         @if (hasIcon) {
-            <i [class]="iconClasses" class="pi icon-md shrink-0" data-testid="metric-icon"></i>
+            <i [class]="iconClasses" class="pi text-base shrink-0" data-testid="metric-icon"></i>
         }
     </div>
 </ng-template>
 
-<p-card class="h-full border-gray-400 border rounded-xl" data-testid="metric-card">
+<p-card class="h-full p-4 border border-gray-400 rounded-xl" data-testid="metric-card">
     @if (isErrorState) {
         <!-- Error state -->
         <div class="flex flex-col justify-between h-full gap-4">
@@ -53,19 +51,19 @@
         </div>
     } @else if (isLoadingState) {
         <!-- Loading state with skeleton -->
-        <div class="flex flex-column justify-content-between h-full gap-2">
+        <div class="flex flex-col justify-between h-full gap-2">
             <!-- Header with title and icon skeletons -->
-            <div class="flex align-items-start" [@fadeInContent]>
-                <p-skeleton width="8rem" height="1rem" styleClass="flex-grow-1" />
+            <div class="flex items-start" [@fadeInContent]>
+                <p-skeleton width="8rem" height="1rem" styleClass="" />
                 <p-skeleton
                     width="1.5rem"
                     height="1.5rem"
                     shape="circle"
-                    styleClass="flex-shrink-0 ml-auto" />
+                    styleClass="shrink-0 ml-auto" />
             </div>
 
             <!-- Skeleton content -->
-            <div class="flex flex-column gap-1" [@fadeInContent]>
+            <div class="flex flex-col gap-1" [@fadeInContent]>
                 <!-- Skeleton value -->
                 <p-skeleton width="5rem" height="2rem" />
                 <!-- Skeleton subtitle/trend -->
@@ -74,17 +72,19 @@
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
-        <div class="flex flex-column justify-content-between h-full gap-2">
+        <div class="flex flex-col justify-between h-full gap-2">
             <!-- Header with title and icon -->
             <ng-container [ngTemplateOutlet]="metricHeader" />
 
             @let animated = $animated();
             @let duration = $animationDuration();
-            <div class="flex flex-column gap-1" [@fadeInContent]>
+            <div class="flex flex-col gap-1" [@fadeInContent]>
                 @if ($isFraction()) {
                     @let fractionParts = $fractionParts();
-                    <div class="metric-value metric-value--fraction" data-testid="metric-value">
-                        <span class="metric-value__numerator">
+                    <div
+                        class="flex items-baseline gap-0 text-3xl font-bold text-gray-900 m-0 leading-tight"
+                        data-testid="metric-value">
+                        <span class="text-3xl font-bold text-gray-900">
                             @if (fractionParts && animated) {
                                 <span
                                     [dotCountUp]="fractionParts.numeratorValue"
@@ -93,8 +93,8 @@
                                 {{ fractionParts?.numerator }}
                             }
                         </span>
-                        <span class="metric-value__separator">/</span>
-                        <span class="metric-value__denominator">
+                        <span class="text-3xl font-bold text-gray-900">/</span>
+                        <span class="text-2xl font-bold text-gray-600">
                             @if (fractionParts && animated) {
                                 <span
                                     [dotCountUp]="fractionParts.denominatorValue"
@@ -106,7 +106,9 @@
                     </div>
                 } @else {
                     @let numericVal = $numericValue();
-                    <div class="metric-value" data-testid="metric-value">
+                    <div
+                        class="text-3xl font-bold text-gray-900 m-0 leading-tight"
+                        data-testid="metric-value">
                         @if (numericVal !== null && animated) {
                             <span
                                 [dotCountUp]="numericVal.value"
@@ -122,11 +124,15 @@
 
             <!-- Subtítulo -->
             @if (hasSubtitle || trendData) {
-                <div class="metric-subtitle" data-testid="metric-subtitle" [@fadeInContent]>
+                <div
+                    class="text-base text-gray-600 m-0"
+                    data-testid="metric-subtitle"
+                    [@fadeInContent]>
                     @if (trendData) {
                         <span [class]="trendData.class">
                             {{ trendData.prefix }}{{ trendData.value }}%
                             <i
+                                class="text-sm"
                                 [class]="
                                     trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
                                 "></i>
@@ -136,7 +142,9 @@
                 </div>
             }
             <!-- Projected content -->
-            <div class="metric-projected-content" data-testid="metric-projected-content">
+            <div
+                class="flex flex-col flex-1 w-full mt-2 empty:hidden"
+                data-testid="metric-projected-content">
                 <ng-content />
             </div>
         </div>

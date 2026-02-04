@@ -36,7 +36,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
     });
 
     it('should render the message element', () => {
-        const messageElement = spectator.query('.text-base.text-gray-800');
+        const messageElement = spectator.query('.text-sm.text-gray-600');
 
         expect(messageElement).toBeTruthy();
         expect(messageElement).toBeVisible();
@@ -74,7 +74,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
     it('should have correct component structure', () => {
         const container = spectator.query('.flex.flex-col.justify-center');
         const iconElement = spectator.query('i');
-        const messageElement = spectator.query('.text-base.text-gray-800');
+        const messageElement = spectator.query('.text-sm.text-gray-600');
 
         expect(container).toBeTruthy();
         expect(iconElement).toBeTruthy();

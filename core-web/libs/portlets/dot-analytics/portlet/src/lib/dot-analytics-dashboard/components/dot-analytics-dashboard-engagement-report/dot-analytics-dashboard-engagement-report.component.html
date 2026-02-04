@@ -1,10 +1,10 @@
-<div class="engagement-dashboard flex flex-column gap-2">
+<div class="flex flex-col gap-3">
     @let kpis = $kpis();
     @let status = $status();
 
     <!-- Row 1: Engagement Rate + Trend Chart -->
-    <div class="engagement-dashboard__top-row grid align-items-stretch">
-        <div class="col-12 lg:col-4">
+    <div class="flex gap-3 max-lg:flex-col">
+        <div class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full">
             <dot-analytics-dashboard-metrics
                 class="h-full"
                 [name]="'analytics.engagement.metrics.engagement-rate'"
@@ -13,14 +13,15 @@
                 "
                 [trend]="kpis?.engagementRate?.trend ?? 0"
                 [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
-                [status]="status">
+                [status]="status"
+                data-testid="analytics-metric-card">
                 <dot-analytics-sparkline
                     [data]="kpis?.engagementRate?.sparklineData ?? []"
                     [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
                     valueSuffix="%"
                     [status]="$status()" />
                 @if ($isLoaded()) {
-                    <div class="flex justify-content-center mt-auto">
+                    <div class="flex justify-center mt-auto">
                         <button
                             pButton
                             type="button"
@@ -32,56 +33,58 @@
             </dot-analytics-dashboard-metrics>
         </div>
 
-        <div class="col-12 lg:col-8">
+        <div class="flex-[2] min-w-0 max-lg:w-full">
             <dot-analytics-dashboard-chart
                 class="h-full"
                 [title]="'analytics.engagement.charts.trend.title' | dm"
                 [type]="'bar'"
                 [data]="$trend()!"
                 [status]="status"
-                height="13rem" />
+                height="13rem"
+                data-testid="analytics-trend-chart" />
         </div>
     </div>
 
     <!-- Row 2: Three metrics -->
-    <div class="engagement-dashboard__metrics-row grid">
-        <div class="col-12 md:col-4">
-            <dot-analytics-dashboard-metrics
-                [name]="'analytics.engagement.metrics.avg-interactions'"
-                [value]="kpis?.avgInteractions?.value ?? ''"
-                [trend]="kpis?.avgInteractions?.trend ?? 0"
-                icon="pi-bullseye"
-                [status]="status" />
-        </div>
-        <div class="col-12 md:col-4">
-            <dot-analytics-dashboard-metrics
-                [name]="'analytics.engagement.metrics.avg-session-time'"
-                [value]="kpis?.avgSessionTime?.value ?? ''"
-                [trend]="kpis?.avgSessionTime?.trend ?? 0"
-                icon="pi-clock"
-                [status]="status" />
-        </div>
-        <div class="col-12 md:col-4">
-            <dot-analytics-dashboard-metrics
-                [name]="'analytics.engagement.metrics.total-sessions'"
-                [value]="kpis?.conversionRate?.value ?? ''"
-                [trend]="kpis?.conversionRate?.trend ?? 0"
-                icon="pi-bullseye"
-                [status]="status" />
-        </div>
+    <div class="flex gap-3 flex-wrap max-lg:flex-col">
+        <dot-analytics-dashboard-metrics
+            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full"
+            [name]="'analytics.engagement.metrics.avg-interactions'"
+            [value]="kpis?.avgInteractions?.value ?? ''"
+            [trend]="kpis?.avgInteractions?.trend ?? 0"
+            icon="pi-bullseye"
+            [status]="status"
+            data-testid="analytics-metric-card" />
+        <dot-analytics-dashboard-metrics
+            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full"
+            [name]="'analytics.engagement.metrics.avg-session-time'"
+            [value]="kpis?.avgSessionTime?.value ?? ''"
+            [trend]="kpis?.avgSessionTime?.trend ?? 0"
+            icon="pi-clock"
+            [status]="status"
+            data-testid="analytics-metric-card" />
+        <dot-analytics-dashboard-metrics
+            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full"
+            [name]="'analytics.engagement.metrics.total-sessions'"
+            [value]="kpis?.conversionRate?.value ?? ''"
+            [trend]="kpis?.conversionRate?.trend ?? 0"
+            icon="pi-bullseye"
+            [status]="status"
+            data-testid="analytics-metric-card" />
     </div>
 
     <!-- Row 3: Breakdown Chart + Platform Analytics -->
     @defer (on viewport) {
-        <div class="engagement-dashboard__bottom-row grid">
-            <div class="col-12 lg:col-5">
+        <div class="flex gap-3 max-lg:flex-col align-items-stretch">
+            <div class="flex-[5] min-w-0 max-lg:w-full">
                 <dot-analytics-dashboard-chart
                     [title]="'analytics.engagement.charts.breakdown.title' | dm"
                     [type]="'doughnut'"
                     [data]="$breakdown()!"
-                    [status]="status" />
+                    [status]="status"
+                    data-testid="analytics-breakdown-chart" />
             </div>
-            <div class="col-12 lg:col-7">
+            <div class="flex-[7] min-w-0 max-lg:w-full">
                 <dot-analytics-platforms-table
                     class="h-full"
                     [platforms]="$platforms()"
