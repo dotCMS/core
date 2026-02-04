@@ -328,7 +328,10 @@
           return data.entity || null;
         }
       } catch (error) {
-        // Silently fail - template may have been deleted
+        console.warn("Failed to fetch template by ID, returning null. Template may have been deleted or an error occurred.", {
+          templateId,
+          error,
+        });
       }
       return null;
     }
