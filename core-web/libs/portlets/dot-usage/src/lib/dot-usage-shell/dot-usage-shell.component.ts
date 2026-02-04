@@ -85,10 +85,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
         });
     }
 
-    onRefresh(): void {
-        this.loadData();
-    }
-
     onRetry(): void {
         this.summary.set(null);
         this.error.set(null);
