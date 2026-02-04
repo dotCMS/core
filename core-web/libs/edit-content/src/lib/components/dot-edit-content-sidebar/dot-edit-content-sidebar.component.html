@@ -2,6 +2,7 @@
 @let contentType = $store.contentType();
 @let activeIndex = $store.activeSidebarTab();
 @let isNew = $store.isNew();
+@let isCopyingLocale = $store.isCopyingLocale();
 
 <!-- Information Component -->
 @let isLoadingInformation = $store.isLoadingInformation();
@@ -26,7 +27,7 @@
                 [title]="'edit.content.sidebar.general.title' | dm"
                 class="h-full">
                 <ng-template #sectionAction>
-                    @if (!isNew && !$store.isCopyingLocale()) {
+                    @if (!isNew && !isCopyingLocale) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
