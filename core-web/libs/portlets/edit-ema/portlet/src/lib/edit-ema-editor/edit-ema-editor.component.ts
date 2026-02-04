@@ -249,6 +249,22 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.iframeMessenger.requestBounds();
     });
 
+    /**
+     * Reset activeContentlet when page is unlocked
+     *
+     * Business Rule: When a page is unlocked (isLocked === false), any active contentlet
+     * selection should be cleared to prevent editing conflicts.
+     */
+    readonly $resetActiveContentletOnUnlockEffect = effect(() => {
+        const toggleLockOptions = this.$toggleLockOptions();
+        const activeContentlet = this.uveStore.activeContentlet();
+
+        // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
+        if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
+            this.uveStore.resetActiveContentlet();
+        }
+    });
+
     ngOnInit(): void {
         this.handleDragEvents();
 
