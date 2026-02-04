@@ -4,6 +4,7 @@ import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.business.SystemCache;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
@@ -51,6 +52,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
 import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
@@ -153,7 +155,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
         }
 
-        final PageCacheParameters cacheParameters = buildCacheParameters(langId, htmlPage);
+        final PageCacheParameters cacheParameters = buildCacheParameters(langId, htmlPage, null);
 
         String cachedPage = pageCache.get(htmlPage, cacheParameters);
         if (cachedPage != null) {
@@ -184,6 +186,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                     // if velocity has not changed the response status, we can cache it
                     if (response.getStatus() == startResponse) {
                         pageCache.add(htmlPage, byteArrayLocal.get().toString(StandardCharsets.UTF_8), cacheParameters);
+                        cleanOldCachedPages(langId, htmlPage, request);
                     }
                 }
             } else {
@@ -207,15 +210,36 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     }
 
+    /**
+     * Removes old versions of the Page from the cache to avoid unnecessary data storage
+     * @param langId   the language ID
+     * @param htmlPage the IHTMLPage
+     * @param request the HttpServletRequest
+     */
+    private void cleanOldCachedPages(long langId, IHTMLPage htmlPage, HttpServletRequest request) {
+        String lastCachedPageKey = buildCacheParameters(langId, htmlPage, "_LAST_").getKey();
+        SystemCache systemCache = CacheLocator.getSystemCache();
+
+        String lastContentletsKey = (String) systemCache.get(lastCachedPageKey);
+        if (StringUtils.isNotBlank(lastContentletsKey)) {
+            pageCache.remove(htmlPage, buildCacheParameters(langId, htmlPage, lastContentletsKey));
+        }
+
+        String requestContentletsKey = (String) request.getAttribute("contentletsKey");
+        if (StringUtils.isNotBlank(requestContentletsKey)) {
+            systemCache.put(lastCachedPageKey, requestContentletsKey);
+        }
+    }
 
     /**
      * Builds PageCacheParameters with all necessary cache keys for page caching.
      *
      * @param langId   the language ID
      * @param htmlPage the HTML page being served
+     * @param contentletsKey the contentletsKey
      * @return PageCacheParameters instance with all cache keys
      */
-    private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
+    private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage, final String contentletsKey) {
         String userId = (getUser() != null) ? getUser().getUserId() : "anonymous";
         String language = String.valueOf(langId);
         String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
@@ -226,24 +250,23 @@ public class VelocityLiveMode extends VelocityModeHandler {
         String persona = Try.of(() -> visitorAPI.getVisitor(request, false).get().getPersona().getKeyTag())
                 .getOrElse("");
 
-        final String pageUrl = Try.of(() -> htmlPage.getURI())
-                .getOrElse((String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI));
-
-
+        final String pageUrl = Try.of(htmlPage::getURI).getOrElse((String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI));
         Date modDate = htmlPage.getModDate() != null ? htmlPage.getModDate() : new Date(0);
+        String finalContentletsKey = StringUtils.isNotBlank(contentletsKey) ? contentletsKey : (String) request.getAttribute("contentletsKey");
 
         return new PageCacheParameters(
                 "pageUrl:" + pageUrl,
                 "site:" + htmlPage.getHost(),
                 "user:" + userId,
                 "lang:" + language,
-                "urlmap:" + urlMap,
+                "urlMap:" + urlMap,
                 "query:" + queryString,
                 "persona:" + persona,
                 "pageInode:" + htmlPage.getInode(),
                 "modDate:" + modDate.getTime(),
                 "vanity:" + vanityUrl,
-                "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
+                "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId(),
+                "contentletsKey:" + finalContentletsKey
         );
     }
 

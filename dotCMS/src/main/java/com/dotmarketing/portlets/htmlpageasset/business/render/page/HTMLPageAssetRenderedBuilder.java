@@ -192,6 +192,13 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
+            final int contentletsKey = containers.stream()
+                    .flatMap(container -> container.getContentlets().values().stream())
+                    .flatMap(Collection::stream)
+                    .map(Contentlet::getIdentifier)
+                    .collect(Collectors.joining(","))
+                    .hashCode();
+            request.setAttribute("contentletsKey", String.valueOf(contentletsKey));
             final String pageHTML = this.getPageHTML(mode);
 
             transformLegacyContainerUUIDs(layout);
