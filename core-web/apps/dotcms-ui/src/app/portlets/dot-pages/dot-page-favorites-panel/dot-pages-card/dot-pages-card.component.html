@@ -6,7 +6,7 @@
 <p-card
     class="cursor-pointer"
     [style]="{ width: '250px', overflow: 'hidden' }"
-    (click)="navigateToPage.emit(true)"
+    (click)="navigateToPage.emit(cardUrl)"
     data-testid="pageCard">
     <ng-template #header>
         @if (!cardImage) {

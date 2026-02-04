@@ -154,7 +154,7 @@ export class DotPagesComponent {
      */
     @HostListener('window:click')
     closeMenu(): void {
-        this.menu().hide();
+        this.menu()?.hide();
         this.menuItems.set([]);
     }
 
@@ -170,7 +170,6 @@ export class DotPagesComponent {
             this.closeMenu();
             return;
         }
-
         this.openMenu({ originalEvent, data });
     }
 
@@ -272,38 +271,23 @@ export class DotPagesComponent {
     }
 
     /**
-     * Opens the PrimeNG popup menu for a page row after loading its actions asynchronously.
-     *
-     * Why this helper exists:
-     * - `DotPageActionsService.getItems(...)` is async, so we can't always show the menu immediately.
-     * - PrimeNG `Menu.show(event)` positions the overlay using `event.currentTarget`.
-     *   After the original click handler completes, `currentTarget` can be lost (null),
-     *   causing the popup to render in the wrong place.
-     *
-     * What we do:
-     * - Capture the anchor element synchronously (`currentTarget`/`target`) before awaiting data.
-     * - Fetch menu items.
-     * - Show the menu using a synthetic event that reuses the captured anchor.
-     * - Then set the menu model (`menuItems`) so the first render already has content.
-     *
-     * Notes for feature devs:
-     * - If/when we introduce an endpoint that returns pages with actions precomputed,
-     *   this can be simplified to a synchronous menu open (no subscription required).
+     * Opens the PrimeNG popup menu for a page row (three-dots button click).
+     * Positions at the button using anchor; menu items are loaded asynchronously.
      *
      * @param event Menu trigger payload containing the original mouse event and the page contentlet.
      */
     private openMenu({ originalEvent, data }: DotActionsMenuEventParams): void {
-        // Capture the anchor element now—after the async call resolves, `currentTarget` may be null,
-        // and PrimeNG uses it to position the popup menu.
         const anchor = originalEvent.currentTarget || originalEvent.target;
+        const { clientX, clientY } = originalEvent;
         this.#dotPageActionsService
             .getItems(data)
             .pipe(take(1))
             .subscribe((actions) => {
-                // Show with a stable anchor so the popup is positioned correctly.
-                this.menu().show({
+                this.menu()?.show({
                     currentTarget: anchor,
-                    target: anchor
+                    target: anchor,
+                    clientX,
+                    clientY
                 } as unknown as MouseEvent);
                 this.menuItems.set(actions);
             });

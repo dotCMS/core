@@ -1,18 +1,32 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { DOCUMENT, CommonModule } from '@angular/common';
+import {
+    afterNextRender,
+    ChangeDetectorRef,
+    Component,
+    computed,
+    DestroyRef,
+    HostListener,
+    inject,
+    Injector,
+    input,
+    output,
+    signal,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-import { LazyLoadEvent } from 'primeng/api';
+import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSystemLanguage } from '@dotcms/dotcms-models';
@@ -24,6 +38,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotActionsMenuEventParams } from '../dot-pages.component';
+import { DotPageActionsService } from '../services/dot-page-actions.service';
 
 type LanguageOption = {
     label: string;
@@ -42,6 +57,7 @@ type TableRowSelectEvent<T> = {
         ButtonModule,
         CheckboxModule,
         CommonModule,
+        ContextMenuModule,
         DotAutofocusDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
@@ -56,6 +72,26 @@ type TableRowSelectEvent<T> = {
 })
 export class DotPagesTableComponent {
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotPageActionsService = inject(DotPageActionsService);
+    readonly #cdr = inject(ChangeDetectorRef);
+    readonly #document = inject(DOCUMENT);
+    readonly #destroyRef = inject(DestroyRef);
+
+    readonly contextMenu = viewChild<ContextMenu>('contextMenu');
+    readonly contextMenuItems = signal<MenuItem[]>([]);
+
+    /** Hide context menu when the user scrolls (window or any scrollable container). */
+    @HostListener('window:scroll')
+    protected onScroll(): void {
+        this.#hideContextMenuOnScroll();
+    }
+
+    #hideContextMenuOnScroll(): void {
+        if (this.contextMenu()?.visible) {
+            this.contextMenu()?.hide();
+            requestAnimationFrame(() => this.contextMenuItems.set([]));
+        }
+    }
 
     /** The pages to display. */
     readonly $pages = input.required<DotCMSContentlet[]>({ alias: 'pages' });
@@ -129,13 +165,18 @@ export class DotPagesTableComponent {
         draft: this.#dotMessageService.get('Draft')
     };
 
-    /**
-     * Wires up reactive filters:
-     * - Search is debounced (300ms) before emitting `search`
-     * - Language emits immediately via `languageChange`
-     * - Archived emits immediately via `archivedChange`
-     */
     constructor() {
+        afterNextRender(
+            () => {
+                const handler = () => this.#hideContextMenuOnScroll();
+                this.#document.addEventListener('scroll', handler, true);
+                this.#destroyRef.onDestroy(() => {
+                    this.#document.removeEventListener('scroll', handler, true);
+                });
+            },
+            { injector: inject(Injector) }
+        );
+
         this.searchControl.valueChanges
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
             .subscribe((keyword) => this.search.emit(keyword));
@@ -183,7 +224,7 @@ export class DotPagesTableComponent {
     }
 
     /**
-     * Handle open menu
+     * Handle open menu (e.g. click on three-dots button).
      *
      * @param {MouseEvent} originalEvent
      * @param {DotCMSContentlet} data
@@ -192,5 +233,26 @@ export class DotPagesTableComponent {
     protected handleOpenMenu(originalEvent: MouseEvent, data: DotCMSContentlet): void {
         originalEvent.stopPropagation();
         this.openMenu.emit({ originalEvent, data });
+    }
+
+    /**
+     * Handle right-click on row: prevent browser context menu, load actions, and show
+     * p-contextmenu at cursor (same component as table, so ref and model are in sync).
+     *
+     * @param {MouseEvent} event
+     * @param {DotCMSContentlet} data
+     * @memberof DotPagesTableComponent
+     */
+    protected handleContextMenu(event: MouseEvent, data: DotCMSContentlet): void {
+        event.preventDefault();
+        event.stopPropagation();
+        this.#dotPageActionsService
+            .getItems(data)
+            .pipe(take(1))
+            .subscribe((actions) => {
+                this.contextMenuItems.set(actions);
+                this.#cdr.detectChanges();
+                this.contextMenu()?.show(event);
+            });
     }
 }
