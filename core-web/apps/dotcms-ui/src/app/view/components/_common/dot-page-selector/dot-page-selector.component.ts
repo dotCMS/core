@@ -67,7 +67,10 @@ enum SearchType {
         DotDirectivesModule,
         DotFieldHelperComponent,
         DotMessagePipe
-    ]
+    ],
+    host: {
+        class: 'relative'
+    }
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
     private dotPageSelectorService = inject(DotPageSelectorService);

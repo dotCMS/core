@@ -12,9 +12,6 @@
         #formEl="ngForm"
         novalidate>
         <div class="field">
-            <label for="addBundleDropdown">
-                {{ 'contenttypes.content.add_to_bundle.label' | dm }}
-            </label>
             <p-select
                 id="addBundleDropdown"
                 [options]="bundle$ | async"
