@@ -318,6 +318,22 @@
     // UTILS END
   
     /**
+     * Fetches a single template by ID (used when selected template is not in first page)
+     */
+    async function fetchTemplateById(templateId) {
+      try {
+        const response = await fetch(`/api/v1/templates/${templateId}/working`);
+        if (response.ok) {
+          const data = await response.json();
+          return data.entity || null;
+        }
+      } catch (error) {
+        // Silently fail - template may have been deleted
+      }
+      return null;
+    }
+
+    /**
      * Fetches the template image from the server
      */
     async function fetchTemplateImage(templateId) {
@@ -409,22 +425,22 @@
     /**
      * Callback function to handle the template fetch
      */
-    const onTemplateFetchComplete = function (
+    const onTemplateFetchComplete = async function (
       templates,
       templateField,
       selectedTemplate,
     ) {
       const templateId = templateField.getValue() || "";
       const isTemplateValid = templateId && templateId !== ALL_SITES_IDENTIFIER;
-  
+
       if (!templates || templates.length === 0) {
         // If no templates, show "All Sites" as placeholder
         updateSelectButton(null);
         return;
       }
-  
+
       let template = selectedTemplate;
-  
+
       if (!template) {
         const { mapById, mapByName } = getTemplatesMaps(templates);
         const normalizedName = defaultTemplateName
@@ -434,13 +450,19 @@
           ? mapById[templateId]
           : mapByName[normalizedName]; // [cite: 18]
       }
-  
+
+      // When selected template is not in first page (e.g. user chose from page 2 and came back),
+      // fetch it by ID so the correct option is displayed
+      if (!template && isTemplateValid) {
+        template = await fetchTemplateById(templateId);
+      }
+
       if (!template) {
         // If no template found, show "All Sites" as placeholder
         updateSelectButton(null);
         return;
       }
-  
+
       const { identifier, fullTitle } = template;
       // We set the values directly into the components
       const currentTemplateIdElement = getElement("currentTemplateId");
@@ -940,7 +962,7 @@
             );
           }
   
-          onTemplateFetchComplete(
+          await onTemplateFetchComplete(
             result.templates,
             templateField,
             selectedTemplate,

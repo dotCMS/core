@@ -31,7 +31,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotContentletCanLock } from '@dotcms/dotcms-models';
+import { DotContentletCanLock, DotContentletDepths } from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-content-sidebar-activities/dot-edit-content-sidebar-activities.component';
@@ -258,6 +258,263 @@ describe('DotEditContentSidebarComponent', () => {
         it('should render locales section with data-testId when on info tab', () => {
             const localesElement = spectator.query(byTestId('locales'));
             expect(localesElement).toBeTruthy();
+        });
+    });
+
+    describe('Permissions Tab Visibility', () => {
+        describe('when content is new (isNew = true)', () => {
+            it('should NOT render the permissions tab', () => {
+                expect(store.isNew()).toBe(true);
+                const permissionsElement = spectator.query(byTestId('permissions'));
+                expect(permissionsElement).toBeFalsy();
+            });
+
+            it('should NOT include permissions tab in the tab list', () => {
+                const tabView = spectator.query(byTestId('sidebar-tabs'));
+                const tabs = tabView.querySelectorAll('[role="tab"]');
+                expect(tabs.length).toBe(3);
+            });
+
+            it('should NOT render DotEditContentSidebarPermissionsComponent', () => {
+                const permissionsComponent = spectator.query(
+                    DotEditContentSidebarPermissionsComponent
+                );
+                expect(permissionsComponent).toBeFalsy();
+            });
+        });
+
+        describe('when content is in edit mode (isNew = false)', () => {
+            beforeEach(fakeAsync(() => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+                const dotWorkflowService = spectator.inject(DotWorkflowService);
+                const dotEditContentService = spectator.inject(DotEditContentService);
+
+                const mockContentlet = {
+                    inode: '123',
+                    contentType: 'testContentType',
+                    archived: false,
+                    baseType: 'CONTENT',
+                    folder: 'SYSTEM_FOLDER',
+                    hasTitleImage: false,
+                    host: 'demo.dotcms.com',
+                    hostName: 'demo.dotcms.com',
+                    identifier: '123-456',
+                    languageId: 1,
+                    live: true,
+                    locked: false,
+                    modDate: new Date().toISOString(),
+                    modUser: 'admin',
+                    modUserName: 'Admin User',
+                    owner: 'admin',
+                    permissionId: '123',
+                    permissionType: 'CONTENT',
+                    title: 'Test Content',
+                    working: true,
+                    URL_MAP_FOR_CONTENT: '/test',
+                    sortOrder: 0,
+                    stInode: '123-stInode',
+                    structure: {
+                        name: 'Test Structure',
+                        inode: '456'
+                    },
+                    titleImage: '',
+                    url: '/test-content'
+                };
+
+                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ locked: false, canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: '123',
+                    depth: DotContentletDepths.TWO
+                });
+                tick();
+                spectator.detectChanges();
+            }));
+
+            it('should render the permissions tab', fakeAsync(() => {
+                expect(store.isNew()).toBe(false);
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                const permissionsElement = spectator.query(byTestId('permissions'));
+                expect(permissionsElement).toBeTruthy();
+            }));
+
+            it('should include permissions tab in the tab list', () => {
+                const tabView = spectator.query(byTestId('sidebar-tabs'));
+                const tabs = tabView.querySelectorAll('[role="tab"]');
+                expect(tabs.length).toBe(4);
+            });
+
+            it('should render DotEditContentSidebarPermissionsComponent when permissions tab is active', fakeAsync(() => {
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                const permissionsComponent = spectator.query(
+                    DotEditContentSidebarPermissionsComponent
+                );
+                expect(permissionsComponent).toBeTruthy();
+            }));
+
+            it('should find permissions element by data-testId when permissions tab is active', fakeAsync(() => {
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                const permissionsElement = spectator.query(byTestId('permissions'));
+                expect(permissionsElement).toBeTruthy();
+            }));
+        });
+
+        describe('Edge Cases', () => {
+            it('should NOT render permissions when initialContentletState is new', () => {
+                expect(store.initialContentletState()).toBe('new');
+                expect(spectator.query(byTestId('permissions'))).toBeFalsy();
+            });
+
+            it('should render permissions when initialContentletState is existing', fakeAsync(() => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+                const dotWorkflowService = spectator.inject(DotWorkflowService);
+                const dotEditContentService = spectator.inject(DotEditContentService);
+
+                const mockContentlet = {
+                    inode: '456',
+                    contentType: 'testContentType',
+                    archived: false,
+                    baseType: 'CONTENT',
+                    folder: 'SYSTEM_FOLDER',
+                    hasTitleImage: false,
+                    host: 'demo.dotcms.com',
+                    hostName: 'demo.dotcms.com',
+                    identifier: '456-789',
+                    languageId: 1,
+                    live: true,
+                    locked: false,
+                    modDate: new Date().toISOString(),
+                    modUser: 'admin',
+                    modUserName: 'Admin User',
+                    owner: 'admin',
+                    permissionId: '456',
+                    permissionType: 'CONTENT',
+                    title: 'Existing Content',
+                    working: true,
+                    URL_MAP_FOR_CONTENT: '/existing',
+                    sortOrder: 0,
+                    stInode: '456-stInode',
+                    structure: {
+                        name: 'Test Structure',
+                        inode: '456'
+                    },
+                    titleImage: '',
+                    url: '/existing-content'
+                };
+
+                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ locked: false, canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: '456',
+                    depth: DotContentletDepths.TWO
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(store.initialContentletState()).not.toBe('new');
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('permissions'))).toBeTruthy();
+            }));
+
+            it('should render permissions when initialContentletState is reset (no workflow)', fakeAsync(() => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+                const dotWorkflowService = spectator.inject(DotWorkflowService);
+                const dotEditContentService = spectator.inject(DotEditContentService);
+
+                const mockContentlet = {
+                    inode: '789',
+                    contentType: 'testContentType',
+                    archived: false,
+                    baseType: 'CONTENT',
+                    folder: 'SYSTEM_FOLDER',
+                    hasTitleImage: false,
+                    host: 'demo.dotcms.com',
+                    hostName: 'demo.dotcms.com',
+                    identifier: '789-012',
+                    languageId: 1,
+                    live: true,
+                    locked: false,
+                    modDate: new Date().toISOString(),
+                    modUser: 'admin',
+                    modUserName: 'Admin User',
+                    owner: 'admin',
+                    permissionId: '789',
+                    permissionType: 'CONTENT',
+                    title: 'Reset Content',
+                    working: true,
+                    URL_MAP_FOR_CONTENT: '/reset',
+                    sortOrder: 0,
+                    stInode: '789-stInode',
+                    structure: {
+                        name: 'Test Structure',
+                        inode: '456'
+                    },
+                    titleImage: '',
+                    url: '/reset-content'
+                };
+
+                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(
+                    of({ scheme: null, step: null, task: null, firstStep: null })
+                );
+                dotContentletService.canLock.mockReturnValue(
+                    of({ locked: false, canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: '789',
+                    depth: DotContentletDepths.TWO
+                });
+                tick();
+                spectator.detectChanges();
+
+                expect(store.initialContentletState()).toBe('reset');
+                expect(store.isNew()).toBe(false);
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                expect(spectator.query(byTestId('permissions'))).toBeTruthy();
+            }));
         });
     });
 
