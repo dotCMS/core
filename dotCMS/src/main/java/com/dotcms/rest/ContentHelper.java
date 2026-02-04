@@ -359,7 +359,7 @@ public class ContentHelper {
                 //we need to add relationships fields
                 if (depth != -1){
                     addRelationshipsToJSON(request, response, render, user, depth,
-                            respectFrontendRoles, contentlet, contentAsJson, null, language, live, allCategoriesInfo);
+                            respectFrontendRoles, contentlet, contentAsJson, null, contentlet.getLanguageId(), live, allCategoriesInfo);
                 }
             } catch (final Exception e) {
                 final String errorMsg = String.format("An error occurred when converting Contentlet '%s' into JSON: " +
@@ -769,23 +769,5 @@ public class ContentHelper {
         return jsonArray;
     }
 
-    /**
-     * Extracts the value of the language id from a luceneQuery
-     * **/
-    public Long extractLanguageIdFromQuery(String query, SearchForm searchForm) {
-        String languageId = null;
-        String languageIdStr = "languageId";
-
-        if (UtilMethods.isSet(query) && query.contains(languageIdStr)) {
-            int index = query.indexOf(languageIdStr) + languageIdStr.length() + 1; // +1 for ':'
-            try {
-                languageId = query.substring(index, query.indexOf(" ", index));
-            } catch (StringIndexOutOfBoundsException e) {
-                languageId = query.substring(index);
-            }
-        }
-
-        return UtilMethods.isSet(languageId) ? Long.parseLong(languageId) : searchForm.getLanguageId();
-    }
 
 }

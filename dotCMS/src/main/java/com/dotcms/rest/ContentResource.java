@@ -173,7 +173,7 @@ public class ContentResource {
         final int    offset  = searchForm.getOffset(); // default value = 0
         final String render  = searchForm.getRender();
         final int depth      = searchForm.getDepth(); // default value = -1
-        final long language  = this.contentHelper.extractLanguageIdFromQuery(query, searchForm);
+        final long language  = searchForm.getLanguageId();
         final PageMode pageMode         = PageMode.get(request);
         final String userToPullID       = searchForm.getUserId();
         final boolean allCategoriesInfo = searchForm.isAllCategoriesInfo();
