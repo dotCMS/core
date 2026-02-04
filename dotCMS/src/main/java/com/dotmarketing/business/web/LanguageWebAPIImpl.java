@@ -14,6 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
+import io.vavr.control.Try;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -48,25 +49,25 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     }
 
 
-
     // only try internal session and attributes
-    private Language currentLanguage(HttpServletRequest httpRequest) {
-        HttpSession sessionOpt = httpRequest.getSession(false);
-        Language lang = null;
+    private Language currentLanguage(HttpServletRequest req) {
+        HttpSession sessionOpt = req.getSession(false);
 
-        try {
-            if (sessionOpt != null) {
-                if (sessionOpt.getAttribute("tm_lang") != null) {
-                    lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
-                } else {
-                    lang = langAPI.getLanguage(
-                            (String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
-                }
-            } else if (UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))) {
-                lang = langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
-            }
-        } catch (Exception e) {
-            Logger.debug(this.getClass(), "Error getting language from session/request", e);
+        if (sessionOpt == null && UtilMethods.isEmpty((String) req.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))) {
+            return langAPI.getDefaultLanguage();
+        }
+
+        Language lang = UtilMethods.isSet(sessionOpt.getAttribute("tm_lang"))
+                ? Try.of(() -> langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"))).getOrNull()
+                : null;
+
+        if (lang == null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+            lang = Try.of(() -> langAPI.getLanguage((String) sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)))
+                    .getOrNull();
+        }
+
+        if (lang == null && UtilMethods.isSet(req.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))) {
+            lang = Try.of(() -> langAPI.getLanguage((String) req.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))).getOrNull();
         }
 
         return lang != null ? lang : langAPI.getDefaultLanguage();
