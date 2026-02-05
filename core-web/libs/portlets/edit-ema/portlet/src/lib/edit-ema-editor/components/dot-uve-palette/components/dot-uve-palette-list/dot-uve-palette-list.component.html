@@ -11,7 +11,7 @@
     }
 
     @if (!$shouldHideControls()) {
-        <p-iconField iconPosition="left">
+        <p-iconField iconPosition="left" class="w-full">
             <p-inputIcon class="pi pi-search" />
             <input
                 pInputText
@@ -71,16 +71,16 @@
 <ng-template #emptyStateTemplate>
     <div
         class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-        <div class="rounded-full bg-gray-100 p-6">
-            <i class="text-[70px] font-normal text-gray-500" [class]="$emptyState().icon"></i>
+        <div class="rounded-full p-6">
+            <i class="text-[5rem]! text-gray-500" [class]="$emptyState().icon"></i>
         </div>
         <div class="space-y-2">
-            <div class="text-sm font-bold leading-[150%] text-gray-900">
+            <div class="font-bold text-gray-900">
                 {{ $emptyState().title | dm }}
             </div>
             <p
                 data-testid="empty-state-message"
-                class="m-0 text-sm leading-6 text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
+                class="m-0 text-sm text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
                 [innerHTML]="$emptyState().message | dm"
                 (click)="onEmptyStateClick($event)"></p>
         </div>
