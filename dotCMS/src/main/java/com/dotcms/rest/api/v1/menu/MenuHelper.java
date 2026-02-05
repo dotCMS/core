@@ -15,7 +15,6 @@ import com.liferay.portlet.StrutsPortlet;
 import com.liferay.portlet.VelocityPortlet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,7 @@ public class MenuHelper implements Serializable {
 
     private static final String PORTLET_DOESNT_EXIST_ERROR_MSG = "Portlet ID '%s' does not exist";
     private static final String PORTLET_KEY_PREFIX="com.dotcms.repackage.javax.portlet.title.";
+    private static final String ANGULAR_MODULE_INIT_PARAM = "angular-module";
     private MenuHelper() {}
 
     /**
@@ -54,8 +54,9 @@ public class MenuHelper implements Serializable {
             String linkName = normalizeLinkName(LanguageUtil.get(locale, PORTLET_KEY_PREFIX + portletId));
             boolean isAngular = isAngular( portletId );
             boolean isAjax = isAjax( portletId );
+            String angularModule = getAngularModule(portletId);
 
-            menuItems.add ( new MenuItem(portletId, url, linkName, isAngular, isAjax) );
+            menuItems.add(new MenuItem(portletId, url, linkName, isAngular, isAjax, angularModule));
         }
         return menuItems;
     }
@@ -117,6 +118,21 @@ public class MenuHelper implements Serializable {
         }
 
         return false;
+    }
+
+    /**
+     * Gets the Angular module path for dynamic lazy loading from the portlet's init-params. This allows the frontend to
+     * dynamically import and register Angular portlet modules at runtime.
+     *
+     * @param portletId ID of the portlet to check
+     * @return the Angular module path (e.g., "@dotcms/portlets/my-custom"), or null if not configured
+     */
+    public String getAngularModule(final String portletId) {
+        final Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
+        if (null != portlet && null != portlet.getInitParams()) {
+            return portlet.getInitParams().get(ANGULAR_MODULE_INIT_PARAM);
+        }
+        return null;
     }
 
     /**

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
@@ -12,6 +12,7 @@ import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 @Injectable()
 export class DotNavigationService {
@@ -19,6 +20,7 @@ export class DotNavigationService {
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
     private dotcmsEventsService = inject(DotcmsEventsService);
+    private dynamicRouteService = inject(DynamicRouteService);
     private loginService = inject(LoginService);
     private router = inject(Router);
     private titleService = inject(Title);
@@ -30,6 +32,7 @@ export class DotNavigationService {
 
         // Load initial menu - store handles menu link processing and entity transformation
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
+            this.registerDynamicRoutes(menus);
             this.#globalStore.loadMenu(menus);
 
             if (this.dotRouterService.currentPortlet.id) {
@@ -139,5 +142,10 @@ export class DotNavigationService {
         if (this.router.url.indexOf('c/') > -1) {
             this.dotIframeService.reload();
         }
+    }
+
+    private registerDynamicRoutes(menus: DotMenu[]): void {
+        const allMenuItems = menus.flatMap((menu) => menu.menuItems);
+        this.dynamicRouteService.registerRoutesFromMenuItems(allMenuItems);
     }
 }
