@@ -28,6 +28,7 @@ export async function fetchWithRetry(
     requestTimeout = 10000 // Per-request timeout in milliseconds
 ) {
     const errors: string[] = [];
+    let lastError: unknown;
 
     for (let i = 0; i < retries; i++) {
         try {
@@ -36,28 +37,55 @@ export async function fetchWithRetry(
                 validateStatus: (status) => status === 200
             });
         } catch (err) {
-            // Track error for debugging
-            const errorMsg = axios.isAxiosError(err)
-                ? err.response?.statusText || err.code || err.message
-                : String(err);
+            lastError = err;
+
+            // Track error for debugging with more context
+            let errorMsg = '';
+            if (axios.isAxiosError(err)) {
+                if (err.code === 'ECONNREFUSED') {
+                    errorMsg = 'Connection refused - service not accepting connections';
+                } else if (err.code === 'ETIMEDOUT' || err.code === 'ECONNABORTED') {
+                    errorMsg = 'Connection timeout - service too slow or not responding';
+                } else if (err.response) {
+                    errorMsg = `HTTP ${err.response.status}: ${err.response.statusText}`;
+                } else {
+                    errorMsg = err.code || err.message;
+                }
+            } else {
+                errorMsg = String(err);
+            }
+
             errors.push(`Attempt ${i + 1}: ${errorMsg}`);
 
             if (i === retries - 1) {
                 // Last attempt failed - provide comprehensive error
+                const errorType =
+                    axios.isAxiosError(lastError) && lastError.code === 'ECONNREFUSED'
+                        ? 'Connection Refused'
+                        : axios.isAxiosError(lastError) &&
+                            (lastError.code === 'ETIMEDOUT' || lastError.code === 'ECONNABORTED')
+                          ? 'Timeout'
+                          : 'Connection Failed';
+
                 throw new Error(
-                    chalk.red(`Failed to connect to dotCMS after ${retries} attempts\n\n`) +
+                    chalk.red(
+                        `\n❌ Failed to connect to dotCMS after ${retries} attempts (${errorType})\n\n`
+                    ) +
                         chalk.white(`URL: ${url}\n\n`) +
-                        chalk.yellow('Troubleshooting steps:\n') +
-                        chalk.white('  1. Verify the URL is correct and accessible\n') +
-                        chalk.white('  2. Check that dotCMS instance is running\n') +
-                        chalk.white('  3. Ensure no firewall is blocking the connection\n') +
-                        chalk.white('  4. Try accessing the URL in your browser\n\n') +
-                        chalk.gray('Error history:\n' + errors.map((e) => `  • ${e}`).join('\n'))
+                        chalk.yellow('Common causes:\n') +
+                        chalk.white('  • dotCMS is still starting up (may need more time)\n') +
+                        chalk.white('  • Container crashed or failed to start\n') +
+                        chalk.white('  • Port conflict (8082 already in use)\n') +
+                        chalk.white('  • Network/firewall blocking connection\n\n') +
+                        chalk.gray(
+                            'Detailed error history:\n' + errors.map((e) => `  • ${e}`).join('\n')
+                        )
                 );
             }
 
             console.log(
                 chalk.yellow(`⏳ dotCMS not ready (attempt ${i + 1}/${retries})`) +
+                    chalk.gray(` - ${errorMsg}`) +
                     chalk.gray(` - Retrying in ${delay / 1000}s...`)
             );
             await new Promise((r) => setTimeout(r, delay));
@@ -93,7 +121,9 @@ export function getPortByFramework(framework: SupportedFrontEndFrameworks): stri
 
 export function getDotcmsApisByBaseUrl(baseUrl: string) {
     return {
-        DOTCMS_HEALTH_API: `${baseUrl}/api/v1/probes/alive`,
+        // Note: Using /appconfiguration instead of /probes/alive because the probe endpoints
+        // have IP ACL restrictions that block requests from Docker host. See GitHub issue #34509
+        DOTCMS_HEALTH_API: `${baseUrl}/api/v1/appconfiguration`,
         DOTCMS_TOKEN_API: `${baseUrl}/api/v1/authentication/api-token`,
         DOTCMS_EMA_CONFIG_API: `${baseUrl}/api/v1/apps/dotema-config-v2/`,
         DOTCMS_DEMO_SITE: `${baseUrl}/api/v1/site/`

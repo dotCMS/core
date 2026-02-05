@@ -108,12 +108,13 @@ program
 
                 const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL, 5);
 
-                if (!checkIfDotcmsIsRunning) {
+                if (!checkIfDotcmsIsRunning.ok) {
                     spinner.fail(
                         'dotCMS is not running on the following url ' +
                             urlDotcmsInstance +
                             '. Please check the url and try again.'
                     );
+                    console.log(checkIfDotcmsIsRunning.val);
                     return;
                 }
 
@@ -210,8 +211,10 @@ program
 
             const checkIfDotcmsIsRunning = await isDotcmsRunning();
 
-            if (!checkIfDotcmsIsRunning) {
-                spinner.fail('dotCMS is not running. Please check the docker containers.');
+            if (!checkIfDotcmsIsRunning.ok) {
+                spinner.fail('dotCMS failed to start properly');
+                console.log(checkIfDotcmsIsRunning.val);
+                console.log(await getDockerDiagnostics(finalDirectory));
                 return;
             }
             spinner.succeed('dotCMS is running locally at http://localhost:8082');
@@ -353,18 +356,100 @@ async function runDockerCompose({
     }
 }
 
-async function isDotcmsRunning(url?: string, retries = 60): Promise<boolean> {
+async function isDotcmsRunning(url?: string, retries = 60): Promise<Result<boolean, string>> {
     try {
         // console.log(chalk.cyan("Waiting for DotCMS to be up ...."));
         const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, retries, 5000);
         if (res && res.status === 200) {
             // console.log(chalk.green("✔ DotCMS container started sucessfully!\n"));
-            return true;
+            return Ok(true);
         }
-        return false;
-    } catch {
-        return false;
+        return Err('dotCMS health check returned non-200 status');
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return Err(errorMessage);
     }
+}
+
+async function getDockerDiagnostics(directory?: string): Promise<string> {
+    const diagnostics: string[] = [];
+
+    try {
+        // Check if Docker is running
+        await execa('docker', ['info'], { cwd: directory });
+    } catch {
+        return (
+            chalk.red('\n🐳 Docker is not running or not installed\n') +
+            chalk.white('Please start Docker Desktop or install Docker\n')
+        );
+    }
+
+    try {
+        // Get container status
+        const { stdout: psOutput } = await execa(
+            'docker',
+            ['ps', '-a', '--format', '{{.Names}}\t{{.Status}}\t{{.Ports}}'],
+            { cwd: directory }
+        );
+
+        if (!psOutput.trim()) {
+            diagnostics.push(chalk.yellow('\n⚠️  No Docker containers found'));
+            diagnostics.push(
+                chalk.white('The docker-compose.yml may not have been started correctly\n')
+            );
+            return diagnostics.join('\n');
+        }
+
+        diagnostics.push(chalk.cyan('\n📋 Container Status:'));
+        const containers = psOutput.trim().split('\n');
+
+        for (const container of containers) {
+            const [name, status, ports] = container.split('\t');
+            const isHealthy = status.includes('Up') && !status.includes('unhealthy');
+            const icon = isHealthy ? '✅' : '❌';
+            diagnostics.push(`  ${icon} ${chalk.white(name)}: ${chalk.gray(status)}`);
+            if (ports) {
+                diagnostics.push(`     ${chalk.gray('Ports:')} ${chalk.white(ports)}`);
+            }
+        }
+
+        // Check for unhealthy containers and get their logs
+        const unhealthyContainers = containers.filter(
+            (c) => !c.includes('Up') || c.includes('unhealthy') || c.includes('Exited')
+        );
+
+        if (unhealthyContainers.length > 0) {
+            diagnostics.push(chalk.yellow('\n🔍 Recent logs from problematic containers:\n'));
+
+            for (const container of unhealthyContainers) {
+                const name = container.split('\t')[0];
+                try {
+                    const { stdout: logs } = await execa('docker', ['logs', '--tail', '20', name], {
+                        cwd: directory,
+                        reject: false
+                    });
+                    diagnostics.push(chalk.white(`\n--- ${name} ---`));
+                    diagnostics.push(chalk.gray(logs.split('\n').slice(-10).join('\n')));
+                } catch {
+                    diagnostics.push(chalk.gray(`  Unable to fetch logs for ${name}`));
+                }
+            }
+        }
+    } catch (error) {
+        diagnostics.push(chalk.red('\n❌ Failed to get Docker diagnostics'));
+        diagnostics.push(chalk.gray(String(error)));
+    }
+
+    diagnostics.push(chalk.yellow('\n💡 Troubleshooting steps:'));
+    diagnostics.push(chalk.white('  1. Check if all containers are running:'));
+    diagnostics.push(chalk.gray('     docker ps'));
+    diagnostics.push(chalk.white('  2. View logs for a specific container:'));
+    diagnostics.push(chalk.gray('     docker logs <container-name>'));
+    diagnostics.push(chalk.white('  3. Restart the containers:'));
+    diagnostics.push(chalk.gray('     docker compose down && docker compose up -d'));
+    diagnostics.push(chalk.white('  4. Check if ports 8082, 8443, 9200, and 9600 are available\n'));
+
+    return diagnostics.join('\n');
 }
 function displayFinalSteps({
     selectedFramework,
