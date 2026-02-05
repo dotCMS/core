@@ -187,21 +187,49 @@ export function validateProjectName(projectName: string | undefined): string | u
         );
     }
 
-    // Invalid filesystem characters (cross-platform)
-    const invalidChars = /[<>:"|?*]/;
-    // Control characters (ASCII 0-31) checked separately to avoid regex complexity
-    const CONTROL_CHAR_THRESHOLD = 32; // ASCII control characters are 0-31
-    const hasControlChar = [...trimmed].some((c) => c.charCodeAt(0) < CONTROL_CHAR_THRESHOLD);
-    if (invalidChars.test(trimmed) || hasControlChar) {
+    // Check for leading hyphen or dot (problematic patterns)
+    if (trimmed.startsWith('-')) {
         throw new Error(
             chalk.red(`❌ Invalid project name: "${projectName}"`) +
                 '\n\n' +
-                chalk.white('Project name contains invalid characters\n\n') +
-                chalk.white('Avoid: < > : " | ? * and control characters\n\n') +
+                chalk.white('Project name cannot start with a hyphen (-)\n\n') +
+                chalk.gray('This can be confused with command-line flags\n\n') +
+                chalk.cyan('Try:\n') +
+                chalk.gray(`  • ${trimmed.slice(1)} (remove leading hyphen)\n`) +
+                chalk.gray(`  • my${trimmed} (add prefix)`)
+        );
+    }
+
+    if (trimmed.startsWith('.')) {
+        console.warn(
+            chalk.yellow('\n⚠️  Warning: Project name starts with a dot\n') +
+                chalk.gray('This will create a hidden directory on Unix systems\n')
+        );
+    }
+
+    // Only allow alphanumeric characters, hyphens, underscores, and dots
+    // This prevents issues with npm, Docker, and other tools
+    const validPattern = /^[a-zA-Z0-9._-]+$/;
+
+    if (!validPattern.test(trimmed)) {
+        throw new Error(
+            chalk.red(`❌ Invalid project name: "${projectName}"`) +
+                '\n\n' +
+                chalk.white('Project names can only contain:\n') +
+                chalk.white('  • Letters (a-z, A-Z)\n') +
+                chalk.white('  • Numbers (0-9)\n') +
+                chalk.white('  • Hyphens (-)\n') +
+                chalk.white('  • Underscores (_)\n') +
+                chalk.white('  • Dots (.)\n\n') +
                 chalk.cyan('Valid examples:\n') +
-                chalk.gray('  • my-project\n') +
+                chalk.gray('  • my-dotcms-app\n') +
                 chalk.gray('  • my_project\n') +
-                chalk.gray('  • project-123')
+                chalk.gray('  • MyProject.v2\n') +
+                chalk.gray('  • project-123\n\n') +
+                chalk.yellow('Invalid examples:\n') +
+                chalk.gray('  • test@#$%project (special characters)\n') +
+                chalk.gray('  • my project (spaces)\n') +
+                chalk.gray('  • project! (exclamation marks)')
         );
     }
 
@@ -248,15 +276,6 @@ export function validateProjectName(projectName: string | undefined): string | u
                     `Maximum: ${MAX_PROJECT_NAME_LENGTH} characters (you provided: ${trimmed.length})\n\n`
                 ) +
                 chalk.gray('Please use a shorter name')
-        );
-    }
-
-    // Warning for hidden files
-    if (trimmed.startsWith('.') && trimmed.length > 1) {
-        console.warn(
-            chalk.yellow('\n⚠️  Warning: Project name starts with a dot') +
-                '\n' +
-                chalk.gray('This will create a hidden directory on Unix systems\n')
         );
     }
 
