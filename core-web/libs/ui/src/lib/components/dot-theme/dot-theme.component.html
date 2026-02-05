@@ -28,7 +28,7 @@
 }
 
 <p-popover #popover>
-    <div class="flex flex-col gap-4 min-w-2xl max-w-2xl h-[420px]" [id]="id()">
+    <div class="flex flex-col min-w-2xl max-w-2xl h-[420px] overflow-hidden" [id]="id()">
         <!-- DataView with grid layout -->
         <p-dataview
             [dt]="{
@@ -49,6 +49,19 @@
                 root: {
                     border: {
                         width: '0'
+                    }
+                }
+            }"
+            [pt]="{
+                root: {
+                    class: 'h-full !flex flex-col'
+                },
+                content: {
+                    class: 'flex-1 min-h-0 overflow-y-auto flex flex-col'
+                },
+                pcPaginator: {
+                    root: {
+                        class: 'flex-shrink-0'
                     }
                 }
             }"
