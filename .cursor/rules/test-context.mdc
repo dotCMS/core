@@ -11,6 +11,7 @@ alwaysApply: false
 - Inputs: `spectator.setInput('prop', value)`; never `spectator.component.prop = value`.
 - CSS: `expect(el).toHaveClass('pi', 'pi-update')` (separate strings); not object form.
 - Test user flows: type, click, assert visible content; avoid testing internals or mock call counts.
+- **Mocks**: Use `@dotcms/utils-testing` createFake functions; never create manual mocks for domain objects.
 
 ## data-testid
 - Component: `data-testid="user-profile"`. Controls: `user-profile-name-input`, `user-profile-save-button`. States: `loading-spinner`, `error-message`, `success-message`.
