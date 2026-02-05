@@ -1,4 +1,4 @@
-<ng-template #defaultListTemplate let-data="data" pTemplate="list">
+<ng-template #defaultListTemplate let-data="data">
     @for (item of data; track $index) {
         <span
             (click)="handleClick(item)"
@@ -64,27 +64,27 @@
         }
     </header>
 
-    <p-dataView
+    <p-dataview
         #dataView
         (click)="$event.stopPropagation()"
         (onLazyLoad)="paginate($event)"
         [lazy]="true"
+        [lazyLoadOnInit]="false"
         [pageLinks]="pageLinkSize"
         [paginator]="totalRecords > rows"
         [rows]="rows"
-        [styleClass]="cssClassDataList"
         [totalRecords]="totalRecords"
         [value]="options"
-        class="searchable-dropdown__data-list">
-        <ng-template let-data pTemplate="list">
+        [class]="'searchable-dropdown__data-list ' + cssClassDataList">
+        <ng-template #list let-items>
             <ng-container
                 [ngTemplateOutletContext]="{
-                    data: data,
+                    data: items,
                     selectedOptionValue: selectedOptionValue
                 }"
                 [ngTemplateOutlet]="externalItemListTemplate || defaultListTemplate" />
         </ng-template>
-    </p-dataView>
+    </p-dataview>
 </p-popover>
 
 <ng-container
