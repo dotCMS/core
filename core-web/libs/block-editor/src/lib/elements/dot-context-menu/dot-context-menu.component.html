@@ -6,7 +6,7 @@
     <ng-template #item let-item>
         <a
             pRipple
-            class="flex items-center justify-between p-menuitem-link"
+            class="flex items-center justify-between p-menuitem-link no-underline!"
             (click)="onItemClick($event, item)">
             <span class="menu-item-label">{{ item.label | dm }}</span>
             @if (item.shortcut) {
