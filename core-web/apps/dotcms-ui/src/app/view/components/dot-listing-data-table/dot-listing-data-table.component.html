@@ -1,6 +1,7 @@
 <dot-action-header [options]="actionHeaderOptions">
-    <div class="flex gap-2">
+    <div class="flex gap-2 p-1">
         <ng-container [ngTemplateOutlet]="beforeSearchTemplate" />
+        
         <input
             (keydown.arrowdown)="focusFirstRow()"
             [(ngModel)]="filter"
