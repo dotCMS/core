@@ -273,8 +273,11 @@ export function escapeShellPath(filePath: string): string {
             : /[\s'"`$!&*(){};<>?*|\\\n\r\t[\]]/.test(filePath); // Include backslash on Unix
 
     if (needsEscaping) {
-        // Use double quotes, escape internal quotes and backslashes
-        const escaped = filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        // Use double quotes. On Windows, escape only internal quotes; on Unix, also escape backslashes.
+        const escaped =
+            process.platform === 'win32'
+                ? filePath.replace(/"/g, '\\"')
+                : filePath.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
         return `"${escaped}"`;
     }
 
