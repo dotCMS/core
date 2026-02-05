@@ -110,12 +110,12 @@ describe('DotToolbarBtnOverlayComponent', () => {
             expect(badge).toExist();
         });
 
-        it('should apply isActive class when mask is shown', () => {
+        it('should apply p-highlight class when mask is shown', () => {
             component.$showMask.set(true);
             spectator.detectChanges();
 
             const button = spectator.query(byTestId('btn-overlay'));
-            expect(button).toHaveClass('isActive');
+            expect(button).toHaveClass('p-highlight');
         });
 
         it('should render overlay panel with correct attributes', () => {
