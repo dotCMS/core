@@ -6,6 +6,7 @@ import { Err, Ok, Result } from 'ts-results';
 
 import https from 'https';
 import net from 'net';
+import path from 'path';
 
 import { escapeShellPath } from './validation';
 
@@ -605,4 +606,32 @@ export async function getDockerDiagnostics(directory?: string): Promise<string> 
     diagnostics.push(chalk.white('  4. Check if ports 8082, 8443, 9200, and 9600 are available\n'));
 
     return diagnostics.join('\n');
+}
+
+/**
+ * Returns a user-friendly display path for CLI output
+ * Uses absolute path if cleaner, otherwise uses relative path
+ *
+ * @param targetPath - Absolute path to the target directory
+ * @param cwd - Current working directory
+ * @returns Formatted path string for display (relative or absolute)
+ *
+ * @remarks
+ * - Uses absolute path when relative path would contain 3+ parent directory traversals (../)
+ * - Uses relative path for simpler navigation (e.g., './my-project')
+ * - Prevents confusing output like 'cd ../../../../tmp/test-dir'
+ */
+export function getDisplayPath(targetPath: string, cwd: string): string {
+    const relativePath = path.relative(cwd, targetPath);
+
+    // Count the number of parent directory traversals in the relative path
+    const parentDirCount = (relativePath.match(/\.\.\//g) || []).length;
+
+    // If relative path has 3+ parent directories, use absolute path instead
+    if (parentDirCount >= 3) {
+        return targetPath;
+    }
+
+    // Otherwise use relative path (e.g., './my-project' or 'my-project')
+    return relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
 }

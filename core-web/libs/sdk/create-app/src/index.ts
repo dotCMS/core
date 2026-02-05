@@ -7,8 +7,6 @@ import { execa } from 'execa';
 import ora, { Ora } from 'ora';
 import { Result, Ok, Err } from 'ts-results';
 
-import path from 'path';
-
 import { DotCMSApi } from './api';
 import {
     askCloudOrLocalInstance,
@@ -41,6 +39,7 @@ import {
     finalStepsForAngularAndAngularSSR,
     finalStepsForAstro,
     finalStepsForNextjs,
+    getDisplayPath,
     getDockerDiagnostics,
     getDotcmsApisByBaseUrl,
     getPortByFramework,
@@ -218,7 +217,7 @@ program
                 }
                 await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
                 console.log(chalk.white(`✅ Project setup complete!`));
-                const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
+                const relativePath = getDisplayPath(finalDirectory, process.cwd());
                 displayFinalSteps({
                     host: urlDotcmsInstance,
                     relativePath,
@@ -350,7 +349,7 @@ program
             await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
             moveDockerComposeBack(finalDirectory);
             console.log(chalk.white(`✅ Project setup complete!`));
-            const relativePath = path.relative(process.cwd(), finalDirectory) || '.';
+            const relativePath = getDisplayPath(finalDirectory, process.cwd());
             displayFinalSteps({
                 host: 'http://localhost:8082',
                 relativePath,
