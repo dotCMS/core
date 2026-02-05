@@ -11,22 +11,20 @@
             <form class="form" [formGroup]="form" novalidate>
                 @switch (action()) {
                     @case ('Export') {
-                        @if (form.get('password')) {
-                            <div class="field">
-                                <label dotFieldRequired for="export-password">
-                                    {{ 'Password' | dm }}
-                                </label>
-                                <p-password
-                                    [placeholder]="'apps.confirmation.export.password.label' | dm"
-                                    inputId="export-password"
-                                    dotAutofocus
-                                    autocomplete="new-password"
-                                    formControlName="password"
-                                    [feedback]="false"
-                                    class="w-full"
-                                    inputStyleClass="w-full" />
-                            </div>
-                        }
+                        <div class="field">
+                            <label dotFieldRequired for="export-password">
+                                {{ 'Password' | dm }}
+                            </label>
+                            <p-password
+                                [placeholder]="'apps.confirmation.export.password.label' | dm"
+                                inputId="export-password"
+                                dotAutofocus
+                                autocomplete="new-password"
+                                formControlName="password"
+                                [feedback]="false"
+                                class="w-full"
+                                inputStyleClass="w-full" />
+                        </div>
                     }
                     @case ('Import') {
                         <div class="field">
@@ -41,24 +39,20 @@
                                 (onSelect)="onFileSelect($event)"
                                 (onClear)="onFileClear()" />
                         </div>
-                        @if (form.get('password')) {
-                            <div class="field">
-                                <label dotFieldRequired for="import-password">
-                                    {{ 'Password' | dm }}
-                                </label>
-                                <p-password
-                                    [placeholder]="'apps.confirmation.import.password.label' | dm"
-                                    inputId="import-password"
-                                    autocomplete="new-password"
-                                    formControlName="password"
-                                    [feedback]="false"
-                                    class="w-full"
-                                    inputStyleClass="w-full" />
-                            </div>
-                        }
-                        @if (form.get('importFile')) {
-                            <input type="hidden" name="importFile" formControlName="importFile" />
-                        }
+                        <div class="field">
+                            <label dotFieldRequired for="import-password">
+                                {{ 'Password' | dm }}
+                            </label>
+                            <p-password
+                                [placeholder]="'apps.confirmation.import.password.label' | dm"
+                                inputId="import-password"
+                                autocomplete="new-password"
+                                formControlName="password"
+                                [feedback]="false"
+                                class="w-full"
+                                inputStyleClass="w-full" />
+                        </div>
+                        <input type="hidden" name="importFile" formControlName="importFile" />
                     }
                 }
 

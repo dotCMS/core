@@ -45,6 +45,10 @@
 
 .dot-apps-configuration-detail__form-content {
     margin: spacing.$spacing-4;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: spacing.$spacing-4;
 }
 
 .dot-apps-configuration-detail__container {

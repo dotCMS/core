@@ -1,4 +1,5 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, DestroyRef, effect, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
@@ -38,6 +39,7 @@ export class DotAppsImportExportDialogComponent {
     readonly #store = inject(DotAppsImportExportDialogStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #fb = inject(UntypedFormBuilder);
+    readonly #destroyRef = inject(DestroyRef);
 
     // Store selectors
     readonly visible = this.#store.visible;
@@ -49,7 +51,6 @@ export class DotAppsImportExportDialogComponent {
     form: UntypedFormGroup = this.#fb.group({});
     dialogActions: DotDialogActions;
     #selectedFile: File | null = null;
-    #formValueChangesSubscription?: ReturnType<typeof this.form.valueChanges.subscribe>;
 
     // Effect to react to action changes to setup the form
     actionsEffect = effect(() => {
@@ -90,9 +91,6 @@ export class DotAppsImportExportDialogComponent {
      * Sets dialog form based on action Import/Export
      */
     private setDialogForm(action: dialogAction): void {
-        // Unsubscribe from previous form value changes
-        this.#formValueChangesSubscription?.unsubscribe();
-
         if (action === dialogAction.EXPORT) {
             this.form = this.#fb.group({
                 password: new UntypedFormControl('', Validators.required)
@@ -106,7 +104,7 @@ export class DotAppsImportExportDialogComponent {
             this.setImportDialogActions();
         }
 
-        this.#formValueChangesSubscription = this.form.valueChanges.subscribe(() => {
+        this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
             this.dialogActions = {
                 ...this.dialogActions,
                 accept: {
