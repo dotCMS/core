@@ -171,9 +171,27 @@ export async function askCloudOrLocalInstance(): Promise<boolean> {
  * user enters: "."
  * projectName: "my-app"
  * final path becomes "./my-app"
+ *
+ * @remarks
+ * - Prevents nested directories when basePath already ends with projectName
+ * - Example: basePath="/tmp/my-app" + projectName="my-app" → "/tmp/my-app" (not "/tmp/my-app/my-app")
+ * - Handles both absolute and relative paths correctly
  */
 export async function prepareDirectory(basePath: string, projectName: string) {
-    const targetPath = path.resolve(basePath, projectName);
+    // Resolve basePath to absolute path for consistent comparison
+    const resolvedBasePath = path.resolve(basePath);
+    const basePathDirName = path.basename(resolvedBasePath);
+
+    // Check if basePath already ends with the project name
+    // This prevents nested directories like "/tmp/my-app/my-app"
+    let targetPath: string;
+    if (basePathDirName === projectName) {
+        // User specified full path including project name (e.g., "-d /tmp/my-app" with projectName="my-app")
+        targetPath = resolvedBasePath;
+    } else {
+        // User specified parent directory (e.g., "-d /tmp" with projectName="my-app")
+        targetPath = path.resolve(resolvedBasePath, projectName);
+    }
 
     // If path doesn't exist → create
     if (!fs.existsSync(targetPath)) {
