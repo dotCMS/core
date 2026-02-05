@@ -4,6 +4,7 @@ import inquirer from 'inquirer';
 import path from 'path';
 
 import { FRAMEWORKS_CHOICES } from './constants';
+import { validateProjectName, validateUrl } from './utils/validation';
 
 import type { SupportedFrontEndFrameworks } from './types';
 
@@ -32,7 +33,15 @@ export async function askProjectName() {
             type: 'input',
             name: 'projectName',
             message: 'What is your project name ?',
-            default: `my-dotcms-app`
+            default: `my-dotcms-app`,
+            validate: (input: string) => {
+                try {
+                    validateProjectName(input);
+                    return true;
+                } catch (error) {
+                    return error instanceof Error ? error.message : String(error);
+                }
+            }
         }
     ]);
     return ans.projectName;
@@ -62,7 +71,15 @@ export async function askDotcmsCloudUrl() {
             type: 'input',
             name: 'url',
             message: 'dotCMS instance URL:',
-            default: `https://demo.dotcms.com`
+            default: `https://demo.dotcms.com`,
+            validate: (input: string) => {
+                try {
+                    validateUrl(input);
+                    return true;
+                } catch (error) {
+                    return error instanceof Error ? error.message : String(error);
+                }
+            }
         }
     ]);
     return ans.url;
@@ -77,14 +94,20 @@ export async function askUserNameForDotcmsCloud() {
             type: 'input',
             name: 'username',
             message: 'Username:',
-            default: `admin@dotcms.com`
+            default: `admin@dotcms.com`,
+            validate: (input: string) => {
+                if (!input || input.trim() === '') {
+                    return 'Username cannot be empty';
+                }
+                return true;
+            }
         }
     ]);
     return ans.username;
 }
 
 /**
- * Ask user the ulsername of the dotCMS instance
+ * Ask user the password of the dotCMS instance
  */
 export async function askPasswordForDotcmsCloud() {
     const ans = await inquirer.prompt([
@@ -93,7 +116,13 @@ export async function askPasswordForDotcmsCloud() {
             name: 'password',
             mask: '•',
             message: 'Password:',
-            default: `admin`
+            default: `admin`,
+            validate: (input: string) => {
+                if (!input || input.trim() === '') {
+                    return 'Password cannot be empty';
+                }
+                return true;
+            }
         }
     ]);
     return ans.password;

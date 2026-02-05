@@ -88,21 +88,10 @@ program
             const validatedFramework = validateAndNormalizeFramework(options.framework);
             validateUrl(options.url);
             validateConflictingParameters(options);
+            validateProjectName(projectName); // Validate CLI flag if provided
 
-            // Get project name: validate CLI-provided value or prompt interactively
-            const projectNameInput = projectName ?? (await askProjectName());
-
-            // Always validate the final project name (whether from CLI or prompt)
-            // This ensures consistent validation and handles edge cases
-            const validated = validateProjectName(projectNameInput);
-            if (validated === undefined) {
-                throw new Error(
-                    chalk.red('❌ Invalid project name: cannot be empty') +
-                        '\n\n' +
-                        chalk.white('Project name must contain at least one character')
-                );
-            }
-            const projectNameFinal = validated;
+            // Get project name from CLI or prompt (prompt has built-in validation)
+            const projectNameFinal = projectName ?? (await askProjectName());
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
             const selectedFramework = validatedFramework ?? (await askFramework());
@@ -111,10 +100,8 @@ program
 
             if (isCloudInstanceSelected) {
                 const urlDotcmsInstance = options.url ?? (await askDotcmsCloudUrl());
-                const userNameDotCmsInstance =
-                    options.username ?? (await askUserNameForDotcmsCloud());
-                const passwordDotCmsInstance =
-                    options.password ?? (await askPasswordForDotcmsCloud());
+                // Validate URL (prompt has validation, but double-check for consistency)
+                validateUrl(urlDotcmsInstance);
 
                 const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
                 const emaConfigApiURL =
@@ -141,21 +128,55 @@ program
 
                 spinner.succeed('Connected to dotCMS successfully');
 
-                const dotcmsToken = await DotCMSApi.getAuthToken({
-                    payload: {
-                        user: userNameDotCmsInstance,
-                        password: passwordDotCmsInstance,
-                        expirationDays: '30',
-                        label: 'token for frontend app'
-                    },
-                    url: tokenApiUrl
-                });
+                // Authentication with retry on failure
+                let dotcmsToken;
+                let authAttempts = 0;
+                const MAX_AUTH_ATTEMPTS = 3;
 
-                if (!dotcmsToken.ok) {
-                    spinner.fail('Failed to get authentication token from Dotcms.');
+                while (authAttempts < MAX_AUTH_ATTEMPTS) {
+                    authAttempts++;
+
+                    const userNameDotCmsInstance =
+                        options.username ?? (await askUserNameForDotcmsCloud());
+                    const passwordDotCmsInstance =
+                        options.password ?? (await askPasswordForDotcmsCloud());
+
+                    dotcmsToken = await DotCMSApi.getAuthToken({
+                        payload: {
+                            user: userNameDotCmsInstance,
+                            password: passwordDotCmsInstance,
+                            expirationDays: '30',
+                            label: 'token for frontend app'
+                        },
+                        url: tokenApiUrl
+                    });
+
+                    if (dotcmsToken.ok) {
+                        spinner.succeed('Generated API authentication token');
+                        break;
+                    } else {
+                        spinner.fail('Authentication failed');
+                        console.error(dotcmsToken.val);
+
+                        if (authAttempts < MAX_AUTH_ATTEMPTS) {
+                            console.log(
+                                chalk.yellow(
+                                    `\nAttempt ${authAttempts}/${MAX_AUTH_ATTEMPTS} - Please try again\n`
+                                )
+                            );
+                        } else {
+                            console.log(
+                                chalk.red(
+                                    `\nMaximum authentication attempts (${MAX_AUTH_ATTEMPTS}) reached. Exiting.\n`
+                                )
+                            );
+                            return;
+                        }
+                    }
+                }
+
+                if (!dotcmsToken || !dotcmsToken.ok) {
                     return;
-                } else {
-                    spinner.succeed('Generated API authentication token');
                 }
 
                 const demoSite = await DotCMSApi.getDemoSiteIdentifier({
