@@ -67,7 +67,7 @@ export function validateAndNormalizeFramework(
  * @throws Error if URL format is invalid
  */
 export function validateUrl(url: string | undefined): void {
-    if (!url) return; // Will be prompted interactively
+    if (!url || url.trim() === '') return; // Will be prompted interactively
 
     // Basic format check before URL parsing
     if (!url.includes('://')) {

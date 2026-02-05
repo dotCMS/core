@@ -118,7 +118,7 @@ program
                     return;
                 }
 
-                spinner.succeed('Connected to dotCMS sucessfully');
+                spinner.succeed('Connected to dotCMS successfully');
 
                 const dotcmsToken = await DotCMSApi.getAuthToken({
                     payload: {
@@ -134,7 +134,7 @@ program
                     spinner.fail('Failed to get authentication token from Dotcms.');
                     return;
                 } else {
-                    spinner.succeed('Generated API autentication token');
+                    spinner.succeed('Generated API authentication token');
                 }
 
                 const demoSite = await DotCMSApi.getDemoSiteIdentifier({
@@ -148,7 +148,7 @@ program
                     return;
                 } else {
                     spinner.succeed(
-                        `Reterived site: Demo Site (${demoSite.val.entity.identifier})`
+                        `Retrieved site: Demo Site (${demoSite.val.entity.identifier})`
                     );
                 }
 
@@ -232,7 +232,7 @@ program
                 spinner.fail('Failed to get authentication token from Dotcms.');
                 return;
             } else {
-                spinner.succeed('Generated API autentication token');
+                spinner.succeed('Generated API authentication token');
             }
 
             const demoSite = await DotCMSApi.getDemoSiteIdentifier({
@@ -243,7 +243,7 @@ program
                 spinner.fail('Failed to get demo site identifier from Dotcms.');
                 return;
             } else {
-                spinner.succeed(`Reterived site: Demo Site (${demoSite.val.entity.identifier})`);
+                spinner.succeed(`Retrieved site: Demo Site (${demoSite.val.entity.identifier})`);
             }
 
             const setUpUVE = await DotCMSApi.setupUVEConfig({
@@ -282,8 +282,14 @@ program
             // Handle validation and other errors gracefully
             if (error instanceof Error) {
                 console.error(error.message);
+                // Preserve stack trace for debugging when DEBUG mode is enabled
+                if (process.env.DEBUG) {
+                    console.error('\n' + chalk.gray('Stack trace:'));
+                    console.error(chalk.gray(error.stack || 'No stack trace available'));
+                }
             } else {
                 console.error(chalk.red('❌ An unexpected error occurred'));
+                console.error(String(error));
             }
             process.exit(1);
         }
