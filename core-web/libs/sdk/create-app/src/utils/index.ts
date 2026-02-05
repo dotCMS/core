@@ -123,7 +123,8 @@ export function getPortByFramework(framework: SupportedFrontEndFrameworks): stri
 export function getDotcmsApisByBaseUrl(baseUrl: string) {
     return {
         // Note: Using /appconfiguration instead of /probes/alive because the probe endpoints
-        // have IP ACL restrictions that block requests from Docker host. See GitHub issue #34509
+        // have IP ACL restrictions that block requests from Docker host. 
+        // See: https://github.com/dotCMS/core/issues/34509
         DOTCMS_HEALTH_API: `${baseUrl}/api/v1/appconfiguration`,
         DOTCMS_TOKEN_API: `${baseUrl}/api/v1/authentication/api-token`,
         DOTCMS_EMA_CONFIG_API: `${baseUrl}/api/v1/apps/dotema-config-v2/`,
