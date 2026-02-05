@@ -111,6 +111,7 @@ For convenience, the CLI accepts common framework name variations (case-insensit
 - `next`, `next.js`, `Next.js` → `nextjs`
 - `ng`, `Angular` → `angular`
 - `angular-server` → `angular-ssr`
+- `angular-server` → `angular-ssr`
 
 ### URL Format
 
