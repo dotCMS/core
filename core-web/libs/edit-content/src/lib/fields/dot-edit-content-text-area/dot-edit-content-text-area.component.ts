@@ -48,7 +48,6 @@ import {
 @Component({
     selector: 'dot-edit-content-text-area',
     templateUrl: './dot-edit-content-text-area.component.html',
-    styleUrls: ['./dot-edit-content-text-area.component.scss'],
     imports: [
         TextareaModule,
         ReactiveFormsModule,
@@ -63,6 +62,9 @@ import {
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block h-fit'
+    },
     viewProviders: [
         {
             provide: ControlContainer,

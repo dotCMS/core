@@ -26,7 +26,6 @@ const MINIMUM_CHARACTERS = 3;
         InputGroupAddonModule
     ],
     templateUrl: './dot-category-field-search.component.html',
-    styleUrl: './dot-category-field-search.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCategoryFieldSearchComponent {

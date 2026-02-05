@@ -19,7 +19,6 @@ import { DotCategoryFieldKeyValueObj } from '../../models/dot-category-field.mod
     selector: 'dot-category-field-selected',
     imports: [ButtonModule, DotMessagePipe, ChipModule, TooltipModule],
     templateUrl: './dot-category-field-selected.component.html',
-    styleUrl: './dot-category-field-selected.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
         trigger('fadeAnimation', [

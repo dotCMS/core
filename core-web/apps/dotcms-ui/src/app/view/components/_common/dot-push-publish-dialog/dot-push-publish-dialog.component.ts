@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Component, EventEmitter, OnDestroy, OnInit, Output, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject, output } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -28,7 +28,6 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
 
 @Component({
     selector: 'dot-push-publish-dialog',
-    styleUrls: ['./dot-push-publish-dialog.component.scss'],
     templateUrl: 'dot-push-publish-dialog.component.html',
     imports: [
         FormsModule,
@@ -46,6 +45,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private pushPublishService = inject(PushPublishService);
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    private cdr = inject(ChangeDetectorRef);
 
     dialogActions: DotDialogActions;
     dialogShow = false;
@@ -55,7 +55,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     errorMessage = null;
     isSaving = false;
 
-    @Output() cancel = new EventEmitter<boolean>();
+    cancel = output<boolean>();
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -106,6 +106,7 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                     } else {
                         this.errorMessage = result.errors;
                     }
+                    this.cdr.detectChanges();
                 });
         }
     }

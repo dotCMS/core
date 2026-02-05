@@ -951,6 +951,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     this.dialogService.open(DotFavoritePageComponent, {
                         header: this.dotMessageService.get('favoritePage.dialog.header'),
                         width: '80rem',
+                        contentStyle: {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minHeight: 0,
+                            overflow: 'hidden'
+                        },
                         data: {
                             page: {
                                 favoritePageUrl,

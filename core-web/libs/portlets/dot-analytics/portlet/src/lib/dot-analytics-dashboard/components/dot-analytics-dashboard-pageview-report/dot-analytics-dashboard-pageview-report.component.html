@@ -27,9 +27,9 @@
 
 <!-- Table and Pie Chart Section -->
 @defer (on viewport) {
-    <div class="analytics-dashboard-pages__bottom-section flex gap-3 align-items-stretch">
+    <div class="analytics-dashboard-pages__bottom-section flex gap-3 items-stretch max-lg:flex-col">
         <!-- Pie Chart -->
-        <div class="analytics-dashboard-pages__device-chart">
+        <div class="analytics-dashboard-pages__device-chart shrink-0 max-lg:w-full">
             <dot-analytics-dashboard-chart
                 [title]="'analytics.charts.device-breakdown.title' | dm"
                 type="pie"
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Table -->
-        <div class="analytics-dashboard-pages__table">
+        <div class="analytics-dashboard-pages__table flex-1 min-w-0 max-lg:w-full max-lg:min-w-0">
             <dot-analytics-dashboard-table
                 [tableState]="$topPagesTable()"
                 data-testid="analytics-table" />

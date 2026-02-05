@@ -1,7 +1,13 @@
 import { Observable } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    OnInit,
+    inject
+} from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -42,6 +48,7 @@ import {
 })
 export class DotExperimentsConfigurationTrafficAllocationAddComponent implements OnInit {
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
+    private readonly cd = inject(ChangeDetectorRef);
 
     form: FormGroup;
     trafficAllocation: string;
@@ -79,15 +86,16 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
     }
 
     /**
-     * Check allocation is higher than 100
+     * Check traffic allocation is higher than 100
      * @returns void
      * @memberof DotExperimentsConfigurationTrafficAllocationAddComponent
      */
-    checkAllocationRange() {
-        this.form.setValue({
-            trafficAllocation:
-                this.form.value.trafficAllocation > 100 ? 100 : this.form.value.trafficAllocation
-        });
+    onInputTrafficAllocation(event: Event) {
+        const input = event.target as HTMLInputElement;
+        const raw = input.value.trim();
+        const num = raw === '' ? 1 : Math.min(100, Math.max(1, Number(raw) || 1));
+        this.form.patchValue({ trafficAllocation: num }, { emitEvent: true });
+        this.cd.detectChanges();
     }
 
     private initForm() {
@@ -96,8 +104,25 @@ export class DotExperimentsConfigurationTrafficAllocationAddComponent implements
                 trafficAllocation: new FormControl<number>(data.trafficAllocation, {
                     nonNullable: true,
                     validators: [Validators.required]
+                }),
+                trafficAllocationInput: new FormControl<number>(data.trafficAllocation, {
+                    nonNullable: true,
+                    validators: [Validators.required]
                 })
             });
+        });
+
+        // Workaround: PrimeNG p-slider doesn't properly sync when multiple form controls
+        // share the same formControlName. Using separate controls and manually syncing them
+        // via valueChanges subscriptions to keep the slider and input in sync.
+        this.form.get('trafficAllocationInput')?.valueChanges.subscribe((value) => {
+            this.form.get('trafficAllocation')?.setValue(value, { emitEvent: false });
+            this.cd.detectChanges();
+        });
+
+        this.form.get('trafficAllocation')?.valueChanges.subscribe((value) => {
+            this.form.get('trafficAllocationInput')?.setValue(value, { emitEvent: false });
+            this.cd.detectChanges();
         });
     }
 }

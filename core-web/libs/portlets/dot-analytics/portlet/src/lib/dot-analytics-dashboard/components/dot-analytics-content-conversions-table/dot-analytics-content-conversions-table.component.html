@@ -13,7 +13,7 @@
 
     @if (isLoading) {
         <!-- Loading State -->
-        <div class="flex flex-column gap-3 p-4" data-testid="content-conversions-loading">
+        <div class="flex flex-col gap-3 p-4" data-testid="content-conversions-loading">
             @for (i of [1, 2, 3]; track i) {
                 <div class="flex gap-3">
                     <div class="flex-1 h-6 bg-gray-200 rounded"></div>
@@ -51,7 +51,7 @@
             <ng-template pTemplate="header">
                 <tr>
                     <th pSortableColumn="eventType">
-                        <div class="flex align-items-center">
+                        <div class="flex items-center">
                             {{ 'analytics.table.content-conversions.type' | dm }}
                             <p-sortIcon field="eventType" />
                             <p-columnFilter
@@ -89,7 +89,7 @@
                         </div>
                     </th>
                     <th>
-                        <div class="flex align-items-center">
+                        <div class="flex items-center">
                             {{ 'analytics.table.content-conversions.title-column' | dm }}
                             <p-columnFilter
                                 type="text"

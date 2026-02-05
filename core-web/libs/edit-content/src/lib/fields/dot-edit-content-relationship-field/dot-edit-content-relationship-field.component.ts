@@ -26,7 +26,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotRelationshipFieldComponent
     ],
     templateUrl: './dot-edit-content-relationship-field.component.html',
-    styleUrls: ['./dot-edit-content-relationship-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     viewProviders: [

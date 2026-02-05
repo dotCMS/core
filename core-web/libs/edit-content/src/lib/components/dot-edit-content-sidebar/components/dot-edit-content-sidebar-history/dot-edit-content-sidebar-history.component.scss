@@ -1,105 +1,46 @@
-@use "../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
-// Host component should take full height
+/* Fill tab panel so the open accordion tab uses full height */
 :host {
-    section {
-        display: block;
-        height: 100%;
-    }
-}
-
-// Block
-.dot-edit-content-sidebar-history {
     display: flex;
     flex-direction: column;
     height: 100%;
     min-height: 0;
-    position: relative;
-    flex: 1; // Takes all available space in the accordion
 }
 
-// Elements
-.dot-edit-content-sidebar-history__content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 0 0 spacing.$spacing-4;
-    min-height: 0; // Important for flexbox scroll
-}
+/* Timeline marker: base + halo/glow by state */
+.timeline-marker {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    flex-shrink: 0;
+    box-sizing: border-box;
 
-// Custom timeline styles for PrimeNG Scroller
-::ng-deep .dot-edit-content-sidebar-history__scroller {
-    .p-scroller-content {
-        padding-top: spacing.$spacing-1;
+    &--live {
+        background: #10b981; /* emerald-500 */
+        box-shadow:
+            0 0 0 2px rgba(16, 185, 129, 0.4),
+            0 0 6px 2px rgba(16, 185, 129, 0.2);
+    }
+
+    &--draft {
+        background: #eab308; /* yellow-500 */
+        box-shadow:
+            0 0 0 2px rgba(234, 179, 8, 0.4),
+            0 0 6px 2px rgba(234, 179, 8, 0.2);
+    }
+
+    &--default {
+        background: #9ca3af; /* gray-400 */
+        box-shadow:
+            0 0 0 2px rgba(156, 163, 175, 0.4),
+            0 0 4px 2px rgba(156, 163, 175, 0.12);
     }
 }
 
-.dot-edit-content-sidebar-history__loading {
-    padding: spacing.$spacing-3 spacing.$spacing-4;
-
-    ::ng-deep .p-skeleton {
-        background-color: colors.$color-palette-gray-200;
-        border-radius: common.$border-radius-md;
-    }
-}
-
-.dot-edit-content-sidebar-history__skeleton-item {
-    margin-bottom: spacing.$spacing-3;
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-}
-
-// Push Publish styles
-.dot-edit-content-sidebar-history__push-publish {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    position: relative;
-    flex: 1; // Takes all available space in the accordion
-}
-
-.dot-edit-content-sidebar-history__push-publish-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 0 0 spacing.$spacing-4;
-    min-height: 0; // Important for flexbox scroll
-    padding-top: spacing.$spacing-1;
-}
-
-.dot-edit-content-sidebar-history__push-publish-message {
-    margin-bottom: spacing.$spacing-3;
-    color: colors.$color-palette-gray-600;
-
-    &:last-of-type {
-        margin-bottom: spacing.$spacing-4;
-    }
-}
-
-.dot-edit-content-sidebar-history__push-publish-list {
-    margin: 0;
-    padding-left: spacing.$spacing-4;
-}
-
-.dot-edit-content-sidebar-history__push-publish-item {
-    margin-bottom: spacing.$spacing-2;
-    color: colors.$color-palette-gray-600;
-
-    &:last-child {
-        margin-bottom: 0;
-    }
-}
-
-dot-history-timeline-item,
-dot-pushpublish-timeline-item {
-    padding-right: spacing.$spacing-4;
-}
-
-dot-empty-container {
-    padding: 0 spacing.$spacing-4;
+/* Timeline connector line: thin light gray (Versions and Push Publish) */
+::ng-deep .dot-edit-content-sidebar-history .p-timeline-event-connector,
+::ng-deep .dot-edit-content-sidebar-history__push-publish-content .p-timeline-event-connector {
+    background-color: #e5e7eb !important; /* gray-200 */
+    width: 2px;
 }

@@ -33,14 +33,16 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-tag-field.component.html',
-    styleUrl: './dot-edit-content-tag-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true, optional: true })
         }
-    ]
+    ],
+    host: {
+        class: 'block'
+    }
 })
 export class DotEditContentTagFieldComponent extends BaseWrapperField {
     /**

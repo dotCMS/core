@@ -1,6 +1,7 @@
 import { Subject } from 'rxjs';
 
 import {
+    ChangeDetectorRef,
     Component,
     ElementRef,
     EventEmitter,
@@ -27,8 +28,17 @@ import { IframeOverlayService } from '../service/iframe-overlay.service';
 
 @Component({
     selector: 'dot-iframe',
-    styleUrls: ['./iframe.component.scss'],
     templateUrl: 'iframe.component.html',
+    styles: [
+        `
+            :host {
+                display: block;
+                height: 100%;
+                position: relative;
+                overflow: hidden;
+            }
+        `
+    ],
     imports: [DotLoadingIndicatorComponent, DotOverlayMaskComponent, DotSafeUrlPipe]
 })
 export class IframeComponent implements OnInit, OnDestroy {
@@ -37,6 +47,7 @@ export class IframeComponent implements OnInit, OnDestroy {
     private dotUiColorsService = inject(DotUiColorsService);
     private dotcmsEventsService = inject(DotcmsEventsService);
     private ngZone = inject(NgZone);
+    private cdr = inject(ChangeDetectorRef);
     dotLoadingIndicatorService = inject(DotLoadingIndicatorService);
     iframeOverlayService = inject(IframeOverlayService);
     loggerService = inject(LoggerService);
@@ -60,7 +71,12 @@ export class IframeComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.iframeOverlayService.overlay
             .pipe(takeUntil(this.destroy$))
-            .subscribe((val: boolean) => (this.showOverlay = val));
+            .subscribe((val: boolean) => {
+                queueMicrotask(() => {
+                    this.showOverlay = val;
+                    this.cdr.markForCheck();
+                });
+            });
 
         this.dotIframeService
             .reloaded()

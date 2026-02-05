@@ -110,6 +110,13 @@ describe('DotExperimentsCreateComponent', () => {
         expect(spectator.component.handleSubmit).toHaveBeenCalled();
     });
 
+    it('should have add-experiment button with type="button" to prevent form submit', () => {
+        spectator.detectChanges();
+        const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
+        expect(submitButton).toExist();
+        expect(submitButton.getAttribute('type')).toBe('button');
+    });
+
     describe('Form', () => {
         it('should have a form & autofocus ', () => {
             expect(spectator.query(byTestId('new-experiment-form'))).toExist();

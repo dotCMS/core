@@ -8,9 +8,9 @@ import { DotPagesFavoritePageEmptySkeletonComponent } from '@dotcms/ui';
 import { DotPagesCardComponent } from './dot-pages-card.component';
 
 interface HostComponent {
-    navigateToPageEmitted: boolean | null;
+    navigateToPageEmitted: string | null;
     openMenuEmitted: MouseEvent | null;
-    onNavigateToPage: (event: boolean) => void;
+    onNavigateToPage: (event: string) => void;
     onOpenMenu: (event: MouseEvent) => void;
     actionButtonId: string;
     imageUri: string;
@@ -48,9 +48,9 @@ describe('DotPagesCardComponent', () => {
                     imageUri: 'https://example.com/image.jpg',
                     title: 'Test Page Title',
                     url: '/test-page-url',
-                    navigateToPageEmitted: null as boolean | null,
+                    navigateToPageEmitted: null as string | null,
                     openMenuEmitted: null as MouseEvent | null,
-                    onNavigateToPage(event: boolean) {
+                    onNavigateToPage(event: string) {
                         this.navigateToPageEmitted = event;
                     },
                     onOpenMenu(event: MouseEvent) {
@@ -137,14 +137,14 @@ describe('DotPagesCardComponent', () => {
     });
 
     describe('Output Events', () => {
-        it('should emit navigateToPage when card is clicked', () => {
+        it('should emit navigateToPage with url when card is clicked', () => {
             const card = spectator.query('[data-testid="pageCard"]') as HTMLElement;
             expect(card).toBeTruthy();
 
             spectator.click(card);
             spectator.detectChanges();
 
-            expect(host().navigateToPageEmitted).toBe(true);
+            expect(host().navigateToPageEmitted).toBe('/test-page-url');
         });
 
         it('should emit openMenu when action button is clicked', () => {
@@ -210,7 +210,7 @@ describe('DotPagesCardComponent', () => {
             spectator.click(card);
             spectator.detectChanges();
 
-            expect(host().navigateToPageEmitted).toBe(true);
+            expect(host().navigateToPageEmitted).toBe('/test-page-url');
 
             // Step 3: User clicks action menu
             const mockEvent = new MouseEvent('click');

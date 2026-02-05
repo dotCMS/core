@@ -62,7 +62,6 @@ import {
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-wysiwyg-field.component.html',
-    styleUrl: './dot-edit-content-wysiwyg-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {

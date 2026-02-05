@@ -61,7 +61,6 @@ const STATIC_COLUMNS = 6;
         FormsModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
-    styleUrls: ['./dot-select-existing-content.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })

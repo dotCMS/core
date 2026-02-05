@@ -1,47 +1,64 @@
+@let contentlet = $contentlet();
+@let tempFile = $tempFile();
+@let disabled = $disabled();
+@let editFile = $editFile;
+@let removeFile = $removeFile;
+
 <div
-    [ngClass]="{ 'preview-container--fade': this.metadata?.editableAsText }"
-    class="preview-container">
+    [ngClass]="
+        this.metadata?.editableAsText
+            ? 'after:absolute after:inset-x-0 after:bottom-0 after:h-1/2 after:rounded-md after:bg-linear-to-t after:from-white after:to-transparent after:pointer-events-none'
+            : ''
+    "
+    class="relative flex h-full w-full items-start justify-center gap-2 overflow-hidden">
     @if (this.metadata?.editableAsText) {
         <div
-            (click)="this.editFile.emit()"
-            class="preview-code_container"
+            (click)="editFile.emit()"
+            class="flex h-full w-full cursor-pointer select-none items-center justify-center"
             data-testId="code-preview">
-            <code>{{ content() }}</code>
+            <code
+                class="block h-full w-full overflow-hidden whitespace-pre-wrap bg-white text-blue-600">
+                {{ content() }}
+            </code>
         </div>
     } @else {
-        <div class="preview-image__container">
+        <div
+            class="flex h-full w-full min-w-0 shrink items-center justify-center bg-gray-200 min-[500px]:max-w-70 min-[500px]:flex-none">
             @if (tempFile) {
                 <dot-temp-file-thumbnail
                     [tempFile]="tempFile"
                     [iconSize]="'48px'"
+                    class="flex h-full w-full items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:object-center [&_video]:h-full [&_video]:w-full"
                     data-testId="temp-file-thumbnail" />
             } @else {
                 <dot-contentlet-thumbnail
-                    [fieldVariable]="contentlet.fieldVariable"
+                    [fieldVariable]="contentlet?.fieldVariable"
                     [iconSize]="'48px'"
                     [contentlet]="contentlet"
                     [playableVideo]="true"
+                    class="flex h-full w-full items-center justify-center [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_img]:object-center"
                     data-testId="contentlet-thumbnail" />
             }
         </div>
-        <div class="preview-metadata__container">
-            <span class="preview-metadata_header">{{ title }}</span>
+        <div
+            class="hidden min-w-37.5 flex-1 flex-col gap-2 overflow-hidden p-2 pr-6 min-[500px]:flex">
+            <span class="truncate text-base font-semibold text-black">{{ title }}</span>
             @if (metadata.width && metadata.height) {
-                <div class="preview-metadata">
+                <div class="flex items-center gap-1 text-sm">
                     <i class="pi pi-arrows-alt"></i>
-                    <span>{{ metadata.width }} x {{ metadata.height }}</span>
+                    <span class="truncate">{{ metadata.width }} x {{ metadata.height }}</span>
                 </div>
             }
             @if (metadata.fileSize) {
-                <div class="preview-metadata">
+                <div class="flex items-center gap-1 text-sm">
                     <i class="pi pi-file"></i>
-                    <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
+                    <span class="truncate">{{ metadata.fileSize | dotFileSizeFormat }}</span>
                 </div>
             }
         </div>
     }
 
-    <div class="preview-resource-links__actions">
+    <div class="absolute right-0 top-0 hidden flex-col gap-1 pt-2 min-[500px]:flex">
         <p-button
             (click)="visibility = !visibility"
             [disabled]="disabled"
@@ -59,7 +76,7 @@
         }
     </div>
 
-    <div class="preview-metadata__actions">
+    <div class="absolute bottom-2 right-0 z-10 hidden items-center gap-2 min-[500px]:flex">
         <p-button
             (click)="removeFile.emit()"
             [disabled]="disabled"
@@ -78,7 +95,7 @@
         }
     </div>
 
-    <div class="preview-metadata__action--responsive">
+    <div class="absolute bottom-2 right-2 z-10 flex flex-col gap-2 min-[500px]:hidden">
         @if (isEditable) {
             <p-button
                 (click)="onEdit()"
@@ -116,16 +133,16 @@
     [header]="title"
     [appendTo]="'body'"
     [style]="{ maxWidth: '582px', width: '100%' }">
-    <div class="file-info__item">
-        <span class="file-info__title">{{ 'Size' | dm }}:</span>
-        <div class="file-info__link">
+    <div class="flex flex-col items-start gap-1 border-b border-gray-200 py-1 last:border-b-0">
+        <span class="text-sm font-semibold">{{ 'Size' | dm }}:</span>
+        <div class="flex min-h-8 w-full items-center gap-2 text-sm">
             @if (metadata.width && metadata.height) {
-                <div class="file-info__size" data-testId="file-resolution">
+                <div class="flex items-center gap-1" data-testId="file-resolution">
                     <i class="pi pi-arrows-alt"></i>
                     <span>{{ metadata.width }}px, {{ metadata.height }}px</span>
                 </div>
             }
-            <div class="file-info__size">
+            <div class="flex items-center gap-1">
                 <i class="pi pi-file"></i>
                 <span>{{ metadata.fileSize | dotFileSizeFormat }}</span>
             </div>
@@ -135,10 +152,15 @@
     @if (contentlet) {
         @for (sourceLink of this.resourceLinks(); track $index) {
             @if (sourceLink.show) {
-                <div [attr.data-testId]="'resource-link-' + sourceLink.key" class="file-info__item">
-                    <span class="file-info__title">{{ sourceLink.key | dm }}:</span>
-                    <div class="file-info__link">
-                        <a [href]="sourceLink.value" target="_blank">
+                <div
+                    [attr.data-testId]="'resource-link-' + sourceLink.key"
+                    class="flex flex-col items-start gap-1 border-b border-gray-200 py-1 last:border-b-0">
+                    <span class="text-sm font-semibold">{{ sourceLink.key | dm }}:</span>
+                    <div class="flex min-h-8 w-full items-center gap-2 text-sm">
+                        <a
+                            [href]="sourceLink.value"
+                            target="_blank"
+                            class="flex-1 text-black no-underline">
                             {{ sourceLink.value || ('dot.binary.field.no.link.found' | dm) }}
                         </a>
                         <dot-copy-button [copy]="sourceLink.value" />
@@ -147,10 +169,11 @@
             }
         } @empty {
             @for (item of [1, 2, 3, 4]; track $index) {
-                <div class="file-info__item file-info__loading">
+                <div
+                    class="flex flex-col items-start gap-1 border-b border-gray-200 py-1 last:border-b-0">
                     <p-skeleton height="1.5rem" width="4rem" />
-                    <div class="file-info__link">
-                        <p-skeleton class="file-info__link" height="20px" width="100%" />
+                    <div class="flex min-h-8 w-full items-center gap-2 text-sm">
+                        <p-skeleton class="w-full" height="20px" width="100%" />
                         <p-skeleton size="20px" />
                     </div>
                 </div>
