@@ -5,6 +5,7 @@ import fs from 'fs-extra';
 import { Err, Ok, Result } from 'ts-results';
 
 import https from 'https';
+import net from 'net';
 
 import { escapeShellPath } from './validation';
 
@@ -384,4 +385,112 @@ function formatDependencies(dependencies: string[], devDependencies: string[]): 
     devDependencies.forEach((item) => lines.push(chalk.grey(`- ${item}`)));
 
     return lines.join('\n');
+}
+
+/**
+ * Checks if Docker is installed and running
+ * @returns Result with true if available, or error message if not
+ */
+export async function checkDockerAvailability(): Promise<Result<true, string>> {
+    try {
+        // Check if Docker is installed and running by executing 'docker info'
+        await execa('docker', ['info']);
+        return Ok(true);
+    } catch {
+        // Docker is either not installed or not running
+        const errorMsg =
+            chalk.red('\n❌ Docker is not available\n\n') +
+            chalk.white('Docker is required to run dotCMS locally.\n\n') +
+            chalk.yellow('How to fix:\n') +
+            chalk.white('  1. Install Docker Desktop:\n') +
+            chalk.cyan('     → https://www.docker.com/products/docker-desktop\n\n') +
+            chalk.white('  2. Start Docker Desktop\n') +
+            chalk.white(
+                '  3. Wait for Docker to be running (check the Docker icon in your system tray)\n'
+            ) +
+            chalk.white('  4. Run this command again\n\n') +
+            chalk.gray('Alternative: Use --url flag to connect to an existing dotCMS instance');
+
+        return Err(errorMsg);
+    }
+}
+
+/**
+ * Checks if a specific port is available
+ * @param port - Port number to check
+ * @returns Promise resolving to true if available, false if in use
+ */
+function isPortAvailable(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+
+        server.once('error', (err: NodeJS.ErrnoException) => {
+            if (err.code === 'EADDRINUSE') {
+                resolve(false); // Port is in use
+            } else {
+                resolve(true); // Other error, assume available
+            }
+        });
+
+        server.once('listening', () => {
+            server.close();
+            resolve(true); // Port is available
+        });
+
+        server.listen(port, '0.0.0.0');
+    });
+}
+
+/**
+ * Checks if required dotCMS ports are available
+ * @returns Result with true if all ports available, or error message with busy ports
+ */
+export async function checkPortsAvailability(): Promise<Result<true, string>> {
+    const requiredPorts = [
+        { port: 8082, service: 'dotCMS HTTP' },
+        { port: 8443, service: 'dotCMS HTTPS' },
+        { port: 9200, service: 'Elasticsearch HTTP' },
+        { port: 9600, service: 'Elasticsearch Transport' }
+    ];
+
+    const busyPorts: { port: number; service: string }[] = [];
+
+    // Check all ports
+    for (const { port, service } of requiredPorts) {
+        const available = await isPortAvailable(port);
+        if (!available) {
+            busyPorts.push({ port, service });
+        }
+    }
+
+    if (busyPorts.length > 0) {
+        const errorMsg =
+            chalk.red('\n❌ Required ports are already in use\n\n') +
+            chalk.white('The following ports are busy:\n') +
+            busyPorts
+                .map(
+                    ({ port, service }) =>
+                        chalk.yellow(`  • Port ${port}`) + chalk.gray(` (${service})`)
+                )
+                .join('\n') +
+            '\n\n' +
+            chalk.yellow('How to fix:\n') +
+            chalk.white('  1. Stop services using these ports:\n') +
+            chalk.gray("     • Check what's using the ports: ") +
+            chalk.cyan(
+                process.platform === 'win32'
+                    ? `netstat -ano | findstr ":<port>"`
+                    : `lsof -i :<port>`
+            ) +
+            '\n' +
+            chalk.gray('     • Stop the conflicting service\n\n') +
+            chalk.white('  2. Or stop existing dotCMS containers:\n') +
+            chalk.cyan('     $ docker compose down\n\n') +
+            chalk.white('  3. Run this command again\n\n') +
+            chalk.gray('Alternative: Use --url flag to connect to an existing dotCMS instance');
+
+        return Err(errorMsg);
+    }
+
+    return Ok(true);
 }

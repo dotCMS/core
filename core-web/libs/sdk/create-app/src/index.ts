@@ -29,6 +29,8 @@ import {
     moveDockerComposeOneLevelUp
 } from './git';
 import {
+    checkDockerAvailability,
+    checkPortsAvailability,
     displayDependencies,
     fetchWithRetry,
     finalStepsForAngularAndAngularSSR,
@@ -185,9 +187,29 @@ program
                 return;
             }
 
-            const spinner = ora(`Starting dotCMS with Docker`).start();
+            const spinner = ora(`Checking Docker availability...`).start();
 
-            // STEP 2 — Download docker-compose
+            // STEP 1 — Check if Docker is available
+            const dockerAvailable = await checkDockerAvailability();
+            if (!dockerAvailable.ok) {
+                spinner.fail('Docker is not available');
+                console.log(dockerAvailable.val);
+                return;
+            }
+            spinner.succeed('Docker is available');
+
+            // STEP 2 — Check if required ports are available
+            spinner.start('Checking port availability...');
+            const portsAvailable = await checkPortsAvailability();
+            if (!portsAvailable.ok) {
+                spinner.fail('Required ports are busy');
+                console.log(portsAvailable.val);
+                return;
+            }
+            spinner.succeed('All required ports are available');
+
+            // STEP 3 — Download docker-compose
+            spinner.start('Downloading Docker Compose configuration...');
             const downloaded = await downloadTheDockerCompose({
                 directory: finalDirectory
             });
@@ -195,12 +217,25 @@ program
                 spinner.fail('Failed to download Docker Compose file.');
                 return;
             }
+            spinner.succeed('Docker Compose configuration downloaded');
 
-            // STEP 3 — Run docker-compose
+            // STEP 4 — Run docker-compose
+            spinner.start('Starting dotCMS containers...');
             const ran = await runDockerCompose({ directory: finalDirectory });
             if (!ran.ok) {
-                spinner.fail(
-                    'Failed to start dotCMS ensure docker is running and ports 8082, 8443, 9200, and 9600 are free.'
+                spinner.fail('Failed to start Docker containers');
+                const errorMessage = ran.val instanceof Error ? ran.val.message : String(ran.val);
+                console.log(
+                    chalk.red('\n❌ Docker Compose failed to start\n\n') +
+                        chalk.white('Error details:\n') +
+                        chalk.gray(errorMessage) +
+                        '\n\n' +
+                        chalk.yellow('Common solutions:\n') +
+                        chalk.white('  • Ensure Docker Desktop is running\n') +
+                        chalk.white('  • Try: ') +
+                        chalk.cyan('docker compose down') +
+                        chalk.white(' then run this command again\n') +
+                        chalk.white('  • Check Docker logs for more details\n')
                 );
                 return;
             }
