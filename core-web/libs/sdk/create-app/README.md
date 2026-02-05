@@ -3,11 +3,12 @@
 > 🚧 **Beta Notice:**
 > This CLI is currently in **beta**. Features and APIs may change as we continue improving the tool.
 
-With a single command, you can bootstrap a fully functional frontend (Next.js,Vue,Angular, etc.) connected to dotCMS APIs — including the following:
+With a single command, you can bootstrap a fully functional frontend (Next.js, Angular, Astro, etc.) connected to dotCMS APIs — including the following:
 
--   Spinning up dotCMS using docker
--   Universal Visual Editor pre configured
--   Generating site id and authentication token (just copy paste them in frontend .env and enjoy).
+-   Spinning up dotCMS using Docker with intelligent pre-flight checks
+-   Universal Visual Editor pre-configured
+-   Generating site ID and authentication token (just copy paste them in frontend .env and enjoy)
+-   Comprehensive validation and helpful error messages
 
 ---
 
@@ -17,12 +18,13 @@ With a single command, you can bootstrap a fully functional frontend (Next.js,Vu
 
 It automates the tedious work of:
 
--   Setting up a framework
+-   Setting up a framework with best practices
 -   Connecting to dotCMS REST & GraphQL APIs
 -   Providing content-fetching helpers
 -   Adding example components & pages
 -   Creating environment variable templates
--   Optional Setting up local dotCMS instance using docker.
+-   Optionally setting up local dotCMS instance using Docker
+-   Validating your environment (Docker, ports, URLs)
 
 This tool lets you focus on **building**, not configuring.
 
@@ -65,8 +67,12 @@ npx @dotcms/create-app <project-name>
 This will:
 
 -   Ask for the target directory
--   Ask which frontend framework you want (Next.js,Angular,Vue, etc.)
--   Ask if you’re using dotCMS Cloud or Local Docker dotCMS
+-   Ask which frontend framework you want (Next.js, Angular, Astro, etc.)
+-   Ask if you're using dotCMS Cloud or Local Docker dotCMS
+-   **For local Docker setup:**
+    -   Check if Docker is installed and running
+    -   Verify required ports are available (8082, 8443, 9200, 9600)
+    -   Provide specific error messages and solutions if issues are found
 -   Automatically scaffold your project
 -   Configure UVE (Edit Mode Anywhere)
 -   Start dotCMS (if using Docker)
@@ -112,4 +118,120 @@ When using `--url`, make sure to include the full URL with protocol:
 
 ✅ **Valid:** `https://demo.dotcms.com`, `http://localhost:8082`
 ❌ **Invalid:** `demo.dotcms.com`, `localhost:8082` (missing protocol)
+
+---
+
+## 🛡️ Built-in Validation & Error Handling
+
+The CLI includes comprehensive validation to help you avoid common setup issues:
+
+### Input Validation
+- **Project names:** Validates against filesystem limitations, reserved names, special characters, and path traversal
+- **Framework names:** Supports aliases and case-insensitive matching
+- **URLs:** Ensures proper protocol and format
+- **Conflicting parameters:** Warns when mixing `--local` with cloud parameters
+
+### Docker Environment Checks
+When using local Docker setup, the CLI performs pre-flight checks:
+
+1. **Docker Availability**
+   - Verifies Docker is installed and running
+   - Provides installation instructions if not found
+   - Direct link to Docker Desktop download
+
+2. **Port Availability**
+   - Checks all required ports before starting containers
+   - Lists which specific ports are busy
+   - Provides platform-specific commands to identify blocking processes
+   - Suggests `docker compose down` to stop existing containers
+
+3. **Container Health**
+   - Monitors dotCMS startup with intelligent retries
+   - Shows detailed diagnostics if startup fails
+   - Displays container status and recent logs
+
+### Error Messages
+All error messages include:
+- **Clear problem description** - What went wrong
+- **Specific suggestions** - How to fix it
+- **Alternative solutions** - Other ways to proceed
+- **Platform-specific commands** - Commands tailored to your OS
+
+### Debug Mode
+Run with `DEBUG=1` to see detailed stack traces:
+```sh
+DEBUG=1 npx @dotcms/create-app my-project
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Docker Issues
+
+**"Docker is not available"**
+- Ensure Docker Desktop is installed and running
+- Check the Docker icon in your system tray
+- Download from: https://www.docker.com/products/docker-desktop
+
+**"Required ports are already in use"**
+- Check what's using the ports:
+  - macOS/Linux: `lsof -i :8082`
+  - Windows: `netstat -ano | findstr ":8082"`
+- Stop existing dotCMS containers: `docker compose down`
+- Stop conflicting services or choose a different port mapping
+
+**"dotCMS failed to start properly"**
+- Check container logs: `docker logs <container-name>`
+- Verify sufficient system resources (RAM, disk space)
+- Review Docker diagnostics output from the CLI
+
+### Validation Errors
+
+**"Invalid project name"**
+- Avoid special characters: `< > : " | ? *`
+- Don't use Windows reserved names: `CON`, `PRN`, `AUX`, `NUL`, etc.
+- Maximum 255 characters
+- No path traversal patterns (`..`)
+
+**"Invalid URL format"**
+- Include protocol: `https://` or `http://`
+- Verify hostname is correct
+- For localhost, default port is 8082
+
+---
+
+## 🚀 Examples
+
+### Quick Start with Interactive Prompts
+```sh
+npx @dotcms/create-app my-blog
+```
+
+### Using CLI Flags (Skip Prompts)
+```sh
+# Local Docker setup
+npx @dotcms/create-app my-blog --framework nextjs --local
+
+# Cloud instance
+npx @dotcms/create-app my-blog \
+  --framework angular \
+  --url https://demo.dotcms.com \
+  --username admin@dotcms.com \
+  --password mypassword
+```
+
+### Debug Mode
+```sh
+DEBUG=1 npx @dotcms/create-app my-blog --framework nextjs --local
+```
+
+---
+
+## 🔒 Security Notes
+
+- Never commit API tokens or passwords to version control
+- The CLI validates all inputs to prevent injection attacks
+- Project names are sanitized to prevent path traversal
+- Shell commands are properly escaped for cross-platform safety
 
