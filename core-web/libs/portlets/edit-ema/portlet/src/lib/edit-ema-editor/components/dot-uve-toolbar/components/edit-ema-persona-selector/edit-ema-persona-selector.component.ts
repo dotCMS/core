@@ -50,8 +50,7 @@ interface PersonaSelector {
         ChipModule,
         PaginatorModule
     ],
-    templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss']
+    templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;

@@ -1,45 +1,45 @@
-@use "variables" as *;
-@use "mixins";
-@use "../../../../../../../libs/dotcms-scss/shared/colors";
-@use "../../../../../../../libs/dotcms-scss/shared/spacing";
+// @use "variables" as *;
+// @use "mixins";
+// @use "../../../../../../../libs/dotcms-scss/shared/colors";
+// @use "../../../../../../../libs/dotcms-scss/shared/spacing";
 
-:host {
-    ::ng-deep {
-        dot-site-selector {
-            span.p-button-text {
-                max-width: 300px;
-                @include mixins.truncate-text;
-            }
-        }
-    }
-}
+// :host {
+//     ::ng-deep {
+//         dot-site-selector {
+//             span.p-button-text {
+//                 max-width: 300px;
+//                 @include mixins.truncate-text;
+//             }
+//         }
+//     }
+// }
 
-p-toolbar::ng-deep {
-    z-index: 1004; // Menu and dropdown options in primeng use 1003.
+// p-toolbar::ng-deep {
+//     z-index: 1004; // Menu and dropdown options in primeng use 1003.
 
-    .p-toolbar {
-        background-color: $toolbar-background;
-        color: $toolbar-color;
-        height: $toolbar-height;
-        padding: 0 spacing.$spacing-3 0 0;
-    }
+//     .p-toolbar {
+//         background-color: $toolbar-background;
+//         color: $toolbar-color;
+//         height: $toolbar-height;
+//         padding: 0 spacing.$spacing-3 0 0;
+//     }
 
-    .p-toolbar-group-left {
-        min-width: 0;
-    }
-}
+//     .p-toolbar-group-left {
+//         min-width: 0;
+//     }
+// }
 
-dot-toolbar-user {
-    width: 32px;
-}
+// dot-toolbar-user {
+//     width: 32px;
+// }
 
-.toolbar__crumbtrail {
-    margin-left: spacing.$spacing-4;
-}
+// .toolbar__crumbtrail {
+//     margin-left: spacing.$spacing-4;
+// }
 
-.toolbar__sep {
-    border-left: solid 1px colors.$color-palette-primary;
-    margin: 0 spacing.$spacing-1 0 spacing.$spacing-4 !important;
-    display: block;
-    height: 40px;
-}
+// .toolbar__sep {
+//     border-left: solid 1px colors.$color-palette-primary;
+//     margin: 0 spacing.$spacing-1 0 spacing.$spacing-4 !important;
+//     display: block;
+//     height: 40px;
+// }
