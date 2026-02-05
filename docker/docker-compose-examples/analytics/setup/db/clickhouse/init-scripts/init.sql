@@ -34,6 +34,7 @@
 -- This is the raw event ingestion table. All data from Jitsu/collectors enters here first.
 -- =====================================================================
 CREATE DATABASE IF NOT EXISTS clickhouse_test_db;
+use clickhouse_test_db;
 CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 (
     -- ######################################################
@@ -255,7 +256,7 @@ CREATE TABLE clickhouse_test_db.content_events_counter
 -- count(*) AS daily_total
 -- =====================================================================
 
-CREATE MATERIALIZED VIEW content_events_counter_mv TO clickhouse_test_db.content_events_counter AS
+CREATE MATERIALIZED VIEW clickhouse_test_db.content_events_counter_mv TO clickhouse_test_db.content_events_counter AS
 SELECT customer_id,
        cluster_id,
        event_type,
@@ -374,7 +375,7 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
 --
 -- Inserts rows summarizing content presence before the conversion.
 -- =====================================================================
-CREATE MATERIALIZED VIEW content_presents_in_conversion_mv
+CREATE MATERIALIZED VIEW clickhouse_test_db.content_presents_in_conversion_mv
     REFRESH EVERY 15 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
     SELECT context_user_id,
@@ -432,7 +433,7 @@ GROUP BY customer_id, cluster_id, identifier, title, event_type, context_user_id
 -- =====================================================================
 
 
-CREATE MATERIALIZED VIEW conversion_time_mv TO clickhouse_test_db.conversion_time AS
+CREATE MATERIALIZED VIEW clickhouse_test_db.conversion_time_mv TO clickhouse_test_db.conversion_time AS
 SELECT customer_id,
        cluster_id,
        context_user_id,

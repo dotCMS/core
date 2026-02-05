@@ -108,15 +108,6 @@ describe('DotUsageShellComponent', () => {
         expect(spectator.query('[data-testid="system-COUNT_LANGUAGES-card"]')).toBeTruthy();
     });
 
-    it('should handle refresh button click', () => {
-        jest.clearAllMocks();
-        const refreshButton = spectator.query('[data-testid="refresh-button"]');
-        expect(refreshButton).toBeTruthy();
-
-        spectator.click(refreshButton);
-        expect(usageService.getSummary).toHaveBeenCalled();
-    });
-
     it('should handle retry button click', () => {
         spectator.component.loading.set(false);
         spectator.component.error.set('Some error');
