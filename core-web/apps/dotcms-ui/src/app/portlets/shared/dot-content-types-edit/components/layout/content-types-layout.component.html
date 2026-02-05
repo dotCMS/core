@@ -82,7 +82,7 @@
             }
         </p-tablist>
         <p-tabpanels class="grow basis-0 min-h-0 p-0!">
-            <p-tabpanel [value]="0" class="content-type__properties h-full min-h-0">
+            <p-tabpanel [value]="0" class="h-full min-h-0">
                 <div class="flex h-full min-h-0" id="content-type-form-layout">
                     <div
                         class="flex flex-col grow min-h-0 overflow-x-hidden overflow-y-auto bg-gray-200 p-3"
@@ -90,7 +90,7 @@
                         <ng-content></ng-content>
                     </div>
                     <div
-                        class="items-center flex flex-col min-h-0 overflow-y-auto border-l border-gray-200">
+                        class="items-center w-64 flex flex-col min-h-0 overflow-y-auto border-l border-gray-200">
                         <p-splitButton
                             (onClick)="fireAddRowEvent()"
                             [model]="actions"
