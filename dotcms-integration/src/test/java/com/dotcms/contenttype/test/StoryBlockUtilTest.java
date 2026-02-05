@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.util.JsonUtil;
 import org.junit.Test;
 
+import java.util.OptionalInt;
+
 import static org.junit.Assert.*;
 
 /**
@@ -411,5 +413,155 @@ public class StoryBlockUtilTest {
                 "}"
         );
         assertFalse("Block with mixed empty and actual text should return false", StoryBlockUtil.isTextContentEmpty(blockWithMixedContent));
+    }
+
+    // =========================================================================
+    // getCharCount tests
+    // =========================================================================
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Story Block JSON contains attrs.charCount with a valid integer value
+     *
+     * Expected Result: Method should return OptionalInt with the charCount value
+     */
+    @Test
+    public void test_getCharCount_returns_value_when_present() {
+        final String storyBlock = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 42,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 8\n" +
+                "  },\n" +
+                "  \"content\": [],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final OptionalInt result = StoryBlockUtil.getCharCount(storyBlock);
+        assertTrue("Should have charCount value", result.isPresent());
+        assertEquals("Should return correct charCount", 42, result.getAsInt());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Story Block JSON has attrs but no charCount property
+     *
+     * Expected Result: Method should return empty OptionalInt
+     */
+    @Test
+    public void test_getCharCount_returns_empty_when_no_charCount() {
+        final String storyBlock = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 8\n" +
+                "  },\n" +
+                "  \"content\": [],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final OptionalInt result = StoryBlockUtil.getCharCount(storyBlock);
+        assertFalse("Should return empty when no charCount", result.isPresent());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Story Block JSON has no attrs property at all
+     *
+     * Expected Result: Method should return empty OptionalInt
+     */
+    @Test
+    public void test_getCharCount_returns_empty_when_no_attrs() {
+        final String storyBlock = "{\n" +
+                "  \"content\": [],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final OptionalInt result = StoryBlockUtil.getCharCount(storyBlock);
+        assertFalse("Should return empty when no attrs", result.isPresent());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Input is null
+     *
+     * Expected Result: Method should return empty OptionalInt
+     */
+    @Test
+    public void test_getCharCount_returns_empty_for_null() {
+        final OptionalInt result = StoryBlockUtil.getCharCount(null);
+        assertFalse("Should return empty for null input", result.isPresent());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Input is empty string
+     *
+     * Expected Result: Method should return empty OptionalInt
+     */
+    @Test
+    public void test_getCharCount_returns_empty_for_empty_string() {
+        final OptionalInt result = StoryBlockUtil.getCharCount("");
+        assertFalse("Should return empty for empty string", result.isPresent());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Input is malformed/invalid JSON
+     *
+     * Expected Result: Method should return empty OptionalInt without throwing
+     */
+    @Test
+    public void test_getCharCount_returns_empty_for_invalid_json() {
+        final OptionalInt result = StoryBlockUtil.getCharCount("{invalid json}");
+        assertFalse("Should return empty for invalid JSON", result.isPresent());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Story Block JSON has charCount of 0
+     *
+     * Expected Result: Method should return OptionalInt with value 0
+     */
+    @Test
+    public void test_getCharCount_returns_zero_when_charCount_is_zero() {
+        final String storyBlock = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 0\n" +
+                "  },\n" +
+                "  \"content\": [],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final OptionalInt result = StoryBlockUtil.getCharCount(storyBlock);
+        assertTrue("Should have charCount value", result.isPresent());
+        assertEquals("Should return zero charCount", 0, result.getAsInt());
+    }
+
+    /**
+     * Tested method {@link StoryBlockUtil#getCharCount(String)}
+     *
+     * Given scenario: Story Block JSON has charCount as a string instead of integer
+     *
+     * Expected Result: Method should return empty OptionalInt as the value is not an integer
+     */
+    @Test
+    public void test_getCharCount_returns_empty_for_non_integer_charCount() {
+        final String storyBlock = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": \"not a number\"\n" +
+                "  },\n" +
+                "  \"content\": [],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final OptionalInt result = StoryBlockUtil.getCharCount(storyBlock);
+        assertFalse("Should return empty for non-integer charCount", result.isPresent());
     }
 }

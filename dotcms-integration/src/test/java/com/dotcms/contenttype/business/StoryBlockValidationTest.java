@@ -2,6 +2,8 @@ package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
+import com.dotcms.contenttype.model.field.ImmutableFieldVariable;
 import com.dotcms.contenttype.model.field.ImmutableStoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -30,6 +32,9 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
     private static User systemUser;
     private static ContentType testContentType;
     private static Field storyBlockField;
+
+    private static ContentType charLimitContentType;
+    private static Field charLimitStoryBlockField;
 
     /**
      * Functional interface for operations that can throw checked exceptions
@@ -109,6 +114,29 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Helper method to handle DotContentletValidationException for CHAR_LIMIT (character limit exceeded) errors
+     */
+    private void expectCharLimitValidationException(CheckedOperation operation, String expectedErrorMessage) {
+        try {
+            operation.run();
+            fail(expectedErrorMessage);
+        } catch (DotContentletValidationException e) {
+            assertTrue("Should contain char limit error", e.hasCharLimitErrors());
+        } catch (DotRuntimeException e) {
+            if (e.getCause() instanceof DotContentletValidationException) {
+                DotContentletValidationException ve = (DotContentletValidationException) e.getCause();
+                assertTrue("Should contain char limit error", ve.hasCharLimitErrors());
+            } else {
+                final String message = e.getMessage();
+                assertTrue("Exception message should indicate char limit error: " + message,
+                        message != null && (message.contains("charLimitExceeded") || message.contains("character limit") || message.contains("has invalid/missing field")));
+            }
+        } catch (DotDataException | DotSecurityException e) {
+            fail("Unexpected exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+        }
+    }
+
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
@@ -129,6 +157,29 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 .build();
 
         storyBlockField = APILocator.getContentTypeFieldAPI().save(storyBlockField, systemUser);
+
+        // Create a content type with a story block field that has a charLimit field variable
+        charLimitContentType = new ContentTypeDataGen()
+                .name("StoryBlockCharLimitTest")
+                .velocityVarName("storyBlockCharLimitTest")
+                .nextPersisted();
+
+        charLimitStoryBlockField = ImmutableStoryBlockField.builder()
+                .name("Story Block With Limit")
+                .variable("storyBlockWithLimit")
+                .contentTypeId(charLimitContentType.id())
+                .required(false)
+                .build();
+
+        charLimitStoryBlockField = APILocator.getContentTypeFieldAPI().save(charLimitStoryBlockField, systemUser);
+
+        // Add charLimit field variable with a limit of 25 characters
+        final FieldVariable charLimitVar = ImmutableFieldVariable.builder()
+                .key("charLimit")
+                .value("25")
+                .fieldId(charLimitStoryBlockField.id())
+                .build();
+        APILocator.getContentTypeFieldAPI().save(charLimitVar, systemUser);
     }
 
     /**
@@ -769,6 +820,209 @@ public class StoryBlockValidationTest extends IntegrationTestBase {
                 () -> APILocator.getContentletAPI().checkin(contentlet, systemUser, false),
                 "Expected DotContentletValidationException for empty Story Block JSON"
         );
+    }
+
+    // =========================================================================
+    // charLimit validation tests
+    // =========================================================================
+
+    /**
+     * Test that a story block exceeding charLimit fails validation.
+     * charLimit is set to 25, and the content has charCount of 32.
+     */
+    @Test
+    public void test_story_block_exceeding_char_limit_fails_validation() {
+        final String storyBlockExceedingLimit = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 32,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 1\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"adasdasdasdasdasdasdasdasdasdads\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockExceedingLimit)
+                .next();
+
+        expectCharLimitValidationException(
+                () -> APILocator.getContentletAPI().checkin(contentlet, systemUser, false),
+                "Expected DotContentletValidationException for story block exceeding charLimit"
+        );
+    }
+
+    /**
+     * Test that a story block within charLimit passes validation.
+     * charLimit is set to 25, and the content has charCount of 12.
+     */
+    @Test
+    public void test_story_block_within_char_limit_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockWithinLimit = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 12,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 2\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"Hello World!\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockWithinLimit)
+                .next();
+
+        // Should not throw validation exception - within the limit
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Test that a story block at exactly the charLimit passes validation.
+     * charLimit is set to 25, and the content has charCount of 25.
+     */
+    @Test
+    public void test_story_block_at_exact_char_limit_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockAtLimit = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 25,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 1\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"abcdefghijklmnopqrstuvwxy\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockAtLimit)
+                .next();
+
+        // Should not throw validation exception - exactly at the limit
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Test that a story block without charCount attribute in JSON passes validation even with charLimit set.
+     * This handles gracefully the case where old content doesn't have charCount in attrs.
+     */
+    @Test
+    public void test_story_block_without_char_count_attr_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockNoCharCount = "{\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"Some content without charCount in attrs\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(charLimitContentType)
+                .setProperty("storyBlockWithLimit", storyBlockNoCharCount)
+                .next();
+
+        // Should not throw - gracefully skips validation when charCount is not in JSON attrs
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
+    }
+
+    /**
+     * Test that a story block without charLimit field variable passes validation regardless of charCount.
+     * Uses the original test content type which has no charLimit field variable.
+     */
+    @Test
+    public void test_story_block_without_char_limit_variable_passes_validation() throws DotDataException, DotSecurityException {
+        final String storyBlockHighCharCount = "{\n" +
+                "  \"attrs\": {\n" +
+                "    \"charCount\": 9999,\n" +
+                "    \"readingTime\": 1,\n" +
+                "    \"wordCount\": 1\n" +
+                "  },\n" +
+                "  \"content\": [\n" +
+                "    {\n" +
+                "      \"attrs\": {\n" +
+                "        \"indent\": 0,\n" +
+                "        \"textAlign\": null\n" +
+                "      },\n" +
+                "      \"content\": [\n" +
+                "        {\n" +
+                "          \"text\": \"Some text content\",\n" +
+                "          \"type\": \"text\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"type\": \"paragraph\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"type\": \"doc\"\n" +
+                "}";
+
+        final Contentlet contentlet = new ContentletDataGen(testContentType)
+                .setProperty("storyBlockField", storyBlockHighCharCount)
+                .next();
+
+        // Should not throw - no charLimit field variable on this content type's field
+        final Contentlet savedContentlet = APILocator.getContentletAPI().checkin(contentlet, systemUser, false);
+
+        assertNotNull("Saved contentlet should not be null", savedContentlet);
+        assertTrue("Saved contentlet should have a valid inode", UtilMethods.isSet(savedContentlet.getInode()));
     }
 
     /**

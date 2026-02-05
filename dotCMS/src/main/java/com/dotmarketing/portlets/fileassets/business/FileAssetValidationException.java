@@ -49,4 +49,14 @@ public class FileAssetValidationException extends DotContentletValidationExcepti
 		super(x, importLineError, notValidFields, notValidRelationships);
 	}
 
+	/**
+	 * Package-private constructor for setting ImportLineError, validation details, and char limit data from Builder
+	 */
+	public FileAssetValidationException(String x, ImportLineError importLineError,
+			Map<String, List<Field>> notValidFields,
+			Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships,
+			Map<String, Integer> charLimitMaxByFieldVar) {
+		super(x, importLineError, notValidFields, notValidRelationships, charLimitMaxByFieldVar);
+	}
+
 }
