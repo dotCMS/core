@@ -236,8 +236,13 @@ CREATE TABLE clickhouse_test_db.content_events_counter
 
     daily_total UInt64
 )
-    ENGINE = SummingMergeTree(daily_total)
-        ORDER BY (customer_id, cluster_id, context_user_id, day, identifier, title, event_type);
+ENGINE = SummingMergeTree(daily_total)
+--ENGINE = ReplicatedSummingMergeTree(
+--    '/clickhouse/tables/{shard}/events_daily',
+--    '{replica}'
+--)
+PARTITION BY (customer_id, cluster_id, toYYYYMM(day))
+ORDER BY (customer_id, cluster_id, context_user_id, day, identifier, title, event_type);
 
 
 -- =====================================================================
@@ -302,9 +307,13 @@ CREATE TABLE clickhouse_test_db.conversion_time
     conversion_last_time AggregateFunction( max, DateTime64(3, 'UTC')),
     timestamp_last_time  AggregateFunction( max, DateTime64(3, 'UTC'))
 )
-    ENGINE = AggregatingMergeTree
-        PARTITION BY (customer_id)
-        ORDER BY (customer_id, cluster_id, context_user_id);
+ENGINE = AggregatingMergeTree
+--ENGINE = ReplicatedAggregatingMergeTree(
+--    '/clickhouse/tables/{shard}/conversion_time',
+--    '{replica}'
+--)
+PARTITION BY (customer_id, cluster_id)
+ORDER BY (customer_id, cluster_id, context_user_id);
 
 -- =====================================================================
 -- Tracks which content a user interacted with prior to a conversion and after the user's previous conversion
@@ -331,9 +340,13 @@ CREATE TABLE clickhouse_test_db.content_presents_in_conversion
     conversion_count UInt32,
     events_count UInt32
 )
-    ENGINE = SummingMergeTree
-        PARTITION BY (customer_id)
-        ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name, identifier, title, day);
+ENGINE = SummingMergeTree
+--ENGINE = ReplicatedSummingMergeTree(
+--    '/clickhouse/tables/{shard}/content_presents_in_conversion_daily',
+--    '{replica}'
+--)
+PARTITION BY (customer_id, cluster_id, toYYYYMM(day))
+ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name, identifier, title, day);
 
 
 -- =====================================================================
