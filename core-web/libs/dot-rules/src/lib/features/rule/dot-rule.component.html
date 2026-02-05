@@ -19,15 +19,15 @@
         @if (!hidden) {
             <div
                 (click)="setRuleExpandedState(!rule._expanded)"
-                class="bg-white p-3 rounded-t-md flex flex-row flex-1 focus:outline-none focus:ring-0 focus:bg-white active:bg-white">
+                class="bg-white p-3 rounded-md flex flex-col md:flex-row flex-1 gap-3 focus:outline-none focus:ring-0 focus:bg-white active:bg-white">
                 <div
-                    class="dot-rules-header-info flex flex-row justify-start items-center basis-[70%] max-w-[70%]">
+                    class="dot-rules-header-info flex flex-row justify-start items-center w-full md:basis-[70%] md:max-w-[70%]">
                     <i
                         [class.pi-angle-right]="!rule._expanded"
                         [class.pi-angle-down]="rule._expanded"
-                        class="text-sm font-bold p-2 pi"
+                        class="text-sm font-bold p-2 pi shrink-0"
                         aria-hidden="true"></i>
-                    <div class="flex flex-col basis-[70%] max-w-[70%]">
+                    <div class="flex flex-col flex-1 min-w-0">
                         <input
                             (click)="$event.stopPropagation()"
                             class="mr-4 px-3"
@@ -45,7 +45,7 @@
                         </div>
                     </div>
                     @if (!hideFireOn) {
-                        <span class="font-bold mr-2 min-w-16 max-w-16">
+                        <span class="font-bold mr-2 min-w-16 max-w-16 shrink-0">
                             {{ getI18nLabel('inputs.fireOn.label') | async }}
                         </span>
                     }
@@ -58,14 +58,14 @@
                             [options]="fireOnOptions$ | async"
                             [style]="{ width: '9.5rem' }"
                             [placeholder]="fireOnPlaceholder$ | async"
-                            class="min-w-48 max-w-48 flex-none"
+                            class="min-w-48 max-w-48 flex-none shrink-0"
                             appendTo="body" />
                     }
                 </div>
                 <div
-                    class="mr-2 relative flex flex-row justify-end items-center basis-[30%] max-w-[30%]">
+                    class="relative flex flex-row justify-end items-center w-full md:basis-[30%] md:max-w-[30%] md:mr-2">
                     <span
-                        class="mt-1 mr-8 transition-opacity duration-[2000ms] delay-[1000ms] saved:opacity-0 saving:opacity-100 saving:delay-0"
+                        class="mt-1 mr-4 md:mr-8 transition-opacity duration-[2000ms] delay-[1000ms] saved:opacity-0 saving:opacity-100 saving:delay-0 shrink-0"
                         title="{{ getStatusText() }}">
                         {{ getStatusText(30) }}
                     </span>
@@ -75,8 +75,8 @@
                         [ngModelOptions]="{ standalone: true }"
                         [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
                         tooltipPosition="bottom"
-                        class="mt-1 mr-4" />
-                    <div class="flex items-center gap-2">
+                        class="mt-1 mr-4 shrink-0" />
+                    <div class="flex items-center gap-2 shrink-0">
                         <button
                             (click)="ruleOptions.toggle($event); $event.stopPropagation()"
                             pButton

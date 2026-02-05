@@ -1,6 +1,8 @@
 @let contentlet = $store.contentlet();
 @let contentType = $store.contentType();
 @let activeIndex = $store.activeSidebarTab();
+@let isNew = $store.isNew();
+@let isCopyingLocale = $store.isCopyingLocale();
 
 <!-- Information Component -->
 @let isLoadingInformation = $store.isLoadingInformation();
@@ -26,6 +28,11 @@
             <p-tab [value]="2">
                 <i class="pi pi-comment"></i>
             </p-tab>
+            @if (!isNew) {
+                <p-tab [value]="3">
+                    <i class="pi pi-cog"></i>
+                </p-tab>
+            }
         </p-tablist>
         <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col">
             <p-tabpanel [value]="0" class="flex flex-col h-full min-h-0">
@@ -102,18 +109,15 @@
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
             </p-tabpanel>
-
-            <p-tabpanel class="h-full flex-column tab-panel tab-panel--permissions">
-                <ng-template pTemplate="header">
-                    <i class="pi pi-cog"></i>
-                </ng-template>
-                <ng-template pTemplate="content">
+            @if (!isNew) {
+                <p-tabpanel [value]="3" class="h-full min-h-0 flex flex-col">
+                    <!-- Permissions section -->
                     <dot-edit-content-sidebar-permissions
                         [identifier]="$identifier() ?? ''"
                         [languageId]="$contentlet()?.languageId ?? 0"
                         data-testId="permissions" />
-                </ng-template>
-            </p-tabpanel>
+                </p-tabpanel>
+            }
         </p-tabpanels>
     </p-tabs>
 </aside>

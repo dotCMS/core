@@ -1,5 +1,10 @@
 @let languageIsoCodeById = $languageIsoCodeById();
 
+<p-contextmenu
+    #contextMenu
+    [appendTo]="'body'"
+    [model]="contextMenuItems()"
+    (onHide)="contextMenuItems.set([])" />
 <p-table
     (onLazyLoad)="loadPagesLazy($event)"
     (onRowSelect)="onRowSelect($event)"
@@ -76,7 +81,10 @@
         </tr>
     </ng-template>
     <ng-template #body let-page let-rowIndex="rowIndex">
-        <tr [id]="'tableRow-' + rowIndex" [pSelectableRow]="page" pContextMenuRow>
+        <tr
+            [id]="'tableRow-' + rowIndex"
+            [pSelectableRow]="page"
+            (contextmenu)="handleContextMenu($event, page)">
             <td>{{ page['title'] }}</td>
             <td [pTooltip]="page['urlMap'] || page['url']" tooltipPosition="bottom">
                 {{ page['urlMap'] || page['url'] }}
