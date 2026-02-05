@@ -125,7 +125,7 @@ program
                             '. Please check the url and try again.'
                     );
                     console.error(healthCheckResult.val);
-                    return;
+                    process.exit(1);
                 }
 
                 spinner.succeed('Connected to dotCMS successfully');
@@ -172,13 +172,13 @@ program
                                     `\nMaximum authentication attempts (${MAX_AUTH_ATTEMPTS}) reached. Exiting.\n`
                                 )
                             );
-                            return;
+                            process.exit(1);
                         }
                     }
                 }
 
                 if (!dotcmsToken || !dotcmsToken.ok) {
-                    return;
+                    process.exit(1);
                 }
 
                 const demoSite = await DotCMSApi.getDemoSiteIdentifier({
@@ -189,7 +189,7 @@ program
 
                 if (!demoSite.ok) {
                     spinner.fail('Failed to get demo site identifier from Dotcms.');
-                    return;
+                    process.exit(1);
                 } else {
                     spinner.succeed(
                         `Retrieved site: Demo Site (${demoSite.val.entity.identifier})`
@@ -212,7 +212,7 @@ program
 
                 if (!setUpUVE.ok) {
                     spinner.fail('Failed to setup UVE configuration in Dotcms.');
-                    return;
+                    process.exit(1);
                 } else {
                     spinner.succeed(`Configured the Universal Visual Editor`);
                 }
@@ -226,7 +226,7 @@ program
                     siteId: demoSite.val.entity.identifier,
                     selectedFramework: selectedFramework
                 });
-                return;
+                return; // Successful completion - exit code 0
             }
 
             const spinner = ora(`Checking Docker availability...`).start();
@@ -236,7 +236,7 @@ program
             if (!dockerAvailable.ok) {
                 spinner.fail('Docker is not available');
                 console.error(dockerAvailable.val);
-                return;
+                process.exit(1);
             }
             spinner.succeed('Docker is available');
 
@@ -246,7 +246,7 @@ program
             if (!portsAvailable.ok) {
                 spinner.fail('Required ports are busy');
                 console.error(portsAvailable.val);
-                return;
+                process.exit(1);
             }
             spinner.succeed('All required ports are available');
 
@@ -257,7 +257,7 @@ program
             });
             if (!downloaded.ok) {
                 spinner.fail('Failed to download Docker Compose file.');
-                return;
+                process.exit(1);
             }
             spinner.succeed('Docker Compose configuration downloaded');
 
@@ -279,7 +279,7 @@ program
                         chalk.white(' then run this command again\n') +
                         chalk.white('  • Check Docker logs for more details\n')
                 );
-                return;
+                process.exit(1);
             }
 
             spinner.succeed('dotCMS containers started successfully.');
@@ -295,7 +295,7 @@ program
                 spinner.fail('dotCMS failed to start properly');
                 console.error(healthCheckResult.val);
                 console.error(await getDockerDiagnostics(finalDirectory));
-                return;
+                process.exit(1);
             }
             spinner.succeed('dotCMS is running locally at http://localhost:8082');
             spinner.succeed('Default credentials: admin@dotcms.com / admin');
@@ -310,7 +310,7 @@ program
             });
             if (!dotcmsToken.ok) {
                 spinner.fail('Failed to get authentication token from Dotcms.');
-                return;
+                process.exit(1);
             } else {
                 spinner.succeed('Generated API authentication token');
             }
@@ -321,7 +321,7 @@ program
             });
             if (!demoSite.ok) {
                 spinner.fail('Failed to get demo site identifier from Dotcms.');
-                return;
+                process.exit(1);
             } else {
                 spinner.succeed(`Retrieved site: Demo Site (${demoSite.val.entity.identifier})`);
             }
@@ -341,7 +341,7 @@ program
 
             if (!setUpUVE.ok) {
                 spinner.fail('Failed to setup UVE configuration in Dotcms.');
-                return;
+                process.exit(1);
             } else {
                 spinner.succeed(`Configured the Universal Visual Editor`);
             }
@@ -527,7 +527,7 @@ async function startScaffoldingFrontEnd({
 
     if (!created.ok) {
         spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
-        return;
+        process.exit(1);
     }
 
     // TODO need to insert here the dependices step
@@ -536,11 +536,14 @@ async function startScaffoldingFrontEnd({
         `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
     );
     const result = await installDependenciesForProject(finalDirectory);
-    if (!result)
+    if (!result) {
         spinner.fail(
-            `Failed to install dependencies.Please check if npm is installed in your system`
+            `Failed to install dependencies. Please check if npm is installed in your system`
         );
-    else spinner.succeed(`Dependencies installed`);
+        process.exit(1);
+    } else {
+        spinner.succeed(`Dependencies installed`);
+    }
     console.log('\n\n');
     spinner.stop();
 }
