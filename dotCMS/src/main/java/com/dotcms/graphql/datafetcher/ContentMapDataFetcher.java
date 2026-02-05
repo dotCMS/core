@@ -5,8 +5,10 @@ import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -74,10 +76,11 @@ public class ContentMapDataFetcher implements DataFetcher<Object> {
             final JSONObject contentMapInJSON = new JSONObject();
 
             // this only adds relationships to any json. We would need to return them with the transformations already
+            final Language currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(request);
 
             final JSONObject jsonWithRels = ContentHelper.getInstance().addRelationshipsToJSON(request, response,
                     Boolean.toString(render), user, depth, false, contentlet,
-                    contentMapInJSON, null, 1, true, false,
+                    contentMapInJSON, null, currentLanguage.getId(), true, false,
                     true);
 
             HashMap<String,Object> result = new ObjectMapper().readValue(jsonWithRels.toString(), HashMap.class);

@@ -211,7 +211,7 @@ describe('DotPageApiService', () => {
     });
 
     describe('saveStyleProperties', () => {
-        it('should send a POST request with correct payload structure', () => {
+        it('should send a PUT request with correct payload structure', () => {
             const payload = {
                 pageId: 'test-page-123',
                 containerIdentifier: 'container-id-456',
@@ -226,20 +226,17 @@ describe('DotPageApiService', () => {
             spectator.service.saveStyleProperties(payload).subscribe();
 
             const { request } = spectator.expectOne(
-                '/api/v1/page/test-page-123/content',
-                HttpMethod.POST
+                '/api/v1/page/test-page-123/styles',
+                HttpMethod.PUT
             );
 
             expect(request.body).toEqual([
                 {
                     identifier: 'container-id-456',
                     uuid: 'container-uuid-789',
-                    contentletsId: ['contentlet-id-abc'],
-                    styleProperties: {
-                        'contentlet-id-abc': {
-                            'font-size': '16px',
-                            color: '#000000'
-                        }
+                    'contentlet-id-abc': {
+                        'font-size': '16px',
+                        color: '#000000'
                     }
                 }
             ]);

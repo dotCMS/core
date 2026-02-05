@@ -6,18 +6,17 @@ import {
     effect,
     inject,
     input,
-    linkedSignal,
     signal,
     untracked
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounceTime, distinctUntilChanged, share, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -34,6 +33,7 @@ import {
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { filterFormValues } from '../../utils';
 
@@ -69,26 +69,6 @@ export class DotUveStyleEditorFormComponent {
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
     /**
-     * Tracks rollback detection using linkedSignal.
-     * Returns true when currentIndex decreases (undo operation detected).
-     * The previous parameter contains both the source (currentIndex) and the computed value from last run.
-     */
-    readonly $isRollback = linkedSignal({
-        source: this.#uveStore.currentIndex,
-        computation: (currentIndex: number, previous?: { source: number; value: boolean }) => {
-            // First run: no previous value, not a rollback
-            if (!previous) {
-                return false;
-            }
-
-            const previousIndex = previous.source;
-
-            // Rollback detected: index decreased from a valid position
-            return previousIndex >= 0 && currentIndex < previousIndex;
-        }
-    });
-
-    /**
      * Computed property that returns an array of all section indices to keep all tabs open by default
      */
     $activeTabIndices = computed(() => {
@@ -96,25 +76,24 @@ export class DotUveStyleEditorFormComponent {
         return sections.map((_, index) => index);
     });
 
-    readonly #rollbackDetectionEffect = effect(() => {
-        const isRollback = this.$isRollback();
-
-        // When rollback is detected, restore form from the rolled-back state
-        if (isRollback) {
-            untracked(() => {
-                this.#restoreFormFromRollback();
-            });
-        }
-    });
-
+    /**
+     * Effect that observes changes in the schema and rebuilds the form accordingly.
+     *
+     * This effect is triggered whenever the schema changes, ensuring that the most
+     * up-to-date schema is used to construct the form. It uses `untracked` to avoid
+     * causing unnecessary dependency tracking on this.$schema().
+     */
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
 
         if (schema) {
             this.#buildForm(schema);
-            this.#listenToFormChanges();
         }
     });
+
+    constructor() {
+        this.#listenToFormChanges();
+    }
 
     /**
      * Builds a form from the schema using the form builder service
@@ -125,19 +104,29 @@ export class DotUveStyleEditorFormComponent {
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
 
-        const form = this.#formBuilder.buildForm(schema, initialValues);
-        this.#form.set(form);
+        // Clear form first so the template destroys the form block and unbinds old controls.
+        // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName
+        this.#form.set(null);
+
+        queueMicrotask(() => {
+            const form = this.#formBuilder.buildForm(schema, initialValues);
+            this.#form.set(form);
+        });
     }
 
     /**
      * Restores form values from the rolled-back graphqlResponse state.
      * Used when rollback occurs to sync form with restored state.
+     *
+     * This method rebuilds the entire form (rather than patching) to trigger
+     * the switchMap in #listenToFormChanges, which automatically cancels any
+     * pending debounced saves from the old form instance.
      */
     #restoreFormFromRollback(): void {
-        const form = this.#form();
         const activeContentlet = this.#uveStore.activeContentlet();
+        const schema = this.$schema();
 
-        if (!form || !activeContentlet) {
+        if (!activeContentlet || !schema) {
             return;
         }
 
@@ -156,11 +145,11 @@ export class DotUveStyleEditorFormComponent {
                 activeContentlet
             );
 
-            if (styleProperties) {
-                // Update form values without triggering valueChanges
-                // Use patchValue with emitEvent: false to prevent triggering form changes
-                form.patchValue(styleProperties, { emitEvent: false });
-            }
+            // Rebuild the ENTIRE form with rolled-back values
+            // This causes the #form signal to change, which triggers switchMap in #listenToFormChanges
+            // to cancel the old subscription (including any pending debounced saves)
+            const restoredForm = this.#formBuilder.buildForm(schema, styleProperties || undefined);
+            this.#form.set(restoredForm);
         } catch (error) {
             console.error('Error restoring form from rollback:', error);
         }
@@ -170,37 +159,58 @@ export class DotUveStyleEditorFormComponent {
      * Listens to form changes and handles:
      * 1. Immediate updates to iframe (no debounce)
      * 2. Debounced API calls to save style properties
+     *
+     * Uses mergeMap to subscribe to each form's valueChanges when the form signal changes
+     * (e.g., during rollback restoration). mergeMap keeps all subscriptions active, so both
+     * old and new forms' valueChanges will be processed. This ensures that pending debounced
+     * saves from the old form will still complete, while also processing changes from the new form.
+     * This is a clean reactive approach that eliminates the need for flags, timeouts, or
+     * manual subscription management.
      */
     #listenToFormChanges(): void {
-        const form = this.#form();
-        if (!form) {
-            return;
-        }
-
-        // Share the valueChanges observable to avoid multiple subscriptions
-        const formValueChanges$ = form.valueChanges.pipe(
-            share(),
-            takeUntilDestroyed(this.#destroyRef)
-        );
-
-        formValueChanges$
+        // Convert the form signal to an observable
+        // When the form signal changes (rebuilt during rollback), mergeMap subscribes to the new form's valueChanges
+        // while keeping the old form's subscription active
+        toObservable(this.$form)
             .pipe(
-                distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
-                tap((formValues) => this.#updateIframeImmediately(formValues)),
-                debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
+                // Filter out null forms
+                filter((form): form is FormGroup => form !== null),
+                // Merge with the new form's valueChanges
+                // mergeMap keeps all inner subscriptions active, so both old and new forms'
+                // valueChanges will be processed, including any pending debounced saves
+                mergeMap((form) =>
+                    form.valueChanges.pipe(
+                        distinctUntilChanged(
+                            (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
+                        ),
+                        // Capture activeContentlet at the time of form change (before debounce)
+                        // This ensures we use the correct contentlet even if the user switches
+                        // to a different contentlet during the debounce period
+                        map((formValues) => ({
+                            formValues,
+                            activeContentlet: this.#uveStore.activeContentlet()
+                        })),
+                        tap(({ formValues, activeContentlet }) =>
+                            this.#updateIframeImmediately(formValues, activeContentlet)
+                        ),
+                        debounceTime(STYLE_EDITOR_DEBOUNCE_TIME)
+                    )
+                ),
+                takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe((formValues: Record<string, unknown>) =>
-                this.#saveStyleProperties(formValues)
-            );
+            .subscribe(({ formValues, activeContentlet }) => {
+                this.#saveStyleProperties(formValues, activeContentlet);
+            });
     }
 
     /**
      * Immediately updates the iframe with new form values (no debounce)
      * Uses optimistic updates WITHOUT saving to history (history is saved only on API calls)
      */
-    #updateIframeImmediately(formValues: Record<string, unknown>): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
-
+    #updateIframeImmediately(
+        formValues: Record<string, unknown>,
+        activeContentlet: ActionPayload | null
+    ): void {
         if (!activeContentlet) {
             return;
         }
@@ -212,17 +222,19 @@ export class DotUveStyleEditorFormComponent {
                 return;
             }
 
-            // Update the internal response (mutates the pageAsset in place)
-            // Since $customGraphqlResponse is computed from graphqlResponse(),
-            // updating the internal response will automatically reflect in the computed
+            // Deep clone the graphqlResponse before mutating to prevent affecting history entries
+            // This ensures that mutations don't affect the stored state in history
+            const clonedResponse = structuredClone(internalGraphqlResponse);
+
+            // Update the cloned response (mutates the clone in place)
             const updatedInternalResponse = updateStylePropertiesInGraphQL(
-                internalGraphqlResponse,
+                clonedResponse,
                 activeContentlet,
                 formValues
             );
 
             // Optimistic update: Update state WITHOUT saving to history
-            // History is only saved when we actually call the API (in #saveStylePropertiesToApi)
+            // History is only saved when we actually call the API (in #saveStyleProperties)
             this.#uveStore.setGraphqlResponse(updatedInternalResponse);
 
             // Send updated response to iframe immediately for instant feedback
@@ -241,9 +253,10 @@ export class DotUveStyleEditorFormComponent {
      * Saves style properties to API with debounce
      * Saves current state to history before API call, so rollback can restore to this point
      */
-    #saveStyleProperties(formValues: Record<string, unknown>): void {
-        const activeContentlet = this.#uveStore.activeContentlet();
-
+    #saveStyleProperties(
+        formValues: Record<string, unknown>,
+        activeContentlet: ActionPayload
+    ): void {
         if (!activeContentlet) {
             return;
         }
@@ -287,6 +300,11 @@ export class DotUveStyleEditorFormComponent {
                     });
                 },
                 error: (error) => {
+                    // Restore form values from rolled-back state
+                    // Rollback already happened synchronously in store's error handler,
+                    // so we can restore the form immediately
+                    this.#restoreFormFromRollback();
+
                     // Error toast - rollback already handled in store
                     this.#messageService.add({
                         severity: 'error',

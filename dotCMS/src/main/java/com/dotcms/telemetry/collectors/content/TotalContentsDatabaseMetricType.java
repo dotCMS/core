@@ -17,7 +17,7 @@ import javax.enterprise.context.ApplicationScoped;
 public class TotalContentsDatabaseMetricType implements DBMetricType {
     @Override
     public String getName() {
-        return "COUNT";
+        return "COUNT_CONTENT";
     }
 
     @Override

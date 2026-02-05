@@ -11,7 +11,6 @@ import com.dotcms.analytics.attributes.CustomAttributeAPIImpl;
 import com.dotcms.analytics.bayesian.BayesianAPI;
 import com.dotcms.analytics.bayesian.BayesianAPIImpl;
 import com.dotcms.analytics.content.ContentAnalyticsAPI;
-import com.dotcms.annotations.Legacy;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.api.tree.TreeableAPI;
@@ -36,6 +35,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
 import com.dotcms.content.index.VersionedIndicesAPI;
+import com.dotcms.content.index.opensearch.OpenSearchIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.ContentTypeDestroyAPI;
@@ -711,20 +711,28 @@ public class APILocator extends Locator<APIIndex> {
 
 	/**
 	 * Creates a single instance of the {@link IndiciesAPI} class.
-	 *
+	 * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
 	 * @return The {@link IndiciesAPI} class.
 	 */
-    @Legacy
+    @Deprecated(forRemoval = true)
 	public static IndiciesAPI getIndiciesAPI() {
 	    return (IndiciesAPI) getInstance(APIIndex.INDICIES_API);
 	}
 
     /**
      * Get the modern index Manger
-     * @return
+     * @return {@link VersionedIndicesAPI}
      */
     public static VersionedIndicesAPI getVersionedIndicesAPI() {
-        return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
+        return (VersionedIndicesAPI)getInstance(APIIndex.VERSIONED_INDICES_API);
+    }
+
+    /**
+     * Open Search Index API
+     * @return {@link OpenSearchIndexAPI}
+     */
+    public static OpenSearchIndexAPI getOpenSearchIndexAPI(){
+        return (OpenSearchIndexAPI) getInstance(APIIndex.OPENSEARCH_INDEX_API);
     }
 
 	/**
@@ -1248,7 +1256,6 @@ public class APILocator extends Locator<APIIndex> {
 		return CDIUtils.getBeanThrows(HealthService.class);
 	}
 
-
     /**
      * Retrieves an instance of RequestCostApi using CDI (Contexts and Dependency Injection). This method ensures that
      * the instance is obtained through the CDI container and throws an exception if the bean cannot be found.
@@ -1419,9 +1426,12 @@ enum APIIndex
 	ACHECKER_API,
 	CONTENT_ANALYTICS_API,
 	JOB_QUEUE_MANAGER_API,
-   AI_VISION_API,
+    AI_VISION_API,
     REQUEST_COST_API,
-    ANALYTICS_CUSTOM_ATTRIBUTE_API;
+    ANALYTICS_CUSTOM_ATTRIBUTE_API,
+    VERSIONED_INDICES_API,
+    OPENSEARCH_INDEX_API
+    ;
 
 	Object create() {
 		switch(this) {
@@ -1521,6 +1531,8 @@ enum APIIndex
             case AI_VISION_API:
                 return new OpenAIVisionAPIImpl();
             case ANALYTICS_CUSTOM_ATTRIBUTE_API: return new CustomAttributeAPIImpl();
+            case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
+            case OPENSEARCH_INDEX_API: return CDIUtils.getBeanThrows(OpenSearchIndexAPI.class);
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
