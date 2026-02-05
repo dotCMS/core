@@ -1,9 +1,13 @@
-<div class="lock-overlay" data-testId="lock-overlay">
-    <div class="lock-overlay__content">
-        <div class="lock-overlay__icon">
+<div
+    class="relative w-full h-full bg-[var(--color-palette-black-op-90)] flex items-center justify-center pointer-events-auto"
+    data-testId="lock-overlay">
+    <div class="text-center text-white">
+        <div class="inline-block">
             <i [class]="$overlayMessages()?.icon"></i>
         </div>
-        <h3 class="lock-overlay__title">{{ $overlayMessages()?.title | dm }}</h3>
-        <p class="lock-overlay__message">{{ $overlayMessages()?.message | dm }}</p>
+        <h3 class="text-[1.25rem] font-semibold text-white m-0">
+            {{ $overlayMessages()?.title | dm }}
+        </h3>
+        <p class="m-0 text-[0.875rem]">{{ $overlayMessages()?.message | dm }}</p>
     </div>
 </div>
