@@ -20,7 +20,12 @@ import {
     askUserNameForDotcmsCloud,
     prepareDirectory
 } from './asks';
-import { DOTCMS_HEALTH_API, DOTCMS_USER } from './constants';
+import {
+    CLOUD_HEALTH_CHECK_RETRIES,
+    DOTCMS_HEALTH_API,
+    DOTCMS_USER,
+    LOCAL_HEALTH_CHECK_RETRIES
+} from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import {
     cloneFrontEndSample,
@@ -85,8 +90,10 @@ program
             validateProjectName(projectName);
 
             const projectNameFinal = projectName ?? (await askProjectName());
-            // Validate project name from interactive prompt as well
-            validateProjectName(projectNameFinal);
+            // Only validate if it came from interactive prompt (CLI flag already validated above)
+            if (!projectName) {
+                validateProjectName(projectNameFinal);
+            }
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
             const selectedFramework = validatedFramework ?? (await askFramework());
@@ -108,15 +115,18 @@ program
 
                 const spinner = ora(`⏳ Connecting to dotCMS...`).start();
 
-                const checkIfDotcmsIsRunning = await isDotcmsRunning(healthApiURL, 5);
+                const healthCheckResult = await isDotcmsRunning(
+                    healthApiURL,
+                    CLOUD_HEALTH_CHECK_RETRIES
+                );
 
-                if (!checkIfDotcmsIsRunning.ok) {
+                if (!healthCheckResult.ok) {
                     spinner.fail(
                         'dotCMS is not running on the following url ' +
                             urlDotcmsInstance +
                             '. Please check the url and try again.'
                     );
-                    console.log(checkIfDotcmsIsRunning.val);
+                    console.error(healthCheckResult.val);
                     return;
                 }
 
@@ -193,7 +203,7 @@ program
             const dockerAvailable = await checkDockerAvailability();
             if (!dockerAvailable.ok) {
                 spinner.fail('Docker is not available');
-                console.log(dockerAvailable.val);
+                console.error(dockerAvailable.val);
                 return;
             }
             spinner.succeed('Docker is available');
@@ -203,7 +213,7 @@ program
             const portsAvailable = await checkPortsAvailability();
             if (!portsAvailable.ok) {
                 spinner.fail('Required ports are busy');
-                console.log(portsAvailable.val);
+                console.error(portsAvailable.val);
                 return;
             }
             spinner.succeed('All required ports are available');
@@ -225,7 +235,7 @@ program
             if (!ran.ok) {
                 spinner.fail('Failed to start Docker containers');
                 const errorMessage = ran.val instanceof Error ? ran.val.message : String(ran.val);
-                console.log(
+                console.error(
                     chalk.red('\n❌ Docker Compose failed to start\n\n') +
                         chalk.white('Error details:\n') +
                         chalk.gray(errorMessage) +
@@ -244,12 +254,15 @@ program
 
             spinner.start('Verifying if dotCMS is running...');
 
-            const checkIfDotcmsIsRunning = await isDotcmsRunning();
+            const healthCheckResult = await isDotcmsRunning(
+                DOTCMS_HEALTH_API,
+                LOCAL_HEALTH_CHECK_RETRIES
+            );
 
-            if (!checkIfDotcmsIsRunning.ok) {
+            if (!healthCheckResult.ok) {
                 spinner.fail('dotCMS failed to start properly');
-                console.log(checkIfDotcmsIsRunning.val);
-                console.log(await getDockerDiagnostics(finalDirectory));
+                console.error(healthCheckResult.val);
+                console.error(await getDockerDiagnostics(finalDirectory));
                 return;
             }
             spinner.succeed('dotCMS is running locally at http://localhost:8082');

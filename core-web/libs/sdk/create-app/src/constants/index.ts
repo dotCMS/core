@@ -14,6 +14,11 @@ export const DOTCMS_TOKEN_API = `${DOTCMS_HOST}/api/v1/authentication/api-token`
 export const DOTCMS_EMA_CONFIG_API = `${DOTCMS_HOST}/api/v1/apps/dotema-config-v2/`;
 export const DOTCMS_DEMO_SITE = `${DOTCMS_HOST}/api/v1/site/`;
 
+// Health check configuration
+export const CLOUD_HEALTH_CHECK_RETRIES = 5; // Retries for cloud instances (faster expected startup)
+export const LOCAL_HEALTH_CHECK_RETRIES = 60; // Retries for local Docker (slower startup)
+export const HEALTH_CHECK_DELAY_MS = 5000; // 5 seconds between retries
+
 // App constants
 export const FRAMEWORKS: SupportedFrontEndFrameworks[] = [
     'nextjs',
