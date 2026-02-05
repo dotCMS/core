@@ -428,14 +428,10 @@ async function isDotcmsRunning(url?: string, retries = 60): Promise<Result<boole
 async function getDockerDiagnostics(directory?: string): Promise<string> {
     const diagnostics: string[] = [];
 
-    try {
-        // Check if Docker is running
-        await execa('docker', ['info'], { cwd: directory });
-    } catch {
-        return (
-            chalk.red('\n🐳 Docker is not running or not installed\n') +
-            chalk.white('Please start Docker Desktop or install Docker\n')
-        );
+    // Reuse the Docker availability check
+    const dockerAvailable = await checkDockerAvailability();
+    if (!dockerAvailable.ok) {
+        return dockerAvailable.val as string; // Return the detailed error message (Err value is string)
     }
 
     try {
