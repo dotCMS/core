@@ -75,6 +75,22 @@ import java.util.stream.Collectors;
  */
 public class ContentMap implements Serializable {
 
+	private static final long serialVersionUID = 1L;
+
+	/**
+	 * ThreadLocal StringBuilder for building tag lists without allocation per field access.
+	 * Used when processing TAG field types.
+	 */
+	private static final ThreadLocal<StringBuilder> TAG_BUILDER =
+			ThreadLocal.withInitial(() -> new StringBuilder(256));
+
+	/**
+	 * ThreadLocal StringWriter for velocity template merging without allocation per field access.
+	 * Used when field values contain velocity code that needs parsing.
+	 */
+	private static final ThreadLocal<StringWriter> VELOCITY_WRITER =
+			ThreadLocal.withInitial(() -> new StringWriter(1024));
+
 	private Contentlet content;
 	private ContentletAPI conAPI;
 	private PermissionAPI perAPI;
@@ -320,21 +336,18 @@ public class ContentMap implements Serializable {
 				}
 				return null;
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
-
-				StringBuilder tags = new StringBuilder();
+				// Use ThreadLocal StringBuilder to avoid allocation per tag field access
+				final StringBuilder tags = TAG_BUILDER.get();
+				tags.setLength(0);
 
 				//Search for the list of tags related to this contentlet
-				List<Tag> foundTags = APILocator.getTagAPI().getTagsByInode(content.getInode());
+				final List<Tag> foundTags = APILocator.getTagAPI().getTagsByInode(content.getInode());
 				if ( foundTags != null && !foundTags.isEmpty() ) {
-
-					Iterator<Tag> iterator = foundTags.iterator();
+					final Iterator<Tag> iterator = foundTags.iterator();
 					while ( iterator.hasNext() ) {
-
-						Tag foundTag = iterator.next();
-						tags.append(foundTag.getTagName());
-
+						tags.append(iterator.next().getTagName());
 						if ( iterator.hasNext() ) {
-							tags.append(",");
+							tags.append(',');
 						}
 					}
 				}
@@ -412,11 +425,12 @@ public class ContentMap implements Serializable {
 
 			//handle Velocity Code
 			if(parseVelocity && ret != null && (f == null || f.getFieldType().equals(Field.FieldType.TEXT.toString()) || f.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || f.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString()) || f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) && (ret.toString().contains("#") || ret.toString().contains("$"))){
-				VelocityEngine ve = VelocityUtil.getEngine();
-				Template template = null;
-				StringWriter sw = new StringWriter();
+				// Use ThreadLocal StringWriter to avoid allocation per velocity field parse
+				final StringWriter sw = VELOCITY_WRITER.get();
+				sw.getBuffer().setLength(0);
 
-				template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
+				final VelocityEngine ve = VelocityUtil.getEngine();
+				final Template template = ve.getTemplate((EDIT_OR_PREVIEW_MODE ? PageMode.PREVIEW_MODE.name():PageMode.LIVE.name()) + File.separator + content.getInode() + File.separator + f.getInode() + "." + VelocityType.FIELD.fileExtension);
 				template.merge(context, sw);
 				ret = sw.toString();
 			}

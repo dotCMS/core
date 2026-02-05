@@ -55,13 +55,62 @@ import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
 
-    final static ThreadLocal<ByteArrayOutputStream> byteArrayLocal = ThreadLocal.withInitial(
-            ByteArrayOutputStream::new);
-    final static long PAGE_CACHE_TIMEOUT_MILLIS = Config.getIntProperty("PAGE_CACHE_TIMEOUT_MILLIS", 2000);
+    /**
+     * Initial capacity for the page rendering buffer.
+     * Most pages are under 64KB, so this avoids early resizing.
+     * Configurable via PAGE_BUFFER_INITIAL_SIZE property.
+     */
+    private static final int BUFFER_INITIAL_SIZE =
+            Config.getIntProperty("PAGE_BUFFER_INITIAL_SIZE", 64 * 1024);  // 64KB default
 
+    /**
+     * Maximum retained capacity for the ThreadLocal buffer.
+     * If a page grows the buffer beyond this size, we replace it with a fresh one
+     * after the request completes to prevent memory bloat from large pages.
+     * Configurable via PAGE_BUFFER_MAX_RETAINED_SIZE property.
+     */
+    private static final int BUFFER_MAX_RETAINED_SIZE =
+            Config.getIntProperty("PAGE_BUFFER_MAX_RETAINED_SIZE", 256 * 1024);  // 256KB default
+
+    /**
+     * ThreadLocal buffer for capturing page output during cache population.
+     * Uses a custom ResettableByteArrayOutputStream that exposes capacity info.
+     */
+    private static final ThreadLocal<ResettableByteArrayOutputStream> byteArrayLocal =
+            ThreadLocal.withInitial(() -> new ResettableByteArrayOutputStream(BUFFER_INITIAL_SIZE));
+
+    private static final long PAGE_CACHE_TIMEOUT_MILLIS = Config.getIntProperty("PAGE_CACHE_TIMEOUT_MILLIS", 2000);
 
     private static final Striped<Lock> stripedLock = Striped.lazyWeakLock(
             Config.getIntProperty("PAGE_CACHE_STRIPES", 64));
+
+    /**
+     * A ByteArrayOutputStream that exposes its internal buffer capacity for memory management.
+     * This allows us to detect when the buffer has grown too large and should be replaced.
+     */
+    static final class ResettableByteArrayOutputStream extends ByteArrayOutputStream {
+
+        ResettableByteArrayOutputStream(final int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        /**
+         * Returns the current capacity of the internal buffer (not the data size).
+         * @return the buffer capacity in bytes
+         */
+        int getCapacity() {
+            return buf.length;
+        }
+
+        /**
+         * Checks if the buffer has grown beyond the specified threshold.
+         * @param threshold the maximum acceptable capacity
+         * @return true if buffer capacity exceeds threshold
+         */
+        boolean exceedsCapacity(final int threshold) {
+            return buf.length > threshold;
+        }
+    }
 
 
     @Deprecated
@@ -155,10 +204,11 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
         final PageCacheParameters cacheParameters = buildCacheParameters(langId, htmlPage);
 
-        String cachedPage = pageCache.get(htmlPage, cacheParameters);
-        if (cachedPage != null) {
-            // have cached response and are not refreshing, send it
-            out.write(cachedPage.getBytes(StandardCharsets.UTF_8));
+        // Use byte[] cache to avoid String conversion overhead
+        byte[] cachedBytes = pageCache.getBytes(htmlPage, cacheParameters);
+        if (cachedBytes != null) {
+            // have cached response and are not refreshing, send it directly
+            out.write(cachedBytes);
             return;
         }
 
@@ -168,22 +218,24 @@ public class VelocityLiveMode extends VelocityModeHandler {
         try {
             hasLock = lock.tryLock(PAGE_CACHE_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
 
-            String cachedPage2 = pageCache.get(htmlPage, cacheParameters);
-            if (cachedPage2 != null) {
+            // Double-check cache inside lock using byte[] for efficiency
+            byte[] cachedBytes2 = pageCache.getBytes(htmlPage, cacheParameters);
+            if (cachedBytes2 != null) {
                 Logger.debug(this.getClass(), "Found cached page in striped lock: " + cacheParameters.getKey());
-                // have cached response and are not refreshing, send it
-                out.write(cachedPage2.getBytes(StandardCharsets.UTF_8));
+                // have cached response and are not refreshing, send it directly
+                out.write(cachedBytes2);
                 return;
             }
             if (hasLock) {
                 try (Writer tmpOut = new OutputStreamWriter(new TeeOutputStream(out, byteArrayLocal.get()))) {
-                    int startResponse = response.getStatus();
+                    final int startResponse = response.getStatus();
 
                     writePage(tmpOut, htmlPage);
                     tmpOut.flush();
                     // if velocity has not changed the response status, we can cache it
                     if (response.getStatus() == startResponse) {
-                        pageCache.add(htmlPage, byteArrayLocal.get().toString(StandardCharsets.UTF_8), cacheParameters);
+                        // Cache bytes directly - avoids toString() String allocation
+                        pageCache.addBytes(htmlPage, byteArrayLocal.get().toByteArray(), cacheParameters);
                     }
                 }
             } else {
@@ -202,9 +254,29 @@ public class VelocityLiveMode extends VelocityModeHandler {
             if (hasLock) {
                 lock.unlock();
             }
-            byteArrayLocal.get().reset();
+            resetBuffer();
         }
 
+    }
+
+    /**
+     * Resets the ThreadLocal buffer for reuse.
+     * If the buffer has grown beyond BUFFER_MAX_RETAINED_SIZE, it is replaced with a fresh one
+     * to prevent memory bloat from large pages persisting in the ThreadLocal.
+     */
+    private static void resetBuffer() {
+        final ResettableByteArrayOutputStream buffer = byteArrayLocal.get();
+        if (buffer.exceedsCapacity(BUFFER_MAX_RETAINED_SIZE)) {
+            // Buffer grew too large (e.g., from a very large page), replace it
+            // to release the oversized byte array back to GC
+            Logger.debug(VelocityLiveMode.class, () ->
+                    "Page buffer exceeded max retained size (" + buffer.getCapacity() +
+                    " > " + BUFFER_MAX_RETAINED_SIZE + "), replacing with fresh buffer");
+            byteArrayLocal.set(new ResettableByteArrayOutputStream(BUFFER_INITIAL_SIZE));
+        } else {
+            // Normal case: just reset the buffer position, keep the allocated array
+            buffer.reset();
+        }
     }
 
 
