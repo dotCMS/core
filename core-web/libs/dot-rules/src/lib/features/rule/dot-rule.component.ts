@@ -9,7 +9,8 @@ import {
     input,
     output,
     signal,
-    effect
+    effect,
+    computed
 } from '@angular/core';
 import {
     UntypedFormControl,
@@ -147,6 +148,36 @@ export class DotRuleComponent {
     fireOnPlaceholder$: Observable<string>;
     readonly showAddToBundleDialog = signal(false);
     hideFireOn: boolean;
+
+    // Computed status text signals
+    readonly statusText = computed(() => {
+        const saved = this.$saved();
+        const saving = this.$saving();
+        const errors = this.$errors();
+
+        if (saved) {
+            return 'All changes saved';
+        } else if (saving) {
+            return 'Saving...';
+        } else if (errors) {
+            return (
+                (errors['invalid'] as string) ||
+                (errors['serverError'] as string) ||
+                'Unsaved changes...'
+            );
+        }
+        return '';
+    });
+
+    readonly statusTextTruncated = computed(() => {
+        const text = this.statusText();
+        const maxLength = 30;
+        if (maxLength && text.length > maxLength) {
+            return text.substring(0, maxLength) + '...';
+        }
+        return text;
+    });
+
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';
     ruleActionOptions: MenuItem[];
@@ -312,30 +343,6 @@ export class DotRuleComponent {
             type: 'RULE_UPDATE_FIRE_ON',
             payload: { rule: this.$rule(), value }
         });
-    }
-
-    getStatusText(maxLength = 0): string {
-        const saved = this.$saved();
-        const saving = this.$saving();
-        const errors = this.$errors();
-
-        let text = '';
-        if (saved) {
-            text = 'All changes saved';
-        } else if (saving) {
-            text = 'Saving...';
-        } else if (errors) {
-            text =
-                (errors['invalid'] as string) ||
-                (errors['serverError'] as string) ||
-                'Unsaved changes...';
-        }
-
-        if (maxLength && text.length > maxLength) {
-            text = text.substring(0, maxLength) + '...';
-        }
-
-        return text;
     }
 
     setRuleExpandedState(expanded: boolean): void {

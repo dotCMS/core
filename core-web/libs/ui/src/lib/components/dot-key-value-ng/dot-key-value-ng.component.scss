@@ -1,39 +1,12 @@
 @use "../../../../../dotcms-scss/shared/colors";
 @use "../../../../../dotcms-scss/shared/common";
-@use "../../../../../dotcms-scss/shared/fonts";
 
-@use "variables" as *;
-
+// Minimal styles - most styling done via Tailwind in templates
 ::ng-deep {
     p-table {
-        .dotTable.p-datatable.p-datatable-key-value {
-            .p-datatable-header {
-                background-color: colors.$color-palette-gray-100;
-                th {
-                    border: 0;
-                }
-            }
-            .p-datatable-footer {
-                padding-left: 0;
-                padding-right: 0;
-            }
-            .p-datatable-wrapper {
-                border: 1px solid colors.$color-palette-gray-300;
-                border-radius: common.$border-radius-md;
-            }
-            .p-datatable-footer {
-                border: 0;
-                padding-left: 0;
-                padding-right: 0;
-                font-weight: lighter;
-            }
+        .p-datatable-wrapper {
+            border: 1px solid colors.$color-palette-gray-300;
+            border-radius: common.$border-radius-md;
         }
-    }
-}
-
-.dot-key-value__header {
-    th {
-        font-weight: fonts.$font-weight-bold;
-        background-color: colors.$color-palette-gray-100;
     }
 }

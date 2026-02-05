@@ -2,6 +2,7 @@
 
 <p-card
     (click)="actionFired.emit(app.key)"
+    class="h-full"
     [ngClass]="{
         'dot-apps-card__disabled': !app.configurationsCount
     }">

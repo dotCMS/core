@@ -1,14 +1,14 @@
 @let variableList = $variableList();
 
 <p-table [value]="variableList()" #table dataKey="key" (onRowReorder)="reorderVariables()">
-    <ng-template pTemplate="header" let-columns>
+    <ng-template #header let-columns>
         <dot-key-value-table-header-row
             (save)="saveVariable($event)"
             [showHiddenField]="$showHiddenField()"
             [dragAndDrop]="$dragAndDrop()"
             [forbiddenkeys]="$forbiddenkeys()" />
     </ng-template>
-    <ng-template pTemplate="body" let-variable let-rowIndex="rowIndex">
+    <ng-template #body let-variable let-rowIndex="rowIndex">
         <dot-key-value-table-row
             (delete)="deleteVariable(rowIndex)"
             (save)="updateKeyValue($event, rowIndex)"
@@ -18,7 +18,7 @@
             [dragAndDrop]="$dragAndDrop()"
             #tableRow />
     </ng-template>
-    <ng-template pTemplate="emptymessage" let-variables>
+    <ng-template #emptymessage let-variables>
         <tr>
             <td [attr.colspan]="$colspan()">
                 <div class="flex p-2 gap-2 justify-center" data-testId="no-rows">
