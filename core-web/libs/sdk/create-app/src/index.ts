@@ -88,13 +88,21 @@ program
             const validatedFramework = validateAndNormalizeFramework(options.framework);
             validateUrl(options.url);
             validateConflictingParameters(options);
-            validateProjectName(projectName);
 
-            const projectNameFinal = projectName ?? (await askProjectName());
-            // Only validate if it came from interactive prompt (CLI flag already validated above)
-            if (!projectName) {
-                validateProjectName(projectNameFinal);
+            // Get project name: validate CLI-provided value or prompt interactively
+            const projectNameInput = projectName ?? (await askProjectName());
+
+            // Always validate the final project name (whether from CLI or prompt)
+            // This ensures consistent validation and handles edge cases
+            const validated = validateProjectName(projectNameInput);
+            if (validated === undefined) {
+                throw new Error(
+                    chalk.red('❌ Invalid project name: cannot be empty') +
+                        '\n\n' +
+                        chalk.white('Project name must contain at least one character')
+                );
             }
+            const projectNameFinal = validated;
             const directoryInput = options.directory ?? (await askDirectory());
             const finalDirectory = await prepareDirectory(directoryInput, projectNameFinal);
             const selectedFramework = validatedFramework ?? (await askFramework());

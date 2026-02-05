@@ -22,6 +22,21 @@ import {
 
 import type { SupportedFrontEndFrameworks } from '../types';
 
+/**
+ * Fetches a URL with retry logic for health checks and connection validation
+ *
+ * @param url - The URL to fetch
+ * @param retries - Number of retry attempts (default: 5)
+ * @param delay - Delay between retries in milliseconds (default: 5000)
+ * @param requestTimeout - Per-request timeout in milliseconds (default: 10000)
+ * @returns Promise resolving to axios response
+ * @throws Error with detailed failure information after all retries exhausted
+ *
+ * @remarks
+ * - Accepts any 2xx HTTP status code (200-299) as success
+ * - Designed for health check endpoints that may return various success codes
+ * - Provides detailed error messages including timeout configuration
+ */
 export async function fetchWithRetry(
     url: string,
     retries = 5,
@@ -35,7 +50,8 @@ export async function fetchWithRetry(
         try {
             return await axios.get(url, {
                 timeout: requestTimeout,
-                validateStatus: (status) => status === 200
+                // Accept any 2xx status code as success (health endpoints may return 200, 201, 204, etc.)
+                validateStatus: (status) => status >= 200 && status < 300
             });
         } catch (err) {
             lastError = err;
@@ -72,12 +88,19 @@ export async function fetchWithRetry(
                     chalk.red(
                         `\n❌ Failed to connect to dotCMS after ${retries} attempts (${errorType})\n\n`
                     ) +
-                        chalk.white(`URL: ${url}\n\n`) +
+                        chalk.white(`URL: ${url}\n`) +
+                        chalk.gray(`Request timeout: ${requestTimeout}ms per attempt\n`) +
+                        chalk.gray(
+                            `Total retry window: ~${(retries * (delay + requestTimeout)) / 1000}s\n\n`
+                        ) +
                         chalk.yellow('Common causes:\n') +
                         chalk.white('  • dotCMS is still starting up (may need more time)\n') +
                         chalk.white('  • Container crashed or failed to start\n') +
                         chalk.white('  • Port conflict (8082 already in use)\n') +
-                        chalk.white('  • Network/firewall blocking connection\n\n') +
+                        chalk.white('  • Network/firewall blocking connection\n') +
+                        chalk.white(
+                            `  • Request timeout too short (current: ${requestTimeout}ms)\n\n`
+                        ) +
                         chalk.gray(
                             'Detailed error history:\n' + errors.map((e) => `  • ${e}`).join('\n')
                         )
@@ -123,7 +146,7 @@ export function getPortByFramework(framework: SupportedFrontEndFrameworks): stri
 export function getDotcmsApisByBaseUrl(baseUrl: string) {
     return {
         // Note: Using /appconfiguration instead of /probes/alive because the probe endpoints
-        // have IP ACL restrictions that block requests from Docker host. 
+        // have IP ACL restrictions that block requests from Docker host.
         // See: https://github.com/dotCMS/core/issues/34509
         DOTCMS_HEALTH_API: `${baseUrl}/api/v1/appconfiguration`,
         DOTCMS_TOKEN_API: `${baseUrl}/api/v1/authentication/api-token`,
@@ -429,7 +452,13 @@ function isPortAvailable(port: number): Promise<boolean> {
             if (err.code === 'EADDRINUSE') {
                 resolve(false); // Port is in use
             } else {
-                resolve(true); // Other error, assume available
+                // Unexpected error while checking port; log and treat as unavailable
+                console.warn(
+                    chalk.yellow(
+                        `Warning: Unexpected error while checking port ${port}: ${err.message}`
+                    )
+                );
+                resolve(false); // Conservative: treat as unavailable
             }
         });
 

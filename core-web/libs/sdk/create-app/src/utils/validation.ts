@@ -82,31 +82,12 @@ export function validateUrl(url: string | undefined): void {
         );
     }
 
+    // Parse URL - catch only parsing errors (TypeError from invalid URL format)
+    let parsed: URL;
     try {
-        const parsed = new URL(url);
-
-        // Protocol validation
-        if (!['http:', 'https:'].includes(parsed.protocol)) {
-            throw new Error(
-                chalk.red(`❌ Unsupported protocol: ${parsed.protocol}`) +
-                    '\n\n' +
-                    chalk.white('Only HTTP and HTTPS are supported')
-            );
-        }
-
-        // Hostname validation
-        if (!parsed.hostname) {
-            throw new Error(chalk.red('❌ URL missing hostname'));
-        }
-
-        // Warn about localhost without Docker flag
-        if (parsed.hostname === 'localhost' && parsed.port !== '8082') {
-            console.log(
-                chalk.yellow('⚠️  Warning: ') +
-                    chalk.white('Using localhost but port is not 8082 (default dotCMS port)')
-            );
-        }
+        parsed = new URL(url);
     } catch (error) {
+        // Only catch TypeError from URL constructor (invalid URL format)
         if (error instanceof TypeError) {
             throw new Error(
                 chalk.red(`❌ Invalid URL format: "${url}"`) +
@@ -115,7 +96,30 @@ export function validateUrl(url: string | undefined): void {
                     chalk.cyan('Example:\n  https://demo.dotcms.com')
             );
         }
+        // Re-throw any other unexpected errors
         throw error;
+    }
+
+    // Protocol validation (throws custom error that propagates directly)
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+        throw new Error(
+            chalk.red(`❌ Unsupported protocol: ${parsed.protocol}`) +
+                '\n\n' +
+                chalk.white('Only HTTP and HTTPS are supported')
+        );
+    }
+
+    // Hostname validation (throws custom error that propagates directly)
+    if (!parsed.hostname) {
+        throw new Error(chalk.red('❌ URL missing hostname'));
+    }
+
+    // Warn about localhost without Docker flag
+    if (parsed.hostname === 'localhost' && parsed.port !== '8082') {
+        console.log(
+            chalk.yellow('⚠️  Warning: ') +
+                chalk.white('Using localhost but port is not 8082 (default dotCMS port)')
+        );
     }
 }
 
@@ -265,12 +269,12 @@ export function escapeShellPath(filePath: string): string {
         return filePath;
     }
 
-    // Check if escaping needed (brackets moved to end to avoid ESLint warnings)
+    // Check if escaping needed
     // Platform-specific: Windows paths use backslashes natively, Unix paths need backslash escaping
     const needsEscaping =
         process.platform === 'win32'
-            ? /[\s'"`$!&*(){};<>?*|\n\r\t[\]]/.test(filePath) // Skip backslash on Windows
-            : /[\s'"`$!&*(){};<>?*|\\\n\r\t[\]]/.test(filePath); // Include backslash on Unix
+            ? /[\s'"`$!&*(){};<>?|\n\r\t[\]]/.test(filePath) // Skip backslash on Windows
+            : /[\s'"`$!&*(){};<>?|\\\n\r\t[\]]/.test(filePath); // Include backslash on Unix
 
     if (needsEscaping) {
         // Use double quotes. On Windows, escape only internal quotes; on Unix, also escape backslashes.
