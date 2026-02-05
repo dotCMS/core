@@ -60,6 +60,15 @@ export function validateAndNormalizeFramework(
 }
 
 /**
+ * Normalizes a URL by removing trailing slashes
+ * @param url - The URL to normalize
+ * @returns URL without trailing slash
+ */
+export function normalizeUrl(url: string): string {
+    return url.replace(/\/+$/, ''); // Remove one or more trailing slashes
+}
+
+/**
  * Validates URL format
  * Checks for protocol, valid format, and hostname
  *
@@ -69,10 +78,13 @@ export function validateAndNormalizeFramework(
 export function validateUrl(url: string | undefined): void {
     if (!url || url.trim() === '') return; // Will be prompted interactively
 
+    // Normalize URL (remove trailing slashes)
+    const normalizedUrl = normalizeUrl(url);
+
     // Basic format check before URL parsing
-    if (!url.includes('://')) {
+    if (!normalizedUrl.includes('://')) {
         throw new Error(
-            chalk.red(`❌ Invalid URL format: "${url}"`) +
+            chalk.red(`❌ Invalid URL format: "${normalizedUrl}"`) +
                 '\n\n' +
                 chalk.white('URLs must include the protocol (http:// or https://)\n\n') +
                 chalk.cyan('Example:\n  https://demo.dotcms.com\n\n') +
@@ -85,12 +97,12 @@ export function validateUrl(url: string | undefined): void {
     // Parse URL - catch only parsing errors (TypeError from invalid URL format)
     let parsed: URL;
     try {
-        parsed = new URL(url);
+        parsed = new URL(normalizedUrl);
     } catch (error) {
         // Only catch TypeError from URL constructor (invalid URL format)
         if (error instanceof TypeError) {
             throw new Error(
-                chalk.red(`❌ Invalid URL format: "${url}"`) +
+                chalk.red(`❌ Invalid URL format: "${normalizedUrl}"`) +
                     '\n\n' +
                     chalk.white('Please provide a valid HTTP/HTTPS URL\n\n') +
                     chalk.cyan('Example:\n  https://demo.dotcms.com')

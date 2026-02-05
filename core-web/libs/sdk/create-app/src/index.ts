@@ -48,6 +48,7 @@ import {
     installDependenciesForProject
 } from './utils';
 import {
+    normalizeUrl,
     validateAndNormalizeFramework,
     validateConflictingParameters,
     validateProjectName,
@@ -99,9 +100,10 @@ program
                 options.local === undefined ? await askCloudOrLocalInstance() : !options.local;
 
             if (isCloudInstanceSelected) {
-                const urlDotcmsInstance = options.url ?? (await askDotcmsCloudUrl());
-                // Validate URL (prompt has validation, but double-check for consistency)
-                validateUrl(urlDotcmsInstance);
+                const urlInput = options.url ?? (await askDotcmsCloudUrl());
+                // Validate and normalize URL (remove trailing slashes)
+                validateUrl(urlInput);
+                const urlDotcmsInstance = normalizeUrl(urlInput);
 
                 const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
                 const emaConfigApiURL =
