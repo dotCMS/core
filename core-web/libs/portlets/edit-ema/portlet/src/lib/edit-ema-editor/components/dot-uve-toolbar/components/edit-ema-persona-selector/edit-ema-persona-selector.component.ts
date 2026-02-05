@@ -59,6 +59,12 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
 
     readonly MAX_PERSONAS_PER_PAGE = 10;
 
+    /** Passthrough to keep p-avatar small so it fits the toolbar button height (31px). */
+    protected readonly avatarPt = {
+        root: 'w-[15px]! h-[15px]!',
+        label: 'text-xs font-bold'
+    };
+
     $personas = signal<PersonaSelector>({
         items: [],
         totalRecords: 0,
