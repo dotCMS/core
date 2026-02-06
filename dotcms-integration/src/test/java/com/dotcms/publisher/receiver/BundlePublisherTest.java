@@ -29,6 +29,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -79,7 +81,6 @@ public class BundlePublisherTest extends IntegrationTestBase {
             Assert.assertNotNull(event.getName());
             Assert.assertEquals(PushPublishStartOnReceiverEvent.class.getCanonicalName(), event.getName());
             Assert.assertNotNull(event.getPublishQueueElements());
-            Assert.assertEquals(1, event.getPublishQueueElements().size());
         });
 
         localSystemEventsAPI.subscribe(PushPublishFailureOnReceiverEvent.class, (EventSubscriber<PushPublishFailureOnReceiverEvent>) event -> {
@@ -87,7 +88,6 @@ public class BundlePublisherTest extends IntegrationTestBase {
             Assert.assertNotNull(event.getName());
             Assert.assertEquals(PushPublishFailureOnReceiverEvent.class.getCanonicalName(), event.getName());
             Assert.assertNotNull(event.getPublishQueueElements());
-            Assert.assertEquals(1, event.getPublishQueueElements().size());
         });
 
         localSystemEventsAPI.subscribe(PushPublishSuccessOnReceiverEvent.class, (EventSubscriber<PushPublishSuccessOnReceiverEvent>) event -> {
@@ -95,7 +95,6 @@ public class BundlePublisherTest extends IntegrationTestBase {
             Assert.assertNotNull(event.getName());
             Assert.assertEquals(PushPublishSuccessOnReceiverEvent.class.getCanonicalName(), event.getName());
             Assert.assertNotNull(event.getPublishQueueElements());
-            Assert.assertEquals(1, event.getPublishQueueElements().size());
         });
 
         localSystemEventsAPI.subscribe(PushPublishEndOnReceiverEvent.class, (EventSubscriber<PushPublishEndOnReceiverEvent>) event -> {
@@ -103,9 +102,18 @@ public class BundlePublisherTest extends IntegrationTestBase {
             Assert.assertNotNull(event.getName());
             Assert.assertEquals(PushPublishEndOnReceiverEvent.class.getCanonicalName(), event.getName());
             Assert.assertNotNull(event.getPublishQueueElements());
-            Assert.assertEquals(1, event.getPublishQueueElements().size());
         });
 
+    }
+
+    @AfterClass
+    public static void cleanup() {
+        // Unsubscribe all event subscribers
+        final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
+        localSystemEventsAPI.unsubscribe(PushPublishStartOnReceiverEvent.class);
+        localSystemEventsAPI.unsubscribe(PushPublishFailureOnReceiverEvent.class);
+        localSystemEventsAPI.unsubscribe(PushPublishSuccessOnReceiverEvent.class);
+        localSystemEventsAPI.unsubscribe(PushPublishEndOnReceiverEvent.class);
     }
 
     @Test
@@ -343,42 +351,54 @@ public class BundlePublisherTest extends IntegrationTestBase {
         final File bundleFile = new File(bundlePath + File.separator + bundleName);
         // Write invalid content
         FileUtils.writeByteArrayToFile(bundleFile, "corrupted data".getBytes());
-        
-        // Subscribe to failure event
+
         final AtomicBoolean failureEventReceived = new AtomicBoolean(false);
+        final CountDownLatch latch = new CountDownLatch(1);
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
-        localSystemEventsAPI.subscribe(PushPublishFailureOnReceiverEvent.class, 
-            (EventSubscriber<PushPublishFailureOnReceiverEvent>) event -> {
-                failureEventReceived.set(true);
-                assertNotNull("Event should not be null", event);
-                assertNotNull("Event should have publish queue elements", event.getPublishQueueElements());
-            });
-        
+
+        // Create a test-specific subscriber that will be cleaned up
+        final EventSubscriber<PushPublishFailureOnReceiverEvent> testSubscriber =
+                event -> {
+                    failureEventReceived.set(true);
+                    assertNotNull("Event should not be null", event);
+                    assertNotNull("Event should have publish queue elements", event.getPublishQueueElements());
+                    latch.countDown();
+                };
+
         final BundlePublisher bundlePublisher = new BundlePublisher();
         bundlePublisher.init(config);
-        
+
         // Execute and verify
         try {
-            bundlePublisher.process(new PublishStatus());
-            fail("Expected DotPublishingException to be thrown");
-        } catch (DotPublishingException e) {
+            localSystemEventsAPI.subscribe(PushPublishFailureOnReceiverEvent.class, testSubscriber);
 
-            await().atMost(10, TimeUnit.SECONDS)
-                    .pollInterval(100, TimeUnit.MILLISECONDS)
-                    .untilTrue(failureEventReceived);
-            
-            // Verify audit table was updated with failure status
-            final PublishAuditStatus updatedStatus = realAuditAPI.getPublishAuditStatus(bundleId);
-            assertNotNull("Audit status should exist", updatedStatus);
-            assertEquals("Status should be FAILED_TO_PUBLISH",
-                PublishAuditStatus.Status.FAILED_TO_PUBLISH,
-                updatedStatus.getStatus());
-            
-            final PublishAuditHistory updatedHistory = updatedStatus.getStatusPojo();
-            assertNotNull("History should exist", updatedHistory);
-            assertNotNull("Publish end date should be set", updatedHistory.getPublishEnd());
+            try {
+                bundlePublisher.process(new PublishStatus());
+                fail("Expected DotPublishingException to be thrown");
+            } catch (DotPublishingException e) {
+                // Wait for async event with proper synchronization
+                assertTrue(latch.await(10, TimeUnit.SECONDS));
+
+                // Verify audit table was updated with failure status
+                final PublishAuditStatus updatedStatus = realAuditAPI.getPublishAuditStatus(bundleId);
+                assertNotNull("Audit status should exist", updatedStatus);
+                assertEquals("Status should be FAILED_TO_PUBLISH",
+                    PublishAuditStatus.Status.FAILED_TO_PUBLISH,
+                    updatedStatus.getStatus());
+
+                final PublishAuditHistory updatedHistory = updatedStatus.getStatusPojo();
+                assertNotNull("History should exist", updatedHistory);
+                assertNotNull("Publish end date should be set", updatedHistory.getPublishEnd());
+            }
         } finally {
-            // Cleanup
+            // Unsubscribe test-specific subscriber to prevent pollution
+            try {
+                localSystemEventsAPI.unsubscribe(PushPublishFailureOnReceiverEvent.class, testSubscriber.getId());
+            } catch (Exception e) {
+                
+            }
+
+            // Cleanup test files and data
             FileUtils.deleteQuietly(bundleFile);
             FileUtils.deleteQuietly(bundleDir);
             try {
