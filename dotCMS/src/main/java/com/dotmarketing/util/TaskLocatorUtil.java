@@ -260,6 +260,7 @@ import com.dotmarketing.startup.runonce.Task250828CreateCustomAttributeTable;
 import com.dotmarketing.startup.runonce.Task251029RemoveContentTypesLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTree;
 import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTable;
+import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenu;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -594,6 +595,7 @@ public class TaskLocatorUtil {
         .add(Task251029RemoveContentTypesLegacyPortletFromLayouts.class)
         .add(Task251103AddStylePropertiesColumnInMultiTree.class)
         .add(Task251212AddVersionColumnIndicesTable.class)
+        .add(Task260206AddUsagePortletToMenu.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
