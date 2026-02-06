@@ -19,6 +19,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -213,7 +214,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
      * @throws DotDataException     An error occurred when interacting with the database.
      * @throws DotSecurityException An error occurred due to security constraints.
      */
-    @org.junit.Ignore("Flaky test - see https://github.com/dotCMS/core/issues/33788")
+    @Ignore("Flaky test - see https://github.com/dotCMS/core/issues/33788")
     @Test
     public void testBothFilesMapToSameLanguageWithPriorityHandling() throws DotDataException, DotSecurityException, IOException {
         final Task240306MigrateLegacyLanguageVariables dataTask = new Task240306MigrateLegacyLanguageVariables();

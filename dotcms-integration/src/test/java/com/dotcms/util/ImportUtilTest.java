@@ -96,6 +96,7 @@ import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.io.FileUtils;
 import java.util.Base64;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -4578,7 +4579,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
         // Skip flaky BinaryField and ImageField tests - tracked in issue #34538
         // These tests have timing-dependent row counting issues in CI/CD
-        org.junit.Assume.assumeFalse(
+        Assume.assumeFalse(
             "Skipping flaky " + testCase.fieldTypeName + " test - see https://github.com/dotCMS/core/issues/34538",
             "BinaryField".equals(testCase.fieldTypeName) || "ImageField".equals(testCase.fieldTypeName)
         );
