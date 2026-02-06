@@ -16,10 +16,8 @@ import static org.junit.Assert.*;
 public class StoryBlockUtilTest {
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: Input parameter is null
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: Input parameter is null
      * Expected Result: Method should return true, treating null as empty
      */
     @Test
@@ -28,10 +26,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: Input contains various whitespace-only strings (spaces, tabs, newlines)
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: Input contains various whitespace-only strings (spaces, tabs, newlines)
      * Expected Result: All whitespace-only inputs should return true, being treated as empty
      */
     @Test
@@ -45,10 +41,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: Input is empty string or contains only whitespace characters
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: Input is empty string or contains only whitespace characters
      * Expected Result: Method should return true for both empty and whitespace-only strings
      */
     @Test
@@ -58,10 +52,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: Input contains invalid or malformed JSON strings
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: Input contains invalid or malformed JSON strings
      * Expected Result: Method should return true to force validation failure for invalid JSON
      */
     @Test
@@ -72,10 +64,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: StoryBlock JSON contains only an empty paragraph element with no text content
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: StoryBlock JSON contains only an empty paragraph element with no text content
      * Expected Result: Method should return true as empty paragraphs contain no meaningful content
      */
     @Test
@@ -97,10 +87,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: StoryBlock JSON contains a paragraph element with actual text content
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: StoryBlock JSON contains a paragraph element with actual text content
      * Expected Result: Method should return false as the block contains meaningful text content
      */
     @Test
@@ -128,10 +116,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: StoryBlock JSON contains an image block element with identifier data
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: StoryBlock JSON contains an image block element with identifier data
      * Expected Result: Method should return false as image blocks represent meaningful content
      */
     @Test
@@ -155,10 +141,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: StoryBlock JSON document structure has no content property defined
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: StoryBlock JSON document structure has no content property defined
      * Expected Result: Method should return true as missing content indicates empty block
      */
     @Test
@@ -171,10 +155,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyStoryBlock(String)}
-     *
-     * Given scenario: StoryBlock JSON has content property defined as an empty array
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyStoryBlock(String)}
+     * Given Scenario: StoryBlock JSON has content property defined as an empty array
      * Expected Result: Method should return true as empty content array indicates no meaningful content
      */
     @Test
@@ -188,10 +170,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
-     *
-     * Given scenario: JsonNode block has no type property defined
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
+     * Given Scenario: JsonNode block has no type property defined
      * Expected Result: Method should return true as blocks without type are considered empty
      */
     @Test
@@ -201,10 +181,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
-     *
-     * Given scenario: JsonNode represents a paragraph block without content property
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
+     * Given Scenario: JsonNode represents a paragraph block without content property
      * Expected Result: Method should return true as paragraphs without content are empty
      */
     @Test
@@ -222,10 +200,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
-     *
-     * Given scenario: JsonNode represents a paragraph block containing text content
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
+     * Given Scenario: JsonNode represents a paragraph block containing text content
      * Expected Result: Method should return false as the paragraph contains meaningful text
      */
     @Test
@@ -245,10 +221,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
-     *
-     * Given scenario: JsonNode represents an image block with identifier data
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
+     * Given Scenario: JsonNode represents an image block with identifier data
      * Expected Result: Method should return false as image blocks represent meaningful content
      */
     @Test
@@ -267,10 +241,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
-     *
-     * Given scenario: JsonNode represents a list block element (bulletList type)
-     *
+     * Method to test: {@link StoryBlockUtil#isEmptyBlock(JsonNode)}
+     * Given Scenario: JsonNode represents a list block element (bulletList type)
      * Expected Result: Method should return false as list structures are considered content even when empty
      */
     @Test
@@ -285,10 +257,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
-     *
-     * Given scenario: JsonNode block has no content property defined
-     *
+     * Method to test: {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
+     * Given Scenario: JsonNode block has no content property defined
      * Expected Result: Method should return true as missing content property indicates empty text
      */
     @Test
@@ -302,10 +272,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
-     *
-     * Given scenario: JsonNode block has content property defined as an empty array
-     *
+     * Method to test: {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
+     * Given Scenario: JsonNode block has content property defined as an empty array
      * Expected Result: Method should return true as empty content array contains no text
      */
     @Test
@@ -320,10 +288,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
-     *
-     * Given scenario: JsonNode contains text elements with empty text values
-     *
+     * Method to test: {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
+     * Given Scenario: JsonNode contains text elements with empty text values
      * Expected Result: Method should return true as empty text values contain no meaningful content
      */
     @Test
@@ -343,10 +309,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
-     *
-     * Given scenario: JsonNode contains text elements with only whitespace characters
-     *
+     * Method to test: {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
+     * Given Scenario: JsonNode contains text elements with only whitespace characters
      * Expected Result: Method should return true as whitespace-only text is considered empty
      */
     @Test
@@ -366,10 +330,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
-     *
-     * Given scenario: JsonNode contains text elements with actual meaningful text content
-     *
+     * Method to test: {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
+     * Given Scenario: JsonNode contains text elements with actual meaningful text content
      * Expected Result: Method should return false as the block contains real text content
      */
     @Test
@@ -389,10 +351,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
-     *
-     * Given scenario: JsonNode contains mix of empty text elements and elements with actual content
-     *
+     * Method to test: {@link StoryBlockUtil#isTextContentEmpty(JsonNode)}
+     * Given Scenario: JsonNode contains mix of empty text elements and elements with actual content
      * Expected Result: Method should return false as at least one element contains meaningful text
      */
     @Test
@@ -420,10 +380,8 @@ public class StoryBlockUtilTest {
     // =========================================================================
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Story Block JSON contains attrs.charCount with a valid integer value
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Story Block JSON contains attrs.charCount with a valid integer value
      * Expected Result: Method should return OptionalInt with the charCount value
      */
     @Test
@@ -444,10 +402,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Story Block JSON has attrs but no charCount property
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Story Block JSON has attrs but no charCount property
      * Expected Result: Method should return empty OptionalInt
      */
     @Test
@@ -466,10 +422,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Story Block JSON has no attrs property at all
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Story Block JSON has no attrs property at all
      * Expected Result: Method should return empty OptionalInt
      */
     @Test
@@ -484,10 +438,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Input is null
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Input is null
      * Expected Result: Method should return empty OptionalInt
      */
     @Test
@@ -497,10 +449,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Input is empty string
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Input is empty string
      * Expected Result: Method should return empty OptionalInt
      */
     @Test
@@ -510,10 +460,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Input is malformed/invalid JSON
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Input is malformed/invalid JSON
      * Expected Result: Method should return empty OptionalInt without throwing
      */
     @Test
@@ -523,10 +471,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Story Block JSON has charCount of 0
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Story Block JSON has charCount of 0
      * Expected Result: Method should return OptionalInt with value 0
      */
     @Test
@@ -545,10 +491,8 @@ public class StoryBlockUtilTest {
     }
 
     /**
-     * Tested method {@link StoryBlockUtil#getCharCount(String)}
-     *
-     * Given scenario: Story Block JSON has charCount as a string instead of integer
-     *
+     * Method to test: {@link StoryBlockUtil#getCharCount(String)}
+     * Given Scenario: Story Block JSON has charCount as a string instead of integer
      * Expected Result: Method should return empty OptionalInt as the value is not an integer
      */
     @Test
