@@ -6,7 +6,7 @@ This document follows [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): use the `$
 - **Testing Framework**: Jest or Vitest
 - **Testing Library**: **Spectator (required)** — use `@ngneat/spectator` with `@ngneat/spectator/jest` (Jest) or `@ngneat/spectator` (Vitest)
 - **Coverage Tool**: Jest Coverage / Vitest coverage
-- **Mocking**: Jest/Vitest + `mockProvider` from Spectator
+- **Mocking**: Jest/Vitest + `mockProvider` from Spectator; **domain mocks** from `@dotcms/utils-testing` (createFake functions)
 - **E2E**: Playwright (when needed)
 
 ## Spectator API (Required)
@@ -499,24 +499,57 @@ describe('DotFeatureContainer Integration', () => {
 
 ## Test Data Management
 
-### Mock Data Setup
+### Use @dotcms/utils-testing createFake Functions (Required)
+
+**Always use `@dotcms/utils-testing` createFake functions for domain objects. Never create manual mocks.**
+
 ```typescript
-// test-data.ts
+import {
+    createFakeContentlet,
+    createFakeContentType,
+    createFakeLanguage,
+    createFakeSite,
+    createFakeFolder,
+    createFakeTextField,
+    createFakeDateTimeField,
+    createFakeCustomField
+} from '@dotcms/utils-testing';
+
+// ✅ Use createFake with overrides for test-specific values
+const contentlet = createFakeContentlet({ inode: '123', title: 'Test Content' });
+const site = createFakeSite({ name: 'Demo Site' });
+const language = createFakeLanguage({ id: 1, languageCode: 'en' });
+const folder = createFakeFolder({ path: '/images' });
+const contentType = createFakeContentType({ variable: 'Blog' });
+const textField = createFakeTextField({ variable: 'title', required: true });
+
+// ❌ Never create manual mocks for domain objects
+const badContentlet = {
+    inode: '123',
+    contentType: 'Blog',
+    title: 'Test',
+    // ... dozens of required properties
+};
+```
+
+**Available createFake functions in `@dotcms/utils-testing`:**
+
+| Category | Functions |
+|----------|-----------|
+| **Content** | `createFakeContentlet`, `createFakeContentType` |
+| **Locale/Site** | `createFakeLanguage`, `createFakeSite`, `createFakeFolder` |
+| **Fields** | `createFakeBaseField`, `createFakeTextField`, `createFakeTextAreaField`, `createFakeDateField`, `createFakeDateTimeField`, `createFakeTimeField`, `createFakeSelectField`, `createFakeMultiSelectField`, `createFakeRadioField`, `createFakeCheckboxField`, `createFakeFileField`, `createFakeImageField`, `createFakeJSONField`, `createFakeTagField`, `createFakeRelationshipField`, `createFakeHostFolderField`, `createFakeCustomField`, `createFakeKeyValueField`, `createFakeWYSIWYGField`, `createFakeBlockEditorField`, `createFakeBinaryField`, `createFakeRowField`, `createFakeColumnField`, `createFakeTabDividerField`, `createFakeLineDividerField`, `createFakeConstantField`, `createFakeHiddenField`, `createFakeColumnBreakField`, `createFakeCategoryField` |
+| **Events** | `createFakeEvent`, `createFakeMouseEvent`, `createFakeKeyboardEvent` |
+
+### Custom Mock Data (when no createFake exists)
+
+For domain types that do not have a createFake function, define minimal mock data in a shared test file:
+
+```typescript
+// test-data.ts — only when no createFake exists
 export const mockItems: MyItem[] = [
-    {
-        id: '1',
-        name: 'Test Item 1',
-        description: 'Test Description 1',
-        status: 'active',
-        createdDate: new Date('2023-01-01')
-    },
-    {
-        id: '2',
-        name: 'Test Item 2',
-        description: 'Test Description 2',
-        status: 'inactive',
-        createdDate: new Date('2023-01-02')
-    }
+    { id: '1', name: 'Test Item 1', status: 'active' },
+    { id: '2', name: 'Test Item 2', status: 'inactive' }
 ];
 
 export const mockConfig: MyFeatureConfig = {
@@ -672,6 +705,9 @@ spectator.component.config = signal(newConfig);
 spectator.query('button');
 spectator.query('.my-class');
 
+// ❌ Don't create manual mocks for domain objects — use createFake from @dotcms/utils-testing
+const contentlet = { inode: '123', contentType: 'Blog', title: 'Test', /* ... */ };
+
 // ❌ Don't test implementation details (e.g. private methods or internal calls)
 expect(spectator.component['privateMethod']).toHaveBeenCalled();
 
@@ -687,6 +723,9 @@ spectator.setInput('inputProperty', 'value');
 // ✅ Use byTestId for element selection
 spectator.query(byTestId('submit-button'));
 
+// ✅ Use createFake from @dotcms/utils-testing for domain mocks
+const contentlet = createFakeContentlet({ inode: '123', title: 'Test' });
+
 // ✅ Trigger change detection after state/input changes
 spectator.detectChanges();
 
@@ -701,6 +740,6 @@ expect(element).toHaveClass('class1', 'class2');
 ## Location Information
 - **Test files**: Alongside the file under test with `.spec.ts` suffix
 - **Test utilities**: `libs/utils/src/lib/testing/`
-- **Mock data**: `*.mock.ts` or test setup files
+- **Mock data**: Use `@dotcms/utils-testing` createFake functions; fallback to `*.mock.ts` only when no createFake exists
 - **Spectator**: `@ngneat/spectator` (Jest: `@ngneat/spectator/jest`). Use **createComponentFactory**, **createDirectiveFactory**, **createPipeFactory**, **createServiceFactory**, **createHostFactory**, **createRoutingFactory**, **createHttpFactory**, **Spectator**, **byTestId**, **mockProvider**, **detectChanges**, **setInput**, **click** as documented above.
 - **See also**: [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md), [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) (testing stores), [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md), [docs/frontend/README.md](./README.md)

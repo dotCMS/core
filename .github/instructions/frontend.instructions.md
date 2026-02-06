@@ -140,8 +140,8 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 
 ### Styling
 
-- Prefer **PrimeFlex** for utility classes (layout, spacing, typography) and **PrimeNG** for UI components.
-- Use BEM and SCSS only when custom components or theming require it; avoid hardcoded colors and spacing—use design tokens, CSS variables, or theme variables when available.
+- **Priority: PrimeFlex & PrimeNG first.** Prefer PrimeFlex utility classes for layout, spacing, typography, and colors; avoid custom SCSS when a utility exists (e.g. `p-flex`, `p-m-3`, `p-text-primary`). Use PrimeNG components instead of building custom UI from scratch (e.g. `p-button`, `p-inputText`, `p-card`, `p-dialog`). Custom styles should be the exception, not the default.
+- When custom styles are needed, follow BEM; avoid hardcoded colors and spacing—use design tokens, CSS variables, or theme variables when available.
 - Do not hardcode hex/rgb colors or pixel values for spacing in components when shared variables exist.
 
 ### Accessibility
@@ -172,3 +172,4 @@ Here is a link to the most recent Angular style guide https://angular.dev/style-
 - In tests, set component inputs via **`spectator.setInput()`** (or the factory’s `props`); **do not** assign inputs directly to the component instance.
 - Use the appropriate factory: `createComponentFactory`, `createDirectiveFactory`, `createPipeFactory`, `createServiceFactory`, `createHostFactory`, `createRoutingFactory`, `createHttpFactory`.
 - Use the `Spectator` instance: `byTestId()`, `mockProvider()`, `detectChanges()`, `setInput()`, `click()` (and other DOM/user-event helpers) to drive and assert behavior.
+- **Use `@dotcms/utils-testing` createFake functions** for domain mocks (e.g. `createFakeContentlet`, `createFakeLanguage`, `createFakeSite`, `createFakeFolder`, `createFakeContentType`, `createFakeTextField`); **do not** create manual mocks for domain objects.

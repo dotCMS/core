@@ -1,6 +1,8 @@
 @let contentlet = $store.contentlet();
 @let contentType = $store.contentType();
 @let activeIndex = $store.activeSidebarTab();
+@let isNew = $store.isNew();
+@let isCopyingLocale = $store.isCopyingLocale();
 
 <!-- Information Component -->
 @let isLoadingInformation = $store.isLoadingInformation();
@@ -25,7 +27,7 @@
                 [title]="'edit.content.sidebar.general.title' | dm"
                 class="h-full">
                 <ng-template #sectionAction>
-                    @if (!$store.isNew() && !$store.isCopyingLocale()) {
+                    @if (!isNew && !isCopyingLocale) {
                         <dot-copy-button
                             [copy]="contentlet.identifier"
                             [label]="contentlet.shortyId"
@@ -103,17 +105,19 @@
             </ng-template>
         </p-tabPanel>
 
-        <p-tabPanel class="h-full flex-column tab-panel tab-panel--permissions">
-            <ng-template pTemplate="header">
-                <i class="pi pi-cog"></i>
-            </ng-template>
-            <ng-template pTemplate="content">
-                <dot-edit-content-sidebar-permissions
-                    [identifier]="$identifier() ?? ''"
-                    [languageId]="$contentlet()?.languageId ?? 0"
-                    data-testId="permissions" />
-            </ng-template>
-        </p-tabPanel>
+        @if (!isNew) {
+            <p-tabPanel class="h-full flex-column tab-panel tab-panel--permissions">
+                <ng-template pTemplate="header">
+                    <i class="pi pi-cog"></i>
+                </ng-template>
+                <ng-template pTemplate="content">
+                    <dot-edit-content-sidebar-permissions
+                        [identifier]="$identifier() ?? ''"
+                        [languageId]="$contentlet()?.languageId ?? 0"
+                        data-testId="permissions" />
+                </ng-template>
+            </p-tabPanel>
+        }
     </p-tabView>
 </aside>
 
