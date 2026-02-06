@@ -11,8 +11,6 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
@@ -40,12 +38,6 @@ public class Logger {
                     Caffeine.newBuilder()
                         .maximumSize(10000)
                         .expireAfterAccess(6,TimeUnit.HOURS)
-                        .removalListener(new RemovalListener<String, org.apache.logging.log4j.Logger>() {
-                            @Override
-                            public void onRemoval(String key, org.apache.logging.log4j.Logger value, RemovalCause cause) {
-                                debug(this.getClass(), "removing Logger :" + key + " due to " + cause);
-                            }
-                        })
                         .build();
 
     public static void clearLoggers() {

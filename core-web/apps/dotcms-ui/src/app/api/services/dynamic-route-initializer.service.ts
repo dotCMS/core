@@ -15,9 +15,8 @@ import { DynamicRouteService } from './dynamic-route.service';
  *
  * @example
  * // In a component or service after login
- * this.dynamicRouteInitializer.initialize().subscribe(count => {
- *     console.log(`Registered ${count} dynamic routes`);
- * });
+ * const count = await this.dynamicRouteInitializer.initialize();
+ * console.log(`Registered ${count} dynamic routes`);
  */
 @Injectable({ providedIn: 'root' })
 export class DynamicRouteInitializerService {
@@ -32,7 +31,7 @@ export class DynamicRouteInitializerService {
      * This should be called once after user authentication.
      *
      * @param force - Force re-initialization even if already done
-     * @returns Observable that emits the number of routes registered
+     * @returns Promise that resolves with the number of routes registered
      */
     initialize(force = false): Promise<number> {
         if (this.initialized && !force) {

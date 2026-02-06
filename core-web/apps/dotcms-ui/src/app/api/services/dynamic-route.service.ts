@@ -16,6 +16,9 @@ export interface DynamicRouteConfig {
     data?: Record<string, unknown>;
 }
 
+/** Tracks containers that have already been initialized to avoid double-init errors. */
+const initializedContainers = new Set<string>();
+
 /**
  * Registry of known Angular module paths to their import functions.
  * Add entries here for modules that can be dynamically loaded.
@@ -60,10 +63,13 @@ async function loadRemoteModule(
         return [];
     }
 
-    // Initialize the container with the sharing scope.
-    const win = window as unknown as Record<string, unknown>;
-    const shareScopes = win['__webpack_share_scopes__'] as Record<string, unknown>;
-    await container.init(shareScopes['default'] || {});
+    // Initialize the container exactly once — calling init() twice throws.
+    if (!initializedContainers.has(remoteName)) {
+        const win = window as unknown as Record<string, unknown>;
+        const shareScopes = win['__webpack_share_scopes__'] as Record<string, unknown>;
+        await container.init(shareScopes['default'] || {});
+        initializedContainers.add(remoteName);
+    }
 
     // Get the exposed module
     const factory = await container.get(exposedModule);

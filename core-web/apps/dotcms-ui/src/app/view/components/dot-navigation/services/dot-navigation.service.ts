@@ -85,6 +85,7 @@ export class DotNavigationService {
                 .reloadMenu()
                 .pipe(take(1))
                 .subscribe((menus: DotMenu[]) => {
+                    this.registerDynamicRoutes(menus);
                     this.#globalStore.loadMenu(menus);
 
                     if (this.dotRouterService.currentPortlet.id) {
@@ -104,6 +105,7 @@ export class DotNavigationService {
                 switchMap(() => this.dotMenuService.reloadMenu())
             )
             .subscribe((menus: DotMenu[]) => {
+                this.registerDynamicRoutes(menus);
                 this.#globalStore.loadMenu(menus);
                 this.goToFirstPortlet();
             });
