@@ -38,11 +38,17 @@ async function loadRemoteModule(
     remoteName: string,
     exposedModule: string
 ): Promise<Route[]> {
+    // Ensure webpack Module Federation globals exist before loading the remote.
+    // The remote's webpack runtime references these when resolving shared modules.
+    // If the host doesn't use MF, we provide no-op stubs so the remote
+    // falls back to its own bundled dependencies.
+    ensureWebpackSharingGlobals();
+
     // Dynamically load the remote entry script
     await loadRemoteEntry(remoteEntry, remoteName);
 
     // Wait for the container to be initialized.
-    // Webpack's var library type hoists the declaration (creating the key on window)
+    // Webpack's library type hoists the declaration (creating the key on window)
     // but the actual assignment happens asynchronously after chunks load.
     const container = await waitForContainer(remoteName);
 
@@ -54,18 +60,10 @@ async function loadRemoteModule(
         return [];
     }
 
-    // Initialize sharing scope if the host supports Module Federation.
-    // If not (host not built with MF), initialize with an empty scope -
-    // the remote will use its own bundled dependencies.
+    // Initialize the container with the sharing scope.
     const win = window as unknown as Record<string, unknown>;
-
-    if (typeof win['__webpack_init_sharing__'] === 'function') {
-        await (win['__webpack_init_sharing__'] as (scope: string) => Promise<void>)('default');
-        const shareScopes = win['__webpack_share_scopes__'] as Record<string, unknown>;
-        await container.init(shareScopes['default']);
-    } else {
-        await container.init({});
-    }
+    const shareScopes = win['__webpack_share_scopes__'] as Record<string, unknown>;
+    await container.init(shareScopes['default'] || {});
 
     // Get the exposed module
     const factory = await container.get(exposedModule);
@@ -88,6 +86,27 @@ async function loadRemoteModule(
 
     // Fall back to standard route exports
     return (Module['remoteRoutes'] || Module['routes'] || Module['default'] || []) as Route[];
+}
+
+/**
+ * Ensures the webpack Module Federation sharing globals exist on window.
+ * Remote entries reference __webpack_init_sharing__ and __webpack_share_scopes__
+ * during their initialization. If the host doesn't use MF, we provide stubs
+ * so the remote falls back to its own bundled dependencies.
+ */
+function ensureWebpackSharingGlobals(): void {
+    const win = window as unknown as Record<string, unknown>;
+
+    if (typeof win['__webpack_init_sharing__'] !== 'function') {
+        win['__webpack_share_scopes__'] = { default: {} };
+        win['__webpack_init_sharing__'] = (name: string) => {
+            if (!(win['__webpack_share_scopes__'] as Record<string, unknown>)[name]) {
+                (win['__webpack_share_scopes__'] as Record<string, unknown>)[name] = {};
+            }
+
+            return Promise.resolve();
+        };
+    }
 }
 
 /**
