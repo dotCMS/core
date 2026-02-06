@@ -28,7 +28,7 @@ public class FileAssetValidationException extends DotContentletValidationExcepti
     }
 
 	/**
-	 * Package-private constructor for setting ImportLineError from Builder
+	 * Constructor for setting ImportLineError from Builder
 	 * @param x
 	 * @param importLineError
 	 */
@@ -37,7 +37,7 @@ public class FileAssetValidationException extends DotContentletValidationExcepti
 	}
 
 	/**
-	 * Package-private constructor for setting ImportLineError and validation details from Builder
+	 * Constructor for setting ImportLineError and validation details from Builder
 	 * @param x
 	 * @param importLineError
 	 * @param notValidFields
@@ -50,7 +50,7 @@ public class FileAssetValidationException extends DotContentletValidationExcepti
 	}
 
 	/**
-	 * Package-private constructor for setting ImportLineError, validation details, and char limit data from Builder
+	 * Constructor for setting ImportLineError, validation details, and char limit data from Builder
 	 */
 	public FileAssetValidationException(String x, ImportLineError importLineError,
 			Map<String, List<Field>> notValidFields,
