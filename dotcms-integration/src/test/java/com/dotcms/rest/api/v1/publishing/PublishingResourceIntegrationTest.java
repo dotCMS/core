@@ -489,6 +489,10 @@ public class PublishingResourceIntegrationTest {
     public void test_purgeWithoutStatus_usesDefaults() throws Exception {
         final String successBundle = createBundleWithStatus("purge-default-success", Status.SUCCESS);
         final String failedBundle = createBundleWithStatus("purge-default-failed", Status.FAILED_TO_PUBLISH);
+        // Create all in-progress bundles that must survive the purge
+        final String bundlingBundle = createBundleWithStatus("purge-default-bundling", Status.BUNDLING);
+        final String sendingBundle = createBundleWithStatus("purge-default-sending", Status.SENDING_TO_ENDPOINTS);
+        final String publishingBundle = createBundleWithStatus("purge-default-publishing", Status.PUBLISHING_BUNDLE);
 
         // Call purge without status (uses defaults)
         final ResponseEntityPurgeView result = callPurgeEndpoint(null);
@@ -505,11 +509,19 @@ public class PublishingResourceIntegrationTest {
         assertFalse("Should NOT include SENDING_TO_ENDPOINTS", statusesRequested.contains("SENDING_TO_ENDPOINTS"));
         assertFalse("Should NOT include PUBLISHING_BUNDLE", statusesRequested.contains("PUBLISHING_BUNDLE"));
 
-        // Wait for async purge
+        // Wait for async purge to delete terminal bundles
         final BundleAPI bundleAPI = APILocator.getBundleAPI();
         await().atMost(10, TimeUnit.SECONDS).until(() ->
                 bundleAPI.getBundleById(successBundle) == null &&
                 bundleAPI.getBundleById(failedBundle) == null);
+
+        // Verify ALL in-progress bundles survived the purge (safety guarantee)
+        assertNotNull("BUNDLING bundle should NOT be deleted by default purge",
+                bundleAPI.getBundleById(bundlingBundle));
+        assertNotNull("SENDING_TO_ENDPOINTS bundle should NOT be deleted by default purge",
+                bundleAPI.getBundleById(sendingBundle));
+        assertNotNull("PUBLISHING_BUNDLE bundle should NOT be deleted by default purge",
+                bundleAPI.getBundleById(publishingBundle));
 
         createdBundleIds.remove(successBundle);
         createdBundleIds.remove(failedBundle);
