@@ -71,7 +71,8 @@ describe('LockFeature', () => {
         it('should determine if content is locked', () => {
             store.updateContent({
                 locked: true,
-                lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                lockedBy: '123',
+                lockedByName: 'John Doe'
             } as DotCMSContentlet);
 
             expect(store.isContentLocked()).toBe(true);
@@ -90,7 +91,8 @@ describe('LockFeature', () => {
             // Update with content locked by current user
             store.updateContent({
                 locked: true,
-                lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                lockedBy: '123',
+                lockedByName: 'John Doe'
             });
 
             store.updateCanLock(true);
@@ -105,7 +107,8 @@ describe('LockFeature', () => {
             // Update with content locked by another user
             store.updateContent({
                 locked: true,
-                lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                lockedBy: '123',
+                lockedByName: 'John Doe'
             });
 
             expect(store.lockWarningMessage()).toEqual(
@@ -122,7 +125,8 @@ describe('LockFeature', () => {
             // Update with content locked by another user
             store.updateContent({
                 locked: true,
-                lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                lockedBy: '123',
+                lockedByName: 'John Doe'
             });
 
             expect(store.lockWarningMessage()).toBe('Content is locked by John Doe');
@@ -146,7 +150,8 @@ describe('LockFeature', () => {
                 const lockedContentlet = {
                     ...mockContentlet,
                     locked: true,
-                    lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                    lockedBy: '123',
+                    lockedByName: 'John Doe'
                 };
 
                 dotContentletService.canLock.mockReturnValue(
@@ -195,13 +200,15 @@ describe('LockFeature', () => {
                 const mockContentlet = {
                     inode: '123',
                     locked: true,
-                    lockedBy: { userId: '123', firstName: 'John', lastName: 'Doe' }
+                    lockedBy: '123',
+                    lockedByName: 'John Doe'
                 } as DotCMSContentlet;
 
                 const unlockedContentlet = {
                     ...mockContentlet,
                     locked: false,
-                    lockedBy: null
+                    lockedBy: null,
+                    lockedByName: null
                 };
 
                 dotContentletService.canLock.mockReturnValue(
