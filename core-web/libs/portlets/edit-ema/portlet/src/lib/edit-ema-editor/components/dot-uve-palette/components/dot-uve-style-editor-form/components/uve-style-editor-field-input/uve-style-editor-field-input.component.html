@@ -5,5 +5,7 @@
         [formControlName]="$field().id"
         [id]="$field().id"
         class="w-full"
-        [placeholder]="$field().config.placeholder" />
+        [placeholder]="
+            $field().config?.placeholder ?? ('style.editor.text.field.default.placeholder' | dm)
+        " />
 </div>

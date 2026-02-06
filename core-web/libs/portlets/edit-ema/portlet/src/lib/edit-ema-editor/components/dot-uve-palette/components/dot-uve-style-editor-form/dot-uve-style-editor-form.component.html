@@ -1,7 +1,7 @@
 @if ($form() && $sections()) {
     <form
         [formGroup]="$form()!"
-        class="flex h-full w-full flex-col gap-3 overflow-y-auto p-0 [&_.field-label]:mb-5 [&_.field-label]:block [&_.field-label]:text-base [&_.field-label]:font-bold [&_.field-label]:text-[var(--color-palette-bluegray-700)]">
+        class="flex h-full w-full flex-col gap-3 overflow-y-auto p-0 [&_.field-label]:mb-5 [&_.field-label]:block [&_.field-label]:text-base [&_.field-label]:font-bold">
         <p-accordion [multiple]="true" class="uve-accordion" [value]="$activeTabIndices()">
             @for (section of $sections(); track section.title; let index = $index) {
                 <p-accordion-panel [value]="index" class="uve-accordion-tab">

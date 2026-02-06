@@ -1,32 +1,36 @@
-<div class="form-field" [class.field-radio-image]="$hasRadioImage()">
+<div class="form-field">
     <label class="field-label">{{ $field().label }}</label>
 
     @if ($hasRadioImage()) {
         <div
-            class="radio-image-group"
+            class="grid gap-3 mb-4"
             [style.grid-template-columns]="'repeat(' + $columns() + ', 1fr)'">
             @for (option of $options(); track option.value) {
-                <div class="radio-image-item">
+                <div class="relative">
                     <input
                         type="radio"
                         [id]="$field().id + '-' + option.value"
                         [name]="$field().id"
                         [formControlName]="$field().id"
                         [value]="option.value"
-                        class="radio-image-input" />
+                        class="peer absolute opacity-0 cursor-pointer" />
                     <label
                         [for]="$field().id + '-' + option.value"
-                        class="radio-image-label flex flex-column items-start">
-                        <div class="radio-image-container">
-                            <img [src]="option.imageURL" [alt]="option.label" class="radio-image" />
+                        class="flex flex-col items-start gap-1 cursor-pointer peer-checked:[&>div]:border-[var(--color-palette-primary-500)] peer-checked:[&>div]:bg-[var(--color-palette-primary-100)] peer-checked:[&>div]:shadow-[0_2px_8px_rgba(0,0,0,0.12)]">
+                        <div
+                            class="w-full h-[5.75rem] block rounded border border-gray-300 bg-white p-1 transition-all duration-150 hover:border-[var(--color-palette-primary-500)] hover:shadow-md">
+                            <img
+                                [src]="option.imageURL"
+                                [alt]="option.label"
+                                class="w-full h-full object-cover rounded-[calc(0.25rem-2px)]" />
                         </div>
-                        <span class="radio-image-text">{{ option.label }}</span>
+                        <span class="text-sm text-gray-900 w-full">{{ option.label }}</span>
                     </label>
                 </div>
             }
         </div>
     } @else {
-        <div class="radio-group flex flex-col gap-5">
+        <div class="flex flex-col gap-2">
             @for (option of $options(); track option.value) {
                 <div class="flex items-center gap-2">
                     <p-radioButton

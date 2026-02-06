@@ -3,12 +3,13 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotMessagePipe } from '@dotcms/ui';
 import { StyleEditorFieldSchema } from '@dotcms/uve';
 
 @Component({
     selector: 'dot-uve-style-editor-field-input',
     standalone: true,
-    imports: [ReactiveFormsModule, InputTextModule],
+    imports: [ReactiveFormsModule, InputTextModule, DotMessagePipe],
     viewProviders: [
         {
             provide: ControlContainer,
