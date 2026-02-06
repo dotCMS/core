@@ -46,9 +46,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.dotcms.util.CollectionsUtils.list;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -360,8 +362,10 @@ public class BundlePublisherTest extends IntegrationTestBase {
             bundlePublisher.process(new PublishStatus());
             fail("Expected DotPublishingException to be thrown");
         } catch (DotPublishingException e) {
-            // Verify failure event was notified
-            assertTrue("Failure event should have been received", failureEventReceived.get());
+
+            await().atMost(10, TimeUnit.SECONDS)
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .untilTrue(failureEventReceived);
             
             // Verify audit table was updated with failure status
             final PublishAuditStatus updatedStatus = realAuditAPI.getPublishAuditStatus(bundleId);
