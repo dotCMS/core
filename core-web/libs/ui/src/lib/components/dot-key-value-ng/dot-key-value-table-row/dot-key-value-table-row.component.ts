@@ -26,8 +26,8 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
 
 @Component({
     selector: 'dot-key-value-table-row',
-    styleUrls: ['./dot-key-value-table-row.component.scss'],
     templateUrl: './dot-key-value-table-row.component.html',
+    host: { class: 'contents' },
     imports: [
         ButtonModule,
         ToggleSwitchModule,
