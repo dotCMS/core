@@ -1,3 +1,5 @@
 #if( $structures.isNewEditModeEnabled() )
-#parse('/static/htmlpage_assets/cachettl_custom_field_new.vtl') #else
-#parse('/static/htmlpage_assets/cachettl_custom_field_old.vtl') #end
+	#parse('/static/htmlpage_assets/cachettl_custom_field_new.vtl')
+#else
+	#parse('/static/htmlpage_assets/cachettl_custom_field_old.vtl')
+#end
