@@ -211,11 +211,11 @@ export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, On
         if (changes.$layout && changes.$layout.currentValue) {
             this.fieldRows = structuredClone(changes.$layout.currentValue);
         }
-        
+
         if (changes.$loading) {
             const loading = changes.$loading.currentValue;
             this._loading = loading;
-            
+
             // Use setTimeout to defer loading indicator changes until after current change detection cycle
             setTimeout(() => {
                 if (loading) {
