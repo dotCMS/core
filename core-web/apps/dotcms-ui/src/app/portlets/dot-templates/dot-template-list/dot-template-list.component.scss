@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    overflow: auto;
 
     &::ng-deep listing-data-table tr {
         cursor: pointer;
