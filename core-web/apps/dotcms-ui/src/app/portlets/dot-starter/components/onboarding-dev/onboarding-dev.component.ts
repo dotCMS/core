@@ -20,7 +20,6 @@ import { OnboardingFramework } from './models';
 @Component({
     selector: 'dot-onboarding-dev',
     templateUrl: './onboarding-dev.component.html',
-    styleUrls: ['./onboarding-dev.component.scss'],
     imports: [
         AccordionModule,
         DotCopyButtonComponent,
@@ -34,7 +33,11 @@ import { OnboardingFramework } from './models';
         RouterModule,
         TagModule,
         TooltipModule
-    ]
+    ],
+    host: {
+        style: 'background: linear-gradient(135deg, #d8e9ff 0%, #ffffff 70%, #faf5ff 100%); padding-block-start: 1.5rem;',
+        class: 'h-full flex flex-col flex-1 overflow-auto gap-5'
+    }
 })
 export class DotOnboardingDevComponent {
     @Output() eventEmitter = new EventEmitter<'reset-user-profile'>();
@@ -89,7 +92,7 @@ export class DotOnboardingDevComponent {
             copied: false,
             cliCommand: '',
             disabled: true,
-            githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
+            githubUrl: 'https://github.com/dotCMS/dotcms-php-sdk'
         }
     ];
 
