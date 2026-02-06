@@ -1,5 +1,3 @@
 #if( $structures.isNewEditModeEnabled() )
-	#parse('/static/htmlpage_assets/text_count_new.vtl')
-#else
-	#parse('/static/htmlpage_assets/text_count_old.vtl')
-#end
+#parse('/static/htmlpage_assets/text_count_new.vtl') #else
+#parse('/static/htmlpage_assets/text_count_old.vtl') #end
