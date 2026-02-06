@@ -18,7 +18,7 @@ import static com.dotmarketing.util.PortletID.USAGE;
 /**
  * Adds the custom 'Usage' portlet to the main menu, if it hasn't already been added yet.
  *
- * @author Jose Castro
+ * @author Denis Santos
  * @since Feb 6th, 2026
  */
 public class Task260206AddUsagePortletToMenu implements StartupTask {
