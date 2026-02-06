@@ -66,15 +66,16 @@
             </p-button>
             <a
                 size="small"
+                [text]="true"
                 title="Page API URL"
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="p-button-text p-button-sm p-button-rounded !no-underline"
+                class="text-[var(--color-palette-primary)]! visited:text-[var(--color-palette-primary)]! !no-underline"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">
-                <span pButtonLabel>API</span>
+                API
             </a>
 
             @if ($showDeviceSelector()) {
@@ -125,7 +126,7 @@
     </ng-template>
 
     <ng-template #end>
-        <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1 uve-toolbar-end-actions">
             <dot-toggle-lock-button />
 
             @if (runningExperiment) {

@@ -105,8 +105,10 @@ const DEBOUNCE_TIME = 300;
     ],
     providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
-    styleUrl: './dot-uve-palette-list.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col w-full h-full min-h-0 overflow-hidden'
+    }
 })
 export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('menu') menu!: { toggle: (event: Event) => void };

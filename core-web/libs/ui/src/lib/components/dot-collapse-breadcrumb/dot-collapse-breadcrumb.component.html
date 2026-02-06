@@ -1,10 +1,13 @@
-<div class="flex items-center h-4" [class]="$styleClass()">
+<div class="flex items-center h-6" [class]="$styleClass()">
     @if ($isCollapsed()) {
         <div class="flex items-center">
             <div>
                 <p-menu #menu [model]="$itemsToHide()" [popup]="true" appendTo="body" />
                 <p-button
                     (click)="menu.toggle($event)"
+                    [text]="true"
+                    size="small"
+                    [rounded]="true"
                     icon="pi pi-ellipsis-h"
                     type="button"
                     data-testid="btn-collapse" />
