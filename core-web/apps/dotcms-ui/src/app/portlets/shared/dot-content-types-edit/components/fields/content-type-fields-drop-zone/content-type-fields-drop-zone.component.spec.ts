@@ -1209,32 +1209,35 @@ describe('Load fields and drag and drop', () => {
             expect(dotLoadingIndicator.componentInstance.fullscreen).toBe(true);
         });
 
-        it('Should show dot-loading-indicator when loading is set to true', () => {
+        it('Should show dot-loading-indicator when loading is set to true', fakeAsync(() => {
             const dropZoneFixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
             const localComponent = dropZoneFixture.componentInstance;
-            jest.spyOn(dotLoadingIndicatorServiceMock, 'show');
+            const showSpy = jest.spyOn(dotLoadingIndicatorServiceMock, 'show');
 
             dropZoneFixture.componentRef.setInput('loading', true);
             dropZoneFixture.detectChanges();
+            tick(); // Wait for setTimeout(0)
 
             expect(localComponent.$loading()).toBe(true);
-            expect(dotLoadingIndicatorServiceMock.show).toHaveBeenCalled();
-        });
+            expect(showSpy).toHaveBeenCalledTimes(1);
+        }));
 
-        it('Should hide dot-loading-indicator when loading is set to true', () => {
+        it('Should hide dot-loading-indicator when loading is set to false', fakeAsync(() => {
             const dropZoneFixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
             const localComponent = dropZoneFixture.componentInstance;
-            jest.spyOn(dotLoadingIndicatorServiceMock, 'hide');
+            const hideSpy = jest.spyOn(dotLoadingIndicatorServiceMock, 'hide');
 
             dropZoneFixture.componentRef.setInput('loading', true);
             dropZoneFixture.detectChanges();
+            tick(); // Wait for setTimeout(0)
 
             dropZoneFixture.componentRef.setInput('loading', false);
             dropZoneFixture.detectChanges();
+            tick(); // Wait for setTimeout(0)
 
             expect(localComponent.$loading()).toBe(false);
-            expect(dotLoadingIndicatorServiceMock.hide).toHaveBeenCalled();
-        });
+            expect(hideSpy).toHaveBeenCalledTimes(1);
+        }));
     });
 
     afterEach(() => {

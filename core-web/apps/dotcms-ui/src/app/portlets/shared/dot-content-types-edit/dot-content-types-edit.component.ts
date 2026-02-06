@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, DestroyRef, OnDestroy, OnInit, inject, viewChild } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -68,7 +68,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
         header: ''
     };
 
-    loadingFields = false;
+    loadingFields = signal(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private destroyRef = inject(DestroyRef);
@@ -233,14 +233,14 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     saveFields(layout: DotCMSContentTypeLayoutRow[]): void {
-        this.loadingFields = true;
+        this.loadingFields.set(true);
         this.fieldService
             .saveFields(this.data.id, layout)
             .pipe(take(1))
             .subscribe(
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
-                    this.loadingFields = false;
+                    this.loadingFields.set(false);
                 },
                 (err) => {
                     this.dotHttpErrorManagerService
@@ -248,7 +248,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                         .pipe(take(1))
                         .subscribe(() => {
                             this.$fieldsDropZone().cancelLastDragAndDrop();
-                            this.loadingFields = false;
+                            this.loadingFields.set(false);
                         });
                 }
             );
@@ -261,14 +261,14 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     editField(fieldsToEdit: DotCMSContentTypeField): void {
-        this.loadingFields = true;
+        this.loadingFields.set(true);
         this.fieldService
             .updateField(this.data.id, fieldsToEdit)
             .pipe(take(1))
             .subscribe(
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
-                    this.loadingFields = false;
+                    this.loadingFields.set(false);
                 },
                 (err) => {
                     this.dotHttpErrorManagerService
@@ -276,7 +276,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                         .pipe(take(1))
                         .subscribe(() => {
                             this.$fieldsDropZone().cancelLastDragAndDrop();
-                            this.loadingFields = false;
+                            this.loadingFields.set(false);
                         });
                 }
             );
