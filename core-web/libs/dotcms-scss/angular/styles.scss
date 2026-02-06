@@ -132,7 +132,7 @@ However this is for the dragula we use in the angular components the one in the 
 }
 
 code {
-    color: $color-accessible-text-purple;
+    color: $color-accessible-text-purple !important;
     background-color: $color-accessible-text-purple-bg;
     padding: $spacing-0 $spacing-1;
     font-family: $font-code;
