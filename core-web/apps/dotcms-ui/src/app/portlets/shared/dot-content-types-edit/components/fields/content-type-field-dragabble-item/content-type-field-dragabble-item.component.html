@@ -5,7 +5,7 @@
     <i class="material-icons text-(--color-palette-secondary-500) text-lg">{{ icon }}</i>
 </div>
 
-<div class="flex flex-col overflow-hidden pr-1 grow gap-2">
+<div class="flex flex-col overflow-hidden pr-1 grow gap-2 py-3">
     <div class="h-4 flex items-center justify-between mb-1">
         <span class="truncate text-black font-semibold text-sm block">{{ field.name }}</span>
         @if (!field.fixed) {
@@ -20,8 +20,8 @@
         }
     </div>
     <div class="h-4 flex items-center justify-between">
-        @if (field.variable) {
-            <dot-copy-link [label]="field.variable" [copy]="field.variable" />
+        @if (variableToShow) {
+            <dot-copy-link [label]="variableToShow" [copy]="variableToShow" />
         }
 
         @if ($isSmall()) {

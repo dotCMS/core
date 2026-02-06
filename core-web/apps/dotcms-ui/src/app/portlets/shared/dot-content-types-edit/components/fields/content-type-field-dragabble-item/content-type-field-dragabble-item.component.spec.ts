@@ -249,4 +249,61 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         createComponent(mockField, true);
         expect(de.query(By.css('[data-testid="field-info-button"]'))).toBeTruthy();
     });
+
+    describe('variableToShow getter', () => {
+        it('should return field variable when variable is defined', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'My Field Name',
+                variable: 'myCustomVariable'
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('myCustomVariable');
+        });
+
+        it('should return camelCase of field name when variable is undefined', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'My Field Name',
+                variable: undefined
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('myFieldName');
+        });
+
+        it('should return camelCase of field name when variable is empty string', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'Another Test Field',
+                variable: ''
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('anotherTestField');
+        });
+
+        it('should return empty string when both variable and name are empty', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: '',
+                variable: ''
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('');
+        });
+
+        it('should return camelCase of field name when variable is null', () => {
+            const field = {
+                ...dotcmsContentTypeFieldBasicMock,
+                name: 'Test Field With Spaces',
+                variable: null
+            };
+
+            createComponent(field);
+            expect(comp.variableToShow).toBe('testFieldWithSpaces');
+        });
+    });
 });

@@ -1,4 +1,5 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, DestroyRef, effect, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     ReactiveFormsModule,
     UntypedFormBuilder,
@@ -22,7 +23,6 @@ import { DotAppsImportExportDialogStore } from './store/dot-apps-import-export-d
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
-    styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
     imports: [
         ReactiveFormsModule,
         DialogModule,
@@ -39,6 +39,7 @@ export class DotAppsImportExportDialogComponent {
     readonly #store = inject(DotAppsImportExportDialogStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #fb = inject(UntypedFormBuilder);
+    readonly #destroyRef = inject(DestroyRef);
 
     // Store selectors
     readonly visible = this.#store.visible;
@@ -47,7 +48,7 @@ export class DotAppsImportExportDialogComponent {
     readonly dialogHeaderKey = this.#store.dialogHeaderKey;
     readonly isLoading = this.#store.isLoading;
 
-    form: UntypedFormGroup;
+    form: UntypedFormGroup = this.#fb.group({});
     dialogActions: DotDialogActions;
     #selectedFile: File | null = null;
 
@@ -103,7 +104,7 @@ export class DotAppsImportExportDialogComponent {
             this.setImportDialogActions();
         }
 
-        this.form.valueChanges.subscribe(() => {
+        this.form.valueChanges.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
             this.dialogActions = {
                 ...this.dialogActions,
                 accept: {

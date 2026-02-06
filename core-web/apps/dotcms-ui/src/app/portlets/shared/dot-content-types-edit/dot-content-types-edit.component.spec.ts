@@ -685,7 +685,7 @@ describe('DotContentTypesEditComponent', () => {
 
             jest.spyOn(fieldService, 'saveFields').mockImplementation(() => {
                 // Check loading is set to true before the observable completes
-                expect(comp.loadingFields).toBe(true);
+                expect(comp.loadingFields()).toBe(true);
                 return of(fieldsReturnByServer);
             });
 

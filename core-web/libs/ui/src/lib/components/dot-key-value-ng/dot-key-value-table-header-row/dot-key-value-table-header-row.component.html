@@ -1,10 +1,10 @@
-<tr class="dot-key-value__header">
+<tr class="font-bold">
     @if ($dragAndDrop()) {
-        <th scope="col" class="w-12" data-testId="drag-column"></th>
+        <th scope="col" class="w-12 align-bottom text-left p-2" data-testId="drag-column"></th>
     }
-    <th>
-        <div class="flex flex-col">
-            <label for="key-value-input-row-key-input" class="mb-1">
+    <th class="align-bottom text-left p-2">
+        <div class="flex flex-col gap-1">
+            <label for="key-value-input-row-key-input" class="font-bold">
                 {{ 'keyValue.key_header.label' | dm }}
             </label>
             <input
@@ -12,7 +12,7 @@
                 (keydown.enter)="handleKeyInputEnter($event)"
                 [formControl]="keyControl"
                 [placeholder]="'keyValue.key_input.placeholder' | dm"
-                class="w-full h-8"
+                class="w-full"
                 #keyCell
                 id="key-value-input-row-key-input"
                 data-testId="key-input"
@@ -20,19 +20,18 @@
                 type="text"
                 pSize="small"
                 autocomplete="false" />
-            @if (keyControl.dirty && keyControl.hasError('required')) {
-                <small class="text-red-500 text-xs">{{ 'keyValue.key_input.required' | dm }}</small>
-            }
-            @if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
-                <small class="text-red-500 text-xs">
+            <small class="text-red-500 text-xs h-4">
+                @if (keyControl.dirty && keyControl.hasError('required')) {
+                    {{ 'keyValue.key_input.required' | dm }}
+                } @else if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
                     {{ 'keyValue.key_input.duplicated' | dm }}
-                </small>
-            }
+                }
+            </small>
         </div>
     </th>
-    <th>
-        <div class="flex flex-col">
-            <label for="key-value-input-row-value-input" class="mb-1">
+    <th class="align-bottom text-left p-2">
+        <div class="flex flex-col gap-1">
+            <label for="key-value-input-row-value-input" class="font-bold">
                 {{ 'keyValue.value_header.label' | dm }}
             </label>
             <input
@@ -42,44 +41,45 @@
                 [formControl]="valueControl"
                 [type]="hiddenControl.value ? 'password' : 'text'"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
-                class="w-full h-8"
+                class="w-full"
                 id="key-value-input-row-value-input"
                 #valueCell
                 data-testId="value-input"
                 pInputText
                 pSize="small"
                 autocomplete="false" />
-            @if (valueControl.dirty && valueControl.hasError('required')) {
-                <small class="text-red-500 text-xs">
+            <small class="text-red-500 text-xs h-4">
+                @if (valueControl.dirty && valueControl.hasError('required')) {
                     {{ 'keyValue.value_input.required' | dm }}
-                </small>
-            }
+                }
+            </small>
         </div>
     </th>
     @if ($showHiddenField()) {
-        <th>
-            <div class="flex flex-col">
-                <label for="key-value-input-row-hidden-input" class="mb-1">
+        <th class="align-bottom text-left p-2">
+            <div class="flex flex-col gap-1">
+                <label for="key-value-input-row-hidden-input" class="font-bold">
                     {{ 'keyValue.hidden_header.label' | dm }}
                 </label>
-                <p-inputSwitch
-                    class="inline-block mt-2"
+                <p-toggleSwitch
                     [formControl]="hiddenControl"
                     id="key-value-input-row-hidden-input"
                     data-testId="hidden-switch" />
+                <small class="h-4"></small>
             </div>
         </th>
     }
-    <th class="relative w-16 min-w-12" scope="col">
-        <button
-            (click)="saveVariable()"
-            icon="pi pi-plus"
-            [text]="true"
-            class="absolute top-9"
-            #saveButton
-            size="small"
-            data-testId="save-button"
-            type="button"
-            pButton></button>
+    <th class="align-bottom text-left p-2 w-16 min-w-12" scope="col">
+        <div class="flex flex-col gap-1 justify-end h-full">
+            <p-button
+                (click)="saveVariable()"
+                icon="pi pi-plus"
+                [text]="true"
+                #saveButton
+                size="small"
+                data-testId="save-button"
+                type="button" />
+            <small class="h-4"></small>
+        </div>
     </th>
 </tr>

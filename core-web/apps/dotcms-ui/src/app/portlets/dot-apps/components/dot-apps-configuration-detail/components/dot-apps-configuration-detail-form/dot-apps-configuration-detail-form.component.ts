@@ -71,7 +71,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
     readonly data = output<{ [key: string]: string }>();
     readonly valid = output<boolean>();
 
-    myFormGroup: UntypedFormGroup;
+    myFormGroup: UntypedFormGroup = new UntypedFormGroup({});
     private valueChangesSubscription?: Subscription;
     private isDestroyed = false;
 

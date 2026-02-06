@@ -16,6 +16,7 @@ import { LazyLoadEvent, MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { TieredMenu } from 'primeng/tieredmenu';
 
 import { take } from 'rxjs/operators';
 
@@ -94,7 +95,8 @@ type SavePageEventData = {
         DotAddToBundleComponent,
         DotPageFavoritesPanelComponent,
         DotPagesTableComponent,
-        DotCreatePageDialogComponent
+        DotCreatePageDialogComponent,
+        TieredMenu
     ],
     host: {
         class: 'h-full overflow-auto p-6 block'
