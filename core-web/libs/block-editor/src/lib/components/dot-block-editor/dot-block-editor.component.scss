@@ -48,6 +48,10 @@
         pointer-events: none;
     }
 
+    .editor-wrapper--error {
+        outline-color: $color-palette-red;
+    }
+
     .dot-drag-handle {
         cursor: grab;
         color: $color-palette-gray-500;
@@ -96,6 +100,24 @@
         100% {
             transform: rotate(360deg);
         }
+    }
+
+    .block-editor__footer {
+        display: flex;
+        align-items: center;
+        margin-top: $spacing-3;
+        gap: $spacing-2;
+    }
+
+    .block-editor__footer-error {
+        flex: 7;
+        color: $color-palette-red;
+        font-size: $font-size-md;
+    }
+
+    dot-editor-count-bar {
+        flex: 5;
+        margin-top: 0;
     }
 }
 

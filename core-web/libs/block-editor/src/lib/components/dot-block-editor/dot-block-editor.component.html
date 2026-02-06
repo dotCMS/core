@@ -3,7 +3,8 @@
         [ngClass]="{
             'editor-wrapper--fullscreen': isFullscreen,
             'editor-wrapper--default': !isFullscreen,
-            'editor-wrapper--disabled': disabled
+            'editor-wrapper--disabled': disabled,
+            'editor-wrapper--error': hasError
         }"
         [style]="customStyles"
         class="editor-wrapper"
@@ -25,12 +26,31 @@
         <i class="pi pi-ellipsis-v"></i>
     </div>
 
-    @if (showCharData) {
-        <dot-editor-count-bar
-            [charLimit]="charLimit"
-            [characterCount]="characterCount"
-            [readingTime]="readingTime"
-            data-testid="editor-count-bar" />
+    @if (showCharData || charLimitError || requiredError) {
+        <div class="block-editor__footer">
+            <div class="block-editor__footer-error">
+                @if (requiredError) {
+                    <small data-testid="required-error">
+                        {{ 'dot.edit.content.form.field.required' | dm }}
+                    </small>
+                }
+                @if (charLimitError) {
+                    <small data-testid="char-limit-error">
+                        {{
+                            'dot.edit.content.form.field.charLimitExceeded'
+                                | dm: [charLimitError.max]
+                        }}
+                    </small>
+                }
+            </div>
+            @if (showCharData) {
+                <dot-editor-count-bar
+                    [charLimit]="charLimit"
+                    [characterCount]="characterCount"
+                    [readingTime]="readingTime"
+                    data-testid="editor-count-bar" />
+            }
+        </div>
     }
 
     <dot-editor-context-menu [editor]="editor" />
