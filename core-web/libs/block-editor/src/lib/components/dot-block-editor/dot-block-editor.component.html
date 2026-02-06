@@ -27,15 +27,15 @@
     </div>
 
     @if (showCharData || charLimitError || requiredError) {
-        <div class="block-editor__footer">
-            <div class="block-editor__footer-error">
+        <div class="flex align-items-center mt-3 gap-2">
+            <div class="flex-1">
                 @if (requiredError) {
-                    <small data-testid="required-error">
+                    <small class="p-invalid" data-testid="required-error">
                         {{ 'dot.edit.content.form.field.required' | dm }}
                     </small>
                 }
                 @if (charLimitError) {
-                    <small data-testid="char-limit-error">
+                    <small class="p-invalid" data-testid="char-limit-error">
                         {{
                             'dot.edit.content.form.field.charLimitExceeded'
                                 | dm: [charLimitError.max]

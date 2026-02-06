@@ -102,21 +102,7 @@
         }
     }
 
-    .block-editor__footer {
-        display: flex;
-        align-items: center;
-        margin-top: $spacing-3;
-        gap: $spacing-2;
-    }
-
-    .block-editor__footer-error {
-        flex: 7;
-        color: $color-palette-red;
-        font-size: $font-size-md;
-    }
-
     dot-editor-count-bar {
-        flex: 5;
         margin-top: 0;
     }
 }
