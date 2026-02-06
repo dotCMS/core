@@ -43,6 +43,7 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
+import { TieredMenu } from 'primeng/tieredmenu';
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
 import { DotPageStore } from './dot-pages-store/dot-pages.store';
@@ -94,7 +95,8 @@ type SavePageEventData = {
         DotAddToBundleComponent,
         DotPageFavoritesPanelComponent,
         DotPagesTableComponent,
-        DotCreatePageDialogComponent
+        DotCreatePageDialogComponent,
+        TieredMenu
     ],
     host: {
         class: 'h-full overflow-auto p-6 block'

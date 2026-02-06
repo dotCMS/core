@@ -26,7 +26,16 @@
     [visibility]="dialogVisible()"
     (visibilityChange)="dialogVisible.set($event)" />
 
-<p-menu (onHide)="closeMenu()" [appendTo]="'body'" [popup]="true" #menu [model]="menuItems()" />
+<!-- 
+    TODO: Replace with p-menu when the issue is fixed:
+    https://github.com/primefaces/primeng/issues/19191
+-->
+<p-tieredmenu
+    (onHide)="closeMenu()"
+    [appendTo]="'body'"
+    [popup]="true"
+    #menu
+    [model]="menuItems()" />
 
 @if ($showBundleDialog()) {
     <dot-add-to-bundle (cancel)="onCloseBundleDialog()" [assetIdentifier]="$assetIdentifier()" />
