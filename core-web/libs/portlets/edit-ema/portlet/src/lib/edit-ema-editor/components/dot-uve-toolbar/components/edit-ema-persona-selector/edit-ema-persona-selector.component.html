@@ -5,9 +5,13 @@
     size="small"
     data-testId="persona-button">
     @if (value?.identifier !== 'modes.persona.no.persona') {
-        <p-avatar [text]="value?.name" [image]="photo" shape="circle" dotAvatar />
+        <p-avatar [text]="value?.name" [image]="photo" shape="circle" [pt]="avatarPt" dotAvatar />
     } @else {
-        <p-avatar [text]="'modes.persona.no.persona' | dm" shape="circle" dotAvatar />
+        <p-avatar
+            [text]="'modes.persona.no.persona' | dm"
+            shape="circle"
+            [pt]="avatarPt"
+            dotAvatar />
     }
 </p-button>
 <p-popover #op data-testId="persona-op" [unstyled]="true" [appendTo]="'body'">
