@@ -16,7 +16,8 @@ import static com.dotmarketing.util.PortletID.SITES;
 import static com.dotmarketing.util.PortletID.USAGE;
 
 /**
- * Adds the custom 'Usage' portlet to the main menu, if it hasn't already been added yet.
+ * Adds the custom 'Usage' portlet to the System menu, if it doesn't exist anywhere in the system.
+ * Falls back to Marketing menu, or the menu containing the Sites portlet if System is not available.
  *
  * @author Denis Santos
  * @since Feb 6th, 2026
