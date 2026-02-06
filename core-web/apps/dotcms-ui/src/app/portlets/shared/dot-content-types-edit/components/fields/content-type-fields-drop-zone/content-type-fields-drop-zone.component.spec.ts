@@ -1222,7 +1222,7 @@ describe('Load fields and drag and drop', () => {
             expect(showSpy).toHaveBeenCalledTimes(1);
         }));
 
-        it('Should hide dot-loading-indicator when loading is set to true', fakeAsync(() => {
+        it('Should hide dot-loading-indicator when loading is set to false', fakeAsync(() => {
             const dropZoneFixture = TestBed.createComponent(ContentTypeFieldsDropZoneComponent);
             const localComponent = dropZoneFixture.componentInstance;
             const hideSpy = jest.spyOn(dotLoadingIndicatorServiceMock, 'hide');
