@@ -198,10 +198,9 @@ function loadRemoteEntry(remoteEntry: string, remoteName: string): Promise<void>
         }
 
         const isSameOrigin = url.origin === window.location.origin;
-        const allowlist =
-            (window as unknown as { DOT_REMOTE_ENTRY_ALLOWLIST?: string[] }).DOT_REMOTE_ENTRY_ALLOWLIST;
-        const isAllowlistedOrigin =
-            Array.isArray(allowlist) && allowlist.includes(url.origin);
+        const allowlist = (window as unknown as { DOT_REMOTE_ENTRY_ALLOWLIST?: string[] })
+            .DOT_REMOTE_ENTRY_ALLOWLIST;
+        const isAllowlistedOrigin = Array.isArray(allowlist) && allowlist.includes(url.origin);
 
         // Require https for cross-origin remotes
         if (!isSameOrigin && url.protocol !== 'https:') {
