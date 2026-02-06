@@ -66,15 +66,16 @@
             </p-button>
             <a
                 size="small"
+                [text]="true"
                 title="Page API URL"
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="p-button-text p-button-sm p-button-rounded !no-underline"
+                class="!no-underline"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">
-                <span pButtonLabel>API</span>
+                API
             </a>
 
             @if ($showDeviceSelector()) {
