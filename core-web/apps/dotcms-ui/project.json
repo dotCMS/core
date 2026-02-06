@@ -15,7 +15,7 @@
                     "browser": ""
                 },
                 "index": "apps/dotcms-ui/src/index.html",
-                "main": "apps/dotcms-ui/src/main.ts",
+                "browser": "apps/dotcms-ui/src/main.ts",
                 "polyfills": ["apps/dotcms-ui/src/polyfills.ts"],
                 "tsConfig": "apps/dotcms-ui/tsconfig.app.json",
                 "inlineStyleLanguage": "scss",
@@ -76,9 +76,7 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "vendorChunk": true,
                 "extractLicenses": false,
-                "buildOptimizer": false,
                 "sourceMap": true,
                 "optimization": false,
                 "namedChunks": true
@@ -96,8 +94,6 @@
                     "sourceMap": false,
                     "namedChunks": false,
                     "extractLicenses": true,
-                    "vendorChunk": false,
-                    "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
@@ -118,8 +114,6 @@
                     "optimization": false,
                     "sourceMap": false,
                     "namedChunks": false,
-                    "vendorChunk": true,
-                    "buildOptimizer": false,
                     "extractLicenses": false,
                     "fileReplacements": [],
                     "progress": false,
