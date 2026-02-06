@@ -15,8 +15,7 @@ import { StyleEditorFieldSchema } from '@dotcms/uve';
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
     ],
-    templateUrl: './uve-style-editor-field-input.component.html',
-    styleUrl: './uve-style-editor-field-input.component.scss'
+    templateUrl: './uve-style-editor-field-input.component.html'
 })
 export class UveStyleEditorFieldInputComponent {
     $field = input.required<StyleEditorFieldSchema>({ alias: 'field' });

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
+    ChangeDetectionStrategy,
     Component,
     computed,
     DestroyRef,
@@ -40,7 +41,6 @@ import { filterFormValues } from '../../utils';
 @Component({
     selector: 'dot-uve-style-editor-form',
     templateUrl: './dot-uve-style-editor-form.component.html',
-    styleUrls: ['./dot-uve-style-editor-form.component.scss'],
     imports: [
         CommonModule,
         ReactiveFormsModule,
@@ -50,7 +50,11 @@ import { filterFormValues } from '../../utils';
         UveStyleEditorFieldDropdownComponent,
         UveStyleEditorFieldCheckboxGroupComponent,
         UveStyleEditorFieldRadioComponent
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block h-full w-full'
+    }
 })
 export class DotUveStyleEditorFormComponent {
     $schema = input.required<StyleEditorFormSchema>({ alias: 'schema' });

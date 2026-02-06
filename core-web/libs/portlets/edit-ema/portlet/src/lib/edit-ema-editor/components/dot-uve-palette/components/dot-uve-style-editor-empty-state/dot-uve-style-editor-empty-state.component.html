@@ -1,13 +1,11 @@
-<div class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
-    <div class="rounded-full p-6">
-        <i class="pi pi-sliders-h text-[5rem]! text-gray-500"></i>
+<div class="rounded-full p-6">
+    <i class="pi pi-sliders-h text-[5rem]! text-gray-500"></i>
+</div>
+<div class="space-y-2">
+    <div class="font-bold text-gray-900">
+        {{ 'uve.palette.style-editor.empty-state.title' | dm }}
     </div>
-    <div class="space-y-2">
-        <div class="font-bold text-gray-900">
-            {{ 'uve.palette.style-editor.empty-state.title' | dm }}
-        </div>
-        <p
-            class="m-0 text-sm text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
-            [innerHTML]="'uve.palette.style-editor.empty-state.message' | dm"></p>
-    </div>
+    <p
+        class="m-0 text-sm text-gray-800 [&_span]:cursor-pointer [&_span]:font-semibold [&_span]:text-[var(--color-palette-primary-500)] [&_span]:underline hover:[&_span]:text-[var(--color-palette-primary-600)]"
+        [innerHTML]="'uve.palette.style-editor.empty-state.message' | dm"></p>
 </div>

@@ -1,16 +1,16 @@
 <div class="form-field">
     <label class="field-label">{{ $field().label }}</label>
-    <div class="uve-checkbox-group__container flex flex-col gap-2" [formGroupName]="$field().id">
+    <div class="flex flex-col gap-2" [formGroupName]="$field().id">
         @for (option of $options(); track option.value) {
-            <div
-                class="uve-checkbox-group__item flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 shadow-sm transition hover:border-gray-300 focus-within:border-gray-400 focus-within:ring-2 focus-within:ring-gray-200">
+            <div class="flex items-center gap-2">
                 <p-checkbox
                     [formControlName]="option.value"
                     [binary]="true"
                     [inputId]="$field().id + '-' + option.value"
-                    [label]="option.label"
-                    [ariaLabel]="option.label"
-                    class="uve-checkbox-group__checkbox"></p-checkbox>
+                    [ariaLabel]="option.label" />
+                <label [for]="$field().id + '-' + option.value">
+                    {{ option.label }}
+                </label>
             </div>
         }
     </div>

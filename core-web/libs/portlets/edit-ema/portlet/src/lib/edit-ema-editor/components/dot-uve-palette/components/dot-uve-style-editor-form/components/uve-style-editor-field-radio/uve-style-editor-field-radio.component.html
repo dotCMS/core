@@ -10,6 +10,7 @@
                     <input
                         type="radio"
                         [id]="$field().id + '-' + option.value"
+                        [name]="$field().id"
                         [formControlName]="$field().id"
                         [value]="option.value"
                         class="radio-image-input" />
@@ -25,15 +26,18 @@
             }
         </div>
     } @else {
-        <div class="radio-group flex flex-column">
+        <div class="radio-group flex flex-col gap-5">
             @for (option of $options(); track option.value) {
-                <div class="flex items-center">
+                <div class="flex items-center gap-2">
                     <p-radioButton
+                        [name]="$field().id"
                         [formControlName]="$field().id"
                         [value]="option.value"
                         [inputId]="$field().id + '-' + option.value"
-                        [label]="option.label"
-                        class="uve-radio"></p-radioButton>
+                        class="uve-radio" />
+                    <label [for]="$field().id + '-' + option.value">
+                        {{ option.label }}
+                    </label>
                 </div>
             }
         </div>
