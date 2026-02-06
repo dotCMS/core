@@ -177,12 +177,52 @@ function loadRemoteEntry(remoteEntry: string, remoteName: string): Promise<void>
             return;
         }
 
+        // Basic scheme validation to prevent javascript:/data: URLs
+        const trimmedRemoteEntry = remoteEntry.trim();
+        const lowerCased = trimmedRemoteEntry.toLowerCase();
+        if (lowerCased.startsWith('javascript:') || lowerCased.startsWith('data:')) {
+            reject(new Error('Invalid remote entry URL scheme.'));
+
+            return;
+        }
+
+        // Parse and validate URL: require same-origin or allowlisted https origin
+        let url: URL;
+
+        try {
+            url = new URL(trimmedRemoteEntry, window.location.origin);
+        } catch {
+            reject(new Error('Invalid remote entry URL.'));
+
+            return;
+        }
+
+        const isSameOrigin = url.origin === window.location.origin;
+        const allowlist =
+            (window as unknown as { DOT_REMOTE_ENTRY_ALLOWLIST?: string[] }).DOT_REMOTE_ENTRY_ALLOWLIST;
+        const isAllowlistedOrigin =
+            Array.isArray(allowlist) && allowlist.includes(url.origin);
+
+        // Require https for cross-origin remotes
+        if (!isSameOrigin && url.protocol !== 'https:') {
+            reject(new Error('Remote entry must use HTTPS when loaded from a different origin.'));
+
+            return;
+        }
+
+        // If an allowlist is configured, require the origin to be in it when cross-origin
+        if (!isSameOrigin && Array.isArray(allowlist) && !isAllowlistedOrigin) {
+            reject(new Error('Remote entry origin is not allowed.'));
+
+            return;
+        }
+
         const script = document.createElement('script');
-        script.src = remoteEntry;
+        script.src = url.toString();
         script.type = 'text/javascript';
         script.async = true;
         script.onload = () => resolve();
-        script.onerror = () => reject(new Error(`Failed to load remote entry: ${remoteEntry}`));
+        script.onerror = () => reject(new Error(`Failed to load remote entry: ${url.toString()}`));
         document.head.appendChild(script);
     });
 }
