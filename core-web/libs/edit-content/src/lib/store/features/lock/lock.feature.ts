@@ -55,16 +55,16 @@ export function withLock() {
                     return null;
                 }
 
-                const { lockedBy } = contentlet;
+                const { lockedBy, lockedByName } = contentlet;
 
-                const isLockedByCurrentUser = currentUser?.userId === lockedBy?.userId;
+                const isLockedByCurrentUser = currentUser?.userId === lockedBy;
 
                 // content is not locked or locked by the current user
                 if (!lockedBy || isLockedByCurrentUser) {
                     return null;
                 }
 
-                const userDisplay = lockedBy.firstName + ' ' + lockedBy.lastName;
+                const userDisplay = lockedByName;
 
                 // If user doesn't have permission to lock, use the no permission message
                 if (!userCanLock) {
