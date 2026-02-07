@@ -6,7 +6,7 @@ FROM ubuntu:24.04 AS base-builder
 WORKDIR /srv
 
 # Defining default Java version, can be any java version provided by sdkman
-ARG SDKMAN_JAVA_VERSION="21.0.8-ms"
+ARG SDKMAN_JAVA_VERSION="25.0.1-ms"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
