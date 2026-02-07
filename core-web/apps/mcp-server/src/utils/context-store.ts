@@ -11,6 +11,7 @@ export class ContextStore {
     private isInitialized = false;
     private initializationTimestamp: Date | null = null;
     private readonly logger: Logger;
+    private readonly dataStore: Map<string, unknown> = new Map();
 
     /**
      * Private constructor to enforce singleton pattern
@@ -67,6 +68,8 @@ export class ContextStore {
         this.isInitialized = false;
         this.initializationTimestamp = null;
         this.logger.log('Context initialization state reset');
+        this.dataStore.clear();
+        this.logger.log('Context data store cleared');
     }
 
     /**
@@ -99,6 +102,41 @@ export class ContextStore {
      */
     logStatus(): void {
         this.logger.log('Current context store status', this.getStatus());
+    }
+
+    /**
+     * Store arbitrary contextual data for later tool usage and LLM filtering
+     * @param key unique key name
+     * @param value any serializable value
+     */
+    setData(key: string, value: unknown): void {
+        this.dataStore.set(key, value);
+        this.logger.log('Context data stored', { key });
+    }
+
+    /**
+     * Retrieve contextual data by key
+     * @param key key used when storing the data
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getData<T = any>(key: string): T | undefined {
+        return this.dataStore.get(key) as T | undefined;
+    }
+
+    /**
+     * Remove contextual data by key
+     * @param key key to delete
+     */
+    deleteData(key: string): void {
+        this.dataStore.delete(key);
+        this.logger.log('Context data deleted', { key });
+    }
+
+    /**
+     * List all keys currently stored
+     */
+    listDataKeys(): string[] {
+        return Array.from(this.dataStore.keys());
     }
 }
 

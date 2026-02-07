@@ -12,6 +12,7 @@
     ],
     "compilerOptions": {
         "strict": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "importHelpers": false
     }
 }
