@@ -11529,6 +11529,42 @@ paths:
       summary: List publishing jobs
       tags:
       - Publishing
+  /v1/publishing/retry:
+    post:
+      description: "Re-attempts sending bundles that were previously pushed but failed,\
+        \ partially failed, or succeeded but need re-synchronization. Supports bulk\
+        \ operations with per-bundle results."
+      operationId: retryBundles
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RetryBundlesForm"
+        description: Retry request containing bundle IDs and options
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRetryBundlesView"
+          description: Retry operation completed (check individual results for success/failure)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request parameters (e.g., empty bundleIds, invalid\
+            \ deliveryStrategy)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Retry failed or successful bundles
+      tags:
+      - Publishing
   /v1/publishing/{bundleId}:
     delete:
       description: "Removes a specific bundle from the publishing queue. Cannot delete\
@@ -23079,17 +23115,14 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
-        \ *.pdf)"
+      description: List of bundle identifiers to retry
       example:
-      - '*.jpg'
-      - '*.png'
-      - '*.pdf'
+      - bundle-123
+      - bundle-456
       items:
         type: string
-        description: "List of file patterns that are allowed in this folder (e.g.,\
-          \ *.jpg, *.pdf)"
-        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+        description: List of bundle identifiers to retry
+        example: "[\"bundle-123\",\"bundle-456\"]"
       properties:
         empty:
           type: boolean
@@ -26104,6 +26137,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRetryBundlesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RetryBundleResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRoleDetailView:
       type: object
       properties:
@@ -27418,6 +27476,78 @@ components:
         uniqueBySession:
           type: integer
           format: int64
+    RetryBundleResultView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Number of assets in the bundle
+          example: 47
+        bundleId:
+          type: string
+          description: Bundle identifier that was processed
+          example: 01HQXYZ123456789ABCDEFGHIJ
+        deliveryStrategy:
+          type: string
+          description: "Delivery strategy used: ALL_ENDPOINTS or FAILED_ENDPOINTS"
+          example: FAILED_ENDPOINTS
+        forcePush:
+          type: boolean
+          description: Whether force push was applied to this bundle
+          example: true
+        message:
+          type: string
+          description: Human-readable message describing the result
+          example: Bundle successfully re-queued for publishing
+        operation:
+          type: string
+          description: Publishing operation type
+          example: PUBLISH
+        success:
+          type: boolean
+          description: Whether the retry operation was successful
+          example: true
+      required:
+      - bundleId
+      - deliveryStrategy
+      - message
+      - success
+    RetryBundlesForm:
+      type: object
+      properties:
+        bundleIds:
+          type: array
+          description: List of bundle identifiers to retry
+          example:
+          - bundle-123
+          - bundle-456
+          items:
+            type: string
+            description: List of bundle identifiers to retry
+            example: "[\"bundle-123\",\"bundle-456\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        deliveryStrategy:
+          type: string
+          description: "Which endpoints to retry: ALL_ENDPOINTS sends to all, FAILED_ENDPOINTS\
+            \ sends only to previously failed endpoints"
+          enum:
+          - ALL_ENDPOINTS
+          - FAILED_ENDPOINTS
+          example: FAILED_ENDPOINTS
+        forcePush:
+          type: boolean
+          description: Force push to override existing content at endpoints. Automatically
+            true for SUCCESS/SUCCESS_WITH_WARNINGS bundles.
+          example: false
+      required:
+      - bundleIds
     Role:
       type: object
       properties:
