@@ -1,50 +1,75 @@
 <script type="application/javascript">
-	DotCustomFieldApi.ready(() => {
-		const redirectField = DotCustomFieldApi.getField('redirecturl');
-		const redirectURLBox = document.getElementById('redirectURLBox');
-		const selectLinkButton = document.getElementById('selectLinkButton');
-		
-		// Initialize input with current field value
-		const currentValue = redirectField.getValue() || '';
-		redirectURLBox.value = currentValue;
-		
-		// Handle page selector button click
-		selectLinkButton.addEventListener('click', () => {
-			DotCustomFieldApi.openBrowserModal({
-				header: 'Select a Page',
-				params: {
-					showLinks: true,
-					showDotAssets: false,
-					showPages: true,
-					showFiles: false,
-					showFolders: false,
-					showWorking: false,
-					showArchived: false,
-					sortByDesc: true,
-				},
-				onClose: (result) => {
-					if (result && result.url) {
-						redirectURLBox.value = result.url;
-						redirectField.setValue(result.url);
-					}
-				}
-			});
-		});
-	});
+  DotCustomFieldApi.ready(() => {
+    const redirectField = DotCustomFieldApi.getField("redirecturl");
+    const redirectURLBox = document.getElementById("redirectURLBox");
+    const selectLinkButton = document.getElementById("selectLinkButton");
+    const clearRedirectButton = document.getElementById("clearRedirectButton");
+
+    // Initialize input with current field value
+    const currentValue = redirectField.getValue() || "";
+    redirectURLBox.value = currentValue;
+
+    // Update clear button visibility based on input value
+    const updateClearButtonVisibility = () => {
+      redirectURLBox.value
+        ? clearRedirectButton.classList.remove("hidden")
+        : clearRedirectButton.classList.add("hidden");
+    };
+    updateClearButtonVisibility();
+
+    // Handle clear button click
+    clearRedirectButton.addEventListener("click", () => {
+      redirectURLBox.value = "";
+      redirectField.setValue("");
+      updateClearButtonVisibility();
+    });
+
+    // Handle page selector button click
+    selectLinkButton.addEventListener("click", () => {
+      DotCustomFieldApi.openBrowserModal({
+        header: "Select a Page",
+        params: {
+          showLinks: true,
+          showDotAssets: false,
+          showPages: true,
+          showFiles: false,
+          showFolders: false,
+          showWorking: false,
+          showArchived: false,
+          sortByDesc: true,
+        },
+        onClose: (result) => {
+          if (result && result.url) {
+            redirectURLBox.value = result.url;
+            redirectField.setValue(result.url);
+            updateClearButtonVisibility();
+          }
+        },
+      });
+    });
+  });
 </script>
 
-<div style="display: flex; gap: 8px; align-items: center;">
-	<input 
-		type="text" 
-		id="redirectURLBox" 
-		name="redirectURLBox"
-		readonly
-		style="flex: 1;"
-	/>
-	<button 
-		id="selectLinkButton" 
-		type="button"
-	>
-		$text.get("select-link")
-	</button>
+<div class="flex gap-2 align-items-center">
+  <div class="relative flex-1">
+    <input
+      type="text"
+      id="redirectURLBox"
+      name="redirectURLBox"
+      readonly
+      class="w-full pr-7"
+    />
+    <div class="absolute right-0 top-0 bottom-0 flex align-items-center pr-2">
+      <button
+        id="clearRedirectButton"
+        type="button"
+        class="p-2 border-none bg-transparent cursor-pointer text-500 hidden custom-button"
+        title="Clear"
+        aria-label="Clear redirect URL"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </div>
+  </div>
+  <button id="selectLinkButton" type="button">$text.get("select-link")</button>
 </div>
