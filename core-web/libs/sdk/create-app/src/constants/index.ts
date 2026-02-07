@@ -7,10 +7,16 @@ export const DOTCMS_USER = {
 };
 
 // USED APIS
-export const DOTCMS_HEALTH_API = `${DOTCMS_HOST}/api/v1/probes/alive`;
+// Note: Using /appconfiguration instead of /probes/alive because the probe endpoints
+// have IP ACL restrictions that block requests from Docker host. See GitHub issue #34509
+export const DOTCMS_HEALTH_API = `${DOTCMS_HOST}/api/v1/appconfiguration`;
 export const DOTCMS_TOKEN_API = `${DOTCMS_HOST}/api/v1/authentication/api-token`;
 export const DOTCMS_EMA_CONFIG_API = `${DOTCMS_HOST}/api/v1/apps/dotema-config-v2/`;
 export const DOTCMS_DEMO_SITE = `${DOTCMS_HOST}/api/v1/site/`;
+
+// Health check configuration
+export const CLOUD_HEALTH_CHECK_RETRIES = 5; // Retries for cloud instances (faster expected startup)
+export const LOCAL_HEALTH_CHECK_RETRIES = 60; // Retries for local Docker (slower startup)
 
 // App constants
 export const FRAMEWORKS: SupportedFrontEndFrameworks[] = [
