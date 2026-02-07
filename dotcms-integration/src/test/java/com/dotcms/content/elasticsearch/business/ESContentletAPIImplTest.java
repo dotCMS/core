@@ -4897,4 +4897,108 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Given Scenario: Create HTML Pages with URLs containing path separators (e.g., "/index", "/act/index", "/a/v/page")
+     * Expected Result: The URL field should only contain the last part after the final "/" (e.g., "index", "index", "page")
+     *                  Simple URLs without "/" should remain unchanged (e.g., "index" stays "index")
+     */
+    @Test
+    public void test_HTMLPage_URL_ShouldExtractLastPartAfterSlash() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final long time = System.currentTimeMillis();
+
+        ContentType pageContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.HTMLPAGE)
+                .host(host)
+                .name("TestPageTypeUrlExtract_" + time)
+                .velocityVarName("testPageTypeUrlExtract" + time)
+                .nextPersisted();
+
+        // Test case 1: Simple URL without slash
+        Contentlet page1 = null;
+        // Test case 2: URL with leading slash
+        Contentlet page2 = null;
+        // Test case 3: URL with multiple path segments
+        Contentlet page3 = null;
+        // Test case 4: URL with deep path
+        Contentlet page4 = null;
+
+        try {
+            // Test case 1: Simple URL without slash - should remain unchanged
+            page1 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "index")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 1")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 1")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url1 = contentletAPI.checkout(page1.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("Simple URL without slash should remain 'index'", "index", url1);
+
+            // Test case 2: URL with leading slash - should extract last part
+            page2 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .folder(APILocator.getFolderAPI().createFolders("/testfolder" + time, host, APILocator.systemUser(), false))
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "/index2")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 2")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 2")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url2 = contentletAPI.checkout(page2.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("URL '/index2' should be extracted to 'index2'", "index2", url2);
+
+            // Test case 3: URL with multiple path segments - should extract last part
+            page3 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .folder(APILocator.getFolderAPI().createFolders("/testfolder2" + time, host, APILocator.systemUser(), false))
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "/act/index3")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 3")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 3")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url3 = contentletAPI.checkout(page3.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("URL '/act/index3' should be extracted to 'index3'", "index3", url3);
+
+            // Test case 4: URL with deep path - should extract last part
+            page4 = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .folder(APILocator.getFolderAPI().createFolders("/testfolder3" + time, host, APILocator.systemUser(), false))
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, "/a/v/page4")
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page 4")
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page 4")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+
+            String url4 = contentletAPI.checkout(page4.getInode(), user, false).getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertEquals("URL '/a/v/page4' should be extracted to 'page4'", "page4", url4);
+
+        } finally {
+            // Clean up
+            if (page1 != null && UtilMethods.isSet(page1.getInode())) {
+                ContentletDataGen.remove(page1);
+            }
+            if (page2 != null && UtilMethods.isSet(page2.getInode())) {
+                ContentletDataGen.remove(page2);
+            }
+            if (page3 != null && UtilMethods.isSet(page3.getInode())) {
+                ContentletDataGen.remove(page3);
+            }
+            if (page4 != null && UtilMethods.isSet(page4.getInode())) {
+                ContentletDataGen.remove(page4);
+            }
+            if (pageContentType != null) {
+                ContentTypeDataGen.remove(pageContentType);
+            }
+        }
+    }
+
 }

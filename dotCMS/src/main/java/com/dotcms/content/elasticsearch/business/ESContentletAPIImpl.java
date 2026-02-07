@@ -8285,6 +8285,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if (UtilMethods.isSet(url)) {
+                // Extract only the last part after the last /
+                if (url.contains("/")) {
+                    url = url.substring(url.lastIndexOf('/') + 1);
+                }
                 contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
                 Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
                 String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/" + url
