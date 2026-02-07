@@ -15,7 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { TabView, TabViewChangeEvent, TabViewModule } from 'primeng/tabview';
+import { TabView, TabViewChangeEvent } from 'primeng/tabview';
 
 import {
     DotContentletService,
@@ -63,7 +63,7 @@ describe('DotEditContentSidebarComponent', () => {
             MockComponent(DotEditContentSidebarWorkflowComponent)
         ],
         imports: [
-            TabViewModule,
+            TabsModule,
             DotEditContentSidebarActivitiesComponent,
             DotEditContentSidebarHistoryComponent,
             DotEditContentSidebarPermissionsComponent

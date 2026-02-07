@@ -159,7 +159,7 @@ describe('DotLocaleCreateEditComponent', () => {
             );
 
             localeTypeDropdown.componentInstance.value = 2;
-            spectator.triggerEventHandler(localeTypeDropdown, 'onChange', {
+            spectator.triggerEventHandler(localeTypeSelect, 'onChange', {
                 event: new Event('change'),
                 value: 2
             });
@@ -174,7 +174,7 @@ describe('DotLocaleCreateEditComponent', () => {
             );
 
             localeTypeDropdown.componentInstance.value = 2;
-            spectator.triggerEventHandler(localeTypeDropdown, 'onChange', {
+            spectator.triggerEventHandler(localeTypeSelect, 'onChange', {
                 event: new Event('change'),
                 value: 2
             });
@@ -199,7 +199,7 @@ describe('DotLocaleCreateEditComponent', () => {
             );
 
             localeTypeDropdown.componentInstance.value = 2;
-            spectator.triggerEventHandler(localeTypeDropdown, 'onChange', {
+            spectator.triggerEventHandler(localeTypeSelect, 'onChange', {
                 event: new Event('change'),
                 value: 2
             });

@@ -13,7 +13,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
@@ -80,7 +80,7 @@ describe('DotLoginComponent', () => {
                 FormsModule,
                 ButtonModule,
                 CheckboxModule,
-                DropdownModule,
+                SelectModule,
                 DotLoadingIndicatorComponent,
                 DotFieldValidationMessageComponent,
                 RouterTestingModule,
@@ -212,7 +212,7 @@ describe('DotLoginComponent', () => {
             fixture.detectChanges();
             await fixture.whenStable();
 
-            const languageDropdown: Dropdown = de.query(
+            const languageDropdown: Select = de.query(
                 By.css('[data-testId="language"]')
             ).componentInstance;
             const emailInput = de.query(By.css('[data-testId="userNameInput"]'));

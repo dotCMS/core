@@ -1,24 +1,37 @@
-<div [class.selected]="selectedItems.length" class="action-header">
-    @if (options && options.primary) {
+<div
+    [class.selected]="selectedItems().length"
+    class="flex flex-row-reverse items-center px-5 py-3 text-base">
+    @if (options() && options().primary) {
         <dot-action-button
             (press)="handlePrimaryAction()"
-            [model]="options.primary.model"
-            class="action-header__primary-button" />
+            [model]="options().primary.model"
+            class="transition-all duration-200"
+            [class]="
+                selectedItems().length ? 'opacity-0 -translate-y-5' : 'opacity-100 translate-y-0'
+            " />
     }
-    <div [style.overflow]="dynamicOverflow" class="action-header__container">
-        <div class="action-header__global-search">
+    <div [style.overflow]="dynamicOverflow()" class="flex-1 overflow-hidden">
+        <div
+            class="flex items-center transition-transform duration-200 ease-in-out"
+            [class]="
+                selectedItems().length ? '-translate-y-15 invisible' : 'translate-y-0 visible'
+            ">
             <ng-content />
         </div>
-        @if ((options && options.secondary) || selectedItems.length) {
-            <div class="action-header__group-actions">
-                <span class="action-header__selected-items-counter">
-                    {{ selectedItems.length }} {{ 'selected' | dm }}
+        @if ((options() && options().secondary) || selectedItems().length) {
+            <div
+                class="flex items-center bg-primary text-white transition-all duration-200 ease-in-out"
+                [class]="
+                    selectedItems().length ? '-translate-y-15 visible' : 'translate-y-0 invisible'
+                ">
+                <span class="mr-3 border-r border-white px-3 py-1">
+                    {{ selectedItems().length }} {{ 'selected' | dm }}
                 </span>
-                @if (options && options.secondary) {
-                    @for (action of options.secondary; track action) {
+                @if (options() && options().secondary) {
+                    @for (action of options().secondary; track action) {
                         <p-splitButton
                             [model]="action.model"
-                            class="action-header__secondary-button"
+                            [outlined]="true"
                             secondary
                             label="{{ action.label }}"
                             class="inverted" />

@@ -21,7 +21,6 @@ import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.componen
 @Component({
     providers: [DotToolbarUserStore],
     selector: 'dot-toolbar-user',
-    styleUrls: ['./dot-toolbar-user.component.scss'],
     templateUrl: './dot-toolbar-user.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [

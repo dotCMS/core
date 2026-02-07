@@ -119,9 +119,11 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             );
             spectator.detectChanges();
 
+            // PrimeNG RadioButton no longer renders/owns an "option label" API; assert by option values instead.
             const radioButtons = spectator.queryAll(RadioButton);
-            expect(radioButtons[0].label).toBe('Left');
-            expect(radioButtons[1].label).toBe('Right');
+            expect(radioButtons).toHaveLength(2);
+            expect(radioButtons[0].value).toBe('left');
+            expect(radioButtons[1].value).toBe('right');
         });
 
         it('should render radio buttons with correct inputId', () => {
@@ -145,9 +147,9 @@ describe('UveStyleEditorFieldRadioComponent', () => {
             );
             spectator.detectChanges();
 
-            const radioButtons = spectator.queryAll(RadioButton);
-            expect(radioButtons[0].inputId).toBe('test-field-left');
-            expect(radioButtons[1].inputId).toBe('test-field-right');
+            // Assert through DOM (PrimeNG renders an <input> with the provided id)
+            expect(spectator.query('#test-field-left')).toBeTruthy();
+            expect(spectator.query('#test-field-right')).toBeTruthy();
         });
     });
 

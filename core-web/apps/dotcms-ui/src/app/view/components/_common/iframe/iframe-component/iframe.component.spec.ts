@@ -266,25 +266,27 @@ describe('IframeComponent', () => {
         it('should not be present onload', () => {
             expect(de.query(By.css('dot-overlay-mask'))).toBeNull();
         });
-        it('should show when the service emit true', () => {
+        it('should show when the service emit true', fakeAsync(() => {
             iframeOverlayService.$overlay.next(true);
+            tick(0);
             fixture.detectChanges();
             const dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             expect(dotOverlayMask).toBeDefined();
-        });
+        }));
 
-        it('should hide on click and call hide event', () => {
+        it('should hide on click and call hide event', fakeAsync(() => {
             comp.showOverlay = true;
             jest.spyOn(iframeOverlayService, 'hide');
             fixture.detectChanges();
             let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             dotOverlayMask.triggerEventHandler('click', {});
+            tick(0);
             fixture.detectChanges();
 
             dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             expect(dotOverlayMask).toBeNull();
             expect(iframeOverlayService.hide).toHaveBeenCalledTimes(1);
-        });
+        }));
     });
 
     it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {

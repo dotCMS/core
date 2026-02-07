@@ -8,20 +8,15 @@ import {
     signal
 } from '@angular/core';
 
-import { ChipModule } from 'primeng/chip';
+import { ButtonModule } from 'primeng/button';
+import { OverlayBadgeModule } from 'primeng/overlaybadge';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
 import { DotIsoCodePipe } from '@dotcms/ui';
 
-enum LOCALE_STATUS {
-    BASE = 'p-chip-sm',
-    DEFAULT = ' default',
-    CURRENT = ' p-chip-filled',
-    TRANSLATED = ' p-chip-primary',
-    UNTRANSLATED = ' p-chip-gray p-chip-dashed'
-}
+type ButtonSeverity = 'primary' | 'secondary';
 
 /**
  * The maximum number of locales to display without truncation.
@@ -35,7 +30,7 @@ const MAX_LOCALES = 9;
  */
 @Component({
     selector: 'dot-edit-content-sidebar-locales',
-    imports: [ChipModule, SkeletonModule, DotIsoCodePipe],
+    imports: [ButtonModule, OverlayBadgeModule, SkeletonModule, DotIsoCodePipe],
     templateUrl: './dot-edit-content-sidebar-locales.component.html',
     styleUrl: './dot-edit-content-sidebar-locales.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -109,27 +104,27 @@ export class DotEditContentSidebarLocalesComponent {
     });
 
     /**
-     * Determines the appropriate style class for a given locale.
+     * Determines the appropriate button severity for a given locale.
      *
      * @param {DotLanguage} locale - The locale object containing its id and translation status.
-     * @returns {string} The computed style class based on the locale's properties.
+     * @returns {ButtonSeverity} The button severity based on the locale's properties.
      */
-    getStyleClass({ id, translated }: DotLanguage): string {
-        let styleClass: string = LOCALE_STATUS.BASE;
-
+    getSeverity({ id }: DotLanguage): ButtonSeverity {
         if (id === this.$currentLocale().id) {
-            styleClass += LOCALE_STATUS.CURRENT;
-        } else if (translated) {
-            styleClass += LOCALE_STATUS.TRANSLATED;
+            return 'primary';
         } else {
-            styleClass += LOCALE_STATUS.UNTRANSLATED;
+            return 'secondary';
         }
+    }
 
-        if (id === this.$defaultLocale().id) {
-            styleClass += LOCALE_STATUS.DEFAULT;
-        }
-
-        return styleClass;
+    /**
+     * Determines if a locale button should be outlined (for untranslated locales).
+     *
+     * @param {DotLanguage} locale - The locale object containing its translation status.
+     * @returns {boolean} True if the locale is not translated and not current.
+     */
+    isOutlined({ id, translated }: DotLanguage): boolean {
+        return id !== this.$currentLocale().id && !translated;
     }
 
     toggleShowAll(): void {

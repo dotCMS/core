@@ -1,8 +1,10 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
     .dot-loop-editor__pre-post-loop {
-        margin: $spacing-4;
+        margin: spacing.$spacing-4;
     }
 
     .dot-loop-editor__pre-post-loop-inplace {

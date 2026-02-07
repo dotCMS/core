@@ -1,14 +1,23 @@
-import { Component, inject, input, output, viewChild, signal, computed } from '@angular/core';
+import {
+    Component,
+    inject,
+    input,
+    output,
+    viewChild,
+    signal,
+    computed,
+    DestroyRef
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
-import { DropdownModule } from 'primeng/dropdown';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -43,23 +52,22 @@ interface ActiveFilter {
         InputTextModule,
         ButtonModule,
         InputGroupModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotMessagePipe,
-        DropdownModule,
+        SelectModule,
         ReactiveFormsModule,
         LanguageFieldComponent,
         SiteFieldComponent,
         InputGroupAddonModule,
         ChipModule
     ],
-    styleUrls: ['./search.component.scss'],
     templateUrl: './search.component.html'
 })
 export class SearchComponent {
     /**
-     * Reference to the OverlayPanel component used for advanced search options.
+     * Reference to the Popover component used for advanced search options.
      */
-    $overlayPanel = viewChild.required(OverlayPanel);
+    $overlayPanel = viewChild.required(Popover);
 
     /**
      * Reference to the language field component to access its store.
@@ -137,6 +145,18 @@ export class SearchComponent {
     readonly #formBuilder = inject(FormBuilder);
 
     /**
+     * DestroyRef instance to track component lifecycle.
+     * @private
+     */
+    readonly #destroyRef = inject(DestroyRef);
+
+    /**
+     * Flag to track if the component has been destroyed.
+     * @private
+     */
+    #isDestroyed = false;
+
+    /**
      * Reactive form group containing search parameters:
      * - query: The search text
      * - languageId: Selected language ID (-1 for all languages)
@@ -151,6 +171,11 @@ export class SearchComponent {
     });
 
     constructor() {
+        // Mark component as destroyed when cleanup happens
+        this.#destroyRef.onDestroy(() => {
+            this.#isDestroyed = true;
+        });
+
         // debounced search.
         this.form
             .get('query')
@@ -170,6 +195,10 @@ export class SearchComponent {
      * @param event - Optional mouse event that triggered the clear action
      */
     clearForm() {
+        if (this.#isDestroyed) {
+            return;
+        }
+
         this.form.reset();
         this.$overlayPanel().hide();
 
@@ -185,6 +214,10 @@ export class SearchComponent {
      * This method is triggered when the user submits the search form.
      */
     doSearch() {
+        if (this.#isDestroyed) {
+            return;
+        }
+
         this.$overlayPanel().hide();
         const values = this.getValues();
 
@@ -261,7 +294,7 @@ export class SearchComponent {
      *
      * @param filterType - The type of filter to remove ('language' | 'site' | 'folder')
      */
-    removeFilter(filterType: 'language' | 'site' | 'folder') {
+    removeFilter(filterType: string) {
         if (filterType === 'language') {
             this.form.get('systemSearchableFields.languageId')?.setValue(-1);
         } else {

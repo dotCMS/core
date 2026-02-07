@@ -17,8 +17,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
-import { TabPanel, TabView } from 'primeng/tabview';
+import { Tab, Tabs } from 'primeng/tabs';
+import { ToggleSwitch, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
 
 import {
     DotContentletService,
@@ -325,13 +325,16 @@ describe('DotFormComponent', () => {
 
         describe('UI', () => {
             it('should render two tabs', () => {
-                const tabView = spectator.query(TabView);
+                const tabView = spectator.query(Tabs);
                 expect(tabView).toBeTruthy();
 
-                const tabPanels = spectator.queryAll(TabPanel);
+                const tabPanels = spectator.queryAll(Tab);
                 expect(tabPanels.length).toBe(2);
-                expect(tabPanels[0]._header).toBe('Content');
-                expect(tabPanels[1]._header).toBe('New Tab');
+                // In PrimeNG 20, headers are template-based, so we check the rendered text
+                const tabHeaders = spectator.queryAll('.p-tab-header-text');
+                expect(tabHeaders.length).toBe(2);
+                expect(tabHeaders[0]?.textContent?.trim()).toBe('Content');
+                expect(tabHeaders[1]?.textContent?.trim()).toBe('New Tab');
             });
 
             it('should have append area', () => {
@@ -628,17 +631,17 @@ describe('DotFormComponent', () => {
             });
 
             it('should call lockContent when switch is turned on', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
 
-                lockSwitch.onChange.emit({ checked: true } as InputSwitchChangeEvent);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.lockContent).toHaveBeenCalled();
             });
 
             it('should call unlockContent when switch is turned off', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
 
-                lockSwitch.onChange.emit({ checked: false } as InputSwitchChangeEvent);
+                lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.unlockContent).toHaveBeenCalled();
             });
@@ -659,7 +662,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should hide the lock switch when user can not lock', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
                 expect(lockSwitch).toBe(null);
             });
         });
@@ -901,7 +904,7 @@ describe('DotFormComponent', () => {
         describe('Historical Version UI Elements', () => {
             it('should hide lock controls when viewing historical version', () => {
                 // Initially lock controls should be visible
-                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const lockControls = spectator.query(byTestId('content-lock-controls'));
                 expect(lockControls).toBeTruthy();
 
                 // Simulate loading a historical version using the store's public method
@@ -909,7 +912,7 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
 
                 // Lock controls should be hidden
-                const lockControlsAfter = spectator.query('.dot-edit-content-actions__lock');
+                const lockControlsAfter = spectator.query(byTestId('content-lock-controls'));
                 expect(lockControlsAfter).toBeFalsy();
             });
 
@@ -990,7 +993,7 @@ describe('DotFormComponent', () => {
                 expect(store.isViewingHistoricalVersion()).toBe(false);
                 //TODO: enable this when all fields have disable state expect(component.form.enabled).toBe(true);
 
-                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const lockControls = spectator.query(byTestId('content-lock-controls'));
                 const workflowActions = spectator.query(byTestId('workflow-actions'));
                 const restoreButton = spectator.query(
                     byTestId('restore-historical-version-button')
@@ -1007,7 +1010,7 @@ describe('DotFormComponent', () => {
                 // Check historical view state
                 //TODO: enable this when all fields have disable state expect(component.form.disabled).toBe(true);
 
-                const lockControlsAfter = spectator.query('.dot-edit-content-actions__lock');
+                const lockControlsAfter = spectator.query(byTestId('content-lock-controls'));
                 const workflowActionsAfter = spectator.query(byTestId('workflow-actions'));
                 const restoreButtonAfter = spectator.query(
                     byTestId('restore-historical-version-button')
@@ -1033,7 +1036,7 @@ describe('DotFormComponent', () => {
                 // Check normal view state
                 expect(component.form.enabled).toBe(true);
 
-                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const lockControls = spectator.query(byTestId('content-lock-controls'));
                 const workflowActions = spectator.query(byTestId('workflow-actions'));
                 const restoreButton = spectator.query(
                     byTestId('restore-historical-version-button')

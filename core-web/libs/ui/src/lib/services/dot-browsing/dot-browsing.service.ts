@@ -41,9 +41,9 @@ export class DotBrowsingService {
     }): Observable<TreeNodeItem[]> {
         const { filter, perPage, page } = data;
 
-        return this.#siteService.getSites(filter, perPage, page).pipe(
-            map((sites) => {
-                return sites.map((site) => ({
+        return this.#siteService.getSites({ filter, per_page: perPage, page }).pipe(
+            map((data) => {
+                return data.sites.map((site) => ({
                     key: site.identifier,
                     label: site.hostname,
                     data: {

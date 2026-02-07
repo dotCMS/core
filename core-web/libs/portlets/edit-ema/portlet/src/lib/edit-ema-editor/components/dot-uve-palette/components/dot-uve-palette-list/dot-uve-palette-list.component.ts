@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { NgTemplateOutlet } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -9,6 +9,7 @@ import {
     effect,
     inject,
     input,
+    linkedSignal,
     OnInit,
     signal,
     untracked,
@@ -19,13 +20,13 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ContextMenuModule } from 'primeng/contextmenu';
+import { ContextMenu } from 'primeng/contextmenu';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { MenuModule } from 'primeng/menu';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { Menu } from 'primeng/menu';
 import { PaginatorModule, PaginatorState } from 'primeng/paginator';
+import { PopoverModule } from 'primeng/popover';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { debounceTime, distinctUntilChanged, filter, take } from 'rxjs/operators';
@@ -85,6 +86,7 @@ const DEBOUNCE_TIME = 300;
 @Component({
     selector: 'dot-uve-palette-list',
     imports: [
+        NgClass,
         NgTemplateOutlet,
         ReactiveFormsModule,
         DotUVEPaletteContenttypeComponent,
@@ -93,18 +95,20 @@ const DEBOUNCE_TIME = 300;
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        MenuModule,
+        Menu,
         PaginatorModule,
         SkeletonModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotFavoriteSelectorComponent,
         DotMessagePipe,
-        ContextMenuModule
+        ContextMenu
     ],
     providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
-    styleUrl: './dot-uve-palette-list.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col w-full h-full min-h-0 overflow-hidden'
+    }
 })
 export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('menu') menu!: { toggle: (event: Event) => void };
@@ -129,7 +133,6 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $skipNextSearch = signal(false);
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
     protected readonly $isSearching = signal<boolean>(false);
-    protected readonly $shouldHideControls = signal<boolean>(true);
     protected readonly $siteId = this.#globalStore.currentSiteId;
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
@@ -143,6 +146,11 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
     protected readonly status$ = toObservable(this.#paletteListStore.status);
+
+    protected readonly $shouldHideControls = linkedSignal({
+        source: this.$contenttypes,
+        computation: (contenttypes) => contenttypes.length === 0
+    });
 
     /**
      * Computed signal to determine the start index for the pagination.
@@ -275,7 +283,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Handles view mode selection (grid/list) from the options menu.
      * Updates the view signal to toggle between grid and list layouts.
      *
-     * @param viewOption - Selected view mode ('grid' or 'list')
+     * @param viewOption - Selected view mode ('grid grid-cols-12 gap-4' or 'list')
      */
     protected onViewSelect(viewOption: DotPaletteViewMode) {
         this.#paletteListStore.setLayoutMode(viewOption);

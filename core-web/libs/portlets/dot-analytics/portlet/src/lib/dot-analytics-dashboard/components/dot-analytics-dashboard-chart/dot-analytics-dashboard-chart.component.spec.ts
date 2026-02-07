@@ -1,5 +1,4 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
 
 import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -31,15 +30,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsDashboardChartComponent,
-        overrideComponents: [
-            [
-                DotAnalyticsDashboardChartComponent,
-                {
-                    remove: { imports: [ChartModule, SkeletonModule] },
-                    add: { imports: [MockModule(ChartModule), MockModule(SkeletonModule)] }
-                }
-            ]
-        ],
+        imports: [ChartModule, SkeletonModule],
         providers: [
             {
                 provide: DotMessageService,
@@ -101,7 +92,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
 
     describe('Chart Title Display', () => {
         it('should show header with the provided title', () => {
-            const header = spectator.query('.chart-title');
+            const header = spectator.query('h3');
             expect(header).toExist();
             expect(header).toHaveText('Test Chart');
         });
@@ -118,7 +109,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const header = spectator.query('.chart-title');
+            const header = spectator.query('h3');
             expect(header).toExist();
             expect(header).toHaveText('Updated Chart Title');
         });
@@ -136,7 +127,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const skeleton = spectator.query('.chart-skeleton');
+            const skeleton = spectator.query('p-skeleton');
             expect(skeleton).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -152,7 +143,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const skeleton = spectator.query('.chart-skeleton');
+            const skeleton = spectator.query('p-skeleton');
             expect(skeleton).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -168,7 +159,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const lineSkeleton = spectator.query('.chart-skeleton--line');
+            // Line chart skeleton has grid with specific structure (y-axis labels, chart area, x-axis labels)
+            const lineSkeleton = spectator.query('.grid.grid-rows-\\[1fr_1\\.875rem\\]');
             expect(lineSkeleton).toExist();
         });
 
@@ -183,7 +175,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const pieSkeleton = spectator.query('.chart-skeleton--pie');
+            const pieSkeleton = spectator.query('p-skeleton[shape="circle"]');
             expect(pieSkeleton).toExist();
         });
 
@@ -198,7 +190,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const pieSkeleton = spectator.query('.chart-skeleton--pie');
+            const pieSkeleton = spectator.query('p-skeleton[shape="circle"]');
             expect(pieSkeleton).toExist();
         });
 
@@ -213,7 +205,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const defaultSkeleton = spectator.query('.chart-skeleton--default');
+            const defaultSkeleton = spectator.query('p-skeleton:not([shape="circle"])');
             expect(defaultSkeleton).toExist();
         });
 
@@ -244,7 +236,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const errorElement = spectator.query('.chart-error');
+            const errorElement = spectator.query('dot-analytics-state-message');
             expect(errorElement).toExist();
             expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
@@ -420,7 +412,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('.chart-empty');
+            const emptyState = spectator.query('dot-analytics-state-message');
             expect(emptyState).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });

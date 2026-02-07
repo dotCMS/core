@@ -8,7 +8,7 @@ import {
     ViewContainerRef
 } from '@angular/core';
 
-import { TabView } from 'primeng/tabview';
+import { Tabs } from 'primeng/tabs';
 
 @Directive({
     selector: '[dotTabViewAppend]'
@@ -19,11 +19,11 @@ export class TabViewInsertDirective implements AfterViewInit {
 
     #viewContainer = inject(ViewContainerRef);
     #renderer = inject(Renderer2);
-    #tabView = inject(TabView, { optional: true });
+    #tabView = inject(Tabs, { optional: true });
 
     ngAfterViewInit() {
         if (!this.#tabView) {
-            console.warn('TabViewAppendDirective is for use with PrimeNG TabView');
+            console.warn('TabViewAppendDirective is for use with PrimeNG Tabs');
 
             return;
         }
@@ -33,7 +33,10 @@ export class TabViewInsertDirective implements AfterViewInit {
 
     private insertContent() {
         const tabViewElement = this.#tabView.el.nativeElement;
-        const tabViewNavContent = tabViewElement.querySelector('.p-tabview-nav-content');
+        // Try new tabs API structure first (.p-tablist), fallback to old (.p-tabview-nav-content)
+        const tabViewNavContent =
+            tabViewElement.querySelector('.p-tablist') ||
+            tabViewElement.querySelector('.p-tabview-nav-content');
 
         if (!tabViewNavContent) {
             console.warn('TabView nav content not found');

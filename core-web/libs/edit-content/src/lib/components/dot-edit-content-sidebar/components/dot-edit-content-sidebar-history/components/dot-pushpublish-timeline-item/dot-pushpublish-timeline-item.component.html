@@ -1,40 +1,21 @@
 @let item = $item();
-<div class="dot-pushpublish-timeline-item" data-testid="pushpublish-item">
-    <!-- Timeline Marker Column -->
-    <div class="dot-pushpublish-timeline-item__marker-column">
-        <!-- Top connector line -->
-        <div
-            class="dot-pushpublish-timeline-item__connector dot-pushpublish-timeline-item__connector--top"></div>
-
-        <!-- Marker -->
-        <div class="dot-pushpublish-timeline-item__marker" data-testid="timeline-marker"></div>
-
-        <!-- Bottom connector line (fills remaining space) -->
-        <div
-            class="dot-pushpublish-timeline-item__connector dot-pushpublish-timeline-item__connector--bottom"></div>
-    </div>
-
-    <!-- Timeline Item Content Wrapper -->
+<div data-testid="pushpublish-item" class="block w-full">
     <div
-        class="dot-pushpublish-timeline-item__content-wrapper"
         data-testid="content-wrapper"
+        class="flex items-center justify-between gap-2 rounded-lg bg-white p-2 cursor-pointer hover:bg-gray-50 transition-colors min-w-0"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
         [tooltipOptions]="{
             showDelay: 100,
             hideDelay: 100,
-            tooltipStyleClass: 'dot-pushpublish-timeline-item__tooltip',
             escape: false,
             positionStyle: 'absolute',
             appendTo: 'body'
         }">
-        <!-- Tooltip Content Template -->
         <ng-template #tooltipContent>
-            <div class="dot-pushpublish-timeline-item__overlay-content">
-                <ul class="dot-pushpublish-timeline-item__overlay-list">
-                    <li>
-                        {{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}
-                    </li>
+            <div class="min-w-0 max-w-[280px] py-1">
+                <ul class="text-gray-600 text-xs space-y-1 list-none pl-0 m-0">
+                    <li>{{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}</li>
                     <li>
                         {{ 'edit.content.sidebar.pushpublish.environment' | dm }}:
                         {{ item.environment }}
@@ -46,43 +27,32 @@
             </div>
         </ng-template>
 
-        <!-- Timeline Item Content -->
-        <div class="dot-pushpublish-timeline-item__content">
-            <!-- Timeline Item Header -->
-            <div class="dot-pushpublish-timeline-item__header">
-                <span
-                    class="dot-pushpublish-timeline-item__time-relative"
-                    data-testid="time-display">
+        <div class="flex flex-col gap-2 flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span data-testid="time-display" class="font-semibold text-gray-900 text-sm">
                     {{ item.pushDate | dotRelativeDate }}
                 </span>
-
-                <!-- Bundle ID Section -->
-                <div
-                    class="dot-pushpublish-timeline-item__bundle-id-section"
-                    data-testid="bundle-id-section">
-                    <span
-                        class="dot-pushpublish-timeline-item__bundle-id-text"
-                        data-testid="bundle-id-text">
+                <div class="flex items-center gap-1" data-testid="bundle-id-section">
+                    <span data-testid="bundle-id-text" class="text-sm text-gray-700 font-mono">
                         {{ $truncatedBundleId() }}
                     </span>
                     <dot-copy-button
                         [copy]="item.bundleId"
                         [tooltipText]="'Copy Bundle ID'"
-                        customClass="dot-pushpublish-timeline-item__copy-button"
+                        customClass="p-0! [&_.p-button-label]:text-sm"
                         data-testid="copy-bundle-id" />
                 </div>
             </div>
 
-            <!-- User Information Section -->
-            <div class="dot-pushpublish-timeline-item__user-section">
-                <p-avatar
-                    dotGravatar
-                    [label]="item.pushedBy.charAt(0).toUpperCase()"
-                    styleClass="dot-pushpublish-timeline-item__avatar"
-                    data-testid="user-avatar" />
-                <span
-                    class="dot-pushpublish-timeline-item__user-name"
-                    data-testid="pushpublish-user">
+            <div class="flex items-center gap-2">
+                <div
+                    class="w-8 h-8 shrink-0 overflow-hidden rounded-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
+                    <p-avatar
+                        dotGravatar
+                        [label]="item.pushedBy.charAt(0).toUpperCase()"
+                        data-testid="user-avatar" />
+                </div>
+                <span data-testid="pushpublish-user" class="text-sm text-gray-700 truncate min-w-0">
                     {{ item.pushedBy }}
                 </span>
             </div>

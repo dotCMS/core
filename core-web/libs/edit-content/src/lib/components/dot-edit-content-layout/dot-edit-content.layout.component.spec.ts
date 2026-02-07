@@ -17,7 +17,7 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 
 import {
     DotContentletService,
@@ -72,7 +72,7 @@ describe('EditContentLayoutComponent', () => {
     const createComponent = createComponentFactory({
         component: DotEditContentLayoutComponent,
         imports: [
-            MessagesModule,
+            MessageModule,
             ButtonModule,
             MockComponent(DotEditContentFormComponent),
             MockComponent(DotEditContentSidebarComponent),

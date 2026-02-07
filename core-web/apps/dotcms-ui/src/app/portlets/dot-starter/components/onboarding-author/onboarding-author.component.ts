@@ -24,7 +24,6 @@ import { DotAccountService } from '../../../../api/services/dot-account-service'
 @Component({
     selector: 'dot-onboarding-author',
     templateUrl: './onboarding-author.component.html',
-    styleUrls: ['./onboarding-author.component.scss'],
     providers: [DotAccountService],
     standalone: true,
     imports: [ButtonModule, AsyncPipe, DotMessagePipe, CheckboxModule, RouterLink]

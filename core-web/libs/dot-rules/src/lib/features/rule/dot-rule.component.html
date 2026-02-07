@@ -1,0 +1,167 @@
+@let rule = $rule();
+@let ruleActions = $ruleActions();
+@let saved = $saved();
+@let saving = $saving();
+@let hidden = $hidden();
+
+<form [formGroup]="formModel" let rf="ngForm">
+    @if (showAddToBundleDialog()) {
+        <dot-add-to-bundle
+            (cancel)="showAddToBundleDialog.set(false)"
+            [assetIdentifier]="rule.key" />
+    }
+    <div
+        [class.hidden]="hidden"
+        [class.saving]="saving"
+        [class.saved]="saved"
+        [class.out-of-sync]="!saved && !saving"
+        class="mb-8 border border-gray-200 rounded-md bg-white text-sm focus:outline-none focus:ring-0">
+        @if (!hidden) {
+            <div
+                (click)="setRuleExpandedState(!rule._expanded)"
+                class="bg-white p-3 rounded-md flex flex-col md:flex-row flex-1 gap-3 focus:outline-none focus:ring-0 focus:bg-white active:bg-white">
+                <div
+                    class="dot-rules-header-info flex flex-row justify-start items-center w-full md:basis-[70%] md:max-w-[70%]">
+                    <i
+                        [class.pi-angle-right]="!rule._expanded"
+                        [class.pi-angle-down]="rule._expanded"
+                        class="text-sm font-bold p-2 pi shrink-0"
+                        aria-hidden="true"></i>
+                    <div class="flex flex-col flex-1 min-w-0">
+                        <input
+                            (click)="$event.stopPropagation()"
+                            class="mr-4 px-3"
+                            pInputText
+                            placeholder="{{ getI18nLabel('inputs.name.placeholder') | async }}"
+                            formControlName="name"
+                            [pAutoFocus]="true" />
+                        <div
+                            [hidden]="
+                                !formModel.controls['name'].touched ||
+                                formModel.controls['name'].valid
+                            "
+                            class="name text-red-500 basic label basis-1/2 max-w-1/2">
+                            Name is required
+                        </div>
+                    </div>
+                    @if (!hideFireOn) {
+                        <span class="font-bold mr-2 min-w-16 max-w-16 shrink-0">
+                            {{ getI18nLabel('inputs.fireOn.label') | async }}
+                        </span>
+                    }
+                    @if (!hideFireOn) {
+                        <p-select
+                            (onChange)="onFireOnChange($event.value)"
+                            (click)="$event.stopPropagation()"
+                            [ngModel]="fireOnValue()"
+                            [ngModelOptions]="{ standalone: true }"
+                            [options]="fireOnOptions$ | async"
+                            [style]="{ width: '9.5rem' }"
+                            [placeholder]="fireOnPlaceholder$ | async"
+                            class="min-w-48 max-w-48 flex-none shrink-0"
+                            appendTo="body" />
+                    }
+                </div>
+                <div
+                    class="relative flex flex-row justify-end items-center w-full md:basis-[30%] md:max-w-[30%] md:mr-2">
+                    <span
+                        [class.opacity-0]="saved"
+                        [class.opacity-100]="saving"
+                        [class.delay-0]="saving"
+                        [class.delay-500]="!saving"
+                        class="mt-1 mr-8 transition-opacity duration-1500"
+                        [title]="statusText()">
+                        {{ statusTextTruncated() }}
+                    </span>
+                    <p-toggleSwitch
+                        (onChange)="setRuleEnabledState($event)"
+                        [(ngModel)]="rule.enabled"
+                        [ngModelOptions]="{ standalone: true }"
+                        [pTooltip]="rule.enabled ? tooltipRuleOnText : tooltipRuleOffText"
+                        tooltipPosition="bottom"
+                        class="mt-1 mr-4 shrink-0" />
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button
+                            (click)="ruleOptions.toggle($event); $event.stopPropagation()"
+                            pButton
+                            severity="secondary"
+                            icon="pi pi-ellipsis-v"
+                            ariaLabel="Rule options"></button>
+                        <button
+                            (click)="
+                                onCreateConditionGroupClicked();
+                                setRuleExpandedState(true);
+                                $event.stopPropagation()
+                            "
+                            [disabled]="!rule.isPersisted()"
+                            pButton
+                            severity="secondary"
+                            icon="pi pi-plus"
+                            ariaLabel="Add Group"
+                            styleClass="ml-2"></button>
+                        <p-menu
+                            [model]="ruleActionOptions"
+                            #ruleOptions
+                            appendTo="body"
+                            [popup]="true" />
+                    </div>
+                </div>
+            </div>
+        }
+        @if (rule._expanded) {
+            <div class="mx-4 mb-4 mt-0">
+                @for (group of rule._conditionGroups; track group; let i = $index) {
+                    <dot-condition-group
+                        (createCondition)="onCreateCondition($event)"
+                        (deleteCondition)="onDeleteCondition($event, group)"
+                        (updateConditionGroupOperator)="
+                            onUpdateConditionGroupOperator($event, group)
+                        "
+                        (updateConditionType)="onUpdateConditionType($event, group)"
+                        (updateConditionParameter)="onUpdateConditionParameter($event, group)"
+                        (updateConditionOperator)="onUpdateConditionOperator($event, group)"
+                        [group]="group"
+                        [conditionTypes]="$conditionTypes()"
+                        [groupIndex]="i"
+                        [conditionTypePlaceholder]="conditionTypePlaceholder" />
+                }
+                <div class="mt-2">
+                    <div class="flex items-center py-2 pr-4 pl-8 bg-green-50 rounded w-full gap-3">
+                        {{ getI18nLabel('inputs.action.firesActions') | async }}
+                    </div>
+                    <div class="pt-3 px-8 pb-0 flex flex-col flex-1">
+                        @for (ruleAction of ruleActions; track ruleAction; let i = $index) {
+                            <div class="mb-3 last:mb-0 min-h-10 items-center gap-2 flex flex-row">
+                                <dot-rule-action
+                                    (updateRuleActionType)="onUpdateRuleActionType($event)"
+                                    (updateRuleActionParameter)="
+                                        onUpdateRuleActionParameter($event)
+                                    "
+                                    (deleteRuleAction)="onDeleteRuleAction($event)"
+                                    [action]="ruleAction"
+                                    [index]="i"
+                                    [actionTypePlaceholder]="actionTypePlaceholder"
+                                    [ruleActionTypes]="$ruleActionTypes()"
+                                    class="flex-1 flex flex-row" />
+                                <div class="flex items-center gap-2 min-w-10 w-10 shrink-0">
+                                    @if (i === ruleActions.length - 1) {
+                                        <button
+                                            (click)="onCreateRuleAction()"
+                                            [disabled]="!ruleAction.isPersisted()"
+                                            [rounded]="true"
+                                            [text]="true"
+                                            pButton
+                                            type="button"
+                                            severity="success"
+                                            icon="pi pi-plus"
+                                            ariaLabel="Add Action"></button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</form>

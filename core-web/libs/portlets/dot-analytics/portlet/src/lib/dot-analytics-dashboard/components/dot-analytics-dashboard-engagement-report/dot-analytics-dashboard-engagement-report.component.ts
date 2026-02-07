@@ -39,8 +39,8 @@ import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-a
         DotAnalyticsSparklineComponent
     ],
     templateUrl: './dot-analytics-dashboard-engagement-report.component.html',
-    styleUrl: './dot-analytics-dashboard-engagement-report.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col gap-3 w-full' }
 })
 export default class DotAnalyticsDashboardEngagementReportComponent implements OnInit {
     readonly store = inject(DotAnalyticsDashboardStore);
