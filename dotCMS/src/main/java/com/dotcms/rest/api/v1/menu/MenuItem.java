@@ -10,21 +10,37 @@ public class MenuItem {
     private String label;
     private boolean angular = false;
     private boolean isAjax = false;
+    private String angularModule;
 
     /**
      * Generate a Submenu portlet
      * @param id  Portlet id
      * @param url Portlet url
      * @param label Portlet label
-     * @param isAngular if the portlet is an PortletController portlet 
+     * @param isAngular if the portlet is an PortletController portlet
      * @param isAjax if the portlet is an BaseRestPortlet portlet
      */
     public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax) {
+        this(id, url, label, isAngular, isAjax, null);
+    }
+
+    /**
+     * Generate a Submenu portlet with dynamic Angular module loading support
+     *
+     * @param id            Portlet id
+     * @param url           Portlet url
+     * @param label         Portlet label
+     * @param isAngular     if the portlet is an PortletController portlet
+     * @param isAjax        if the portlet is an BaseRestPortlet portlet
+     * @param angularModule the Angular module path for dynamic lazy loading (e.g., "@dotcms/portlets/my-custom")
+     */
+    public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax, String angularModule) {
         this.url = url;
         this.id = id;
         this.label = label;
         this.angular = isAngular;
         this.isAjax = isAjax;
+        this.angularModule = angularModule;
     }
 
     /**
@@ -65,5 +81,15 @@ public class MenuItem {
      */
     public boolean isAjax() {
         return isAjax;
+    }
+
+    /**
+     * Get the Angular module path for dynamic lazy loading. This is used by the frontend to dynamically import and
+     * register the portlet's Angular module.
+     *
+     * @return the Angular module path (e.g., "@dotcms/portlets/my-custom"), or null if not set
+     */
+    public String getAngularModule() {
+        return angularModule;
     }
 }

@@ -11,4 +11,10 @@ export interface DotMenuItem {
      */
     labelParent?: string;
     parentMenuId: string;
+    /**
+     * The Angular module path for dynamic lazy loading.
+     * When set, the frontend can dynamically import and register this portlet's Angular module at runtime.
+     * Example: "@dotcms/portlets/my-custom"
+     */
+    angularModule?: string;
 }

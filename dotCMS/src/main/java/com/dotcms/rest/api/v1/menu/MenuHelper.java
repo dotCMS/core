@@ -15,7 +15,6 @@ import com.liferay.portlet.StrutsPortlet;
 import com.liferay.portlet.VelocityPortlet;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,7 @@ public class MenuHelper implements Serializable {
 
     private static final String PORTLET_DOESNT_EXIST_ERROR_MSG = "Portlet ID '%s' does not exist";
     private static final String PORTLET_KEY_PREFIX="com.dotcms.repackage.javax.portlet.title.";
+    private static final String ANGULAR_MODULE_INIT_PARAM = "angular-module";
     private MenuHelper() {}
 
     /**
@@ -48,14 +48,23 @@ public class MenuHelper implements Serializable {
         List<String> portletIds = menuContext.getLayout().getPortletIds();
 
         for (String portletId : portletIds) {
+            if (null == portletId) {
+                continue;
+            }
+            Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
+            if (null == portlet) {
+                Logger.warn(this, String.format("Portlet %s not found", portletId));
+                continue;
+            }
             menuContext.setPortletId( portletId );
             String url = getUrl(menuContext);
             Locale locale = Try.of(()-> new Locale(menuContext.getHttpServletRequest().getSession().getAttribute("com.dotcms.repackage.org.apache.struts.action.LOCALE").toString())).getOrElse(Locale.US);
             String linkName = normalizeLinkName(LanguageUtil.get(locale, PORTLET_KEY_PREFIX + portletId));
-            boolean isAngular = isAngular( portletId );
-            boolean isAjax = isAjax( portletId );
+            boolean isAngular = isAngular(portlet);
+            boolean isAjax = isAjax(portlet);
+            String angularModule = getAngularModule(portlet);
 
-            menuItems.add ( new MenuItem(portletId, url, linkName, isAngular, isAjax) );
+            menuItems.add(new MenuItem(portletId, url, linkName, isAngular, isAjax, angularModule));
         }
         return menuItems;
     }
@@ -84,39 +93,52 @@ public class MenuHelper implements Serializable {
     /**
      * Determines if the portlet is an Angular-based portlet by checking if it implements PortletController
      *
-     * @param portletId ID of the portlet to check
+     * @param portlet ID of the portlet to check
      * @return true if the portlet is an Angular portlet, false if not
      * @throws ClassNotFoundException if the portlet class cannot be found
      */
-    public boolean isAngular(final String portletId) throws ClassNotFoundException {
-        final Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
+    boolean isAngular(final Portlet portlet) throws ClassNotFoundException {
         if (null != portlet) {
             final String portletClass = portlet.getPortletClass();
             final Class<?> classs = Class.forName(portletClass);
             return PortletController.class.isAssignableFrom(classs);
         } else {
-            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG, portletId));
+            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG, portlet));
         }
         return false;
     }
 
     /**
      * Validate if the portlet is a BaseRestPortlet
-     * @param portletId Id of the portlet
+     * @param portlet Id of the portlet
      * @return true if the portlet is a BaseRestPortlet portlet, false if not
      * @throws ClassNotFoundException
      */
-    public boolean isAjax(final String portletId) throws ClassNotFoundException {
-        final Portlet portlet = APILocator.getPortletAPI().findPortlet(portletId);
+    boolean isAjax(final Portlet portlet) throws ClassNotFoundException {
+
         if (null != portlet) {
             final String portletClass = portlet.getPortletClass();
             final Class<?> classs = Class.forName(portletClass);
             return BaseRestPortlet.class.isAssignableFrom(classs);
         } else {
-            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG, portletId));
+            Logger.error(this, String.format(PORTLET_DOESNT_EXIST_ERROR_MSG, portlet));
         }
 
         return false;
+    }
+
+    /**
+     * Gets the Angular module path for dynamic lazy loading from the portlet's init-params. This allows the frontend to
+     * dynamically import and register Angular portlet modules at runtime.
+     *
+     * @param portlet ID of the portlet to check
+     * @return the Angular module path (e.g., "@dotcms/portlets/my-custom"), or null if not configured
+     */
+    String getAngularModule(final Portlet portlet) {
+        if (null != portlet && null != portlet.getInitParams()) {
+            return portlet.getInitParams().get(ANGULAR_MODULE_INIT_PARAM);
+        }
+        return null;
     }
 
     /**
@@ -125,7 +147,7 @@ public class MenuHelper implements Serializable {
      * @return the portlet url
      * @throws ClassNotFoundException
      */
-    public String getUrl(final MenuContext menuContext) throws ClassNotFoundException {
+    String getUrl(final MenuContext menuContext) throws ClassNotFoundException {
         final Portlet portlet = APILocator.getPortletAPI().findPortlet( menuContext.getPortletId() );
 
         if (null != portlet) {
