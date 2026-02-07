@@ -48,6 +48,10 @@
         pointer-events: none;
     }
 
+    .editor-wrapper--error {
+        outline-color: $color-palette-red;
+    }
+
     .dot-drag-handle {
         cursor: grab;
         color: $color-palette-gray-500;
@@ -96,6 +100,10 @@
         100% {
             transform: rotate(360deg);
         }
+    }
+
+    dot-editor-count-bar {
+        margin-top: 0;
     }
 }
 

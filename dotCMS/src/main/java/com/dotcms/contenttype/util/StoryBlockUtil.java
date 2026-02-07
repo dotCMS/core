@@ -4,6 +4,7 @@ import com.dotcms.util.JsonUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import java.util.OptionalInt;
 
 /**
  * Utility class for Story Block field validation and processing.
@@ -81,6 +82,38 @@ public class StoryBlockUtil {
         // If the block exists, it represents content,
         // This is to avoid recursive checking of blocks that are not text-based like lists on tables or similar.
         return false;
+    }
+
+    /**
+     * Extracts the character count from a Story Block JSON value.
+     * The TipTap editor stores character count metadata in the root {@code attrs.charCount} field.
+     *
+     * @param storyBlockValue The JSON string representing the Story Block content
+     * @return An {@link OptionalInt} containing the character count if present and valid,
+     *         or {@link OptionalInt#empty()} if the value is not set, not valid JSON,
+     *         or does not contain a charCount attribute.
+     */
+    public static OptionalInt getCharCount(final String storyBlockValue) {
+        if (!UtilMethods.isSet(storyBlockValue)) {
+            return OptionalInt.empty();
+        }
+
+        try {
+            final JsonNode storyBlockJson = JsonUtil.JSON_MAPPER.readTree(storyBlockValue);
+
+            if (storyBlockJson.has("attrs")) {
+                final JsonNode attrsNode = storyBlockJson.get("attrs");
+                if (attrsNode.has("charCount") && attrsNode.get("charCount").isInt()) {
+                    return OptionalInt.of(attrsNode.get("charCount").asInt());
+                }
+            }
+
+            return OptionalInt.empty();
+        } catch (Exception e) {
+            Logger.debug(StoryBlockUtil.class,
+                    "Unable to extract charCount from Story Block JSON: " + e.getMessage());
+            return OptionalInt.empty();
+        }
     }
 
     /**
