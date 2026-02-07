@@ -37,7 +37,17 @@ const fs = require('fs');
 const path = require('path');
 
 // Whitelist of allowed cubes for security validation
-const ALLOWED_CUBES = ['Events', 'request', 'ContentAttribution', 'Conversion', 'EventSummary'];
+const ALLOWED_CUBES = [
+    'Events',
+    'request',
+    'ContentAttribution',
+    'Conversion',
+    'EventSummary',
+    'EngagementDaily',
+    'SessionsByDeviceDaily',
+    'SessionsByBrowserDaily',
+    'SessionsByLanguageDaily'
+];
 
 // Extract customer ID from scope (required for all queries)
 // Note: Scope comes from validated JWT token, so customer_id is already trusted
