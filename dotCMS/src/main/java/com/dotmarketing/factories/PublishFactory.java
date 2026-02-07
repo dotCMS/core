@@ -405,7 +405,7 @@ public class PublishFactory {
 
 
         //Remove from block cache.
-        CacheLocator.getBlockPageCache().remove(htmlPage);
+        // CacheLocator.getBlockPageCache().remove(htmlPage);
 
         if (!futureContentlets.isEmpty()) {
 			final String listContentlets = futureContentlets.stream()

@@ -192,6 +192,9 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
+            if (PageMode.LIVE.equals(mode)) {
+                request.setAttribute(VelocityUtil.DOTCACHE, VelocityUtil.NO);
+            }
             final String pageHTML = this.getPageHTML(mode);
 
             transformLegacyContainerUUIDs(layout);
