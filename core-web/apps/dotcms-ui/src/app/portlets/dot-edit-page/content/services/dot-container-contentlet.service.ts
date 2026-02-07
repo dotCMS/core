@@ -1,16 +1,16 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotPage, DotPageContainer, DotPageContent } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotPage, DotPageContainer, DotPageContent } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotContainerContentletService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private dotSessionStorageService = inject(DotSessionStorageService);
 
     /**
@@ -28,17 +28,15 @@ export class DotContainerContentletService {
         page: DotPage
     ): Observable<string> {
         const currentVariantName = this.dotSessionStorageService.getVariationId();
-        const defaultUrl = `v1/containers/content/${content.identifier}?containerId=${container.identifier}&pageInode=${page.inode}`;
+        const defaultUrl = `/api/v1/containers/content/${content.identifier}?containerId=${container.identifier}&pageInode=${page.inode}`;
 
         const url = !currentVariantName
             ? defaultUrl
             : `${defaultUrl}&variantName=${currentVariantName}`;
 
-        return this.coreWebService
-            .requestView({
-                url: url
-            })
-            .pipe(pluck('entity', 'render'));
+        return this.http
+            .get<DotCMSResponse<{ render: string }>>(url)
+            .pipe(map((response) => response.entity.render));
     }
 
     /**
@@ -53,10 +51,10 @@ export class DotContainerContentletService {
         container: DotPageContainer,
         formId: string
     ): Observable<{ render: string; content: { [key: string]: string } }> {
-        return this.coreWebService
-            .requestView({
-                url: `v1/containers/form/${formId}?containerId=${container.identifier}`
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<
+                DotCMSResponse<{ render: string; content: { [key: string]: string } }>
+            >(`/api/v1/containers/form/${formId}?containerId=${container.identifier}`)
+            .pipe(map((response) => response.entity));
     }
 }

@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, mergeMap, pluck, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, toArray } from 'rxjs/operators';
 
-import { ApiRoot, CoreWebService, ResponseView } from '@dotcms/dotcms-js';
+import { ApiRoot } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
     DotCurrentUser,
@@ -15,6 +16,11 @@ import {
 import { DotCurrentUserService } from '../dot-current-user/dot-current-user.service';
 import { DotFormatDateService } from '../dot-format-date/dot-format-date.service';
 
+// Response type for endpoints that return bodyJsonObject
+interface DotBodyJsonResponse<T> {
+    bodyJsonObject: T;
+}
+
 /**
  * Provide method to push publish to content types
  * @export
@@ -23,17 +29,15 @@ import { DotFormatDateService } from '../dot-format-date/dot-format-date.service
 @Injectable()
 export class PushPublishService {
     _apiRoot = inject(ApiRoot);
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private currentUser = inject(DotCurrentUserService);
     private dotFormatDateService = inject(DotFormatDateService);
 
     private pushEnvironementsUrl = '/api/environment/loadenvironments/roleId';
-    /*
-        TODO: I had to do this because this line concat'api/' into the URL
-        https://github.com/dotCMS/dotcms-js/blob/master/src/core/core-web.service.ts#L169
-    */
-    private publishUrl = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish`;
-    private publishBundleURL = `/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle`;
+    private publishUrl =
+        '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish';
+    private publishBundleURL =
+        '/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/pushBundle';
 
     private _lastEnvironmentPushed!: string[];
 
@@ -49,11 +53,12 @@ export class PushPublishService {
     getEnvironments(): Observable<DotEnvironment[]> {
         return this.currentUser.getCurrentUser().pipe(
             mergeMap((user: DotCurrentUser) => {
-                return this.coreWebService.requestView<DotEnvironment[]>({
-                    url: `${this.pushEnvironementsUrl}/${user.roleId}`
-                });
+                return this.http
+                    .get<
+                        DotBodyJsonResponse<DotEnvironment[]>
+                    >(`${this.pushEnvironementsUrl}/${user.roleId}`)
+                    .pipe(map((response) => response.bodyJsonObject));
             }),
-            pluck<ResponseView<DotEnvironment[]>, DotEnvironment[]>('bodyJsonObject'),
             mergeMap((environments: DotEnvironment[]) => environments),
             filter((environment: DotEnvironment) => environment.name !== ''),
             toArray()
@@ -74,16 +79,16 @@ export class PushPublishService {
     ): Observable<DotAjaxActionResponseView> {
         this._lastEnvironmentPushed = pushPublishData.environment;
 
-        return this.coreWebService
-            .request<DotAjaxActionResponseView>({
-                body: this.getPublishEnvironmentData(assetIdentifier, pushPublishData),
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                method: 'POST',
-                url: isBundle ? this.publishBundleURL : this.publishUrl
-            })
-            .pipe(map((res) => res as DotAjaxActionResponseView));
+        const headers = new HttpHeaders({
+            'Content-Type': 'application/x-www-form-urlencoded'
+        });
+
+        const body = this.getPublishEnvironmentData(assetIdentifier, pushPublishData);
+        const url = isBundle ? this.publishBundleURL : this.publishUrl;
+
+        return this.http
+            .post<DotAjaxActionResponseView>(url, body, { headers })
+            .pipe(map((res) => res));
     }
 
     private getPublishEnvironmentData(

@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import {
     Component,
     EventEmitter,
@@ -14,7 +15,6 @@ import { NgControl, ControlValueAccessor } from '@angular/forms';
 
 import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { isEmpty } from '@dotcms/utils';
 
 import { Verify } from '../../services/validation/Verify';
@@ -36,7 +36,7 @@ import { Verify } from '../../services/validation/Verify';
     standalone: false
 })
 export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAccessor {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     control = inject(NgControl, { optional: true });
 
     @Input() placeholder: string;
@@ -117,10 +117,8 @@ export class RestDropdown implements AfterViewInit, OnChanges, ControlValueAcces
 
     ngOnChanges(change): void {
         if (change.optionUrl) {
-            this._options = this.coreWebService
-                .request({
-                    url: change.optionUrl.currentValue
-                })
+            this._options = this.http
+                .get<any>(change.optionUrl.currentValue)
                 .pipe(map((res: any) => this.jsonEntriesToOptions(res)));
         }
 

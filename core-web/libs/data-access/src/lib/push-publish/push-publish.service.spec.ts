@@ -2,15 +2,16 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/
 import { format } from 'date-fns';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
-import { ApiRoot, CoreWebService, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
+import { ApiRoot, LoggerService, StringUtils, UserModel } from '@dotcms/dotcms-js';
 import {
     DotAjaxActionResponseView,
     DotCurrentUser,
     DotPushPublishData
 } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock, DotFormatDateServiceMock } from '@dotcms/utils-testing';
+import { DotFormatDateServiceMock } from '@dotcms/utils-testing';
 
 import { PushPublishService } from './push-publish.service';
 
@@ -39,10 +40,10 @@ describe('PushPublishService', () => {
     let dotCurrentUserService: DotCurrentUserService;
     const createHttp = createHttpFactory({
         service: PushPublishService,
-        imports: [HttpClientTestingModule],
         mocks: [DotCurrentUserService],
         providers: [
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
+            provideHttpClient(),
+            provideHttpClientTesting(),
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             ApiRoot,
             LoggerService,

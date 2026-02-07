@@ -1,11 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { DotTheme } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotTheme } from '@dotcms/dotcms-models';
 
 /**
  * Provide util methods to get themes information.
@@ -14,7 +14,7 @@ import { DotTheme } from '@dotcms/dotcms-models';
  */
 @Injectable()
 export class DotThemesService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
 
     /**
      * Get Theme information based on the inode.
@@ -24,10 +24,8 @@ export class DotThemesService {
      * @memberof DotThemesService
      */
     get(inode: string): Observable<DotTheme> {
-        return this.coreWebService
-            .requestView({
-                url: 'v1/themes/id/' + inode
-            })
-            .pipe(pluck('entity'));
+        return this.http
+            .get<DotCMSResponse<DotTheme>>('/api/v1/themes/id/' + inode)
+            .pipe(map((response) => response.entity));
     }
 }
