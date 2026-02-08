@@ -80,6 +80,23 @@ spectator.setInput('prop', value);           // ALWAYS use setInput
 - **Styling**: Tailwind CSS + PrimeFlex utilities
 - **Testing**: Jest + Spectator, use `data-testid` for selectors
 
+### Form Markup
+
+Always wrap form fields with this structure for consistent styling:
+
+```html
+<form class="form">
+  <div class="field">
+    <label for="name">Name</label>
+    <input pInputText id="name" />
+  </div>
+  <div class="field">
+    <label for="site">Site</label>
+    <p-select id="site" [options]="sites()" />
+  </div>
+</form>
+```
+
 ## Creating New Portlets
 
 New portlets go in `libs/portlets/`. Use Nx generators:
@@ -176,7 +193,7 @@ import('@portlets/dot-{feature}/dot-{feature}.routes').then((m) => m.dotFeatureR
 
 - Dev proxy: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
 - API services: `libs/data-access/` via `DotHttpService`
-- OpenAPI spec: Available at `/api/openapi.json` on running dotCMS instance
+- OpenAPI spec: Use `http://localhost:8080/api/openapi.json` (local dev instance), fallback to `https://demo.dotcms.com/api/openapi.json`. Fetch this to understand available endpoints, request/response schemas, and parameters before building API integrations.
 
 ## For Backend/Java Development
 
