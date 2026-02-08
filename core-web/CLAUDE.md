@@ -8,6 +8,33 @@ This is the **DotCMS Core-Web** monorepo (v23.4.0-next.1) - the frontend infrast
 
 **Package Manager**: Uses Yarn with npm resolutions/overrides for dependency management
 
+### MCP Servers Available
+
+This repository has configured MCP (Model Context Protocol) servers that provide specialized tools:
+
+- **`angular-cli`** - Angular CLI integration with tools for:
+  - Getting Angular best practices and coding standards
+  - Searching Angular documentation (https://angular.dev)
+  - Finding modern code examples for new Angular features
+  - Project structure analysis and migration guidance
+  - **Usage:** Use these tools when working with Angular code, creating components, or needing Angular-specific guidance
+
+- **`primeng`** - PrimeNG component library integration with tools for:
+  - Listing and searching PrimeNG components
+  - Getting component props, events, methods, and templates
+  - Finding usage examples and code snippets
+  - Component comparison and related components
+  - **Usage:** Use these tools when implementing UI with PrimeNG components (buttons, tables, dialogs, etc.)
+
+- **`chrome-devtools`** - Browser automation and testing tools for:
+  - Taking screenshots and snapshots
+  - Navigating pages and interacting with elements
+  - Debugging network requests and console messages
+  - Performance analysis and tracing
+  - **Usage:** Use for E2E testing, debugging UI issues, or performance analysis
+
+**Tip:** When working on Angular components or PrimeNG UI, leverage these MCP tools for accurate, up-to-date documentation and examples.
+
 ## Key Development Commands
 
 ### Development Server
@@ -271,6 +298,11 @@ const button = spectator.query('[data-testid="submit-button"]');
 4. Follow component prefix conventions (`dot-`)
 5. Add comprehensive tests (Jest + Playwright if needed)
 6. Update TypeScript paths in `tsconfig.base.json` if adding new libraries
+
+**Use MCP Tools:**
+- Use `angular-cli` tools for Angular best practices, documentation, and code examples
+- Use `primeng` tools for PrimeNG component API reference and usage examples
+- Use `chrome-devtools` for E2E testing and debugging UI issues
 
 ### Creating New Portlets
 
