@@ -1,374 +1,124 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
 
-## Repository Overview
+## Overview
 
-This is the **DotCMS Core-Web** monorepo (v23.4.0-next.1) - the frontend infrastructure for the DotCMS content management system. Built with **Nx workspace** architecture, it contains Angular applications, TypeScript SDKs, shared libraries, and web components.
+DotCMS Core-Web monorepo — Angular + Nx. Uses **Yarn** as package manager. Nx is not installed globally — always use `yarn nx`.
 
-**Package Manager**: Uses Yarn with npm resolutions/overrides for dependency management
+### MCP Servers
 
-### MCP Servers Available
+Configured in `/.mcp.json`. Use these instead of guessing:
 
-This repository has configured MCP (Model Context Protocol) servers that provide specialized tools:
+- **`angular-cli`** — Angular best practices, documentation search, code examples. Use before writing Angular code.
+- **`primeng`** — PrimeNG component API, props, events, examples. Use when building UI.
+- **`chrome-devtools`** — Browser automation, screenshots, network debugging, performance tracing.
 
-- **`angular-cli`** - Angular CLI integration with tools for:
-  - Getting Angular best practices and coding standards
-  - Searching Angular documentation (https://angular.dev)
-  - Finding modern code examples for new Angular features
-  - Project structure analysis and migration guidance
-  - **Usage:** Use these tools when working with Angular code, creating components, or needing Angular-specific guidance
-
-- **`primeng`** - PrimeNG component library integration with tools for:
-  - Listing and searching PrimeNG components
-  - Getting component props, events, methods, and templates
-  - Finding usage examples and code snippets
-  - Component comparison and related components
-  - **Usage:** Use these tools when implementing UI with PrimeNG components (buttons, tables, dialogs, etc.)
-
-- **`chrome-devtools`** - Browser automation and testing tools for:
-  - Taking screenshots and snapshots
-  - Navigating pages and interacting with elements
-  - Debugging network requests and console messages
-  - Performance analysis and tracing
-  - **Usage:** Use for E2E testing, debugging UI issues, or performance analysis
-
-**Tip:** When working on Angular components or PrimeNG UI, leverage these MCP tools for accurate, up-to-date documentation and examples.
-
-## Key Development Commands
-
-### Development Server
+## Essential Commands
 
 ```bash
-# Start main admin UI with backend proxy
-nx serve dotcms-ui
-
-# Start block editor development
-nx serve dotcms-block-editor
-
-# Start with specific configuration
-nx serve dotcms-ui --configuration=development
+yarn nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
+yarn nx build dotcms-ui                    # Build
+yarn nx test {project}                     # Test specific project
+yarn nx test {project} --testPathPattern=  # Test specific file
+yarn nx lint {project}                     # Lint
+yarn nx affected:test                      # Test only changed projects
+yarn run test:dotcms                       # Test all
+yarn run lint:dotcms                       # Lint all
 ```
 
-### Building
+## Architecture
 
-```bash
-# Build main application
-nx build dotcms-ui
+### Where Code Goes
 
-# Build specific SDK for publishing
-nx build sdk-client
-nx build sdk-react
-nx build sdk-analytics
-
-# Build all affected projects
-nx affected:build
+```
+apps/dotcms-ui/              # Main admin UI application
+libs/portlets/               # Feature portlets (new portlets go HERE)
+libs/ui/                     # Shared UI components (multi-portlet)
+libs/data-access/            # Shared services (multi-portlet)
+libs/dotcms-models/          # TypeScript interfaces and types
+libs/edit-content/           # Content editing library
+libs/block-editor/           # TipTap rich text editor
+libs/sdk/                    # External SDKs (client, react, angular)
 ```
 
-### Testing
+### Code Placement Rules
 
-```bash
-# Run all tests
-yarn run test:dotcms
-
-# Run specific project tests
-nx test dotcms-ui
-nx test sdk-client
-nx test block-editor
-
-# Run E2E tests
-nx e2e dotcms-ui-e2e
-
-# Run single test file
-nx test dotcms-ui --testPathPattern=dot-edit-content
-
-# Test with coverage
-nx test dotcms-ui --coverage
-```
-
-### Code Quality
-
-```bash
-# Lint all projects (with auto-fix, excludes skip:lint tagged projects)
-yarn run lint:dotcms
-
-# Lint specific project
-nx lint dotcms-ui
-
-# Fix linting issues
-nx lint dotcms-ui --fix
-
-# Check affected projects
-nx affected:test
-nx affected:lint
-
-# Format code with Prettier 3.7.4
-yarn run format
-yarn run format:check
-```
-
-**Linting Stack:**
-- **ESLint 8.57.0** with TypeScript 8.38.0 parser
-- **@angular-eslint 21.0.0** for Angular-specific rules
-- **@stylistic/eslint-plugin 5.2.2** for code style
-- **eslint-plugin-react 7.34.2** for React projects
-- **eslint-config-prettier 10.1.8** for Prettier integration
-
-### Monorepo Management
-
-```bash
-# Visualize project dependencies
-nx dep-graph
-
-# Show project information
-nx show project dotcms-ui
-
-# Run tasks in parallel
-nx run-many --target=test --projects=sdk-client,sdk-react
-```
-
-## Architecture & Structure
-
-### Monorepo Organization
-
-- **apps/** - Main applications (dotcms-ui, dotcms-block-editor, dotcms-binary-field-builder, mcp-server)
-- **libs/sdk/** - External-facing SDKs (client, react, angular, analytics, experiments, uve)
-- **libs/data-access/** - **Shared agnostic Angular services** for API communication and business logic
-- **libs/ui/** - **Shared UI components and patterns** used across multiple portlets
-- **libs/portlets/** - Feature-specific portlets (analytics, experiments, locales, etc.)
-- **libs/dotcms-models/** - TypeScript interfaces and types
-- **libs/block-editor/** - TipTap-based rich text editor (using ngx-tiptap 12.0.0)
-- **libs/template-builder/** - Template construction utilities
-- **libs/dotcms-webcomponents/** - Stencil.js 4.39.0 web components
-
-### Code Organization & Reusability Guidelines
-
-**When building portlets or features, follow these rules for shared code:**
-
-#### Shared UI Components (`libs/ui/`)
-Place components in `@dotcms/ui` when they:
-- ✅ Are used by **multiple portlets or applications**
-- ✅ Provide **generic, reusable UI functionality** (dialogs, forms, tables, buttons)
-- ✅ Have **no business logic** or are domain-agnostic
-- ✅ Follow design system patterns and can be configured via inputs
-
-**Examples:**
-- Reusable dialog components
-- Generic data tables or lists
-- Form controls and validation patterns
-- Common layout components (cards, panels, toolbars)
-- Shared directives and pipes
-
-```typescript
-// ✅ CORRECT: Generic shared component in libs/ui/
-@Component({
-  selector: 'dotcms-data-table',
-  // Generic table that can be configured for any use case
-})
-export class DotcmsDataTableComponent { }
-
-// ❌ WRONG: Feature-specific component in libs/ui/
-@Component({
-  selector: 'analytics-metrics-chart', // Too specific!
-  // Should stay in libs/portlets/analytics/
-})
-```
-
-#### Shared Services (`libs/data-access/`)
-Place services in `@dotcms/data-access` when they:
-- ✅ Provide **domain-agnostic API communication**
-- ✅ Are used by **multiple portlets or applications**
-- ✅ Handle **cross-cutting concerns** (auth, HTTP, caching, state management)
-- ✅ Don't contain portlet-specific business logic
-
-**Examples:**
-- HTTP client wrappers
-- Authentication services
-- Generic CRUD services
-- Caching utilities
-- WebSocket/real-time communication services
-
-```typescript
-// ✅ CORRECT: Generic service in libs/data-access/
-@Injectable()
-export class DotHttpErrorManagerService {
-  // Generic error handling used everywhere
-}
-
-// ❌ WRONG: Portlet-specific service in libs/data-access/
-@Injectable()
-export class AnalyticsMetricsService {
-  // Should stay in libs/portlets/analytics/
-}
-```
-
-#### Portlet-Specific Code (`libs/portlets/`)
-Keep code in portlet libraries when:
-- ✅ It's **only used within that specific portlet**
-- ✅ Contains **domain-specific business logic**
-- ✅ Implements **feature-specific UI patterns**
-
-**Decision Tree:**
 ```
 Is this component/service used by multiple portlets?
-├─ NO → Keep it in libs/portlets/{feature}/
+├─ NO  → libs/portlets/{feature}/
 └─ YES → Is it domain-agnostic?
-    ├─ YES (UI) → Move to libs/ui/
-    ├─ YES (Service) → Move to libs/data-access/
-    └─ NO → Consider if it should be in libs/portlets/shared/ or refactored
+    ├─ YES (UI)      → libs/ui/
+    ├─ YES (Service)  → libs/data-access/
+    └─ NO             → libs/portlets/shared/ or refactor
 ```
 
-### Technology Stack
+## Angular Rules (REQUIRED)
 
-- **Angular 21.0.2** with standalone components
-- **Nx 21.6.9** for monorepo management
-- **PrimeNG 21.0.2** UI components
-- **TipTap 2.14.0** for rich text editing
-- **NgRx 19.2.1** for state management
-- **Jest 29.7.0** for testing
-- **Playwright 1.36.0** for E2E testing
-- **Node.js >=v22.15.0** requirement
-- **Storybook 9.1.9** for component documentation
+### Modern Syntax — Always Use
+
+```typescript
+// Control flow
+@if (condition()) { <content /> }           // NOT *ngIf
+@for (item of items(); track item.id) { }   // NOT *ngFor
+
+// Inputs/Outputs
+data = input<string>();                      // NOT @Input()
+onChange = output<string>();                  // NOT @Output()
+
+// Testing selectors
+<button data-testid="submit-btn">Submit</button>
+spectator.query('[data-testid="submit-btn"]');
+spectator.setInput('prop', value);           // ALWAYS use setInput
+```
 
 ### Component Conventions
 
-- **Prefix**: All Angular components use `dot-` prefix
-- **Naming**: Follow Angular style guide with kebab-case
-- **Architecture**: Feature modules with lazy loading
-- **State**: Component-store pattern with NgRx signals
-- **Testing**: Jest unit tests + Playwright E2E
-- **Styling**: Tailwind CSS 4.1.17 with PrimeFlex 3.3.1 utilities
-- **Icons**: PrimeIcons 7.0.0 and Font Awesome 4.7.0
+- **Prefix**: All components use `dot-` prefix
+- **Standalone**: All new components must be standalone
+- **State**: Use NgRx signals (`@ngrx/signals`) for state management
+- **Styling**: Tailwind CSS + PrimeFlex utilities
+- **Testing**: Jest + Spectator, use `data-testid` for selectors
 
-### Modern Angular Syntax (REQUIRED)
+## Creating New Portlets
 
-```typescript
-// ✅ CORRECT: Modern control flow syntax
-@if (condition()) { <content /> }      // NOT *ngIf
-@for (item of items(); track item.id) { }  // NOT *ngFor
-
-// ✅ CORRECT: Modern input/output syntax
-data = input<string>();                // NOT @Input()
-onChange = output<string>();           // NOT @Output()
-
-// ✅ CRITICAL: Testing with Spectator
-spectator.setInput('prop', value);     // ALWAYS use setInput for inputs
-spectator.detectChanges();             // Trigger change detection
-
-// ✅ CORRECT: Use data-testid for selectors
-<button data-testid="submit-button">Submit</button>
-const button = spectator.query('[data-testid="submit-button"]');
-```
-
-### Backend Integration
-
-- **Development Proxy**: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
-- **API Services**: Centralized in `libs/data-access`
-- **Authentication**: Bearer token-based with `DotcmsConfigService`
-- **Content Management**: Full CRUD through `DotHttpService`
-- **HTTP Client**: Cross-fetch 3.1.4 for universal fetch API support
-
-### Additional Key Libraries
-
-- **Rich Text Editing**: TinyMCE 6.8.3 with Angular/React wrappers, Marked 12.0.2 for markdown
-- **Date Handling**: date-fns 4.0.0 with @date-fns/tz 1.4.0 for timezone support
-- **Drag & Drop**: dragula 3.7.3 with ng2-dragula 5.0.1, dom-autoscroller 2.3.4
-- **Charts**: chart.js 4.3.0 for data visualization
-- **Layout**: gridstack 8.1.1 for grid-based layouts
-- **Utilities**: uuid 9.0.0, md5 2.3.0, turndown 7.2.0 (HTML to Markdown)
-- **Validation**: zod 4.1.9, superstruct 1.0.3 for runtime type checking
-- **Analytics**: @jitsu/sdk-js 3.1.5, analytics 0.8.14
-- **Model Context Protocol**: @modelcontextprotocol/sdk 1.13.1
-
-## Development Workflows
-
-### Local Development Setup
-
-1. Ensure Node.js >=v22.15.0
-2. Run `yarn install` to install dependencies
-3. Run `node prepare.js` to set up Husky git hooks
-4. Start backend dotCMS on port 8080
-5. Run `nx serve dotcms-ui` for frontend development
-
-### Adding New Features
-
-1. Create feature branch following naming convention
-2. Add libraries in `libs/` for reusable code
-3. Use existing patterns from similar features
-4. Follow component prefix conventions (`dot-`)
-5. Add comprehensive tests (Jest + Playwright if needed)
-6. Update TypeScript paths in `tsconfig.base.json` if adding new libraries
-
-**Use MCP Tools:**
-- Use `angular-cli` tools for Angular best practices, documentation, and code examples
-- Use `primeng` tools for PrimeNG component API reference and usage examples
-- Use `chrome-devtools` for E2E testing and debugging UI issues
-
-### Creating New Portlets
-
-Portlets are full-featured admin modules that are lazily loaded into the main `dotcms-ui` application. All new portlets should be created in `libs/portlets/` for reusability.
-
-#### Quick Start
+New portlets go in `libs/portlets/`. Use Nx generators:
 
 ```bash
 # Generate portlet library
-nx generate @nx/angular:library portlet \
+yarn nx generate @nx/angular:library portlet \
   --directory=libs/portlets/dot-{feature} \
   --tags=type:feature,scope:dotcms-ui,portlet:{feature} \
-  --prefix=dotcms \
-  --standalone
+  --prefix=dotcms --standalone
 
-# Optional: Generate data-access library for API services
-nx generate @nx/angular:library data-access \
+# Optional: data-access library
+yarn nx generate @nx/angular:library data-access \
   --directory=libs/portlets/dot-{feature} \
-  --tags=type:data-access,scope:portlets \
-  --prefix=dotcms
+  --tags=type:data-access,scope:portlets --prefix=dotcms
 ```
 
-#### Standard Directory Structure
+### Standard Structure
 
 ```
 libs/portlets/dot-{feature}/
-├── portlet/                           # Main portlet library (REQUIRED)
+├── portlet/
 │   ├── src/
-│   │   ├── index.ts                  # Export routes (REQUIRED)
+│   │   ├── index.ts              # export * from './lib/lib.routes'
 │   │   └── lib/
-│   │       ├── lib.routes.ts         # Routes definition (Nx convention)
+│   │       ├── lib.routes.ts     # Route definitions (Nx convention)
 │   │       ├── {feature}-shell.component.ts
 │   │       ├── {feature}-list.component.ts
 │   │       └── {feature}-edit.component.ts
-│   ├── project.json
-│   ├── jest.config.ts
-│   └── tsconfig.json
-└── data-access/                       # Optional: API services
+│   └── project.json
+└── data-access/                   # Optional
     └── src/lib/
-        ├── services/
-        │   └── {feature}.service.ts
-        └── store/
-            └── {feature}.store.ts
+        └── services/
 ```
 
-**File Naming Convention (Nx Standard):**
-- ✅ Routes: `lib/lib.routes.ts` (Nx convention for libraries with routing)
-- ✅ Components: `lib/{feature}-{type}.component.ts` (e.g., `lib/tags-list.component.ts`)
-- ✅ Location: Always in `src/lib/` directory (not at `src/` root)
-
-#### Step-by-Step Guide
-
-**1. Export Routes from index.ts** (REQUIRED)
-
-```typescript
-// libs/portlets/dot-{feature}/portlet/src/index.ts
-export * from './lib/lib.routes';
-```
-
-**2. Define Routes (use camelCase for constant name)**
+### Route Definition
 
 ```typescript
 // libs/portlets/dot-{feature}/portlet/src/lib/lib.routes.ts
-import { Routes } from '@angular/router';
-import { DotFeatureShellComponent } from './dot-feature-shell.component';
-import { DotFeatureListComponent } from './dot-feature-list.component';
 
 // ✅ CORRECT: camelCase with 'Routes' suffix
 export const dotFeatureRoutes: Routes = [
@@ -376,206 +126,68 @@ export const dotFeatureRoutes: Routes = [
     path: '',
     component: DotFeatureShellComponent,
     children: [
-      {
-        path: '',
-        component: DotFeatureListComponent,
-        title: 'Feature List'
-      },
+      { path: '', component: DotFeatureListComponent },
       {
         path: ':id',
         loadComponent: () =>
-          import('./dot-feature-edit.component').then(
-            (m) => m.DotFeatureEditComponent
-          ),
-        title: 'Edit Feature'
+          import('./dot-feature-edit.component').then((m) => m.DotFeatureEditComponent)
       }
     ]
   }
 ];
-```
 
-**3. Register in Main App Routes**
-
-```typescript
-// apps/dotcms-ui/src/app/app.routes.ts
-const PORTLETS_ANGULAR: Route[] = [
-  // ... existing routes
-  {
-    path: '{feature-slug}',                    // URL path (e.g., 'tags', 'analytics')
-    canActivate: [MenuGuardService],           // Authentication guard
-    canActivateChild: [MenuGuardService],      // Child route authentication
-    data: {
-      reuseRoute: false                        // Prevent route reuse for fresh state
-    },
-    loadChildren: () =>
-      import('@dotcms/portlets/dot-{feature}/portlet').then(
-        (m) => m.dotFeatureRoutes              // Match exported constant name
-      )
-  }
-];
-```
-
-#### Naming Conventions (CRITICAL)
-
-```typescript
-// ✅ CORRECT: Use camelCase for route constants
-export const dotFeatureRoutes: Routes = [...]
-export const dotAnalyticsRoutes: Routes = [...]
-export const dotContentDriveRoutes: Routes = [...]
-
-// ❌ WRONG: PascalCase
+// ❌ WRONG: PascalCase or verbose
 export const DotFeatureRoutes: Routes = [...]
-
-// ❌ WRONG: Verbose naming
 export const DotFeaturePortletRoutes: Routes = [...]
 ```
 
-#### Import Alias Conventions
+### Register in App Routes
 
-**For portlets in `libs/portlets/` (new portlets):**
 ```typescript
-// ✅ CORRECT
-import('@dotcms/portlets/dot-{feature}/portlet').then((m) => m.dotFeatureRoutes)
+// apps/dotcms-ui/src/app/app.routes.ts
+{
+  path: '{feature-slug}',
+  canActivate: [MenuGuardService],
+  canActivateChild: [MenuGuardService],
+  data: { reuseRoute: false },
+  loadChildren: () =>
+    import('@dotcms/portlets/dot-{feature}/portlet').then((m) => m.dotFeatureRoutes)
+}
 ```
 
-**For portlets in `apps/dotcms-ui/src/app/portlets/` (legacy):**
+### Import Alias Conventions
+
 ```typescript
-// ✅ CORRECT
+// New portlets (libs/portlets/) — use @dotcms/portlets/*
+import('@dotcms/portlets/dot-{feature}/portlet').then((m) => m.dotFeatureRoutes)
+
+// Legacy portlets (apps/dotcms-ui/src/app/portlets/) — use @portlets/*
 import('@portlets/dot-{feature}/dot-{feature}.routes').then((m) => m.dotFeatureRoutes)
 ```
 
-#### Real-World Examples
+### Reference Portlets
 
-Reference these portlets for patterns:
-- **`dot-experiments`** - Full CRUD with guards, resolvers, shell pattern
-- **`dot-locales`** - Simple list/edit with MenuGuardService
-- **`dot-analytics`** - Enterprise license checking, lazy loading
-- **`dot-content-drive`** - Complex routing with nested views
-- **`dot-usage`** - Dashboard-style portlet with data visualization
+- **`dot-locales`** — Simple list/edit (good starting point)
+- **`dot-experiments`** — Full CRUD with guards, resolvers, shell
+- **`dot-analytics`** — Enterprise license checking, lazy loading
+- **`dot-content-drive`** — Complex nested routing
 
-#### Testing New Portlets
+## Backend Integration
 
-```bash
-# Unit tests
-nx test portlets-dot-{feature}-portlet
+- Dev proxy: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
+- API services: `libs/data-access/` via `DotHttpService`
+- OpenAPI spec: Available at `/api/openapi.json` on running dotCMS instance
 
-# Lint
-nx lint portlets-dot-{feature}-portlet
+## For Backend/Java Development
 
-# Build verification
-nx build dotcms-ui
-
-# Check dependency graph
-nx dep-graph
-```
-
-### SDK Development
-
-- **Client SDK**: Core API client in `libs/sdk/client`
-- **React SDK**: React 18.3.1 components in `libs/sdk/react`
-- **Angular SDK**: Angular services in `libs/sdk/angular`
-- **Next.js Support**: Next.js 14.0.4 integration patterns
-- **Publishing**: Automated via npm with proper versioning
-- **Build Tools**: Vite 7.2.7, Rollup 4.14.0, esbuild 0.19.2 for optimized library builds
-
-### Testing Strategy
-
-- **Unit Tests**: Jest 29.7.0 with jest-preset-angular 14.6.2 and @ngneat/spectator 19.6.2
-- **E2E Tests**: Playwright 1.36.0 for critical user workflows
-- **Test Environment**: @happy-dom/jest-environment 15.7.4 (modern, fast alternative to jsdom)
-- **Coverage**: Reports generated to `../../../target/core-web-reports/` using jest-html-reporters
-- **Mock Data**: @faker-js/faker 8.4.1 for realistic test data, extensive mock utilities in `libs/utils-testing`
-- **Component Testing**: ng-mocks 14.12.1 for Angular component mocking
-
-### Build Targets & Configurations
-
-- **Development**: Proxy configuration with source maps (webpack-dev-middleware 6.1.2)
-- **Production**: Optimized builds with tree shaking (Terser 5.28.1 minification)
-- **Library**: Rollup 4.14.0 / Vite 7.2.7 / esbuild 0.19.2 builds for SDK packages
-- **Web Components**: Stencil.js 4.39.0 compilation for `dotcms-webcomponents`
-- **Angular Builder**: @angular-devkit/build-angular 21.0.2
-- **Bundle Analysis**: webpack-bundle-analyzer 4.5.0 for size optimization
-
-## Important Notes
-
-### TypeScript Configuration
-
-- **TypeScript 5.9.3**: Latest stable version with strict mode enabled
-- **Strict Mode**: Enabled across all projects
-- **Path Mapping**: Extensive use of `@dotcms/*` barrel exports
-- **Types**: Centralized in `libs/dotcms-models` and `libs/sdk/types`
-- **Build Tools**: ng-packagr 19.2.2 for library builds
-
-### State Management
-
-- **NgRx 19.2.1**: Component stores with signals pattern
-- **@ngrx/component-store**: For local component state management
-- **@ngrx/signals**: Modern reactive state with signals
-- **@ngrx/operators**: Reactive operators for state transformations
-- **Global Store**: Centralized state in `libs/global-store`
-- **Services**: Angular services for data access and business logic
-
-### Web Components
-
-- **Stencil.js 4.39.0**: Framework-agnostic components in `libs/dotcms-webcomponents`
-- **@nxext/stencil 21.0.0**: Nx integration for Stencil projects
-- **@stencil/sass 3.2.3**: SASS support for component styling
-- **Integration**: Used across Angular, React, and vanilla JS contexts
-- **Material Web Components**: @material/mwc-* components (v0.20.0) for specific UI needs
-
-### Performance Considerations
-
-- **Lazy Loading**: Feature modules loaded on demand
-- **Tree Shaking**: Proper barrel exports for optimal bundles
-- **Caching**: Nx task caching for faster builds
-- **Affected**: Only build/test changed projects in CI
-
-## Debugging & Troubleshooting
-
-### Common Issues
-
-- **Proxy Errors**: Ensure backend is running on port 8080
-- **Build Failures**: Check TypeScript paths and circular dependencies
-- **Test Failures**: Verify mock data and async handling
-- **Linting**: Follow component naming conventions with `dot-` prefix
-
-### Development Tools
-
-- **Nx Console**: VS Code extension for Nx commands
-- **Angular DevTools**: Browser extension for debugging
-- **Coverage Reports**: Check `target/core-web-reports/` for test coverage
-- **Dependency Graph**: Use `nx dep-graph` to visualize project relationships
-
-This codebase emphasizes consistency, testability, and maintainability through its monorepo architecture and established patterns.
-
-## Summary Checklist
-
-### Angular/TypeScript Development
-
-- ✅ Use modern control flow: `@if`, `@for` (NOT `*ngIf`, `*ngFor`)
-- ✅ Use modern inputs/outputs: `input<T>()`, `output<T>()` (NOT `@Input()`, `@Output()`)
-- ✅ Use `data-testid` attributes for all testable elements
-- ✅ Use `spectator.setInput()` for testing component inputs
-- ✅ Follow `dot-` prefix convention for all components
-- ✅ Use standalone components with lazy loading
-- ✅ Use NgRx signals for state management
-- ✅ **Code Organization**: Shared components → `libs/ui/`, Shared services → `libs/data-access/`
-- ✅ **Reusability**: Extract multi-portlet components to `@dotcms/ui`, domain-agnostic services to `@dotcms/data-access`
-- ❌ Avoid legacy Angular syntax (`*ngIf`, `@Input()`, etc.)
-- ❌ Avoid direct DOM queries without `data-testid`
-- ❌ Never skip unit tests for new components
-- ❌ **Don't duplicate**: If a component/service exists in multiple portlets, refactor to shared libs
-
-### For Backend/Java Development
-
-- See **[../CLAUDE.md](../CLAUDE.md)** for Java, Maven, REST API, and Git workflow standards
+See **[../CLAUDE.md](../CLAUDE.md)** for Java, Maven, REST API, and Git workflow standards.
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
 # General Guidelines for working with Nx
 
-- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `yarn nx` (i.e. `yarn nx run`, `yarn nx run-many`, `yarn nx affected`) instead of using the underlying tooling directly
 - You have access to the Nx MCP server and its tools, use them to help the user
 - When answering questions about the repository, use the `nx_workspace` tool first to gain an understanding of the workspace architecture where applicable.
 - When working in individual projects, use the `nx_project_details` mcp tool to analyze and understand the specific project structure and dependencies
