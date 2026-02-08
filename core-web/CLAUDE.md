@@ -81,11 +81,11 @@ yarn run format:check
 ```
 
 **Linting Stack:**
--   **ESLint 8.57.0** with TypeScript 8.38.0 parser
--   **@angular-eslint 21.0.0** for Angular-specific rules
--   **@stylistic/eslint-plugin 5.2.2** for code style
--   **eslint-plugin-react 7.34.2** for React projects
--   **eslint-config-prettier 10.1.8** for Prettier integration
+- **ESLint 8.57.0** with TypeScript 8.38.0 parser
+- **@angular-eslint 21.0.0** for Angular-specific rules
+- **@stylistic/eslint-plugin 5.2.2** for code style
+- **eslint-plugin-react 7.34.2** for React projects
+- **eslint-config-prettier 10.1.8** for Prettier integration
 
 ### Monorepo Management
 
@@ -104,37 +104,114 @@ nx run-many --target=test --projects=sdk-client,sdk-react
 
 ### Monorepo Organization
 
--   **apps/** - Main applications (dotcms-ui, dotcms-block-editor, dotcms-binary-field-builder, mcp-server)
--   **libs/sdk/** - External-facing SDKs (client, react, angular, analytics, experiments, uve)
--   **libs/data-access/** - Angular services for API communication
--   **libs/ui/** - Shared UI components and patterns
--   **libs/portlets/** - Feature-specific portlets (analytics, experiments, locales, etc.)
--   **libs/dotcms-models/** - TypeScript interfaces and types
--   **libs/block-editor/** - TipTap-based rich text editor (using ngx-tiptap 12.0.0)
--   **libs/template-builder/** - Template construction utilities
--   **libs/dotcms-webcomponents/** - Stencil.js 4.39.0 web components
+- **apps/** - Main applications (dotcms-ui, dotcms-block-editor, dotcms-binary-field-builder, mcp-server)
+- **libs/sdk/** - External-facing SDKs (client, react, angular, analytics, experiments, uve)
+- **libs/data-access/** - **Shared agnostic Angular services** for API communication and business logic
+- **libs/ui/** - **Shared UI components and patterns** used across multiple portlets
+- **libs/portlets/** - Feature-specific portlets (analytics, experiments, locales, etc.)
+- **libs/dotcms-models/** - TypeScript interfaces and types
+- **libs/block-editor/** - TipTap-based rich text editor (using ngx-tiptap 12.0.0)
+- **libs/template-builder/** - Template construction utilities
+- **libs/dotcms-webcomponents/** - Stencil.js 4.39.0 web components
+
+### Code Organization & Reusability Guidelines
+
+**When building portlets or features, follow these rules for shared code:**
+
+#### Shared UI Components (`libs/ui/`)
+Place components in `@dotcms/ui` when they:
+- ✅ Are used by **multiple portlets or applications**
+- ✅ Provide **generic, reusable UI functionality** (dialogs, forms, tables, buttons)
+- ✅ Have **no business logic** or are domain-agnostic
+- ✅ Follow design system patterns and can be configured via inputs
+
+**Examples:**
+- Reusable dialog components
+- Generic data tables or lists
+- Form controls and validation patterns
+- Common layout components (cards, panels, toolbars)
+- Shared directives and pipes
+
+```typescript
+// ✅ CORRECT: Generic shared component in libs/ui/
+@Component({
+  selector: 'dotcms-data-table',
+  // Generic table that can be configured for any use case
+})
+export class DotcmsDataTableComponent { }
+
+// ❌ WRONG: Feature-specific component in libs/ui/
+@Component({
+  selector: 'analytics-metrics-chart', // Too specific!
+  // Should stay in libs/portlets/analytics/
+})
+```
+
+#### Shared Services (`libs/data-access/`)
+Place services in `@dotcms/data-access` when they:
+- ✅ Provide **domain-agnostic API communication**
+- ✅ Are used by **multiple portlets or applications**
+- ✅ Handle **cross-cutting concerns** (auth, HTTP, caching, state management)
+- ✅ Don't contain portlet-specific business logic
+
+**Examples:**
+- HTTP client wrappers
+- Authentication services
+- Generic CRUD services
+- Caching utilities
+- WebSocket/real-time communication services
+
+```typescript
+// ✅ CORRECT: Generic service in libs/data-access/
+@Injectable()
+export class DotHttpErrorManagerService {
+  // Generic error handling used everywhere
+}
+
+// ❌ WRONG: Portlet-specific service in libs/data-access/
+@Injectable()
+export class AnalyticsMetricsService {
+  // Should stay in libs/portlets/analytics/
+}
+```
+
+#### Portlet-Specific Code (`libs/portlets/`)
+Keep code in portlet libraries when:
+- ✅ It's **only used within that specific portlet**
+- ✅ Contains **domain-specific business logic**
+- ✅ Implements **feature-specific UI patterns**
+
+**Decision Tree:**
+```
+Is this component/service used by multiple portlets?
+├─ NO → Keep it in libs/portlets/{feature}/
+└─ YES → Is it domain-agnostic?
+    ├─ YES (UI) → Move to libs/ui/
+    ├─ YES (Service) → Move to libs/data-access/
+    └─ NO → Consider if it should be in libs/portlets/shared/ or refactored
+```
 
 ### Technology Stack
 
--   **Angular 21.0.2** with standalone components
--   **Nx 21.6.9** for monorepo management
--   **PrimeNG 21.0.2** UI components
--   **TipTap 2.14.0** for rich text editing
--   **NgRx 19.2.1** for state management
--   **Jest 29.7.0** for testing
--   **Playwright 1.36.0** for E2E testing
--   **Node.js >=v22.15.0** requirement
--   **Storybook 9.1.9** for component documentation
+- **Angular 21.0.2** with standalone components
+- **Nx 21.6.9** for monorepo management
+- **PrimeNG 21.0.2** UI components
+- **TipTap 2.14.0** for rich text editing
+- **NgRx 19.2.1** for state management
+- **Jest 29.7.0** for testing
+- **Playwright 1.36.0** for E2E testing
+- **Node.js >=v22.15.0** requirement
+- **Storybook 9.1.9** for component documentation
 
 ### Component Conventions
 
--   **Prefix**: All Angular components use `dot-` prefix
--   **Naming**: Follow Angular style guide with kebab-case
--   **Architecture**: Feature modules with lazy loading
--   **State**: Component-store pattern with NgRx signals
--   **Testing**: Jest unit tests + Playwright E2E
--   **Styling**: Tailwind CSS 4.1.17 with PrimeFlex 3.3.1 utilities
--   **Icons**: PrimeIcons 7.0.0 and Font Awesome 4.7.0
+- **Prefix**: All Angular components use `dot-` prefix
+- **Naming**: Follow Angular style guide with kebab-case
+- **Architecture**: Feature modules with lazy loading
+- **State**: Component-store pattern with NgRx signals
+- **Testing**: Jest unit tests + Playwright E2E
+- **Styling**: Tailwind CSS 4.1.17 with PrimeFlex 3.3.1 utilities
+- **Icons**: PrimeIcons 7.0.0 and Font Awesome 4.7.0
 
 ### Modern Angular Syntax (REQUIRED)
 
@@ -158,23 +235,23 @@ const button = spectator.query('[data-testid="submit-button"]');
 
 ### Backend Integration
 
--   **Development Proxy**: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
--   **API Services**: Centralized in `libs/data-access`
--   **Authentication**: Bearer token-based with `DotcmsConfigService`
--   **Content Management**: Full CRUD through `DotHttpService`
--   **HTTP Client**: Cross-fetch 3.1.4 for universal fetch API support
+- **Development Proxy**: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
+- **API Services**: Centralized in `libs/data-access`
+- **Authentication**: Bearer token-based with `DotcmsConfigService`
+- **Content Management**: Full CRUD through `DotHttpService`
+- **HTTP Client**: Cross-fetch 3.1.4 for universal fetch API support
 
 ### Additional Key Libraries
 
--   **Rich Text Editing**: TinyMCE 6.8.3 with Angular/React wrappers, Marked 12.0.2 for markdown
--   **Date Handling**: date-fns 4.0.0 with @date-fns/tz 1.4.0 for timezone support
--   **Drag & Drop**: dragula 3.7.3 with ng2-dragula 5.0.1, dom-autoscroller 2.3.4
--   **Charts**: chart.js 4.3.0 for data visualization
--   **Layout**: gridstack 8.1.1 for grid-based layouts
--   **Utilities**: uuid 9.0.0, md5 2.3.0, turndown 7.2.0 (HTML to Markdown)
--   **Validation**: zod 4.1.9, superstruct 1.0.3 for runtime type checking
--   **Analytics**: @jitsu/sdk-js 3.1.5, analytics 0.8.14
--   **Model Context Protocol**: @modelcontextprotocol/sdk 1.13.1
+- **Rich Text Editing**: TinyMCE 6.8.3 with Angular/React wrappers, Marked 12.0.2 for markdown
+- **Date Handling**: date-fns 4.0.0 with @date-fns/tz 1.4.0 for timezone support
+- **Drag & Drop**: dragula 3.7.3 with ng2-dragula 5.0.1, dom-autoscroller 2.3.4
+- **Charts**: chart.js 4.3.0 for data visualization
+- **Layout**: gridstack 8.1.1 for grid-based layouts
+- **Utilities**: uuid 9.0.0, md5 2.3.0, turndown 7.2.0 (HTML to Markdown)
+- **Validation**: zod 4.1.9, superstruct 1.0.3 for runtime type checking
+- **Analytics**: @jitsu/sdk-js 3.1.5, analytics 0.8.14
+- **Model Context Protocol**: @modelcontextprotocol/sdk 1.13.1
 
 ## Development Workflows
 
@@ -195,82 +272,247 @@ const button = spectator.query('[data-testid="submit-button"]');
 5. Add comprehensive tests (Jest + Playwright if needed)
 6. Update TypeScript paths in `tsconfig.base.json` if adding new libraries
 
+### Creating New Portlets
+
+Portlets are full-featured admin modules that are lazily loaded into the main `dotcms-ui` application. All new portlets should be created in `libs/portlets/` for reusability.
+
+#### Quick Start
+
+```bash
+# Generate portlet library
+nx generate @nx/angular:library portlet \
+  --directory=libs/portlets/dot-{feature} \
+  --tags=type:feature,scope:dotcms-ui,portlet:{feature} \
+  --prefix=dotcms \
+  --standalone
+
+# Optional: Generate data-access library for API services
+nx generate @nx/angular:library data-access \
+  --directory=libs/portlets/dot-{feature} \
+  --tags=type:data-access,scope:portlets \
+  --prefix=dotcms
+```
+
+#### Standard Directory Structure
+
+```
+libs/portlets/dot-{feature}/
+├── portlet/                           # Main portlet library (REQUIRED)
+│   ├── src/
+│   │   ├── index.ts                  # Export routes (REQUIRED)
+│   │   └── lib/
+│   │       ├── lib.routes.ts         # Routes definition (Nx convention)
+│   │       ├── {feature}-shell.component.ts
+│   │       ├── {feature}-list.component.ts
+│   │       └── {feature}-edit.component.ts
+│   ├── project.json
+│   ├── jest.config.ts
+│   └── tsconfig.json
+└── data-access/                       # Optional: API services
+    └── src/lib/
+        ├── services/
+        │   └── {feature}.service.ts
+        └── store/
+            └── {feature}.store.ts
+```
+
+**File Naming Convention (Nx Standard):**
+- ✅ Routes: `lib/lib.routes.ts` (Nx convention for libraries with routing)
+- ✅ Components: `lib/{feature}-{type}.component.ts` (e.g., `lib/tags-list.component.ts`)
+- ✅ Location: Always in `src/lib/` directory (not at `src/` root)
+
+#### Step-by-Step Guide
+
+**1. Export Routes from index.ts** (REQUIRED)
+
+```typescript
+// libs/portlets/dot-{feature}/portlet/src/index.ts
+export * from './lib/lib.routes';
+```
+
+**2. Define Routes (use camelCase for constant name)**
+
+```typescript
+// libs/portlets/dot-{feature}/portlet/src/lib/lib.routes.ts
+import { Routes } from '@angular/router';
+import { DotFeatureShellComponent } from './dot-feature-shell.component';
+import { DotFeatureListComponent } from './dot-feature-list.component';
+
+// ✅ CORRECT: camelCase with 'Routes' suffix
+export const dotFeatureRoutes: Routes = [
+  {
+    path: '',
+    component: DotFeatureShellComponent,
+    children: [
+      {
+        path: '',
+        component: DotFeatureListComponent,
+        title: 'Feature List'
+      },
+      {
+        path: ':id',
+        loadComponent: () =>
+          import('./dot-feature-edit.component').then(
+            (m) => m.DotFeatureEditComponent
+          ),
+        title: 'Edit Feature'
+      }
+    ]
+  }
+];
+```
+
+**3. Register in Main App Routes**
+
+```typescript
+// apps/dotcms-ui/src/app/app.routes.ts
+const PORTLETS_ANGULAR: Route[] = [
+  // ... existing routes
+  {
+    path: '{feature-slug}',                    // URL path (e.g., 'tags', 'analytics')
+    canActivate: [MenuGuardService],           // Authentication guard
+    canActivateChild: [MenuGuardService],      // Child route authentication
+    data: {
+      reuseRoute: false                        // Prevent route reuse for fresh state
+    },
+    loadChildren: () =>
+      import('@dotcms/portlets/dot-{feature}/portlet').then(
+        (m) => m.dotFeatureRoutes              // Match exported constant name
+      )
+  }
+];
+```
+
+#### Naming Conventions (CRITICAL)
+
+```typescript
+// ✅ CORRECT: Use camelCase for route constants
+export const dotFeatureRoutes: Routes = [...]
+export const dotAnalyticsRoutes: Routes = [...]
+export const dotContentDriveRoutes: Routes = [...]
+
+// ❌ WRONG: PascalCase
+export const DotFeatureRoutes: Routes = [...]
+
+// ❌ WRONG: Verbose naming
+export const DotFeaturePortletRoutes: Routes = [...]
+```
+
+#### Import Alias Conventions
+
+**For portlets in `libs/portlets/` (new portlets):**
+```typescript
+// ✅ CORRECT
+import('@dotcms/portlets/dot-{feature}/portlet').then((m) => m.dotFeatureRoutes)
+```
+
+**For portlets in `apps/dotcms-ui/src/app/portlets/` (legacy):**
+```typescript
+// ✅ CORRECT
+import('@portlets/dot-{feature}/dot-{feature}.routes').then((m) => m.dotFeatureRoutes)
+```
+
+#### Real-World Examples
+
+Reference these portlets for patterns:
+- **`dot-experiments`** - Full CRUD with guards, resolvers, shell pattern
+- **`dot-locales`** - Simple list/edit with MenuGuardService
+- **`dot-analytics`** - Enterprise license checking, lazy loading
+- **`dot-content-drive`** - Complex routing with nested views
+- **`dot-usage`** - Dashboard-style portlet with data visualization
+
+#### Testing New Portlets
+
+```bash
+# Unit tests
+nx test portlets-dot-{feature}-portlet
+
+# Lint
+nx lint portlets-dot-{feature}-portlet
+
+# Build verification
+nx build dotcms-ui
+
+# Check dependency graph
+nx dep-graph
+```
+
 ### SDK Development
 
--   **Client SDK**: Core API client in `libs/sdk/client`
--   **React SDK**: React 18.3.1 components in `libs/sdk/react`
--   **Angular SDK**: Angular services in `libs/sdk/angular`
--   **Next.js Support**: Next.js 14.0.4 integration patterns
--   **Publishing**: Automated via npm with proper versioning
--   **Build Tools**: Vite 7.2.7, Rollup 4.14.0, esbuild 0.19.2 for optimized library builds
+- **Client SDK**: Core API client in `libs/sdk/client`
+- **React SDK**: React 18.3.1 components in `libs/sdk/react`
+- **Angular SDK**: Angular services in `libs/sdk/angular`
+- **Next.js Support**: Next.js 14.0.4 integration patterns
+- **Publishing**: Automated via npm with proper versioning
+- **Build Tools**: Vite 7.2.7, Rollup 4.14.0, esbuild 0.19.2 for optimized library builds
 
 ### Testing Strategy
 
--   **Unit Tests**: Jest 29.7.0 with jest-preset-angular 14.6.2 and @ngneat/spectator 19.6.2
--   **E2E Tests**: Playwright 1.36.0 for critical user workflows
--   **Test Environment**: @happy-dom/jest-environment 15.7.4 (modern, fast alternative to jsdom)
--   **Coverage**: Reports generated to `../../../target/core-web-reports/` using jest-html-reporters
--   **Mock Data**: @faker-js/faker 8.4.1 for realistic test data, extensive mock utilities in `libs/utils-testing`
--   **Component Testing**: ng-mocks 14.12.1 for Angular component mocking
+- **Unit Tests**: Jest 29.7.0 with jest-preset-angular 14.6.2 and @ngneat/spectator 19.6.2
+- **E2E Tests**: Playwright 1.36.0 for critical user workflows
+- **Test Environment**: @happy-dom/jest-environment 15.7.4 (modern, fast alternative to jsdom)
+- **Coverage**: Reports generated to `../../../target/core-web-reports/` using jest-html-reporters
+- **Mock Data**: @faker-js/faker 8.4.1 for realistic test data, extensive mock utilities in `libs/utils-testing`
+- **Component Testing**: ng-mocks 14.12.1 for Angular component mocking
 
 ### Build Targets & Configurations
 
--   **Development**: Proxy configuration with source maps (webpack-dev-middleware 6.1.2)
--   **Production**: Optimized builds with tree shaking (Terser 5.28.1 minification)
--   **Library**: Rollup 4.14.0 / Vite 7.2.7 / esbuild 0.19.2 builds for SDK packages
--   **Web Components**: Stencil.js 4.39.0 compilation for `dotcms-webcomponents`
--   **Angular Builder**: @angular-devkit/build-angular 21.0.2
--   **Bundle Analysis**: webpack-bundle-analyzer 4.5.0 for size optimization
+- **Development**: Proxy configuration with source maps (webpack-dev-middleware 6.1.2)
+- **Production**: Optimized builds with tree shaking (Terser 5.28.1 minification)
+- **Library**: Rollup 4.14.0 / Vite 7.2.7 / esbuild 0.19.2 builds for SDK packages
+- **Web Components**: Stencil.js 4.39.0 compilation for `dotcms-webcomponents`
+- **Angular Builder**: @angular-devkit/build-angular 21.0.2
+- **Bundle Analysis**: webpack-bundle-analyzer 4.5.0 for size optimization
 
 ## Important Notes
 
 ### TypeScript Configuration
 
--   **TypeScript 5.9.3**: Latest stable version with strict mode enabled
--   **Strict Mode**: Enabled across all projects
--   **Path Mapping**: Extensive use of `@dotcms/*` barrel exports
--   **Types**: Centralized in `libs/dotcms-models` and `libs/sdk/types`
--   **Build Tools**: ng-packagr 19.2.2 for library builds
+- **TypeScript 5.9.3**: Latest stable version with strict mode enabled
+- **Strict Mode**: Enabled across all projects
+- **Path Mapping**: Extensive use of `@dotcms/*` barrel exports
+- **Types**: Centralized in `libs/dotcms-models` and `libs/sdk/types`
+- **Build Tools**: ng-packagr 19.2.2 for library builds
 
 ### State Management
 
--   **NgRx 19.2.1**: Component stores with signals pattern
--   **@ngrx/component-store**: For local component state management
--   **@ngrx/signals**: Modern reactive state with signals
--   **@ngrx/operators**: Reactive operators for state transformations
--   **Global Store**: Centralized state in `libs/global-store`
--   **Services**: Angular services for data access and business logic
+- **NgRx 19.2.1**: Component stores with signals pattern
+- **@ngrx/component-store**: For local component state management
+- **@ngrx/signals**: Modern reactive state with signals
+- **@ngrx/operators**: Reactive operators for state transformations
+- **Global Store**: Centralized state in `libs/global-store`
+- **Services**: Angular services for data access and business logic
 
 ### Web Components
 
--   **Stencil.js 4.39.0**: Framework-agnostic components in `libs/dotcms-webcomponents`
--   **@nxext/stencil 21.0.0**: Nx integration for Stencil projects
--   **@stencil/sass 3.2.3**: SASS support for component styling
--   **Integration**: Used across Angular, React, and vanilla JS contexts
--   **Material Web Components**: @material/mwc-* components (v0.20.0) for specific UI needs
+- **Stencil.js 4.39.0**: Framework-agnostic components in `libs/dotcms-webcomponents`
+- **@nxext/stencil 21.0.0**: Nx integration for Stencil projects
+- **@stencil/sass 3.2.3**: SASS support for component styling
+- **Integration**: Used across Angular, React, and vanilla JS contexts
+- **Material Web Components**: @material/mwc-* components (v0.20.0) for specific UI needs
 
 ### Performance Considerations
 
--   **Lazy Loading**: Feature modules loaded on demand
--   **Tree Shaking**: Proper barrel exports for optimal bundles
--   **Caching**: Nx task caching for faster builds
--   **Affected**: Only build/test changed projects in CI
+- **Lazy Loading**: Feature modules loaded on demand
+- **Tree Shaking**: Proper barrel exports for optimal bundles
+- **Caching**: Nx task caching for faster builds
+- **Affected**: Only build/test changed projects in CI
 
 ## Debugging & Troubleshooting
 
 ### Common Issues
 
--   **Proxy Errors**: Ensure backend is running on port 8080
--   **Build Failures**: Check TypeScript paths and circular dependencies
--   **Test Failures**: Verify mock data and async handling
--   **Linting**: Follow component naming conventions with `dot-` prefix
+- **Proxy Errors**: Ensure backend is running on port 8080
+- **Build Failures**: Check TypeScript paths and circular dependencies
+- **Test Failures**: Verify mock data and async handling
+- **Linting**: Follow component naming conventions with `dot-` prefix
 
 ### Development Tools
 
--   **Nx Console**: VS Code extension for Nx commands
--   **Angular DevTools**: Browser extension for debugging
--   **Coverage Reports**: Check `target/core-web-reports/` for test coverage
--   **Dependency Graph**: Use `nx dep-graph` to visualize project relationships
+- **Nx Console**: VS Code extension for Nx commands
+- **Angular DevTools**: Browser extension for debugging
+- **Coverage Reports**: Check `target/core-web-reports/` for test coverage
+- **Dependency Graph**: Use `nx dep-graph` to visualize project relationships
 
 This codebase emphasizes consistency, testability, and maintainability through its monorepo architecture and established patterns.
 
@@ -278,31 +520,34 @@ This codebase emphasizes consistency, testability, and maintainability through i
 
 ### Angular/TypeScript Development
 
--   ✅ Use modern control flow: `@if`, `@for` (NOT `*ngIf`, `*ngFor`)
--   ✅ Use modern inputs/outputs: `input<T>()`, `output<T>()` (NOT `@Input()`, `@Output()`)
--   ✅ Use `data-testid` attributes for all testable elements
--   ✅ Use `spectator.setInput()` for testing component inputs
--   ✅ Follow `dot-` prefix convention for all components
--   ✅ Use standalone components with lazy loading
--   ✅ Use NgRx signals for state management
--   ❌ Avoid legacy Angular syntax (`*ngIf`, `@Input()`, etc.)
--   ❌ Avoid direct DOM queries without `data-testid`
--   ❌ Never skip unit tests for new components
+- ✅ Use modern control flow: `@if`, `@for` (NOT `*ngIf`, `*ngFor`)
+- ✅ Use modern inputs/outputs: `input<T>()`, `output<T>()` (NOT `@Input()`, `@Output()`)
+- ✅ Use `data-testid` attributes for all testable elements
+- ✅ Use `spectator.setInput()` for testing component inputs
+- ✅ Follow `dot-` prefix convention for all components
+- ✅ Use standalone components with lazy loading
+- ✅ Use NgRx signals for state management
+- ✅ **Code Organization**: Shared components → `libs/ui/`, Shared services → `libs/data-access/`
+- ✅ **Reusability**: Extract multi-portlet components to `@dotcms/ui`, domain-agnostic services to `@dotcms/data-access`
+- ❌ Avoid legacy Angular syntax (`*ngIf`, `@Input()`, etc.)
+- ❌ Avoid direct DOM queries without `data-testid`
+- ❌ Never skip unit tests for new components
+- ❌ **Don't duplicate**: If a component/service exists in multiple portlets, refactor to shared libs
 
 ### For Backend/Java Development
 
--   See **[../CLAUDE.md](../CLAUDE.md)** for Java, Maven, REST API, and Git workflow standards
+- See **[../CLAUDE.md](../CLAUDE.md)** for Java, Maven, REST API, and Git workflow standards
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->
 
 # General Guidelines for working with Nx
 
--   When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
--   You have access to the Nx MCP server and its tools, use them to help the user
--   When answering questions about the repository, use the `nx_workspace` tool first to gain an understanding of the workspace architecture where applicable.
--   When working in individual projects, use the `nx_project_details` mcp tool to analyze and understand the specific project structure and dependencies
--   For questions around nx configuration, best practices or if you're unsure, use the `nx_docs` tool to get relevant, up-to-date docs. Always use this instead of assuming things about nx configuration
--   If the user needs help with an Nx configuration or project graph error, use the `nx_workspace` tool to get any errors
+- When running tasks (for example build, lint, test, e2e, etc.), always prefer running the task through `nx` (i.e. `nx run`, `nx run-many`, `nx affected`) instead of using the underlying tooling directly
+- You have access to the Nx MCP server and its tools, use them to help the user
+- When answering questions about the repository, use the `nx_workspace` tool first to gain an understanding of the workspace architecture where applicable.
+- When working in individual projects, use the `nx_project_details` mcp tool to analyze and understand the specific project structure and dependencies
+- For questions around nx configuration, best practices or if you're unsure, use the `nx_docs` tool to get relevant, up-to-date docs. Always use this instead of assuming things about nx configuration
+- If the user needs help with an Nx configuration or project graph error, use the `nx_workspace` tool to get any errors
 
 <!-- nx configuration end-->

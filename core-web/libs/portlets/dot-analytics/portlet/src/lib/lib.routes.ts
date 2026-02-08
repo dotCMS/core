@@ -5,7 +5,7 @@ import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-
 import DotAnalyticsDashboardComponent from './lib/dot-analytics-dashboard/dot-analytics-dashboard.component';
 import { analyticsHealthGuard } from './lib/guards/analytics-health.guard';
 
-export const DotAnalyticsRoutes: Route[] = [
+export const dotAnalyticsRoutes: Route[] = [
     {
         path: 'error',
         title: 'analytics.error.title',

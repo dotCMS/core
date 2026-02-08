@@ -11,7 +11,7 @@ import { DotExperimentsReportsComponent } from './dot-experiments-reports/dot-ex
 import { DotExperimentsShellComponent } from './dot-experiments-shell/dot-experiments-shell.component';
 import { AnalyticsAppGuard } from './shared/guards/dot-experiments-analytic-app.guard';
 
-export const DotExperimentsPortletRoutes: Routes = [
+export const dotExperimentsRoutes: Routes = [
     {
         path: 'analytic-app-misconfiguration',
         component: DotExperimentsAnalyticAppMisconfigurationComponent,

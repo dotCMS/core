@@ -8,7 +8,7 @@ import { DotTemplateListComponent } from './dot-template-list/dot-template-list.
 
 import { DotTemplatesService } from '../../api/services/dot-templates/dot-templates.service';
 
-export const DotTemplatesRoutes: Routes = [
+export const dotTemplatesRoutes: Routes = [
     {
         path: '',
         component: DotTemplateListComponent,

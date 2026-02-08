@@ -53,16 +53,15 @@ export const dotEditPageRoutes: Routes = [
             {
                 path: 'experiments',
                 loadChildren: async () =>
-                    (await import('@dotcms/portlets/dot-experiments/portlet'))
-                        .DotExperimentsPortletRoutes
+                    (await import('@dotcms/portlets/dot-experiments/portlet')).dotExperimentsRoutes
             }
         ]
     },
     {
         path: 'layout/template/:id/:tabName',
         loadComponent: () =>
-            import(
-                './layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component'
-            ).then((m) => m.DotLegacyTemplateAdditionalActionsComponent)
+            import('./layout/components/dot-template-additional-actions/dot-legacy-template-additional-actions-iframe/dot-legacy-template-additional-actions-iframe.component').then(
+                (m) => m.DotLegacyTemplateAdditionalActionsComponent
+            )
     }
 ];
