@@ -4,7 +4,7 @@
         [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
         [title]="vm.experiment?.name" />
-    <div class="flex flex-col dot-experiment-report__wrapper">
+    <div class="flex flex-col w-full h-full overflow-y-auto bg-gray-100 p-5 pt-3 gap-3">
         @if (!vm.isLoading) {
             <dot-experiments-experiment-summary
                 (updateResults)="loadExperimentsResults()"
@@ -12,35 +12,45 @@
                 [scheduling]="vm.experiment.scheduling"
                 [sessionsReached]="vm.results ? vm.results.sessions.total : 0"
                 [suggestedWinner]="vm.winnerLegendSummary" />
-            <div class="flex items-center flex-col w-full dot-experiment-report__container gap-4">
-                <div class="dot-experiment-report__tabview">
-                    <p-tabs>
-                        <p-tab header="{{ 'experiments.reports.chart.title' | dm }}">
-                            <div class="flex flex-col gap-2 items-center content">
-                                <dot-experiments-reports-chart
-                                    [config]="axisLabelsProbabilityChart"
-                                    [data]="vm.dailyChart.chartData"
-                                    [isEmpty]="!vm.dailyChart.hasEnoughData"
-                                    [isLoading]="vm.isLoading"
-                                    data-testId="daily-chart" />
-                            </div>
-                        </p-tab>
-                        <p-tab header="{{ 'experiments.bayesian.reports.chart.title' | dm }}">
-                            <div class="flex flex-col gap-2 items-center content">
-                                <dot-experiments-reports-chart
-                                    [config]="axisLabelsBayesianChart"
-                                    [data]="vm.bayesianChart.chartData"
-                                    [isEmpty]="!vm.bayesianChart.hasEnoughData"
-                                    [isLinearAxis]="true"
-                                    [isLoading]="vm.isLoading"
-                                    data-testId="bayesian-chart" />
-                            </div>
-                        </p-tab>
+            <div class="flex items-center flex-col w-full bg-white p-5 rounded-xl gap-4">
+                <div class="w-full xl:max-w-[1100px]">
+                    <p-tabs [value]="0">
+                        <p-tablist>
+                            <p-tab [value]="0">{{ 'experiments.reports.chart.title' | dm }}</p-tab>
+                            <p-tab [value]="1">
+                                {{ 'experiments.bayesian.reports.chart.title' | dm }}
+                            </p-tab>
+                        </p-tablist>
+                        <p-tabpanels>
+                            <p-tabpanel [value]="0">
+                                <div
+                                    class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
+                                    <dot-experiments-reports-chart
+                                        [config]="axisLabelsProbabilityChart"
+                                        [data]="vm.dailyChart?.chartData"
+                                        [isEmpty]="!vm.dailyChart?.hasEnoughData"
+                                        [isLoading]="vm.isLoading"
+                                        data-testId="daily-chart" />
+                                </div>
+                            </p-tabpanel>
+                            <p-tabpanel [value]="1">
+                                <div
+                                    class="flex flex-col gap-2 items-center md:w-[calc(100%-2rem)]">
+                                    <dot-experiments-reports-chart
+                                        [config]="axisLabelsBayesianChart"
+                                        [data]="vm.bayesianChart?.chartData"
+                                        [isEmpty]="!vm.bayesianChart?.hasEnoughData"
+                                        [isLinearAxis]="true"
+                                        [isLoading]="vm.isLoading"
+                                        data-testId="bayesian-chart" />
+                                </div>
+                            </p-tabpanel>
+                        </p-tabpanels>
                     </p-tabs>
                     <dot-experiments-report-daily-details
                         [detailData]="vm.detailData"
                         [experimentId]="vm.experiment.id"
-                        [hasEnoughSessions]="vm.dailyChart.hasEnoughData"
+                        [hasEnoughSessions]="vm.results ? vm.results.sessions.total >= 10 : false"
                         [promotedVariantId]="vm.promotedVariant" />
                 </div>
             </div>
@@ -51,4 +61,4 @@
 }
 
 <ng-template dotDynamic></ng-template>
-<p-confirmpopup></p-confirmpopup>
+<p-confirmpopup />

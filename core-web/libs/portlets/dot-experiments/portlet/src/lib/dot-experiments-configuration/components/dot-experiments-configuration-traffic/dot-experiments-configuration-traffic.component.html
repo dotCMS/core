@@ -1,19 +1,21 @@
 @if (vm$ | async; as vm) {
     <p-card>
-        <ng-template pTemplate="title">
-            <h2 class="flex items-center gap-1 uppercase" data-testId="traffic-card-title">
-                <dot-icon
-                    [ngClass]="{ isDone: vm.trafficAllocation }"
-                    [size]="16"
-                    class="inline-flex"
-                    data-testId="traffic-step-done"
-                    name="check_circle" />
+        <ng-template #title>
+            <h2
+                class="flex items-center gap-1 uppercase m-0 font-bold"
+                data-testId="traffic-card-title">
+                <i
+                    [style.font-size.px]="16"
+                    class="material-icons"
+                    [ngClass]="vm.trafficAllocation ? 'text-green-600' : 'text-gray-500'">
+                    check_circle
+                </i>
                 {{ 'experiments.configure.traffic.name' | dm }}
             </h2>
         </ng-template>
         <p-card>
-            <div class="flex flex-row items-center content-between gap-2">
-                <div class="title flex grow flex-col">
+            <div class="flex flex-row items-center justify-between gap-2">
+                <div class="flex grow flex-col">
                     <span data-testId="card-title">
                         {{ 'experiments.configure.traffic.load.name' | dm }}
                     </span>
@@ -23,14 +25,14 @@
                     [tooltipDisabled]="!vm.disabledTooltipLabel"
                     data-testId="tooltip-on-disabled"
                     tooltipPosition="bottom">
-                    <button
-                        (click)="changeTrafficAllocation()"
+                    <p-button
+                        (onClick)="changeTrafficAllocation()"
                         [disabled]="vm.disabledTooltipLabel"
-                        class="p-button-sm p-button-link"
+                        [link]="true"
+                        [size]="'small'"
                         data-testId="traffic-allocation-button"
-                        pButton>
-                        {{ vm.trafficAllocation }}%
-                    </button>
+                        [label]="vm.trafficAllocation + '%'"
+                        type="button" />
                 </div>
             </div>
         </p-card>

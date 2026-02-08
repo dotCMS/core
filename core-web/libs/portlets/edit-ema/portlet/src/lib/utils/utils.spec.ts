@@ -1,6 +1,11 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
+import {
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSViewAsPersona,
+    UVE_MODE
+} from '@dotcms/types';
 
 import {
     deleteContentletFromContainer,
@@ -11,10 +16,12 @@ import {
     SDK_EDITOR_SCRIPT_SOURCE,
     getBaseHrefFromPageURI,
     injectBaseTag,
+    isPageLockedByOtherUser,
     computeIsPageLocked,
     computeCanEditPage,
     mapContainerStructureToArrayOfContainers,
     mapContainerStructureToDotContainerMap,
+    getContentTypeVarRecord,
     areContainersEquals,
     compareUrlPaths,
     createFullURL,
@@ -200,6 +207,70 @@ describe('utils functions', () => {
         });
     });
 
+    describe('getContentTypeVarRecord', () => {
+        it('should return empty record for undefined containers', () => {
+            expect(getContentTypeVarRecord(undefined)).toEqual({});
+        });
+
+        it('should return empty record for null containers', () => {
+            expect(getContentTypeVarRecord(null)).toEqual({});
+        });
+
+        it('should return empty record when containerStructures is missing or empty', () => {
+            const containers = {
+                a: { containerStructures: [] },
+                b: {}
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({});
+        });
+
+        it('should collect unique contentTypeVar values across all containers/structures', () => {
+            const containers = {
+                a: {
+                    containerStructures: [{ contentTypeVar: 'Blog' }, { contentTypeVar: 'Banner' }]
+                },
+                b: {
+                    containerStructures: [
+                        { contentTypeVar: 'Blog' }, // duplicate
+                        { contentTypeVar: 'News' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({
+                Blog: true,
+                Banner: true,
+                News: true
+            });
+        });
+
+        it('should skip non-string and empty string contentTypeVar values', () => {
+            const containers = {
+                a: {
+                    containerStructures: [
+                        { contentTypeVar: '' },
+                        { contentTypeVar: null },
+                        { contentTypeVar: undefined },
+                        { contentTypeVar: 123 },
+                        { contentTypeVar: 'Valid' }
+                    ]
+                }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Valid: true });
+        });
+
+        it('should not normalize case', () => {
+            const containers = {
+                a: { containerStructures: [{ contentTypeVar: 'Blog' }] },
+                b: { containerStructures: [{ contentTypeVar: 'blog' }] }
+            } as unknown as DotCMSPageAssetContainers;
+
+            expect(getContentTypeVarRecord(containers)).toEqual({ Blog: true, blog: true });
+        });
+    });
+
     describe('delete contentlet from container', () => {
         it('should delete', () => {
             // Current page
@@ -212,8 +283,7 @@ describe('utils functions', () => {
                     acceptTypes: 'test',
                     uuid: 'test',
                     maxContentlets: 1,
-                    contentletsId: ['test'],
-                    variantId: '1'
+                    contentletsId: ['test']
                 },
                 pageContainers: [
                     {
@@ -272,8 +342,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet to delete
@@ -316,8 +385,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet to delete
@@ -341,7 +409,6 @@ describe('utils functions', () => {
                 {
                     acceptTypes: 'test',
                     maxContentlets: 1,
-                    variantId: '1',
                     identifier: 'test',
                     uuid: 'test',
                     contentletsId: [],
@@ -369,8 +436,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'container-uui-123',
                 contentletsId: ['contentlet-mark-123'],
-                maxContentlets: 2,
-                variantId: '1'
+                maxContentlets: 2
             };
 
             // Contentlet position mark
@@ -419,8 +485,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 4,
-                variantId: '1'
+                maxContentlets: 4
             };
 
             // Contentlet to insert
@@ -470,8 +535,7 @@ describe('utils functions', () => {
                 acceptTypes: 'test',
                 uuid: 'test',
                 contentletsId: ['test'],
-                maxContentlets: 1,
-                variantId: '1'
+                maxContentlets: 1
             };
 
             // Contentlet to insert
@@ -514,8 +578,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: [],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             // Contentlet position mark
@@ -545,8 +608,7 @@ describe('utils functions', () => {
                         contentletsId: ['new-contentlet-id'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
-                        maxContentlets: 1,
-                        variantId: '1'
+                        maxContentlets: 1
                     }
                 ]
             });
@@ -562,8 +624,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['test123'],
                 maxContentlets: 2,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
             // Contentlet to insert
             const contentlet = {
@@ -592,8 +653,7 @@ describe('utils functions', () => {
                         contentletsId: ['test123', '000'],
                         personaTag: 'persona-tag',
                         acceptTypes: 'test',
-                        maxContentlets: 2,
-                        variantId: '1'
+                        maxContentlets: 2
                     }
                 ]
             });
@@ -606,8 +666,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: [],
                     acceptTypes: 'test',
-                    maxContentlets: 1,
-                    variantId: '1'
+                    maxContentlets: 1
                 }
             ];
 
@@ -616,8 +675,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: [],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -646,8 +704,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: ['contentlet1'],
                     acceptTypes: 'test',
-                    maxContentlets: 1,
-                    variantId: '1'
+                    maxContentlets: 1
                 }
             ];
 
@@ -656,8 +713,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['contentlet1'],
                 maxContentlets: 1,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -687,8 +743,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: ['contentlet1'],
                     acceptTypes: 'test',
-                    maxContentlets: 2,
-                    variantId: '1'
+                    maxContentlets: 2
                 }
             ];
 
@@ -697,8 +752,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['contentlet1'],
                 maxContentlets: 2,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -727,8 +781,7 @@ describe('utils functions', () => {
                     uuid: 'test',
                     contentletsId: ['contentlet1', 'contentlet2'],
                     acceptTypes: 'test',
-                    maxContentlets: 2,
-                    variantId: '1'
+                    maxContentlets: 2
                 }
             ];
 
@@ -737,8 +790,7 @@ describe('utils functions', () => {
                 uuid: 'test',
                 contentletsId: ['contentlet1', 'contentlet2'],
                 maxContentlets: 2,
-                acceptTypes: 'test',
-                variantId: '1'
+                acceptTypes: 'test'
             };
 
             const result = insertContentletInContainer({
@@ -866,81 +918,79 @@ describe('utils functions', () => {
         });
     });
 
-    describe('computeIsPageLocked', () => {
-        describe('with legacy behavior (feature flag disabled)', () => {
-            it('should return false when the page is unlocked', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: false,
-                    lockedBy: '123',
-                    userId: '123'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(false);
+    describe('isPageLockedByOtherUser', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
             });
 
-            it('should return false when the page is locked and is the same user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '123'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(false);
-            });
-
-            it('should return true when the page is locked and is not the same user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '456'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, false);
-
-                expect(result).toBe(true);
-            });
+            expect(result).toBe(false);
         });
 
-        describe('with new behavior (feature flag enabled)', () => {
-            it('should return false when the page is unlocked', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: false,
-                    lockedBy: '123',
-                    userId: '123'
-                });
-
-                const result = computeIsPageLocked(page, currentUser, true);
-
-                expect(result).toBe(false);
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
             });
 
-            it('should return true when the page is locked by current user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '123'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, true);
+            expect(result).toBe(false);
+        });
 
-                expect(result).toBe(true);
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
             });
 
-            it('should return true when the page is locked by another user', () => {
-                const { page, currentUser } = generatePageAndUser({
-                    locked: true,
-                    lockedBy: '123',
-                    userId: '456'
-                });
+            const result = isPageLockedByOtherUser(page, currentUser);
 
-                const result = computeIsPageLocked(page, currentUser, true);
+            expect(result).toBe(true);
+        });
+    });
 
-                expect(result).toBe(true);
+    describe('computeIsPageLocked', () => {
+        it('should return false when the page is unlocked', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: false,
+                lockedBy: '123',
+                userId: '123'
             });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return false when the page is locked by the current user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '123'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(false);
+        });
+
+        it('should return true when the page is locked by another user', () => {
+            const { page, currentUser } = generatePageAndUser({
+                locked: true,
+                lockedBy: '123',
+                userId: '456'
+            });
+
+            const result = computeIsPageLocked(page, currentUser);
+
+            expect(result).toBe(true);
         });
     });
 
@@ -1072,7 +1122,6 @@ describe('utils functions', () => {
                         identifier: '123',
                         uuid: '123',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -1090,7 +1139,6 @@ describe('utils functions', () => {
                         identifier: '456',
                         uuid: '123',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )
@@ -1108,7 +1156,6 @@ describe('utils functions', () => {
                         identifier: '123',
                         uuid: '456',
                         acceptTypes: 'test',
-                        variantId: 'Default',
                         maxContentlets: 1
                     }
                 )

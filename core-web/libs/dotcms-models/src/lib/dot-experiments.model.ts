@@ -4,10 +4,10 @@ import type { MenuItem } from 'primeng/api';
 
 import {
     BayesianStatusResponse,
-    ComponentStatus,
     DotExperimentStatus,
     TrafficProportionTypes
-} from '@dotcms/dotcms-models';
+} from './dot-experiments-constants';
+import { ComponentStatus } from './shared-models';
 
 export interface DotExperiment {
     id: string;
@@ -118,12 +118,12 @@ export interface Goal {
 
 export type Goals = Record<GoalsLevels, Goal>;
 
-interface ReachPageGoalCondition {
+export interface ReachPageGoalCondition {
     parameter: GOAL_PARAMETERS | string;
     operator: GOAL_OPERATORS;
     value: string;
 }
-interface UrlParameterGoalCondition {
+export interface UrlParameterGoalCondition {
     parameter: GOAL_PARAMETERS;
     operator: GOAL_OPERATORS;
     value: {

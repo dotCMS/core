@@ -48,28 +48,30 @@
                     [style]="{
                         display: generatedText.value ? 'flex' : 'none'
                     }">
-                    <button
-                        (click)="store.updateActiveIndex(vm.activeIndex - 1)"
+                    <p-button
+                        (onClick)="store.updateActiveIndex(vm.activeIndex - 1)"
                         [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
-                        class="p-button-text p-button-sm p-button-rounded"
-                        type="button"
+                        variant="text"
+                        size="small"
+                        [rounded]="true"
                         icon="pi pi-chevron-left"
-                        pButton></button>
+                        type="button" />
                     <span>
                         {{ vm.generatedContent?.length ? vm.activeIndex + 1 : 0 }}
                         {{ 'of' | dm }}
                         {{ vm.generatedContent?.length }}
                     </span>
-                    <button
-                        (click)="store.updateActiveIndex(vm.activeIndex + 1)"
+                    <p-button
+                        (onClick)="store.updateActiveIndex(vm.activeIndex + 1)"
                         [disabled]="
                             vm.activeIndex === vm.generatedContent?.length - 1 ||
                             vm.generatedContent?.length === 0
                         "
-                        class="p-button-text p-button-sm p-button-rounded"
-                        type="button"
+                        variant="text"
+                        size="small"
+                        [rounded]="true"
                         icon="pi pi-chevron-right"
-                        pButton></button>
+                        type="button" />
                 </div>
             }
 
@@ -81,14 +83,15 @@
                 pInputTextarea></textarea>
 
             <div class="ai-content__buttons">
-                <button
-                    (click)="closeDialog()"
+                <p-button
+                    (onClick)="closeDialog()"
                     [label]="'Cancel' | dm"
-                    class="p-button-text"
-                    pButton
-                    type="button"></button>
-                <button
-                    (click)="store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)"
+                    variant="text"
+                    type="button" />
+                <p-button
+                    (onClick)="
+                        store.setSelectedContent(vm.generatedContent[vm.activeIndex]?.content)
+                    "
                     [disabled]="
                         vm.status === ComponentStatus.LOADING ||
                         !vm.generatedContent?.length ||
@@ -96,21 +99,21 @@
                     "
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     class="ml-auto"
-                    pButton
-                    type="button"></button>
-                <button
+                    type="button" />
+                <p-button
+                    (onClick)="store.generateContent(form.value.textPrompt)"
                     [disabled]="form.invalid || vm.status === ComponentStatus.LOADING"
                     [label]="submitButtonLabel | dm"
-                    class="p-button-outlined"
-                    pButton
-                    type="submit">
+                    variant="outlined"
+                    type="button">
                     @if (vm.status !== ComponentStatus.LOADING) {
                         <svg
                             fill="none"
-                            height="22"
+                            height="16"
                             viewBox="0 0 18 22"
-                            width="18"
-                            xmlns="http://www.w3.org/2000/svg">
+                            width="16"
+                            xmlns="http://www.w3.org/2000/svg"
+                            style="display: inline-block; vertical-align: middle; flex-shrink: 0">
                             <path
                                 d="M9.48043 13.2597L5.40457 14.5046C5.29885 14.5368 5.20602 14.6037 5.13999 14.6952C5.07396 14.7868 5.03828 14.8981 5.03828 15.0124C5.03828 15.1268 5.07396 15.238 5.13999 15.3296C5.20602 15.4211 5.29885 15.488 5.40457 15.5203L9.48043 16.7651L10.6799 20.9949C10.711 21.1046 10.7755 21.2009 10.8637 21.2695C10.9519 21.338 11.0591 21.375 11.1693 21.375C11.2795 21.375 11.3867 21.338 11.4749 21.2695C11.5631 21.2009 11.6276 21.1046 11.6586 20.9949L12.8586 16.7651L16.9345 15.5203C17.0402 15.488 17.133 15.4211 17.1991 15.3296C17.2651 15.238 17.3008 15.1268 17.3008 15.0124C17.3008 14.8981 17.2651 14.7868 17.1991 14.6952C17.133 14.6037 17.0402 14.5368 16.9345 14.5046L12.8586 13.2597L11.6586 9.02989C11.6276 8.92018 11.5631 8.82385 11.4749 8.75533C11.3867 8.6868 11.2795 8.64977 11.1693 8.64977C11.0591 8.64977 10.9519 8.6868 10.8637 8.75533C10.7754 8.82385 10.711 8.92018 10.6799 9.02989L9.48043 13.2597Z"
                                 fill="#426BF0" />
@@ -124,14 +127,15 @@
                     } @else {
                         <i class="pi pi-spin pi-spinner"></i>
                     }
-                </button>
+                </p-button>
             </div>
         </form>
         <p-confirmDialog
             [style]="{ width: '500px' }"
-            acceptIcon="null"
             key="ai-image-prompt"
-            rejectButtonStyleClass="p-button-outlined"
-            rejectIcon="null" />
+            [pt]="{
+                rejectButton: { class: 'p-button-outlined', icon: '' },
+                acceptButton: { icon: '' }
+            }" />
     </p-dialog>
 }

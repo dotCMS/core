@@ -47,10 +47,17 @@ export class DotEmaBookmarksComponent implements OnInit {
     }
 
     toggleBookmark(): void {
+        // HERE
         this.dialogService.open(DotFavoritePageComponent, {
             header: this.dotMessageService.get('favoritePage.dialog.header'),
             width: '80rem',
             draggable: false,
+            contentStyle: {
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                overflow: 'hidden'
+            },
             data: {
                 page: {
                     favoritePageUrl: this.url,

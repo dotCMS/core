@@ -2,8 +2,13 @@
     <label [for]="property.name" [checkIsRequiredControl]="property.name" dotFieldRequired>
         {{ 'contenttypes.field.properties.validation_regex.label' | dm }}
     </label>
-    <div class="form__validation-input-container">
-        <input [id]="property.name" [formControlName]="property.name" pInputText type="text" />
+    <div class="flex gap-2">
+        <input
+            [id]="property.name"
+            [formControlName]="property.name"
+            pInputText
+            type="text"
+            class="grow" />
         <p-select
             (onChange)="templateSelect($event)"
             [style]="{ width: '125px' }"

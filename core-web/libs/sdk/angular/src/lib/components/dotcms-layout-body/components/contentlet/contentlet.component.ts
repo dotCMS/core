@@ -76,6 +76,7 @@ export class ContentletComponent implements OnChanges {
     @HostBinding('attr.data-dot-type') type: string | null = null;
     @HostBinding('attr.data-dot-container') containerAttribute: string | null = null;
     @HostBinding('attr.data-dot-on-number-of-pages') onNumberOfPages: string | null = null;
+    @HostBinding('attr.data-dot-style-properties') styleProperties: string | null = null;
     @HostBinding('style') styleAttribute: { [key: string]: unknown } | null = null;
 
     ngOnChanges() {
@@ -89,6 +90,7 @@ export class ContentletComponent implements OnChanges {
         this.type = this.$dotAttributes()['data-dot-type'];
         this.containerAttribute = JSON.stringify(this.containerData);
         this.onNumberOfPages = this.$dotAttributes()['data-dot-on-number-of-pages'];
+        this.styleProperties = this.$dotAttributes()['data-dot-style-properties'] || null;
         this.styleAttribute = this.$style();
     }
 

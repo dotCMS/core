@@ -11,8 +11,7 @@
                 display: none;
             }
 
-            /* PrimeNG v21 changed element from p-treenode to p-tree-node */
-            .p-tree-root-children > p-tree-node:first-of-type {
+            .p-tree-root-children > p-treenode:first-of-type {
                 .toggler-first {
                     display: block;
                 }

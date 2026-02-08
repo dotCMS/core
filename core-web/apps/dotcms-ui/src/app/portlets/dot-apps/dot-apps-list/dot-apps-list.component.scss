@@ -38,10 +38,7 @@
     align-self: center;
     display: flex;
     margin-right: spacing.$spacing-4;
-
-    dot-icon {
-        margin-right: spacing.$spacing-1;
-    }
+    gap: spacing.$spacing-1;
 }
 
 .dot-apps-configuration__action_import_button {

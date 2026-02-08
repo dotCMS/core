@@ -49,6 +49,7 @@
                     [imageUri]="getScreenshotUri(favoritePage)"
                     [title]="favoritePage.title"
                     [url]="favoritePage.url"
+                    (navigateToPage)="navigateToPage.emit($event)"
                     (openMenu)="handleOpenMenu($event, favoritePage)" />
             }
         </div>

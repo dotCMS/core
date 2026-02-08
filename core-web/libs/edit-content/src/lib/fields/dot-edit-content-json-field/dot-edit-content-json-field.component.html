@@ -20,7 +20,9 @@
                     (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
             </div>
 
-            <div class="dot-json-field__editor" data-testid="json-field-editor">
+            <div
+                class="rounded-md block h-full min-h-[150px] overflow-auto w-full"
+                data-testid="json-field-editor">
                 <dot-edit-content-monaco-editor-control
                     #monaco
                     data-testid="json-field-monaco-editor"

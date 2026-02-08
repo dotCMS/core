@@ -57,9 +57,8 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
         });
 
         it('should have the correct title in  DotExperimentsUiHeaderComponent', () => {
-            expect(spectator.query(DotExperimentsUiHeaderComponent).title).toEqual(
-                'not configured title'
-            );
+            const headerComponent = spectator.query(DotExperimentsUiHeaderComponent);
+            expect(headerComponent.$title()).toEqual('not configured title');
         });
     });
 
@@ -83,11 +82,10 @@ describe('DotExperimentsAnalyticAppMisconfigurationComponent', () => {
         });
 
         it('should have the correct title in  DotExperimentsUiHeaderComponent and navigation', () => {
-            expect(spectator.query(DotExperimentsUiHeaderComponent).title).toEqual(
-                'misconfiguration title'
-            );
+            const headerComponent = spectator.query(DotExperimentsUiHeaderComponent);
+            expect(headerComponent.$title()).toEqual('misconfiguration title');
 
-            spectator.query(DotExperimentsUiHeaderComponent).goBack.emit();
+            spectator.triggerEventHandler(DotExperimentsUiHeaderComponent, 'goBack', true);
 
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
                 queryParamsHandling: 'merge'

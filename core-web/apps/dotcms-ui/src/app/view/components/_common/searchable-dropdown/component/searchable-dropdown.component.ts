@@ -267,8 +267,8 @@ export class SearchableDropdownComponent
      */
     paginate(event: DataViewLazyLoadEvent): void {
         const paginationEvent = {
-            first: event.first,
-            rows: event.rows,
+            first: event?.first ?? 0,
+            rows: event?.rows ?? this.rows,
             filter: ''
         };
         if (this.searchInput) {

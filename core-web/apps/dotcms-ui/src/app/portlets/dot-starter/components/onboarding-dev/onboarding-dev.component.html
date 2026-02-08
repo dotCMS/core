@@ -1,0 +1,58 @@
+<header class="grid grid-cols-[1fr_auto_1fr] items-center px-6">
+    <div class="col-start-2">
+        <h1 class="text-center font-semibold text-3xl m-0 p-0">
+            Start with dotCMS headless development in minutes
+        </h1>
+        <p class="text-center font-normal text-base m-0 p-0">
+            Seamlessly integrate dotCMS into your favorite technology stack.
+        </p>
+    </div>
+    <p-button
+        icon="pi pi-refresh"
+        label="Not A Developer?"
+        iconPos="left"
+        [text]="true"
+        class="col-start-3 justify-self-end"
+        (click)="resetUserProfile()" />
+</header>
+
+<main class="w-max mx-auto flex flex-col gap-5 bg-white rounded-md p-5">
+    @for (framework of frameworks; track framework.id) {
+        <div class="grid grid-cols-[40px_1fr] items-center gap-4 border-b border-gray-200 p-4">
+            <img
+                [src]="framework.logo"
+                [alt]="framework.label"
+                width="40"
+                height="40"
+                style="object-fit: contain" />
+            <div class="flex flex-col gap-2">
+                <h3 class="font-medium text-xl m-0 p-0">{{ framework.label }}</h3>
+                <div class="flex items-center gap-2 grow">
+                    @if (framework.cliCommand !== '') {
+                        <p class="font-mono text-sm bg-gray-100 rounded-md p-2 grow">
+                            {{ framework.cliCommand }}
+                        </p>
+                    } @else {
+                        <p class="text-sm text-gray-800 grow">
+                            Our interactive guide is coming soon. Try the fully configured
+                            <a
+                                target="_blank"
+                                style="text-decoration: none"
+                                href="{{ framework.githubUrl }}">
+                                {{ framework.label }} starter kit
+                            </a>
+                        </p>
+                    }
+                    @if (framework.cliCommand !== '') {
+                        <dot-copy-button [copy]="framework.cliCommand" />
+                    } @else {
+                        <p-button
+                            icon="pi pi-external-link"
+                            styleClass="p-button-text p-button-sm"
+                            (click)="openExternalLink(framework.githubUrl)" />
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</main>

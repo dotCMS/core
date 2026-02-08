@@ -1,0 +1,70 @@
+{
+    "workspaceIndexing": {
+        "ignorePatterns": [
+            "**/node_modules/**",
+            "**/dist/**",
+            "**/.nx/**",
+            "**/*.timestamp-*",
+            "**/.vite/**",
+            "**/target/**"
+        ]
+    },
+    // NOTE: Critical Java settings are duplicated in dotcms.code-workspace
+    // Multi-root workspaces need settings in workspace file to apply consistently
+
+    // Disable automatic Java build (use Maven CLI instead for dotCMS)
+    "java.autobuild.enabled": false,
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": true,
+
+    // Java Runtime Configuration
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "${env:HOME}/.sdkman/candidates/java/21.0.8-ms",
+            "default": true
+        }
+    ],
+
+    // Java Home for Terminal
+    "java.home": "/Users/fmontes/.sdkman/candidates/java/21.0.8-ms",
+
+    // Disable Maven lifecycle execution in IDE (use CLI instead)
+    "java.configuration.updateBuildConfiguration": "disabled",
+
+    // Auto Import
+    "java.completion.importOrder": [
+        "java",
+        "javax",
+        "com",
+        "org"
+    ],
+    "java.saveActions.organizeImports": true,
+
+
+    // Code Formatting
+    "java.format.settings.profile": "GoogleStyle",
+
+    // Editor Settings
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+
+    // Files to exclude from explorer and search
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/target": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "**/.flattened-pom.xml": true
+    },
+
+    "search.exclude": {
+        "**/target": true,
+        "**/node_modules": true,
+        "**/dist": true
+    },
+    "java.compile.nullAnalysis.mode": "disabled"
+}

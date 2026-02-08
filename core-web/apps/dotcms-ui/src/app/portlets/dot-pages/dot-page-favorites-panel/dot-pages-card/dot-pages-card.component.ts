@@ -24,8 +24,8 @@ export class DotPagesCardComponent {
 
     /** Emits when the edit button is clicked. */
     readonly edit = output<boolean>();
-    /** Emits when the navigate to page button is clicked. */
-    readonly navigateToPage = output<boolean>();
+    /** Emits the page URL when the card is clicked (navigate to page). */
+    readonly navigateToPage = output<string>();
     /** Emits when the actions menu is opened. */
     readonly openMenu = output<MouseEvent>();
 }

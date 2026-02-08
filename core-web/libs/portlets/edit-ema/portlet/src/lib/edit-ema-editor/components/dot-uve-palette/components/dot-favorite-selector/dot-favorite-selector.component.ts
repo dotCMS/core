@@ -37,8 +37,7 @@ const CONTENT_TYPE_CATEGORIES = [
 @Component({
     selector: 'dot-favorite-selector',
     imports: [FormsModule, ListboxModule, DotMessagePipe, PopoverModule],
-    templateUrl: './dot-favorite-selector.component.html',
-    styleUrls: ['./dot-favorite-selector.component.scss']
+    templateUrl: './dot-favorite-selector.component.html'
 })
 /**
  * Favorite selector overlay used in the UVE palette.

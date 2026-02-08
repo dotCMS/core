@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { NgTemplateOutlet } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -9,6 +9,7 @@ import {
     effect,
     inject,
     input,
+    linkedSignal,
     OnInit,
     signal,
     untracked,
@@ -35,13 +36,14 @@ import {
     DotFavoriteContentTypeService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPaletteListStore } from './store/store';
 
 import {
+    DotCMSPaletteContentType,
     DotPaletteListStatus,
     DotPaletteSearchParams,
     DotPaletteSortOption,
@@ -84,6 +86,7 @@ const DEBOUNCE_TIME = 300;
 @Component({
     selector: 'dot-uve-palette-list',
     imports: [
+        NgClass,
         NgTemplateOutlet,
         ReactiveFormsModule,
         DotUVEPaletteContenttypeComponent,
@@ -102,8 +105,10 @@ const DEBOUNCE_TIME = 300;
     ],
     providers: [DotPaletteListStore, DotESContentService],
     templateUrl: './dot-uve-palette-list.component.html',
-    styleUrl: './dot-uve-palette-list.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col w-full h-full min-h-0 overflow-hidden'
+    }
 })
 export class DotUvePaletteListComponent implements OnInit {
     @ViewChild('menu') menu!: { toggle: (event: Event) => void };
@@ -128,7 +133,6 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $skipNextSearch = signal(false);
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
     protected readonly $isSearching = signal<boolean>(false);
-    protected readonly $shouldHideControls = signal<boolean>(true);
     protected readonly $siteId = this.#globalStore.currentSiteId;
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
@@ -142,6 +146,11 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $isContentTypesView = this.#paletteListStore.$isContentTypesView;
     protected readonly $isFavoritesList = this.#paletteListStore.$isFavoritesList;
     protected readonly status$ = toObservable(this.#paletteListStore.status);
+
+    protected readonly $shouldHideControls = linkedSignal({
+        source: this.$contenttypes,
+        computation: (contenttypes) => contenttypes.length === 0
+    });
 
     /**
      * Computed signal to determine the start index for the pagination.
@@ -300,7 +309,7 @@ export class DotUvePaletteListComponent implements OnInit {
         this.#resetSearch();
     }
 
-    protected onContextMenu(contentType: DotCMSContentType) {
+    protected onContextMenu(contentType: DotCMSPaletteContentType) {
         const isFavorite = this.#dotFavoriteContentTypeService.isFavorite(contentType.id);
         const label = isFavorite
             ? 'uve.palette.menu.favorite.option.remove'
@@ -331,7 +340,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Remove a content type from favorites.
      * @param contentType - The content type to remove.
      */
-    #removeFavorite(contentType: DotCMSContentType) {
+    #removeFavorite(contentType: DotCMSPaletteContentType) {
         this.#paletteListStore.removeFavorite(contentType.id);
         this.#messageService.add({
             severity: 'success',
@@ -345,7 +354,7 @@ export class DotUvePaletteListComponent implements OnInit {
      * Add a content type to favorites.
      * @param contentType - The content type to add.
      */
-    #addFavorite(contentType: DotCMSContentType) {
+    #addFavorite(contentType: DotCMSPaletteContentType) {
         this.#paletteListStore.addFavorite(contentType);
         this.#messageService.add({
             severity: 'success',

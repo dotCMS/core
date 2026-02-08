@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-import { NgClass } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -40,7 +39,6 @@ interface PersonaSelector {
 @Component({
     selector: 'dot-edit-ema-persona-selector',
     imports: [
-        NgClass,
         ButtonModule,
         AvatarModule,
         PopoverModule,
@@ -52,8 +50,7 @@ interface PersonaSelector {
         ChipModule,
         PaginatorModule
     ],
-    templateUrl: './edit-ema-persona-selector.component.html',
-    styleUrls: ['./edit-ema-persona-selector.component.scss']
+    templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {
     @ViewChild('listbox') listbox: Listbox;
@@ -61,6 +58,12 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     private readonly pageApiService = inject(DotPageApiService);
 
     readonly MAX_PERSONAS_PER_PAGE = 10;
+
+    /** Passthrough to keep p-avatar small so it fits the toolbar button height (31px). */
+    protected readonly avatarPt = {
+        root: 'w-[15px]! h-[15px]!',
+        label: 'text-xs font-bold'
+    };
 
     $personas = signal<PersonaSelector>({
         items: [],

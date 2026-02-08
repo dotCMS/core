@@ -4,7 +4,7 @@ import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, signal } from '@angular/core';
+import { Component, DebugElement, EventEmitter, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -29,6 +29,7 @@ import {
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { UVE_MODE } from '@dotcms/types';
+import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
@@ -42,7 +43,6 @@ import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
-import { EditEmaLanguageSelectorComponent } from './components/edit-ema-language-selector/edit-ema-language-selector.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
 
@@ -53,6 +53,7 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
+import { DotPageAssetParams } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import {
     getFullPageURL,
@@ -61,6 +62,20 @@ import {
     convertLocalTimeToUTC,
     createFullURL
 } from '../../../utils';
+
+/**
+ * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
+ * which uses Angular's signal-based `viewChild()` and can crash when mocked.
+ */
+@Component({
+    selector: 'dot-language-selector',
+    template: '',
+    standalone: true
+})
+class StubDotLanguageSelectorComponent {
+    value: unknown;
+    onChange = new EventEmitter<number>();
+}
 
 // Mock createFullURL to avoid issues with invalid URLs in tests
 jest.mock('../../../utils', () => ({
@@ -73,7 +88,7 @@ jest.mock('../../../utils', () => ({
 
 const $apiURL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
-const params = HEADLESS_BASE_QUERY_PARAMS;
+const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
 const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
@@ -111,6 +126,7 @@ const baseUVEState = {
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
+    $canEditPage: signal(true),
     $personaSelector: signal({
         pageId: pageAPIResponse?.page.identifier,
         value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
@@ -195,6 +211,19 @@ describe('DotUveToolbarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUveToolbarComponent,
+        overrideComponents: [
+            [
+                DotUveToolbarComponent,
+                {
+                    remove: {
+                        imports: [DotLanguageSelectorComponent]
+                    },
+                    add: {
+                        imports: [StubDotLanguageSelectorComponent]
+                    }
+                }
+            ]
+        ],
         imports: [
             HttpClientTestingModule,
             // PrimeNG modules - import actual modules to prevent ng-mocks from auto-mocking them
@@ -209,7 +238,6 @@ describe('DotUveToolbarComponent', () => {
             MockComponent(DotEmaBookmarksComponent),
             MockComponent(DotEmaRunningExperimentComponent),
             MockComponent(EditEmaPersonaSelectorComponent),
-            MockComponent(EditEmaLanguageSelectorComponent),
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotUveDeviceSelectorComponent),
             MockComponent(DotEditorModeSelectorComponent)
@@ -307,10 +335,13 @@ describe('DotUveToolbarComponent', () => {
                 const contentlet = {
                     identifier: '123',
                     inode: '456',
-                    title: 'My super awesome blog post'
+                    title: 'My super awesome blog post',
+                    contentType: 'Blog'
                 };
                 const spy = jest.spyOn(spectator.component.editUrlContentMap, 'emit');
 
+                // The edit URL content map button is only rendered in EDIT mode and when the map exists
+                baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
                 baseUVEState.$urlContentMap.set(contentlet);
                 spectator.detectChanges();
 
@@ -744,7 +775,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call loadPageAsset when language is selected and exists that page translated', () => {
                 const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
+                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 1);
 
                 expect(spyLoadPageAsset).toHaveBeenCalled();
             });
@@ -752,7 +783,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call confirmationService.confirm when language is selected and does not exist that page translated', () => {
                 const spyConfirmationService = jest.spyOn(confirmationService, 'confirm');
 
-                spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 2);
+                spectator.triggerEventHandler(StubDotLanguageSelectorComponent, 'onChange', 2);
                 spectator.detectChanges();
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
@@ -801,9 +832,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.classList.contains('lock-button--unlocked')).toBe(true);
-                expect(button.classList.contains('lock-button--locked')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.querySelector('.pi-lock-open')).toBeTruthy();
+                expect(button.querySelector('.pi-lock')).toBeNull();
             });
 
             it('should display locked state when page is locked by current user', () => {
@@ -818,9 +850,10 @@ describe('DotUveToolbarComponent', () => {
                 });
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.classList.contains('lock-button--locked')).toBe(true);
-                expect(button.classList.contains('lock-button--unlocked')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                expect(button).toBeTruthy();
+                expect(button.querySelector('.pi-lock')).toBeTruthy();
+                expect(button.querySelector('.pi-lock-open')).toBeNull();
             });
 
             it('should call store.toggleLock when unlocked button is clicked', () => {
@@ -876,8 +909,9 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.lockLoading.set(true);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.hasAttribute('disabled')).toBe(true);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
+                expect(nativeButton?.disabled).toBe(true);
             });
 
             it('should enable button when lock operation is not loading', () => {
@@ -893,8 +927,9 @@ describe('DotUveToolbarComponent', () => {
                 baseUVEState.lockLoading.set(false);
                 spectator.detectChanges();
 
-                const button = spectator.query(byTestId('toggle-lock-button'));
-                expect(button.hasAttribute('disabled')).toBe(false);
+                const button = spectator.query(byTestId('toggle-lock-button')) as HTMLElement;
+                const nativeButton = button.querySelector('button') as HTMLButtonElement | null;
+                expect(nativeButton?.disabled).toBe(false);
             });
 
             it('should call store.toggleLock with correct params for page locked by another user', () => {
@@ -921,13 +956,31 @@ describe('DotUveToolbarComponent', () => {
         describe('palette toggle button', () => {
             it('should not display palette toggle button when not in edit mode', () => {
                 baseUVEState.$isEditMode.set(false);
+                baseUVEState.$canEditPage.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
             });
 
-            it('should display palette toggle button when in edit mode', () => {
+            it('should not display palette toggle button when canEditPage is false', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should not display palette toggle button when not in edit mode and canEditPage is false', () => {
+                baseUVEState.$isEditMode.set(false);
+                baseUVEState.$canEditPage.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeNull();
+            });
+
+            it('should display palette toggle button when in edit mode and canEditPage is true', () => {
+                baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('uve-toolbar-palette-toggle'))).toBeTruthy();
@@ -936,6 +989,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with true when palette is closed', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
@@ -948,6 +1002,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call setPaletteOpen with false when palette is open', () => {
                 const spy = jest.spyOn(store, 'setPaletteOpen');
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 
@@ -959,6 +1014,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show close icon and hide open icon when palette is closed', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(false);
                 spectator.detectChanges();
 
@@ -973,6 +1029,7 @@ describe('DotUveToolbarComponent', () => {
 
             it('should show open icon and hide close icon when palette is open', () => {
                 baseUVEState.$isEditMode.set(true);
+                baseUVEState.$canEditPage.set(true);
                 baseUVEState.palette.open.set(true);
                 spectator.detectChanges();
 

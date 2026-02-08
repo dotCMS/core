@@ -1,18 +1,21 @@
-<div class="dot-form-dialog__content">
-    <ng-content pFocusTrap />
-</div>
-
-<div class="dot-form-dialog__actions">
-    <ng-content select="[footerActions]"></ng-content>
-    <p-button
-        (click)="onSecondaryClick($event)"
-        [label]="'cancel' | dm"
-        [outlined]="true"
-        data-testid="dotFormDialogCancel" />
-    <p-button
-        (click)="onPrimaryClick($event)"
-        [label]="'save' | dm"
-        [disabled]="saveButtonDisabled"
-        [loading]="saveButtonLoading"
-        data-testid="dotFormDialogSave" />
+<div class="flex min-h-0 flex-1 flex-col">
+    <div class="min-h-0 flex-1 overflow-y-auto" data-testid="dot-form-dialog-content">
+        <ng-content pFocusTrap />
+    </div>
+    <div
+        class="flex shrink-0 justify-end gap-2 bg-white py-6"
+        data-testid="dot-form-dialog-actions">
+        <ng-content select="[footerActions]"></ng-content>
+        <p-button
+            (click)="onSecondaryClick($event)"
+            [label]="'cancel' | dm"
+            [outlined]="true"
+            data-testid="dotFormDialogCancel" />
+        <p-button
+            (click)="onPrimaryClick($event)"
+            [label]="'save' | dm"
+            [disabled]="saveButtonDisabled"
+            [loading]="saveButtonLoading"
+            data-testid="dotFormDialogSave" />
+    </div>
 </div>

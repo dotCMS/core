@@ -1,10 +1,18 @@
+import { updatePrimaryPalette } from '@primeuix/themes';
+
 import { TestBed } from '@angular/core/testing';
 
 import { DEFAULT_COLORS, DotUiColorsService } from './dot-ui-colors.service';
 
+// Mock PrimeNG updatePrimaryPalette
+jest.mock('@primeuix/themes', () => ({
+    updatePrimaryPalette: jest.fn()
+}));
+
 describe('DotUiColorsService', () => {
     let service: DotUiColorsService;
-    let setPropertySpy;
+    let mockElement: HTMLElement;
+    let setPropertySpy: jest.Mock;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -14,236 +22,258 @@ describe('DotUiColorsService', () => {
         service = TestBed.inject(DotUiColorsService);
 
         setPropertySpy = jest.fn();
-        jest.spyOn(document as Document, 'querySelector').mockReturnValue({
+        mockElement = {
             style: {
                 setProperty: setPropertySpy
             }
-        } as HTMLElement);
+        } as unknown as HTMLElement;
+
+        jest.clearAllMocks();
     });
 
-    beforeEach(() => {
-        setPropertySpy.mockClear();
+    describe('setColors', () => {
+        it('should set all colors and update PrimeNG theme', () => {
+            const colors = {
+                primary: '#78E4FF',
+                secondary: '#98FF78',
+                background: '#CB8978'
+            };
+
+            service.setColors(mockElement, colors);
+
+            // Verify PrimeNG theme was updated
+            expect(updatePrimaryPalette).toHaveBeenCalledTimes(1);
+            expect(updatePrimaryPalette).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    '50': expect.any(String),
+                    '500': colors.primary,
+                    '950': expect.any(String)
+                })
+            );
+
+            // Verify CSS variables were set
+            expect(setPropertySpy).toHaveBeenCalled();
+            expect(setPropertySpy).toHaveBeenCalledWith('--color-primary-h', expect.any(String));
+            expect(setPropertySpy).toHaveBeenCalledWith('--color-primary-s', expect.any(String));
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-primary-100',
+                expect.any(String)
+            );
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-primary-500',
+                expect.any(String)
+            );
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-primary-900',
+                expect.any(String)
+            );
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-primary-op-10',
+                expect.stringContaining('hsla')
+            );
+            expect(setPropertySpy).toHaveBeenCalledWith('--color-secondary-h', expect.any(String));
+            expect(setPropertySpy).toHaveBeenCalledWith('--color-secondary-s', expect.any(String));
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-secondary-100',
+                expect.any(String)
+            );
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-secondary-op-10',
+                expect.stringContaining('hsla')
+            );
+            expect(setPropertySpy).toHaveBeenCalledWith('--color-background', colors.background);
+        });
+
+        it('should use default colors when invalid colors are provided', () => {
+            service.setColors(mockElement, {
+                primary: 'invalid',
+                secondary: 'invalid',
+                background: 'invalid'
+            });
+
+            // Legacy CSS variables should not be set for invalid colors
+            expect(setPropertySpy).not.toHaveBeenCalled();
+
+            // PrimeNG should use default colors when invalid colors are provided
+            expect(updatePrimaryPalette).toHaveBeenCalledTimes(1);
+            expect(updatePrimaryPalette).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    '500': DEFAULT_COLORS.primary
+                })
+            );
+        });
+
+        it('should use current colors when colors parameter is not provided', () => {
+            const initialColors = {
+                primary: '#426BF0',
+                secondary: '#7042F0',
+                background: '#FFFFFF'
+            };
+
+            // Set initial colors
+            service.setColors(mockElement, initialColors);
+            setPropertySpy.mockClear();
+            jest.clearAllMocks();
+
+            // Call without colors parameter
+            service.setColors(mockElement);
+
+            // Should use the previously set colors
+            expect(setPropertySpy).toHaveBeenCalled();
+            expect(updatePrimaryPalette).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    '500': initialColors.primary
+                })
+            );
+        });
+
+        it('should generate all required CSS variables for primary color', () => {
+            service.setColors(mockElement, {
+                primary: '#426BF0',
+                secondary: '#7042F0',
+                background: '#FFFFFF'
+            });
+
+            // Verify all shades are generated (100-900)
+            const shades = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
+            shades.forEach((shade) => {
+                expect(setPropertySpy).toHaveBeenCalledWith(
+                    `--color-palette-primary-${shade}`,
+                    expect.any(String)
+                );
+            });
+
+            // Verify all opacities are generated (10-90)
+            const opacities = ['10', '20', '30', '40', '50', '60', '70', '80', '90'];
+            opacities.forEach((opacity) => {
+                expect(setPropertySpy).toHaveBeenCalledWith(
+                    `--color-palette-primary-op-${opacity}`,
+                    expect.stringContaining('hsla')
+                );
+            });
+        });
+
+        it('should generate all required CSS variables for secondary color', () => {
+            service.setColors(mockElement, {
+                primary: '#426BF0',
+                secondary: '#7042F0',
+                background: '#FFFFFF'
+            });
+
+            // Verify secondary shades are generated
+            const shades = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
+            shades.forEach((shade) => {
+                expect(setPropertySpy).toHaveBeenCalledWith(
+                    `--color-palette-secondary-${shade}`,
+                    expect.any(String)
+                );
+            });
+
+            // Verify secondary opacities use secondary color variables (not primary)
+            expect(setPropertySpy).toHaveBeenCalledWith(
+                '--color-palette-secondary-op-10',
+                expect.stringContaining('var(--color-secondary-h)')
+            );
+        });
     });
 
-    it('should set all colors', () => {
-        service.setColors(document.querySelector('html'), {
-            primary: '#78E4FF',
-            secondary: '#98FF78',
-            background: '#CB8978'
+    describe('getColors', () => {
+        it('should return default colors initially', () => {
+            const colors = service.getColors();
+
+            expect(colors).toEqual(DEFAULT_COLORS);
         });
 
-        const html = <HTMLElement>document.querySelector('');
+        it('should return updated colors after setColors', () => {
+            const newColors = {
+                primary: '#FF0000',
+                secondary: '#00FF00',
+                background: '#0000FF'
+            };
 
-        const expectedCalls = [
-            { key: '--color-primary-h', value: '192deg' },
-            { key: '--color-primary-s', value: '100%' },
-            { key: '--color-palette-primary-100', value: 'hsl(194deg, 100%, 97%)' },
-            { key: '--color-palette-primary-200', value: 'hsl(192deg, 100%, 92%)' },
-            { key: '--color-palette-primary-300', value: 'hsl(192deg, 100%, 87%)' },
-            { key: '--color-palette-primary-400', value: 'hsl(192deg, 100%, 82%)' },
-            { key: '--color-palette-primary-500', value: 'hsl(192deg, 100%, 74%)' },
-            { key: '--color-palette-primary-600', value: 'hsl(192deg, 51%, 59%)' },
-            { key: '--color-palette-primary-700', value: 'hsl(192deg, 36%, 44%)' },
-            { key: '--color-palette-primary-800', value: 'hsl(193deg, 36%, 22%)' },
-            { key: '--color-palette-primary-900', value: 'hsl(193deg, 37%, 7%)' },
-            {
-                key: '--color-palette-primary-op-10',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.1)'
-            },
-            {
-                key: '--color-palette-primary-op-20',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.2)'
-            },
-            {
-                key: '--color-palette-primary-op-30',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.3)'
-            },
-            {
-                key: '--color-palette-primary-op-40',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.4)'
-            },
-            {
-                key: '--color-palette-primary-op-50',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.5)'
-            },
-            {
-                key: '--color-palette-primary-op-60',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.6)'
-            },
-            {
-                key: '--color-palette-primary-op-70',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.7)'
-            },
-            {
-                key: '--color-palette-primary-op-80',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.8)'
-            },
-            {
-                key: '--color-palette-primary-op-90',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.9)'
-            },
-            { key: '--color-secondary-h', value: '106deg' },
-            { key: '--color-secondary-s', value: '100%' },
-            { key: '--color-palette-secondary-100', value: 'hsl(106deg, 100%, 97%)' },
-            { key: '--color-palette-secondary-200', value: 'hsl(107deg, 100%, 92%)' },
-            { key: '--color-palette-secondary-300', value: 'hsl(106deg, 100%, 87%)' },
-            { key: '--color-palette-secondary-400', value: 'hsl(106deg, 100%, 82%)' },
-            { key: '--color-palette-secondary-500', value: 'hsl(106deg, 100%, 74%)' },
-            { key: '--color-palette-secondary-600', value: 'hsl(106deg, 51%, 59%)' },
-            { key: '--color-palette-secondary-700', value: 'hsl(106deg, 36%, 44%)' },
-            { key: '--color-palette-secondary-800', value: 'hsl(105deg, 36%, 22%)' },
-            { key: '--color-palette-secondary-900', value: 'hsl(107deg, 37%, 7%)' },
-            {
-                key: '--color-palette-secondary-op-10',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.1)'
-            },
-            {
-                key: '--color-palette-secondary-op-20',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.2)'
-            },
-            {
-                key: '--color-palette-secondary-op-30',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.3)'
-            },
-            {
-                key: '--color-palette-secondary-op-40',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.4)'
-            },
-            {
-                key: '--color-palette-secondary-op-50',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.5)'
-            },
-            {
-                key: '--color-palette-secondary-op-60',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.6)'
-            },
-            {
-                key: '--color-palette-secondary-op-70',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.7)'
-            },
-            {
-                key: '--color-palette-secondary-op-80',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.8)'
-            },
-            {
-                key: '--color-palette-secondary-op-90',
-                value: 'hsla(var(--color-primary-h), var(--color-primary-s), 100%, 0.9)'
-            },
-            { key: '--color-background', value: '#CB8978' }
-        ];
+            service.setColors(mockElement, newColors);
 
-        expectedCalls.forEach(({ key, value }) => {
-            expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
+            const currentColors = service.getColors();
+            expect(currentColors).toEqual(newColors);
         });
-
-        expect(html.style.setProperty).toHaveBeenCalledTimes(expectedCalls.length);
     });
 
-    it('should not set invalid colors', () => {
-        service.setColors(document.querySelector('html'), {
-            primary: 'sdfadfg',
-            secondary: 'dfgsdfg',
-            background: 'dsfgsdfg'
+    describe('PrimeNG integration', () => {
+        it('should call updatePrimaryPalette with generated palette', () => {
+            const colors = {
+                primary: '#426BF0',
+                secondary: '#7042F0',
+                background: '#FFFFFF'
+            };
+
+            service.setColors(mockElement, colors);
+
+            expect(updatePrimaryPalette).toHaveBeenCalledTimes(1);
+            const palette = (updatePrimaryPalette as jest.Mock).mock.calls[0][0];
+
+            // Verify palette structure
+            expect(palette).toHaveProperty('50');
+            expect(palette).toHaveProperty('500', colors.primary);
+            expect(palette).toHaveProperty('950');
+            expect(Object.keys(palette)).toHaveLength(11); // 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950
         });
 
-        const html = <HTMLElement>document.querySelector('');
+        it('should handle PrimeNG updatePrimaryPalette errors gracefully', () => {
+            (updatePrimaryPalette as jest.Mock).mockImplementation(() => {
+                throw new Error('PrimeNG not initialized');
+            });
 
-        expect(html.style.setProperty).not.toHaveBeenCalled();
+            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+            expect(() => {
+                service.setColors(mockElement, {
+                    primary: '#426BF0',
+                    secondary: '#7042F0',
+                    background: '#FFFFFF'
+                });
+            }).not.toThrow();
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+                'Failed to update PrimeNG colors:',
+                expect.any(Error)
+            );
+
+            consoleSpy.mockRestore();
+        });
     });
 
-    it('should set manual picked colors', () => {
-        service.setColors(document.querySelector('html'), {
-            primary: DEFAULT_COLORS.primary,
-            secondary: DEFAULT_COLORS.secondary,
-            background: '#CB8978'
+    describe('static getDefaultPrimeNGPalette', () => {
+        it('should generate default palette from DEFAULT_COLORS.primary', () => {
+            const palette = DotUiColorsService.getDefaultPrimeNGPalette();
+
+            expect(palette).toHaveProperty('50');
+            expect(palette).toHaveProperty('500', DEFAULT_COLORS.primary);
+            expect(palette).toHaveProperty('950');
+            expect(Object.keys(palette)).toHaveLength(11);
         });
 
-        const html = <HTMLElement>document.querySelector('');
+        it('should generate consistent palette structure', () => {
+            const palette = DotUiColorsService.getDefaultPrimeNGPalette();
 
-        const expectedCalls = [
-            { key: '--color-primary-h', value: '226deg' },
-            { key: '--color-primary-s', value: '85%' },
-            {
-                key: '--color-palette-primary-100',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 98%)'
-            },
-            {
-                key: '--color-palette-primary-200',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 96%)'
-            },
-            {
-                key: '--color-palette-primary-300',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 90%)'
-            },
-            {
-                key: '--color-palette-primary-400',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 78%)'
-            },
-            {
-                key: '--color-palette-primary-500',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 60%)'
-            },
-            {
-                key: '--color-palette-primary-600',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 48%)'
-            },
-            {
-                key: '--color-palette-primary-700',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 36%)'
-            },
-            {
-                key: '--color-palette-primary-800',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 27%)'
-            },
-            {
-                key: '--color-palette-primary-900',
-                value: 'hsl(var(--color-primary-h) var(--color-primary-s) 21%)'
-            },
-            { key: '--color-secondary-h', value: '256deg' },
-            { key: '--color-secondary-s', value: '85%' },
-            {
-                key: '--color-palette-secondary-100',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 98%)'
-            },
-            {
-                key: '--color-palette-secondary-200',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 94%)'
-            },
-            {
-                key: '--color-palette-secondary-300',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 84%)'
-            },
-            {
-                key: '--color-palette-secondary-400',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 71%)'
-            },
-            {
-                key: '--color-palette-secondary-500',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 60%)'
-            },
-            {
-                key: '--color-palette-secondary-600',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 51%)'
-            },
-            {
-                key: '--color-palette-secondary-700',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 42%)'
-            },
-            {
-                key: '--color-palette-secondary-800',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 30%)'
-            },
-            {
-                key: '--color-palette-secondary-900',
-                value: 'hsl(var(--color-secondary-h) var(--color-secondary-s) 22%)'
-            },
-            { key: '--color-background', value: '#CB8978' }
-        ];
-
-        expectedCalls.forEach(({ key, value }) => {
-            expect(html.style.setProperty).toHaveBeenCalledWith(key, value);
+            // Verify all expected shades exist
+            const expectedShades = [
+                '50',
+                '100',
+                '200',
+                '300',
+                '400',
+                '500',
+                '600',
+                '700',
+                '800',
+                '900',
+                '950'
+            ];
+            expectedShades.forEach((shade) => {
+                expect(palette).toHaveProperty(shade);
+                expect(typeof palette[shade]).toBe('string');
+                expect(palette[shade]).toMatch(/^#[0-9A-Fa-f]{6}$/); // Valid hex color
+            });
         });
-
-        expect(html.style.setProperty).toHaveBeenCalledTimes(expectedCalls.length);
     });
 });

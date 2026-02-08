@@ -1,73 +1,51 @@
-import { Observable } from 'rxjs';
+import { Component, OnInit } from '@angular/core';
 
-import { Component, DestroyRef, inject, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { DotOnboardingAuthorComponent } from './components/onboarding-author/onboarding-author.component';
+import { DotOnboardingDevComponent } from './components/onboarding-dev/onboarding-dev.component';
 
-import { map, pluck, take } from 'rxjs/operators';
-
-import { DotCurrentUser, DotPermissionsType, PermissionsType } from '@dotcms/dotcms-models';
-
-import { DotAccountService } from '../../api/services/dot-account-service';
+export type UserProfile = 'developer' | 'marketer';
 
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    standalone: false
+    imports: [DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent implements OnInit {
-    private route = inject(ActivatedRoute);
-    private dotAccountService = inject(DotAccountService);
+    public profile: UserProfile = localStorage.getItem('user_profile') as UserProfile;
+    public showProfileSelection = true;
+    public showDeveloperGuide = false;
+    public showMarketerGuide = false;
 
-    userData$: Observable<{
-        username: string;
-        showCreateContentLink: boolean;
-        showCreateDataModelLink: boolean;
-        showCreatePageLink: boolean;
-        showCreateTemplateLink: boolean;
-    }>;
-    username: string;
-    showCreateContentLink: boolean;
-    showCreateDataModelLink: boolean;
-    showCreatePageLink: boolean;
-    showCreateTemplateLink: boolean;
+    ngOnInit(): void {
+        if (this.profile !== null && this.profile === 'developer') {
+            this.showDeveloperGuide = true;
+            this.showProfileSelection = false;
+        }
 
-    readonly #destroyRef = inject(DestroyRef);
-
-    ngOnInit() {
-        this.userData$ = this.route.data.pipe(
-            pluck('userData'),
-            take(1),
-            map(
-                ({
-                    user,
-                    permissions
-                }: {
-                    user: DotCurrentUser;
-                    permissions: DotPermissionsType;
-                }) => {
-                    return {
-                        username: user.givenName,
-                        showCreateContentLink: permissions[PermissionsType.CONTENTLETS].canWrite,
-                        showCreateDataModelLink: permissions[PermissionsType.STRUCTURES].canWrite,
-                        showCreatePageLink: permissions[PermissionsType.HTMLPAGES].canWrite,
-                        showCreateTemplateLink: permissions[PermissionsType.TEMPLATES].canWrite
-                    };
-                }
-            )
-        );
+        if (this.profile !== null && this.profile === 'marketer') {
+            this.showMarketerGuide = true;
+            this.showProfileSelection = false;
+        }
     }
 
-    /**
-     * Hit the endpoint to show/hide the tool group in the menu.
-     * @param {boolean} hide
-     * @memberof DotStarterComponent
-     */
-    handleVisibility(hide: boolean): void {
-        const subscription = hide
-            ? this.dotAccountService.removeStarterPage()
-            : this.dotAccountService.addStarterPage();
+    public setUserProfile(selectedProfile: UserProfile) {
+        localStorage.setItem('user_profile', selectedProfile);
+        this.showProfileSelection = false;
+        this.showMarketerGuide = false;
+        this.showDeveloperGuide = false;
 
-        subscription.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe();
+        if (selectedProfile === 'marketer') {
+            this.showMarketerGuide = true;
+        }
+
+        if (selectedProfile === 'developer') {
+            this.showDeveloperGuide = true;
+        }
+    }
+
+    public onUserProfileReset(): void {
+        this.showProfileSelection = true;
+        this.showDeveloperGuide = false;
+        this.showMarketerGuide = false;
     }
 }

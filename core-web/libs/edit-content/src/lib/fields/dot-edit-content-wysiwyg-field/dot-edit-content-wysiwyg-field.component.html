@@ -9,8 +9,8 @@
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        <div class="dot-wysiwyg__wrapper">
-            <div class="dot-wysiwyg__controls">
+        <div class="flex flex-col gap-2">
+            <div class="flex justify-between">
                 <p-select
                     [options]="editorOptions"
                     [(ngModel)]="$selectedEditorDropdown"
@@ -23,7 +23,7 @@
                     (onSelectLanguageVariable)="onSelectLanguageVariable($event)" />
             </div>
 
-            <div class="dot-wysiwyg__editor">
+            <div class="flex flex-col">
                 @if ($displayedEditor() === editorTypes.TinyMCE) {
                     <dot-wysiwyg-tinymce [field]="field" [hasError]="fieldHasError" />
                 } @else {

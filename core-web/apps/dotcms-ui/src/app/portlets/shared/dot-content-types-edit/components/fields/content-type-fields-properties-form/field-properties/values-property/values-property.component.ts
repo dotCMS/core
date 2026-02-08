@@ -7,7 +7,6 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     selector: 'dot-values-property',
     templateUrl: './values-property.component.html',
-    styleUrls: ['./values-property.component.scss'],
     standalone: false
 })
 export class ValuesPropertyComponent {

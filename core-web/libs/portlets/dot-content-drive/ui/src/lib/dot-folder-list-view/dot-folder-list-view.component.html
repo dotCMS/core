@@ -47,7 +47,6 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-item>
-        @let status = item | dotContentletStatus;
         @let isFolder = item.type === 'folder';
 
         @if ($loading() || !$items().length) {
@@ -122,19 +121,7 @@
                 </td>
                 <td data-testId="item-status">
                     @if (!isFolder) {
-                        @if (status === 'Published') {
-                            <p-chip
-                                class="bg-green-100! text-green-700! border-green-100! text-xs"
-                                [label]="status" />
-                        } @else if (status === 'Archived') {
-                            <p-chip
-                                class="bg-red-100! text-red-700! border-red-100! text-xs"
-                                [label]="status" />
-                        } @else {
-                            <p-chip
-                                class="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
-                                [label]="status" />
-                        }
+                        <dot-contentlet-status-chip [state]="item" />
                     }
                 </td>
                 <td data-testId="item-language">
@@ -169,12 +156,12 @@
     <ng-template pTemplate="emptymessage">
         <tr class="hover:bg-transparent! h-max">
             <td colspan="7" class="p-6 text-center h-full border-none">
-                <div class="flex flex-col items-center gap-4 max-w-[400px] mx-auto">
+                <div class="flex flex-col items-center gap-4 max-w-100 mx-auto">
                     <div class="flex items-center justify-center w-20 h-20 rounded-full">
                         <i class="pi pi-folder-open text-(--surface-500) text-6xl!"></i>
                     </div>
-                    <div class="flex flex-col">
-                        <h3 class="m-0 text-lg font-medium text-center text-gray-800">
+                    <div class="flex flex-col text-center">
+                        <h3 class="m-0 text-lg font-medium text-gray-800">
                             {{ 'content.drive.empty.state.title' | dm }}
                         </h3>
                         <p class="m-0 text-text-color text-base leading-6">

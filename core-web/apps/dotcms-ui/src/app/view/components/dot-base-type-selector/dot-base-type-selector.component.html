@@ -1,4 +1,7 @@
 <p-select
     (onChange)="change($event)"
     [options]="options | async"
-    [style]="{ width: '155px' }"></p-select>
+    optionLabel="label"
+    optionValue="value"
+    appendTo="body"
+    class="w-38.75"></p-select>

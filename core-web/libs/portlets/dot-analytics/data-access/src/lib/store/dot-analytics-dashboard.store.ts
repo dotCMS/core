@@ -6,6 +6,7 @@ import { ActivatedRoute, Params, Router } from '@angular/router';
 import { GlobalStore } from '@dotcms/store';
 
 import { withConversions } from './features/with-conversions.feature';
+import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
 
@@ -32,6 +33,7 @@ export const DotAnalyticsDashboardStore = signalStore(
     withFilters(),
     withPageview(),
     withConversions(),
+    withEngagement(),
     // Coordinator methods that work across features
     withMethods((store, route = inject(ActivatedRoute), router = inject(Router)) => ({
         /**
@@ -56,10 +58,16 @@ export const DotAnalyticsDashboardStore = signalStore(
         refreshAllData(): void {
             const currentTab = store.currentTab();
 
-            if (currentTab === DASHBOARD_TABS.pageview) {
-                store.loadAllPageviewData();
-            } else {
-                store.loadConversionsData();
+            switch (currentTab) {
+                case DASHBOARD_TABS.pageview:
+                    store.loadAllPageviewData();
+                    break;
+                case DASHBOARD_TABS.engagement:
+                    store.loadEngagementData();
+                    break;
+                case DASHBOARD_TABS.conversions:
+                    store.loadConversionsData();
+                    break;
             }
         },
 
@@ -113,10 +121,16 @@ export const DotAnalyticsDashboardStore = signalStore(
                 }
 
                 // Load data based on active tab
-                if (currentTab === DASHBOARD_TABS.pageview) {
-                    store.loadAllPageviewData();
-                } else if (currentTab === DASHBOARD_TABS.conversions) {
-                    store.loadConversionsData();
+                switch (currentTab) {
+                    case DASHBOARD_TABS.pageview:
+                        store.loadAllPageviewData();
+                        break;
+                    case DASHBOARD_TABS.conversions:
+                        store.loadConversionsData();
+                        break;
+                    case DASHBOARD_TABS.engagement:
+                        store.loadEngagementData();
+                        break;
                 }
             });
         }

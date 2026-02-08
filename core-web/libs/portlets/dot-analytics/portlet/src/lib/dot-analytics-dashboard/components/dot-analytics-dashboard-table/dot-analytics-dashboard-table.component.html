@@ -8,17 +8,31 @@
 @let showRealTable = !isLoadingState && !isErrorState && !isEmptyState && hasData;
 
 @if (isLoadingState) {
-    <div class="table-loading-state h-full">
-        <p-card class="h-full">
-            <ng-template pTemplate="header">
-                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
-            </ng-template>
-            <!-- Loading State -->
-            <div class="flex flex-col gap-4 h-full">
-                <!-- Custom Table Skeleton -->
-                <div class="p-datatable p-datatable-sm">
-                    <!-- Skeleton Header -->
-                    <div class="p-datatable-header-row flex p-4">
+    <p-card class="h-full border-gray-400 rounded-xl">
+        <ng-template pTemplate="header">
+            <h3 class="text-lg font-bold text-black leading-normal m-0 p-4">
+                {{ 'analytics.table.title' | dm }}
+            </h3>
+        </ng-template>
+        <!-- Loading State -->
+        <div class="flex flex-col gap-4 h-full">
+            <!-- Custom Table Skeleton -->
+            <div class="p-datatable p-datatable-sm">
+                <!-- Skeleton Header -->
+                <div class="flex p-4">
+                    @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
+                        <div
+                            [class]="columnConfig.cssClass"
+                            class="flex-1"
+                            [style.width]="columnConfig.width">
+                            <p-skeleton height="1.2rem" width="80%" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Skeleton Rows -->
+                @for (row of skeletonRows; track trackByIndex($index)) {
+                    <div class="flex p-4 hover:bg-gray-50">
                         @for (
                             columnConfig of columnsConfig;
                             track trackByField($index, columnConfig)
@@ -27,70 +41,56 @@
                                 [class]="columnConfig.cssClass"
                                 class="flex-1"
                                 [style.width]="columnConfig.width">
-                                <p-skeleton height="1.2rem" width="80%" />
+                                <p-skeleton height="1rem" [width]="columnConfig.skeletonWidth" />
                             </div>
                         }
                     </div>
+                }
 
-                    <!-- Skeleton Rows -->
-                    @for (row of skeletonRows; track trackByIndex($index)) {
-                        <div class="flex p-4 hover:bg-gray-50">
-                            @for (
-                                columnConfig of columnsConfig;
-                                track trackByField($index, columnConfig)
-                            ) {
-                                <div
-                                    [class]="columnConfig.cssClass"
-                                    class="flex-1"
-                                    [style.width]="columnConfig.width">
-                                    <p-skeleton
-                                        height="1rem"
-                                        [width]="columnConfig.skeletonWidth" />
-                                </div>
-                            }
-                        </div>
-                    }
-
-                    <!-- Skeleton Pagination -->
-                    <div class="flex justify-center items-center p-4">
-                        <p-skeleton height="1.5rem" width="15.625rem"></p-skeleton>
-                    </div>
+                <!-- Skeleton Pagination -->
+                <div class="flex justify-center items-center p-4">
+                    <p-skeleton height="1.5rem" width="15.625rem"></p-skeleton>
                 </div>
             </div>
-        </p-card>
-    </div>
+        </div>
+    </p-card>
 } @else if (isErrorState) {
-    <div class="table-error-state h-full">
-        <p-card class="h-full">
-            <ng-template pTemplate="header">
-                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
-            </ng-template>
-            <!-- Error State -->
-            <div class="flex flex-col gap-4 h-full">
-                <dot-analytics-state-message
-                    message="analytics.error.loading.top-pages-table"
-                    icon="pi-exclamation-triangle" />
-            </div>
-        </p-card>
-    </div>
-} @else if (isEmptyState) {
-    <div class="table-empty-state h-full" data-testid="empty-table-state">
-        <p-card class="h-full">
-            <ng-template pTemplate="header">
-                <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
-            </ng-template>
-            <!-- Empty State -->
-            <div class="flex flex-col gap-4 h-full">
-                <dot-analytics-state-message
-                    message="analytics.table.empty.description"
-                    icon="pi-info-circle" />
-            </div>
-        </p-card>
-    </div>
-} @else if (showRealTable) {
-    <p-card class="h-full">
+    <p-card [pt]="stateCardPt" class="h-full border border-gray-400 rounded-xl">
         <ng-template pTemplate="header">
-            <h3 class="table-title">{{ 'analytics.table.title' | dm }}</h3>
+            <h3 class="text-lg font-bold text-black leading-normal m-0 p-4">
+                {{ 'analytics.table.title' | dm }}
+            </h3>
+        </ng-template>
+        <!-- Error State -->
+        <div class="flex flex-col gap-4 h-full">
+            <dot-analytics-state-message
+                message="analytics.error.loading.top-pages-table"
+                icon="pi-exclamation-triangle" />
+        </div>
+    </p-card>
+} @else if (isEmptyState) {
+    <p-card
+        [pt]="stateCardPt"
+        data-testid="empty-table-state"
+        class="h-full border border-gray-400 rounded-xl">
+        <ng-template pTemplate="header">
+            <h3 class="text-lg font-bold text-black leading-normal m-0 p-4">
+                {{ 'analytics.table.title' | dm }}
+            </h3>
+        </ng-template>
+        <!-- Empty State -->
+        <div class="flex flex-col gap-4 h-full">
+            <dot-analytics-state-message
+                message="analytics.table.empty.description"
+                icon="pi-info-circle" />
+        </div>
+    </p-card>
+} @else if (showRealTable) {
+    <p-card class="h-full border border-gray-400 rounded-xl">
+        <ng-template pTemplate="header">
+            <h3 class="text-lg font-bold text-black leading-normal m-0 p-4">
+                {{ 'analytics.table.title' | dm }}
+            </h3>
         </ng-template>
         <!-- Loaded State -->
         <div class="flex flex-col gap-4 h-full">
@@ -99,7 +99,6 @@
                 [value]="tableData"
                 [columns]="columnsConfig"
                 [attr.data-testid]="'analytics-top-pages-table'"
-                class="p-datatable-sm"
                 [scrollable]="true"
                 [scrollHeight]="tableConfig.SCROLL_HEIGHT"
                 [virtualScroll]="true"

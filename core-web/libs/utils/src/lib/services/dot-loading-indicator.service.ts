@@ -1,14 +1,14 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class DotLoadingIndicatorService {
-    display = false;
+    display = signal(false);
 
     show(): void {
-        this.display = true;
+        this.display.set(true);
     }
 
     hide(): void {
-        this.display = false;
+        this.display.set(false);
     }
 }

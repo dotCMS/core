@@ -76,9 +76,7 @@ describe('ContainerCreateComponent', () => {
                                     name: '',
                                     type: '',
                                     source: CONTAINER_SOURCE.DB,
-                                    parentPermissionable: {
-                                        hostname: 'dotcms.com'
-                                    }
+                                    hostName: 'dotcms.com'
                                 },
                                 containerStructures: []
                             }

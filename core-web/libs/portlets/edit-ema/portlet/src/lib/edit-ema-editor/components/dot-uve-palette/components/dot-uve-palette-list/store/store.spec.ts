@@ -2,6 +2,16 @@ import { describe, expect, it, beforeEach, afterEach, jest } from '@jest/globals
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+jest.mock('../../../utils', () => {
+    // jest.requireActual is typed as unknown, cast so we can spread and reference exports
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const actual = jest.requireActual('../../../utils') as any;
+    return {
+        ...actual,
+        buildPaletteFavorite: jest.fn(actual.buildPaletteFavorite)
+    };
+});
+
 import {
     DotESContentService,
     DotFavoriteContentTypeService,
@@ -12,12 +22,14 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms
 
 import { DotPaletteListStore } from './store';
 
+import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
+    DotCMSPaletteContentType,
     DotPaletteListStatus,
     DotUVEPaletteListTypes,
     DotUVEPaletteListView
 } from '../../../models';
-import { EMPTY_PAGINATION } from '../../../utils';
+import { buildPaletteFavorite, EMPTY_PAGINATION } from '../../../utils';
 
 // ===== Mock Data =====
 
@@ -65,6 +77,7 @@ describe('DotPaletteListStore', () => {
     let dotESContentService: jest.Mocked<DotESContentService>;
     let dotFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
     let dotLocalstorageService: jest.Mocked<DotLocalstorageService>;
+    let uveStore: { $allowedContentTypes: jest.Mock };
 
     // ===== Test Helper Functions =====
 
@@ -139,6 +152,13 @@ describe('DotPaletteListStore', () => {
         providers: [
             DotPaletteListStore,
             {
+                provide: UVEStore,
+                useValue: {
+                    // Default to empty map so favorites are marked as disabled unless tests override.
+                    $allowedContentTypes: jest.fn().mockReturnValue({})
+                }
+            },
+            {
                 provide: DotLocalstorageService,
                 useValue: {
                     getItem: jest.fn().mockReturnValue(null),
@@ -157,6 +177,7 @@ describe('DotPaletteListStore', () => {
         dotESContentService = spectator.inject(DotESContentService);
         dotFavoriteContentTypeService = spectator.inject(DotFavoriteContentTypeService);
         dotLocalstorageService = spectator.inject(DotLocalstorageService);
+        uveStore = spectator.inject(UVEStore) as unknown as { $allowedContentTypes: jest.Mock };
 
         // Setup default mock return values
         pageContentTypeService.get.mockReturnValue(
@@ -185,7 +206,7 @@ describe('DotPaletteListStore', () => {
             });
             expect(store.currentView()).toBe(DotUVEPaletteListView.CONTENT_TYPES);
             expect(store.status()).toBe(DotPaletteListStatus.LOADING);
-            expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
+            expect(store.layoutMode()).toBe('grid');
         });
 
         it('should initialize search params with correct defaults', () => {
@@ -250,8 +271,8 @@ describe('DotPaletteListStore', () => {
         });
 
         describe('$showListLayout', () => {
-            it('should return false when layoutMode is grid grid-cols-12 gap-4 and in content types view', () => {
-                store.setLayoutMode('grid grid-cols-12 gap-4');
+            it('should return false when layoutMode is grid and in content types view', () => {
+                store.setLayoutMode('grid');
 
                 expect(store.$showListLayout()).toBe(false);
             });
@@ -263,14 +284,14 @@ describe('DotPaletteListStore', () => {
             });
 
             it('should return true when in contentlets view regardless of layout mode', () => {
-                store.setLayoutMode('grid grid-cols-12 gap-4');
+                store.setLayoutMode('grid');
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.$showListLayout()).toBe(true);
             });
 
-            it('should return false when back to content types view with grid grid-cols-12 gap-4 layout', () => {
-                store.setLayoutMode('grid grid-cols-12 gap-4');
+            it('should return false when back to content types view with grid layout', () => {
+                store.setLayoutMode('grid');
                 store.getContentlets({ selectedContentType: 'Blog' });
 
                 expect(store.$showListLayout()).toBe(true);
@@ -359,21 +380,21 @@ describe('DotPaletteListStore', () => {
 
         describe('setLayoutMode', () => {
             it('should update layoutMode to list', () => {
-                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
+                expect(store.layoutMode()).toBe('grid');
 
                 store.setLayoutMode('list');
 
                 expect(store.layoutMode()).toBe('list');
             });
 
-            it('should update layoutMode to grid grid-cols-12 gap-4', () => {
+            it('should update layoutMode to grid', () => {
                 store.setLayoutMode('list');
 
                 expect(store.layoutMode()).toBe('list');
 
-                store.setLayoutMode('grid grid-cols-12 gap-4');
+                store.setLayoutMode('grid');
 
-                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
+                expect(store.layoutMode()).toBe('grid');
             });
 
             it('should affect $showListLayout computed', () => {
@@ -383,7 +404,7 @@ describe('DotPaletteListStore', () => {
 
                 expect(store.$showListLayout()).toBe(true);
 
-                store.setLayoutMode('grid grid-cols-12 gap-4');
+                store.setLayoutMode('grid');
 
                 expect(store.$showListLayout()).toBe(false);
             });
@@ -451,10 +472,10 @@ describe('DotPaletteListStore', () => {
                 expect(dotFavoriteContentTypeService.add).toHaveBeenCalledWith(mockContentTypes[0]);
                 // Favorites are sorted alphabetically by name: Blog, Events, News
                 const expectedOrder = [
-                    mockContentTypes[0], // Blog
-                    extraFavorite, // Events
-                    mockContentTypes[1] // News
-                ];
+                    { ...mockContentTypes[0], disabled: true }, // Blog
+                    { ...extraFavorite, disabled: true }, // Events
+                    { ...mockContentTypes[1], disabled: true } // News
+                ] as DotCMSPaletteContentType[];
                 expect(store.contenttypes()).toEqual(expectedOrder);
             });
 
@@ -477,7 +498,24 @@ describe('DotPaletteListStore', () => {
                 expect(dotFavoriteContentTypeService.remove).toHaveBeenCalledWith(
                     mockContentTypes[0].id
                 );
-                expect(store.contenttypes()).toEqual(remainingFavorites);
+                expect(store.contenttypes()).toEqual([
+                    { ...remainingFavorites[0], disabled: true }
+                ] as DotCMSPaletteContentType[]);
+            });
+
+            it('should pass allowedContentTypes to buildPaletteFavorite when refreshing favorites state', () => {
+                store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
+
+                (buildPaletteFavorite as unknown as jest.Mock).mockClear();
+                uveStore.$allowedContentTypes.mockReturnValueOnce({ blog: true, banner: true });
+
+                store.setContentTypesFromFavorite(mockContentTypes);
+
+                expect(buildPaletteFavorite).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        allowedContentTypes: { blog: true, banner: true }
+                    })
+                );
             });
 
             it('should not refresh store when removing favorites outside favorites view', () => {
@@ -522,7 +560,11 @@ describe('DotPaletteListStore', () => {
                 store.getContentTypes({ listType: DotUVEPaletteListTypes.FAVORITES });
 
                 expect(dotFavoriteContentTypeService.getAll).toHaveBeenCalled();
-                expect(store.contenttypes()).toEqual(mockContentTypes);
+                expect(store.contenttypes()).toEqual(
+                    mockContentTypes.map(
+                        (ct) => ({ ...ct, disabled: true }) as DotCMSPaletteContentType
+                    )
+                );
             });
 
             it('should update search params with provided values', () => {
@@ -858,7 +900,7 @@ describe('DotPaletteListStore', () => {
                 );
 
                 // When null is returned, defaults to grid
-                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
+                expect(store.layoutMode()).toBe('grid');
             });
 
             it('should call getItem for sort options on initialization', () => {
@@ -875,7 +917,7 @@ describe('DotPaletteListStore', () => {
 
         describe('State Management: Layout and Sort', () => {
             it('should update layoutMode state when changed', () => {
-                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
+                expect(store.layoutMode()).toBe('grid');
 
                 store.setLayoutMode('list');
 
@@ -911,12 +953,12 @@ describe('DotPaletteListStore', () => {
                 store.setLayoutMode('list');
                 expect(store.layoutMode()).toBe('list');
 
-                store.setLayoutMode('grid grid-cols-12 gap-4');
-                expect(store.layoutMode()).toBe('grid grid-cols-12 gap-4');
+                store.setLayoutMode('grid');
+                expect(store.layoutMode()).toBe('grid');
             });
 
             it('should affect computed $showListLayout', () => {
-                store.setLayoutMode('grid grid-cols-12 gap-4');
+                store.setLayoutMode('grid');
                 expect(store.$showListLayout()).toBe(false);
 
                 store.setLayoutMode('list');

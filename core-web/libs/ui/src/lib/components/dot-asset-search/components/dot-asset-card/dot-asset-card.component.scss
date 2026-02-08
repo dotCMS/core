@@ -12,19 +12,24 @@
         box-shadow: shadows.$shadow-xs;
         cursor: pointer;
         display: flex;
+        flex-direction: row;
         gap: spacing.$spacing-3;
-        height: 94px;
+        height: 5.875rem;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
 
         .p-card-header {
             padding: 0;
-            height: 94px;
-            width: 94px;
-            min-height: 94px;
-            min-width: 94px;
+            height: 5.875rem;
+            min-height: 5.875rem;
+            min-width: 5.875rem;
+            aspect-ratio: 1/1;
             border-radius: common.$border-radius-sm 0 0 common.$border-radius-sm;
 
             .thumbnail-container {
-                padding: 10px;
+                padding: 0.625rem;
                 width: 100%;
                 height: 100%;
                 background: colors.$color-palette-gray-200;
@@ -62,22 +67,13 @@
                 }
             }
         }
-    }
 
-    .state {
-        align-items: center;
-        display: flex;
-        gap: spacing.$spacing-1;
-    }
-
-    .badge {
-        background: colors.$color-palette-primary-100;
-        border-radius: common.$border-radius-xs;
-        color: colors.$black;
-        font-size: 0.75 * $dot-editor-size;
-        line-height: 140%;
-        padding: 0.2rem spacing.$spacing-1;
-        display: flex;
-        align-items: center;
+        .p-card-footer {
+            .state {
+                align-items: center;
+                display: flex;
+                gap: spacing.$spacing-1;
+            }
+        }
     }
 }

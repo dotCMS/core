@@ -1,9 +1,8 @@
-import { it, describe, expect, beforeEach, afterEach } from '@jest/globals';
+import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { By } from '@angular/platform-browser';
 
 import { DotContentTypeService, DotLanguagesService } from '@dotcms/data-access';
 
@@ -114,12 +113,11 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should add the invisible class to the tree toggler when tree is expanded', () => {
+        it('should not render the tree toggler when tree is expanded', () => {
             store.isTreeExpanded.mockReturnValue(true);
             spectator.detectChanges();
-            const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
-            expect(toggler).toBeDefined();
-            expect(toggler?.classes['invisible']).toBe(true);
+            const toggler = spectator.query('[data-testid="tree-toggler"]');
+            expect(toggler).toBeNull();
         });
     });
 

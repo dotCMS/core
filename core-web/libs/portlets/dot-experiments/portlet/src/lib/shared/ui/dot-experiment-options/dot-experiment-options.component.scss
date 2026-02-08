@@ -1,72 +1,29 @@
-@use "../../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../../../dotcms-scss/shared/spacing";
+/* PrimeNG/Lara + Tailwind handle styling for this component. */
 
-@use "variables" as *;
+// Angular's animation DSL (`trigger`, `transition`, etc.) is deprecated in Angular 21.
+// We use a small CSS transition for the expand/collapse content instead.
+.dot-option-content {
+    display: grid;
+    transition:
+        grid-template-rows 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98),
+        opacity 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98),
+        visibility 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98);
+    will-change: grid-template-rows, opacity;
+}
 
-:host {
-    display: flex;
-    flex-direction: column;
-    gap: spacing.$spacing-3;
+.dot-option-content__inner {
+    min-height: 0;
+    overflow: hidden;
+}
 
-    .dot-options__item {
-        border: 1px solid colors.$color-palette-gray-200;
-        border-radius: common.$border-radius-sm;
-        display: flex;
-        flex-direction: column;
-        transition-duration: $basic-speed;
+.dot-option-content--expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+}
 
-        header {
-            padding: spacing.$spacing-4;
-            gap: spacing.$spacing-1;
-            align-items: baseline;
-            display: flex;
-            cursor: pointer;
-
-            h2,
-            p {
-                margin: 0;
-                color: colors.$color-palette-gray-800;
-            }
-
-            h2 {
-                font-size: fonts.$font-size-lmd;
-                font-weight: fonts.$font-weight-bold;
-            }
-
-            p {
-                font-size: fonts.$font-size-md;
-                color: colors.$color-palette-gray-700;
-            }
-
-            i {
-                font-size: fonts.$font-size-md;
-                color: colors.$color-palette-secondary;
-            }
-        }
-
-        .option-item__content {
-            padding: 0 spacing.$spacing-4 0 spacing.$spacing-4;
-
-            &.expanded {
-                padding-bottom: spacing.$spacing-4;
-            }
-        }
-
-        &.active {
-            background-color: colors.$color-palette-primary-100;
-
-            header {
-                h2,
-                p {
-                    color: colors.$black;
-                }
-            }
-        }
-
-        &:hover {
-            background-color: colors.$color-palette-primary-100;
-        }
-    }
+.dot-option-content--collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
 }

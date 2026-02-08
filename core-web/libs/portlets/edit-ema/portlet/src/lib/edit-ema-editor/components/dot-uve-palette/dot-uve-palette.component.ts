@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, input, Output } from '@angular/core';
+import { NgClass } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    EventEmitter,
+    computed,
+    input,
+    Output
+} from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -7,10 +15,17 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
+import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
 
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
+
+interface TabHeaderConfig {
+    value: UVE_PALETTE_TABS;
+    icon: string;
+    tooltip: string;
+}
 
 /**
  * Standalone palette component used by the EMA editor to display and switch
@@ -22,16 +37,43 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 @Component({
     selector: 'dot-uve-palette',
     imports: [
+        NgClass,
         TabsModule,
         DotUvePaletteListComponent,
         TooltipModule,
-        DotUveStyleEditorFormComponent
+        DotUveStyleEditorFormComponent,
+        DotUveStyleEditorEmptyStateComponent
     ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUvePaletteComponent {
+    protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
+        const tabs: TabHeaderConfig[] = [
+            { value: UVE_PALETTE_TABS.CONTENT_TYPES, icon: 'pi-stop', tooltip: 'Content types' },
+            { value: UVE_PALETTE_TABS.WIDGETS, icon: 'pi-th-large', tooltip: 'Widgets' },
+            { value: UVE_PALETTE_TABS.FAVORITES, icon: 'pi-star', tooltip: 'Favorites' }
+        ];
+
+        if (this.$showStyleEditorTab()) {
+            tabs.push({
+                value: UVE_PALETTE_TABS.STYLE_EDITOR,
+                icon: 'pi-palette',
+                tooltip: 'Style Editor'
+            });
+        }
+
+        return tabs;
+    });
+
+    /**
+     * Tabs PT so we can style Prime's internal root element with Tailwind instead of ::ng-deep SCSS.
+     */
+    readonly tabsPt = {
+        root: { class: 'h-full min-h-0' }
+    };
+
     /**
      * Absolute path of the page currently being edited.
      */

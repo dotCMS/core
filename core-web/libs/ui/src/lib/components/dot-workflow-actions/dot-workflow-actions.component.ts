@@ -26,7 +26,6 @@ interface WorkflowActionsGroup {
     selector: 'dot-workflow-actions',
     imports: [ButtonModule, SplitButtonModule, DotMessagePipe],
     templateUrl: './dot-workflow-actions.component.html',
-    styleUrl: './dot-workflow-actions.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotWorkflowActionsComponent implements OnChanges {

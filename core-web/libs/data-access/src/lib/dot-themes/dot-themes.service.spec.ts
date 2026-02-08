@@ -89,10 +89,12 @@ describe('DotThemesService', () => {
         };
 
         it('should get themes with default parameters', () => {
-            dotThemesService.getThemes().subscribe((result) => {
-                expect(result.themes).toEqual(mockThemesResponse.entity);
-                expect(result.pagination).toEqual(mockThemesResponse.pagination);
-            });
+            dotThemesService
+                .getThemes({ hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d' })
+                .subscribe((result) => {
+                    expect(result.themes).toEqual(mockThemesResponse.entity);
+                    expect(result.pagination).toEqual(mockThemesResponse.pagination);
+                });
 
             const req = httpMock.expectOne((request) => {
                 return (
@@ -111,6 +113,7 @@ describe('DotThemesService', () => {
         it('should get themes with custom pagination parameters', () => {
             dotThemesService
                 .getThemes({
+                    hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d',
                     page: 2,
                     per_page: 20,
                     direction: 'DESC'
@@ -137,6 +140,7 @@ describe('DotThemesService', () => {
         it('should get themes with search parameter', () => {
             dotThemesService
                 .getThemes({
+                    hostId: '8a7d5e23-da1e-420a-b4f0-471e7da8ea2d',
                     searchParam: 'test'
                 })
                 .subscribe((result) => {

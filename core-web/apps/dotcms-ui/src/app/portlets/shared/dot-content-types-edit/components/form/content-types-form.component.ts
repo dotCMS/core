@@ -49,7 +49,7 @@ import {
     DotMessagePipe,
     DotSiteComponent
 } from '@dotcms/ui';
-import { isEqual, FieldUtil } from '@dotcms/utils';
+import { FieldUtil, isEqual } from '@dotcms/utils';
 
 import { DotMdIconSelectorComponent } from '../../../../../view/components/_common/dot-md-icon-selector/dot-md-icon-selector.component';
 import { DotPageSelectorComponent } from '../../../../../view/components/_common/dot-page-selector/dot-page-selector.component';
@@ -68,7 +68,6 @@ import { DotFieldHelperComponent } from '../../../../../view/components/dot-fiel
 @Component({
     providers: [DotWorkflowsActionsService, DotWorkflowsActionsSelectorFieldService],
     selector: 'dot-content-types-form',
-    styleUrls: ['./content-types-form.component.scss'],
     templateUrl: 'content-types-form.component.html',
     imports: [
         CommonModule,
@@ -100,8 +99,8 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
 
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
 
-    readonly send = output<DotCMSContentType>();
-    readonly valid = output<boolean>();
+    readonly $send = output<DotCMSContentType>();
+    readonly $valid = output<boolean>();
 
     canSave = false;
     dateVarOptions: SelectItem[] = [];
@@ -164,7 +163,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
      */
     submitForm(): void {
         if (this.canSave) {
-            this.send.emit(this.addMetadataToForm());
+            this.$send.emit(this.addMetadataToForm());
         }
     }
 
@@ -187,7 +186,7 @@ export class ContentTypesFormComponent implements OnInit, OnDestroy {
             ? this.form.valid && this.isFormValueUpdated()
             : this.form.valid;
 
-        this.valid.emit(this.canSave);
+        this.$valid.emit(this.canSave);
     }
 
     private getDateVarFieldOption(field: DotCMSContentTypeField): SelectItem {

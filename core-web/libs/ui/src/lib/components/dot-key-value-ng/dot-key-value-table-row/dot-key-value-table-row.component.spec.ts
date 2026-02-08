@@ -8,7 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Table, TableModule, TableService } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -156,7 +156,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
                 expect(spectator.component.form).toBeTruthy();
 
-                const inputSwitch = spectator.query(byTestId('dot-key-value-hidden-switch'));
+                const inputSwitch = spectator.query(ToggleSwitch);
 
                 expect(inputSwitch).toBeFalsy();
                 expect(spectator.component.$isHiddenField()).toBe(true);

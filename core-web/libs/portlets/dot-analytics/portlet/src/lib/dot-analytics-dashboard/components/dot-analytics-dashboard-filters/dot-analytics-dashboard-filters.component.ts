@@ -14,7 +14,8 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { DatePickerModule } from 'primeng/datepicker';
-import { SelectModule, SelectChangeEvent } from 'primeng/select';
+import { SelectModule } from 'primeng/select';
+import { SelectChangeEvent } from 'primeng/types/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -36,7 +37,6 @@ import { isValidCustomDateRange } from '../../utils/dot-analytics.utils';
     selector: 'dot-analytics-dashboard-filters',
     imports: [DatePickerModule, SelectModule, FormsModule, DotMessagePipe],
     templateUrl: './dot-analytics-dashboard-filters.component.html',
-    styleUrls: ['./dot-analytics-dashboard-filters.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAnalyticsDashboardFiltersComponent {

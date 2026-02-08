@@ -89,7 +89,6 @@ import { DotFieldHelperComponent } from '../../../view/components/dot-field-help
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
 import { DotPortletBoxComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotRelationshipTreeComponent } from '../../../view/components/dot-relationship-tree/dot-relationship-tree.component';
-import { DotSecondaryToolbarComponent } from '../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotMaxlengthDirective } from '../../../view/directives/dot-maxlength/dot-maxlength.directive';
 import { DotAddToMenuComponent } from '../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.service';
@@ -136,7 +135,6 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotCopyLinkComponent,
         DotDirectivesModule,
         DotSafeHtmlPipe,
-        DotSecondaryToolbarComponent,
         DotFieldHelperComponent,
         DotFieldValidationMessageComponent,
         DotBinarySettingsComponent,

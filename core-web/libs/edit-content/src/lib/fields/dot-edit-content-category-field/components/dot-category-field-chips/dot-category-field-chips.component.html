@@ -1,14 +1,15 @@
-<div class="flex gap-2 items-center flex-wrap" data-testId="category-list">
+<div class="flex gap-2 items-center flex-wrap justify-center" data-testId="category-list">
     @for (category of $categoriesToShow(); track category.key) {
         <p-chip
             [pTooltip]="category.path || category.value"
             [label]="category.value"
             tooltipPosition="top"
             [removable]="true"
-            [styleClass]="$disabled() ? 'p-chip-sm p-chip-disabled' : 'p-chip-sm'"
             (onRemove)="onRemove(category.key)">
             <ng-template pTemplate="removeicon">
-                <i class="pi pi-times"></i>
+                <span class="flex items-center leading-none">
+                    <i class="pi pi-times text-xs"></i>
+                </span>
             </ng-template>
         </p-chip>
     }

@@ -30,8 +30,8 @@ import { DotAnalyticsDashboardTableComponent } from '../dot-analytics-dashboard-
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-dashboard-pageview-report.component.html',
-    styleUrl: './dot-analytics-dashboard-pageview-report.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col gap-3 w-full' }
 })
 export default class DotAnalyticsDashboardPageviewReportComponent {
     readonly store = inject(DotAnalyticsDashboardStore);

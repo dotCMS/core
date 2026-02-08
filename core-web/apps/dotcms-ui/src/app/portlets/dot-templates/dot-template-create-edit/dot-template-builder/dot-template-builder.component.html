@@ -11,7 +11,7 @@
             {{ 'History' | dm }}
         </p-tab>
     </p-tablist>
-    <p-tabpanels class="!p-0 overflow-hidden grow basis-0">
+    <p-tabpanels class="p-0 overflow-hidden grow basis-0">
         <p-tabpanel [value]="0" data-testId="builder" class="h-full block">
             @switch (item.type) {
                 @case ('advanced') {

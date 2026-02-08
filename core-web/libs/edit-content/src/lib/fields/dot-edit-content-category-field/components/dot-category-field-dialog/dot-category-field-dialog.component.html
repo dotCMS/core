@@ -7,16 +7,18 @@
     [maximizable]="false"
     [modal]="true"
     [header]="'edit.content.category-field.dialog.header.select-categories' | dm"
-    styleClass="category-field__dialog">
-    <div class="category-field__content h-full w-full">
-        <div class="category-field__left-pane flex flex-col">
-            <div class="category-field__search">
+    styleClass="min-h-[90%] h-full w-[75vw]"
+    [pt]="{ content: { class: 'h-full p-0' } }">
+    <div class="flex flex-row m-auto bg-(--gray-300) p-6 gap-2 h-full w-full">
+        <div class="flex flex-col flex-1 gap-2 max-w-[75vw] overflow-hidden h-full">
+            <div>
                 <dot-category-field-search
                     (changeMode)="store.setMode($event)"
                     (term)="store.search($event)"
                     [isLoading]="store.isSearchLoading()" />
             </div>
-            <div class="grow category-field__categories">
+            <div
+                class="grow border-[1.5px] border-(--gray-400) rounded-md bg-white overflow-hidden">
                 @if (store.mode() === 'list') {
                     <dot-category-field-category-list
                         (itemChecked)="store.updateSelected($event.selected, $event.item)"
@@ -37,15 +39,15 @@
         </div>
 
         <div
-            class="category-field__right-pane flex flex-col"
-            [ngClass]="{ empty: !store.dialog.selected().length }">
+            class="flex flex-col flex-[0_0_25%] gap-2 p-4 border-[1.5px] border-(--gray-400) rounded-md bg-white overflow-hidden"
+            [ngClass]="{ 'pl-0': !store.dialog.selected().length }">
             @if (store.dialog.selected().length) {
-                <div class="category-field__selected-categories-list flex-1">
+                <div class="flex-1 overflow-y-auto [scrollbar-gutter:auto]">
                     <dot-category-field-selected
                         (removeItem)="store.removeSelected($event)"
                         [categories]="store.dialog.selected()" />
                 </div>
-                <div class="category-field__actions flex justify-end">
+                <div class="flex justify-end">
                     <button
                         (click)="store.removeSelected(store.dialogSelectedKeys())"
                         class="p-button p-button-link"
@@ -55,9 +57,13 @@
                     </button>
                 </div>
             } @else {
-                <div class="category-field__empty-state" data-testId="category-field__empty-state">
+                <div
+                    class="flex flex-col items-center justify-center h-full p-4"
+                    data-testId="category-field__empty-state">
                     <i class="pi pi-check-square"></i>
-                    <p>{{ 'edit.content.category-field.dialog.empty-state' | dm }}</p>
+                    <p class="text-center text-xs">
+                        {{ 'edit.content.category-field.dialog.empty-state' | dm }}
+                    </p>
                 </div>
             }
         </div>

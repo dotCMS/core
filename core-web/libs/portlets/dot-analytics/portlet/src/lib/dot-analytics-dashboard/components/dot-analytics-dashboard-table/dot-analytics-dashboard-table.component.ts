@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { CardPassThrough } from 'primeng/types/card';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
@@ -41,7 +42,6 @@ const SKELETON_WIDTH_MAP = {
         DotAnalyticsStateMessageComponent
     ],
     templateUrl: './dot-analytics-dashboard-table.component.html',
-    styleUrls: ['./dot-analytics-dashboard-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAnalyticsDashboardTableComponent {
@@ -80,6 +80,13 @@ export class DotAnalyticsDashboardTableComponent {
 
     /** Skeleton rows for loading state */
     protected readonly skeletonRows = Array.from({ length: 3 }, (_, i) => i);
+
+    /** PassThrough config for state cards  */
+    protected readonly stateCardPt: CardPassThrough = {
+        root: 'h-full',
+        body: 'h-full flex flex-col',
+        content: 'flex-1 flex flex-col'
+    };
 
     /** Pre-computed column configurations with CSS classes and skeleton widths */
     protected readonly $columnConfigs = computed(() => {

@@ -11,13 +11,12 @@ import {
     ChangeDetectorRef,
     Component,
     computed,
-    EventEmitter,
+    effect,
     HostListener,
     inject,
-    Input,
-    OnChanges,
+    input,
     OnInit,
-    Output,
+    output,
     signal,
     ViewChild
 } from '@angular/core';
@@ -56,16 +55,17 @@ const DEFAULT_FILE_TYPE = 'text';
         DotFieldValidationMessageComponent
     ],
     templateUrl: './dot-binary-field-editor.component.html',
-    styleUrls: ['./dot-binary-field-editor.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
-    @Input() fileName = '';
-    @Input() fileContent = '';
-    @Input() allowFileNameEdit = true;
+export class DotBinaryFieldEditorComponent implements OnInit {
+    $fileName = input<string>('', { alias: 'fileName' });
+    $fileContent = input<string>('', { alias: 'fileContent' });
+    $allowFileNameEdit = input<boolean>(true, { alias: 'allowFileNameEdit' });
+    $userMonacoOptions = input<MonacoEditorConstructionOptions>({}, { alias: 'userMonacoOptions' });
 
-    @Output() readonly tempFileUploaded = new EventEmitter<DotCMSTempFile>();
-    @Output() readonly cancel = new EventEmitter<void>();
+    $tempFileUploaded = output<DotCMSTempFile>();
+    $cancel = output<void>();
+
     @ViewChild('editorRef', { static: true }) editorRef!: MonacoEditorComponent;
     readonly form = new FormGroup({
         name: new FormControl('', [Validators.required]),
@@ -93,11 +93,6 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
         };
     });
 
-    @Input()
-    set userMonacoOptions(customMonacoOptions: MonacoEditorConstructionOptions) {
-        this._userMonacoOptions.set(customMonacoOptions);
-    }
-
     get name(): FormControl {
         return this.form.get('name') as FormControl;
     }
@@ -115,13 +110,24 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
      */
     @HostListener('document:keydown.escape', ['$event']) onEscape(event) {
         // TODO: The 'emit' function requires a mandatory void argument
-        this.cancel.emit();
+        this.$cancel.emit();
         event.preventDefault();
         event.stopPropagation();
     }
 
     ngOnInit(): void {
-        this.setFormValues();
+        effect(() => {
+            this._userMonacoOptions.set(this.$userMonacoOptions() ?? {});
+        });
+
+        effect(() => {
+            this.setFormValues();
+            const fileName = this.$fileName();
+            if (window.monaco) {
+                this.setEditorLanguage(fileName);
+            }
+        });
+
         this.name.valueChanges
             .pipe(debounceTime(350))
             .subscribe((name) => this.setEditorLanguage(name));
@@ -131,17 +137,11 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
         );
     }
 
-    ngOnChanges(): void {
-        this.setFormValues();
-        if (window.monaco) {
-            this.setEditorLanguage(this.fileName);
-        }
-    }
-
     onEditorInit() {
         this.editor = this.editorRef.editor;
-        if (this.fileName) {
-            this.setEditorLanguage(this.fileName);
+        const fileName = this.$fileName();
+        if (fileName) {
+            this.setEditorLanguage(fileName);
         }
 
         window.monaco.languages.register({
@@ -167,8 +167,8 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
     }
 
     private setFormValues(): void {
-        this.name.setValue(this.fileName);
-        this.content.setValue(this.fileContent);
+        this.name.setValue(this.$fileName());
+        this.content.setValue(this.$fileContent());
     }
 
     private markControlInvalid(control: FormControl): void {
@@ -182,7 +182,7 @@ export class DotBinaryFieldEditorComponent implements OnInit, OnChanges {
         this.disableEditor();
         obs$.subscribe((tempFile) => {
             this.enableEditor();
-            this.tempFileUploaded.emit({
+            this.$tempFileUploaded.emit({
                 ...tempFile,
                 content: this.content.value
             });

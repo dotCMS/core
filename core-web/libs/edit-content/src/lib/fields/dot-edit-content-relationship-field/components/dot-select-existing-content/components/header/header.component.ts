@@ -13,7 +13,9 @@ import { SearchComponent } from '../search/search.component';
     imports: [DotMessagePipe, SearchComponent, ToggleSwitchModule, FormsModule],
     templateUrl: './header.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    styleUrl: './header.component.scss'
+    host: {
+        class: 'w-full'
+    }
 })
 export class HeaderComponent {
     readonly store = inject(ExistingContentStore);

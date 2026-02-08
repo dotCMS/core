@@ -14,12 +14,11 @@ bin/*.sh
 *.sublime-workspace
 
 # IDE - VSCode
-.vscode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+
+
+# Allow core-web VSCode settings
+!core-web/.vscode/
+!core-web/.vscode/**
 
 # none enterprise stuff should make it here #
 #######################################
@@ -190,6 +189,9 @@ dotCMS/dependencies.gradle
 examples/nextjs/package-lock.json
 examples/angular/package-lock.json
 examples/astro/package-lock.json
+
+# core-web uses yarn, ignore npm lock file
+/core-web/package-lock.json
 
 local/
 

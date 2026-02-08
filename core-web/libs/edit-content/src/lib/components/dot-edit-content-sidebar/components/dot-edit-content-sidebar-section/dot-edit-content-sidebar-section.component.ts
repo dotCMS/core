@@ -14,8 +14,10 @@ import {
     selector: 'dot-edit-content-sidebar-section',
     imports: [CommonModule],
     templateUrl: './dot-edit-content-sidebar-section.component.html',
-    styleUrl: './dot-edit-content-sidebar-section.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col'
+    }
 })
 export class DotEditContentSidebarSectionComponent {
     /**

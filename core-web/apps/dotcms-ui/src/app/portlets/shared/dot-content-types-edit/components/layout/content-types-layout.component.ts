@@ -4,13 +4,12 @@ import { AsyncPipe, CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
-    EventEmitter,
-    Input,
-    OnChanges,
     OnInit,
-    Output,
-    ViewChild,
-    inject
+    effect,
+    inject,
+    input,
+    output,
+    viewChild
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
@@ -27,7 +26,6 @@ import {
     DotApiLinkComponent,
     DotAutofocusDirective,
     DotCopyButtonComponent,
-    DotIconComponent,
     DotMessagePipe
 } from '@dotcms/ui';
 
@@ -35,14 +33,12 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
-import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { ContentTypesFieldsListComponent } from '../fields/content-types-fields-list';
 import { FieldDragDropService } from '../fields/service';
 
 @Component({
     selector: 'dot-content-type-layout',
-    styleUrls: ['./content-types-layout.component.scss'],
     templateUrl: 'content-types-layout.component.html',
     imports: [
         CommonModule,
@@ -51,8 +47,7 @@ import { FieldDragDropService } from '../fields/service';
         SplitButtonModule,
         ButtonModule,
         InputTextModule,
-        DotSecondaryToolbarComponent,
-        DotIconComponent,
+        InputTextModule,
         DotApiLinkComponent,
         DotCopyButtonComponent,
         DotMessagePipe,
@@ -64,18 +59,18 @@ import { FieldDragDropService } from '../fields/service';
         ContentTypesFieldsListComponent
     ]
 })
-export class ContentTypesLayoutComponent implements OnChanges, OnInit {
+export class ContentTypesLayoutComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private dotMenuService = inject(DotMenuService);
     private fieldDragDropService = inject(FieldDragDropService);
     private dotEventsService = inject(DotEventsService);
     private dotCurrentUserService = inject(DotCurrentUserService);
 
-    @Input() contentType: DotCMSContentType;
-    @Output() openEditDialog: EventEmitter<unknown> = new EventEmitter();
-    @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
-    @ViewChild('contentTypeNameInput') contentTypeNameInput: ElementRef;
-    @ViewChild('dotEditInline') dotEditInline: DotInlineEditComponent;
+    $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
+    openEditDialog = output<unknown>();
+    changeContentTypeName = output<string>();
+    $contentTypeNameInput = viewChild.required<ElementRef>('contentTypeNameInput');
+    $dotEditInline = viewChild.required<DotInlineEditComponent>('dotEditInline');
 
     permissionURL: string;
     pushHistoryURL: string;
@@ -92,18 +87,20 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
         this.loadActions();
     }
 
-    ngOnChanges(changes): void {
-        if (changes.contentType.currentValue) {
-            this.dotMenuService
-                .getDotMenuId('content-types-angular')
-                .pipe(take(1))
-                .subscribe((id: string) => {
-                    // tslint:disable-next-line:max-line-length
-                    this.relationshipURL = `c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${this.contentType.id}`;
-                });
-            this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${this.contentType.id}&popup=true`;
-            this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${this.contentType.id}&popup=true`;
-        }
+    constructor() {
+        effect(() => {
+            const ct = this.$contentType();
+            if (ct) {
+                this.dotMenuService
+                    .getDotMenuId('content-types-angular')
+                    .pipe(take(1))
+                    .subscribe((id: string) => {
+                        this.relationshipURL = `/c/portal/layout?p_l_id=${id}&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=${ct.id}`;
+                    });
+                this.permissionURL = `/html/content_types/permissions.jsp?contentTypeId=${ct.id}&popup=true`;
+                this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${ct.id}&popup=true`;
+            }
+        });
     }
 
     /**
@@ -121,10 +118,10 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     fireChangeName(): void {
-        const contentTypeName = this.contentTypeNameInput.nativeElement.value.trim();
+        const contentTypeName = this.$contentTypeNameInput().nativeElement.value.trim();
         this.changeContentTypeName.emit(contentTypeName);
-        this.contentType.name = contentTypeName;
-        this.dotEditInline.hideContent();
+        this.$contentType().name = contentTypeName;
+        this.$dotEditInline().hideContent();
     }
 
     /**
@@ -134,7 +131,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     editInlineActivate(event: MouseEvent): void {
-        this.contentTypeNameInputSize = event.target['offsetWidth'];
+        this.contentTypeNameInputSize = event.target['offsetWidth'] + 20;
     }
 
     /**
@@ -147,7 +144,7 @@ export class ContentTypesLayoutComponent implements OnChanges, OnInit {
         if (event.key === 'Enter') {
             this.fireChangeName();
         } else if (event.key === 'Escape') {
-            this.dotEditInline.hideContent();
+            this.$dotEditInline().hideContent();
         } else {
             const newInputSize = event.target['value'].length * 8 + 22;
             this.contentTypeNameInputSize = newInputSize > 485 ? 485 : newInputSize;

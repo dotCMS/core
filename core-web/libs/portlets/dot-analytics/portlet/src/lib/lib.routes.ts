@@ -4,8 +4,7 @@ import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-
 
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard/dot-analytics-dashboard.component';
 import { analyticsHealthGuard } from './guards/analytics-health.guard';
-
-
+import { dotAnalyticsEngagementResolver } from './resolvers/dot-analytics-engagement.resolver';
 
 export const dotAnalyticsRoutes: Route[] = [
     {
@@ -27,7 +26,11 @@ export const dotAnalyticsRoutes: Route[] = [
         path: 'dashboard',
         canMatch: [analyticsHealthGuard],
         providers: [DotAnalyticsDashboardStore],
-        component: DotAnalyticsDashboardComponent
+        component: DotAnalyticsDashboardComponent,
+        // TODO: Remove this resolver when the feature flag is removed
+        resolve: {
+            engagementEnabled: dotAnalyticsEngagementResolver
+        }
     },
     {
         path: '',

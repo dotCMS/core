@@ -386,7 +386,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             byTestId('dot-options-item-content_REACH_PAGE')
         );
 
-        expect(reachPageOptionContent).toHaveClass('expanded');
+        expect(reachPageOptionContent).toHaveClass('dot-option-content--expanded');
     });
 
     it('should emit closedSidebar when the sidebar its closed', () => {

@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
@@ -75,6 +76,7 @@ import {
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
     imports: [
+        ButtonModule,
         ConfirmDialogModule,
         ToastModule,
         EditEmaNavigationBarComponent,

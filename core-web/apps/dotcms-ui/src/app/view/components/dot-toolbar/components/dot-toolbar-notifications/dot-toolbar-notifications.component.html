@@ -7,10 +7,11 @@
     #overlayPanel
     icon="pi pi-bell"
     [showBadge]="unreadCount > 0"
-    (onHide)="markAllAsRead()">
-    <div class="dot-notifications">
+    (onHide)="markAllAsRead()"
+    overlayStyleClass="max-h-[80vh] overflow-auto translate-x-2">
+    <div class="w-84">
         <div class="flex items-center justify-between pb-2">
-            <h3 class="dot-notifications__title" id="dot-toolbar-notifications-title">
+            <h3 class="m-0 text-base font-semibold" id="dot-toolbar-notifications-title">
                 {{ 'notifications_title' | dm }}
             </h3>
             @if (data.length) {
@@ -25,17 +26,17 @@
             }
         </div>
         @if (!data.length) {
-            <div class="dot-notifications__empty">
-                <span class="dot-notifications__empty-title">
+            <div class="flex flex-col items-center border-t border-gray-200 py-4">
+                <span class="text-sm font-semibold">
                     {{ 'notifications_no_notifications_title' | dm }}
                 </span>
-                <span class="dot-notifications__empty-info">
+                <span class="text-xs text-gray-800">
                     {{ 'notifications_no_notifications' | dm }}
                 </span>
             </div>
         }
         <div class="dot-notifications__content" id="dot-toolbar-notifications-content">
-            <ul class="dot-notifications-list p-0">
+            <ul class="m-0 max-h-150 list-none overflow-x-hidden p-0">
                 @for (notification of data; track notification.id) {
                     <dot-notification-item
                         (clear)="onDismissNotification($event)"
@@ -43,11 +44,11 @@
                 }
             </ul>
         </div>
-        <div class="dot-notifications__footer" id="dot-toolbar-notifications-footer">
+        <div class="text-center" id="dot-toolbar-notifications-footer">
             @if (hasMore) {
                 <button
                     (click)="loadMore()"
-                    class="p-button-outlined"
+                    class="p-button-outlined mx-auto"
                     id="dot-toolbar-notifications-button-load-more"
                     ripple
                     pButton

@@ -14,8 +14,8 @@ import {
     DotLicenseService,
     DotMessageService,
     DotSiteService,
-    DotWorkflowService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    DotWorkflowService
 } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
 import {
@@ -453,8 +453,8 @@ describe('ContentTypesFormComponent', () => {
         };
 
         // Need to create a new spectator with enterprise license before initialization
-        const enterpriseSpectator = createComponent();
-        enterpriseSpectator.setInput('contentType', {
+        // Use fixture.componentRef.setInput before detectChanges for Angular 21 required signal inputs
+        spectator.fixture.componentRef.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             ...base,
             baseType: 'CONTENT',
@@ -462,14 +462,14 @@ describe('ContentTypesFormComponent', () => {
             publishDateVar: 'publishDateVar',
             layout: layout
         });
-        enterpriseSpectator.detectChanges();
-        await enterpriseSpectator.fixture.whenStable();
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
 
         // Manually call setDateVarFieldsState since ngOnChanges doesn't exist
-        enterpriseSpectator.component['setDateVarFieldsState']();
-        enterpriseSpectator.detectChanges();
+        spectator.component['setDateVarFieldsState']();
+        spectator.detectChanges();
 
-        expect(enterpriseSpectator.component.form.value).toEqual({
+        expect(spectator.component.form.value).toEqual({
             ...base,
             expireDateVar: 'expireDateVar',
             publishDateVar: 'publishDateVar',
@@ -601,16 +601,16 @@ describe('ContentTypesFormComponent', () => {
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = false;
 
-        // Create a new component instance with the updated flag
-        const newSpectator = createComponent();
-        newSpectator.setInput('contentType', {
+        // Use main spectator but update the input value directly
+        // Set input using fixture's componentRef before any detectChanges
+        spectator.fixture.componentRef.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123'
         });
-        newSpectator.detectChanges();
+        spectator.detectChanges();
 
-        const newContentBanner = newSpectator.query(
+        const newContentBanner = spectator.query(
             '[data-test-id="content-type__new-content-banner"]'
         );
         expect(newContentBanner).toBeNull();
@@ -671,7 +671,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         jest.spyOn(spectator.component, 'submitForm');
 
-        spectator.component.send.subscribe((res) => (data = res));
+        spectator.component.$send.subscribe((res) => (data = res));
         spectator.component.submitForm();
 
         expect(data).toBeNull();
@@ -686,11 +686,11 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
         jest.spyOn(spectator.component, 'submitForm');
-        jest.spyOn(spectator.component.send, 'emit');
+        jest.spyOn(spectator.component.$send, 'emit');
 
         spectator.component.submitForm();
 
-        expect(spectator.component.send.emit).not.toHaveBeenCalled();
+        expect(spectator.component.$send.emit).not.toHaveBeenCalled();
     });
 
     it('should have dot-page-selector component and right attrs', () => {
@@ -717,7 +717,7 @@ describe('ContentTypesFormComponent', () => {
             spectator.detectChanges();
             data = null;
             jest.spyOn(spectator.component, 'submitForm');
-            spectator.component.send.subscribe((res) => (data = res));
+            spectator.component.$send.subscribe((res) => (data = res));
             spectator.component.form.controls.name.setValue('A content type name');
             // Set host to match SiteServiceMock currentSite identifier
             spectator.component.form.controls.host.setValue('123-xyz-567-xxl');

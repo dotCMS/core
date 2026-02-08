@@ -4,94 +4,102 @@
         [value]="0"
         collapseIcon="pi pi-angle-up"
         expandIcon="pi pi-angle-down">
-        <p-accordion-panel [disabled]="isLoading">
+        <p-accordion-panel [value]="0" [disabled]="isLoading">
             <p-accordion-header>
                 {{ 'block-editor.extension.ai-image.settings' | dm }}
             </p-accordion-header>
-            <div class="field ai-image-prompt__input">
-                <label dotFieldRequired>{{ 'block-editor.extension.ai-image.input' | dm }}</label>
-                <div>
-                    <p-radioButton formControlName="type" inputId="optionOne" value="input" />
-                    <label class="ml-2" for="optionOne">
-                        {{ 'block-editor.extension.ai-image.custom.prompt' | dm }}
+            <p-accordion-content>
+                <div class="field ai-image-prompt__input">
+                    <label dotFieldRequired>
+                        {{ 'block-editor.extension.ai-image.input' | dm }}
                     </label>
-                </div>
-                <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
-                @if (hasEditorContent) {
-                    <div data-testid="ai-existing-content">
-                        <p-radioButton formControlName="type" inputId="option2" value="auto" />
-                        <label class="ml-2" for="option2">
-                            {{ 'block-editor.extension.ai-image.existing.content' | dm }}
+                    <div>
+                        <p-radioButton formControlName="type" inputId="optionOne" value="input" />
+                        <label class="ml-2" for="optionOne">
+                            {{ 'block-editor.extension.ai-image.custom.prompt' | dm }}
                         </label>
                     </div>
-                    <span>{{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}</span>
-                }
-            </div>
-            <div class="field ai-image-prompt__orientation">
-                <label dotFieldRequired for="orientation">
-                    {{ 'block-editor.extension.ai-image.orientation' | dm }}
-                </label>
-                <p-select
-                    [options]="orientationOptions"
-                    formControlName="size"
-                    inputId="orientation"
-                    styleClass="w-full" />
-            </div>
+                    <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
+                    @if (hasEditorContent) {
+                        <div data-testid="ai-existing-content">
+                            <p-radioButton formControlName="type" inputId="option2" value="auto" />
+                            <label class="ml-2" for="option2">
+                                {{ 'block-editor.extension.ai-image.existing.content' | dm }}
+                            </label>
+                        </div>
+                        <span>
+                            {{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}
+                        </span>
+                    }
+                </div>
+                <div class="field ai-image-prompt__orientation">
+                    <label dotFieldRequired for="orientation">
+                        {{ 'block-editor.extension.ai-image.orientation' | dm }}
+                    </label>
+                    <p-select
+                        [options]="orientationOptions"
+                        formControlName="size"
+                        inputId="orientation"
+                        styleClass="w-full" />
+                </div>
+            </p-accordion-content>
         </p-accordion-panel>
-        <p-accordion-panel [disabled]="isLoading" iconPos="end">
+        <p-accordion-panel [value]="1" [disabled]="isLoading" iconPos="end">
             <p-accordion-header>
                 {{ 'block-editor.extension.ai-image.prompt' | dm }}
             </p-accordion-header>
-            <div
-                [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading"
-                class="ai-image-prompt__text">
-                <div class="field">
-                    @if (requiredPrompt) {
-                        <label data-testid="prompt-label" dotFieldRequired for="prompt">
-                            {{ promptLabel | dm }}
-                        </label>
-                    } @else {
-                        <label data-testid="prompt-label" for="prompt">
-                            {{ promptLabel | dm }}
-                        </label>
-                    }
-                    <textarea
-                        [placeholder]="promptTextAreaPlaceholder | dm"
-                        class="w-full ai-image-prompt__textarea"
-                        id="prompt"
-                        cols="30"
-                        formControlName="text"
-                        pInputTextarea
-                        rows="11"></textarea>
-                </div>
-                @if (aiProcessedPrompt && !isLoading) {
+            <p-accordion-content>
+                <div
+                    [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading"
+                    class="ai-image-prompt__text">
                     <div class="field">
-                        <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten">
-                            {{ 'block-editor.extension.ai-image.rewritten' | dm }}
-                        </label>
-                        <div class="ai-image-prompt__text-wrapper">
-                            <textarea
-                                [value]="aiProcessedPrompt"
-                                class="w-full ai-image-prompt__rewritten-textarea"
-                                id="prompt-rewritten"
-                                cols="30"
-                                pInputTextarea
-                                readonly
-                                rows="10"></textarea>
-                            <dot-copy-button
-                                [copy]="aiProcessedPrompt"
-                                customClass="p-button-rounded" />
-                        </div>
+                        @if (requiredPrompt) {
+                            <label data-testid="prompt-label" dotFieldRequired for="prompt">
+                                {{ promptLabel | dm }}
+                            </label>
+                        } @else {
+                            <label data-testid="prompt-label" for="prompt">
+                                {{ promptLabel | dm }}
+                            </label>
+                        }
+                        <textarea
+                            [placeholder]="promptTextAreaPlaceholder | dm"
+                            class="w-full ai-image-prompt__textarea"
+                            id="prompt"
+                            cols="30"
+                            formControlName="text"
+                            pInputTextarea
+                            rows="11"></textarea>
                     </div>
-                }
-            </div>
+                    @if (aiProcessedPrompt && !isLoading) {
+                        <div class="field">
+                            <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten">
+                                {{ 'block-editor.extension.ai-image.rewritten' | dm }}
+                            </label>
+                            <div class="ai-image-prompt__text-wrapper">
+                                <textarea
+                                    [value]="aiProcessedPrompt"
+                                    class="w-full ai-image-prompt__rewritten-textarea"
+                                    id="prompt-rewritten"
+                                    cols="30"
+                                    pInputTextarea
+                                    readonly
+                                    rows="10"></textarea>
+                                <dot-copy-button
+                                    [copy]="aiProcessedPrompt"
+                                    customClass="p-button-rounded" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </p-accordion-content>
         </p-accordion-panel>
     </p-accordion>
-    <button
+    <p-button
         [disabled]="form.invalid || isLoading"
         [label]="submitButtonLabel | dm"
-        class="self-end p-button-outlined"
-        pButton
+        variant="outlined"
+        class="self-end"
         type="submit">
         @if (!isLoading) {
             <svg
@@ -113,5 +121,5 @@
         } @else {
             <i class="pi pi-spin pi-spinner"></i>
         }
-    </button>
+    </p-button>
 </form>

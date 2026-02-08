@@ -48,11 +48,6 @@ export interface DotAppsSaveData {
     };
 }
 
-export interface DotAppsListResolverData {
-    apps: DotApp[];
-    isEnterpriseLicense: boolean;
-}
-
 export interface DotAppsExportConfiguration {
     appKeysBySite?: { [key: string]: string[] };
     exportAll: boolean;

@@ -1,8 +1,8 @@
-<div class="content-type-fields-drop-zone">
+<div class="flex grow flex-col relative min-h-0 overflow-y-auto overflow-x-hidden">
     <div
         [dragulaModel]="fieldRows"
         [attr.disabled]="loading"
-        class="content-type-fields-drop-zone__container"
+        class="grow flex flex-col gap-4"
         dragula="fields-row-bag">
         @for (row of fieldRows; track row; let i = $index) {
             @if (row.columns && row.columns.length) {
@@ -19,7 +19,7 @@
                     class="row-header__drag" />
             }
         }
-        <dot-add-rows (selectColums)="addRow($event)" />
+        <dot-add-rows ($selectColums)="addRow($event)" />
     </div>
 
     <dot-loading-indicator [fullscreen]="true" />
@@ -30,8 +30,12 @@
     [header]="currentFieldType?.label"
     [modal]="true"
     [style]="{ width: '45rem' }"
-    (visibleChange)="removeFieldsWithoutId()">
-    <p-tabs (onChange)="handleTabChange($event.value)" [(value)]="activeTab">
+    (visibleChange)="handleDialogVisibleChange($event)">
+    <p-tabs
+        (onChange)="handleTabChange($event.value)"
+        [(value)]="activeTab"
+        [tabindex]="-1"
+        class="-mx-6">
         <p-tablist>
             <p-tab [value]="0">
                 {{ 'contenttypes.dropzone.tab.overview' | dm }}
@@ -54,7 +58,7 @@
                     'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
                 ) {
                     <dot-convert-to-block-info
-                        (action)="scrollTo($event)"
+                        ($action)="scrollTo($event)"
                         [currentFieldType]="currentFieldType"
                         [currentField]="currentField"></dot-convert-to-block-info>
                 }
@@ -62,7 +66,7 @@
                     (saveField)="saveFieldsHandler($event)"
                     (valid)="setDialogOkButtonState($event)"
                     [formFieldData]="currentField"
-                    [contentType]="contentType"
+                    [contentType]="$contentType()"
                     #fieldPropertiesForm />
                 @if (
                     !!currentField?.id &&
@@ -70,7 +74,7 @@
                         'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
                 ) {
                     <dot-convert-wysiwyg-to-block
-                        (convert)="convertWysiwygToBlock($event)"
+                        ($convert)="convertWysiwygToBlock($event)"
                         [currentFieldType]="currentFieldType" />
                 }
             </p-tabpanel>
@@ -79,17 +83,17 @@
                     @switch (this.currentFieldType?.clazz) {
                         @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
                             <dot-block-editor-settings
-                                (changeControls)="changesDialogActions($event)"
-                                (save)="toggleDialog()"
-                                (valid)="setDialogOkButtonState($event)"
+                                ($changeControls)="changesDialogActions($event)"
+                                ($save)="toggleDialog()"
+                                ($valid)="setDialogOkButtonState($event)"
                                 [field]="currentField"
                                 [isVisible]="activeTab === 1"></dot-block-editor-settings>
                         }
                         @case ('com.dotcms.contenttype.model.field.ImmutableBinaryField') {
                             <dot-binary-settings
-                                (save)="toggleDialog()"
-                                (valid)="setDialogOkButtonState($event)"
-                                (changeControls)="changesDialogActions($event)"
+                                ($save)="toggleDialog()"
+                                ($valid)="setDialogOkButtonState($event)"
+                                ($changeControls)="changesDialogActions($event)"
                                 [field]="currentField"
                                 [isVisible]="activeTab === 1"></dot-binary-settings>
                         }

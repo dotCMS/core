@@ -8,7 +8,6 @@ import {
     input,
     output,
     viewChildren,
-    ChangeDetectorRef,
     signal
 } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -53,6 +52,9 @@ const COMMENT_MAX_LENGTH = 500;
     ],
     templateUrl: './dot-edit-content-sidebar-activities.component.html',
     styleUrls: ['./dot-edit-content-sidebar-activities.component.scss'],
+    host: {
+        class: 'flex flex-col h-full relative'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarActivitiesComponent {
@@ -155,8 +157,6 @@ export class DotEditContentSidebarActivitiesComponent {
     readonly commentLength = signal(0);
     readonly isAtMaxLength = signal(false);
 
-    #cdRef = inject(ChangeDetectorRef);
-
     constructor() {
         // Listen to comment control changes to update the character counter
         this.commentControl.valueChanges.subscribe((value: string) => {
@@ -220,4 +220,23 @@ export class DotEditContentSidebarActivitiesComponent {
     protected get commentControl(): FormControl<string> {
         return this.form.get('comment') as FormControl<string>;
     }
+
+    /**
+     * DataView passthrough (pt) configuration for PrimeNG v21 styling.
+     */
+    readonly dataViewPt = {
+        root: { class: 'bg-transparent border-none' },
+        content: { class: 'p-0 border-none flex flex-col gap-4 bg-transparent' },
+        emptyMessage: { class: 'bg-transparent p-0' }
+    };
+
+    /**
+     * Avatar passthrough (pt) configuration for PrimeNG v21 styling.
+     */
+    readonly avatarPt = {
+        root: {
+            class: 'w-[21px] h-[21px] text-xs leading-[21px] flex items-center justify-center'
+        },
+        text: { class: 'text-xs leading-none' }
+    };
 }

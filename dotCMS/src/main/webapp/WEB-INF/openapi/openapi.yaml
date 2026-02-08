@@ -62,6 +62,8 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
+- description: Push publishing job management endpoints
+  name: Publishing
 - description: Content relationship management
   name: Relationships
 - description: Endpoints for managing sites (hosts) and their configuration
@@ -122,8 +124,6 @@ tags:
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
-- description: Content publishing and deployment operations
-  name: Publishing
 - description: Remote content publishing and synchronization
   name: Push Publishing
 - description: User role and permission management
@@ -10429,14 +10429,9 @@ paths:
                 entity:
                 - containerId: some-container-id
                   contentletId: some-contentlet-id
-                  styleProperties:
-                    color: "#FF0000"
-                    margin: 10px
-                    width: 100px
                   uuid: some-uuid
                 - containerId: other-container-id
                   contentletId: other-contentlet-id
-                  styleProperties: null
                   uuid: other-uuid
                 errors: []
                 i18nMessagesMap: {}
@@ -10603,6 +10598,55 @@ paths:
           description: default response
       tags:
       - Page
+  /v1/page/{pageId}/styles:
+    put:
+      description: Updates style properties for contentlets within containers on a
+        specific page. Only updates the styleProperties field without modifying page
+        structure.
+      operationId: updateStyles
+      parameters:
+      - description: Page identifier
+        in: path
+        name: pageId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentWithStylesForm"
+        description: "List of containers with contentlet style updates. Each container\
+          \ includes its ID, UUID, and dynamic properties where contentlet IDs are\
+          \ keys with their style properties as values."
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentView"
+          description: Contentlet styles updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - empty container entries or invalid contentlet
+            references
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user does not have EDIT permission on the page
+        "404":
+          content:
+            application/json: {}
+          description: Page not found
+      summary: Update contentlet styles in a page
+      tags:
+      - Page
   /v1/permissions:
     get:
       description: Returns available permission levels and scopes that can be assigned
@@ -10721,6 +10765,101 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: Get permissions by permission type
+      tags:
+      - Permissions
+  /v1/permissions/role/{roleId}:
+    get:
+      description: "Retrieves all hosts and folders where a role has permissions defined,\
+        \ organized by asset with full permission matrices. Admin users can view any\
+        \ role. Non-admin users can only view permissions for roles they belong to."
+      operationId: getRolePermissions
+      parameters:
+      - description: Role identifier
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRolePermissionsView"
+          description: Role permissions retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid role id
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user does not have access to view this role's permissions
+      summary: Get role permissions
+      tags:
+      - Permissions
+  /v1/permissions/role/{roleId}/asset/{assetId}:
+    put:
+      description: Updates permissions for a specific role on a host or folder. Automatically
+        breaks permission inheritance if the asset currently inherits. Only admin
+        users can access this endpoint. Omitting a scope preserves existing permissions;
+        empty array removes permissions.
+      operationId: updateRolePermissions
+      parameters:
+      - description: Role identifier
+        in: path
+        name: roleId
+        required: true
+        schema:
+          type: string
+      - description: "Asset identifier (Host ID, Host Name, or Folder ID)"
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      - description: "If true, cascades permissions to all child assets"
+        in: query
+        name: cascade
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRolePermissionsForm"
+        description: Permission data by scope
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUpdateRolePermissionsView"
+          description: Permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid permission level or scope
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks EDIT_PERMISSIONS on asset or is not
+            admin
+        "404":
+          content:
+            application/json: {}
+          description: Role or asset not found
+        "500":
+          content:
+            application/json: {}
+          description: Failed to update permissions
+      summary: Update role permissions on asset
       tags:
       - Permissions
   /v1/permissions/user/{userId}:
@@ -10888,6 +11027,106 @@ paths:
             application/json: {}
           description: Asset not found
       summary: Get asset permissions
+      tags:
+      - Permissions
+    put:
+      description: "Replaces all permissions for a specific asset. If the asset is\
+        \ currently inheriting permissions, inheritance will be automatically broken.\
+        \ Only admin users can access this endpoint. Use cascade=true to trigger an\
+        \ async job that removes individual permissions from descendant assets."
+      operationId: updateAssetPermissions
+      parameters:
+      - description: Asset identifier (inode or identifier)
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      - description: "If true, triggers async job to cascade permissions to descendants"
+        in: query
+        name: cascade
+        schema:
+          type: boolean
+          default: false
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssetPermissionsForm"
+        description: Permission update data
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityUpdatePermissionsView"
+          description: Permissions updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid request body or role IDs
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user is not admin or lacks EDIT_PERMISSIONS on
+            asset
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+        "500":
+          content:
+            application/json: {}
+          description: Failed to update permissions
+      summary: Update asset permissions
+      tags:
+      - Permissions
+  /v1/permissions/{assetId}/_reset:
+    put:
+      description: "Removes all individual permissions from an asset, making it inherit\
+        \ permissions from its parent in the hierarchy. Only admin users can access\
+        \ this endpoint. Returns 409 Conflict if the asset already inherits."
+      operationId: resetAssetPermissions
+      parameters:
+      - description: Asset identifier (inode or identifier)
+        in: path
+        name: assetId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityResetPermissionsView"
+          description: Permissions reset successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid asset ID
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user is not admin
+        "404":
+          content:
+            application/json: {}
+          description: Asset not found
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - asset already inherits permissions from parent
+      summary: Reset asset permissions to inherited
       tags:
       - Permissions
   /v1/personalization/pagepersonas:
@@ -11225,6 +11464,152 @@ paths:
           description: default response
       tags:
       - Portlets
+  /v1/publishing:
+    get:
+      description: "Returns a paginated list of publishing jobs combining audit status\
+        \ and bundle metadata. Supports filtering by status and bundle name/ID. Each\
+        \ job includes asset preview (first 3 assets), environment count, and timing\
+        \ information."
+      operationId: listPublishingJobs
+      parameters:
+      - description: Page number (starts from 1)
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Results per page (1-500)
+        example: 50
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 50
+      - description: Case-insensitive partial match filter on bundle_id and bundle
+          name
+        example: staging
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).\
+          \ Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS,\
+          \ PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
+          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
+          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
+          \ INVALID_TOKEN, LICENSE_REQUIRED"
+        example: "SUCCESS,FAILED_TO_PUBLISH"
+        in: query
+        name: status
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPublishingJobsView"
+          description: Publishing jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request parameters (e.g., invalid status value, pagination\
+            \ out of range)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: List publishing jobs
+      tags:
+      - Publishing
+  /v1/publishing/{bundleId}:
+    delete:
+      description: "Removes a specific bundle from the publishing queue. Cannot delete\
+        \ bundles that are actively publishing (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE)."
+      operationId: deletePublishingJob
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Success response with message
+                example:
+                  message: Bundle deleted successfully
+          description: Bundle deleted successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "409":
+          content:
+            application/json: {}
+          description: Cannot delete bundle while publishing is in progress
+      summary: Delete a publishing job
+      tags:
+      - Publishing
+    get:
+      description: "Returns detailed status, environments, endpoints, and timestamps\
+        \ for a specific publishing bundle. Includes per-endpoint success/failure\
+        \ status with error messages and stack traces for failed endpoints."
+      operationId: getPublishingJobDetails
+      parameters:
+      - description: Bundle identifier
+        example: f3d9a4b7-staging-bundle-2026-01-15
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPublishingJobDetailView"
+          description: Publishing job details retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid bundle ID format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+      summary: Get publishing job details
+      tags:
+      - Publishing
   /v1/publishqueue:
     delete:
       operationId: deleteAssetsByIdentifiers
@@ -19285,6 +19670,96 @@ components:
           example: //demo.dotcms.com/documents/annual-report.pdf
       required:
       - assetPath
+    AssetPermissionsView:
+      type: object
+      description: The updated asset with its new permission assignments
+      properties:
+        assetId:
+          type: string
+          description: Asset identifier
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        assetType:
+          type: string
+          description: Asset type
+          enum:
+          - INDIVIDUAL
+          - HOST
+          - FOLDER
+          - CONTAINER
+          - TEMPLATE
+          - TEMPLATE_LAYOUT
+          - LINK
+          - CONTENT
+          - PAGE
+          - CONTENT_TYPE
+          - STRUCTURE
+          - CATEGORY
+          - RULE
+          example: FOLDER
+        canEdit:
+          type: boolean
+          description: Whether the requesting user can edit this asset
+          example: true
+        canEditPermissions:
+          type: boolean
+          description: Whether the requesting user can edit permissions on this asset
+          example: true
+        inheritanceMode:
+          type: string
+          description: Permission inheritance mode
+          enum:
+          - INHERITED
+          - INDIVIDUAL
+          example: INDIVIDUAL
+        isParentPermissionable:
+          type: boolean
+          description: "Whether this asset can have child permissionables (e.g., hosts\
+            \ and folders)"
+          example: true
+        parentAssetId:
+          type: string
+          description: Parent asset identifier (null if no parent or at root level)
+          example: abc-123-def-456
+        permissions:
+          type: array
+          description: Paginated list of role permissions assigned to this asset
+          items:
+            $ref: "#/components/schemas/RolePermissionView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/RolePermissionView"
+            last:
+              $ref: "#/components/schemas/RolePermissionView"
+      required:
+      - assetId
+      - assetType
+      - canEdit
+      - canEditPermissions
+      - inheritanceMode
+      - isParentPermissionable
+      - permissions
+    AssetPreviewView:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Asset identifier
+          example: abc123-content-id
+        title:
+          type: string
+          description: Human-readable asset title
+          example: Homepage Content Update
+        type:
+          type: string
+          description: "Asset type (e.g., contentlet, template, container, folder,\
+            \ host)"
+          example: contentlet
+      required:
+      - id
+      - title
+      - type
     AssetsRequestForm:
       type: object
       properties:
@@ -20021,6 +20496,10 @@ components:
         getiDate:
           type: string
           format: date-time
+        hostId:
+          type: string
+        hostName:
+          type: string
         idate:
           type: string
           format: date-time
@@ -20078,6 +20557,8 @@ components:
           type: string
         useDiv:
           type: boolean
+        variant:
+          type: string
         versionId:
           type: string
         versionType:
@@ -20295,6 +20776,53 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowFormEntry"
+    ContentView:
+      type: object
+      properties:
+        containerId:
+          type: string
+          description: Container identifier
+          example: //demo.dotcms.com/application/containers/default/
+        contentletId:
+          type: string
+          description: Contentlet identifier
+        dotStyleProperties:
+          type: object
+          additionalProperties:
+            type: object
+            description: Styles defined for the Contentlet
+            example:
+              color: "#FF0000"
+              margin: 10px
+          description: Styles defined for the Contentlet
+          example:
+            color: "#FF0000"
+            margin: 10px
+          properties:
+            empty:
+              type: boolean
+        uuid:
+          type: string
+          description: Container unique identifier (UUID)
+      required:
+      - containerId
+      - contentletId
+      - uuid
+    ContentWithStylesForm:
+      type: object
+      description: Container with contentlet style properties
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+          example: //demo.dotcms.com/application/containers/default/
+        uuid:
+          type: string
+          description: Container unique identifier (UUID)
+          example: "1"
+      required:
+      - identifier
+      - uuid
     ContentletWorkflowStatusView:
       type: object
       properties:
@@ -20907,6 +21435,65 @@ components:
             type: string
           variable:
             type: string
+    EndpointDetailView:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Server address (hostname or IP)
+          example: staging1.example.com
+        id:
+          type: string
+          description: Unique endpoint identifier
+          example: endpoint-1
+        port:
+          type: string
+          description: Server port number
+          example: "443"
+        protocol:
+          type: string
+          description: Communication protocol
+          example: https
+        serverName:
+          type: string
+          description: Human-readable server name
+          example: Staging Server 1
+        stackTrace:
+          type: string
+          description: Stack trace for failed endpoints (only included for failures)
+        status:
+          type: string
+          description: "Publishing status for this endpoint (e.g., SUCCESS, FAILED_TO_SENT)"
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        statusMessage:
+          type: string
+          description: Status message with additional details
+          example: Everything ok
+      required:
+      - address
+      - id
+      - port
+      - protocol
+      - serverName
     EndpointForm:
       type: object
       properties:
@@ -20945,6 +21532,33 @@ components:
           type: string
         pushToAll:
           type: boolean
+    EnvironmentDetailView:
+      type: object
+      properties:
+        endpoints:
+          type: array
+          description: Endpoints within this environment with their status
+          items:
+            $ref: "#/components/schemas/EndpointDetailView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/EndpointDetailView"
+            last:
+              $ref: "#/components/schemas/EndpointDetailView"
+        id:
+          type: string
+          description: Unique environment identifier
+          example: env-staging-123
+        name:
+          type: string
+          description: Human-readable environment name
+          example: Staging Environment
+      required:
+      - endpoints
+      - id
+      - name
     EnvironmentForm:
       type: object
       properties:
@@ -22382,6 +22996,18 @@ components:
             type: string
           variable:
             type: string
+    ImmutableListAssetPreviewView:
+      type: array
+      description: Preview of first 3 assets in the bundle
+      items:
+        $ref: "#/components/schemas/AssetPreviewView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/AssetPreviewView"
+        last:
+          $ref: "#/components/schemas/AssetPreviewView"
     ImmutableListCondition:
       type: array
       items:
@@ -22393,6 +23019,30 @@ components:
           $ref: "#/components/schemas/Condition"
         last:
           $ref: "#/components/schemas/Condition"
+    ImmutableListEndpointDetailView:
+      type: array
+      description: Endpoints within this environment with their status
+      items:
+        $ref: "#/components/schemas/EndpointDetailView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/EndpointDetailView"
+        last:
+          $ref: "#/components/schemas/EndpointDetailView"
+    ImmutableListEnvironmentDetailView:
+      type: array
+      description: Environments with their endpoints and status details
+      items:
+        $ref: "#/components/schemas/EnvironmentDetailView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/EnvironmentDetailView"
+        last:
+          $ref: "#/components/schemas/EnvironmentDetailView"
     ImmutableListJob:
       type: array
       items:
@@ -22415,6 +23065,18 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListRolePermissionView:
+      type: array
+      description: Paginated list of role permissions assigned to this asset
+      items:
+        $ref: "#/components/schemas/RolePermissionView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/RolePermissionView"
+        last:
+          $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
       description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
@@ -22435,6 +23097,19 @@ components:
           type: string
         last:
           type: string
+    ImmutableListUserPermissionAssetView:
+      type: array
+      description: List of permission assets (hosts and folders) with their permission
+        assignments
+      items:
+        $ref: "#/components/schemas/UserPermissionAssetView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/UserPermissionAssetView"
+        last:
+          $ref: "#/components/schemas/UserPermissionAssetView"
     ImmutableListVariantResult:
       type: array
       items:
@@ -22453,6 +23128,46 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableMapScopeSetType:
+      type: object
+      additionalProperties:
+        type: array
+        description: "Inheritable permissions by scope (only for parent permissionables).\
+          \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are permission\
+          \ types"
+        example:
+          FOLDER:
+          - READ
+          - WRITE
+          CONTENT:
+          - READ
+        items:
+          type: string
+          description: "Inheritable permissions by scope (only for parent permissionables).\
+            \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are\
+            \ permission types"
+          enum:
+          - READ
+          - USE
+          - EDIT
+          - WRITE
+          - PUBLISH
+          - EDIT_PERMISSIONS
+          - CAN_ADD_CHILDREN
+          example: "{\"FOLDER\":[\"READ\",\"WRITE\"],\"CONTENT\":[\"READ\"]}"
+        uniqueItems: true
+      description: "Inheritable permissions by scope (only for parent permissionables).\
+        \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are permission\
+        \ types"
+      example:
+        FOLDER:
+        - READ
+        - WRITE
+        CONTENT:
+        - READ
+      properties:
+        empty:
+          type: boolean
     ImmutableMapStringListSampleData:
       type: object
       additionalProperties:
@@ -22462,10 +23177,52 @@ components:
       properties:
         empty:
           type: boolean
+    ImmutableMapStringListString:
+      type: object
+      additionalProperties:
+        type: array
+        description: "Map of permission scopes (INDIVIDUAL, CONTENT, FOLDER, HOST,\
+          \ etc.) to lists of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+          \ CAN_ADD_CHILDREN)"
+        example:
+          INDIVIDUAL:
+          - READ
+          - WRITE
+          - PUBLISH
+          CONTENT:
+          - READ
+        items:
+          type: string
+          description: "Map of permission scopes (INDIVIDUAL, CONTENT, FOLDER, HOST,\
+            \ etc.) to lists of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"CONTENT\":[\"\
+            READ\"]}"
+      description: "Map of permission scopes (INDIVIDUAL, CONTENT, FOLDER, HOST, etc.)\
+        \ to lists of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+        \ CAN_ADD_CHILDREN)"
+      example:
+        INDIVIDUAL:
+        - READ
+        - WRITE
+        - PUBLISH
+        CONTENT:
+        - READ
+      properties:
+        empty:
+          type: boolean
     ImmutableMapStringObject:
       type: object
       additionalProperties:
         type: object
+        description: Styles defined for the Contentlet
+        example:
+          color: "#FF0000"
+          margin: 10px
+      description: Styles defined for the Contentlet
+      example:
+        color: "#FF0000"
+        margin: 10px
       properties:
         empty:
           type: boolean
@@ -22548,17 +23305,16 @@ components:
       uniqueItems: true
     ImmutableSetType:
       type: array
-      description: Available permission levels that can be assigned to users and roles
+      description: Individual permission levels assigned directly to this role on
+        the asset
       example:
       - READ
       - WRITE
       - PUBLISH
-      - EDIT_PERMISSIONS
-      - CAN_ADD_CHILDREN
       items:
         type: string
-        description: Available permission levels that can be assigned to users and
-          roles
+        description: Individual permission levels assigned directly to this role on
+          the asset
         enum:
         - READ
         - USE
@@ -22567,8 +23323,7 @@ components:
         - PUBLISH
         - EDIT_PERMISSIONS
         - CAN_ADD_CHILDREN
-        example: "[\"READ\",\"WRITE\",\"PUBLISH\",\"EDIT_PERMISSIONS\",\"CAN_ADD_CHILDREN\"\
-          ]"
+        example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
       properties:
         empty:
           type: boolean
@@ -23807,6 +24562,158 @@ components:
           type: boolean
         tokenInvalid:
           type: boolean
+    PublishingJobDetailView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Total number of assets in the bundle
+          example: 47
+        bundleId:
+          type: string
+          description: Unique bundle identifier
+          example: f3d9a4b7-staging-bundle-2026-01-15
+        bundleName:
+          type: string
+          description: Human-readable bundle name
+          example: bundle-testName
+        environments:
+          type: array
+          description: Environments with their endpoints and status details
+          items:
+            $ref: "#/components/schemas/EnvironmentDetailView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/EnvironmentDetailView"
+            last:
+              $ref: "#/components/schemas/EnvironmentDetailView"
+        filterName:
+          type: string
+          description: Publishing filter name used
+          example: Live to Staging
+        numTries:
+          type: integer
+          format: int32
+          description: Number of publish attempts
+          example: 1
+        status:
+          type: string
+          description: Current publishing status
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        timestamps:
+          $ref: "#/components/schemas/TimestampsView"
+      required:
+      - assetCount
+      - bundleId
+      - environments
+      - numTries
+      - status
+      - timestamps
+    PublishingJobView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Total number of assets in the bundle
+          example: 47
+        assetPreview:
+          type: array
+          description: Preview of first 3 assets in the bundle
+          items:
+            $ref: "#/components/schemas/AssetPreviewView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/AssetPreviewView"
+            last:
+              $ref: "#/components/schemas/AssetPreviewView"
+        bundleId:
+          type: string
+          description: Unique bundle identifier
+          example: f3d9a4b7-staging-bundle-2026-01-15
+        bundleName:
+          type: string
+          description: Human-readable bundle name
+          example: bundle-testName
+        createDate:
+          type: string
+          format: date-time
+          description: Bundle creation timestamp in ISO 8601 format
+          example: 2026-01-15T10:29:55Z
+        environmentCount:
+          type: integer
+          format: int32
+          description: Number of target environments
+          example: 3
+        filterName:
+          type: string
+          description: Publishing filter name used
+          example: Live to Staging
+        numTries:
+          type: integer
+          format: int32
+          description: Number of publish attempts
+          example: 1
+        status:
+          type: string
+          description: Current publishing status
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        statusUpdated:
+          type: string
+          format: date-time
+          description: Last status update timestamp in ISO 8601 format
+          example: 2026-01-15T10:31:22Z
+      required:
+      - assetCount
+      - assetPreview
+      - bundleId
+      - createDate
+      - environmentCount
+      - numTries
+      - status
     PullRelatedForm:
       type: object
       properties:
@@ -24106,6 +25013,27 @@ components:
           type: array
           items:
             type: string
+    ResetAssetPermissionsView:
+      type: object
+      properties:
+        assetId:
+          type: string
+          description: The identifier of the asset whose permissions were reset
+          example: abc123-def456
+        message:
+          type: string
+          description: Success message describing the operation result
+          example: Individual permissions removed. Asset now inherits from parent.
+        previousPermissionCount:
+          type: integer
+          format: int32
+          description: Number of individual permissions that were removed during the
+            reset operation
+          example: 5
+      required:
+      - assetId
+      - message
+      - previousPermissionCount
     ResetPasswordForm:
       type: object
       properties:
@@ -24288,6 +25216,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Container"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentView"
         errors:
           type: array
           items:
@@ -25032,6 +25985,77 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityPublishingJobDetailView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PublishingJobDetailView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPublishingJobsView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublishingJobView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityResetPermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ResetAssetPermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRestTagListView:
       type: object
       properties:
@@ -25135,6 +26159,29 @@ components:
           type: object
           additionalProperties:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRolePermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RolePermissionsView"
         errors:
           type: array
           items:
@@ -25377,6 +26424,52 @@ components:
           type: object
           additionalProperties:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityUpdatePermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/UpdateAssetPermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityUpdateRolePermissionsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/UpdateRolePermissionsView"
         errors:
           type: array
           items:
@@ -26387,6 +27480,271 @@ components:
           uniqueItems: true
         roleId:
           type: string
+    RolePermissionAssetView:
+      type: object
+      description: The updated asset with new permission assignments for this role
+      properties:
+        canEditPermissions:
+          type: boolean
+          description: Whether the requesting user can edit permissions on this asset
+          example: true
+        hostId:
+          type: string
+          description: "Host identifier (same as id for HOST type, parent host for\
+            \ FOLDER type)"
+          example: abc-123-def-456
+        id:
+          type: string
+          description: "Asset identifier (host identifier for HOST type, folder inode\
+            \ for FOLDER type)"
+          example: abc-123-def-456
+        inheritsPermissions:
+          type: boolean
+          description: Whether this asset inherits permissions from its parent
+          example: false
+        name:
+          type: string
+          description: "Asset name (hostname for HOST, folder name for FOLDER)"
+          example: demo.dotcms.com
+        path:
+          type: string
+          description: Full path to the asset
+          example: /demo.dotcms.com/application
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Map of permission scopes (INDIVIDUAL, CONTENT, FOLDER, HOST,\
+              \ etc.) to lists of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN)"
+            example:
+              CONTENT:
+              - READ
+              INDIVIDUAL:
+              - READ
+              - WRITE
+              - PUBLISH
+            items:
+              type: string
+              description: "Map of permission scopes (INDIVIDUAL, CONTENT, FOLDER,\
+                \ HOST, etc.) to lists of permission level names (READ, WRITE, PUBLISH,\
+                \ EDIT_PERMISSIONS, CAN_ADD_CHILDREN)"
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\",\"PUBLISH\"],\"CONTENT\"\
+                :[\"READ\"]}"
+          description: "Map of permission scopes (INDIVIDUAL, CONTENT, FOLDER, HOST,\
+            \ etc.) to lists of permission level names (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN)"
+          example:
+            CONTENT:
+            - READ
+            INDIVIDUAL:
+            - READ
+            - WRITE
+            - PUBLISH
+          properties:
+            empty:
+              type: boolean
+        type:
+          type: string
+          description: Asset type
+          enum:
+          - HOST
+          - FOLDER
+          example: HOST
+      required:
+      - canEditPermissions
+      - hostId
+      - id
+      - inheritsPermissions
+      - name
+      - path
+      - permissions
+      - type
+    RolePermissionForm:
+      type: object
+      description: Permission assignment for a single role on an asset
+      properties:
+        individual:
+          type: array
+          description: "Individual permission levels for this asset. Valid values:\
+            \ READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN"
+          example:
+          - READ
+          - WRITE
+          - PUBLISH
+          items:
+            type: string
+            description: "Individual permission levels for this asset. Valid values:\
+              \ READ, WRITE, PUBLISH, EDIT_PERMISSIONS, CAN_ADD_CHILDREN"
+            enum:
+            - READ
+            - USE
+            - EDIT
+            - WRITE
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
+            example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
+          uniqueItems: true
+        inheritable:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Inheritable permissions by scope for child assets. Keys\
+              \ are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are sets\
+              \ of permission levels."
+            example:
+              CONTENT:
+              - READ
+              - WRITE
+              FOLDER:
+              - READ
+              - CAN_ADD_CHILDREN
+            items:
+              type: string
+              description: "Inheritable permissions by scope for child assets. Keys\
+                \ are permission scopes (FOLDER, CONTENT, PAGE, etc.), values are\
+                \ sets of permission levels."
+              enum:
+              - READ
+              - USE
+              - EDIT
+              - WRITE
+              - PUBLISH
+              - EDIT_PERMISSIONS
+              - CAN_ADD_CHILDREN
+              example: "{\"FOLDER\":[\"READ\",\"CAN_ADD_CHILDREN\"],\"CONTENT\":[\"\
+                READ\",\"WRITE\"]}"
+            uniqueItems: true
+          description: "Inheritable permissions by scope for child assets. Keys are\
+            \ permission scopes (FOLDER, CONTENT, PAGE, etc.), values are sets of\
+            \ permission levels."
+          example:
+            CONTENT:
+            - READ
+            - WRITE
+            FOLDER:
+            - READ
+            - CAN_ADD_CHILDREN
+        roleId:
+          type: string
+          description: Role identifier. Can be role ID or role key.
+          example: abc-123-def-456
+      required:
+      - roleId
+    RolePermissionView:
+      type: object
+      properties:
+        individual:
+          type: array
+          description: Individual permission levels assigned directly to this role
+            on the asset
+          example:
+          - READ
+          - WRITE
+          - PUBLISH
+          items:
+            type: string
+            description: Individual permission levels assigned directly to this role
+              on the asset
+            enum:
+            - READ
+            - USE
+            - EDIT
+            - WRITE
+            - PUBLISH
+            - EDIT_PERMISSIONS
+            - CAN_ADD_CHILDREN
+            example: "[\"READ\",\"WRITE\",\"PUBLISH\"]"
+          properties:
+            empty:
+              type: boolean
+          uniqueItems: true
+        inheritable:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Inheritable permissions by scope (only for parent permissionables).\
+              \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are\
+              \ permission types"
+            example:
+              CONTENT:
+              - READ
+              FOLDER:
+              - READ
+              - WRITE
+            items:
+              type: string
+              description: "Inheritable permissions by scope (only for parent permissionables).\
+                \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values\
+                \ are permission types"
+              enum:
+              - READ
+              - USE
+              - EDIT
+              - WRITE
+              - PUBLISH
+              - EDIT_PERMISSIONS
+              - CAN_ADD_CHILDREN
+              example: "{\"FOLDER\":[\"READ\",\"WRITE\"],\"CONTENT\":[\"READ\"]}"
+            uniqueItems: true
+          description: "Inheritable permissions by scope (only for parent permissionables).\
+            \ Keys are permission scopes (HOST, FOLDER, CONTENT, etc.), values are\
+            \ permission types"
+          example:
+            CONTENT:
+            - READ
+            FOLDER:
+            - READ
+            - WRITE
+          properties:
+            empty:
+              type: boolean
+        inherited:
+          type: boolean
+          description: Whether permissions are inherited from a parent asset
+          example: false
+        roleId:
+          type: string
+          description: Role identifier
+          example: abc-123-def-456
+        roleName:
+          type: string
+          description: Role display name
+          example: CMS Administrator
+      required:
+      - individual
+      - inherited
+      - roleId
+      - roleName
+    RolePermissionsView:
+      type: object
+      properties:
+        assets:
+          type: array
+          description: List of permission assets (hosts and folders) with their permission
+            assignments
+          items:
+            $ref: "#/components/schemas/UserPermissionAssetView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/UserPermissionAssetView"
+            last:
+              $ref: "#/components/schemas/UserPermissionAssetView"
+        roleId:
+          type: string
+          description: Role identifier
+          example: abc-123-def-456
+        roleName:
+          type: string
+          description: Role display name
+          example: CMS Administrator
+      required:
+      - assets
+      - roleId
+      - roleName
     RoleResponseEntityView:
       type: object
       properties:
@@ -26568,6 +27926,14 @@ components:
               description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
                 \ etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
                 \ CAN_ADD_CHILDREN)"
+              enum:
+              - READ
+              - USE
+              - EDIT
+              - WRITE
+              - PUBLISH
+              - EDIT_PERMISSIONS
+              - CAN_ADD_CHILDREN
               example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"HOST\":[\"READ\"]}"
             uniqueItems: true
           description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
@@ -27597,6 +28963,42 @@ components:
             type: string
           variable:
             type: string
+    TimestampsView:
+      type: object
+      description: Publishing job timestamps
+      properties:
+        bundleEnd:
+          type: string
+          format: date-time
+          description: When bundle creation completed (ISO 8601 format)
+          example: 2026-01-15T10:31:22Z
+        bundleStart:
+          type: string
+          format: date-time
+          description: When bundle creation started (ISO 8601 format)
+          example: 2026-01-15T10:30:00Z
+        createDate:
+          type: string
+          format: date-time
+          description: When the audit record was created (ISO 8601 format)
+          example: 2026-01-15T10:29:55Z
+        publishEnd:
+          type: string
+          format: date-time
+          description: When publishing to endpoints completed (ISO 8601 format)
+          example: 2026-01-15T10:31:18Z
+        publishStart:
+          type: string
+          format: date-time
+          description: When publishing to endpoints started (ISO 8601 format)
+          example: 2026-01-15T10:30:05Z
+        statusUpdated:
+          type: string
+          format: date-time
+          description: When the status was last updated (ISO 8601 format)
+          example: 2026-01-15T10:31:22Z
+      required:
+      - createDate
     TotalSession:
       type: object
       properties:
@@ -27646,6 +29048,53 @@ components:
         count:
           type: integer
           format: int64
+    UpdateAssetPermissionsForm:
+      type: object
+      properties:
+        permissions:
+          type: array
+          description: List of role permission entries. Each entry defines permissions
+            for a specific role on the asset.
+          items:
+            $ref: "#/components/schemas/RolePermissionForm"
+      required:
+      - permissions
+    UpdateAssetPermissionsView:
+      type: object
+      properties:
+        asset:
+          $ref: "#/components/schemas/AssetPermissionsView"
+        cascadeWarnings:
+          type: array
+          description: Warnings from cascade operations that partially failed. Present
+            only when cascade was requested and some role cascades failed.
+          example:
+          - "Failed to trigger cascade for role xyz123: Connection timeout"
+          items:
+            type: string
+            description: Warnings from cascade operations that partially failed. Present
+              only when cascade was requested and some role cascades failed.
+            example: "[\"Failed to trigger cascade for role xyz123: Connection timeout\"\
+              ]"
+        inheritanceBroken:
+          type: boolean
+          description: Whether permission inheritance was broken during this operation.
+            True if the asset was previously inheriting permissions from its parent.
+          example: true
+        message:
+          type: string
+          description: Success message describing the operation result
+          example: Permissions saved successfully
+        permissionCount:
+          type: integer
+          format: int32
+          description: Number of permission entries saved during this operation
+          example: 5
+      required:
+      - asset
+      - inheritanceBroken
+      - message
+      - permissionCount
     UpdateCurrentUserForm:
       type: object
       properties:
@@ -27728,6 +29177,62 @@ components:
       required:
       - assetPath
       - data
+    UpdateRolePermissionsForm:
+      type: object
+      properties:
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+              \ CONTENT, etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+              \ CAN_ADD_CHILDREN). Omitting a scope preserves existing permissions.\
+              \ Empty array [] removes permissions for that scope."
+            example:
+              CONTENT:
+              - READ
+              - PUBLISH
+              INDIVIDUAL:
+              - READ
+              - WRITE
+            items:
+              type: string
+              description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+                \ CONTENT, etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+                \ CAN_ADD_CHILDREN). Omitting a scope preserves existing permissions.\
+                \ Empty array [] removes permissions for that scope."
+              example: "{\"INDIVIDUAL\":[\"READ\",\"WRITE\"],\"CONTENT\":[\"READ\"\
+                ,\"PUBLISH\"]}"
+          description: "Permission assignments by scope (INDIVIDUAL, HOST, FOLDER,\
+            \ CONTENT, etc.) with permission levels (READ, WRITE, PUBLISH, EDIT_PERMISSIONS,\
+            \ CAN_ADD_CHILDREN). Omitting a scope preserves existing permissions.\
+            \ Empty array [] removes permissions for that scope."
+          example:
+            CONTENT:
+            - READ
+            - PUBLISH
+            INDIVIDUAL:
+            - READ
+            - WRITE
+      required:
+      - permissions
+    UpdateRolePermissionsView:
+      type: object
+      properties:
+        asset:
+          $ref: "#/components/schemas/RolePermissionAssetView"
+        roleId:
+          type: string
+          description: Role identifier
+          example: abc-123-def-456
+        roleName:
+          type: string
+          description: Role name
+          example: Content Editor
+      required:
+      - asset
+      - roleId
+      - roleName
     UpdateTagForm:
       type: object
       properties:

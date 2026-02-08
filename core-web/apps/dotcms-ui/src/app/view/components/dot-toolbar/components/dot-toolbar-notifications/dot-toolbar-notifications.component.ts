@@ -22,7 +22,6 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
 
 @Component({
     selector: 'dot-toolbar-notifications',
-    styleUrls: ['./dot-toolbar-notifications.component.scss'],
     templateUrl: 'dot-toolbar-notifications.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [

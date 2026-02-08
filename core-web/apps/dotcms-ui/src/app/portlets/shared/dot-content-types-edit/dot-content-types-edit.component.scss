@@ -1,8 +1,0 @@
-@use "dotcms-theme/utils/theme-variables" as *;
-@use "variables" as *;
-@use "mixins";
-
-::ng-deep .basetype-content.p-dialog .p-dialog-content .p-autocomplete-panel {
-    bottom: 36px !important;
-    top: auto !important;
-}

@@ -23,7 +23,7 @@ import { Table, TableModule } from 'primeng/table';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusPipe,
+    DotContentletStatusChipComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -36,7 +36,7 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     imports: [
         ButtonModule,
         ChipModule,
-        DotContentletStatusPipe,
+        DotContentletStatusChipComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
@@ -248,7 +248,7 @@ export class DotFolderListViewComponent implements OnInit {
      * @returns The table body element
      */
     private getTableBody(): HTMLElement | null {
-        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-wrapper');
+        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-table-container');
     }
 
     /**

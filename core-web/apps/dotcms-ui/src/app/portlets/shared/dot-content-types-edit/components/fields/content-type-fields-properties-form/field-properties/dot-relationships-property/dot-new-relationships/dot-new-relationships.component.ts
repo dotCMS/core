@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 
 import { DotContentTypeService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotFieldRequiredDirective, DotMessagePipe, DotContentTypeComponent } from '@dotcms/ui';
+import { DotContentTypeComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotCardinalitySelectorComponent } from '../dot-cardinality-selector/dot-cardinality-selector.component';
 import { DotRelationshipsPropertyValue } from '../model/dot-relationships-property-value.model';
@@ -19,7 +19,6 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 @Component({
     selector: 'dot-new-relationships',
     templateUrl: './dot-new-relationships.component.html',
-    styleUrls: ['./dot-new-relationships.component.scss'],
     imports: [
         DotContentTypeComponent,
         DotCardinalitySelectorComponent,

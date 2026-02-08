@@ -38,13 +38,14 @@ import {
     PositionPayload
 } from '../../../shared/models';
 import {
-    mapContainerStructureToArrayOfContainers,
-    getPersonalization,
     areContainersEquals,
+    getContentTypeVarRecord,
     getEditorStates,
-    sanitizeURL,
+    getFullPageURL,
+    getPersonalization,
     getWrapperMeasures,
-    getFullPageURL
+    mapContainerStructureToArrayOfContainers,
+    sanitizeURL
 } from '../../../utils';
 import { UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
@@ -96,6 +97,9 @@ export function withEditor() {
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
                     return numberContents > 1 || !persona || isDefaultPersona;
+                }),
+                $allowedContentTypes: computed<Record<string, true>>(() => {
+                    return getContentTypeVarRecord(pageEntity()?.containers);
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.contentArea();
@@ -316,6 +320,11 @@ export function withEditor() {
                         }
                     });
                 },
+                resetActiveContentlet() {
+                    patchState(store, {
+                        activeContentlet: null
+                    });
+                },
                 resetContentletArea() {
                     patchState(store, {
                         contentArea: null,
@@ -351,14 +360,13 @@ export function withEditor() {
                 ): DotTreeNode {
                     const { identifier: contentId } = contentlet;
                     const {
-                        variantId,
                         uuid: relationType,
                         contentletsId,
                         identifier: containerId
                     } = container;
 
                     const { personalization, id: pageId } = store.$pageData();
-
+                    const variantId = store.$variantId();
                     const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
 
                     return {

@@ -1,16 +1,19 @@
-@if (isHaveOptions()) {
-    <p-menu [model]="model" #menu appendTo="body" popup="popup" />
+@if ($isHaveOptions()) {
+    <p-menu [model]="model()" #menu appendTo="body" [popup]="true" />
 }
 
 <p-button
     (click)="buttonOnClick($event)"
-    [disabled]="disabled"
-    [icon]="icon"
-    data-testid="dot-action-button"
-    class="p-button-rounded"></p-button>
+    [disabled]="disabled()"
+    [icon]="icon()"
+    [rounded]="true"
+    data-testid="dot-action-button"></p-button>
 
-@if (label) {
-    <p [class.action-button__label--disabled]="disabled" class="action-button__label">
-        {{ label }}
+@if (label()) {
+    <p
+        data-testid="dot-action-button-label"
+        class="mt-1 text-center text-xs text-gray-700 font-medium"
+        [ngClass]="{ 'text-gray-400 cursor-not-allowed': disabled() }">
+        {{ label() }}
     </p>
 }

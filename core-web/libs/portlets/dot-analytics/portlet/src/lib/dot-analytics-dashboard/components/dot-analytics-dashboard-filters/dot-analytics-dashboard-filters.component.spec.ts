@@ -176,7 +176,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
     describe('onChangeTimeRange', () => {
         it('should emit time range when time range is selected', () => {
             const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
-            spectator.triggerEventHandler(Select, 'onChange', {
+            spectator.component.onChangeTimeRange({
                 value: TIME_RANGE_OPTIONS.last7days,
                 originalEvent: createFakeEvent('change')
             });
@@ -186,7 +186,7 @@ describe('DotAnalyticsDashboardFiltersComponent', () => {
 
         it('should not emit when time range is a custom date range', () => {
             const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
-            spectator.triggerEventHandler(Select, 'onChange', {
+            spectator.component.onChangeTimeRange({
                 value: TIME_RANGE_OPTIONS.custom,
                 originalEvent: createFakeEvent('change')
             });

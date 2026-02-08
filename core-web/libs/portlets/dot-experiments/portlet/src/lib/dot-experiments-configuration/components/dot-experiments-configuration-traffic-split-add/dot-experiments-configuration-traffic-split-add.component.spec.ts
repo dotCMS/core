@@ -100,12 +100,11 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
 
     it('should save form when is valid ', () => {
         jest.spyOn(store, 'setSelectedTrafficProportion');
-        const submitButton = spectator.query(
-            byTestId('add-traffic-split-button')
-        ) as HTMLButtonElement;
+        const submitButtonWrapper = spectator.query(byTestId('add-traffic-split-button'));
+        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
 
-        expect(submitButton.disabled).toEqual(false);
-        expect(submitButton).toContainText('Done');
+        expect(submitButton.hasAttribute('disabled')).toBe(false);
+        expect(submitButtonWrapper).toContainText('Done');
         expect(spectator.component.form.valid).toEqual(true);
         expect(spectator.query(byTestId('dotErrorMsg'))).toBeNull();
 

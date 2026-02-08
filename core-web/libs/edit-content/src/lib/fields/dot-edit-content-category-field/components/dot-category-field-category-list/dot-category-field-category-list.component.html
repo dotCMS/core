@@ -2,39 +2,40 @@
     <dot-category-field-list-skeleton />
 } @else {
     @if ($categories().length) {
-        <div class="w-full category-list__header flex items-center h-12">
+        <div
+            class="w-full flex items-center h-12 px-6 py-2 text-base font-semibold border-b border-(--gray-400)">
             <dot-collapse-breadcrumb data-testId="breadcrumb-menu" [model]="$breadcrumbsMenu()" />
         </div>
         <div
-            [ngClass]="{ 'no-overflow-x-yet': $emptyColumns().length }"
-            class="flex-1 category-list__category-list">
+            [ngClass]="{ 'overflow-x-hidden': $emptyColumns().length }"
+            class="flex-1 flex overflow-x-auto overflow-y-hidden">
             @for (column of $categories(); let index = $index; track index) {
                 <!--dynamic columns-->
                 <div
                     #categoryColumn
-                    class="category-list__category-column"
+                    class="flex-[0_0_38%] border-r border-(--gray-400) overflow-y-auto h-full p-2 last:border-r-0"
                     data-testId="category-column">
                     @for (item of column; track item.key) {
                         <div
                             data-testId="category-item"
-                            class="flex content-center items-center category-list__item"
-                            [ngClass]="{ 'category-list__item--selected': item.clicked }">
+                            class="flex content-center items-center h-10 flex-nowrap transition-colors duration-200 animate-[fadeIn_0.2s_ease-out] animate-fill-forwards hover:bg-(--color-palette-primary-100)"
+                            [ngClass]="{ 'bg-(--color-palette-primary-200)': item.clicked }">
                             <p-checkbox
                                 [(ngModel)]="$selected"
                                 [value]="item.key"
-                                class="category-list__item-checkbox"
+                                class="ml-2"
                                 (onChange)="itemChecked.emit({ selected: $event.checked, item })" />
 
                             <div
                                 data-testId="category-item-wrapper"
-                                class="flex w-full h-full items-stretch content-center category-list__item-wrapper"
+                                class="flex w-full h-full items-stretch content-center pl-4 pr-2 overflow-hidden"
                                 (click)="rowClicked.emit({ index, item })"
                                 [class.cursor-pointer]="item.hasChildren">
                                 <div
                                     class="flex w-full gap-1 content-center items-center justify-between">
                                     <label
                                         data-testId="category-item-label"
-                                        class="category-list__item-label"
+                                        class="truncate"
                                         [class.cursor-pointer]="item.hasChildren"
                                         [for]="item.key">
                                         {{ item.value }}
@@ -43,7 +44,7 @@
                                     @if (item.hasChildren) {
                                         <i
                                             data-testId="category-item-with-child"
-                                            class="pi pi-chevron-right category-list__item-icon"></i>
+                                            class="pi pi-chevron-right text-(--color-palette-primary-500) cursor-pointer"></i>
                                     }
                                 </div>
                             </div>
@@ -55,7 +56,7 @@
             <!--Fake empty columns-->
             @for (_ of $emptyColumns(); track $index) {
                 <div
-                    class="grow category-list__category-column"
+                    class="grow border-r border-(--gray-400) overflow-y-auto h-full p-2 last:border-r-0"
                     data-testId="category-column-empty">
                     @if ($state() === stateList.LOADING && 0 === $index) {
                         <dot-category-field-list-skeleton />

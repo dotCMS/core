@@ -1,111 +1,34 @@
-@use "../../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../../dotcms-scss/shared/shadows";
-@use "../../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
 :host {
     display: block;
     container-type: inline-size;
-    container-name: fileField;
+    container-name: dotFileField;
 }
 
-.file-field__container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    border-radius: common.$border-radius-md;
-    border: common.$field-border-size solid colors.$color-palette-gray-400;
-    padding: spacing.$spacing-1;
-    height: 14.4rem;
-    min-width: 12.5rem;
-
-    &:has(.file-field__actions:empty) {
-        gap: 0;
-    }
+/* Active state when dragging over drop zone (theme variable; not valid in [class.x] binding) */
+.dot-file-field__drop-zone--active {
+    border-color: var(--color-palette-secondary-500);
+    background: #fff;
+    box-shadow:
+        0 10px 15px -3px rgb(0 0 0 / 0.1),
+        0 4px 6px -4px rgb(0 0 0 / 0.1);
 }
 
-.file-field__container--uploading {
-    border: common.$field-border-size dashed colors.$color-palette-gray-400;
-}
-
-.file-field__actions {
-    display: flex;
-    flex-direction: column;
-    gap: spacing.$spacing-3;
-    justify-content: center;
-    align-items: flex-start;
-
-    &:empty {
-        display: none;
-    }
-
-    .label-ai {
-        text-transform: none;
-        font-size: fonts.$font-size-sm;
-    }
-
-    .p-button {
-        display: inline-flex;
-        user-select: none;
-        align-items: center;
-        vertical-align: bottom;
-        text-align: center;
-    }
-}
-
-.file-field__drop-zone {
-    border: common.$field-border-size dashed $input-border-color;
-    border-radius: common.$border-radius-md;
-    height: 100%;
-    flex: 1;
-    overflow: auto;
-    margin-right: spacing.$spacing-1;
-}
-
-.file-field__drop-zone-btn {
-    border: none;
-    background: none;
-    color: colors.$color-palette-primary-500;
-    text-decoration: underline;
-    font-size: fonts.$font-size-md;
-    font-family: fonts.$font-default;
-    padding: revert;
-    cursor: pointer;
-
-    &:disabled {
-        color: $button-text-color-disabled;
-    }
-}
-
-.file-field__drop-zone--active {
-    border-radius: common.$border-radius-md;
-    border-color: colors.$color-palette-secondary-500;
-    background: colors.$white;
-    box-shadow: shadows.$shadow-l;
-}
-
-input[type="file"] {
-    display: none;
-}
-
-@container fileField (max-width: 500px) {
-    .file-field__container--preview,
-    .file-field__container--empty {
+/* Container query: stack drop zone and actions vertically on narrow widths */
+@container dotFileField (max-width: 500px) {
+    .dot-file-field__root--preview,
+    .dot-file-field__root--empty {
         flex-direction: column;
         justify-content: center;
         align-items: flex-start;
     }
-    .file-field__container--empty {
+
+    .dot-file-field__root--empty {
         height: auto;
     }
 
-    .file-field__drop-zone {
+    .dot-file-field__root--empty .dot-file-field__drop-zone {
         width: 100%;
-        margin: 0;
-        margin-bottom: spacing.$spacing-1;
+        margin-right: 0;
+        margin-bottom: 0.5rem;
     }
 }

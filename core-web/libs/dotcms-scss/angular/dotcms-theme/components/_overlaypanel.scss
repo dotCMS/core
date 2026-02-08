@@ -11,6 +11,7 @@
     border: 0 none;
     border-radius: common.$border-radius-md;
     box-shadow: shadows.$shadow-m;
+    border: 1px solid $color-palette-gray-300;
 }
 
 .p-overlaypanel .p-overlaypanel-content {

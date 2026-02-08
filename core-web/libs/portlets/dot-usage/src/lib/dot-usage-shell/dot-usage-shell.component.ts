@@ -32,7 +32,6 @@ import { DotMessagePipe } from '@dotcms/ui';
         ToolbarModule
     ],
     templateUrl: './dot-usage-shell.component.html',
-    styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUsageShellComponent implements OnInit, OnDestroy {
@@ -83,10 +82,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
                 console.error('Failed to load usage data:', error);
             }
         });
-    }
-
-    onRefresh(): void {
-        this.loadData();
     }
 
     onRetry(): void {

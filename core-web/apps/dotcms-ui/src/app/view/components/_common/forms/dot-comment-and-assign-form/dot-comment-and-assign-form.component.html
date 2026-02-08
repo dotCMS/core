@@ -12,6 +12,9 @@
                     [options]="dotRoles"
                     id="dotRoles"
                     formControlName="assign"
+                    [filter]="true"
+                    filterBy="label"
+                    [filterPlaceholder]="'search' | dm"
                     appendTo="body"></p-select>
             </div>
         }

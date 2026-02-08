@@ -21,3 +21,11 @@ p-skeleton {
         colors.$color-palette-gray-200
     );
 }
+
+.p-skeleton.p-skeleton-circle {
+    border-radius: 50%;
+}
+
+.p-skeleton-none::after {
+    animation: none;
+}

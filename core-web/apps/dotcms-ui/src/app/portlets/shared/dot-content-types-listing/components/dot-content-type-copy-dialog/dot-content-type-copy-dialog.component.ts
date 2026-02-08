@@ -6,12 +6,11 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    EventEmitter,
-    Input,
+    inject,
+    input,
     OnDestroy,
     OnInit,
-    Output,
-    inject
+    output
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -71,12 +70,12 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
     dialogTitle = '';
     isVisibleDialog = false;
 
-    @Input()
-    isSaving$ = new Observable<boolean>();
-    @Output() cancelBtn = new EventEmitter<boolean>();
+    readonly $isSaving$ = input<Observable<boolean>>(new Observable<boolean>(), {
+        alias: 'isSaving$'
+    });
+    readonly $cancelBtn = output<boolean>();
 
-    @Output()
-    validFormFields = new EventEmitter<DotCopyContentTypeDialogFormFields>();
+    readonly $validFormFields = output<DotCopyContentTypeDialogFormFields>();
     form!: UntypedFormGroup;
 
     constructor() {
@@ -117,7 +116,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
      */
     submitForm() {
         if (this.form.valid) {
-            this.validFormFields.emit(this.form.value);
+            this.$validFormFields.emit(this.form.value);
         }
     }
 
@@ -127,7 +126,7 @@ export class DotContentTypeCopyDialogComponent implements OnInit, AfterViewCheck
      * @memberof DotContentTypeCopyDialogComponent
      */
     closeDialog(): void {
-        this.cancelBtn.emit(true);
+        this.$cancelBtn.emit(true);
         this.initForm();
         this.isVisibleDialog = false;
     }

@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -11,7 +11,6 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ExperimentSteps,
@@ -21,7 +20,7 @@ import {
     GoalsLevels,
     StepStatus
 } from '@dotcms/dotcms-models';
-import { DotDynamicDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotDynamicDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
@@ -36,22 +35,18 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
         CommonModule,
         DotMessagePipe,
         DotDynamicDirective,
-        DotIconComponent,
         DotExperimentsDetailsTableComponent,
-        // PrimeNg
         ButtonModule,
         CardModule,
         TooltipModule,
         ConfirmPopupModule
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
-    styleUrls: ['./dot-experiments-configuration-goals.component.scss'],
     providers: [DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsConfigurationGoalsComponent {
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
-    private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessagePipe = inject(DotMessagePipe);
 
@@ -66,7 +61,7 @@ export class DotExperimentsConfigurationGoalsComponent {
     );
 
     destroy$: Subject<boolean> = new Subject<boolean>();
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     protected readonly GOALS_METADATA_MAP = GOALS_METADATA_MAP;
     protected readonly GOAL_TYPES = GOAL_TYPES;
 
@@ -113,17 +108,23 @@ export class DotExperimentsConfigurationGoalsComponent {
 
     private loadSidebarComponent(status: StepStatus): void {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
-            this.sidebarHost.viewContainerRef.clear();
-            this.componentRef =
-                this.sidebarHost.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(
-                    DotExperimentsConfigurationGoalSelectComponent
-                );
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+                this.componentRef =
+                    sidebarHostRef.viewContainerRef.createComponent<DotExperimentsConfigurationGoalSelectComponent>(
+                        DotExperimentsConfigurationGoalSelectComponent
+                    );
+            }
         }
     }
 
     private removeSidebarComponent() {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 }

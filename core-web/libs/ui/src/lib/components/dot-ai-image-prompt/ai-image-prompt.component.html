@@ -16,22 +16,20 @@
             [orientation]="store.formValue()?.size" />
         @if (store.isLoading() || store.hasImages()) {
             <div class="dot-ai-image__buttons">
-                <button
-                    (click)="closeDialog()"
+                <p-button
+                    (onClick)="closeDialog()"
                     [label]="'Cancel' | dm"
-                    class="p-button-text"
+                    variant="text"
                     data-testid="close-btn"
-                    type="button"
-                    pButton></button>
-                <button
-                    (click)="insertImage()"
+                    type="button" />
+                <p-button
+                    (onClick)="insertImage()"
                     [disabled]="store.isLoading() || store.currentImageHasError()"
                     [label]="'block-editor.extension.ai-image.insert' | dm"
                     class="self-end"
                     data-testid="submit-btn"
-                    pButton
                     type="submit"
-                    icon="pi pi-check"></button>
+                    icon="pi pi-check" />
             </div>
         }
     </div>

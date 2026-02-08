@@ -20,6 +20,7 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotCMSContentType } from '@dotcms/dotcms-models';
 
+import { UVEStore } from '../../../../../../store/dot-uve.store';
 import {
     BASETYPES_FOR_CONTENT,
     BASETYPES_FOR_WIDGET,
@@ -63,7 +64,7 @@ export const DEFAULT_STATE: DotPaletteListState = {
     },
     currentView: DotUVEPaletteListView.CONTENT_TYPES,
     status: DotPaletteListStatus.LOADING,
-    layoutMode: 'grid grid-cols-12 gap-4'
+    layoutMode: 'grid'
 };
 
 export const DotPaletteListStore = signalStore(
@@ -98,6 +99,7 @@ export const DotPaletteListStore = signalStore(
         const pageContentTypeService = inject(DotPageContentTypeService);
         const dotESContentService = inject(DotESContentService);
         const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
+        const uveStore = inject(UVEStore);
 
         const getData = () => {
             const { listType, ...params } = store.searchParams();
@@ -121,7 +123,8 @@ export const DotPaletteListStore = signalStore(
                             buildPaletteFavorite({
                                 contentTypes,
                                 filter: params.filter || '',
-                                page: params.page
+                                page: params.page,
+                                allowedContentTypes: uveStore.$allowedContentTypes()
                             })
                         )
                     );
@@ -188,11 +191,13 @@ export const DotPaletteListStore = signalStore(
     withMethods((store) => {
         const params = store.searchParams;
         const dotFavoriteContentTypeService = inject(DotFavoriteContentTypeService);
+        const uveStore = inject(UVEStore);
         const updateFavoriteState = (contentTypes: DotCMSContentType[]) => {
             const response = buildPaletteFavorite({
                 contentTypes,
                 filter: params.filter(),
-                page: params.page() || 1
+                page: params.page() || 1,
+                allowedContentTypes: uveStore?.$allowedContentTypes()
             });
             patchState(store, response);
         };
@@ -258,7 +263,7 @@ export const DotPaletteListStore = signalStore(
                 const layoutMode =
                     dotLocalstorageService.getItem<DotPaletteViewMode>(
                         DOT_PALETTE_LAYOUT_MODE_STORAGE_KEY
-                    ) || 'grid grid-cols-12 gap-4';
+                    ) || 'grid';
                 const { orderby, direction } =
                     dotLocalstorageService.getItem<DotPaletteSortOption>(
                         DOT_PALETTE_SORT_OPTIONS_STORAGE_KEY

@@ -274,10 +274,14 @@ describe('withSidebar', () => {
             });
 
             expect(loadedResult).not.toBeNull();
-            expect(loadedResult!.folders.length).toBeGreaterThan(0);
+            if (!loadedResult) {
+                throw new Error('Expected child folders to be loaded.');
+            }
+
+            expect(loadedResult.folders.length).toBeGreaterThan(0);
 
             // Update folders with new children
-            const updatedFolders = [...store.folders(), ...loadedResult!.folders];
+            const updatedFolders = [...store.folders(), ...loadedResult.folders];
             store.updateFolders(updatedFolders);
 
             // Verify the folders were updated

@@ -1,6 +1,5 @@
 @use "variables" as *;
 @use "dotcms-theme/components/form/common";
-@use "dotcms-theme/components/buttons/common" as common2;
 @use "../../../../../../../../../libs/dotcms-scss/shared/colors";
 @use "../../../../../../../../../libs/dotcms-scss/shared/common" as common3;
 @use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
@@ -25,8 +24,21 @@ dot-binary-file {
 
         button {
             all: unset;
-            @extend #main-primary-severity;
             background-color: colors.$color-palette-primary;
+
+            &:hover {
+                background-color: colors.$color-palette-primary-600;
+            }
+
+            &:active {
+                background-color: colors.$color-palette-primary-700;
+            }
+
+            &:focus {
+                background-color: colors.$color-palette-primary;
+                @extend #form-field-focus;
+            }
+
             display: block;
             height: common3.$field-height-md;
             font-size: fonts.$font-size-md;

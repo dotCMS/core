@@ -6,8 +6,7 @@ import { Component, h, Host, Prop, State } from '@stencil/core';
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
 @Component({
-    tag: 'dot-contentlet-thumbnail',
-    styleUrl: 'dot-contentlet-thumbnail.scss'
+    tag: 'dot-contentlet-thumbnail'
 })
 export class DotContentletThumbnail {
     @Prop({ reflect: true })
@@ -60,9 +59,17 @@ export class DotContentletThumbnail {
     render() {
         const backgroundImageURL =
             this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
+        const hostClass = 'flex h-full w-full flex-1 items-center';
+        const containerClass = this.backgroundImage
+            ? 'absolute inset-0 h-full w-full bg-cover bg-center bg-no-repeat'
+            : 'relative h-full w-full';
+        const svgClass = this.isSVG ? ' bg-contain' : '';
+        const imageClass = this.backgroundImage
+            ? 'absolute h-0 w-0'
+            : 'h-full w-full object-cover object-center';
 
         return (
-            <Host>
+            <Host class={hostClass}>
                 {this.shouldShowVideoThumbnail() ? (
                     <dot-video-thumbnail
                         contentlet={this.contentlet}
@@ -72,7 +79,7 @@ export class DotContentletThumbnail {
                     />
                 ) : this.renderImage ? (
                     <div
-                        class={`thumbnail`}
+                        class={`${containerClass}${svgClass}`}
                         style={{
                             'background-image': backgroundImageURL
                         }}>
@@ -80,6 +87,7 @@ export class DotContentletThumbnail {
                             src={this.getImageURL()}
                             alt={this.alt}
                             aria-label={this.alt}
+                            class={imageClass}
                             onError={() => this.switchToIcon()}
                         />
                     </div>
@@ -88,6 +96,7 @@ export class DotContentletThumbnail {
                         icon={this.getIcon()}
                         size={this.iconSize}
                         aria-label={this.alt}
+                        class="flex h-full w-full items-center justify-center"
                     />
                 )}
             </Host>

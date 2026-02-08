@@ -133,7 +133,7 @@
 
             // Get image from ogImage field container
             const imgInode = ogImageField.getValue() || '';
-            const imgUrl = imgInode ? `/dA/${imgInode}/asset/500w/50q/` : '';
+            const imgUrl = imgInode ? `/dA/${imgInode}/asset/500w/50q/` : "https://placehold.co/600x400";
 
             // Truncate description to 92 characters
             const truncatedDescription = truncateDescription(ogDescription, 92);

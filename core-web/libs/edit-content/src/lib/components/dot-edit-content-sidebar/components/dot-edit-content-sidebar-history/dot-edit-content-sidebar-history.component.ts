@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, input, inject, output } f
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
-import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TimelineModule } from 'primeng/timeline';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
@@ -29,9 +29,12 @@ import {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-history',
+    host: {
+        class: 'flex flex-col h-full min-h-0'
+    },
     imports: [
-        ScrollerModule,
         SkeletonModule,
+        TimelineModule,
         TooltipModule,
         ButtonModule,
         MenuModule,
@@ -151,46 +154,6 @@ export class DotEditContentSidebarHistoryComponent {
     });
 
     /**
-     * Handle infinite scroll when user scrolls near the end
-     */
-    onScrollIndexChange(event: ScrollerLazyLoadEvent): void {
-        if (this.shouldLoadMore(event) && !this.$isLoading()) {
-            this.loadNextPage();
-        }
-    }
-
-    /**
-     * Handle infinite scroll for push publish history when user scrolls near the end
-     */
-    onPushPublishScrollIndexChange(event: ScrollerLazyLoadEvent): void {
-        if (this.shouldLoadMorePushPublish(event) && !this.$isLoading()) {
-            this.loadNextPushPublishPage();
-        }
-    }
-
-    /**
-     * Determine if we should load more items based on scroll position
-     */
-    private shouldLoadMore(event: ScrollerLazyLoadEvent): boolean {
-        const { last } = event;
-        const totalItems = this.$historyItems().length;
-        const threshold = 5; // Load when 5 items remaining
-
-        return totalItems - last <= threshold && this.$hasMoreItems();
-    }
-
-    /**
-     * Determine if we should load more push publish items based on scroll position
-     */
-    private shouldLoadMorePushPublish(event: ScrollerLazyLoadEvent): boolean {
-        const { last } = event;
-        const totalItems = this.$pushPublishHistoryItems().length;
-        const threshold = 5; // Load when 5 items remaining
-
-        return totalItems - last <= threshold && this.$hasMorePushPublishItems();
-    }
-
-    /**
      * Load the next page of history items
      */
     private loadNextPage(): void {
@@ -212,10 +175,52 @@ export class DotEditContentSidebarHistoryComponent {
 
     /**
      * Get the real index of an item in the history array
-     * This is needed because p-scroller's template index is virtual
      */
     getRealIndex(item: DotCMSContentletVersion): number {
         return this.$historyItems().indexOf(item);
+    }
+
+    /**
+     * Get the index of a push publish item in the list.
+     */
+    getPushPublishIndex(item: DotPushPublishHistoryItem): number {
+        return this.$pushPublishHistoryItems().indexOf(item);
+    }
+
+    /**
+     * Get modifier class for the timeline marker (halo/glow by state).
+     * Live: green + green glow, draft: yellow + yellow glow, default: gray + gray glow.
+     */
+    getTimelineMarkerClass(item: DotCMSContentletVersion): string {
+        if (item.live) return 'timeline-marker--live';
+        if (item.working) return 'timeline-marker--draft';
+        return 'timeline-marker--default';
+    }
+
+    /**
+     * Handle scroll on timeline content to load more items when near bottom
+     */
+    onTimelineScroll(event: Event): void {
+        const el = event.target as HTMLElement;
+        if (!el) return;
+        const threshold = 100;
+        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+        if (nearBottom && this.$hasMoreItems() && !this.$isLoading()) {
+            this.loadNextPage();
+        }
+    }
+
+    /**
+     * Handle scroll on push publish timeline content to load more when near bottom
+     */
+    onPushPublishTimelineScroll(event: Event): void {
+        const el = event.target as HTMLElement;
+        if (!el) return;
+        const threshold = 100;
+        const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= threshold;
+        if (nearBottom && this.$hasMorePushPublishItems() && !this.$isLoading()) {
+            this.loadNextPushPublishPage();
+        }
     }
 
     /**

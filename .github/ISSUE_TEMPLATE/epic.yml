@@ -4,6 +4,7 @@ title: "[EPIC] "
 labels: []
 type: epic
 assignees: []
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown

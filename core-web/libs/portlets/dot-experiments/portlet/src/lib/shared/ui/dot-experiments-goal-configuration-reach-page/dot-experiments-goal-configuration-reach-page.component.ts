@@ -12,7 +12,6 @@ import {
 import {
     DotAutofocusDirective,
     DotDropdownDirective,
-    DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
     DotMessagePipe
 } from '@dotcms/ui';
@@ -27,7 +26,6 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
     imports: [
         DotAutofocusDirective,
         DotDropdownDirective,
-        DotFieldRequiredDirective,
         DotFieldValidationMessageComponent,
         SelectModule,
         DotMessagePipe,
@@ -36,7 +34,6 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
         ReactiveFormsModule
     ],
     templateUrl: './dot-experiments-goal-configuration-reach-page.component.html',
-    styleUrls: ['./dot-experiments-goal-configuration-reach-page.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotExperimentsGoalConfigurationReachPageComponent

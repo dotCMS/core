@@ -1,6 +1,6 @@
 <p-dialog
     [(visible)]="dialogShow"
-    [header]="'contenttypes.content.add_to_menu.header' | dm: [contentType?.name]"
+    [header]="'contenttypes.content.add_to_menu.header' | dm: [$contentType?.name]"
     [modal]="true"
     [style]="{ width: '592px' }"
     (visibleChange)="close()">

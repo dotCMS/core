@@ -2,11 +2,11 @@
     <div class="field">
         <label for="allowed-file-type">{{ 'binary-field.settings.allow.type' | dm }}</label>
         <input
-            [style]="{ width: '100%' }"
             id="allowed-file-type"
             formControlName="accept"
             placeholder="ex: image/*"
             pInputText
+            class="w-full"
             data-testId="setting-accept" />
         <a
             class="text-sm"

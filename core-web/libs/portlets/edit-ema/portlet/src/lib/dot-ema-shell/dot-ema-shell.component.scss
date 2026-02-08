@@ -1,41 +1,16 @@
-@use "../../../../../../dotcms-scss/shared/colors";
-@use "../../../../../../dotcms-scss/shared/fonts";
-@use "../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
 :host {
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-rows: 100%;
     height: 100%;
-    background-color: colors.$white;
+    background-color: var(--color-white);
 
     router-outlet {
         display: none;
     }
-
-    &:has(p-messages) {
-        grid-template-rows: max-content 100%;
-    }
 }
 
-// Selectors overlayPanel and dialog
 ::ng-deep {
-    dot-wizard {
-        dot-dialog {
-            &.active {
-                z-index: 1103 !important;
-            }
-        }
-    }
-
-    .p-overlaypanel.edit-ema-selector.p-component {
-        .p-overlaypanel-content {
-            padding: 0;
-        }
-    }
-
     .p-dialog.edit-ema-dialog.p-component {
         .p-dialog-content {
             display: flex;
@@ -45,44 +20,4 @@
             height: 100%;
         }
     }
-
-    .p-confirm-dialog {
-        .p-dialog-content {
-            padding: 0 spacing.$spacing-6 spacing.$spacing-6 spacing.$spacing-6;
-        }
-    }
-
-    dot-experiments-shell dot-experiments-list {
-        .dot-experiment {
-            padding: spacing.$spacing-3 spacing.$spacing-5 spacing.$spacing-5 spacing.$spacing-5 !important;
-        }
-    }
-}
-
-p-messages {
-    grid-column: -1 / 1;
-    border: solid 1px colors.$color-palette-gray-200;
-    border-top: none;
-}
-
-.lock-message {
-    display: inline;
-    line-height: 1.5;
-
-    strong {
-        font-weight: fonts.$font-weight-medium-bold;
-    }
-}
-
-.unlock-link {
-    display: inline-flex;
-    align-items: center;
-    gap: spacing.$spacing-0;
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-    text-decoration: underline;
-    color: colors.$color-palette-blue;
 }

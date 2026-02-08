@@ -24,7 +24,6 @@ export const dotExperimentsRoutes: Routes = [
             isEnterprise: DotEnterpriseLicenseResolver,
             pushPublishEnvironments: DotPushPublishEnvironmentsResolver
         },
-
         canActivateChild: [AnalyticsAppGuard],
         children: [
             {
