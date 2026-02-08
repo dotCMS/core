@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is the **DotCMS Core-Web** monorepo - the frontend infrastructure for the DotCMS content management system. Built with **Nx workspace** architecture, it contains Angular applications, TypeScript SDKs, shared libraries, and web components.
+This is the **DotCMS Core-Web** monorepo (v23.4.0-next.1) - the frontend infrastructure for the DotCMS content management system. Built with **Nx workspace** architecture, it contains Angular applications, TypeScript SDKs, shared libraries, and web components.
+
+**Package Manager**: Uses Yarn with npm resolutions/overrides for dependency management
 
 ## Key Development Commands
 
@@ -60,7 +62,7 @@ nx test dotcms-ui --coverage
 ### Code Quality
 
 ```bash
-# Lint all projects
+# Lint all projects (with auto-fix, excludes skip:lint tagged projects)
 yarn run lint:dotcms
 
 # Lint specific project
@@ -72,7 +74,18 @@ nx lint dotcms-ui --fix
 # Check affected projects
 nx affected:test
 nx affected:lint
+
+# Format code with Prettier 3.7.4
+yarn run format
+yarn run format:check
 ```
+
+**Linting Stack:**
+-   **ESLint 8.57.0** with TypeScript 8.38.0 parser
+-   **@angular-eslint 21.0.0** for Angular-specific rules
+-   **@stylistic/eslint-plugin 5.2.2** for code style
+-   **eslint-plugin-react 7.34.2** for React projects
+-   **eslint-config-prettier 10.1.8** for Prettier integration
 
 ### Monorepo Management
 
@@ -97,19 +110,21 @@ nx run-many --target=test --projects=sdk-client,sdk-react
 -   **libs/ui/** - Shared UI components and patterns
 -   **libs/portlets/** - Feature-specific portlets (analytics, experiments, locales, etc.)
 -   **libs/dotcms-models/** - TypeScript interfaces and types
--   **libs/block-editor/** - TipTap-based rich text editor
+-   **libs/block-editor/** - TipTap-based rich text editor (using ngx-tiptap 12.0.0)
 -   **libs/template-builder/** - Template construction utilities
+-   **libs/dotcms-webcomponents/** - Stencil.js 4.39.0 web components
 
 ### Technology Stack
 
--   **Angular 19.2.9** with standalone components
--   **Nx 20.5.1** for monorepo management
--   **PrimeNG 17.18.11** UI components
+-   **Angular 21.0.2** with standalone components
+-   **Nx 21.6.9** for monorepo management
+-   **PrimeNG 21.0.2** UI components
 -   **TipTap 2.14.0** for rich text editing
 -   **NgRx 19.2.1** for state management
 -   **Jest 29.7.0** for testing
--   **Playwright** for E2E testing
+-   **Playwright 1.36.0** for E2E testing
 -   **Node.js >=v22.15.0** requirement
+-   **Storybook 9.1.9** for component documentation
 
 ### Component Conventions
 
@@ -118,6 +133,8 @@ nx run-many --target=test --projects=sdk-client,sdk-react
 -   **Architecture**: Feature modules with lazy loading
 -   **State**: Component-store pattern with NgRx signals
 -   **Testing**: Jest unit tests + Playwright E2E
+-   **Styling**: Tailwind CSS 4.1.17 with PrimeFlex 3.3.1 utilities
+-   **Icons**: PrimeIcons 7.0.0 and Font Awesome 4.7.0
 
 ### Modern Angular Syntax (REQUIRED)
 
@@ -145,6 +162,19 @@ const button = spectator.query('[data-testid="submit-button"]');
 -   **API Services**: Centralized in `libs/data-access`
 -   **Authentication**: Bearer token-based with `DotcmsConfigService`
 -   **Content Management**: Full CRUD through `DotHttpService`
+-   **HTTP Client**: Cross-fetch 3.1.4 for universal fetch API support
+
+### Additional Key Libraries
+
+-   **Rich Text Editing**: TinyMCE 6.8.3 with Angular/React wrappers, Marked 12.0.2 for markdown
+-   **Date Handling**: date-fns 4.0.0 with @date-fns/tz 1.4.0 for timezone support
+-   **Drag & Drop**: dragula 3.7.3 with ng2-dragula 5.0.1, dom-autoscroller 2.3.4
+-   **Charts**: chart.js 4.3.0 for data visualization
+-   **Layout**: gridstack 8.1.1 for grid-based layouts
+-   **Utilities**: uuid 9.0.0, md5 2.3.0, turndown 7.2.0 (HTML to Markdown)
+-   **Validation**: zod 4.1.9, superstruct 1.0.3 for runtime type checking
+-   **Analytics**: @jitsu/sdk-js 3.1.5, analytics 0.8.14
+-   **Model Context Protocol**: @modelcontextprotocol/sdk 1.13.1
 
 ## Development Workflows
 
@@ -168,42 +198,56 @@ const button = spectator.query('[data-testid="submit-button"]');
 ### SDK Development
 
 -   **Client SDK**: Core API client in `libs/sdk/client`
--   **React SDK**: React components in `libs/sdk/react`
+-   **React SDK**: React 18.3.1 components in `libs/sdk/react`
 -   **Angular SDK**: Angular services in `libs/sdk/angular`
+-   **Next.js Support**: Next.js 14.0.4 integration patterns
 -   **Publishing**: Automated via npm with proper versioning
+-   **Build Tools**: Vite 7.2.7, Rollup 4.14.0, esbuild 0.19.2 for optimized library builds
 
 ### Testing Strategy
 
--   **Unit Tests**: Jest with comprehensive mocking utilities
--   **E2E Tests**: Playwright for critical user workflows
--   **Coverage**: Reports generated to `../../../target/core-web-reports/`
--   **Mock Data**: Extensive mock utilities in `libs/utils-testing`
+-   **Unit Tests**: Jest 29.7.0 with jest-preset-angular 14.6.2 and @ngneat/spectator 19.6.2
+-   **E2E Tests**: Playwright 1.36.0 for critical user workflows
+-   **Test Environment**: @happy-dom/jest-environment 15.7.4 (modern, fast alternative to jsdom)
+-   **Coverage**: Reports generated to `../../../target/core-web-reports/` using jest-html-reporters
+-   **Mock Data**: @faker-js/faker 8.4.1 for realistic test data, extensive mock utilities in `libs/utils-testing`
+-   **Component Testing**: ng-mocks 14.12.1 for Angular component mocking
 
 ### Build Targets & Configurations
 
--   **Development**: Proxy configuration with source maps
--   **Production**: Optimized builds with tree shaking
--   **Library**: Rollup/Vite builds for SDK packages
--   **Web Components**: Stencil.js compilation for `dotcms-webcomponents`
+-   **Development**: Proxy configuration with source maps (webpack-dev-middleware 6.1.2)
+-   **Production**: Optimized builds with tree shaking (Terser 5.28.1 minification)
+-   **Library**: Rollup 4.14.0 / Vite 7.2.7 / esbuild 0.19.2 builds for SDK packages
+-   **Web Components**: Stencil.js 4.39.0 compilation for `dotcms-webcomponents`
+-   **Angular Builder**: @angular-devkit/build-angular 21.0.2
+-   **Bundle Analysis**: webpack-bundle-analyzer 4.5.0 for size optimization
 
 ## Important Notes
 
 ### TypeScript Configuration
 
+-   **TypeScript 5.9.3**: Latest stable version with strict mode enabled
 -   **Strict Mode**: Enabled across all projects
 -   **Path Mapping**: Extensive use of `@dotcms/*` barrel exports
 -   **Types**: Centralized in `libs/dotcms-models` and `libs/sdk/types`
+-   **Build Tools**: ng-packagr 19.2.2 for library builds
 
 ### State Management
 
--   **NgRx**: Component stores with signals pattern
+-   **NgRx 19.2.1**: Component stores with signals pattern
+-   **@ngrx/component-store**: For local component state management
+-   **@ngrx/signals**: Modern reactive state with signals
+-   **@ngrx/operators**: Reactive operators for state transformations
 -   **Global Store**: Centralized state in `libs/global-store`
 -   **Services**: Angular services for data access and business logic
 
 ### Web Components
 
--   **Stencil.js**: Framework-agnostic components in `libs/dotcms-webcomponents`
+-   **Stencil.js 4.39.0**: Framework-agnostic components in `libs/dotcms-webcomponents`
+-   **@nxext/stencil 21.0.0**: Nx integration for Stencil projects
+-   **@stencil/sass 3.2.3**: SASS support for component styling
 -   **Integration**: Used across Angular, React, and vanilla JS contexts
+-   **Material Web Components**: @material/mwc-* components (v0.20.0) for specific UI needs
 
 ### Performance Considerations
 
