@@ -593,10 +593,10 @@ public class PublishingResource {
                 .map(Status::name)
                 .collect(Collectors.toList());
 
-        return new ResponseEntityPurgeView(Map.of(
-                "message", "Purge operation started. Results will be notified when complete.",
-                "statusesRequested", statusNames
-        ));
+        return new ResponseEntityPurgeView(PurgeResultView.builder()
+                .message("Purge operation started. Results will be notified when complete.")
+                .statusesRequested(statusNames)
+                .build());
     }
 
     /**

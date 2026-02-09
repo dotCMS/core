@@ -23116,17 +23116,14 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
-        \ *.pdf)"
+      description: List of status names being purged
       example:
-      - '*.jpg'
-      - '*.png'
-      - '*.pdf'
+      - SUCCESS
+      - FAILED_TO_PUBLISH
       items:
         type: string
-        description: "List of file patterns that are allowed in this folder (e.g.,\
-          \ *.jpg, *.pdf)"
-        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+        description: List of status names being purged
+        example: "[\"SUCCESS\",\"FAILED_TO_PUBLISH\"]"
       properties:
         empty:
           type: boolean
@@ -24774,6 +24771,33 @@ components:
       - limit
       - offset
       - orderBy
+    PurgeResultView:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Confirmation message indicating the purge operation has started
+          example: Purge operation started. Results will be notified when complete.
+        statusesRequested:
+          type: array
+          description: List of status names being purged
+          example:
+          - SUCCESS
+          - FAILED_TO_PUBLISH
+          items:
+            type: string
+            description: List of status names being purged
+            example: "[\"SUCCESS\",\"FAILED_TO_PUBLISH\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - message
+      - statusesRequested
     PushPublishBean:
       type: object
       properties:
@@ -26074,9 +26098,7 @@ components:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/PurgeResultView"
         errors:
           type: array
           items:

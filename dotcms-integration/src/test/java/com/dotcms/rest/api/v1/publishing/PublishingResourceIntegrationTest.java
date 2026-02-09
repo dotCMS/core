@@ -460,11 +460,9 @@ public class PublishingResourceIntegrationTest {
 
         // Verify immediate acknowledgment
         assertNotNull(result);
-        final Map<String, Object> entity = result.getEntity();
-        assertNotNull(entity.get("message"));
-        assertTrue(entity.get("message").toString().contains("Purge operation started"));
-        assertNotNull(entity.get("statusesRequested"));
-        assertTrue(((List<?>) entity.get("statusesRequested")).contains("SUCCESS"));
+        final PurgeResultView entity = result.getEntity();
+        assertTrue(entity.message().contains("Purge operation started"));
+        assertTrue(entity.statusesRequested().contains("SUCCESS"));
 
         // Wait for async purge to complete and verify bundles are deleted
         final BundleAPI bundleAPI = APILocator.getBundleAPI();
@@ -498,9 +496,8 @@ public class PublishingResourceIntegrationTest {
         final ResponseEntityPurgeView result = callPurgeEndpoint(null);
 
         assertNotNull(result);
-        final Map<String, Object> entity = result.getEntity();
-        final List<?> statusesRequested = (List<?>) entity.get("statusesRequested");
-        assertNotNull(statusesRequested);
+        final PurgeResultView entity = result.getEntity();
+        final List<String> statusesRequested = entity.statusesRequested();
         // Should include safe statuses
         assertTrue("Should include SUCCESS", statusesRequested.contains("SUCCESS"));
         assertTrue("Should include FAILED_TO_PUBLISH", statusesRequested.contains("FAILED_TO_PUBLISH"));
