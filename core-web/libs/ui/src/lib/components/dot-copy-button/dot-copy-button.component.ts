@@ -15,7 +15,6 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
     selector: 'dot-copy-button',
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
-    styleUrls: ['./dot-copy-button.component.scss'],
     imports: [Tooltip, Button],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

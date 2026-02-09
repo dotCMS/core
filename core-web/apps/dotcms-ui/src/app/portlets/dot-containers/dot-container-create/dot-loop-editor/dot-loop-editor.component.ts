@@ -21,7 +21,6 @@ import { DotTextareaContentComponent } from '../../../../view/components/_common
     ],
     selector: 'dot-loop-editor',
     templateUrl: './dot-loop-editor.component.html',
-    styleUrls: ['./dot-loop-editor.component.scss'],
     imports: [ReactiveFormsModule, ButtonModule, DotMessagePipe, DotTextareaContentComponent],
     providers: [
         {
