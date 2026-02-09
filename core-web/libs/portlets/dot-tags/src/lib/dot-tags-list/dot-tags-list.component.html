@@ -14,6 +14,19 @@
 
         <div class="flex gap-2 ml-auto">
             <p-button
+                label="Export"
+                icon="pi pi-download"
+                [outlined]="true"
+                [disabled]="store.selectedTags().length === 0"
+                (onClick)="store.exportSelectedTags()"
+                data-testid="tag-export-btn" />
+            <p-button
+                label="Import"
+                icon="pi pi-upload"
+                [outlined]="true"
+                (onClick)="store.openImportDialog()"
+                data-testid="tag-import-btn" />
+            <p-button
                 label="Delete"
                 icon="pi pi-trash"
                 severity="danger"

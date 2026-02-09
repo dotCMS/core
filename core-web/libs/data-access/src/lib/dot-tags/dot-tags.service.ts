@@ -118,4 +118,30 @@ export class DotTagsService {
             { body: tagIds }
         );
     }
+
+    /**
+     * Imports tags from a CSV file.
+     * @param file - The CSV file to import.
+     * @returns Observable with import result counts.
+     */
+    importTags(file: File): Observable<
+        DotCMSAPIResponse<{
+            totalRows: number;
+            successCount: number;
+            failureCount: number;
+            success: boolean;
+        }>
+    > {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return this.#http.post<
+            DotCMSAPIResponse<{
+                totalRows: number;
+                successCount: number;
+                failureCount: number;
+                success: boolean;
+            }>
+        >('/api/v2/tags/import', formData);
+    }
 }

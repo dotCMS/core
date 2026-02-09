@@ -10,8 +10,10 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { getDownloadLink } from '@dotcms/utils';
 
 import { DotTagsCreateComponent } from '../../dot-tags-create/dot-tags-create.component';
+import { DotTagsImportComponent } from '../../dot-tags-import/dot-tags-import.component';
 
 type DotTagsListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -162,6 +164,38 @@ export const DotTagsListStore = signalStore(
                             patchState(store, { selectedTags: [] });
                             loadTags();
                         });
+                    }
+                });
+            },
+
+            exportSelectedTags() {
+                const tags = store.selectedTags();
+                if (tags.length === 0) {
+                    return;
+                }
+
+                const header = '"Tag Name","Host ID"';
+                const rows = tags.map((tag) => {
+                    const name = tag.label.replace(/"/g, '""');
+
+                    return `"${name}","${tag.siteId}"`;
+                });
+
+                const csv = [header, ...rows].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const date = new Date().toISOString().slice(0, 10);
+                getDownloadLink(blob, `tags-export-${date}.csv`).click();
+            },
+
+            openImportDialog() {
+                const ref = dialogService.open(DotTagsImportComponent, {
+                    header: 'Import Tags',
+                    width: '500px'
+                });
+
+                ref?.onClose.pipe(take(1)).subscribe((result) => {
+                    if (result) {
+                        loadTags();
                     }
                 });
             }

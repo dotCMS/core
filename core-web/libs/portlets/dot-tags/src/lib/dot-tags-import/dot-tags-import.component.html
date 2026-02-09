@@ -1,0 +1,64 @@
+<!-- Instructions -->
+<div class="mb-4">
+    <p class="mb-2">Upload a CSV file with two columns:</p>
+    <ul class="list-disc pl-5 mb-2 text-sm text-color-secondary">
+        <li>
+            <strong>Tag Name</strong>
+            — The name of the tag (required)
+        </li>
+        <li>
+            <strong>Host ID</strong>
+            — The site identifier or
+            <code>SYSTEM_HOST</code>
+            for global tags
+        </li>
+    </ul>
+    <p class="text-sm text-color-secondary">Example:</p>
+    <pre class="bg-surface-100 p-2 rounded text-sm mt-1">
+"Tag Name","Host ID"
+"Marketing","SYSTEM_HOST"
+"News","48190c8c-42c4-..."</pre
+    >
+</div>
+
+<!-- File Upload -->
+<p-fileupload
+    mode="basic"
+    chooseLabel="Choose CSV File"
+    chooseIcon="pi pi-upload"
+    accept=".csv"
+    (onSelect)="onFileSelect($event)"
+    (onClear)="onFileClear()"
+    data-testid="tag-import-file" />
+
+<!-- Import Result -->
+@if (result(); as res) {
+    <div class="mt-4">
+        @if (res.failureCount === 0) {
+            <p-message severity="success">
+                Successfully imported {{ res.successCount }} tag(s).
+            </p-message>
+        } @else {
+            <p-message severity="warn">
+                Imported {{ res.successCount }} of {{ res.totalRows }} tag(s).
+                {{ res.failureCount }} row(s) failed.
+            </p-message>
+        }
+    </div>
+}
+
+<!-- Actions -->
+<div class="flex justify-end gap-2 mt-4">
+    @if (result()) {
+        <p-button label="Done" (onClick)="close(true)" data-testid="tag-import-done-btn" />
+    } @else {
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="close(false)" />
+        <p-button
+            label="Import"
+            icon="pi pi-upload"
+            [disabled]="!selectedFile()"
+            [loading]="importing()"
+            (onClick)="importFile()"
+            data-testid="tag-import-submit-btn" />
+    }
+</div>
