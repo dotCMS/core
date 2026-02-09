@@ -18,6 +18,10 @@
     </div>
     <div class="flex justify-end gap-2 mt-4">
         <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="ref.close()" />
-        <p-button label="Save" type="submit" [disabled]="!form.valid" data-testid="tag-save-btn" />
+        <p-button
+            [label]="isEdit ? 'Update' : 'Save'"
+            type="submit"
+            [disabled]="!form.valid"
+            data-testid="tag-save-btn" />
     </div>
 </form>

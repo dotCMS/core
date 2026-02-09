@@ -41,7 +41,7 @@
     [first]="(store.page() - 1) * store.rows()"
     [rowsPerPageOptions]="[10, 25, 50]"
     [loading]="store.status() === 'loading'"
-    [(selection)]="selectedTags"
+    [selection]="store.selectedTags()"
     (selectionChange)="store.setSelectedTags($event)"
     dataKey="id"
     data-testid="tags-table">

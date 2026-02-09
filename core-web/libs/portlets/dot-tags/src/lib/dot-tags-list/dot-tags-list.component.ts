@@ -11,8 +11,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { DotTag } from '@dotcms/dotcms-models';
-
 import { DotTagsListStore } from './store/dot-tags-list.store';
 
 @Component({
@@ -34,8 +32,6 @@ import { DotTagsListStore } from './store/dot-tags-list.store';
 })
 export class DotTagsListComponent {
     readonly store = inject(DotTagsListStore);
-
-    selectedTags: DotTag[] = [];
 
     private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 

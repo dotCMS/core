@@ -1,7 +1,7 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
-import { effect, inject } from '@angular/core';
+import { effect, inject, untracked } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -47,35 +47,52 @@ export const DotTagsListStore = signalStore(
         const confirmationService = inject(ConfirmationService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
 
-        return {
-            loadTags() {
-                patchState(store, { status: 'loading' });
+        function loadTags() {
+            patchState(store, { status: 'loading' });
+            tagsService
+                .getTagsPaginated({
+                    filter: store.filter() || undefined,
+                    page: store.page(),
+                    per_page: store.rows(),
+                    orderBy: store.sortField(),
+                    direction: store.sortOrder()
+                })
+                .pipe(
+                    take(1),
+                    catchError((error) => {
+                        httpErrorManager.handle(error);
+                        patchState(store, { status: 'error' });
 
-                tagsService
-                    .getTagsPaginated({
-                        filter: store.filter() || undefined,
-                        page: store.page(),
-                        per_page: store.rows(),
-                        orderBy: store.sortField(),
-                        direction: store.sortOrder()
+                        return EMPTY;
                     })
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { status: 'error' });
-
-                            return EMPTY;
-                        })
-                    )
-                    .subscribe((response) => {
-                        patchState(store, {
-                            tags: response.entity,
-                            totalRecords: response.pagination?.totalEntries ?? 0,
-                            status: 'loaded'
-                        });
+                )
+                .subscribe((response) => {
+                    patchState(store, {
+                        tags: response.entity,
+                        totalRecords: response.pagination?.totalEntries ?? 0,
+                        status: 'loaded'
                     });
-            },
+                });
+        }
+
+        // Observable<unknown> because we don't use the response — we just reload the list on success.
+        function handleTagAction(source$: Observable<unknown>, onSuccess: () => void) {
+            patchState(store, { status: 'loading' });
+            source$
+                .pipe(
+                    take(1),
+                    catchError((error) => {
+                        httpErrorManager.handle(error);
+                        patchState(store, { status: 'loaded' });
+
+                        return EMPTY;
+                    })
+                )
+                .subscribe(() => onSuccess());
+        }
+
+        return {
+            loadTags,
 
             setFilter(filter: string) {
                 patchState(store, { filter, page: 1 });
@@ -99,23 +116,14 @@ export const DotTagsListStore = signalStore(
                     width: '400px'
                 });
 
-                ref.onClose.pipe(take(1)).subscribe((result) => {
+                ref?.onClose.pipe(take(1)).subscribe((result) => {
                     if (result) {
-                        patchState(store, { status: 'loading' });
-                        tagsService
-                            .createTag([{ name: result.name, siteId: result.siteId || undefined }])
-                            .pipe(
-                                take(1),
-                                catchError((error) => {
-                                    httpErrorManager.handle(error);
-                                    patchState(store, { status: 'loaded' });
-
-                                    return EMPTY;
-                                })
-                            )
-                            .subscribe(() => {
-                                this.loadTags();
-                            });
+                        handleTagAction(
+                            tagsService.createTag([
+                                { name: result.name, siteId: result.siteId || undefined }
+                            ]),
+                            () => loadTags()
+                        );
                     }
                 });
             },
@@ -127,26 +135,15 @@ export const DotTagsListStore = signalStore(
                     data: { tag }
                 });
 
-                ref.onClose.pipe(take(1)).subscribe((result) => {
+                ref?.onClose.pipe(take(1)).subscribe((result) => {
                     if (result) {
-                        patchState(store, { status: 'loading' });
-                        tagsService
-                            .updateTag(tag.id, {
+                        handleTagAction(
+                            tagsService.updateTag(tag.id, {
                                 tagName: result.name,
                                 siteId: result.siteId || ''
-                            })
-                            .pipe(
-                                take(1),
-                                catchError((error) => {
-                                    httpErrorManager.handle(error);
-                                    patchState(store, { status: 'loaded' });
-
-                                    return EMPTY;
-                                })
-                            )
-                            .subscribe(() => {
-                                this.loadTags();
-                            });
+                            }),
+                            () => loadTags()
+                        );
                     }
                 });
             },
@@ -160,24 +157,11 @@ export const DotTagsListStore = signalStore(
                     acceptButtonStyleClass: 'p-button-outlined',
                     rejectButtonStyleClass: 'p-button-primary',
                     accept: () => {
-                        const ids = store.selectedTags().map((tag) => tag.id);
-                        patchState(store, { status: 'loading' });
-
-                        tagsService
-                            .deleteTags(ids)
-                            .pipe(
-                                take(1),
-                                catchError((error) => {
-                                    httpErrorManager.handle(error);
-                                    patchState(store, { status: 'loaded' });
-
-                                    return EMPTY;
-                                })
-                            )
-                            .subscribe(() => {
-                                patchState(store, { selectedTags: [] });
-                                this.loadTags();
-                            });
+                        const ids = store.selectedTags().map((t) => t.id);
+                        handleTagAction(tagsService.deleteTags(ids), () => {
+                            patchState(store, { selectedTags: [] });
+                            loadTags();
+                        });
                     }
                 });
             }
@@ -187,15 +171,13 @@ export const DotTagsListStore = signalStore(
         return {
             onInit() {
                 effect(() => {
-                    // Track reactive dependencies
                     store.filter();
                     store.page();
                     store.rows();
                     store.sortField();
                     store.sortOrder();
 
-                    // Trigger load whenever any of these change
-                    store.loadTags();
+                    untracked(() => store.loadTags());
                 });
             }
         };
