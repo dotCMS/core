@@ -6,6 +6,7 @@ import {
     ElementRef,
     EventEmitter,
     inject,
+    input,
     Input,
     NgZone,
     OnDestroy,
@@ -56,7 +57,7 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     @Input() src: string;
 
-    @Input() isLoading = false;
+    $isLoading = input(false, { alias: 'isLoading' });
 
     @Output() charge: EventEmitter<unknown> = new EventEmitter();
 
