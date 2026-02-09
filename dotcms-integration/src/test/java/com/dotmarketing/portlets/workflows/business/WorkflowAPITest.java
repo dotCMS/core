@@ -40,6 +40,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -82,6 +83,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -3771,9 +3773,52 @@ public class WorkflowAPITest extends IntegrationTestBase {
 
     @Test
     public void testPushIndexUpdate() throws Exception{
-        final WorkflowScheme scheme = workflowAPI.findSystemWorkflowScheme();
-        final WorkflowAPIImpl impl = WorkflowAPIImpl.class.cast(workflowAPI);
-        final int rows = impl.pushIndexUpdate(scheme, user);
+        final WorkflowScheme scheme = addWorkflowScheme(
+                "WorkflowSchemePushIndexUpdate_" + System.currentTimeMillis());
+        ContentType pushIndexContentType = null;
+        Contentlet contentlet = null;
+        final boolean allowManualUnpause =
+                Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+        try {
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
+            ReindexThread.unpause();
+            pushIndexContentType = insertContentType(
+                    "WorkflowPushIndexUpdate_" + System.currentTimeMillis(),
+                    BaseContentType.CONTENT);
+            workflowAPI.saveSchemesForStruct(
+                    new StructureTransformer(ContentType.class.cast(pushIndexContentType))
+                            .asStructure(),
+                    Collections.singletonList(scheme));
+
+            contentlet = createContent("PushIndexUpdate", pushIndexContentType);
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet = contentletAPI.checkin(contentlet, user, false);
+
+            final WorkflowAPIImpl impl = WorkflowAPIImpl.class.cast(workflowAPI);
+            final int rows = impl.pushIndexUpdate(scheme, user);
+            assertTrue("Expected at least one contentlet to be queued", rows > 0);
+            TestDataUtils.waitForEmptyQueue();
+        } finally {
+            try {
+                if (contentlet != null) {
+                    contentletAPI.destroy(contentlet, user, false);
+                }
+            } catch (Exception e) {
+                Logger.warn(this, "Failed to destroy test contentlet", e);
+            }
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", allowManualUnpause);
+            ReindexThread.unpause();
+            if (pushIndexContentType != null) {
+                contentTypeAPI.delete(pushIndexContentType);
+            }
+            if (scheme != null) {
+                workflowAPI.archive(scheme, user);
+                workflowAPI.deleteScheme(scheme, user).get();
+            }
+            APILocator.getReindexQueueAPI().deleteReindexAndFailedRecords();
+        }
     }
 
     @Test
