@@ -111,8 +111,7 @@ describe('DotErrorPipe', () => {
                         identifier: '321',
                         acceptTypes: 'kenobi,theChosenOne,yoda',
                         maxContentlets: 3,
-                        uuid: '123',
-                        variantId: '123'
+                        uuid: '123'
                     },
                     contentlet: {
                         identifier: '321',
@@ -179,8 +178,7 @@ describe('DotErrorPipe', () => {
                         identifier: '321',
                         acceptTypes: 'kenobi,theChosenOne,yoda',
                         maxContentlets: 3,
-                        uuid: '123',
-                        variantId: '123'
+                        uuid: '123'
                     },
                     contentlet: {
                         identifier: '321',
@@ -247,8 +245,7 @@ describe('DotErrorPipe', () => {
                         identifier: '123',
                         acceptTypes: 'kenobi,theChosenOne,yoda',
                         maxContentlets: 3,
-                        uuid: '456',
-                        variantId: '123'
+                        uuid: '456'
                     },
                     contentlet: {
                         identifier: '321',
@@ -316,8 +313,7 @@ describe('DotErrorPipe', () => {
                         identifier: '123',
                         acceptTypes: 'kenobi,theChosenOne,yoda',
                         maxContentlets: 3,
-                        uuid: '321',
-                        variantId: '123'
+                        uuid: '321'
                     },
                     contentlet: {
                         identifier: '321',

@@ -81,7 +81,9 @@
     align-items: center;
     cursor: pointer;
     display: flex;
-    padding: $spacing-3 0 $spacing-2 $spacing-4;
+    gap: $spacing-2;
+    align-items: center;
+    margin-inline-start: $spacing-4;
 }
 
 .dot-nav__item-toggle {
@@ -94,8 +96,6 @@
 }
 
 .dot-nav__item-label {
-    flex: 1;
-    margin-left: $spacing-3;
     word-break: break-word;
     transition: opacity $basic-speed ease;
 }
@@ -111,6 +111,5 @@
 }
 
 dot-nav-icon {
-    flex-shrink: 0;
     pointer-events: none;
 }

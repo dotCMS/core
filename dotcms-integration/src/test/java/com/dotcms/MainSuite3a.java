@@ -1,10 +1,9 @@
 package com.dotcms;
 
-import com.dotcms.content.index.VersionedIndicesAPITest;
-import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.ai.api.OpenAIVisionAPIImplTest;
 import com.dotcms.contenttype.business.StoryBlockValidationTest;
 import com.dotcms.contenttype.test.StoryBlockUtilTest;
+import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
@@ -60,8 +59,7 @@ import org.junit.runners.Suite;
         Task251103AddStylePropertiesColumnInMultiTreeTest.class,
         StoryBlockValidationTest.class,
         StoryBlockUtilTest.class,
-        VersionedIndicesAPITest.class,
-        Task251212AddVersionColumnIndicesTableTest.class
+        Task251212AddVersionColumnIndicesTableTest.class,
 })
 
 public class MainSuite3a {

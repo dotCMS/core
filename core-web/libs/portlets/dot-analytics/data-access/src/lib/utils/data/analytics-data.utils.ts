@@ -12,7 +12,12 @@ import {
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { CHART_COLORS, TIME_RANGE_CUBEJS_MAPPING, TIME_RANGE_OPTIONS } from '../../constants';
+import {
+    AnalyticsChartColors,
+    BAR_CHART_STYLE,
+    TIME_RANGE_CUBEJS_MAPPING,
+    TIME_RANGE_OPTIONS
+} from '../../constants';
 import {
     ChartData,
     ChartDataset,
@@ -210,8 +215,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 {
                     label: 'analytics.charts.pageviews-timeline.dataset-label',
                     data: [],
-                    borderColor: CHART_COLORS.primary,
-                    backgroundColor: CHART_COLORS.primaryBackground,
+                    borderColor: AnalyticsChartColors.primary.line,
+                    backgroundColor: AnalyticsChartColors.primary.fill,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -248,8 +253,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             {
                 label: 'analytics.charts.pageviews-timeline.dataset-label',
                 data: chartData,
-                borderColor: CHART_COLORS.primary,
-                backgroundColor: CHART_COLORS.primaryBackground,
+                borderColor: AnalyticsChartColors.primary.line,
+                backgroundColor: AnalyticsChartColors.primary.fill,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -291,8 +296,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
                 {
                     label: 'analytics.charts.conversion-trend.dataset-label',
                     data: [],
-                    borderColor: CHART_COLORS.secondary,
-                    backgroundColor: CHART_COLORS.secondaryBackground,
+                    borderColor: AnalyticsChartColors.secondary.line,
+                    backgroundColor: AnalyticsChartColors.secondary.fill,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -327,8 +332,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
             {
                 label: 'analytics.charts.conversion-trend.dataset-label',
                 data: chartData,
-                borderColor: CHART_COLORS.secondary,
-                backgroundColor: CHART_COLORS.secondaryBackground,
+                borderColor: AnalyticsChartColors.secondary.line,
+                backgroundColor: AnalyticsChartColors.secondary.fill,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -338,9 +343,11 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
                 pointRadius: chartData.map((value) => (value === 0 ? 4 : 0)),
                 pointHoverRadius: chartData.map((value) => (value === 0 ? 6 : 4)),
                 pointBackgroundColor: chartData.map((value) =>
-                    value === 0 ? CHART_COLORS.secondary : CHART_COLORS.secondaryBackground
+                    value === 0
+                        ? AnalyticsChartColors.secondary.line
+                        : AnalyticsChartColors.secondary.fill
                 ),
-                pointBorderColor: CHART_COLORS.secondary
+                pointBorderColor: AnalyticsChartColors.secondary.line
             } as ConversionTrendChartDataset
         ]
     };
@@ -371,16 +378,15 @@ export const transformTrafficVsConversionsData = (
                     type: 'bar',
                     label: 'analytics.charts.unique-visitors',
                     data: [],
-                    borderWidth: 0,
-                    borderRadius: 6,
-                    backgroundColor: CHART_COLORS.primary,
+                    ...BAR_CHART_STYLE,
+                    backgroundColor: AnalyticsChartColors.primary.line,
                     order: 2
                 },
                 {
                     type: 'line',
                     label: 'analytics.charts.conversions',
                     data: [],
-                    borderColor: CHART_COLORS.secondary,
+                    borderColor: AnalyticsChartColors.secondary.line,
                     borderWidth: 2,
                     fill: false,
                     tension: 0.4,
@@ -423,16 +429,15 @@ export const transformTrafficVsConversionsData = (
                 type: 'bar',
                 label: 'analytics.charts.unique-visitors',
                 data: visitorsData,
-                borderWidth: 0,
-                borderRadius: 6,
-                backgroundColor: CHART_COLORS.primary,
+                ...BAR_CHART_STYLE,
+                backgroundColor: AnalyticsChartColors.primary.line,
                 order: 2
             },
             {
                 type: 'line',
                 label: 'analytics.charts.conversions',
                 data: conversionsData,
-                borderColor: CHART_COLORS.secondary,
+                borderColor: AnalyticsChartColors.secondary.line,
                 borderWidth: 2,
                 fill: false,
                 tension: 0.4,
@@ -535,7 +540,7 @@ export const transformDeviceBrowsersData = (
                 {
                     label: 'analytics.charts.device-breakdown.dataset-label',
                     data: [1],
-                    backgroundColor: [CHART_COLORS.gray]
+                    backgroundColor: [AnalyticsChartColors.neutral.line]
                 }
             ]
         };
@@ -546,13 +551,13 @@ export const transformDeviceBrowsersData = (
 
     // Enhanced color palette for browser + device combinations
     const colorPalette = [
-        CHART_COLORS.primary, // Chrome Desktop - Blue
+        AnalyticsChartColors.primary.line, // Chrome Desktop - Blue
         '#1E40AF', // Chrome Mobile - Dark Blue
         '#60A5FA', // Chrome Tablet - Light Blue
         '#8B5CF6', // Safari Desktop - Purple
         '#6D28D9', // Safari Mobile - Dark Purple
         '#A78BFA', // Safari Tablet - Light Purple
-        CHART_COLORS.secondary, // Firefox Desktop - Green
+        AnalyticsChartColors.secondary.line, // Firefox Desktop - Green
         '#047857', // Firefox Mobile - Dark Green
         '#34D399', // Firefox Tablet - Light Green
         '#F59E0B', // Edge Desktop - Orange

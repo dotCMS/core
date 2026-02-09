@@ -26,21 +26,25 @@
 </div>
 
 <!-- Table and Pie Chart Section -->
-<div class="analytics-dashboard-pages__bottom-section flex gap-3 align-items-stretch">
-    <!-- Pie Chart -->
-    <div class="analytics-dashboard-pages__device-chart">
-        <dot-analytics-dashboard-chart
-            [title]="'analytics.charts.device-breakdown.title' | dm"
-            type="pie"
-            [data]="$pageViewDeviceBrowsersData()"
-            [status]="$pageViewDeviceBrowsersStatus()"
-            data-testid="analytics-device-chart" />
-    </div>
+@defer (on viewport) {
+    <div class="analytics-dashboard-pages__bottom-section flex gap-3 align-items-stretch">
+        <!-- Pie Chart -->
+        <div class="analytics-dashboard-pages__device-chart">
+            <dot-analytics-dashboard-chart
+                [title]="'analytics.charts.device-breakdown.title' | dm"
+                type="pie"
+                [data]="$pageViewDeviceBrowsersData()"
+                [status]="$pageViewDeviceBrowsersStatus()"
+                data-testid="analytics-device-chart" />
+        </div>
 
-    <!-- Table -->
-    <div class="analytics-dashboard-pages__table">
-        <dot-analytics-dashboard-table
-            [tableState]="$topPagesTable()"
-            data-testid="analytics-table" />
+        <!-- Table -->
+        <div class="analytics-dashboard-pages__table">
+            <dot-analytics-dashboard-table
+                [tableState]="$topPagesTable()"
+                data-testid="analytics-table" />
+        </div>
     </div>
-</div>
+} @placeholder {
+    <div style="min-height: 24rem"></div>
+}

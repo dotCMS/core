@@ -29,6 +29,8 @@ import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Optional;
@@ -89,7 +91,10 @@ class MonitorHelper {
      */
     boolean isAccessGranted(final HttpServletRequest request){
         try {
-            if(IPV6_LOCALHOST.equals(request.getRemoteAddr()) || ACLS_IPS == null || ACLS_IPS.length == 0){
+            final String remoteAddr = request.getRemoteAddr();
+            
+            // Check if localhost using proper InetAddress API (handles all IPv4 and IPv6 localhost forms)
+            if (isLocalhostAddress(remoteAddr) || ACLS_IPS == null || ACLS_IPS.length == 0){
                 return true;
             }
 
@@ -104,6 +109,28 @@ class MonitorHelper {
             Logger.warnEveryAndDebug(this.getClass(), e, 60000);
         }
         return false;
+    }
+
+    /**
+     * Checks if the given address is a localhost address (IPv4 or IPv6).
+     * Properly handles all valid IPv6 representations per RFC 5952, including
+     * collapsed forms like "::1" and expanded forms like "0:0:0:0:0:0:0:1".
+     * 
+     * @param addr The IP address string from request.getRemoteAddr()
+     * @return true if address is localhost (127.0.0.1, ::1, or any loopback address)
+     */
+    boolean isLocalhostAddress(final String addr) {
+        if (!UtilMethods.isSet(addr)) {
+            return false;
+        }
+        
+        try {
+            final InetAddress inetAddr = InetAddress.getByName(addr);
+            return inetAddr.isLoopbackAddress();
+        } catch (final UnknownHostException e) {
+            Logger.debug(this, "Unable to parse address for localhost check: " + addr);
+            return false;
+        }
     }
 
     /**

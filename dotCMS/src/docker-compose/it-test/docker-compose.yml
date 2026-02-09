@@ -8,6 +8,7 @@ networks:
 volumes:
     dbdata-test:
     esdata-test:
+    osdata-test-upgrade:
 
 services:
     elasticsearch-test:
@@ -31,7 +32,33 @@ services:
         ports:
             - ${ES_HOST_PORT:-9207}:9200
         volumes:
-            - esdata-test:/usr/share/elasticsearch/data
+            - esdata-test:/usr/share/opensearch/data
+        networks:
+            - es_net
+
+    opensearch-test-upgrade:
+        image: ${OS_IMAGE_UPGRADE:-opensearchproject/opensearch:3.0.0}
+        environment:
+            - cluster.name=opensearch-upgrade-cluster
+            - node.name=opensearch-upgrade-node
+            - discovery.type=single-node
+            - bootstrap.system_call_filter=false
+            - bootstrap.memory_lock=true
+            - http.cors.enabled=true
+            - http.cors.allow-origin=http://localhost:1358,http://127.0.0.1:1358
+            - http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization
+            - http.cors.allow-credentials=true
+            - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx1G
+            - DISABLE_INSTALL_DEMO_CONFIG=true
+            - DISABLE_SECURITY_PLUGIN=true
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        ports:
+            - ${OS_HOST_PORT_UPGRADE:-9201}:9200
+        volumes:
+            - osdata-test-upgrade:/usr/share/opensearch-upgrade/data
         networks:
             - es_net
 

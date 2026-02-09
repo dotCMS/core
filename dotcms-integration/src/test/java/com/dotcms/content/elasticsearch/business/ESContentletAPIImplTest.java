@@ -14,6 +14,8 @@ import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -4818,6 +4820,80 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         } finally {
             // Clean up the folder
             FolderDataGen.remove(restrictedFolder);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl#find(String, User, boolean)}
+     * Given Scenario: Create an HTML Page Content Type with a default value for the URL field,
+     *                 then create a page with a specific URL
+     * Expected Result: When calling find() on the HTML Page, the URL should be 
+     *                  correctly populated from identifier.asset_name, not from 
+     *                  the Content Type's defaultValue
+     * @see <a href="https://github.com/dotCMS/core/issues/33893">GitHub Issue #33893</a>
+     */
+    @Test
+    public void test_find_HTMLPage_URL_ShouldBePopulatedFromIdentifier() throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+        final String defaultUrlValue = "default-url-value";
+        final long time = System.currentTimeMillis();
+        
+        ContentType pageContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.HTMLPAGE)
+                .host(host)
+                .name("TestPageType_" + time)
+                .velocityVarName("testPageType" + time)
+                .nextPersisted();
+        
+        Contentlet pageContentlet = null;
+        try {
+            final Field urlField = pageContentType.fieldMap().get(HTMLPageAssetAPI.URL_FIELD);
+            assertNotNull("URL field should exist in Page Content Type", urlField);
+            
+            final Field updatedUrlField = FieldBuilder.builder(urlField)
+                    .defaultValue(defaultUrlValue)
+                    .build();
+            APILocator.getContentTypeFieldAPI().save(updatedUrlField, APILocator.systemUser());
+            
+            CacheLocator.getContentTypeCache().remove(pageContentType);
+            
+            pageContentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find(pageContentType.id());
+            
+            final String expectedUrl = "actual-page-url-" + time;
+            pageContentlet = new ContentletDataGen(pageContentType)
+                    .host(host)
+                    .setProperty(HTMLPageAssetAPI.URL_FIELD, expectedUrl)
+                    .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Test Page " + time)
+                    .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, template.getIdentifier())
+                    .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Test Page")
+                    .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                    .nextPersisted();
+            
+            assertNotNull(pageContentlet.getInode());
+            
+            CacheLocator.getContentletCache().remove(pageContentlet.getInode());
+            
+            final Contentlet foundContentlet = APILocator.getContentletAPI()
+                    .find(pageContentlet.getInode(), APILocator.systemUser(), false);
+            
+            assertNotNull(foundContentlet);
+            
+            final String actualUrl = foundContentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+            assertNotEquals("URL should NOT be the default value", defaultUrlValue, actualUrl);
+            assertEquals("URL should be populated from identifier.asset_name", expectedUrl, actualUrl);
+            
+            final Identifier identifier = APILocator.getIdentifierAPI().find(foundContentlet);
+            assertEquals("URL should match identifier.asset_name", identifier.getAssetName(), actualUrl);
+            
+        } finally {
+            if (pageContentlet != null && UtilMethods.isSet(pageContentlet.getInode())) {
+                ContentletDataGen.remove(pageContentlet);
+            }
+            if (pageContentType != null) {
+                ContentTypeDataGen.remove(pageContentType);
+            }
         }
     }
 

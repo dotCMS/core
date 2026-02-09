@@ -129,10 +129,10 @@ jobs:
       release_version: ${{ needs.release-prepare.outputs.release_version }}
       release_tag: ${{ needs.release-prepare.outputs.release_tag }}
       artifact_run_id: ${{ github.run_id }}
-      deploy_artifact: ${{ github.event.inputs.deploy_artifact }}
-      upload_javadocs: ${{ github.event.inputs.upload_javadocs }}
-      update_plugins: ${{ github.event.inputs.update_plugins }}
-      update_github_labels: ${{ github.event.inputs.update_github_labels }}
+      deploy_artifact: ${{ github.event.inputs.deploy_artifact == 'true' }}
+      upload_javadocs: ${{ github.event.inputs.upload_javadocs == 'true' }}
+      update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
+      update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' }}
     secrets:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}

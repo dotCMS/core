@@ -41,6 +41,7 @@ import {
 
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
@@ -102,7 +103,13 @@ describe('DotAddContentletComponent', () => {
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
-                UserModel
+                UserModel,
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
+                }
             ]
         });
     }));

@@ -62,6 +62,8 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
+- description: Push publishing job management endpoints
+  name: Publishing
 - description: Content relationship management
   name: Relationships
 - description: Endpoints for managing sites (hosts) and their configuration
@@ -122,8 +124,6 @@ tags:
   name: Personalization
 - description: Portlet management and administration
   name: Portlets
-- description: Content publishing and deployment operations
-  name: Publishing
 - description: Remote content publishing and synchronization
   name: Push Publishing
 - description: User role and permission management
@@ -10429,14 +10429,9 @@ paths:
                 entity:
                 - containerId: some-container-id
                   contentletId: some-contentlet-id
-                  styleProperties:
-                    color: "#FF0000"
-                    margin: 10px
-                    width: 100px
                   uuid: some-uuid
                 - containerId: other-container-id
                   contentletId: other-contentlet-id
-                  styleProperties: null
                   uuid: other-uuid
                 errors: []
                 i18nMessagesMap: {}
@@ -10601,6 +10596,55 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Page
+  /v1/page/{pageId}/styles:
+    put:
+      description: Updates style properties for contentlets within containers on a
+        specific page. Only updates the styleProperties field without modifying page
+        structure.
+      operationId: updateStyles
+      parameters:
+      - description: Page identifier
+        in: path
+        name: pageId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContentWithStylesForm"
+        description: "List of containers with contentlet style updates. Each container\
+          \ includes its ID, UUID, and dynamic properties where contentlet IDs are\
+          \ keys with their style properties as values."
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentView"
+          description: Contentlet styles updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid request - empty container entries or invalid contentlet
+            references
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user does not have EDIT permission on the page
+        "404":
+          content:
+            application/json: {}
+          description: Page not found
+      summary: Update contentlet styles in a page
       tags:
       - Page
   /v1/permissions:
@@ -11420,6 +11464,152 @@ paths:
           description: default response
       tags:
       - Portlets
+  /v1/publishing:
+    get:
+      description: "Returns a paginated list of publishing jobs combining audit status\
+        \ and bundle metadata. Supports filtering by status and bundle name/ID. Each\
+        \ job includes asset preview (first 3 assets), environment count, and timing\
+        \ information."
+      operationId: listPublishingJobs
+      parameters:
+      - description: Page number (starts from 1)
+        example: 1
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Results per page (1-500)
+        example: 50
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 50
+      - description: Case-insensitive partial match filter on bundle_id and bundle
+          name
+        example: staging
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: "Comma-separated status values to filter (e.g., SUCCESS,FAILED_TO_PUBLISH).\
+          \ Valid values: BUNDLE_REQUESTED, WAITING_FOR_PUBLISHING, BUNDLING, SENDING_TO_ENDPOINTS,\
+          \ PUBLISHING_BUNDLE, BUNDLE_SENT_SUCCESSFULLY, RECEIVED_BUNDLE, BUNDLE_SAVED_SUCCESSFULLY,\
+          \ SUCCESS, SUCCESS_WITH_WARNINGS, FAILED_TO_BUNDLE, FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS,\
+          \ FAILED_TO_SEND_TO_SOME_GROUPS, FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK,\
+          \ INVALID_TOKEN, LICENSE_REQUIRED"
+        example: "SUCCESS,FAILED_TO_PUBLISH"
+        in: query
+        name: status
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPublishingJobsView"
+          description: Publishing jobs retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request parameters (e.g., invalid status value, pagination\
+            \ out of range)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: List publishing jobs
+      tags:
+      - Publishing
+  /v1/publishing/{bundleId}:
+    delete:
+      description: "Removes a specific bundle from the publishing queue. Cannot delete\
+        \ bundles that are actively publishing (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE)."
+      operationId: deletePublishingJob
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Success response with message
+                example:
+                  message: Bundle deleted successfully
+          description: Bundle deleted successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "409":
+          content:
+            application/json: {}
+          description: Cannot delete bundle while publishing is in progress
+      summary: Delete a publishing job
+      tags:
+      - Publishing
+    get:
+      description: "Returns detailed status, environments, endpoints, and timestamps\
+        \ for a specific publishing bundle. Includes per-endpoint success/failure\
+        \ status with error messages and stack traces for failed endpoints."
+      operationId: getPublishingJobDetails
+      parameters:
+      - description: Bundle identifier
+        example: f3d9a4b7-staging-bundle-2026-01-15
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPublishingJobDetailView"
+          description: Publishing job details retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid bundle ID format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+      summary: Get publishing job details
+      tags:
+      - Publishing
   /v1/publishqueue:
     delete:
       operationId: deleteAssetsByIdentifiers
@@ -19550,6 +19740,26 @@ components:
       - inheritanceMode
       - isParentPermissionable
       - permissions
+    AssetPreviewView:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Asset identifier
+          example: abc123-content-id
+        title:
+          type: string
+          description: Human-readable asset title
+          example: Homepage Content Update
+        type:
+          type: string
+          description: "Asset type (e.g., contentlet, template, container, folder,\
+            \ host)"
+          example: contentlet
+      required:
+      - id
+      - title
+      - type
     AssetsRequestForm:
       type: object
       properties:
@@ -20566,6 +20776,53 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowFormEntry"
+    ContentView:
+      type: object
+      properties:
+        containerId:
+          type: string
+          description: Container identifier
+          example: //demo.dotcms.com/application/containers/default/
+        contentletId:
+          type: string
+          description: Contentlet identifier
+        dotStyleProperties:
+          type: object
+          additionalProperties:
+            type: object
+            description: Styles defined for the Contentlet
+            example:
+              color: "#FF0000"
+              margin: 10px
+          description: Styles defined for the Contentlet
+          example:
+            color: "#FF0000"
+            margin: 10px
+          properties:
+            empty:
+              type: boolean
+        uuid:
+          type: string
+          description: Container unique identifier (UUID)
+      required:
+      - containerId
+      - contentletId
+      - uuid
+    ContentWithStylesForm:
+      type: object
+      description: Container with contentlet style properties
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+          example: //demo.dotcms.com/application/containers/default/
+        uuid:
+          type: string
+          description: Container unique identifier (UUID)
+          example: "1"
+      required:
+      - identifier
+      - uuid
     ContentletWorkflowStatusView:
       type: object
       properties:
@@ -21178,6 +21435,65 @@ components:
             type: string
           variable:
             type: string
+    EndpointDetailView:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Server address (hostname or IP)
+          example: staging1.example.com
+        id:
+          type: string
+          description: Unique endpoint identifier
+          example: endpoint-1
+        port:
+          type: string
+          description: Server port number
+          example: "443"
+        protocol:
+          type: string
+          description: Communication protocol
+          example: https
+        serverName:
+          type: string
+          description: Human-readable server name
+          example: Staging Server 1
+        stackTrace:
+          type: string
+          description: Stack trace for failed endpoints (only included for failures)
+        status:
+          type: string
+          description: "Publishing status for this endpoint (e.g., SUCCESS, FAILED_TO_SENT)"
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        statusMessage:
+          type: string
+          description: Status message with additional details
+          example: Everything ok
+      required:
+      - address
+      - id
+      - port
+      - protocol
+      - serverName
     EndpointForm:
       type: object
       properties:
@@ -21216,6 +21532,33 @@ components:
           type: string
         pushToAll:
           type: boolean
+    EnvironmentDetailView:
+      type: object
+      properties:
+        endpoints:
+          type: array
+          description: Endpoints within this environment with their status
+          items:
+            $ref: "#/components/schemas/EndpointDetailView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/EndpointDetailView"
+            last:
+              $ref: "#/components/schemas/EndpointDetailView"
+        id:
+          type: string
+          description: Unique environment identifier
+          example: env-staging-123
+        name:
+          type: string
+          description: Human-readable environment name
+          example: Staging Environment
+      required:
+      - endpoints
+      - id
+      - name
     EnvironmentForm:
       type: object
       properties:
@@ -22653,6 +22996,18 @@ components:
             type: string
           variable:
             type: string
+    ImmutableListAssetPreviewView:
+      type: array
+      description: Preview of first 3 assets in the bundle
+      items:
+        $ref: "#/components/schemas/AssetPreviewView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/AssetPreviewView"
+        last:
+          $ref: "#/components/schemas/AssetPreviewView"
     ImmutableListCondition:
       type: array
       items:
@@ -22664,6 +23019,30 @@ components:
           $ref: "#/components/schemas/Condition"
         last:
           $ref: "#/components/schemas/Condition"
+    ImmutableListEndpointDetailView:
+      type: array
+      description: Endpoints within this environment with their status
+      items:
+        $ref: "#/components/schemas/EndpointDetailView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/EndpointDetailView"
+        last:
+          $ref: "#/components/schemas/EndpointDetailView"
+    ImmutableListEnvironmentDetailView:
+      type: array
+      description: Environments with their endpoints and status details
+      items:
+        $ref: "#/components/schemas/EnvironmentDetailView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/EnvironmentDetailView"
+        last:
+          $ref: "#/components/schemas/EnvironmentDetailView"
     ImmutableListJob:
       type: array
       items:
@@ -22836,6 +23215,14 @@ components:
       type: object
       additionalProperties:
         type: object
+        description: Styles defined for the Contentlet
+        example:
+          color: "#FF0000"
+          margin: 10px
+      description: Styles defined for the Contentlet
+      example:
+        color: "#FF0000"
+        margin: 10px
       properties:
         empty:
           type: boolean
@@ -24175,6 +24562,158 @@ components:
           type: boolean
         tokenInvalid:
           type: boolean
+    PublishingJobDetailView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Total number of assets in the bundle
+          example: 47
+        bundleId:
+          type: string
+          description: Unique bundle identifier
+          example: f3d9a4b7-staging-bundle-2026-01-15
+        bundleName:
+          type: string
+          description: Human-readable bundle name
+          example: bundle-testName
+        environments:
+          type: array
+          description: Environments with their endpoints and status details
+          items:
+            $ref: "#/components/schemas/EnvironmentDetailView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/EnvironmentDetailView"
+            last:
+              $ref: "#/components/schemas/EnvironmentDetailView"
+        filterName:
+          type: string
+          description: Publishing filter name used
+          example: Live to Staging
+        numTries:
+          type: integer
+          format: int32
+          description: Number of publish attempts
+          example: 1
+        status:
+          type: string
+          description: Current publishing status
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        timestamps:
+          $ref: "#/components/schemas/TimestampsView"
+      required:
+      - assetCount
+      - bundleId
+      - environments
+      - numTries
+      - status
+      - timestamps
+    PublishingJobView:
+      type: object
+      properties:
+        assetCount:
+          type: integer
+          format: int32
+          description: Total number of assets in the bundle
+          example: 47
+        assetPreview:
+          type: array
+          description: Preview of first 3 assets in the bundle
+          items:
+            $ref: "#/components/schemas/AssetPreviewView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/AssetPreviewView"
+            last:
+              $ref: "#/components/schemas/AssetPreviewView"
+        bundleId:
+          type: string
+          description: Unique bundle identifier
+          example: f3d9a4b7-staging-bundle-2026-01-15
+        bundleName:
+          type: string
+          description: Human-readable bundle name
+          example: bundle-testName
+        createDate:
+          type: string
+          format: date-time
+          description: Bundle creation timestamp in ISO 8601 format
+          example: 2026-01-15T10:29:55Z
+        environmentCount:
+          type: integer
+          format: int32
+          description: Number of target environments
+          example: 3
+        filterName:
+          type: string
+          description: Publishing filter name used
+          example: Live to Staging
+        numTries:
+          type: integer
+          format: int32
+          description: Number of publish attempts
+          example: 1
+        status:
+          type: string
+          description: Current publishing status
+          enum:
+          - BUNDLE_REQUESTED
+          - BUNDLING
+          - SENDING_TO_ENDPOINTS
+          - FAILED_TO_SEND_TO_ALL_GROUPS
+          - FAILED_TO_SEND_TO_SOME_GROUPS
+          - FAILED_TO_BUNDLE
+          - FAILED_TO_SENT
+          - FAILED_TO_PUBLISH
+          - SUCCESS
+          - BUNDLE_SENT_SUCCESSFULLY
+          - RECEIVED_BUNDLE
+          - PUBLISHING_BUNDLE
+          - WAITING_FOR_PUBLISHING
+          - BUNDLE_SAVED_SUCCESSFULLY
+          - INVALID_TOKEN
+          - LICENSE_REQUIRED
+          - SUCCESS_WITH_WARNINGS
+          - FAILED_INTEGRITY_CHECK
+          example: SUCCESS
+        statusUpdated:
+          type: string
+          format: date-time
+          description: Last status update timestamp in ISO 8601 format
+          example: 2026-01-15T10:31:22Z
+      required:
+      - assetCount
+      - assetPreview
+      - bundleId
+      - createDate
+      - environmentCount
+      - numTries
+      - status
     PullRelatedForm:
       type: object
       properties:
@@ -24677,6 +25216,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Container"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentView"
         errors:
           type: array
           items:
@@ -25403,6 +25967,54 @@ components:
           type: array
           items:
             type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPublishingJobDetailView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PublishingJobDetailView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityPublishingJobsView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublishingJobView"
         errors:
           type: array
           items:
@@ -28351,6 +28963,42 @@ components:
             type: string
           variable:
             type: string
+    TimestampsView:
+      type: object
+      description: Publishing job timestamps
+      properties:
+        bundleEnd:
+          type: string
+          format: date-time
+          description: When bundle creation completed (ISO 8601 format)
+          example: 2026-01-15T10:31:22Z
+        bundleStart:
+          type: string
+          format: date-time
+          description: When bundle creation started (ISO 8601 format)
+          example: 2026-01-15T10:30:00Z
+        createDate:
+          type: string
+          format: date-time
+          description: When the audit record was created (ISO 8601 format)
+          example: 2026-01-15T10:29:55Z
+        publishEnd:
+          type: string
+          format: date-time
+          description: When publishing to endpoints completed (ISO 8601 format)
+          example: 2026-01-15T10:31:18Z
+        publishStart:
+          type: string
+          format: date-time
+          description: When publishing to endpoints started (ISO 8601 format)
+          example: 2026-01-15T10:30:05Z
+        statusUpdated:
+          type: string
+          format: date-time
+          description: When the status was last updated (ISO 8601 format)
+          example: 2026-01-15T10:31:22Z
+      required:
+      - createDate
     TotalSession:
       type: object
       properties:

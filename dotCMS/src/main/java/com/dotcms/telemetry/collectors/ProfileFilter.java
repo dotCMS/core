@@ -35,7 +35,7 @@ public class ProfileFilter {
         
         // If no annotation, exclude (annotation is required)
         if (annotation == null) {
-            Logger.warn(ProfileFilter.class, 
+            Logger.debug(ProfileFilter.class,
                 String.format("Metric %s is missing required @MetricsProfile annotation. " +
                     "This metric will be excluded from collection. " +
                     "Please add @MetricsProfile annotation to the metric class.",
@@ -84,5 +84,3 @@ public class ProfileFilter {
         return clazz;
     }
 }
-
-
