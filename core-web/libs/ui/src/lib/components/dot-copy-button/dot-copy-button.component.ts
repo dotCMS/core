@@ -40,6 +40,11 @@ export class DotCopyButtonComponent {
      */
     customClass = input('');
 
+    /**
+     * Tooltip position to be displayed when hovering the button
+     */
+    tooltipPosition = input('bottom');
+
     // Final CSS class to be added to the button
     // When label is empty, use icon-only button styling for input field integration
     // When label exists, use text button for standalone usage

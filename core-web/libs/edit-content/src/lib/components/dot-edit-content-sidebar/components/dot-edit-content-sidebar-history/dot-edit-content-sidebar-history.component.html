@@ -8,14 +8,12 @@
         <dot-sidebar-accordion-tab
             id="versions"
             [label]="'edit.content.sidebar.history.versions' | dm">
-            <div class="dot-edit-content-sidebar-history flex flex-col h-full min-h-0">
+            <div class="flex flex-col h-full min-h-0 gap-5">
                 @if ($isLoading()) {
                     <!-- Loading state -->
-                    <div
-                        class="dot-edit-content-sidebar-history__loading"
-                        data-testid="loading-state">
+                    <div data-testid="loading-state">
                         @for (item of [1, 2, 3, 4]; track $index) {
-                            <div class="dot-edit-content-sidebar-history__skeleton-item">
+                            <div>
                                 <p-skeleton width="100%" height="80px" />
                             </div>
                         }
@@ -44,14 +42,14 @@
                                 }
                             }"
                             data-testid="history-timeline">
-                            <ng-template pTemplate="marker" let-item>
+                            <ng-template #marker let-item>
                                 <span
                                     [class]="'timeline-marker ' + getTimelineMarkerClass(item)"
                                     [attr.data-testid]="
                                         'timeline-marker-' + getRealIndex(item)
                                     "></span>
                             </ng-template>
-                            <ng-template pTemplate="content" let-item>
+                            <ng-template #content let-item>
                                 <dot-history-timeline-item
                                     [item]="item"
                                     [itemIndex]="getRealIndex(item)"
@@ -85,15 +83,12 @@
                     data-testid="push-publish-menu-button" />
                 <p-menu #ppMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
             </div>
-            <div
-                class="dot-edit-content-sidebar-history__push-publish flex flex-col h-full min-h-0">
+            <div class="flex flex-col h-full min-h-0 gap-5">
                 @if ($isLoading()) {
                     <!-- Loading state for push publish -->
-                    <div
-                        class="dot-edit-content-sidebar-history__loading"
-                        data-testid="push-publish-loading-state">
+                    <div data-testid="push-publish-loading-state">
                         @for (item of [1, 2, 3, 4]; track $index) {
-                            <div class="dot-edit-content-sidebar-history__skeleton-item">
+                            <div>
                                 <p-skeleton width="100%" height="80px" />
                             </div>
                         }
@@ -111,7 +106,7 @@
                 } @else {
                     <!-- Push Publish History content -->
                     <div
-                        class="dot-edit-content-sidebar-history__push-publish-content flex-1 min-h-0 overflow-y-auto p-2"
+                        class="flex-1 min-h-0 overflow-y-auto p-2"
                         (scroll)="onPushPublishTimelineScroll($event)"
                         data-testid="push-publish-timeline-container">
                         <p-timeline
@@ -123,14 +118,14 @@
                                 }
                             }"
                             data-testid="push-publish-timeline">
-                            <ng-template pTemplate="marker" let-item>
+                            <ng-template #marker let-item>
                                 <span
                                     class="timeline-marker timeline-marker--default"
                                     [attr.data-testid]="
                                         'pushpublish-timeline-marker-' + getPushPublishIndex(item)
                                     "></span>
                             </ng-template>
-                            <ng-template pTemplate="content" let-item>
+                            <ng-template #content let-item>
                                 <dot-pushpublish-timeline-item
                                     [item]="item"
                                     data-testid="pushpublish-timeline-item" />
