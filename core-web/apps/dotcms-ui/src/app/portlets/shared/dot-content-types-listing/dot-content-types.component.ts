@@ -1,14 +1,6 @@
 import { forkJoin, Subject } from 'rxjs';
 
-import {
-    ChangeDetectorRef,
-    Component,
-    inject,
-    OnDestroy,
-    OnInit,
-    viewChild,
-    ViewContainerRef
-} from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { map, pluck, take } from 'rxjs/operators';
@@ -32,7 +24,7 @@ import {
     DotEnvironment,
     StructureTypeView
 } from '@dotcms/dotcms-models';
-import { DotAddToBundleComponent } from '@dotcms/ui';
+import { DotAddToBundleComponent, DotDynamicDirective } from '@dotcms/ui';
 
 import { DotAddToMenuComponent } from './components/dot-add-to-menu/dot-add-to-menu.component';
 import { DotContentTypeStore } from './dot-content-type.store';
@@ -69,7 +61,8 @@ type DotRowActions = {
         DotBaseTypeSelectorComponent,
         DotAddToBundleComponent,
         DotAddToMenuComponent,
-        DotPortletBaseComponent
+        DotPortletBaseComponent,
+        DotDynamicDirective
     ],
     providers: [
         DotContentTypeStore,
@@ -97,7 +90,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private cdr = inject(ChangeDetectorRef);
 
     $listing = viewChild<DotListingDataTableComponent>('listing');
-    $dotDynamicDialog = viewChild.required<ViewContainerRef>('dotDynamicDialog');
+    $dotDynamicDialog = viewChild.required(DotDynamicDirective);
 
     filterBy: string;
     showTable = false;
@@ -389,7 +382,7 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private async showCloneContentTypeDialog(item: DotCMSContentType) {
         const { DotContentTypeCopyDialogComponent } =
             await import('./components/dot-content-type-copy-dialog/dot-content-type-copy-dialog.component');
-        const componentRef = this.$dotDynamicDialog().createComponent(
+        const componentRef = this.$dotDynamicDialog().viewContainerRef.createComponent(
             DotContentTypeCopyDialogComponent
         );
 
@@ -425,6 +418,6 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private closeCopyContentTypeDialog() {
         this.dialogDestroy$.next(true);
         this.dialogDestroy$.complete();
-        this.$dotDynamicDialog().clear();
+        this.$dotDynamicDialog().viewContainerRef.clear();
     }
 }

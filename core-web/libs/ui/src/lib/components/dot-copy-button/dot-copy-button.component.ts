@@ -15,7 +15,6 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
     selector: 'dot-copy-button',
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
-    styleUrls: ['./dot-copy-button.component.scss'],
     imports: [Tooltip, Button],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -44,29 +43,13 @@ export class DotCopyButtonComponent {
     // When label is empty, use icon-only button styling for input field integration
     // When label exists, use text button for standalone usage
     $clazz = computed(() => {
-        const baseClasses = 'p-button p-button-text p-button-sm ';
-
         if (this.label()) {
-            return `${baseClasses} ${this.customClass()}`;
-        } else {
-            return `${baseClasses} w-9 h-9 min-w-9 p-0 ${this.customClass()}`;
+            return this.customClass();
         }
 
-        return `${baseClasses} ${this.customClass()}`;
+        // Icon-only: constrain dimensions for compact display
+        return `w-8 h-8 min-w-8 p-0 ${this.customClass()}`.trim();
     });
-
-    /**
-     * PrimeNG passthrough configuration for icon-only button styling.
-     * Uses Tailwind classes for transparent background and proper sizing.
-     */
-    readonly iconOnlyPt = {
-        root: {
-            class: '!w-8 !h-8 !min-w-8 !min-h-8 !p-0 !bg-transparent !border-none'
-        },
-        icon: {
-            class: '!m-0'
-        }
-    };
 
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);
