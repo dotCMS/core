@@ -116,7 +116,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             });
 
         this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise(), debounceTime(100))
+            .pipe(
+                takeUntil(this.destroy$),
+                startWith(this.form.value),
+                pairwise(),
+                debounceTime(100)
+            )
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,
