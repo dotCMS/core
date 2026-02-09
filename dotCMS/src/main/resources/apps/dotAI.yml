@@ -84,9 +84,13 @@ params:
     hint: "Image size to generate"
     required: true
     value:
+      - label: "1536x1024 (Banner 3:2)"
+        value: "1536x1024"
+        selected: true
+      - label: "1024x1536 (Banner Vertical 2:3)"
+        value: "1024x1536"
       - label: "1792x1024 (Blog Image 3:2)"
         value: "1792x1024"
-        selected: true
       - label: "1024x1792 (Blog Image Vertical 2:3)"
         value: "1024x1792"
       - label: "1024x1024 (Large Square 1:1)"
