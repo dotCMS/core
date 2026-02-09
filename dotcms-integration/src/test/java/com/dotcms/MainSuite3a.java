@@ -29,6 +29,7 @@ import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
 import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTableTest;
+import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenuTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -62,6 +63,7 @@ import org.junit.runners.Suite;
         StoryBlockValidationTest.class,
         StoryBlockUtilTest.class,
         Task251212AddVersionColumnIndicesTableTest.class,
+        Task260206AddUsagePortletToMenuTest.class,
 })
 
 public class MainSuite3a {
