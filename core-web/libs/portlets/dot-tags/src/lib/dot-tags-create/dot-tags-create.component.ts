@@ -6,12 +6,12 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotTag } from '@dotcms/dotcms-models';
-import { DotSiteComponent } from '@dotcms/ui';
+import { DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-tags-create',
     standalone: true,
-    imports: [ReactiveFormsModule, InputTextModule, ButtonModule, DotSiteComponent],
+    imports: [ReactiveFormsModule, InputTextModule, ButtonModule, DotSiteComponent, DotMessagePipe],
     templateUrl: './dot-tags-create.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

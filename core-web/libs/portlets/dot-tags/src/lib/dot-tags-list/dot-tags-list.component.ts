@@ -11,6 +11,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotTagsListStore } from './store/dot-tags-list.store';
 
 @Component({
@@ -24,7 +26,8 @@ import { DotTagsListStore } from './store/dot-tags-list.store';
         IconFieldModule,
         InputIconModule,
         ConfirmDialogModule,
-        ToolbarModule
+        ToolbarModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-tags-list.component.html',
     providers: [DotTagsListStore, DialogService, ConfirmationService],

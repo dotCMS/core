@@ -6,7 +6,8 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent } from 'primeng/fileupload';
 
-import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsImportComponent } from './dot-tags-import.component';
 
@@ -28,7 +29,11 @@ describe('DotTagsImportComponent', () => {
             mockProvider(DotTagsService, {
                 importTags: jest.fn().mockReturnValue(of(IMPORT_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
         ]
     });
 
@@ -130,6 +135,33 @@ describe('DotTagsImportComponent', () => {
             const ref = spectator.inject(DynamicDialogRef);
             component.close(false);
             expect(ref.close).toHaveBeenCalledWith(false);
+        });
+    });
+
+    describe('resultMessage', () => {
+        it('should return empty string when no result', () => {
+            expect(component.resultMessage()).toBe('');
+        });
+
+        it('should return success message key when no failures', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            (tagsService.importTags as jest.Mock).mockReturnValue(of(IMPORT_RESPONSE));
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+            expect(component.resultMessage()).toBe('tags.import.success');
+        });
+
+        it('should return partial success message when there are failures', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            (tagsService.importTags as jest.Mock).mockReturnValue(
+                of({ entity: { totalRows: 10, successCount: 7, failureCount: 3 } })
+            );
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+            expect(component.resultMessage()).toContain('tags.import.partial-success');
+            expect(component.resultMessage()).toContain('tags.import.failures');
         });
     });
 

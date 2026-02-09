@@ -9,9 +9,10 @@ jest.mock('@dotcms/utils', () => ({
     getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
 }));
 
-import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsListStore } from './dot-tags-list.store';
 
@@ -43,7 +44,11 @@ describe('DotTagsListStore', () => {
             }),
             mockProvider(DialogService),
             mockProvider(ConfirmationService),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
         ]
     });
 
@@ -180,7 +185,7 @@ describe('DotTagsListStore', () => {
             expect(dialogSpy).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
-                    header: 'Edit Tag',
+                    header: 'tags.edit.tag',
                     data: { tag }
                 })
             );
@@ -251,8 +256,8 @@ describe('DotTagsListStore', () => {
 
             expect(confirmSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    message: 'Are you sure you want to delete 2 tag(s)?',
-                    header: 'Delete Tags'
+                    message: 'tags.confirm.delete.message',
+                    header: 'tags.confirm.delete.header'
                 })
             );
         });

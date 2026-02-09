@@ -5,7 +5,9 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 @Component({
     selector: 'dot-site',
@@ -26,6 +28,7 @@ class MockDotSiteComponent implements ControlValueAccessor {
 }
 
 jest.mock('@dotcms/ui', () => ({
+    ...jest.requireActual('@dotcms/ui'),
     DotSiteComponent: MockDotSiteComponent
 }));
 
@@ -49,7 +52,11 @@ describe('DotTagsCreateComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
                 { provide: DynamicDialogRef, useValue: mockRef },
-                { provide: DynamicDialogConfig, useValue: { data: {} } }
+                { provide: DynamicDialogConfig, useValue: { data: {} } },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({})
+                }
             ]
         });
 
@@ -80,7 +87,7 @@ describe('DotTagsCreateComponent', () => {
         it('should show Save label on submit button', () => {
             const button = spectator.query(byTestId('tag-save-btn'));
             expect(button).toBeTruthy();
-            expect((button as HTMLElement).outerHTML).toContain('Save');
+            expect((button as HTMLElement).outerHTML).toContain('tags.save');
         });
     });
 
@@ -93,7 +100,11 @@ describe('DotTagsCreateComponent', () => {
             schemas: [CUSTOM_ELEMENTS_SCHEMA],
             providers: [
                 { provide: DynamicDialogRef, useValue: mockRef },
-                { provide: DynamicDialogConfig, useValue: { data: { tag: MOCK_TAG } } }
+                { provide: DynamicDialogConfig, useValue: { data: { tag: MOCK_TAG } } },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({})
+                }
             ]
         });
 
@@ -116,7 +127,7 @@ describe('DotTagsCreateComponent', () => {
         it('should show Update label on submit button', () => {
             const button = spectator.query(byTestId('tag-save-btn'));
             expect(button).toBeTruthy();
-            expect((button as HTMLElement).outerHTML).toContain('Update');
+            expect((button as HTMLElement).outerHTML).toContain('tags.update');
         });
     });
 });

@@ -7,27 +7,27 @@
                 type="text"
                 [ngModel]="store.filter()"
                 (ngModelChange)="onSearch($event)"
-                placeholder="Search tags..."
+                [placeholder]="'tags.search.placeholder' | dm"
                 data-testid="tag-search-input"
                 class="w-80" />
         </p-iconField>
 
         <div class="flex gap-2 ml-auto">
             <p-button
-                label="Export"
+                [label]="'tags.export' | dm"
                 icon="pi pi-download"
                 [outlined]="true"
                 [disabled]="store.selectedTags().length === 0"
                 (onClick)="store.exportSelectedTags()"
                 data-testid="tag-export-btn" />
             <p-button
-                label="Import"
+                [label]="'tags.import' | dm"
                 icon="pi pi-upload"
                 [outlined]="true"
                 (onClick)="store.openImportDialog()"
                 data-testid="tag-import-btn" />
             <p-button
-                label="Delete"
+                [label]="'tags.delete' | dm"
                 icon="pi pi-trash"
                 severity="danger"
                 [outlined]="true"
@@ -35,7 +35,7 @@
                 (onClick)="store.confirmDelete()"
                 data-testid="tag-delete-btn" />
             <p-button
-                label="Add Tag"
+                [label]="'tags.add.tag' | dm"
                 icon="pi pi-plus"
                 (onClick)="store.openCreateDialog()"
                 data-testid="tag-add-btn" />
@@ -64,10 +64,10 @@
                 <p-tableHeaderCheckbox />
             </th>
             <th pSortableColumn="tagname">
-                Name
+                {{ 'tags.table.header.name' | dm }}
                 <p-sortIcon field="tagname" />
             </th>
-            <th>Site</th>
+            <th>{{ 'tags.table.header.site' | dm }}</th>
         </tr>
     </ng-template>
 
@@ -83,7 +83,7 @@
 
     <ng-template pTemplate="emptymessage">
         <tr>
-            <td colspan="3" class="text-center p-4">No tags found.</td>
+            <td colspan="3" class="text-center p-4">{{ 'tags.empty' | dm }}</td>
         </tr>
     </ng-template>
 </p-table>

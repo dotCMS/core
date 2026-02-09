@@ -1,6 +1,6 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="field">
-        <label for="tagName">Tag Name</label>
+        <label for="tagName">{{ 'tags.form.tag-name' | dm }}</label>
         <input
             pInputText
             id="tagName"
@@ -9,17 +9,21 @@
             class="w-full" />
     </div>
     <div class="field">
-        <label for="tagSite">Site</label>
+        <label for="tagSite">{{ 'tags.form.site' | dm }}</label>
         <dot-site
             id="tagSite"
             formControlName="siteId"
-            placeholder="Select a site"
+            [placeholder]="'tags.form.site.placeholder' | dm"
             data-testid="tag-site-select" />
     </div>
     <div class="flex justify-end gap-2 mt-4">
-        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="ref.close()" />
         <p-button
-            [label]="isEdit ? 'Update' : 'Save'"
+            [label]="'tags.cancel' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="ref.close()" />
+        <p-button
+            [label]="isEdit ? ('tags.update' | dm) : ('tags.save' | dm)"
             type="submit"
             [disabled]="!form.valid"
             data-testid="tag-save-btn" />

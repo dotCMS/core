@@ -8,7 +8,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
 
@@ -48,6 +48,7 @@ export const DotTagsListStore = signalStore(
         const dialogService = inject(DialogService);
         const confirmationService = inject(ConfirmationService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const dotMessageService = inject(DotMessageService);
 
         function loadTags() {
             patchState(store, { status: 'loading' });
@@ -114,7 +115,7 @@ export const DotTagsListStore = signalStore(
 
             openCreateDialog() {
                 const ref = dialogService.open(DotTagsCreateComponent, {
-                    header: 'Add Tag',
+                    header: dotMessageService.get('tags.add.tag'),
                     width: '400px'
                 });
 
@@ -132,7 +133,7 @@ export const DotTagsListStore = signalStore(
 
             openEditDialog(tag: DotTag) {
                 const ref = dialogService.open(DotTagsCreateComponent, {
-                    header: 'Edit Tag',
+                    header: dotMessageService.get('tags.edit.tag'),
                     width: '400px',
                     data: { tag }
                 });
@@ -154,8 +155,8 @@ export const DotTagsListStore = signalStore(
                 const count = store.selectedTags().length;
 
                 confirmationService.confirm({
-                    message: `Are you sure you want to delete ${count} tag(s)?`,
-                    header: 'Delete Tags',
+                    message: dotMessageService.get('tags.confirm.delete.message', `${count}`),
+                    header: dotMessageService.get('tags.confirm.delete.header'),
                     acceptButtonStyleClass: 'p-button-outlined',
                     rejectButtonStyleClass: 'p-button-primary',
                     accept: () => {
@@ -192,7 +193,7 @@ export const DotTagsListStore = signalStore(
 
             openImportDialog() {
                 const ref = dialogService.open(DotTagsImportComponent, {
-                    header: 'Import Tags',
+                    header: dotMessageService.get('tags.import.header'),
                     width: '500px'
                 });
 

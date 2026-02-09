@@ -3,7 +3,9 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsListComponent } from './dot-tags-list.component';
 import { DotTagsListStore } from './store/dot-tags-list.store';
@@ -43,6 +45,12 @@ describe('DotTagsListComponent', () => {
             }),
             DialogService,
             ConfirmationService
+        ],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
         ]
     });
 
