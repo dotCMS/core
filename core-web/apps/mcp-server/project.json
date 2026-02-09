@@ -3,7 +3,7 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "apps/mcp-server/src",
     "projectType": "application",
-    "tags": ["skip:build"],
+    "tags": [],
     "targets": {
         "build": {
             "executor": "@nx/esbuild:esbuild",
