@@ -135,8 +135,9 @@
                             class="block no-underline decoration-none mb-8"
                             style="text-decoration: none"
                             [href]="api.link"
-                            [data-testId]="api.dataTestId"
-                            target="_blank">
+                            [attr.data-testId]="api.dataTestId"
+                            target="_blank"
+                            rel="noopener">
                             <h4
                                 class="text-primary-500 text-base font-bold m-0 no-underline mb-2"
                                 style="text-decoration: none">
@@ -160,8 +161,9 @@
                     @for (resource of resources; track resource.dataTestId) {
                         <a
                             [href]="resource.link"
-                            [data-testId]="resource.dataTestId"
+                            [attr.data-testId]="resource.dataTestId"
                             target="_blank"
+                            rel="noopener"
                             class="bg-white border-b border-gray-300 shadow-md grid grid-cols-[min-content_1fr] grid-rows-2 h-full overflow-hidden transition-colors duration-150 rounded-md gap-x-3 p-4 hover:bg-(--primary-100) no-underline"
                             style="text-decoration: none">
                             <i
