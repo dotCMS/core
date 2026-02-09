@@ -7,6 +7,7 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
+import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUVEPaletteListTypes } from './models';
 
@@ -25,7 +26,8 @@ import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
         TabViewModule,
         DotUvePaletteListComponent,
         TooltipModule,
-        DotUveStyleEditorFormComponent
+        DotUveStyleEditorFormComponent,
+        DotUveStyleEditorEmptyStateComponent
     ],
     templateUrl: './dot-uve-palette.component.html',
     styleUrl: './dot-uve-palette.component.scss',

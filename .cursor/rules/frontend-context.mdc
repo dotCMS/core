@@ -42,7 +42,8 @@ cd core-web && yarn nx affected -t test --exclude='tag:skip:test'
 - **File structure**: One component = one `.ts` + one `.html` + one `.scss` (or `.css`); `templateUrl`/`styleUrls` relative to the component file.
 - **Images**: Use `NgOptimizedImage` for static/asset URLs; not for inline base64.
 - **State**: Prefer NgRx Signal Store; avoid manual signal soup in components. See `@docs/frontend/STATE_MANAGEMENT.md`.
-- **Testing**: Spectator + Jest/Vitest; `data-testid` on elements tests query; `byTestId()`, `spectator.setInput()`, `spectator.detectChanges()`, `spectator.click()`, `mockProvider()`; never set component inputs directly. See `@docs/frontend/TESTING_FRONTEND.md`.
+- **Styling**: Prefer PrimeFlex utility classes and PrimeNG components first; avoid custom SCSS when a utility exists. Use BEM only when custom styles are needed. See `@docs/frontend/STYLING_STANDARDS.md`.
+- **Testing**: Spectator + Jest/Vitest; `data-testid` on elements tests query; `byTestId()`, `spectator.setInput()`, `spectator.detectChanges()`, `spectator.click()`, `mockProvider()`; never set component inputs directly. Use `@dotcms/utils-testing` createFake functions (e.g. `createFakeContentlet`, `createFakeLanguage`) instead of manual mocks. See `@docs/frontend/TESTING_FRONTEND.md`.
 - **TypeScript**: Strict types, no `any` (use `unknown`), `as const` instead of enums, `#` for private. See `@docs/frontend/TYPESCRIPT_STANDARDS.md`.
 - **Services**: Single responsibility; `providedIn: 'root'`; use `inject()` instead of constructor injection.
 - **Accessibility**: Aim for WCAG AA; semantic HTML and ARIA where appropriate.

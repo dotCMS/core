@@ -21,18 +21,6 @@
             </span>
         }
     </div>
-    <div class="p-toolbar-group-end">
-        <p-button
-            icon="pi pi-refresh"
-            [label]="'analytics.dashboard.refresh.button' | dm"
-            [loading]="loading()"
-            [disabled]="loading()"
-            (onClick)="onRefresh()"
-            [rounded]="false"
-            severity="primary"
-            size="small"
-            data-testid="refresh-button"></p-button>
-    </div>
 </p-toolbar>
 
 <div class="mx-auto" style="max-width: 50rem">
