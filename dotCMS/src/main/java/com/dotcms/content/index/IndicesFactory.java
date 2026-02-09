@@ -12,6 +12,8 @@ import java.util.Optional;
  */
 public interface IndicesFactory {
 
+    String CLUSTER_PREFIX = "cluster_";
+
     /**
      * Loads the indices information associated with the specified version.
      *

@@ -1,0 +1,96 @@
+@use "variables" as *;
+
+header {
+    // max-width: 70ch;
+    margin-block-end: $spacing-5;
+
+    h1 {
+        font-weight: $font-weight-medium-bold;
+        font-size: $font-size-xxxl;
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        font-style: normal;
+        line-height: normal;
+    }
+
+    p {
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        font-size: $font-size-md;
+        font-style: normal;
+        font-weight: $font-weight-regular-bold;
+        line-height: 1.5;
+    }
+}
+
+h2 {
+    margin: 0;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium-bold;
+}
+
+main {
+    width: 580px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-4;
+    background-color: $white;
+    border-radius: $border-radius-md;
+    padding-block-start: $spacing-4;
+}
+
+.dot-onboarding {
+    padding-block-start: $spacing-4;
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.framework-container {
+    display: grid;
+    grid-template-columns: 40px 1fr 32px;
+    align-items: center;
+    gap: $spacing-4;
+    border-bottom: solid 1px $color-palette-gray-200;
+    padding-block-end: $spacing-4;
+    padding-inline: $spacing-4;
+
+    h3 {
+        margin: 0;
+        padding: 0;
+        font-size: $font-size-lg;
+        font-weight: $font-weight-semi-bold;
+        line-height: normal;
+        color: $color-palette-gray-800;
+        margin-block-end: $spacing-1;
+    }
+
+    p {
+        margin: 0;
+        color: $color-palette-gray-800;
+    }
+
+    .command-text {
+        background: $color-palette-gray-200;
+        padding: $spacing-0 $spacing-2;
+        border-radius: $spacing-1;
+        font-family: $font-code;
+        font-size: $font-size-md;
+        color: $color-palette-gray-800;
+    }
+
+    .paragraph-text {
+        font-size: $font-size-md;
+    }
+}
+
+.button-link {
+    position: absolute;
+    background: transparent;
+    border: 0px;
+    top: 20px;
+    right: 20px;
+}

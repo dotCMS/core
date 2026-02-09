@@ -6,14 +6,14 @@ import {
 } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotSiteService, DotFolderService } from '@dotcms/data-access';
+import { DotFolderService, DotSiteService } from '@dotcms/data-access';
 import {
-    DotFolder,
-    SiteEntity,
+    ContentByFolderParams,
     DotCMSContentlet,
-    ContentByFolderParams
+    DotFolder,
+    SiteEntity
 } from '@dotcms/dotcms-models';
-import { createFakeSite, createFakeFolder, createFakeContentlet } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
 import { DotBrowsingService } from './dot-browsing.service';
 
@@ -408,6 +408,112 @@ describe('DotBrowsingService', () => {
                     expect(err).toBe(error);
                     done();
                 }
+            });
+        });
+
+        it('should always return tree with defined parent and hostName for single level path', (done) => {
+            const path = 'example.com';
+            const rootParent = createFakeFolder({
+                id: 'root',
+                hostName: 'example.com',
+                path: '/',
+                addChildrenAllowed: true
+            });
+
+            const rootFolders: DotFolder[] = [rootParent];
+
+            dotFolderService.getFolders.mockReturnValue(of(rootFolders));
+
+            spectator.service.buildTreeByPaths(path).subscribe((result) => {
+                expect(result.tree).toBeDefined();
+                expect(result.tree?.parent).toBeDefined();
+                expect(result.tree?.parent?.hostName).toBe('example.com');
+                expect(result.tree?.path).toBe('/');
+                // Consumer (host-folder-field.store) can safely use tree.parent.hostName
+                expect(() => {
+                    const hostName = result.tree?.parent?.hostName;
+                    return hostName;
+                }).not.toThrow();
+                done();
+            });
+        });
+
+        it('should always return tree with defined parent and hostName for multi level path (regression: tree.parent.hostName in host-folder-field.store)', (done) => {
+            const path = 'demo.com/level1/level2';
+
+            const level2Parent = createFakeFolder({
+                id: 'parent-level2',
+                hostName: 'demo.com',
+                path: '/level1/level2',
+                addChildrenAllowed: true
+            });
+
+            const level2Folders: DotFolder[] = [
+                level2Parent,
+                createFakeFolder({
+                    id: 'child-level2',
+                    hostName: 'demo.com',
+                    path: '/level1/level2/child',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const level1Folders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'parent-level1',
+                    hostName: 'demo.com',
+                    path: '/level1',
+                    addChildrenAllowed: true
+                }),
+                createFakeFolder({
+                    id: 'parent-level2',
+                    hostName: 'demo.com',
+                    path: '/level1/level2',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const rootFolders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'root',
+                    hostName: 'demo.com',
+                    path: '/',
+                    addChildrenAllowed: true
+                }),
+                createFakeFolder({
+                    id: 'parent-level1',
+                    hostName: 'demo.com',
+                    path: '/level1',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
+                if (requestedPath === '//demo.com/level1/level2/') {
+                    return of(level2Folders);
+                }
+                if (requestedPath === '//demo.com/level1/') {
+                    return of(level1Folders);
+                }
+                if (requestedPath === '//demo.com/') {
+                    return of(rootFolders);
+                }
+                return of([]);
+            });
+
+            spectator.service.buildTreeByPaths(path).subscribe((result) => {
+                expect(result.tree).toBeDefined();
+                expect(result.tree?.parent).toBeDefined();
+                expect(result.tree?.parent?.hostName).toBeDefined();
+                expect(result.tree?.parent?.hostName).toBe('demo.com');
+                // Simulates host-folder-field.store: item.data.hostname === tree.parent.hostName
+                expect(() => {
+                    const tree = result.tree;
+                    if (tree) {
+                        return tree.parent?.hostName;
+                    }
+                }).not.toThrow();
+                done();
             });
         });
     });
