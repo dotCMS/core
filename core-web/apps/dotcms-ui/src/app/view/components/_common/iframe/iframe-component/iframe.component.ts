@@ -11,6 +11,7 @@ import {
     OnDestroy,
     OnInit,
     Output,
+    signal,
     ViewChild
 } from '@angular/core';
 
@@ -56,7 +57,7 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     @Input() src: string;
 
-    @Input() isLoading = false;
+    $isLoading = signal(false);
 
     @Output() charge: EventEmitter<unknown> = new EventEmitter();
 
