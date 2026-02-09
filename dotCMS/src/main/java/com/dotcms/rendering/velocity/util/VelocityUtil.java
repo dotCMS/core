@@ -479,10 +479,17 @@ public class VelocityUtil {
         if (page == null || page.getCacheTTL() < 1) {
             return false;
         }
+
+		final User user = PortalUtil.getUser(request);
+		if(null != user && user.isAdmin() && PageMode.LIVE.equals(PageMode.get(request))){
+			return false;
+		}
+
         // don't cache posts
         if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod()) ) {
             return false;
         }
+
         // nocache passed either as a session var, as a request var or as a
         // request attribute
         if (NO.equals(request.getParameter(DOTCACHE))
@@ -492,8 +499,6 @@ public class VelocityUtil {
 				|| (request.getSession(false) != null && REFRESH.equals(request.getSession(true).getAttribute(DOTCACHE))) ) {
             return false;
         }
-
-
 
         return true;
     }
