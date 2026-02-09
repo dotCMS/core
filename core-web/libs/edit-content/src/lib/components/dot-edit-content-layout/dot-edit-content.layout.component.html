@@ -29,7 +29,11 @@
                             {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
                             <a
                                 href="#"
-                                (click)="$event.preventDefault(); $store.disableNewContentEditor()"
+                                (click)="
+                                    $event.preventDefault();
+                                    closeMessage('betaMessage');
+                                    $store.disableNewContentEditor()
+                                "
                                 data-testId="edit-content-layout__beta-message-link">
                                 {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
                             </a>
@@ -39,7 +43,7 @@
                         <p-button
                             type="button"
                             icon="pi pi-times"
-                            (onClick)="closeMessage('betaMessage')"
+                            (click)="$event.stopPropagation(); closeMessage('betaMessage')"
                             [rounded]="true"
                             [text]="true"
                             data-testId="edit-content-layout__beta-message-close-button"
