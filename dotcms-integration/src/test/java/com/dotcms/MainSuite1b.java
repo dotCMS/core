@@ -24,6 +24,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.business.GraphqlAPITest.class,
         com.dotcms.contenttype.test.ContentTypeTest.class,
         com.dotcms.contenttype.test.DeleteFieldJobTest.class,
+        com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
         com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
@@ -85,8 +87,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.business.HostAPITest.class,
         com.dotcms.content.elasticsearch.business.IndiciesFactoryTest.class,
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
-        com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
