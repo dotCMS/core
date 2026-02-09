@@ -18,9 +18,7 @@ export const dotAnalyticsRoutes: Route[] = [
         title: 'analytics.search.title',
         canMatch: [analyticsHealthGuard],
         loadComponent: () =>
-            import('./dot-analytics-search/dot-analytics-search.component').then(
-                (m) => m.default
-            )
+            import('./dot-analytics-search/dot-analytics-search.component').then((m) => m.default)
     },
     {
         path: 'dashboard',
