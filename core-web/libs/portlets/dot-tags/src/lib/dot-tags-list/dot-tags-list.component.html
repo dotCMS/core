@@ -8,6 +8,7 @@
                 [ngModel]="store.filter()"
                 (ngModelChange)="onSearch($event)"
                 [placeholder]="'tags.search.placeholder' | dm"
+                [attr.aria-label]="'tags.search.placeholder' | dm"
                 data-testid="tag-search-input"
                 class="w-80" />
         </p-iconField>
