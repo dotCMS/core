@@ -95,7 +95,7 @@
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
 
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
-        <jdk.min.version>21</jdk.min.version>
+        <jdk.min.version>25</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.target>${maven.compiler.target}</maven.compiler.argument.target>
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>

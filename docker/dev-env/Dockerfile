@@ -5,7 +5,7 @@ ARG DOTCMS_DOCKER_TAG="latest"
 
 FROM dotcms/dotcms:${DOTCMS_DOCKER_TAG} AS dotcms
 
-FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu AS dev-env-builder
+FROM mcr.microsoft.com/openjdk/jdk:25-ubuntu AS dev-env-builder
 
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
