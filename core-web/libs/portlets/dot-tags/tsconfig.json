@@ -2,12 +2,11 @@
     "extends": "../../../tsconfig.base.json",
     "compilerOptions": {
         "target": "es2022",
-        "strict": true,
+        "useDefineForClassFields": false,
+        "forceConsistentCasingInFileNames": true,
         "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
-        "module": "preserve"
+        "noFallthroughCasesInSwitch": true
     },
     "angularCompilerOptions": {
         "enableI18nLegacyMessageIdFormat": false,

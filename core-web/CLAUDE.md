@@ -189,6 +189,14 @@ import('@portlets/dot-{feature}/dot-{feature}.routes').then((m) => m.dotFeatureR
 - **`dot-analytics`** — Enterprise license checking, lazy loading
 - **`dot-content-drive`** — Complex nested routing
 
+## Testing (Jest + Spectator)
+
+- Use `dot-content-drive` portlet as reference for test config
+- `jest.config.ts` must have `isolatedModules: true` in jest-preset-angular transform options — without it, transitive deps (`@angular/common/http`, `@primeuix/themes/lara`) fail with TS2307
+- `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
+- `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
+- Import `mockProvider` from `@ngneat/spectator/jest` (not `@ngneat/spectator`)
+
 ## Backend Integration
 
 - Dev proxy: `proxy-dev.conf.mjs` routes `/api/*` to port 8080
