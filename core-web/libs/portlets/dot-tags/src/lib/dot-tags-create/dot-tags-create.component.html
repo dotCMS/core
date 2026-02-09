@@ -1,0 +1,23 @@
+<form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="field">
+        <label for="tagName">Tag Name</label>
+        <input
+            pInputText
+            id="tagName"
+            formControlName="name"
+            data-testid="tag-name-input"
+            class="w-full" />
+    </div>
+    <div class="field">
+        <label for="tagSite">Site</label>
+        <dot-site
+            id="tagSite"
+            formControlName="siteId"
+            placeholder="Select a site"
+            data-testid="tag-site-select" />
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (onClick)="ref.close()" />
+        <p-button label="Save" type="submit" [disabled]="!form.valid" data-testid="tag-save-btn" />
+    </div>
+</form>

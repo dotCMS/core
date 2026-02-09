@@ -1,0 +1,78 @@
+<p-toolbar class="gap-1 px-3 justify-start border-none!">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                placeholder="Search tags..."
+                data-testid="tag-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <div class="flex gap-2 ml-auto">
+            <p-button
+                label="Delete"
+                icon="pi pi-trash"
+                severity="danger"
+                [outlined]="true"
+                [disabled]="store.selectedTags().length === 0"
+                (onClick)="store.confirmDelete()"
+                data-testid="tag-delete-btn" />
+            <p-button
+                label="Add Tag"
+                icon="pi pi-plus"
+                (onClick)="store.openCreateDialog()"
+                data-testid="tag-add-btn" />
+        </div>
+    </div>
+</p-toolbar>
+
+<!-- Table -->
+<p-table
+    [value]="store.tags()"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="true"
+    [rows]="store.rows()"
+    [totalRecords]="store.totalRecords()"
+    [first]="(store.page() - 1) * store.rows()"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    [loading]="store.status() === 'loading'"
+    [(selection)]="selectedTags"
+    (selectionChange)="store.setSelectedTags($event)"
+    dataKey="id"
+    data-testid="tags-table">
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 4rem">
+                <p-tableHeaderCheckbox />
+            </th>
+            <th pSortableColumn="tagname">
+                Name
+                <p-sortIcon field="tagname" />
+            </th>
+            <th>Site</th>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-tag>
+        <tr data-testid="tag-row" class="cursor-pointer" (click)="store.openEditDialog(tag)">
+            <td (click)="$event.stopPropagation()">
+                <p-tableCheckbox [value]="tag" />
+            </td>
+            <td data-testid="tag-name">{{ tag.label }}</td>
+            <td data-testid="tag-site">{{ tag.siteName }}</td>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="3" class="text-center p-4">No tags found.</td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<p-confirmDialog />
