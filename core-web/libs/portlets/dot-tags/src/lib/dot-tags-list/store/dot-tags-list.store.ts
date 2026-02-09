@@ -3,17 +3,11 @@ import { EMPTY, Observable } from 'rxjs';
 
 import { effect, inject, untracked } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
-
 import { catchError, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
-
-import { DotTagsCreateComponent } from '../../dot-tags-create/dot-tags-create.component';
-import { DotTagsImportComponent } from '../../dot-tags-import/dot-tags-import.component';
 
 type DotTagsListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -45,10 +39,7 @@ export const DotTagsListStore = signalStore(
     withState<DotTagsListState>(initialState),
     withMethods((store) => {
         const tagsService = inject(DotTagsService);
-        const dialogService = inject(DialogService);
-        const confirmationService = inject(ConfirmationService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
-        const dotMessageService = inject(DotMessageService);
 
         function loadTags() {
             patchState(store, { status: 'loading' });
@@ -113,59 +104,28 @@ export const DotTagsListStore = signalStore(
                 patchState(store, { selectedTags: tags });
             },
 
-            openCreateDialog() {
-                const ref = dialogService.open(DotTagsCreateComponent, {
-                    header: dotMessageService.get('tags.add.tag'),
-                    width: '400px'
-                });
-
-                ref?.onClose.pipe(take(1)).subscribe((result) => {
-                    if (result) {
-                        handleTagAction(
-                            tagsService.createTag([
-                                { name: result.name, siteId: result.siteId || undefined }
-                            ]),
-                            () => loadTags()
-                        );
-                    }
-                });
+            createTag(form: { name: string; siteId?: string }) {
+                handleTagAction(
+                    tagsService.createTag([{ name: form.name, siteId: form.siteId || undefined }]),
+                    () => loadTags()
+                );
             },
 
-            openEditDialog(tag: DotTag) {
-                const ref = dialogService.open(DotTagsCreateComponent, {
-                    header: dotMessageService.get('tags.edit.tag'),
-                    width: '400px',
-                    data: { tag }
-                });
-
-                ref?.onClose.pipe(take(1)).subscribe((result) => {
-                    if (result) {
-                        handleTagAction(
-                            tagsService.updateTag(tag.id, {
-                                tagName: result.name,
-                                siteId: result.siteId || tag.siteId
-                            }),
-                            () => loadTags()
-                        );
-                    }
-                });
+            updateTag(tag: DotTag, form: { name: string; siteId?: string }) {
+                handleTagAction(
+                    tagsService.updateTag(tag.id, {
+                        tagName: form.name,
+                        siteId: form.siteId || tag.siteId
+                    }),
+                    () => loadTags()
+                );
             },
 
-            confirmDelete() {
-                const count = store.selectedTags().length;
-
-                confirmationService.confirm({
-                    message: dotMessageService.get('tags.confirm.delete.message', `${count}`),
-                    header: dotMessageService.get('tags.confirm.delete.header'),
-                    acceptButtonStyleClass: 'p-button-outlined',
-                    rejectButtonStyleClass: 'p-button-primary',
-                    accept: () => {
-                        const ids = store.selectedTags().map((t) => t.id);
-                        handleTagAction(tagsService.deleteTags(ids), () => {
-                            patchState(store, { selectedTags: [] });
-                            loadTags();
-                        });
-                    }
+            deleteTags() {
+                const ids = store.selectedTags().map((t) => t.id);
+                handleTagAction(tagsService.deleteTags(ids), () => {
+                    patchState(store, { selectedTags: [] });
+                    loadTags();
                 });
             },
 
@@ -189,19 +149,6 @@ export const DotTagsListStore = signalStore(
                 } catch (error) {
                     httpErrorManager.handle(error);
                 }
-            },
-
-            openImportDialog() {
-                const ref = dialogService.open(DotTagsImportComponent, {
-                    header: dotMessageService.get('tags.import.header'),
-                    width: '500px'
-                });
-
-                ref?.onClose.pipe(take(1)).subscribe((result) => {
-                    if (result) {
-                        loadTags();
-                    }
-                });
             }
         };
     }),

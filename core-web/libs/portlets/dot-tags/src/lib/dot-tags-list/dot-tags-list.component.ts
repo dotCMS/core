@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
@@ -11,9 +11,16 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
+import { take } from 'rxjs/operators';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotTag } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTagsListStore } from './store/dot-tags-list.store';
+
+import { DotTagsCreateComponent } from '../dot-tags-create/dot-tags-create.component';
+import { DotTagsImportComponent } from '../dot-tags-import/dot-tags-import.component';
 
 @Component({
     selector: 'dot-tags-list',
@@ -33,15 +40,22 @@ import { DotTagsListStore } from './store/dot-tags-list.store';
     providers: [DotTagsListStore, DialogService, ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotTagsListComponent implements OnDestroy {
+export class DotTagsListComponent {
     readonly store = inject(DotTagsListStore);
+
+    private readonly dialogService = inject(DialogService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly destroyRef = inject(DestroyRef);
 
     private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    ngOnDestroy(): void {
-        if (this.searchTimeout) {
-            clearTimeout(this.searchTimeout);
-        }
+    constructor() {
+        this.destroyRef.onDestroy(() => {
+            if (this.searchTimeout) {
+                clearTimeout(this.searchTimeout);
+            }
+        });
     }
 
     onSearch(value: string): void {
@@ -66,5 +80,57 @@ export class DotTagsListComponent implements OnDestroy {
             const order = event.sortOrder === -1 ? 'DESC' : 'ASC';
             this.store.setSort(field, order);
         }
+    }
+
+    openCreateDialog(): void {
+        const ref = this.dialogService.open(DotTagsCreateComponent, {
+            header: this.dotMessageService.get('tags.add.tag'),
+            width: '400px'
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((result) => {
+            if (result) {
+                this.store.createTag(result);
+            }
+        });
+    }
+
+    openEditDialog(tag: DotTag): void {
+        const ref = this.dialogService.open(DotTagsCreateComponent, {
+            header: this.dotMessageService.get('tags.edit.tag'),
+            width: '400px',
+            data: { tag }
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((result) => {
+            if (result) {
+                this.store.updateTag(tag, result);
+            }
+        });
+    }
+
+    confirmDelete(): void {
+        const count = this.store.selectedTags().length;
+
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get('tags.confirm.delete.message', `${count}`),
+            header: this.dotMessageService.get('tags.confirm.delete.header'),
+            acceptButtonStyleClass: 'p-button-outlined',
+            rejectButtonStyleClass: 'p-button-primary',
+            accept: () => this.store.deleteTags()
+        });
+    }
+
+    openImportDialog(): void {
+        const ref = this.dialogService.open(DotTagsImportComponent, {
+            header: this.dotMessageService.get('tags.import.header'),
+            width: '500px'
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((result) => {
+            if (result) {
+                this.store.loadTags();
+            }
+        });
     }
 }

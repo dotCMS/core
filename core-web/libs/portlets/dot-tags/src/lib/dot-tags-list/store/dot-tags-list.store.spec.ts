@@ -1,18 +1,14 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { of, Subject, throwError } from 'rxjs';
-
-import { ConfirmationService } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
+import { of, throwError } from 'rxjs';
 
 jest.mock('@dotcms/utils', () => ({
     ...jest.requireActual('@dotcms/utils'),
     getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
 }));
 
-import { DotHttpErrorManagerService, DotMessageService, DotTagsService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
-import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsListStore } from './dot-tags-list.store';
 
@@ -42,13 +38,7 @@ describe('DotTagsListStore', () => {
                     .fn()
                     .mockReturnValue(of({ entity: { successCount: 2, fails: [] } }))
             }),
-            mockProvider(DialogService),
-            mockProvider(ConfirmationService),
-            mockProvider(DotHttpErrorManagerService),
-            {
-                provide: DotMessageService,
-                useValue: new MockDotMessageService({})
-            }
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -141,148 +131,87 @@ describe('DotTagsListStore', () => {
         });
     });
 
-    describe('openCreateDialog', () => {
-        it('should open dialog and create tag on close', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
+    describe('createTag', () => {
+        it('should call tagsService.createTag and reload', () => {
+            tagsService.getTagsPaginated.mockClear();
 
-            store.openCreateDialog();
-            onClose.next({ name: 'new-tag', siteId: 'site1' });
-            onClose.complete();
+            store.createTag({ name: 'new-tag', siteId: 'site1' });
 
             expect(tagsService.createTag).toHaveBeenCalledWith([
                 { name: 'new-tag', siteId: 'site1' }
             ]);
+            expect(tagsService.getTagsPaginated).toHaveBeenCalled();
         });
 
-        it('should not create tag when dialog is cancelled', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
+        it('should omit siteId when empty', () => {
+            store.createTag({ name: 'new-tag', siteId: '' });
 
-            tagsService.createTag.mockClear();
-            store.openCreateDialog();
-            onClose.next(undefined);
-            onClose.complete();
-
-            expect(tagsService.createTag).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('openEditDialog', () => {
-        it('should open dialog with tag data and update on close', () => {
-            const onClose = new Subject<unknown>();
-            const dialogSpy = jest
-                .spyOn(spectator.inject(DialogService), 'open')
-                .mockReturnValue({ onClose } as never);
-
-            const tag = MOCK_TAGS[0];
-            store.openEditDialog(tag);
-
-            expect(dialogSpy).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({
-                    header: 'tags.edit.tag',
-                    data: { tag }
-                })
-            );
-
-            onClose.next({ name: 'updated-tag', siteId: 'site1' });
-            onClose.complete();
-
-            expect(tagsService.updateTag).toHaveBeenCalledWith('1', {
-                tagName: 'updated-tag',
-                siteId: 'site1'
-            });
+            expect(tagsService.createTag).toHaveBeenCalledWith([
+                { name: 'new-tag', siteId: undefined }
+            ]);
         });
 
-        it('should preserve original siteId when dialog result has no siteId', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
+        it('should handle create error', () => {
+            tagsService.createTag.mockReturnValue(throwError(() => new Error('create fail')));
 
-            const tag = MOCK_TAGS[0];
-            store.openEditDialog(tag);
-
-            onClose.next({ name: 'updated-tag', siteId: '' });
-            onClose.complete();
-
-            expect(tagsService.updateTag).toHaveBeenCalledWith('1', {
-                tagName: 'updated-tag',
-                siteId: 'site1'
-            });
-        });
-
-        it('should not update when dialog is cancelled', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
-
-            tagsService.updateTag.mockClear();
-            store.openEditDialog(MOCK_TAGS[0]);
-            onClose.next(undefined);
-            onClose.complete();
-
-            expect(tagsService.updateTag).not.toHaveBeenCalled();
-        });
-
-        it('should handle update error', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
-
-            tagsService.updateTag.mockReturnValue(throwError(() => new Error('update fail')));
-
-            store.openEditDialog(MOCK_TAGS[0]);
-            onClose.next({ name: 'updated-tag', siteId: 'site1' });
-            onClose.complete();
+            store.createTag({ name: 'new-tag', siteId: 'site1' });
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
             expect(store.status()).toBe('loaded');
         });
     });
 
-    describe('confirmDelete', () => {
-        it('should show confirmation dialog', () => {
-            const confirmSpy = jest.spyOn(spectator.inject(ConfirmationService), 'confirm');
-            store.setSelectedTags(MOCK_TAGS);
-            store.confirmDelete();
+    describe('updateTag', () => {
+        it('should call tagsService.updateTag with correct args and reload', () => {
+            tagsService.getTagsPaginated.mockClear();
 
-            expect(confirmSpy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    message: 'tags.confirm.delete.message',
-                    header: 'tags.confirm.delete.header'
-                })
-            );
+            const tag = MOCK_TAGS[0];
+            store.updateTag(tag, { name: 'updated-tag', siteId: 'site1' });
+
+            expect(tagsService.updateTag).toHaveBeenCalledWith('1', {
+                tagName: 'updated-tag',
+                siteId: 'site1'
+            });
+            expect(tagsService.getTagsPaginated).toHaveBeenCalled();
         });
 
-        it('should delete tags on accept', () => {
-            const confirmSpy = jest.spyOn(spectator.inject(ConfirmationService), 'confirm');
-            store.setSelectedTags(MOCK_TAGS);
-            store.confirmDelete();
+        it('should preserve original siteId when form siteId is empty', () => {
+            const tag = MOCK_TAGS[0];
+            store.updateTag(tag, { name: 'updated-tag', siteId: '' });
 
-            const acceptFn = confirmSpy.mock.calls[0][0].accept as () => void;
-            acceptFn();
+            expect(tagsService.updateTag).toHaveBeenCalledWith('1', {
+                tagName: 'updated-tag',
+                siteId: 'site1'
+            });
+        });
+
+        it('should handle update error', () => {
+            tagsService.updateTag.mockReturnValue(throwError(() => new Error('update fail')));
+
+            store.updateTag(MOCK_TAGS[0], { name: 'updated-tag', siteId: 'site1' });
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('deleteTags', () => {
+        it('should call tagsService.deleteTags with selected IDs, clear selection, and reload', () => {
+            tagsService.getTagsPaginated.mockClear();
+            store.setSelectedTags(MOCK_TAGS);
+
+            store.deleteTags();
 
             expect(tagsService.deleteTags).toHaveBeenCalledWith(['1', '2']);
             expect(store.selectedTags()).toEqual([]);
+            expect(tagsService.getTagsPaginated).toHaveBeenCalled();
         });
 
         it('should handle delete error', () => {
-            const confirmSpy = jest.spyOn(spectator.inject(ConfirmationService), 'confirm');
             tagsService.deleteTags.mockReturnValue(throwError(() => new Error('delete fail')));
-
             store.setSelectedTags(MOCK_TAGS);
-            store.confirmDelete();
 
-            const acceptFn = confirmSpy.mock.calls[0][0].accept as () => void;
-            acceptFn();
+            store.deleteTags();
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
             expect(store.status()).toBe('loaded');
@@ -375,36 +304,6 @@ describe('DotTagsListStore', () => {
             store.exportSelectedTags();
 
             expect(mockGetDownloadLink).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('openImportDialog', () => {
-        it('should open import dialog and reload on close', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
-
-            tagsService.getTagsPaginated.mockClear();
-            store.openImportDialog();
-            onClose.next(true);
-            onClose.complete();
-
-            expect(tagsService.getTagsPaginated).toHaveBeenCalled();
-        });
-
-        it('should not reload when import dialog cancelled', () => {
-            const onClose = new Subject<unknown>();
-            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
-                onClose
-            } as never);
-
-            tagsService.getTagsPaginated.mockClear();
-            store.openImportDialog();
-            onClose.next(undefined);
-            onClose.complete();
-
-            expect(tagsService.getTagsPaginated).not.toHaveBeenCalled();
         });
     });
 

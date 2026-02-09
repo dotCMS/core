@@ -25,7 +25,7 @@
                 [label]="'tags.import' | dm"
                 icon="pi pi-upload"
                 [outlined]="true"
-                (onClick)="store.openImportDialog()"
+                (onClick)="openImportDialog()"
                 data-testid="tag-import-btn" />
             <p-button
                 [label]="'tags.delete' | dm"
@@ -33,12 +33,12 @@
                 severity="danger"
                 [outlined]="true"
                 [disabled]="store.selectedTags().length === 0"
-                (onClick)="store.confirmDelete()"
+                (onClick)="confirmDelete()"
                 data-testid="tag-delete-btn" />
             <p-button
                 [label]="'tags.add.tag' | dm"
                 icon="pi pi-plus"
-                (onClick)="store.openCreateDialog()"
+                (onClick)="openCreateDialog()"
                 data-testid="tag-add-btn" />
         </div>
     </div>
@@ -73,7 +73,7 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-tag>
-        <tr data-testid="tag-row" class="cursor-pointer" (click)="store.openEditDialog(tag)">
+        <tr data-testid="tag-row" class="cursor-pointer" (click)="openEditDialog(tag)">
             <td (click)="$event.stopPropagation()">
                 <p-tableCheckbox [value]="tag" />
             </td>
