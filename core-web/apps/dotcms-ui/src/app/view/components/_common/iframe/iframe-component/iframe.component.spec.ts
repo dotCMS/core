@@ -78,7 +78,7 @@ describe('IframeComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         jest.spyOn(dotUiColorsService, 'setColors');
 
-        comp.isLoading = false;
+        fixture.componentRef.setInput('isLoading', false);
         comp.src = 'etc/etc?hello=world';
         fixture.detectChanges();
         iframeEl = de.query(By.css('iframe'));
