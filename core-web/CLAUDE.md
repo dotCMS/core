@@ -97,105 +97,51 @@ Always wrap form fields with this structure for consistent styling:
 </form>
 ```
 
-## Creating New Portlets
+## Portlet Development
 
-New portlets go in `libs/portlets/`. Use Nx generators:
+New portlets go in `libs/portlets/`. For full patterns, architecture, testing, and Nx generator setup:
 
-```bash
-# Generate portlet library
-yarn nx generate @nx/angular:library portlet \
-  --directory=libs/portlets/dot-{feature} \
-  --tags=type:feature,scope:dotcms-ui,portlet:{feature} \
-  --prefix=dotcms --standalone
-
-# Optional: data-access library
-yarn nx generate @nx/angular:library data-access \
-  --directory=libs/portlets/dot-{feature} \
-  --tags=type:data-access,scope:portlets --prefix=dotcms
-```
-
-### Standard Structure
-
-```
-libs/portlets/dot-{feature}/
-├── portlet/
-│   ├── src/
-│   │   ├── index.ts              # export * from './lib/lib.routes'
-│   │   └── lib/
-│   │       ├── lib.routes.ts     # Route definitions (Nx convention)
-│   │       ├── {feature}-shell.component.ts
-│   │       ├── {feature}-list.component.ts
-│   │       └── {feature}-edit.component.ts
-│   └── project.json
-└── data-access/                   # Optional
-    └── src/lib/
-        └── services/
-```
-
-### Route Definition
-
-```typescript
-// libs/portlets/dot-{feature}/portlet/src/lib/lib.routes.ts
-
-// ✅ CORRECT: camelCase with 'Routes' suffix
-export const dotFeatureRoutes: Routes = [
-  {
-    path: '',
-    component: DotFeatureShellComponent,
-    children: [
-      { path: '', component: DotFeatureListComponent },
-      {
-        path: ':id',
-        loadComponent: () =>
-          import('./dot-feature-edit.component').then((m) => m.DotFeatureEditComponent)
-      }
-    ]
-  }
-];
-
-// ❌ WRONG: PascalCase or verbose
-export const DotFeatureRoutes: Routes = [...]
-export const DotFeaturePortletRoutes: Routes = [...]
-```
-
-### Register in App Routes
-
-```typescript
-// apps/dotcms-ui/src/app/app.routes.ts
-{
-  path: '{feature-slug}',
-  canActivate: [MenuGuardService],
-  canActivateChild: [MenuGuardService],
-  data: { reuseRoute: false },
-  loadChildren: () =>
-    import('@dotcms/portlets/dot-{feature}/portlet').then((m) => m.dotFeatureRoutes)
-}
-```
-
-### Import Alias Conventions
-
-```typescript
-// New portlets (libs/portlets/) — use @dotcms/portlets/*
-import('@dotcms/portlets/dot-{feature}/portlet').then((m) => m.dotFeatureRoutes)
-
-// Legacy portlets (apps/dotcms-ui/src/app/portlets/) — use @portlets/*
-import('@portlets/dot-{feature}/dot-{feature}.routes').then((m) => m.dotFeatureRoutes)
-```
-
-### Reference Portlets
-
-- **`dot-locales`** — Simple list/edit (good starting point)
-- **`dot-experiments`** — Full CRUD with guards, resolvers, shell
-- **`dot-analytics`** — Enterprise license checking, lazy loading
-- **`dot-content-drive`** — Complex nested routing
+> **See [`libs/portlets/CLAUDE.md`](libs/portlets/CLAUDE.md)** — the complete portlet development guide with `dot-tags` as canonical reference.
 
 ## Testing (Jest + Spectator)
+
+### Config
 
 - Use `dot-content-drive` portlet as reference for test config
 - `jest.config.ts` must have `isolatedModules: true` in jest-preset-angular transform options — without it, transitive deps (`@angular/common/http`, `@primeuix/themes/lara`) fail with TS2307
 - `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
 - `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
 - Import `mockProvider` from `@ngneat/spectator/jest` (not `@ngneat/spectator`)
+
+### SignalStore Tests
+
+- Use `createServiceFactory` from Spectator
+- Call `spectator.flushEffects()` in `beforeEach` to trigger the `withHooks` `onInit` effect
+- Mock services with `mockProvider(Service, { method: jest.fn().mockReturnValue(of(...)) })`
+- Test error paths: mock service to `throwError(() => error)`, assert `httpErrorManager.handle` was called
+- For `jest.mock()` of utilities: place the mock **before** the import
+
+### Component Tests (with Mocked Store)
+
+- Use `createComponentFactory` from Spectator
+- Store goes in `componentProviders` (component-level injection), not `providers`
+- Mock all signal getters as `jest.fn().mockReturnValue(...)` and all methods as `jest.fn()`
+- PrimeNG button clicks: `spectator.query(byTestId('btn'))?.querySelector('button')` then `spectator.click(el)`
+
+### Dialog Tests
+
+- Mock `DialogService.open` to return `{ onClose: new Subject() }`, then emit a value and complete the subject
+- Two `describe` blocks for create/edit dialog: one with `DynamicDialogConfig.data: {}`, one with `data: { item }`
+
+### DotSiteComponent Mocking
+
+- Use `jest.mock('@dotcms/ui', ...)` with a stub implementing `ControlValueAccessor`
+- Add `CUSTOM_ELEMENTS_SCHEMA` when mocking complex child components
+
+### Debounce / Timer Tests
+
+- Use `jest.useFakeTimers()` in `beforeEach`, `jest.useRealTimers()` in `afterEach`
+- Advance with `jest.advanceTimersByTime(300)` to trigger debounced actions
 
 ## Backend Integration
 
