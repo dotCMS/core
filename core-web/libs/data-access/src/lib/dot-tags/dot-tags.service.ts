@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSAPIResponse, DotTag, DotTagsPaginatedResponse } from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotTag } from '@dotcms/dotcms-models';
 
 /**
  * Provide util methods to get Tags available in the system.
@@ -54,7 +54,7 @@ export class DotTagsService {
         per_page?: number;
         orderBy?: string;
         direction?: string;
-    }): Observable<DotTagsPaginatedResponse> {
+    }): Observable<DotCMSAPIResponse<DotTag[]>> {
         let httpParams = new HttpParams();
 
         if (params.filter) {
@@ -77,7 +77,7 @@ export class DotTagsService {
             httpParams = httpParams.set('direction', params.direction);
         }
 
-        return this.#http.get<DotTagsPaginatedResponse>('/api/v2/tags', {
+        return this.#http.get<DotCMSAPIResponse<DotTag[]>>('/api/v2/tags', {
             params: httpParams
         });
     }

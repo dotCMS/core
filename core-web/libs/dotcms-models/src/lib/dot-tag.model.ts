@@ -5,12 +5,3 @@ export interface DotTag {
     siteName: string;
     persona: boolean;
 }
-
-export interface DotTagsPaginatedResponse {
-    entity: DotTag[];
-    pagination: {
-        currentPage: number;
-        perPage: number;
-        totalEntries: number;
-    };
-}

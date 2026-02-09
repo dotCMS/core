@@ -1,6 +1,6 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotCMSAPIResponse, DotTag, DotTagsPaginatedResponse } from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotTag } from '@dotcms/dotcms-models';
 
 import { DotTagsService } from './dot-tags.service';
 
@@ -78,8 +78,12 @@ describe('DotTagsService', () => {
     it('should get paginated tags with all params', () => {
         const mockTag1 = createFakeTag({ label: 'tag1' });
         const mockTag2 = createFakeTag({ label: 'tag2' });
-        const mockResponse: DotTagsPaginatedResponse = {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
             entity: [mockTag1, mockTag2],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
             pagination: { currentPage: 2, perPage: 10, totalEntries: 100 }
         };
 
@@ -104,8 +108,12 @@ describe('DotTagsService', () => {
 
     it('should get paginated tags with partial params', () => {
         const mockTag1 = createFakeTag({ label: 'tag1' });
-        const mockResponse: DotTagsPaginatedResponse = {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
             entity: [mockTag1],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
             pagination: { currentPage: 1, perPage: 25, totalEntries: 1 }
         };
 
@@ -118,8 +126,12 @@ describe('DotTagsService', () => {
     });
 
     it('should get paginated tags with no params', () => {
-        const mockResponse: DotTagsPaginatedResponse = {
+        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
             entity: [],
+            errors: [],
+            messages: [],
+            permissions: [],
+            i18nMessagesMap: {},
             pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
         };
 

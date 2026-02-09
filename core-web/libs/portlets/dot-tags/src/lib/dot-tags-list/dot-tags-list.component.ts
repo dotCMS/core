@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
@@ -30,10 +30,16 @@ import { DotTagsListStore } from './store/dot-tags-list.store';
     providers: [DotTagsListStore, DialogService, ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotTagsListComponent {
+export class DotTagsListComponent implements OnDestroy {
     readonly store = inject(DotTagsListStore);
 
     private searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    ngOnDestroy(): void {
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+        }
+    }
 
     onSearch(value: string): void {
         if (this.searchTimeout) {

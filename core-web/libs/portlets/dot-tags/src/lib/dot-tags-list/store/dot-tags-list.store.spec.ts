@@ -194,6 +194,24 @@ describe('DotTagsListStore', () => {
             });
         });
 
+        it('should preserve original siteId when dialog result has no siteId', () => {
+            const onClose = new Subject<unknown>();
+            jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
+                onClose
+            } as never);
+
+            const tag = MOCK_TAGS[0];
+            store.openEditDialog(tag);
+
+            onClose.next({ name: 'updated-tag', siteId: '' });
+            onClose.complete();
+
+            expect(tagsService.updateTag).toHaveBeenCalledWith('1', {
+                tagName: 'updated-tag',
+                siteId: 'site1'
+            });
+        });
+
         it('should not update when dialog is cancelled', () => {
             const onClose = new Subject<unknown>();
             jest.spyOn(spectator.inject(DialogService), 'open').mockReturnValue({
@@ -312,6 +330,36 @@ describe('DotTagsListStore', () => {
             const blob: Blob = mockGetDownloadLink.mock.calls[0][0];
             const text = await readBlob(blob);
             expect(text).toContain('"tag ""with"" quotes","site3"');
+        });
+
+        it('should sanitize formula injection characters in tag names', async () => {
+            const mockGetDownloadLink = getDownloadLink as jest.Mock;
+            mockGetDownloadLink.mockClear();
+
+            const dangerousTags: DotTag[] = [
+                {
+                    id: '4',
+                    label: '=SUM(A1)',
+                    siteId: 'site4',
+                    siteName: 'Site 4',
+                    persona: false
+                },
+                {
+                    id: '5',
+                    label: '+cmd|test',
+                    siteId: 'site5',
+                    siteName: 'Site 5',
+                    persona: false
+                }
+            ];
+
+            store.setSelectedTags(dangerousTags);
+            store.exportSelectedTags();
+
+            const blob: Blob = mockGetDownloadLink.mock.calls[0][0];
+            const text = await readBlob(blob);
+            expect(text).toContain('"\'=SUM(A1)"');
+            expect(text).toContain('"\'+cmd|test"');
         });
 
         it('should not export when no tags selected', () => {

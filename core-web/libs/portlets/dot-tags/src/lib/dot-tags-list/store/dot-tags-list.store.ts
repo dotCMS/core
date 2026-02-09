@@ -142,7 +142,7 @@ export const DotTagsListStore = signalStore(
                         handleTagAction(
                             tagsService.updateTag(tag.id, {
                                 tagName: result.name,
-                                siteId: result.siteId || ''
+                                siteId: result.siteId || tag.siteId
                             }),
                             () => loadTags()
                         );
@@ -176,15 +176,18 @@ export const DotTagsListStore = signalStore(
 
                 const header = '"Tag Name","Host ID"';
                 const rows = tags.map((tag) => {
-                    const name = tag.label.replace(/"/g, '""');
-
-                    return `"${name}","${tag.siteId}"`;
+                    return `${sanitizeCsvValue(tag.label)},${sanitizeCsvValue(tag.siteId)}`;
                 });
 
                 const csv = [header, ...rows].join('\n');
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const date = new Date().toISOString().slice(0, 10);
-                getDownloadLink(blob, `tags-export-${date}.csv`).click();
+
+                try {
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const date = new Date().toISOString().slice(0, 10);
+                    getDownloadLink(blob, `tags-export-${date}.csv`).click();
+                } catch (error) {
+                    httpErrorManager.handle(error);
+                }
             },
 
             openImportDialog() {
@@ -217,3 +220,18 @@ export const DotTagsListStore = signalStore(
         };
     })
 );
+
+/**
+ * Sanitizes a value for CSV export to prevent spreadsheet formula injection.
+ * Prefixes values starting with formula characters (=, +, -, @, tab, carriage return)
+ * with a single quote, which is the standard mitigation for CSV injection.
+ */
+function sanitizeCsvValue(value: string): string {
+    const escaped = value.replace(/"/g, '""');
+
+    if (/^[=+\-@\t\r]/.test(escaped)) {
+        return `"'${escaped}"`;
+    }
+
+    return `"${escaped}"`;
+}
