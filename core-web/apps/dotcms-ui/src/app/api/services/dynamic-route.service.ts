@@ -487,8 +487,7 @@ export class DynamicRouteService {
         return this.router.config.find(
             (route) =>
                 route.path === '' &&
-                route.children &&
-                route.children.length > 0 &&
+                Array.isArray(route.children) &&
                 route.canActivate &&
                 route.canActivate.length > 0
         );
