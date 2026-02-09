@@ -4,6 +4,7 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcdn/src",
     "prefix": "dotcms",
+    "tags": [],
     "targets": {
         "build": {
             "executor": "@angular-devkit/build-angular:browser",
@@ -73,7 +74,8 @@
                 "production": {
                     "buildTarget": "dotcdn:build:production"
                 }
-            }
+            },
+            "continuous": true
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -101,9 +103,9 @@
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
-                "scripts": ["node_modules/chart.js/dist/Chart.js"]
+                "scripts": ["node_modules/chart.js/dist/Chart.js"],
+                "tsConfig": "apps/dotcdn/tsconfig.spec.json"
             }
         }
-    },
-    "tags": []
+    }
 }

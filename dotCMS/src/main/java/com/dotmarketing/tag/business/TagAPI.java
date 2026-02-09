@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
+import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Set;
@@ -228,6 +229,38 @@ public interface TagAPI {
 	 */
 	public void deleteTag ( String tagId ) throws DotDataException;
 
+	/**
+	 * Deletes multiple tags in a single batch operation
+	 * @param tagIds tag IDs of the tags to be deleted
+	 * @throws DotDataException
+	 */
+	public void deleteTags ( String... tagIds ) throws DotDataException;
+
+	/**
+	 * Checks if a user has permission to delete a tag based on contentlet associations.
+	 * <p>If the tag has no contentlet associations (orphan tag), deletion is allowed.
+	 * If the tag is associated with contentlets, the user must have EDIT permission on ALL of them.
+	 * Admin and system users always have permission to delete.</p>
+	 *
+	 * @param user  the user to check permissions for
+	 * @param tagId tagId of the tag to check
+	 * @return true if deletion is allowed, false if denied
+	 * @throws DotDataException if there's a data access error
+	 */
+	public boolean canDeleteTag(User user, String tagId) throws DotDataException;
+
+	/**
+	 * Deletes a tag after verifying the user has EDIT permission on all associated contentlets.
+	 * <p>If the tag has no contentlet associations (orphan tag), deletion is allowed.
+	 * If the tag is associated with contentlets, the user must have EDIT permission on ALL of them.
+	 * Admin and system users always have permission to delete.</p>
+	 *
+	 * @param user  the user requesting the deletion (used for permission checks)
+	 * @param tagId tagId of the tag to be deleted
+	 * @return true if the tag was deleted successfully, false if permission was denied
+	 * @throws DotDataException if there's a data access error
+	 */
+	public boolean deleteTag(User user, String tagId) throws DotDataException;
 
 	/**
 	 * Renames a tag

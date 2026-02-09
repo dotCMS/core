@@ -24,11 +24,11 @@ The `@dotcms/angular` SDK is the DotCMS official Angular library. It empowers An
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
     -   [Still Having Issues?](#still-having-issues)
--   [dotCMS Support](#dotcms-support)
--   [How To Contribute](#how-to-contribute)
+-   [Support](#support)
+-   [Contributing](#contributing)
 -   [Changelog](#changelog)
     -   [v1.1.1](#111)
--   [Licensing Information](#licensing-information)
+-   [Licensing](#licensing)
 
 ## Prerequisites & Setup
 
@@ -772,7 +772,7 @@ If you're still experiencing problems after trying these solutions:
     - Error messages
     - Code samples
 
-## dotCMS Support
+## Support
 
 We offer multiple channels to get help with the dotCMS Angular SDK:
 
@@ -788,9 +788,9 @@ When reporting issues, please include:
 -   Minimal reproduction steps
 -   Expected vs. actual behavior
 
-## How To Contribute
+## Contributing
 
-GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the DotCMS UVE SDK! If you'd like to contribute, please follow these steps:
+GitHub pull requests are the preferred method to contribute code to dotCMS. We welcome contributions to the dotCMS Angular SDK! If you'd like to contribute, please follow these steps:
 
 1. Fork the repository [dotCMS/core](https://github.com/dotCMS/core)
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -842,7 +842,7 @@ provideDotCMSClient({
 - Improved language-specific image handling
 - Better integration with Angular's `NgOptimizedImage` directive
 
-### Licensing Information
+## Licensing
 
 dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
 

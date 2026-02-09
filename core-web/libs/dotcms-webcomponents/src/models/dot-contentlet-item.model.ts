@@ -34,4 +34,5 @@ export interface DotContentletItem {
     mimeType: string;
     titleImage: string;
     modDateMilis: number;
+    icon?: string;
 }

@@ -3,10 +3,15 @@ import type { DotCMSCustomPageResponse } from "@/types/page.model";
 
 import { dotComponents } from "@/components/content-types";
 import Footer from "@/components/common/Footer";
-import Header from "@/components/common/Header";
+import Header from "@/components/common/header/Header";
 
-export const DotCMSPage = ({ pageResponse }: { pageResponse: DotCMSCustomPageResponse }) => {
-  const { pageAsset, content } = useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+export const DotCMSPage = ({
+  pageResponse,
+}: {
+  pageResponse: DotCMSCustomPageResponse;
+}) => {
+  const { pageAsset, content } =
+    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
   const { layout } = pageAsset;
 
   const showHeader = layout.header && content;

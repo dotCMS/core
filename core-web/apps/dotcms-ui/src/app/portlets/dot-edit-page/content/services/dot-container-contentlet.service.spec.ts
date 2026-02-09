@@ -1,5 +1,5 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotSessionStorageService } from '@dotcms/data-access';
 import { CoreWebService } from '@dotcms/dotcms-js';
@@ -15,7 +15,6 @@ import { CoreWebServiceMock, dotcmsContentTypeBasicMock } from '@dotcms/utils-te
 import { DotContainerContentletService } from './dot-container-contentlet.service';
 
 describe('DotContainerContentletService', () => {
-    let injector: TestBed;
     let dotContainerContentletService: DotContainerContentletService;
     let httpMock: HttpTestingController;
     let dotSessionStorageService: DotSessionStorageService;
@@ -29,10 +28,9 @@ describe('DotContainerContentletService', () => {
                 DotSessionStorageService
             ]
         });
-        injector = getTestBed();
-        dotContainerContentletService = injector.get(DotContainerContentletService);
-        httpMock = injector.get(HttpTestingController);
-        dotSessionStorageService = injector.get(DotSessionStorageService);
+        dotContainerContentletService = TestBed.inject(DotContainerContentletService);
+        httpMock = TestBed.inject(HttpTestingController);
+        dotSessionStorageService = TestBed.inject(DotSessionStorageService);
     });
 
     it('should do a request for get the contentlet html code', () => {

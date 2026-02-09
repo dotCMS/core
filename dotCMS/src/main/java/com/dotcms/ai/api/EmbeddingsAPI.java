@@ -1,5 +1,7 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.ai.api.embeddings.ContentTypeEmbeddingIndexRequest;
+import com.dotcms.ai.api.embeddings.EmbeddingIndexRequest;
 import com.dotcms.ai.db.EmbeddingsDTO;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -25,6 +27,25 @@ public interface EmbeddingsAPI {
     String OPEN_AI_THREAD_POOL_KEY = "OpenAIThreadPool";
 
     void shutdown();
+
+    /**
+     * Does the embedding for a contentlet request
+     * @param indexRequest
+     * @return int records affected
+     * @throws Exception
+     */
+    int indexOne(EmbeddingIndexRequest indexRequest) throws Exception;
+
+    /**
+     * Indexes all content of a content type (optionally filtered by host and language),
+     * using the ContentExtractor iterator (hides pagination) and batching persistence via addAll.
+     *
+     * @param  contentTypeIndexRequest ContentTypeEmbeddingIndexRequest
+     * @return total chunks indexed
+     */
+    int indexContentType(ContentTypeEmbeddingIndexRequest contentTypeIndexRequest); // todo: this should be receive an event listener or so to track the progress
+
+
 
     /**
      * given a contentlet, a list of fields and an index, this method will do its best to turn that content into an
@@ -186,4 +207,17 @@ public interface EmbeddingsAPI {
      */
     int deleteEmbeddings(final EmbeddingsDTO dto);
 
+    /**
+     * Search embedding on the new dotAI Api
+     * @param searchForContentRequest
+     * @return SearchContentResponse
+     */
+    SearchContentResponse searchForContentRaw(SearchForContentRequest searchForContentRequest);
+
+    /**
+     * Search embedding on the new dotAI Api and returns the chunks as a contentlet on json
+     * @param searchForContentRequest
+     * @return
+     */
+    JSONObject searchForContent(SearchForContentRequest searchForContentRequest);
 }

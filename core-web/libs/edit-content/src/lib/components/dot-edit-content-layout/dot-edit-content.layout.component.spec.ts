@@ -26,12 +26,15 @@ import {
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
+    DotSiteService,
+    DotSystemConfigService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
@@ -90,6 +93,9 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(MessageService),
             mockProvider(DialogService),
             mockProvider(DotLanguagesService),
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            GlobalStore,
             {
                 provide: DotCurrentUserService,
                 useValue: {
@@ -134,6 +140,7 @@ describe('EditContentLayoutComponent', () => {
 
         // Mock the initial UI state
         jest.spyOn(utils, 'getStoredUIState').mockReturnValue({
+            view: 'form',
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
@@ -354,7 +361,7 @@ describe('EditContentLayoutComponent', () => {
 
     describe('New Content Editor', () => {
         it('should initialize new content, show layout components and dialogs when new content editor is enabled', fakeAsync(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -380,7 +387,9 @@ describe('EditContentLayoutComponent', () => {
 
         describe('Beta Message', () => {
             beforeEach(fakeAsync(() => {
-                dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
                 workflowActionsService.getDefaultActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
@@ -422,7 +431,9 @@ describe('EditContentLayoutComponent', () => {
 
             it('should have correct link to old editor', async () => {
                 // Initialize the content type
-                dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
                 workflowActionsService.getDefaultActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );
@@ -457,7 +468,9 @@ describe('EditContentLayoutComponent', () => {
                 metadata: undefined
             };
 
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK_NO_METADATA));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(CONTENT_TYPE_MOCK_NO_METADATA)
+            );
             workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -474,7 +487,7 @@ describe('EditContentLayoutComponent', () => {
 
     describe('Warning Messages', () => {
         beforeEach(() => {
-            dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
             workflowActionsService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
@@ -532,7 +545,9 @@ describe('EditContentLayoutComponent', () => {
 
         describe('Warning Messages', () => {
             beforeEach(fakeAsync(() => {
-                dotContentTypeService.getContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
                 workflowActionsService.getDefaultActions.mockReturnValue(
                     of(MOCK_SINGLE_WORKFLOW_ACTIONS)
                 );

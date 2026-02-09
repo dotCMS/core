@@ -1,0 +1,55 @@
+@use "variables" as *;
+
+$tab-min-height: 52px;
+
+:host {
+    min-width: 0;
+    overflow: auto;
+}
+
+// Edit Content Actions
+.dot-edit-content-actions {
+    min-height: $tab-min-height;
+    border-bottom: solid 1px var(--gray-300);
+}
+
+.dot-edit-content-actions__left {
+    gap: $spacing-4;
+}
+
+.dot-edit-content-actions__right {
+    gap: $spacing-4;
+    margin-left: auto;
+}
+
+.dot-edit-content-actions__sidebar-toggle {
+    border-left: solid 1px $color-palette-gray-300;
+    transition: all $basic-speed ease-in-out;
+    opacity: 1;
+    transform: translateX(0);
+    overflow: hidden;
+    min-height: $tab-min-height;
+    min-width: 64px;
+    justify-content: center;
+}
+
+.dot-edit-content-actions__sidebar-toggle--hidden {
+    opacity: 0;
+    transform: translateX(100%);
+    max-width: 0;
+    padding: 0;
+    margin: 0;
+    border-left: none;
+    min-width: 0;
+}
+
+.dot-edit-content-actions__sidebar-btn {
+    rect {
+        stroke: $color-palette-primary;
+    }
+
+    path {
+        fill: $color-palette-primary;
+    }
+    transition: all $basic-speed ease-in-out;
+}

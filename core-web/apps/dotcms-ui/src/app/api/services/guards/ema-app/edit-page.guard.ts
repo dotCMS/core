@@ -14,7 +14,7 @@ export const editPageGuard: CanMatchFn = () => {
 
     const router = inject(Router);
 
-    const url = router.getCurrentNavigation().extractedUrl.queryParams['url'];
+    const url = router.currentNavigation().extractedUrl.queryParams['url'];
 
     return combineLatest([
         properties.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_EDIT_PAGE),

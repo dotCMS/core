@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { of } from 'rxjs';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import { DotIconComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 
 import { DotPaletteContentTypeComponent } from './dot-palette-content-type.component';
 
 import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
-import { DotFilterPipeModule } from '../../../../../view/pipes/dot-filter/dot-filter-pipe.module';
-import { DotPaletteInputFilterModule } from '../dot-palette-input-filter/dot-palette-input-filter.module';
+import { DotFilterPipe } from '../../../../../view/pipes/dot-filter/dot-filter.pipe';
+import { DotPaletteInputFilterComponent } from '../dot-palette-input-filter/dot-palette-input-filter.component';
 
 export const contentTypeDataMock = [
     {
@@ -86,19 +88,23 @@ describe('DotPaletteContentTypeComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [TestHostComponent, DotPaletteContentTypeComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotPaletteContentTypeComponent,
+                DotPaletteInputFilterComponent,
+                DotIconComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                DotIconModule,
-                DotFilterPipeModule,
+                DotFilterPipe,
                 FormsModule,
-                DotPaletteInputFilterModule,
                 HttpClientTestingModule
             ],
             providers: [
                 { provide: DotContentletEditorService, useClass: MockDotContentletEditorService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock }
+                {
+                    provide: CoreWebService,
+                    useValue: { request: jest.fn().mockReturnValue(of({})) }
+                }
             ]
         });
 

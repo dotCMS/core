@@ -1,5 +1,5 @@
 <dot-action-header [options]="actionHeaderOptions">
-    <ng-container [ngTemplateOutlet]="beforeSearchTemplate"></ng-container>
+    <ng-container [ngTemplateOutlet]="beforeSearchTemplate" />
     <input
         (keydown.arrowdown)="focusFirstRow()"
         [(ngModel)]="filter"
@@ -8,7 +8,7 @@
         pInputText
         placeholder="{{ 'Type-to-filter' | dm }}"
         type="text" />
-    <ng-content></ng-content>
+    <ng-content />
 </dot-action-header>
 <p-table
     (onContextMenuSelect)="contextMenuSelect.emit($event.data)"
@@ -43,7 +43,7 @@
                 }
                 <ng-container
                     [ngTemplateOutletContext]="{ columns: columns }"
-                    [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate"></ng-container>
+                    [ngTemplateOutlet]="headerTemplate || defaultHeaderTemplate" />
             </tr>
         }
     </ng-template>
@@ -72,7 +72,7 @@
             }
             <ng-container
                 [ngTemplateOutletContext]="{ rowData: rowData }"
-                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate"></ng-container>
+                [ngTemplateOutlet]="rowTemplate || defaultRowTemplate" />
         </tr>
     </ng-template>
     <ng-template pTemplate="emptymessage">
@@ -81,11 +81,11 @@
                 {{ 'No-Results-Found' | dm }}
             </div>
         } @else {
-            <ng-content select="dot-empty-state"></ng-content>
+            <ng-content select="dot-empty-state" />
         }
     </ng-template>
 </p-table>
-<p-contextMenu [model]="contextMenuItems" #cm appendTo="body"></p-contextMenu>
+<p-contextMenu [model]="contextMenuItems" #cm appendTo="body" />
 <ng-template #defaultHeaderTemplate let-columns="columns" pTemplate="header">
     @for (col of columns; track col) {
         <th

@@ -6,8 +6,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotSecondaryToolbarComponent } from './dot-secondary-toolbar.component';
 
-import { DotExperimentClassDirective } from '../../../portlets/shared/directives/dot-experiment-class.directive';
-
 @Component({
     selector: 'dot-test-component',
     template: `
@@ -18,7 +16,7 @@ import { DotExperimentClassDirective } from '../../../portlets/shared/directives
             <div class="lower-toolbar-right">4</div>
         </dot-secondary-toolbar>
     `,
-    standalone: false
+    imports: [DotSecondaryToolbarComponent]
 })
 class HostTestComponent {}
 
@@ -28,8 +26,12 @@ describe('DotSecondaryToolbarComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [HostTestComponent, DotSecondaryToolbarComponent],
-            imports: [CommonModule, RouterTestingModule, DotExperimentClassDirective]
+            imports: [
+                HostTestComponent,
+                CommonModule,
+                RouterTestingModule,
+                DotSecondaryToolbarComponent
+            ]
         }).compileComponents();
     });
 

@@ -191,7 +191,17 @@ describe('DotExperimentsConfigurationGoalsComponent', () => {
             jest.spyOn(store, 'deleteGoal');
             jest.spyOn(confirmationService, 'confirm');
 
+            // Configure vm$ with goals that have no conditions to show the delete button
+            spectator.component.vm$ = of(
+                getVmMock({
+                    primary: {
+                        ...GoalsMock.primary,
+                        conditions: []
+                    }
+                })
+            );
             spectator.detectComponentChanges();
+
             const deleteIcon = spectator.query(byTestId('goal-delete-button'));
 
             expect(deleteIcon).toExist();

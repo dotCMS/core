@@ -40,7 +40,7 @@ export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = fals
 
         if (debug) {
             // eslint-disable-next-line no-console
-            console.info('DotContentAnalytics: using Next.js App Router tracking');
+            console.info('DotCMS Analytics [React]: using Next.js App Router tracking');
         }
         fireIfChanged(computeNextKey(pathname, searchParams));
     }, [analytics, pathname, searchParams, debug]);

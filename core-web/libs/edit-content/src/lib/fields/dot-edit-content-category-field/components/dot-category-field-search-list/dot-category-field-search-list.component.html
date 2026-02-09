@@ -15,7 +15,7 @@
             <ng-template pTemplate="header">
                 <tr data-testId="table-header">
                     <th id="checkbox" scope="col" data-testId="table-header-checkbox">
-                        <p-tableHeaderCheckbox style="width: 4rem"></p-tableHeaderCheckbox>
+                        <p-tableHeaderCheckbox style="width: 4rem" />
                     </th>
                     <th data-testId="table-header-category-name" id="category-name" scope="col">
                         {{ 'edit.content.category-field.search.name' | dm }}
@@ -29,7 +29,7 @@
             <ng-template let-category pTemplate="body">
                 <tr data-testId="table-row">
                     <td>
-                        <p-tableCheckbox [value]="category"></p-tableCheckbox>
+                        <p-tableCheckbox [value]="category" />
                     </td>
                     <td>{{ category.value }}</td>
                     <td>

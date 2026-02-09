@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "2a46e009-62aa-4844-883c-646ab8123846",
+		"_postman_id": "22b0460e-2f21-48c1-b824-4cd55c619037",
 		"name": "GraphQL",
 		"description": "This suite verifies that the GraphQL REST Endpoint is working as expected.\n\n[GraphQL](https://graphql.org/) is an open query language which allows you to perform real-type dynamic queries which specify exactly what data you want, and in what order. The dotCMS GraphQL content delivery API has a number of advantages over querying content via REST:\n\n- A single endpoint to query all content: `api/v1/graphql`.\n    \n- Self documenting via schema introspection.\n    \n- No over-fetching of data (e.g. unneeded fields).\n    \n- No need for multiple requests to get combined data.\n    \n- Client control over both the query and the data received.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/test1~18273634-f7f5-4385-839f-0c3d021b78bb/collection/10041132-22b0460e-2f21-48c1-b824-4cd55c619037?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
@@ -8109,6 +8110,273 @@
 			"description": "Tests for the new 'page' field that enables accessing content-type-specific fields through inline fragments"
 		},
 		{
+			"name": "Page Lock Test",
+			"item": [
+				{
+					"name": "Create test page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set('testPageId', jsonData.entity.identifier);",
+									"pm.collectionVariables.set('testPageInode', jsonData.entity.inode);",
+									"pm.collectionVariables.set('testPageUrl', jsonData.entity.url);",
+									"",
+									"pm.test('Page created successfully', function () {",
+									"    pm.expect(jsonData.entity).to.exist;",
+									"    pm.expect(jsonData.entity.title).to.contain('Test Page Lock');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const timestamp = Date.now();",
+									"pm.collectionVariables.set('pageTitle', `Test Page Lock ${timestamp}`);",
+									"pm.collectionVariables.set('pageUrl', `test-page-lock-${timestamp}`);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlet\": {\n    \"stName\": \"htmlpageasset\",\n    \"title\": \"{{pageTitle}}\",\n    \"friendlyName\": \"{{pageTitle}}\",\n    \"url\": \"{{pageUrl}}\",\n    \"template\": \"SYSTEM_TEMPLATE\",\n    \"hostFolder\": \"48190c8c-42c4-46af-8d1a-0cd5db894797\",\n    \"sortOrder\": 0,\n    \"showOnMenu\": false,\n    \"cachettl\": 100 \n  }\n}"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Lock the test page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('Page locked successfully', function () {",
+									"    pm.expect(jsonData.entity).to.exist;",
+									"    pm.expect(jsonData.entity.locked).to.equal(true);",
+									"    pm.expect(jsonData.entity.lockedBy).to.exist;",
+									"    pm.expect(jsonData.entity.lockedByName).to.exist;",
+									"    pm.collectionVariables.set('lockedBy', jsonData.entity.lockedBy);",
+									"    pm.collectionVariables.set('lockedByName', jsonData.entity.lockedByName);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_lock/{{testPageInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_lock",
+								"{{testPageInode}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Query locked page via GraphQL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test('GraphQL response has page data', function () {",
+									"    pm.expect(jsonData.data).to.exist;",
+									"    pm.expect(jsonData.data.page).to.exist;",
+									"});",
+									"",
+									"pm.test('Page lock attributes are coherent', function () {",
+									"    const page = jsonData.data.page;",
+									"    ",
+									"    // Check that locked is true",
+									"    pm.expect(page.locked, 'Page should be locked').to.equal(true);",
+									"    ",
+									"    // Check that lockedBy exists and matches what we set",
+									"    pm.expect(page.lockedBy, 'lockedBy should exist').to.exist;",
+									"    pm.expect(page.lockedBy, 'lockedBy should match').to.equal(pm.collectionVariables.get('lockedBy'));",
+									"    ",
+									"    // Check that lockedByName exists and matches what we set",
+									"    pm.expect(page.lockedByName, 'lockedByName should exist').to.exist;",
+									"    pm.expect(page.lockedByName, 'lockedByName should match').to.equal(pm.collectionVariables.get('lockedByName'));",
+									"    ",
+									"    console.log('Lock info:', {",
+									"        locked: page.locked,",
+									"        lockedBy: page.lockedBy,",
+									"        lockedByName: page.lockedByName",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query PageAPI {\n  page(url: \"{{testPageUrl}}\") {\n    locked\n    lockedBy\n    lockedByName\n  }\n}",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup: Unlock the test page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Page unlocked successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_unlock/{{testPageInode}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_unlock",
+								"{{testPageInode}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Tests page lock functionality via REST API and GraphQL query"
+		},
+		{
 			"name": "PageAPI_TestMapSpecialField",
 			"item": [
 				{
@@ -13604,6 +13872,36 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "pageTitle",
+			"value": ""
+		},
+		{
+			"key": "pageUrl",
+			"value": ""
+		},
+		{
+			"key": "testPageId",
+			"value": ""
+		},
+		{
+			"key": "testPageInode",
+			"value": ""
+		},
+		{
+			"key": "testPageUrl",
+			"value": ""
+		},
+		{
+			"key": "lockedBy",
+			"value": ""
+		},
+		{
+			"key": "lockedByName",
+			"value": ""
 		}
 	]
 }

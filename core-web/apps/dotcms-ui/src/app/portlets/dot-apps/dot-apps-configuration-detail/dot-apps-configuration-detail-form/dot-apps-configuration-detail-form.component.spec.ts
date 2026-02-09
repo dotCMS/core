@@ -1,9 +1,8 @@
 import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { MarkdownService } from 'ngx-markdown';
+import { MarkdownComponent } from 'ngx-markdown';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
 import { FormGroupDirective, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -13,7 +12,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotFieldRequiredDirective, DotIconModule } from '@dotcms/ui';
+import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
@@ -121,16 +120,6 @@ const formState = {
     generatedString: secrets[5].value
 };
 
-@Component({
-    // eslint-disable-next-line @angular-eslint/component-selector
-    selector: 'markdown',
-    template: `
-        <ng-content></ng-content>
-    `,
-    standalone: false
-})
-class MockMarkdownComponent {}
-
 describe('DotAppsConfigurationDetailFormComponent', () => {
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
     const createComponent = createComponentFactory({
@@ -143,13 +132,13 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             DropdownModule,
             InputTextModule,
             InputTextareaModule,
-            DotIconModule,
             DotFieldRequiredDirective,
             TooltipModule,
-            MockComponent(DotAppsConfigurationDetailGeneratedStringFieldComponent)
+            MockComponent(DotAppsConfigurationDetailGeneratedStringFieldComponent),
+            MockComponent(MarkdownComponent)
         ],
-        providers: [MarkdownService, FormGroupDirective],
-        declarations: [MockMarkdownComponent]
+        providers: [FormGroupDirective],
+        declarations: []
     });
 
     describe('Without warnings', () => {

@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -26,7 +25,6 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
 @Component({
     selector: 'dot-experiments-goal-configuration-reach-page',
     imports: [
-        CommonModule,
         DotAutofocusDirective,
         DotDropdownDirective,
         DotFieldRequiredDirective,

@@ -9,7 +9,7 @@
       },
       "title": {
         "type": "string",
-        "required": true
+        "required": false
       },
       "language_id": {
         "type": "string"

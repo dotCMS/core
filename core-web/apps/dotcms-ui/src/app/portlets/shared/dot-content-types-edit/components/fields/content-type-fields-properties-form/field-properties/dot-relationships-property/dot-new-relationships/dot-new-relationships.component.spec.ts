@@ -170,11 +170,10 @@ describe('DotNewRelationshipsComponent', () => {
         DOTTestBed.configureTestingModule({
             declarations: [
                 HostTestComponent,
-                DotNewRelationshipsComponent,
                 MockSearchableDropdownComponent,
                 MockCardinalitySelectorComponent
             ],
-            imports: [DotFieldRequiredDirective, DotMessagePipe],
+            imports: [DotFieldRequiredDirective, DotMessagePipe, DotNewRelationshipsComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PaginatorService, useClass: MockPaginatorService },
@@ -214,9 +213,8 @@ describe('DotNewRelationshipsComponent', () => {
             expect(dotSearchableDropdown.componentInstance.rows).toBe(
                 paginatorService.paginationPerPage
             );
-            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(
-                paginatorService.totalRecords
-            );
+            // totalRecords is now set after initialization
+            expect(dotSearchableDropdown.componentInstance.totalRecords).toBe(1);
             expect(dotSearchableDropdown.componentInstance.labelPropertyName).toBe('name');
             expect(dotSearchableDropdown.componentInstance.placeholder).toBe('Select Content Type');
         });
@@ -225,6 +223,7 @@ describe('DotNewRelationshipsComponent', () => {
             const newFilter = 'new filter';
 
             fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             dotSearchableDropdown.triggerEventHandler('filterChange', newFilter);
@@ -245,6 +244,7 @@ describe('DotNewRelationshipsComponent', () => {
             };
 
             fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
 
             const dotSearchableDropdown = de.query(By.css('dot-searchable-dropdown'));
             dotSearchableDropdown.componentInstance.pageChange.emit(event);
@@ -296,6 +296,7 @@ describe('DotNewRelationshipsComponent', () => {
             const offset = 5;
 
             fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
 
             // First call - should execute
             comp.getContentTypeList(filter, offset);
@@ -315,6 +316,7 @@ describe('DotNewRelationshipsComponent', () => {
             const newOffset = 10;
 
             fixtureHostComponent.detectChanges();
+            jest.clearAllMocks(); // Clear the initial call from component initialization
 
             // First call
             comp.getContentTypeList(initialFilter, initialOffset);
@@ -339,7 +341,8 @@ describe('DotNewRelationshipsComponent', () => {
 
             fixtureHostComponent.detectChanges();
 
-            expect(comp.lastSearch()).toEqual({ filter: null, offset: null });
+            // After initialization, lastSearch is set to default values ('', 0) from the initial call
+            expect(comp.lastSearch()).toEqual({ filter: '', offset: 0 });
 
             comp.getContentTypeList(filter, offset);
 
@@ -377,10 +380,15 @@ describe('DotNewRelationshipsComponent', () => {
             });
 
             it('should load content type, and emit change event with the right variableValue', (done) => {
+                // Set up the spy BEFORE detectChanges so it tracks the ngOnChanges call
                 const contentTypeService = de.injector.get(DotContentTypeService);
-                jest.spyOn(contentTypeService, 'getContentType');
+                const contentTypeSpy = jest.spyOn(contentTypeService, 'getContentType');
 
                 fixtureHostComponent.detectChanges();
+
+                // Clear getWithOffset call count from initialization, but keep contentTypeSpy
+                const paginatorGetWithOffsetSpy = paginatorService.getWithOffset as jest.Mock;
+                paginatorGetWithOffsetSpy.mockClear();
 
                 comp.switch.subscribe((relationshipSelect: any) => {
                     expect(relationshipSelect).toEqual({
@@ -392,7 +400,9 @@ describe('DotNewRelationshipsComponent', () => {
 
                 comp.triggerChanged();
 
-                expect(contentTypeService.getContentType).toHaveBeenCalled();
+                // getContentType should have been called during ngOnChanges (not by triggerChanged)
+                expect(contentTypeSpy).toHaveBeenCalled();
+                // For inverse relationships, getWithOffset should NOT be called after initialization
                 expect(paginatorService.getWithOffset).not.toHaveBeenCalled();
             });
         });

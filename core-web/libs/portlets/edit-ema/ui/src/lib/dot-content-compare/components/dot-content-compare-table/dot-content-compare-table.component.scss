@@ -22,24 +22,59 @@
 }
 
 :host ::ng-deep .p-datatable {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid $color-palette-gray-300;
+
     table {
         border-collapse: separate;
         border-spacing: 0;
+        width: 100%;
+        background-color: white;
 
         th {
-            border-top: 1px solid $color-palette-gray-300;
+            border-top: none;
             border-bottom: 1px solid $color-palette-gray-300;
             border-right: 1px solid $color-palette-gray-300;
+            background-color: $color-palette-gray-100;
+            padding: $spacing-4;
+            font-weight: bold;
+            font-size: $font-size-lmd;
+            text-align: left;
+
+            &:first-child {
+                border-left: none;
+                background-color: $color-palette-gray-100;
+                min-width: 12.5rem;
+                width: 12.5rem;
+            }
+
+            &:not(:first-child) {
+                width: 45%;
+            }
         }
 
         td {
             vertical-align: top;
             border-bottom: 1px solid $color-palette-gray-300;
             border-right: 1px solid $color-palette-gray-300;
+            padding: $spacing-4;
+            background-color: white;
+            text-align: left;
+
+            &:first-child {
+                border-left: none;
+                font-weight: 500;
+                background-color: $color-palette-gray-100;
+                min-width: 12.5rem;
+                width: 12.5rem;
+            }
 
             img {
                 max-width: 100%;
                 height: auto;
+                display: block;
+                margin: 0 auto;
             }
 
             video {
@@ -49,24 +84,45 @@
             }
         }
 
-        th:first-child,
-        td:first-child {
-            border-left: 1px solid $color-palette-gray-300;
-        }
-
+        // Header row styling
         thead th {
             position: sticky;
             top: 0;
             z-index: 1;
+            background-color: $color-palette-gray-100;
+        }
 
-            &:not(:first-of-type) {
-                width: 45%;
+        // Highlight differences in text content
+        .p-datatable-tbody tr > td {
+            &:last-child {
+                padding-right: $spacing-4;
+            }
+
+            // Style for highlighted differences
+            ::ng-deep .highlight {
+                background-color: #ffeaa7;
+                padding: 2px 4px;
+                border-radius: 2px;
             }
         }
 
-        .p-datatable-tbody tr > td {
-            &:last-child {
-                padding-right: $spacing-2;
+        // Ensure clean grid appearance
+        tr {
+            background-color: white;
+
+            &:nth-child(even) {
+                background-color: white;
+            }
+        }
+
+        // Remove default PrimeNG table styling
+        &.p-datatable-gridlines {
+            border: none;
+
+            th,
+            td {
+                border-right: 1px solid $color-palette-gray-300;
+                border-bottom: 1px solid $color-palette-gray-300;
             }
         }
     }

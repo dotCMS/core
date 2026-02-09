@@ -1,7 +1,6 @@
 import { marked } from 'marked';
 import { DOMSerializer } from 'prosemirror-model';
 
-import { CommonModule } from '@angular/common';
 import { Component, computed, input, signal, viewChild } from '@angular/core';
 
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
@@ -28,8 +27,7 @@ import { htmlToMarkdown } from './markdown.utils';
     selector: 'dot-editor-context-menu',
     templateUrl: './dot-context-menu.component.html',
     styleUrls: ['./dot-context-menu.component.scss'],
-    standalone: true,
-    imports: [CommonModule, ContextMenuModule, RippleModule, DotMessagePipe]
+    imports: [ContextMenuModule, RippleModule, DotMessagePipe]
 })
 export class DotContextMenuComponent {
     $editor = input.required<Editor>({ alias: 'editor' });

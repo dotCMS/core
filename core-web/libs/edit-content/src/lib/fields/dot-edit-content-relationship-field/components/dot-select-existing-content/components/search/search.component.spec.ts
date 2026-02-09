@@ -32,7 +32,6 @@ import { SearchParams } from '../../../../models/search.model';
 // Mock components for testing
 @Component({
     selector: 'dot-language-field',
-    standalone: true,
     template: '<input [formControlName]="null" />',
     providers: [
         {
@@ -55,7 +54,6 @@ class MockLanguageFieldComponent implements ControlValueAccessor {
 
 @Component({
     selector: 'dot-site-field',
-    standalone: true,
     template: '<input [formControlName]="null" />',
     providers: [
         {

@@ -5,14 +5,14 @@
     [apiLink]="apiLink"
     #deviceSelector
     appendTo="body"
-    data-testId="dot-device-selector"></dot-device-selector-seo>
+    data-testId="dot-device-selector" />
 @if (this.featureFlagEditURLContentMapIsOn) {
     <p-menu
         (onHide)="tabButtons.resetDropdownById(dotPageMode.EDIT)"
         [model]="menuItems"
         [popup]="true"
         #menu
-        appendTo="body"></p-menu>
+        appendTo="body" />
 }
 <dot-tab-buttons
     (openMenu)="handleMenuOpen($event)"
@@ -20,7 +20,7 @@
     [activeId]="mode"
     [options]="options"
     #tabButtons
-    data-testId="dot-tabs-buttons"></dot-tab-buttons>
+    data-testId="dot-tabs-buttons" />
 @if (!variant) {
     <span
         [pTooltip]="
@@ -38,11 +38,8 @@
             [disabled]="!pageState.page.canLock"
             #locker
             data-testId="lock-switch"
-            appendTo="target"></p-inputSwitch>
+            appendTo="target" />
     </span>
 }
 
-<dot-edit-page-lock-info-seo
-    [pageState]="pageState"
-    #pageLockInfo
-    data-testId="lockInfo"></dot-edit-page-lock-info-seo>
+<dot-edit-page-lock-info-seo [pageState]="pageState" #pageLockInfo data-testId="lockInfo" />

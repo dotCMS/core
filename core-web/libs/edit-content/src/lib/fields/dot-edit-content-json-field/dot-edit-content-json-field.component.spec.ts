@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -8,7 +8,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-import { createFakeContentlet, monacoMock } from '@dotcms/utils-testing';
+import { createFakeContentlet, monacoMock, DotLanguagesServiceMock } from '@dotcms/utils-testing';
 
 import { DotEditContentJsonFieldComponent } from './dot-edit-content-json-field.component';
 
@@ -43,7 +43,7 @@ describe('DotEditContentJsonFieldComponent', () => {
             DotEditContentMonacoEditorControlComponent
         ],
         providers: [
-            mockProvider(DotLanguagesService),
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -67,6 +67,7 @@ describe('DotEditContentJsonFieldComponent', () => {
                     }
                 }
             );
+
             spectator.detectChanges();
         });
 
@@ -90,6 +91,12 @@ describe('DotEditContentJsonFieldComponent', () => {
 
         it('should pass JSON as forced language to monaco editor', () => {
             const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
+            // Mock $forcedLanguage signal for this test
+            Object.defineProperty(monacoEditor, '$forcedLanguage', {
+                value: jest.fn().mockReturnValue(AvailableLanguageMonaco.Json),
+                writable: true,
+                configurable: true
+            });
             expect(monacoEditor.$forcedLanguage()).toBe(AvailableLanguageMonaco.Json);
         });
 
@@ -110,6 +117,9 @@ describe('DotEditContentJsonFieldComponent', () => {
         it('should call onSelectLanguageVariable when language variable is selected', () => {
             // Spy on component method
             const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
+
+            // Mock insertLanguageVariableInMonaco to avoid calling real insertContent
+            spectator.component['insertLanguageVariableInMonaco'] = jest.fn();
 
             // Get language variable selector component
             const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);

@@ -1,4 +1,5 @@
 import { E2EPage, E2EElement, newE2EPage, EventSpy } from '@stencil/core/testing';
+
 import { dotTestUtil } from '../../utils';
 
 describe('dot-key-value', () => {

@@ -48,6 +48,7 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Dictionary;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -123,9 +124,12 @@ public class OSGIResource {
 
         checkUserPermissions(request, response, DYNAMIC_PLUGINS);
 
-        Logger.debug(this, ()-> "Getting installed bundles");
+        Logger.debug(this, ()-> "Getting installed bundles, ignoreSystemBundles=" + ignoreSystemBundles);
         final List<BundleMap> bundlesArray =
-                Stream.of(OSGIUtil.getInstance().getBundles()).map(bundle -> getBundleMap(ignoreSystemBundles, bundle)).collect(Collectors.toList());
+                Stream.of(OSGIUtil.getInstance().getBundles())
+                        .map(bundle -> getBundleMap(ignoreSystemBundles, bundle))
+                        .filter(bundleMap -> !ignoreSystemBundles || !bundleMap.isSystem())
+                        .collect(Collectors.toList());
 
         return new ResponseEntityBundleListView(bundlesArray);
     }
@@ -146,7 +150,7 @@ public class OSGIResource {
                                                     final Bundle bundle) {
 
         final String bundleLocation = bundle.getLocation();
-        final boolean isSystem = ignoreSystemBundles && (bundleLocation.contains("felix/bundle") || bundleLocation.contains("System Bundle"));
+        final boolean isSystem = bundleLocation.contains("felix/bundle") || bundleLocation.contains("System Bundle");
 
         // Getting the jar file name
         final String separator = bundle.getLocation().contains(StringPool.FORWARD_SLASH)?
@@ -159,6 +163,62 @@ public class OSGIResource {
         final String version = bundle.getVersion().getMajor() + "." + bundle.getVersion().getMinor() + "."
                 + bundle.getVersion().getMicro();
 
+        // Check if plugin uses dotCMS APIs by examining Import-Package header
+        boolean usesDotcmsApis = false;
+        final Dictionary<String, String> headers = bundle.getHeaders();
+        final String importPackage = headers.get("Import-Package");
+        if (importPackage != null && importPackage.contains("com.dotcms")) {
+            usesDotcmsApis = true;
+        }
+
+        // Extract Java compilation version information and Maven metadata
+        String javaVersion = null;
+        Integer javaClassVersion = null;
+        boolean isMultiRelease = false;
+        boolean isBuiltWithMaven = false;
+        String dotcmsCoreDependencyVersion = null;
+
+        if (!isSystem && bundleLocation != null && !bundleLocation.contains("System Bundle")) {
+            try {
+                // Bundle location might be file:// URL, convert to file path
+                String filePath = bundleLocation;
+                if (filePath.startsWith("file:")) {
+                    filePath = filePath.substring(5); // Remove "file:" prefix
+                }
+                final File jarFileLocation = new File(filePath);
+                if (jarFileLocation.exists() && jarFileLocation.canRead()) {
+                    // Extract Java version information
+                    final com.dotmarketing.util.ResourceCollectorUtil.JavaVersionInfo versionInfo =
+                            com.dotmarketing.util.ResourceCollectorUtil.getJavaVersion(jarFileLocation);
+                    javaVersion = versionInfo.getJavaVersion();
+                    javaClassVersion = versionInfo.getClassMajorVersion();
+                    isMultiRelease = versionInfo.isMultiRelease();
+                    final String detectedJavaVersion = javaVersion;
+                    final Integer detectedClassVersion = javaClassVersion;
+                    Logger.debug(this, () -> String.format("Extracted Java version info for bundle %s: %s (class version: %s)",
+                            bundle.getSymbolicName(), detectedJavaVersion, detectedClassVersion));
+
+                    // Extract Maven metadata
+                    final com.dotmarketing.util.ResourceCollectorUtil.MavenInfo mavenInfo =
+                            com.dotmarketing.util.ResourceCollectorUtil.getMavenInfo(jarFileLocation);
+                    isBuiltWithMaven = mavenInfo.isBuiltWithMaven();
+                    dotcmsCoreDependencyVersion = mavenInfo.getDotcmsCoreDependencyVersion();
+                    if (isBuiltWithMaven) {
+                        final String coreDepVersion = dotcmsCoreDependencyVersion;
+                        Logger.debug(this, () -> String.format(
+                                "Plugin %s was built with Maven (dotcms-core dependency: %s)",
+                                bundle.getSymbolicName(),
+                                coreDepVersion != null ? coreDepVersion : "not found"));
+                    }
+                } else {
+                    Logger.debug(this, () -> String.format("JAR file not accessible for bundle %s: exists=%s, canRead=%s, path=%s",
+                            bundle.getSymbolicName(), jarFileLocation.exists(), jarFileLocation.canRead(), jarFileLocation.getAbsolutePath()));
+                }
+            } catch (Exception e) {
+                Logger.error(this, "Could not extract metadata for bundle: " + bundle.getSymbolicName() + " - " + e.getMessage(), e);
+            }
+        }
+
         return new BundleMap.Builder().bundleId(bundle.getBundleId())
                 .symbolicName(bundle.getSymbolicName())
                 .location(bundle.getLocation())
@@ -167,6 +227,12 @@ public class OSGIResource {
                 .version(version)
                 .separator(separator)
                 .isSystem(isSystem)
+                .javaVersion(javaVersion)
+                .javaClassVersion(javaClassVersion)
+                .isMultiRelease(isMultiRelease)
+                .isBuiltWithMaven(isBuiltWithMaven)
+                .usesDotcmsApis(usesDotcmsApis)
+                .dotcmsCoreDependencyVersion(dotcmsCoreDependencyVersion)
                 .build();
     }
 

@@ -65,12 +65,14 @@ public class ContainerFactoryImplTest {
         // get normally
         List<Container> containers = FactoryLocator.getContainerFactory().findContainers(user, false, ImmutableMap.of("title",container.getTitle() ), daHost.getIdentifier(), null, null, null, 0, 100, "mod_date");
 
-        assert ! containers.isEmpty() && containers.contains(containerFromDB);
+        assertFalse("Containers list should not be empty with normal orderBy", containers.isEmpty());
+        assertTrue("Containers list should contain the created container with normal orderBy", containers.contains(containerFromDB));
 
         // get with a malicious SQL order by
         containers = FactoryLocator.getContainerFactory().findContainers(user, false, ImmutableMap.of("title",container.getTitle() ), daHost.getIdentifier(), null, null, null, 0, 100, SQLUtilTest.MALICIOUS_SQL_ORDER_BY);
 
-        assert ! containers.isEmpty() && containers.contains(containerFromDB);
+        assertFalse("Containers list should not be empty even with malicious orderBy", containers.isEmpty());
+        assertTrue("Containers list should contain the created container even with malicious orderBy", containers.contains(containerFromDB));
     }
 
     @Test

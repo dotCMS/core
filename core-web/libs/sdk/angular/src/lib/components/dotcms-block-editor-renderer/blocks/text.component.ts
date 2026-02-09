@@ -4,7 +4,6 @@ import { BlockEditorMark } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-paragraph',
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         <p>
@@ -16,7 +15,6 @@ export class DotParagraphBlock {}
 
 @Component({
     selector: 'dotcms-block-editor-renderer-heading',
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @switch (level) {
@@ -69,7 +67,6 @@ interface TextBlockProps {
 
 @Component({
     selector: 'dotcms-block-editor-renderer-text',
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
         @switch (marks?.[0]?.type) {

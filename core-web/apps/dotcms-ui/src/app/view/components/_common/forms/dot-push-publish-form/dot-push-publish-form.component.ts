@@ -1,5 +1,6 @@
 import { Observable, of, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -11,9 +12,19 @@ import {
     Output,
     ViewChild
 } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { AutoFocusModule } from 'primeng/autofocus';
+import { CalendarModule } from 'primeng/calendar';
+import { DropdownModule } from 'primeng/dropdown';
+import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
 
@@ -25,15 +36,33 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotTimeZone } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-models';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
 import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
+import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
     styleUrls: ['./dot-push-publish-form.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        AutoFocusModule,
+        FormsModule,
+        CalendarModule,
+        PushPublishEnvSelectorComponent,
+        ReactiveFormsModule,
+        DropdownModule,
+        DotFieldValidationMessageComponent,
+        SelectButtonModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ]
 })
 export class DotPushPublishFormComponent
     implements OnInit, OnDestroy, DotFormModel<DotPushPublishDialogData, DotPushPublishData>

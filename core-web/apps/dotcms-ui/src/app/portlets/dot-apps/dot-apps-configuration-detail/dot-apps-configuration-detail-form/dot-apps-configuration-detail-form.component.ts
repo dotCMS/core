@@ -1,17 +1,38 @@
+import { MarkdownComponent } from 'ngx-markdown';
+import { Subscription } from 'rxjs';
+
+import { CommonModule } from '@angular/common';
 import {
     Component,
     effect,
     ElementRef,
     inject,
     input,
+    OnDestroy,
     OnInit,
     output,
     viewChild
 } from '@angular/core';
-import { UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+    FormGroupDirective,
+    ReactiveFormsModule,
+    UntypedFormControl,
+    UntypedFormGroup,
+    Validators
+} from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotAppsSecret } from '@dotcms/dotcms-models';
+import { DotFieldRequiredDirective, DotIconComponent } from '@dotcms/ui';
+
+import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
 
 enum FieldStatus {
     EDITABLE,
@@ -23,9 +44,23 @@ enum FieldStatus {
     selector: 'dot-apps-configuration-detail-form',
     templateUrl: './dot-apps-configuration-detail-form.component.html',
     styleUrls: ['./dot-apps-configuration-detail-form.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        ReactiveFormsModule,
+        ButtonModule,
+        CheckboxModule,
+        DropdownModule,
+        InputTextModule,
+        InputTextareaModule,
+        TooltipModule,
+        DotIconComponent,
+        DotFieldRequiredDirective,
+        MarkdownComponent,
+        DotAppsConfigurationDetailGeneratedStringFieldComponent
+    ],
+    providers: [FormGroupDirective]
 })
-export class DotAppsConfigurationDetailFormComponent implements OnInit {
+export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestroy {
     #dotMessageService = inject(DotMessageService);
 
     $formContainer = viewChild<ElementRef>('formContainer');
@@ -37,6 +72,8 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
     readonly valid = output<boolean>();
 
     myFormGroup: UntypedFormGroup;
+    private valueChangesSubscription?: Subscription;
+    private isDestroyed = false;
 
     constructor() {
         effect(() => {
@@ -67,7 +104,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
 
         this.myFormGroup = new UntypedFormGroup(group);
 
-        this.myFormGroup.valueChanges.subscribe(() => {
+        this.valueChangesSubscription = this.myFormGroup.valueChanges.subscribe(() => {
             this.emitValues();
         });
 
@@ -111,6 +148,9 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
     }
 
     private emitValues(): void {
+        if (this.isDestroyed) {
+            return;
+        }
         this.data.emit(this.myFormGroup.value);
         this.valid.emit(this.myFormGroup.status === 'VALID');
     }
@@ -121,5 +161,12 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit {
         }
 
         return field.envShow ? FieldStatus.DISABLED : FieldStatus.DISABLED_WITH_MESSAGE;
+    }
+
+    ngOnDestroy(): void {
+        this.isDestroyed = true;
+        if (this.valueChangesSubscription) {
+            this.valueChangesSubscription.unsubscribe();
+        }
     }
 }

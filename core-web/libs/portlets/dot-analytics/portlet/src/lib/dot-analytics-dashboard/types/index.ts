@@ -4,30 +4,119 @@ import { DateRange, TimeRange, TimeRangeInput } from '@dotcms/portlets/dot-analy
 // Re-export shared types for consumers
 export { DateRange, TimeRange, TimeRangeInput };
 
+/**
+ * Chart color palette for analytics dashboard.
+ * Uses consistent colors across all charts.
+ */
+export const AnalyticsChartColors = {
+    // Primary colors for main metrics
+    primary: {
+        line: 'rgb(99, 102, 241)', // Indigo
+        fill: 'rgba(99, 102, 241, 0.15)',
+        bar: 'rgba(99, 102, 241, 0.6)'
+    },
+    // Secondary colors for comparison/secondary metrics
+    secondary: {
+        line: 'rgb(34, 197, 94)', // Green
+        fill: 'rgba(34, 197, 94, 0.15)',
+        bar: 'rgba(34, 197, 94, 0.6)'
+    },
+    // Tertiary colors for additional metrics
+    tertiary: {
+        line: 'rgb(249, 115, 22)', // Orange
+        fill: 'rgba(249, 115, 22, 0.15)',
+        bar: 'rgba(249, 115, 22, 0.6)'
+    },
+    // Quaternary colors
+    quaternary: {
+        line: 'rgb(236, 72, 153)', // Pink
+        fill: 'rgba(236, 72, 153, 0.15)',
+        bar: 'rgba(236, 72, 153, 0.6)'
+    },
+    // Additional colors
+    fifth: {
+        line: 'rgb(14, 165, 233)', // Sky blue
+        fill: 'rgba(14, 165, 233, 0.15)',
+        bar: 'rgba(14, 165, 233, 0.6)'
+    }
+} as const;
+
+/**
+ * Array of chart color variants for automatic assignment
+ */
+export const AnalyticsChartColorVariants = [
+    AnalyticsChartColors.primary,
+    AnalyticsChartColors.secondary,
+    AnalyticsChartColors.tertiary,
+    AnalyticsChartColors.quaternary,
+    AnalyticsChartColors.fifth
+] as const;
+
+/**
+ * Get color properties for a dataset by index.
+ * Cycles through available colors if index exceeds array length.
+ *
+ * @param index - Dataset index
+ * @param type - Chart type ('line' | 'bar')
+ * @returns Color properties for the dataset
+ */
+export const getAnalyticsChartColors = (
+    index: number,
+    type: 'line' | 'bar' = 'line'
+): { borderColor: string; backgroundColor: string } => {
+    const colors = AnalyticsChartColorVariants[index % AnalyticsChartColorVariants.length];
+
+    return {
+        borderColor: colors.line,
+        backgroundColor: type === 'bar' ? colors.bar : colors.fill
+    };
+};
+
 /** Union type for supported chart types in the analytics dashboard */
 export type ChartType = 'line' | 'pie' | 'bar' | 'doughnut';
 
-/** Configuration for chart data structure compatible with Chart.js */
+/**
+ * Extended dataset configuration supporting combo charts (mixed bar + line).
+ * Used for type checking when datasets have individual chart types.
+ */
+export interface ComboChartDataset {
+    /** Chart type for this specific dataset (for combo charts) */
+    type?: 'bar' | 'line';
+    /** Display name for the dataset */
+    label?: string;
+    /** Numeric data points */
+    data: number[];
+    /** Y-axis to use ('y' for left, 'y1' for right) - enables dual Y-axes */
+    yAxisID?: 'y' | 'y1';
+    /** Border color for the dataset */
+    borderColor?: string | string[];
+    /** Background color for the dataset */
+    backgroundColor?: string | string[];
+    /** Whether to fill area under line charts */
+    fill?: boolean;
+    /** Render order (lower = rendered first, appears behind) */
+    order?: number;
+    /** Border width */
+    borderWidth?: number;
+    /** Smoothness of line curves (0-1) */
+    tension?: number;
+    /** Border radius for bar charts (rounded corners) */
+    borderRadius?: number;
+}
+
+/**
+ * Unified chart data structure compatible with Chart.js.
+ * Supports simple charts (1 dataset), multiple datasets, and combo charts.
+ *
+ * For combo charts:
+ * - Add `type` property to each dataset ('bar', 'line')
+ * - Optionally add `yAxisID` for dual Y-axes ('y' left, 'y1' right)
+ */
 export interface ChartData {
     /** Labels for chart axes or segments */
     labels?: string[];
     /** Array of datasets to display in the chart */
-    datasets: {
-        /** Display name for the dataset */
-        label?: string;
-        /** Numeric data points */
-        data: number[];
-        /** Background colors for chart elements */
-        backgroundColor?: string | string[];
-        /** Border colors for chart elements */
-        borderColor?: string | string[];
-        /** Width of chart element borders */
-        borderWidth?: number;
-        /** Whether to fill area under line charts */
-        fill?: boolean;
-        /** Smoothness of line curves (0-1) */
-        tension?: number;
-    }[];
+    datasets: ComboChartDataset[];
 }
 
 /** Chart configuration options extending Chart.js options */
@@ -139,6 +228,28 @@ export interface MetricData {
     subtitle?: string;
     /** PrimeIcons icon name (without 'pi-' prefix) */
     icon?: string;
+}
+
+/**
+ * Event types matching the Analytics SDK (DotCMSPredefinedEventType)
+ * @see core-web/libs/sdk/analytics/src/lib/core/shared/constants/dot-analytics.constants.ts
+ */
+export type AnalyticsEventType = 'pageview' | 'content_click' | 'content_impression' | 'conversion';
+
+/** Data structure for content conversion table rows */
+export interface ContentConversionData {
+    /** Event type (matches SDK event names) */
+    eventType: AnalyticsEventType;
+    /** Content identifier (URL path or content ID) */
+    identifier: string;
+    /** Content title/description */
+    title: string;
+    /** Total count/views */
+    count: number;
+    /** Number of conversions */
+    conversions: number;
+    /** Conversion rate percentage */
+    conversionRate: number;
 }
 
 /** Option structure for dropdown filters */

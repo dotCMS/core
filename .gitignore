@@ -194,3 +194,16 @@ examples/astro/package-lock.json
 local/
 
 **/.yalc/
+
+# Claude Code diagnostic outputs
+.claude/diagnostics/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+*.egg

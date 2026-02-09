@@ -159,7 +159,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }
@@ -205,7 +205,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }
@@ -246,7 +246,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }
@@ -272,6 +272,84 @@ describe('DotEditContentService', () => {
 
             const req = spectator.expectOne(
                 `/api/v1/content/versions/id/${identifier}/history?offset=2&limit=10&languageId=1`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should delete push publish history for a contentlet', () => {
+            const identifier = '123-456-789';
+            spectator.service.deletePushPublishHistory(identifier).subscribe();
+            spectator.expectOne(
+                `/api/bundle/deletepushhistory/assetid/${identifier}`,
+                HttpMethod.GET
+            );
+        });
+
+        it('should get push publish history for a contentlet', (done) => {
+            const identifier = '123-456-789';
+            const mockPushPublishHistory = [
+                {
+                    bundleId: 'bundle-123',
+                    environment: 'production',
+                    pushDate: 1756414525995,
+                    pushedBy: 'admin@dotcms.com'
+                },
+                {
+                    bundleId: 'bundle-456',
+                    environment: 'staging',
+                    pushDate: 1756414425995,
+                    pushedBy: 'editor@dotcms.com'
+                }
+            ];
+            const mockResponse = {
+                entity: mockPushPublishHistory
+            };
+
+            spectator.service.getPushPublishHistory(identifier).subscribe((response) => {
+                expect(response.entity).toEqual(mockPushPublishHistory);
+                done();
+            });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/${identifier}/push/history`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should get push publish history with pagination parameters', (done) => {
+            const identifier = '123-456-789';
+            const paginationParams = { offset: 2, limit: 10 };
+            const mockPushPublishHistory = [
+                {
+                    bundleId: 'bundle-789',
+                    environment: 'development',
+                    pushDate: 1756414325995,
+                    pushedBy: 'dev@dotcms.com'
+                }
+            ];
+            const mockPagination = {
+                currentPage: 2,
+                perPage: 10,
+                totalEntries: 25,
+                totalPages: 3
+            };
+            const mockResponse = {
+                entity: mockPushPublishHistory,
+                pagination: mockPagination
+            };
+
+            spectator.service
+                .getPushPublishHistory(identifier, paginationParams)
+                .subscribe((response) => {
+                    expect(response.entity).toEqual(mockPushPublishHistory);
+                    expect(response.pagination).toEqual(mockPagination);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/${identifier}/push/history?offset=2&limit=10`,
                 HttpMethod.GET
             );
             req.flush(mockResponse);

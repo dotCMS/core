@@ -25,6 +25,7 @@ export interface DotFolder {
  * @property {number} [data.sortOrder] - The sort order position of the folder
  * @property {string[]} [data.fileMasks] - Array of file patterns/masks allowed in this folder
  * @property {string} [data.defaultAssetType] - The default type for new assets created in this folder
+ * @property {string} [data.url] - The URL of the folder
  */
 export interface DotFolderEntity {
     assetPath: string;
@@ -34,5 +35,6 @@ export interface DotFolderEntity {
         sortOrder?: number;
         fileMasks?: string[];
         defaultAssetType?: string;
+        name?: string;
     };
 }

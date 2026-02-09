@@ -12,13 +12,11 @@
         maxlength="255" />
     <dot-field-validation-message
         [message]="'contenttypes.field.properties.name.error.required' | dm"
-        [field]="group.controls[property.name]"></dot-field-validation-message>
+        [field]="group.controls[property.name]" />
     @if (property.field.variable) {
         <div class="form__field-variable">
             <b>{{ 'contenttypes.field.properties.name.variable' | dm }}:</b>
-            <dot-copy-link
-                [label]="property.field.variable"
-                [copy]="property.field.variable"></dot-copy-link>
+            <dot-copy-link [label]="property.field.variable" [copy]="property.field.variable" />
         </div>
     }
 </div>

@@ -216,6 +216,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
      */
     handleClose(): void {
         this.formStatus.set(FormStatus.INIT);
+        // TODO: The 'emit' function requires a mandatory void argument
         this.shutdown.emit();
     }
 

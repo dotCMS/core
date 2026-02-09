@@ -21,7 +21,6 @@ import { DotLanguage } from '@dotcms/dotcms-models';
     selector: 'dot-language-selector',
     templateUrl: './dot-language-selector.component.html',
     imports: [DropdownModule, FormsModule],
-    providers: [DotLanguagesService],
     styleUrls: ['./dot-language-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

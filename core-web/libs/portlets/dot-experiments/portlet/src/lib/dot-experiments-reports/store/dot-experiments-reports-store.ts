@@ -262,8 +262,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                     const { experimentId, variant } = variantToPromote;
 
                     return this.dotExperimentsService.promoteVariant(experimentId, variant.id).pipe(
-                        tapResponse(
-                            (experiment) => {
+                        tapResponse({
+                            next: (experiment) => {
                                 this.messageService.add({
                                     severity: 'info',
                                     summary: this.dotMessageService.get(
@@ -276,9 +276,9 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
                                 });
                                 this.setExperiment(experiment);
                             },
-                            (error: HttpErrorResponse) =>
+                            error: (error: HttpErrorResponse) =>
                                 this.dotHttpErrorManagerService.handle(error)
-                        )
+                        })
                     );
                 })
             );

@@ -32,7 +32,7 @@ export function registerContentTypeTools(server: McpServer) {
         {
             title: 'Create Content Type',
             description:
-                'Creates a content type in dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content. NOTE: For field types Checkbox, Multi-Select, Radio, and Select, the "values" property is required. The value should be a string with one option per line, each formatted as "Label|value". Example: Pizza|pizza\nChicken|chicken This will create two options for the field.',
+                'Creates a content type in dotCMS. Content types are used to define the structure of content in dotCMS, you can think of them as schemas for content. IMPORTANT: Field names must be in Title Case format (e.g., "Page Title" not "pageTitle", "First Name" not "firstName"). NOTE: For field types Checkbox, Multi-Select, Radio, and Select, the "values" property is required. The value should be a string with one option per line, each formatted as "Label|value". Example: Pizza|pizza\nChicken|chicken This will create two options for the field.',
             annotations: {
                 title: 'Create Content Type',
                 readOnlyHint: false,

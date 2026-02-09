@@ -7,6 +7,7 @@ import { take, takeUntil } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotFieldVariablesService } from './services/dot-field-variables.service';
 
@@ -16,7 +17,8 @@ import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/do
     selector: 'dot-content-type-fields-variables',
     styleUrls: ['./dot-content-type-fields-variables.component.scss'],
     templateUrl: './dot-content-type-fields-variables.component.html',
-    standalone: false
+    imports: [DotKeyValueComponent],
+    providers: [DotFieldVariablesService]
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);

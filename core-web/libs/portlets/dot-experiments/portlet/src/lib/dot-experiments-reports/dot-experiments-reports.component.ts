@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { AsyncPipe, NgIf } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -29,7 +29,6 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
     selector: 'dot-experiments-reports',
     imports: [
         AsyncPipe,
-        NgIf,
         DotExperimentsUiHeaderComponent,
         DotExperimentsExperimentSummaryComponent,
         DotExperimentsReportsSkeletonComponent,

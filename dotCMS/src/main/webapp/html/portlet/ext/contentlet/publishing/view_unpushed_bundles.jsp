@@ -28,8 +28,7 @@
 
 	if(null!=request.getParameter("delBundle")){
 		String id = request.getParameter("delBundle");
-		APILocator.getBundleAPI().deleteBundle(id);
-		
+		APILocator.getBundleAPI().deleteBundleAndDependencies(id,user);
 		String selectedBundleKey = com.dotmarketing.util.WebKeys.SELECTED_BUNDLE + request.getSession().getAttribute("USER_ID");
 		
 		Bundle lastSelectedBundle = (com.dotcms.publisher.bundle.bean.Bundle) request.getSession().getAttribute( selectedBundleKey ); 

@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { DOCUMENT, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -11,7 +11,8 @@ import {
     effect,
     inject,
     OnInit,
-    output
+    output,
+    DOCUMENT
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -113,7 +114,7 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
 })
 export class DotEditContentFormComponent implements OnInit {
     readonly #rootStore = inject(GlobalStore);
-    readonly $store: InstanceType<typeof DotEditContentStore> = inject(DotEditContentStore);
+    readonly $store = inject(DotEditContentStore);
     readonly #router = inject(Router);
     readonly #destroyRef = inject(DestroyRef);
     readonly #fb = inject(FormBuilder);
@@ -309,6 +310,7 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form.invalid) {
             this.form.markAllAsTouched();
             this.changeDetectorRef.detectChanges();
+            this.$store.setFormStatus('invalid');
             requestAnimationFrame(() => {
                 this.scrollToFirstError();
             });

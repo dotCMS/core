@@ -1,9 +1,9 @@
 <div class="dot-form-dialog__content">
-    <ng-content pFocusTrap></ng-content>
+    <ng-content pFocusTrap />
 </div>
 
 <div class="dot-form-dialog__actions">
-    <ng-content select="[footerActions]"></ng-content>
+    <ng-content select="[footerActions]" />
     <button
         (click)="onSecondaryClick($event)"
         [label]="'cancel' | dm"

@@ -84,7 +84,10 @@ public class AIModelFallbackStrategy implements AIClientStrategy {
             final AIModel aiModel = aiModelOpt.get();
             if (aiModel.isOperational()) {
                 aiModel.repairCurrentIndexIfNeeded();
-                return appConfig.resolveModelOrThrow(aiModel.getCurrentModel(), aiModel.getType());
+                final Tuple2<AIModel, Model> resolvedModel = appConfig.resolveModelOrThrow(aiModel.getCurrentModel(), aiModel.getType());
+                // Update the request payload with the resolved default model name
+                request.getPayload().put(AiKeys.MODEL, resolvedModel._2.getName());
+                return resolvedModel;
             }
 
             notifyFailure(aiModel, request);

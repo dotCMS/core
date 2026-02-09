@@ -18,51 +18,54 @@ import { I18nService } from './services/system/locale/I18n';
     selector: 'condition-group',
     template: `
         <div class="cw-rule-group">
-            <div *ngIf="groupIndex === 0" class="cw-condition-group-separator">
-                {{ rsrc('inputs.group.whenConditions.label') | async }}
-            </div>
-            <div *ngIf="groupIndex !== 0" class="cw-condition-group-separator">
-                <button
-                    (click)="toggleGroupOperator()"
-                    [label]="group.operator"
-                    pButton
-                    tiny
-                    class="p-button-secondary p-button-sm"></button>
-                <span flex class="cw-header-text">
-                    {{ rsrc('inputs.group.whenFurtherConditions.label') | async }}
-                </span>
-            </div>
+            @if (groupIndex === 0) {
+                <div class="cw-condition-group-separator">
+                    {{ rsrc('inputs.group.whenConditions.label') | async }}
+                </div>
+            }
+            @if (groupIndex !== 0) {
+                <div class="cw-condition-group-separator">
+                    <button
+                        (click)="toggleGroupOperator()"
+                        [label]="group.operator"
+                        pButton
+                        tiny
+                        class="p-button-secondary p-button-sm"></button>
+                    <span flex class="cw-header-text">
+                        {{ rsrc('inputs.group.whenFurtherConditions.label') | async }}
+                    </span>
+                </div>
+            }
             <div flex layout="column" class="cw-conditions">
-                <div
-                    *ngFor="let condition of group?._conditions; trackBy: trackByFn; let i = index"
-                    layout="row"
-                    class="cw-condition-row">
-                    <rule-condition
-                        (deleteCondition)="deleteCondition.emit($event)"
-                        (updateConditionType)="updateConditionType.emit($event)"
-                        (updateConditionParameter)="updateConditionParameter.emit($event)"
-                        (updateConditionOperator)="updateConditionOperator.emit($event)"
-                        [condition]="condition"
-                        [conditionTypes]="conditionTypes"
-                        [conditionTypePlaceholder]="conditionTypePlaceholder"
-                        [index]="i"
-                        flex
-                        layout="row"></rule-condition>
-                    <div class="cw-btn-group cw-add-btn">
-                        <div
-                            *ngIf="i === group?._conditions.length - 1"
-                            class="ui basic icon buttons">
-                            <button
-                                (click)="onCreateCondition()"
-                                [disabled]="!condition.isPersisted()"
-                                pButton
-                                type="button"
-                                icon="pi pi-plus"
-                                class="p-button-rounded p-button-success p-button-text"
-                                arial-label="Add Condition"></button>
+                @for (condition of group?._conditions; track trackByFn($index); let i = $index) {
+                    <div layout="row" class="cw-condition-row">
+                        <rule-condition
+                            (deleteCondition)="deleteCondition.emit($event)"
+                            (updateConditionType)="updateConditionType.emit($event)"
+                            (updateConditionParameter)="updateConditionParameter.emit($event)"
+                            (updateConditionOperator)="updateConditionOperator.emit($event)"
+                            [condition]="condition"
+                            [conditionTypes]="conditionTypes"
+                            [conditionTypePlaceholder]="conditionTypePlaceholder"
+                            [index]="i"
+                            flex
+                            layout="row" />
+                        <div class="cw-btn-group cw-add-btn">
+                            @if (i === group?._conditions.length - 1) {
+                                <div class="ui basic icon buttons">
+                                    <button
+                                        (click)="onCreateCondition()"
+                                        [disabled]="!condition.isPersisted()"
+                                        pButton
+                                        type="button"
+                                        icon="pi pi-plus"
+                                        class="p-button-rounded p-button-success p-button-text"
+                                        arial-label="Add Condition"></button>
+                                </div>
+                            }
                         </div>
                     </div>
-                </div>
+                }
             </div>
         </div>
     `,

@@ -832,7 +832,7 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
      */
     @Test
     public void dataIsRequired() {
-        final int errorsCountExpected = 5;
+        final int expectedErrorCount = 4;
         final String json =
                 "{" +
                     "\"context\": {" +
@@ -856,17 +856,19 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
         final List<AnalyticsValidatorUtil.Error> errors = AnalyticsValidatorUtil.INSTANCE
                 .validateEvents((JSONArray) new JSONObject(json).get("events"));
 
-        assertEquals(errorsCountExpected, errors.size());
+        assertEquals(String.format("The test is expecting %s errors in the validation",
+                errors.size() > expectedErrorCount ? "less" : "more"),
+                expectedErrorCount, errors.size());
 
         final List<String> errorsField = errors.stream()
                 .map(AnalyticsValidatorUtil.Error::getField)
                 .distinct()
                 .collect(Collectors.toList());
 
-        assertEquals(errorsCountExpected, errorsField.size());
+        assertEquals("Expected error count must match the number of error messages in the response",
+                expectedErrorCount, errorsField.size());
         assertTrue(errorsField.contains("events[0].data.page"));
         assertTrue(errorsField.contains("events[0].data.page.url"));
-        assertTrue(errorsField.contains("events[0].data.page.title"));
         assertTrue(errorsField.contains("events[0].data.page.doc_encoding"));
         assertTrue(errorsField.contains("events[0].local_time"));
 
@@ -875,18 +877,18 @@ public class AnalyticsValidatorUtilTest extends IntegrationTestBase {
                 .distinct()
                 .collect(Collectors.toList());
 
-        assertEquals(1, errorsCode.size());
-        assertEquals("REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
+        assertEquals("Only one error message is expected", 1, errorsCode.size());
+        assertEquals("Validation code is not the expected one",
+                "REQUIRED_FIELD_MISSING", errorsCode.get(0).name());
 
         final List<String> errorsMessages = errors.stream()
                 .map(AnalyticsValidatorUtil.Error::getMessage)
                 .distinct()
                 .collect(Collectors.toList());
 
-        assertEquals(errorsCountExpected, errorsField.size());
+        assertEquals(expectedErrorCount, errorsField.size());
         assertTrue(errorsMessages.contains("Required field is missing: data.page"));
         assertTrue(errorsMessages.contains("Required field is missing: data.page.url"));
-        assertTrue(errorsMessages.contains("Required field is missing: data.page.title"));
         assertTrue(errorsMessages.contains("Required field is missing: local_time"));
     }
 

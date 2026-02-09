@@ -36,7 +36,11 @@ export function BlogCard({ blog }: { blog: BlogCardProps }) {
 
       <div className="relative h-48 w-full overflow-hidden">
         {image ? (
-          <img src={`/dA/${inode}`} alt={urlTitle || title} className="object-cover w-full h-full" />
+          <img
+            src={`/dA/${inode}`}
+            alt={urlTitle || title}
+            className="object-cover w-full h-full"
+          />
         ) : (
           <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
             <span className="text-gray-400">No image</span>

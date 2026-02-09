@@ -6,6 +6,7 @@ import {
     DotErrorContent
 } from '@dotcms/types';
 
+import { BaseApiClient } from '../../../base/base-api';
 import { CONTENT_API_URL } from '../../shared/const';
 import {
     GetCollectionResponse,
@@ -27,7 +28,7 @@ import { sanitizeQuery } from '../query/utils';
  * @class CollectionBuilder
  * @template T Represents the type of the content type to fetch. Defaults to unknown.
  */
-export class CollectionBuilder<T = unknown> {
+export class CollectionBuilder<T = unknown> extends BaseApiClient {
     #page = 1;
     #limit = 10;
     #depth = 0;
@@ -39,9 +40,6 @@ export class CollectionBuilder<T = unknown> {
     #rawQuery?: string;
     #languageId: number | string = 1;
     #draft = false;
-    #requestOptions: DotRequestOptions;
-    #httpClient: DotHttpClient;
-    #config: DotCMSClientConfig;
 
     /**
      * Creates an instance of CollectionBuilder.
@@ -57,11 +55,8 @@ export class CollectionBuilder<T = unknown> {
         contentType: string,
         httpClient: DotHttpClient
     ) {
-        this.#requestOptions = requestOptions;
-        this.#config = config;
+        super(config, requestOptions, httpClient);
         this.#contentType = contentType;
-        this.#httpClient = httpClient;
-        this.#config = config;
 
         // Build the default query with the contentType field
         this.#defaultQuery = new QueryBuilder().field('contentType').equals(this.#contentType);
@@ -97,18 +92,7 @@ export class CollectionBuilder<T = unknown> {
      * @memberof CollectionBuilder
      */
     private get url() {
-        return `${this.#config.dotcmsUrl}${CONTENT_API_URL}`;
-    }
-
-    /**
-     * Returns the site ID from the configuration.
-     *
-     * @readonly
-     * @private
-     * @memberof CollectionBuilder
-     */
-    private get siteId() {
-        return this.#config.siteId;
+        return `${this.config.dotcmsUrl}${CONTENT_API_URL}`;
     }
 
     /**
@@ -442,11 +426,11 @@ export class CollectionBuilder<T = unknown> {
 
         const query = this.#rawQuery ? `${sanitizedQuery} ${this.#rawQuery}` : sanitizedQuery;
 
-        return this.#httpClient.request<GetCollectionRawResponse<T>>(this.url, {
-            ...this.#requestOptions,
+        return this.httpClient.request<GetCollectionRawResponse<T>>(this.url, {
+            ...this.requestOptions,
             method: 'POST',
             headers: {
-                ...this.#requestOptions.headers,
+                ...this.requestOptions.headers,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -455,7 +439,8 @@ export class CollectionBuilder<T = unknown> {
                 sort: this.sort,
                 limit: this.#limit,
                 offset: this.offset,
-                depth: this.#depth
+                depth: this.#depth,
+                languageId: this.#languageId
                 //userId: This exist but we currently don't use it
                 //allCategoriesInfo: This exist but we currently don't use it
             })
@@ -485,7 +470,7 @@ export class CollectionBuilder<T = unknown> {
      *
      * @example
      * // For draft content without site constraint:
-     * // Returns: "+contentType:Blog +languageId:1 +live:false"
+     * // Returns: "+contentType:Blog +languageId:1 +(live:false AND working:true AND deleted:false)"
      *
      * @example
      * // For content with explicit exclusion of current site (site ID 123):
@@ -498,23 +483,29 @@ export class CollectionBuilder<T = unknown> {
      * // Returns: "+contentType:Blog -conhost:456 +languageId:1 +live:true +conhost:123" (site ID still added)
      */
     private getFinalQuery(): string {
-        // Build base query with language and live/draft constraints
-        const baseQuery = this.currentQuery
-            .field('languageId')
-            .equals(this.#languageId.toString())
-            .field('live')
-            .equals((!this.#draft).toString())
-            .build();
+        // Build base query with language and live/draft constraints.
+        // NOTE: languageId is intentionally sent in BOTH places:
+        // - in the Lucene query (backend requires this)
+        // - as a top-level request body field (backend also requires this)
+        let baseQuery = this.currentQuery.field('languageId').equals(this.#languageId.toString());
+
+        if (this.#draft) {
+            baseQuery = baseQuery.raw('+(live:false AND working:true AND deleted:false)');
+        } else {
+            baseQuery = baseQuery.field('live').equals('true');
+        }
+
+        const builtQuery = baseQuery.build();
 
         // Check if site ID constraint should be added using utility function
-        const shouldAddSiteId = shouldAddSiteIdConstraint(baseQuery, this.siteId);
+        const shouldAddSiteId = shouldAddSiteIdConstraint(builtQuery, this.siteId);
 
         // Add site ID constraint if needed
         if (shouldAddSiteId) {
-            const queryWithSiteId = `${baseQuery} +conhost:${this.siteId}`;
+            const queryWithSiteId = `${builtQuery} +conhost:${this.siteId}`;
             return sanitizeQuery(queryWithSiteId);
         }
 
-        return baseQuery;
+        return builtQuery;
     }
 }

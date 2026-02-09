@@ -22,6 +22,7 @@ const mockGetUVEState = jest.mocked(getUVEState);
 const mockInitializeAnalytics = jest.mocked(initializeAnalytics);
 const mockTrack = jest.fn();
 const mockPageView = jest.fn();
+const mockConversion = jest.fn();
 
 const mockConfig = {
     server: 'https://example.com',
@@ -34,7 +35,8 @@ describe('useContentAnalytics', () => {
         jest.clearAllMocks();
         mockInitializeAnalytics.mockReturnValue({
             track: mockTrack,
-            pageView: mockPageView
+            pageView: mockPageView,
+            conversion: mockConversion
         });
         mockGetUVEState.mockReturnValue(undefined);
     });
@@ -130,5 +132,41 @@ describe('useContentAnalytics', () => {
         // Change debug (should not trigger re-initialization in useMemo)
         rerender({ ...mockConfig, debug: true });
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+    });
+
+    describe('conversion', () => {
+        it('tracks conversion with options when outside editor', () => {
+            const { result } = renderHook(() => useContentAnalytics(mockConfig));
+            result.current.conversion('purchase', { productId: '123', price: 99.99 });
+
+            expect(mockConversion).toHaveBeenCalledWith('purchase', {
+                productId: '123',
+                price: 99.99
+            });
+        });
+
+        it('tracks conversion without options when outside editor', () => {
+            const { result } = renderHook(() => useContentAnalytics(mockConfig));
+            result.current.conversion('signup');
+
+            expect(mockConversion).toHaveBeenCalledWith('signup', {});
+        });
+
+        it('does not track conversion when inside editor', () => {
+            mockGetUVEState.mockReturnValue({
+                mode: UVE_MODE.EDIT,
+                persona: null,
+                variantName: null,
+                experimentId: null,
+                publishDate: null,
+                languageId: '1',
+                dotCMSHost: 'https://demo.dotcms.com'
+            });
+
+            const { result } = renderHook(() => useContentAnalytics(mockConfig));
+            result.current.conversion('purchase', { productId: '123' });
+
+            expect(mockConversion).not.toHaveBeenCalled();
+        });
     });
 });

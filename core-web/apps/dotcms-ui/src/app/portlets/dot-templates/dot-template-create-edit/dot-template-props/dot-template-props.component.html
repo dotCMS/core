@@ -15,8 +15,7 @@
                     formControlName="title"
                     autofocus
                     data-testId="templatePropsTitleField" />
-                <dot-field-validation-message
-                    [field]="form.get('title')"></dot-field-validation-message>
+                <dot-field-validation-message [field]="form.get('title')" />
             </div>
             <div class="field" data-testId="descriptionField">
                 <label for="description">
@@ -30,15 +29,14 @@
                     <dot-theme-selector-dropdown
                         id="theme"
                         formControlName="theme"
-                        data-testId="templatePropsThemeField"></dot-theme-selector-dropdown>
+                        data-testId="templatePropsThemeField" />
                 </div>
             }
             <div class="field" data-testId="thumbnailField">
                 <label for="thumbnail">
                     {{ 'templates.properties.form.label.thumbnail' | dm }}
                 </label>
-                <dot-template-thumbnail-field
-                    formControlName="image"></dot-template-thumbnail-field>
+                <dot-template-thumbnail-field formControlName="image" />
             </div>
         </form>
     }

@@ -4,7 +4,7 @@ import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
 import { pageComponents } from "@/components/content-types";
 import Footer from "@/components/footer/Footer";
-import Header from "@/components/Header";
+import Header from "@/components/header/Header";
 
 export function Page({ pageContent }) {
     const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);

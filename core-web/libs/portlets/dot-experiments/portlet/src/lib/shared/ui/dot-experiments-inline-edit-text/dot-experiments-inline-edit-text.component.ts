@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -46,7 +45,6 @@ const InplaceInputSizeMapPrimeNg: Record<InplaceInputSize, { button: string; inp
 @Component({
     selector: 'dot-experiments-inplace-edit-text',
     imports: [
-        NgIf,
         ReactiveFormsModule,
         DotMessagePipe,
         DotAutofocusDirective,

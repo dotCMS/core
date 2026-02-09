@@ -40,6 +40,7 @@ export type DotFolderTreeNodeData = {
     path: string;
     hostname: string;
     id: string;
+    fromTable?: boolean;
 };
 
 /**

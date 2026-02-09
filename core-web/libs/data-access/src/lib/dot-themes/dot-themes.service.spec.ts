@@ -1,5 +1,5 @@
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
@@ -8,7 +8,6 @@ import { mockDotThemes, CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotThemesService } from './dot-themes.service';
 
 describe('DotThemesService', () => {
-    let injector: TestBed;
     let dotThemesService: DotThemesService;
     let httpMock: HttpTestingController;
 
@@ -17,9 +16,8 @@ describe('DotThemesService', () => {
             imports: [HttpClientTestingModule],
             providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, DotThemesService]
         });
-        injector = getTestBed();
-        dotThemesService = injector.get(DotThemesService);
-        httpMock = injector.get(HttpTestingController);
+        dotThemesService = TestBed.inject(DotThemesService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should get Themes', () => {

@@ -4,6 +4,7 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-block-editor/src",
     "prefix": "dotcms",
+    "tags": ["skip:test", "skip:lint"],
     "targets": {
         "build": {
             "executor": "@nx/angular:browser-esbuild",
@@ -98,7 +99,8 @@
                 "development": {
                     "buildTarget": "dotcms-block-editor:build:development"
                 }
-            }
+            },
+            "continuous": true
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -122,6 +124,5 @@
                 "assets": []
             }
         }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    }
 }

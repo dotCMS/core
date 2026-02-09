@@ -44,7 +44,7 @@ export function dotParseDate(data: string): DotDateSlot {
  * @param string rawData
  */
 export function isValidDateSlot(dateSlot: DotDateSlot, rawData: string): boolean {
-    return !!rawData
+    return rawData
         ? rawData.split(' ').length > 1
             ? isValidFullDateSlot(dateSlot)
             : isValidPartialDateSlot(dateSlot)

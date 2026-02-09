@@ -1,0 +1,26 @@
+@let contentType = $contentType();
+
+<!-- Drag handle -->
+<div class="drag-handle">
+    <i class="pi pi-ellipsis-v"></i>
+    <i class="pi pi-ellipsis-v"></i>
+</div>
+
+<!-- Content type icon and name -->
+<div class="content">
+    <div class="icon">
+        @if (contentType.icon) {
+            <i class="material-icons material-icons-outlined">
+                {{ contentType.icon }}
+            </i>
+        } @else {
+            <i class="material-icons material-icons-outlined">palette</i>
+        }
+    </div>
+    <div class="name">{{ contentType.name }}</div>
+</div>
+
+<!-- Chevron -->
+<div class="chevron" (click)="onSelectContentType.emit(contentType.variable)">
+    <i class="pi pi-chevron-right"></i>
+</div>

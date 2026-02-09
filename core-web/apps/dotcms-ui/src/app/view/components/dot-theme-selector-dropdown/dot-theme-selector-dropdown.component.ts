@@ -1,5 +1,6 @@
 import { fromEvent, Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -10,15 +11,17 @@ import {
     OnInit,
     ViewChild
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, filter, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotThemesService, PaginatorService } from '@dotcms/data-access';
 import { Site, SiteService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
+import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotSiteSelectorComponent } from '../_common/dot-site-selector/dot-site-selector.component';
 import { SearchableDropdownComponent } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
@@ -32,9 +35,19 @@ import { SearchableDropdownComponent } from '../_common/searchable-dropdown/comp
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownComponent)
-        }
+        },
+        PaginatorService,
+        DotThemesService
     ],
-    standalone: false
+    imports: [
+        CommonModule,
+        FormsModule,
+        SearchableDropdownComponent,
+        DotMessagePipe,
+        DotSiteSelectorComponent,
+        InputTextModule,
+        DotIconComponent
+    ]
 })
 export class DotThemeSelectorDropdownComponent
     implements OnInit, OnDestroy, ControlValueAccessor, AfterViewInit

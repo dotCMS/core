@@ -1,0 +1,31 @@
+# Mise configuration for dotCMS development
+# https://mise.jdx.dev/
+#
+# To activate mise in your shell, add to your ~/.zshrc or ~/.bashrc:
+#   eval "$(mise activate zsh)"  # for zsh
+#   eval "$(mise activate bash)" # for bash
+#
+# Or run in current shell:
+#   eval "$(mise activate $(basename $SHELL))"
+#
+# Then reload: source ~/.zshrc (or restart terminal)
+#
+# Verify installation: mise doctor
+
+[tools]
+# GitHub CLI for issue/PR management
+gh = "latest"
+
+# Python for cicd-diagnostics skill and automation scripts
+python = "3.11"
+
+[env]
+# Python virtual environment location
+_.python.venv = { path = ".venv", create = true }
+
+[settings]
+# Experimental features
+experimental = true
+
+# Automatically install missing tools
+auto_install = true

@@ -2,141 +2,172 @@ import {
     CubeJSFilter,
     CubeJSQuery,
     CubeJSTimeDimension,
+    CubePrefix,
     DimensionField,
-    FilterField,
     FilterOperator,
     Granularity,
-    MeasureField,
-    OrderField,
     SortDirection,
     TimeRangeCubeJS
 } from '../../types';
 
 /**
- * Simple CubeJS Query Builder for the 6 specific analytics requests
+ * CubeJS Query Builder for analytics requests.
+ *
+ * Supports two cube types:
+ * - `request`: For pageview analytics (default)
+ * - `EventSummary`: For conversion analytics
+ *
+ * @example
+ * ```typescript
+ * // Pageview query
+ * createCubeQuery()
+ *     .measures(['totalRequest'])
+ *     .pageviews()
+ *     .siteId('site-123')
+ *     .build();
+ *
+ * // Conversion query
+ * createCubeQuery()
+ *     .measures(['totalEvents'])
+ *     .conversions()
+ *     .build();
+ * ```
  */
 export class CubeQueryBuilder {
     private query: CubeJSQuery = {};
+    private currentPrefix: CubePrefix = 'request';
 
     constructor() {
         this.query = {};
     }
 
     /**
-     * Add measures to the query
+     * Set the cube to query from.
+     * All subsequent operations will use this cube's prefix.
+     *
+     * @param prefix - The cube to use ('request' for pageviews, 'EventSummary' for conversions)
      */
-    measures(measures: MeasureField[]): CubeQueryBuilder {
-        const prefixedMeasures = measures.map((m) =>
-            m.startsWith('request.') ? m : `request.${m}`
-        );
+    fromCube(prefix: CubePrefix): CubeQueryBuilder {
+        this.currentPrefix = prefix;
+
+        return this;
+    }
+
+    /**
+     * Add measures to the query.
+     * Automatically prefixes with current cube (request or EventSummary).
+     */
+    measures(measures: string[]): CubeQueryBuilder {
+        const prefixedMeasures = measures.map((m) => this.prefixField(m));
         this.query.measures = prefixedMeasures;
 
         return this;
     }
 
     /**
-     * Add dimensions to the query
+     * Add dimensions to the query.
+     * Automatically prefixes with current cube.
+     *
+     * @param dimensions - Array of dimension field names (e.g., ['path', 'pageTitle'])
      */
     dimensions(dimensions: DimensionField[]): CubeQueryBuilder {
-        const prefixedDimensions = dimensions.map((d) =>
-            d.startsWith('request.') ? d : `request.${d}`
-        );
+        const prefixedDimensions = dimensions.map((d) => this.prefixField(d));
         this.query.dimensions = prefixedDimensions;
 
         return this;
     }
 
     /**
-     * Add pageview filter (common for all 6 requests)
+     * Add pageview filter (eventType = 'pageview').
+     * Use with fromCube('request') for pageview analytics.
      */
     pageviews(): CubeQueryBuilder {
-        const pageviewFilter: CubeJSFilter = {
-            member: 'request.eventType',
+        this.addFilter({
+            member: this.prefixField('eventType'),
             operator: 'equals',
             values: ['pageview']
-        };
-
-        this.query.filters = this.query.filters
-            ? [...this.query.filters, pageviewFilter]
-            : [pageviewFilter];
+        });
 
         return this;
     }
 
     /**
-     * Add site ID filter
+     * Add conversion filter (eventType = 'conversion').
+     * Use with fromCube('EventSummary') for conversion analytics.
+     */
+    conversions(): CubeQueryBuilder {
+        this.addFilter({
+            member: this.prefixField('eventType'),
+            operator: 'equals',
+            values: ['conversion']
+        });
+
+        return this;
+    }
+
+    /**
+     * Add site ID filter using current cube prefix.
      */
     siteId(siteId: string | string[]): CubeQueryBuilder {
         const values = Array.isArray(siteId) ? siteId : [siteId];
         const siteIdFilter: CubeJSFilter = {
-            member: 'request.siteId',
+            member: this.prefixField('siteId'),
             operator: 'equals',
             values
         };
 
-        this.query.filters = this.query.filters
-            ? [...this.query.filters, siteIdFilter]
-            : [siteIdFilter];
+        this.addFilter(siteIdFilter);
 
         return this;
     }
 
     /**
-     * Add a custom filter
+     * Add a custom filter.
+     * Automatically prefixes member with current cube.
      */
-    filter(member: FilterField, operator: FilterOperator, values: string[]): CubeQueryBuilder {
-        const prefixedMember = member.startsWith('request.') ? member : `request.${member}`;
+    filter(member: string, operator: FilterOperator, values: string[]): CubeQueryBuilder {
         const customFilter: CubeJSFilter = {
-            member: prefixedMember,
+            member: this.prefixField(member),
             operator,
             values
         };
 
-        this.query.filters = this.query.filters
-            ? [...this.query.filters, customFilter]
-            : [customFilter];
+        this.addFilter(customFilter);
 
         return this;
     }
 
     /**
-     * Add multiple filters at once
+     * Add multiple filters at once.
+     * Automatically prefixes members with current cube.
      */
     filters(filters: CubeJSFilter[]): CubeQueryBuilder {
         const prefixedFilters = filters.map((filter) => ({
             ...filter,
-            member: filter.member.startsWith('request.')
-                ? filter.member
-                : `request.${filter.member}`
+            member: this.prefixField(filter.member)
         }));
 
-        this.query.filters = this.query.filters
-            ? [...this.query.filters, ...prefixedFilters]
-            : prefixedFilters;
+        prefixedFilters.forEach((f) => this.addFilter(f));
 
         return this;
     }
 
     /**
-     * Add time range - automatically detects TimeRange string vs DateRange array
+     * Add time range with optional granularity.
+     * Automatically prefixes dimension with current cube.
      */
     timeRange(
-        dimension: DimensionField,
+        dimension: string,
         timeRangeInput: TimeRangeCubeJS,
         granularity?: Granularity
     ): CubeQueryBuilder {
-        const prefixedDimension = dimension.startsWith('request.')
-            ? dimension
-            : `request.${dimension}`;
+        const prefixedDimension = this.prefixField(dimension);
 
         let dateRangeValue: string | [string, string];
 
-        // Detect if it's a DateRange array or TimeRange string
         if (Array.isArray(timeRangeInput)) {
-            // It's a DateRange array - use as tuple for CubeJS
             dateRangeValue = timeRangeInput as [string, string];
         } else {
-            // It's a TimeRange string - use as-is
             dateRangeValue = timeRangeInput as string;
         }
 
@@ -155,17 +186,18 @@ export class CubeQueryBuilder {
     }
 
     /**
-     * Add ordering
+     * Add ordering by field.
+     * Automatically prefixes field with current cube.
      */
-    orderBy(field: OrderField, direction: SortDirection = 'desc'): CubeQueryBuilder {
-        const prefixedField = field.startsWith('request.') ? field : `request.${field}`;
+    orderBy(field: string, direction: SortDirection = 'desc'): CubeQueryBuilder {
+        const prefixedField = this.prefixField(field);
         this.query.order = { [prefixedField]: direction };
 
         return this;
     }
 
     /**
-     * Add limit
+     * Set result limit.
      */
     limit(limit: number): CubeQueryBuilder {
         this.query.limit = limit;
@@ -174,15 +206,34 @@ export class CubeQueryBuilder {
     }
 
     /**
-     * Build the final query
+     * Build the final query object.
      */
     build(): CubeJSQuery {
         return { ...this.query };
     }
+
+    /**
+     * Prefix a field with the current cube name if not already prefixed.
+     */
+    private prefixField(field: string): string {
+        if (field.includes('.')) {
+            return field;
+        }
+
+        return `${this.currentPrefix}.${field}`;
+    }
+
+    /**
+     * Add a filter to the query.
+     */
+    private addFilter(filter: CubeJSFilter): void {
+        this.query.filters = this.query.filters ? [...this.query.filters, filter] : [filter];
+    }
 }
 
 /**
- * Create a new query builder instance
+ * Create a new CubeJS query builder instance.
+ * Default cube is 'request' for pageview queries.
  */
 export function createCubeQuery(): CubeQueryBuilder {
     return new CubeQueryBuilder();

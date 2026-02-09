@@ -33,6 +33,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -325,11 +326,14 @@ public class TagResource {
 
 
     /**
-     * Delete tag for a given tag Id
-     * @param request
-     * @param response
-     * @param tagId
-     * @return
+     * Delete tag for a given tag Id.
+     * <p>The user must have EDIT permission on all contentlets associated with the tag.
+     * If the tag has no contentlet associations (orphan tag), deletion is allowed.</p>
+     *
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @param tagId    the ID of the tag to delete
+     * @return Response with OK status on success, 403 if permission denied
      */
     @DELETE
     @JSONP
@@ -338,7 +342,7 @@ public class TagResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response delete(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("tagId") final String tagId) {
+            @PathParam("tagId") final String tagId) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -359,18 +363,13 @@ public class TagResource {
             Logger.error(TagResource.class, errorMessage);
             throw new DoesNotExistException(errorMessage);
         }
-        try {
-            tagAPI.deleteTag(tagByTagId);
-            return Response.ok(new ResponseEntityView(OK)).build();
-        } catch (Exception e) {
-            Logger.error(TagResource.class,
-                    String.format("Exception removing tag  with id `%s`", tagId), e);
-            final String errorMessage = Try
-                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.error.delete", tagId))
-                    .getOrElse(String.format("Error occurred removing tag %s .",
-                            tagId)); //fallback message
-            throw new BadRequestException(e, errorMessage);
+        // Use permission-checked delete method - returns false if permission denied
+        final boolean deleted = tagAPI.deleteTag(user, tagId);
+        if (!deleted) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to delete tag '%s'", user.getUserId(), tagId));
         }
+        return Response.ok(new ResponseEntityView(OK)).build();
     }
 
     /**

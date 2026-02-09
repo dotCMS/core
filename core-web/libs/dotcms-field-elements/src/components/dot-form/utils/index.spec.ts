@@ -5,6 +5,7 @@ import {
     getErrorMessage,
     shouldShowField
 } from '.';
+
 import { basicField, dotFormLayoutMock } from '../../../test/mocks';
 
 describe('getFieldVariableValue', () => {

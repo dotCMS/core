@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
 
-import { DotContentSearchService, DotFolderService } from '@dotcms/data-access';
+import { DotContentDriveService, DotFolderService } from '@dotcms/data-access';
 import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
 import { QueryBuilder } from '@dotcms/query-builder';
 import { GlobalStore } from '@dotcms/store';
@@ -38,7 +38,7 @@ describe('DotContentDriveStore', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
             }),
-            mockProvider(DotContentSearchService),
+            mockProvider(DotContentDriveService),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
             }),
@@ -57,6 +57,7 @@ describe('DotContentDriveStore', () => {
             expect(store.path()).toBe(DEFAULT_PATH);
             expect(store.filters()).toEqual({});
             expect(store.items()).toEqual([]);
+            expect(store.selectedItems()).toEqual([]);
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
@@ -71,7 +72,7 @@ describe('DotContentDriveStore', () => {
                     .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .build();
 
-                expect(store.$searchParams().query).toEqual(baseQuery);
+                expect(store.$query()).toEqual(baseQuery);
             });
 
             it('should include path in query when provided', () => {
@@ -87,12 +88,10 @@ describe('DotContentDriveStore', () => {
                     .raw(BASE_QUERY)
                     .field('parentPath')
                     .equals(testPath)
-                    .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
+                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .build();
 
-                expect(store.$searchParams().query).toEqual(expectedQuery);
+                expect(store.$query()).toEqual(expectedQuery);
             });
 
             it('should include custom site in query when provided', () => {
@@ -112,7 +111,7 @@ describe('DotContentDriveStore', () => {
                     )
                     .build();
 
-                expect(store.$searchParams().query).toEqual(expectedQuery);
+                expect(store.$query()).toEqual(expectedQuery);
             });
 
             it('should include filters in query when provided', () => {
@@ -130,16 +129,14 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
+                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .field('contentType')
                     .equals('Blog')
                     .field('status')
                     .equals('published')
                     .build();
 
-                expect(store.$searchParams().query).toEqual(expectedQuery);
+                expect(store.$query()).toEqual(expectedQuery);
             });
 
             it('should include title filter in query when provided', () => {
@@ -156,13 +153,11 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
+                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .raw(`+catchall:*Blog* title_dotraw:*Blog*^5 title:'Blog'^15 title:Blog^5`)
                     .build();
 
-                expect(store.$searchParams().query).toEqual(expectedQuery);
+                expect(store.$query()).toEqual(expectedQuery);
             });
 
             it('should include title filter in query when provided with multiple words', () => {
@@ -179,15 +174,263 @@ describe('DotContentDriveStore', () => {
 
                 const expectedQuery = new QueryBuilder()
                     .raw(BASE_QUERY)
-                    .raw(
-                        `+(conhost:${SYSTEM_HOST.identifier} OR conhost:${SYSTEM_HOST.identifier}) +working:true +variant:default`
-                    )
+                    .raw(`+conhost:${SYSTEM_HOST.identifier} +working:true +variant:default`)
                     .raw(
                         `+catchall:*Blog Post* title_dotraw:*Blog Post*^5 title:'Blog Post'^15 title:Blog^5 title:Post^5`
                     )
                     .build();
 
-                expect(store.$searchParams().query).toEqual(expectedQuery);
+                expect(store.$query()).toEqual(expectedQuery);
+            });
+        });
+
+        describe('$request', () => {
+            it('should build request with default values when no path or filters are provided', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                expect(request.includeSystemHost).toBe(true);
+                expect(request.filters).toEqual({
+                    text: '',
+                    filterFolders: true
+                });
+                expect(request.language).toBeUndefined();
+                expect(request.contentTypes).toBeUndefined();
+                expect(request.baseTypes).toBeUndefined();
+                expect(request.offset).toBe(DEFAULT_PAGINATION.offset);
+                expect(request.maxResults).toBe(DEFAULT_PAGINATION.limit);
+                expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
+                expect(request.archived).toBe(false);
+                expect(request.showFolders).toBe(true);
+            });
+
+            it('should include path in assetPath when provided', () => {
+                const testPath = '/test/path/';
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: testPath,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}${testPath}`);
+            });
+
+            it('should include custom site hostname in assetPath when provided', () => {
+                const customSite = MOCK_SITES[0] as SiteEntity;
+                store.initContentDrive({
+                    currentSite: customSite,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.assetPath).toBe(`//${customSite.hostname}/`);
+            });
+
+            it('should include title filter in request when provided', () => {
+                const filters = {
+                    title: 'Blog Post'
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.filters?.text).toBe('Blog Post');
+            });
+
+            it('should include contentTypes in request when provided', () => {
+                const filters = {
+                    contentType: ['Blog', 'News']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.contentTypes).toEqual(['Blog', 'News']);
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should include baseTypes in request when provided', () => {
+                const filters = {
+                    baseType: ['1', '2'] // CONTENT and WIDGET
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.baseTypes).toEqual(['CONTENT', 'WIDGET']);
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should include languageId in request when provided', () => {
+                const filters = {
+                    languageId: ['en']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.language).toEqual(['en']);
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should include pagination in request', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+                store.setPagination({ limit: 50, offset: 20 });
+
+                const request = store.$request();
+
+                expect(request.maxResults).toBe(50);
+                expect(request.offset).toBe(20);
+            });
+
+            it('should include sort in request', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+                store.setSort({ field: 'title', order: DotContentDriveSortOrder.ASC });
+
+                const request = store.$request();
+
+                expect(request.sortBy).toBe('title:asc');
+            });
+
+            it('should set showFolders to false when contentType filter is provided', () => {
+                const filters = {
+                    contentType: ['Blog']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to false when baseType filter is provided', () => {
+                const filters = {
+                    baseType: ['1']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to false when languageId filter is provided', () => {
+                const filters = {
+                    languageId: ['en']
+                };
+
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters,
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(false);
+            });
+
+            it('should set showFolders to true when no filters are provided', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.showFolders).toBe(true);
+            });
+
+            it('should handle multiple filters together', () => {
+                const filters = {
+                    title: 'Test',
+                    contentType: ['Blog'],
+                    baseType: ['1'],
+                    languageId: ['en']
+                };
+
+                store.initContentDrive({
+                    currentSite: MOCK_SITES[0],
+                    path: '/documents/',
+                    filters,
+                    isTreeExpanded: false
+                });
+                store.setPagination({ limit: 30, offset: 10 });
+                store.setSort({ field: 'modDate', order: DotContentDriveSortOrder.DESC });
+
+                const request = store.$request();
+
+                expect(request.assetPath).toBe(`//${MOCK_SITES[0].hostname}/documents/`);
+                expect(request.filters?.text).toBe('Test');
+                expect(request.contentTypes).toEqual(['Blog']);
+                expect(request.baseTypes).toEqual(['CONTENT']);
+                expect(request.language).toEqual(['en']);
+                expect(request.maxResults).toBe(30);
+                expect(request.offset).toBe(10);
+                expect(request.sortBy).toBe('modDate:desc');
+                expect(request.showFolders).toBe(false);
             });
         });
     });
@@ -253,6 +496,67 @@ describe('DotContentDriveStore', () => {
             });
         });
 
+        describe('setGlobalSearch', () => {
+            it('should update filters with title search value', () => {
+                store.setGlobalSearch('test search');
+                expect(store.filters()).toEqual({ title: 'test search' });
+            });
+
+            it('should clear filters when search is empty', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
+
+                store.setGlobalSearch('');
+                expect(store.filters()).toEqual({});
+            });
+
+            it('should reset pagination offset when setting global search', () => {
+                store.setPagination({ limit: 10, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+
+                store.setGlobalSearch('test');
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+            });
+
+            it('should reset path to DEFAULT_PATH when setting global search', () => {
+                store.setPath('/some/custom/path');
+                expect(store.path()).toBe('/some/custom/path');
+
+                store.setGlobalSearch('test');
+                expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('removeFilter', () => {
+            it('should remove the specified filter', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+                expect(store.filters()).toEqual({ contentType: ['Blog'], baseType: ['1'] });
+
+                store.removeFilter('contentType');
+                expect(store.filters()).toEqual({ baseType: ['1'] });
+            });
+
+            it('should reset pagination offset when removing filter', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                store.setPagination({ limit: 10, offset: 20 });
+                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+
+                store.removeFilter('contentType');
+                expect(store.pagination()).toEqual({ limit: 10, offset: 0 });
+            });
+
+            it('should not change state if filter does not exist', () => {
+                const initialFilters = { contentType: ['Blog'] };
+                store.patchFilters(initialFilters);
+                store.setPagination({ limit: 10, offset: 20 });
+
+                store.removeFilter('nonExistentFilter');
+
+                expect(store.filters()).toEqual(initialFilters);
+                expect(store.pagination()).toEqual({ limit: 10, offset: 20 });
+            });
+        });
+
         describe('patchFilters', () => {
             it('should update filters with provided values', () => {
                 store.patchFilters({ contentType: ['Blog'] });
@@ -293,6 +597,83 @@ describe('DotContentDriveStore', () => {
                 });
             });
         });
+
+        describe('setSelectedItems', () => {
+            it('should set selected items', () => {
+                const selectedItems = [MOCK_ITEMS[0], MOCK_ITEMS[1]];
+
+                store.setSelectedItems(selectedItems);
+
+                expect(store.selectedItems()).toEqual(selectedItems);
+                expect(store.selectedItems().length).toBe(2);
+            });
+
+            it('should replace existing selected items', () => {
+                // First set some items
+                const firstSelection = [MOCK_ITEMS[0]];
+                store.setSelectedItems(firstSelection);
+                expect(store.selectedItems()).toEqual(firstSelection);
+
+                // Then replace with new selection
+                const secondSelection = [MOCK_ITEMS[1], MOCK_ITEMS[2]];
+                store.setSelectedItems(secondSelection);
+
+                expect(store.selectedItems()).toEqual(secondSelection);
+                expect(store.selectedItems().length).toBe(2);
+            });
+
+            it('should clear selected items when passed empty array', () => {
+                // First set some items
+                store.setSelectedItems([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                expect(store.selectedItems().length).toBe(2);
+
+                // Then clear
+                store.setSelectedItems([]);
+
+                expect(store.selectedItems()).toEqual([]);
+                expect(store.selectedItems().length).toBe(0);
+            });
+
+            it('should handle single item selection', () => {
+                const selectedItem = [MOCK_ITEMS[0]];
+
+                store.setSelectedItems(selectedItem);
+
+                expect(store.selectedItems()).toEqual(selectedItem);
+                expect(store.selectedItems().length).toBe(1);
+            });
+        });
+
+        describe('setPath', () => {
+            it('should reset pagination offset when setting path', () => {
+                store.initContentDrive({
+                    currentSite: MOCK_SITES[0],
+                    path: '/test/',
+                    filters: {},
+                    isTreeExpanded: false
+                });
+                store.setPagination({ limit: 20, offset: 40 });
+                expect(store.pagination()).toEqual({ limit: 20, offset: 40 });
+
+                store.setPath('/documents/');
+
+                expect(store.path()).toBe('/documents/');
+                expect(store.pagination()).toEqual({ limit: 20, offset: 0 });
+            });
+
+            it('should update path', () => {
+                store.initContentDrive({
+                    currentSite: MOCK_SITES[0],
+                    path: '/test/',
+                    filters: {},
+                    isTreeExpanded: false
+                });
+
+                store.setPath('/new/path/');
+
+                expect(store.path()).toBe('/new/path/');
+            });
+        });
     });
 });
 describe('DotContentDriveStore - onInit', () => {
@@ -314,8 +695,8 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
             }),
-            mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
@@ -344,7 +725,7 @@ describe('DotContentDriveStore - onInit', () => {
 describe('DotContentDriveStore - Content Loading Effect', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
-    let contentSearchService: jest.Mocked<DotContentSearchService>;
+    let contentDriveService: jest.Mocked<DotContentDriveService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -357,8 +738,8 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(GlobalStore, {
                 siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
             }),
-            mockProvider(DotContentSearchService, {
-                get: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            mockProvider(DotContentDriveService, {
+                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
                 getFolders: jest.fn().mockReturnValue(of([]))
@@ -370,7 +751,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        contentSearchService = spectator.inject(DotContentSearchService);
+        contentDriveService = spectator.inject(DotContentDriveService);
     });
 
     beforeEach(() => {
@@ -380,15 +761,28 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     it('should fetch content when store has a non-SYSTEM_HOST site', () => {
         spectator.flushEffects();
 
-        expect(contentSearchService.get).toHaveBeenCalled();
+        expect(contentDriveService.search).toHaveBeenCalled();
         expect(store.items()).toEqual(MOCK_ITEMS);
         expect(store.totalItems()).toBe(MOCK_ITEMS.length);
         expect(store.status()).toBe(DotContentDriveStatus.LOADED);
     });
 
-    it('should handle errors from content search service', () => {
-        // Mock error from content search
-        contentSearchService.get.mockReturnValue(
+    it('should clear selected items when loading items', () => {
+        // Set some selected items
+        store.setSelectedItems([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+        expect(store.selectedItems().length).toBe(2);
+
+        // Trigger loadItems by flushing effects
+        spectator.flushEffects();
+
+        // Selected items should be cleared
+        expect(store.selectedItems()).toEqual([]);
+        expect(store.selectedItems().length).toBe(0);
+    });
+
+    it('should handle errors from content drive service', () => {
+        // Mock error from content drive service
+        contentDriveService.search.mockReturnValue(
             throwError(() => new Error('Failed to get content'))
         );
 
@@ -403,26 +797,26 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
         spectator.flushEffects();
 
-        expect(contentSearchService.get).toHaveBeenCalledWith({
-            query: expect.any(String),
-            limit: DEFAULT_PAGINATION.limit,
-            offset: DEFAULT_PAGINATION.offset,
-            sort: 'baseType desc'
-        });
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({
+                sortBy: 'baseType:desc'
+            })
+        );
     });
 
-    it('should handle sorting with score when query includes title', () => {
-        // Set sort in store
+    it('should handle title filter in request', () => {
+        // Set title filter
         store.patchFilters({ title: 'test' });
 
         spectator.service.loadItems();
 
-        expect(contentSearchService.get).toHaveBeenCalledWith({
-            query: expect.any(String),
-            limit: DEFAULT_PAGINATION.limit,
-            offset: DEFAULT_PAGINATION.offset,
-            sort: 'score,modDate desc'
-        });
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({
+                filters: expect.objectContaining({
+                    text: 'test'
+                })
+            })
+        );
     });
 
     it('should handle pagination', () => {
@@ -431,11 +825,11 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
         spectator.flushEffects();
 
-        expect(contentSearchService.get).toHaveBeenCalledWith({
-            query: expect.any(String),
-            limit: 10,
-            offset: 0,
-            sort: expect.any(String)
-        });
+        expect(contentDriveService.search).toHaveBeenCalledWith(
+            expect.objectContaining({
+                maxResults: 10,
+                offset: 0
+            })
+        );
     });
 });

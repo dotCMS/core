@@ -10,26 +10,26 @@
                 @if (contentlet[0]) {
                     <dot-asset-card
                         (click)="selectedItem.emit(contentlet[0])"
-                        [contentlet]="contentlet[0]"></dot-asset-card>
+                        [contentlet]="contentlet[0]" />
                 }
                 @if (contentlet[1]) {
                     <dot-asset-card
                         (click)="selectedItem.emit(contentlet[1])"
-                        [contentlet]="contentlet[1]"></dot-asset-card>
+                        [contentlet]="contentlet[1]" />
                 }
             </div>
         </ng-template>
     </p-scroller>
 } @else {
-    <ng-template [ngTemplateOutlet]="loading ? loadingBlock : emptyBlock"></ng-template>
+    <ng-template [ngTemplateOutlet]="loading ? loadingBlock : emptyBlock" />
 }
 
 <ng-template #loadingBlock>
     <div class="wrapper justify-start">
         @for (loadingItem of loadingItems; track loadingItem) {
             <div class="card-list-row">
-                <dot-asset-card-skeleton></dot-asset-card-skeleton>
-                <dot-asset-card-skeleton></dot-asset-card-skeleton>
+                <dot-asset-card-skeleton />
+                <dot-asset-card-skeleton />
             </div>
         }
     </div>

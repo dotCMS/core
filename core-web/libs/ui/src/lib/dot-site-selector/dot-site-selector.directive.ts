@@ -11,8 +11,7 @@ import { Site } from '@dotcms/dotcms-js';
 
 @Directive({
     selector: '[dotSiteSelector]',
-    providers: [PaginatorService],
-    standalone: true
+    providers: [PaginatorService]
 })
 export class DotSiteSelectorDirective implements OnInit, OnDestroy {
     private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });

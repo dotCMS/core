@@ -4,6 +4,7 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcms-binary-field-builder/src",
     "prefix": "dotcms",
+    "tags": [],
     "targets": {
         "build": {
             "executor": "@nx/angular:browser-esbuild",
@@ -84,7 +85,8 @@
                     "buildTarget": "dotcms-binary-field-builder:build:development"
                 }
             },
-            "defaultConfiguration": "production"
+            "defaultConfiguration": "production",
+            "continuous": true
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -100,9 +102,9 @@
             "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
-                "jestConfig": "apps/dotcms-binary-field-builder/jest.config.ts"
+                "jestConfig": "apps/dotcms-binary-field-builder/jest.config.ts",
+                "tsConfig": "apps/dotcms-binary-field-builder/tsconfig.spec.json"
             }
         }
-    },
-    "tags": []
+    }
 }

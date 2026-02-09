@@ -12,7 +12,7 @@
                 class="p-checkbox-sm"
                 formControlName="newEditContent"
                 binary="true"
-                inputId="newEditContentLabel"></p-checkbox>
+                inputId="newEditContentLabel" />
             <label for="newEditContentLabel">
                 <span [innerHTML]="'content.type.form.banner.message' | dm"></span>
             </label>
@@ -31,14 +31,11 @@
             dotAutofocus />
         <dot-field-validation-message
             [message]="'dot.common.message.field.required' | dm: [nameFieldLabel]"
-            [field]="form.get('name')"></dot-field-validation-message>
+            [field]="form.get('name')" />
     </div>
     <div class="field">
         <label for="content-type-form-description">{{ 'contenttypes.form.label.icon' | dm }}</label>
-        <dot-md-icon-selector
-            [tabindex]="2"
-            id="content-type-form-icon"
-            formControlName="icon"></dot-md-icon-selector>
+        <dot-md-icon-selector [tabindex]="2" id="content-type-form-icon" formControlName="icon" />
     </div>
 
     <div class="field">
@@ -62,7 +59,7 @@
             [tabindex]="4"
             id="content-type-form-host"
             formControlName="host"
-            width="100%"></dot-site-selector-field>
+            width="100%" />
     </div>
     <div class="field">
         <label for="content-type-form-workflow">
@@ -71,7 +68,7 @@
         <dot-workflows-selector-field
             [tabindex]="5"
             id="content-type-form-workflow"
-            formControlName="workflows"></dot-workflows-selector-field>
+            formControlName="workflows" />
     </div>
     <div class="field" formGroupName="systemActionMappings">
         <label for="content-type-form-workflow">
@@ -80,7 +77,7 @@
         <dot-workflows-actions-selector-field
             [tabindex]="6"
             [workflows]="workflowsSelected$ | async"
-            formControlName="NEW"></dot-workflows-actions-selector-field>
+            formControlName="NEW" />
     </div>
     @if (form.get('workflows').disabled) {
         <span class="p-field-hint form-workflow-community-message" id="field-workflow-hint">
@@ -101,7 +98,7 @@
                 id="content-type-form-publish-date-field"
                 appendTo="body"
                 name="publishDateVar"
-                formControlName="publishDateVar"></p-dropdown>
+                formControlName="publishDateVar" />
         </div>
         <div class="field">
             <label for="content-type-form-expire-date-field">
@@ -116,7 +113,7 @@
                 id="content-type-form-expire-date-field"
                 appendTo="body"
                 name="expireDateVar"
-                formControlName="expireDateVar"></p-dropdown>
+                formControlName="expireDateVar" />
         </div>
     </div>
 
@@ -134,13 +131,12 @@
             <dot-page-selector
                 [tabindex]="9"
                 id="content-type-form-detail-page"
-                formControlName="detailPage"></dot-page-selector>
+                formControlName="detailPage" />
         </div>
     }
     @if (form.get('urlMapPattern')) {
         <div class="field form__group--helper">
-            <dot-field-helper
-                [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm"></dot-field-helper>
+            <dot-field-helper [message]="'contenttypes.hint.URL.map.pattern.hint1' | dm" />
             <label for="content-type-form-url-map-pattern">
                 {{ 'contenttypes.form.label.URL.pattern' | dm }}
             </label>

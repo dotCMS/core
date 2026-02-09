@@ -1,5 +1,13 @@
 import { FocusableOption } from '@angular/cdk/a11y';
-import { Component, ElementRef, HostBinding, HostListener, Input, OnInit } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    HostBinding,
+    HostListener,
+    Input,
+    OnInit,
+    inject
+} from '@angular/core';
 
 @Component({
     selector: 'dot-suggestions-list-item',
@@ -24,7 +32,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     icon = false;
 
-    constructor(private element: ElementRef) {}
+    private readonly element = inject(ElementRef);
 
     @HostListener('mousedown', ['$event'])
     onMouseDown(e: MouseEvent) {

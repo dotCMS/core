@@ -41,7 +41,8 @@ import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.componen
 
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 const messageServiceMock = new MockDotMessageService({
@@ -65,12 +66,19 @@ describe('DotContentletWrapperComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentletWrapperComponent],
+            imports: [
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
                 DotEventsService,
+                IframeOverlayService,
                 ConfirmationService,
                 DotcmsEventsService,
                 DotEventsSocket,
@@ -107,12 +115,6 @@ describe('DotContentletWrapperComponent', () => {
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService }
-            ],
-            imports: [
-                DotIframeDialogModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
             ]
         });
     }));
@@ -199,6 +201,37 @@ describe('DotContentletWrapperComponent', () => {
                     }
                 });
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+            });
+
+            it('should close the dialog and navigate to content-drive when CD query params exist', () => {
+                const contentDriveParams = {
+                    folderId: '123',
+                    path: '/images'
+                };
+
+                Object.defineProperty(dotRouterService, 'currentPortlet', {
+                    value: {
+                        url: '/test?CD_folderId=123&CD_path=/images',
+                        id: '123'
+                    },
+                    writable: true
+                });
+
+                jest.spyOn(dotRouterService, 'gotoPortlet');
+
+                dotIframeDialog.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'close'
+                    }
+                });
+
+                expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
+                expect(component.header).toBe('');
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
+                expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
+                    queryParams: contentDriveParams
+                });
             });
 
             it('should called goToEdit', () => {

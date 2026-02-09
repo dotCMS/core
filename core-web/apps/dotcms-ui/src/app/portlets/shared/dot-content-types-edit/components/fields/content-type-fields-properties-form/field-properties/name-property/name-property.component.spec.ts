@@ -14,7 +14,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 
 import { NamePropertyComponent } from './index';
 
-import { DotCopyLinkModule } from '../../../../../../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../../../../../../view/components/dot-copy-link/dot-copy-link.component';
 
 @Component({
     selector: 'dot-field-validation-message',
@@ -40,7 +40,7 @@ describe('NamePropertyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-            imports: [DotCopyLinkModule, ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
+            imports: [DotCopyLinkComponent, ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         }).compileComponents();
 

@@ -44,7 +44,7 @@ import {
     DotAIImagePromptComponent,
     DotDropZoneComponent,
     DotMessagePipe,
-    DotSpinnerModule,
+    DotSpinnerComponent,
     DropZoneErrorType,
     DropZoneFileEvent,
     DropZoneFileValidity
@@ -84,7 +84,7 @@ type SystemOptionsType = {
         MonacoEditorModule,
         DotMessagePipe,
         DotBinaryFieldUiMessageComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DotBinaryFieldEditorComponent,
         InputTextModule,
         DotBinaryFieldUrlModeComponent,
@@ -97,7 +97,6 @@ type SystemOptionsType = {
         DotBinaryFieldStore,
         DotLicenseService,
         DotBinaryFieldValidatorService,
-        DotAiService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,

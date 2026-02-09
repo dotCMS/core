@@ -16,7 +16,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-experiments-configuration-targeting',
-    standalone: true,
     imports: [CommonModule, CardModule, DotMessagePipe, ButtonModule, TooltipModule],
     templateUrl: './dot-experiments-configuration-targeting.component.html',
     styleUrls: ['./dot-experiments-configuration-targeting.component.scss'],

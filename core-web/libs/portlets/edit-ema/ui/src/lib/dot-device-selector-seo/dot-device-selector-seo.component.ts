@@ -197,6 +197,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
      * Hide the overlay panel
      */
     onHideDeviceSelector() {
+        // TODO: The 'emit' function requires a mandatory string argument
         this.hideOverlayPanel.emit();
     }
 

@@ -31,8 +31,6 @@ const initialState: UVEState = {
     pageParams,
     status: UVE_STATUS.LOADING,
     isTraditionalPage: true,
-    canEditPage: false,
-    pageIsLocked: true,
     isClientReady: false
 };
 

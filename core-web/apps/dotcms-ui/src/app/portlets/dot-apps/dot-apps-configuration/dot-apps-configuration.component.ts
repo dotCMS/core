@@ -4,6 +4,8 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@an
 import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
 
 import { debounceTime, pluck, take, takeUntil } from 'rxjs/operators';
 
@@ -14,15 +16,26 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { dialogAction, DotApp, DotAppsSite } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotAppsConfigurationListComponent } from './dot-apps-configuration-list/dot-apps-configuration-list.component';
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 import { DotAppsImportExportDialogComponent } from '../dot-apps-import-export-dialog/dot-apps-import-export-dialog.component';
 
 @Component({
     selector: 'dot-apps-configuration',
     templateUrl: './dot-apps-configuration.component.html',
     styleUrls: ['./dot-apps-configuration.component.scss'],
-    standalone: false
+    imports: [
+        InputTextModule,
+        ButtonModule,
+        DotAppsConfigurationHeaderComponent,
+        DotAppsConfigurationListComponent,
+        DotAppsImportExportDialogComponent,
+        DotMessagePipe
+    ]
 })
 export class DotAppsConfigurationComponent implements OnInit, OnDestroy {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

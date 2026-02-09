@@ -1,0 +1,58 @@
+@use "variables" as *;
+
+/* Regular Radio Styles */
+.radio-group {
+    gap: $spacing-2;
+}
+
+/* Radio Image Styles */
+.field-radio-image {
+    margin-bottom: $spacing-4;
+}
+
+.radio-image-group {
+    display: grid;
+    gap: $spacing-3;
+}
+
+.radio-image-item {
+    position: relative;
+}
+
+.radio-image-input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.radio-image-label {
+    gap: $spacing-1;
+    cursor: pointer;
+}
+
+.radio-image-container {
+    max-width: 100%;
+    height: 5.75rem;
+    display: block;
+    width: 100%;
+    border: 1px solid $color-palette-surface-500;
+    border-radius: $spacing-1;
+    background: $white;
+    transition: all 0.15s ease-in-out;
+    padding: $spacing-1;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.radio-image-container:hover {
+    border-color: $color-palette-primary-500;
+    box-shadow: $shadow-m;
+}
+
+.radio-image-input:checked + .radio-image-label .radio-image-container {
+    border-color: $color-palette-primary-500;
+}

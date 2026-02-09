@@ -1,12 +1,7 @@
 package com.dotcms.filters.interceptor;
 
-import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.config.DotRestApplication;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
-import io.vavr.Lazy;
 import org.apache.commons.collections.iterators.ReverseListIterator;
 
 import javax.servlet.http.HttpServletRequest;
@@ -34,9 +29,6 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
     private OrderMode orderMode = OrderMode.FILO;
     private final AtomicBoolean reverseOrderForPostInvoke =
             new AtomicBoolean(false);
-
-    private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
-            Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
     @Override
     public void addBefore(final String webInterceptorName, final WebInterceptor webInterceptor) {
@@ -91,11 +83,6 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
     @Override
     public void addFirst(final WebInterceptor webInterceptor) {
-        if (Boolean.TRUE.equals(ENABLE_TELEMETRY_FROM_CORE.get()) &&
-                webInterceptor.getClass().getName().equalsIgnoreCase("com.dotcms.experience.collectors.api.ApiMetricWebInterceptor")) {
-            Logger.warn(DotRestApplication.class, "Bypassing addition of API Metric Web Interceptor from OSGi");
-            return;
-        }
         this.interceptors.add(0, webInterceptor);
         this.init(webInterceptor);
     } // addFirst.

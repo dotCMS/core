@@ -1,33 +1,46 @@
 <div class="grid grid-nogutter justify-content-between md:gap-2 xl:gap-3 wrapper">
-    <div *ngIf="suggestedWinner" class="flex align-items-center justify-content-center gap-3">
-        <ng-container *ngIf="suggestedWinner.icon === 'dot-trophy'; else defaultLegendIconTpl">
-            <img
-                alt="winner icon"
-                data-TestId="suggested-winner-icon"
-                src="assets/icon/trophy.svg" />
-        </ng-container>
-        <span
-            [innerHTML]="suggestedWinner.legend | dm"
-            class="flex-grow-1"
-            data-TestId="suggested-winner-legend"></span>
-    </div>
-    <div *ngIf="goals" class="flex align-items-center justify-content-center gap-3">
-        <i class="pi pi-flag"></i>
-        <div class="flex-grow-1">
-            <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
-            <span data-TestId="goal-label">{{ goals.primary.name }}</span>
+    @if (suggestedWinner) {
+        <div class="flex align-items-center justify-content-center gap-3">
+            @if (suggestedWinner.icon === 'dot-trophy') {
+                <img
+                    alt="winner icon"
+                    data-TestId="suggested-winner-icon"
+                    src="assets/icon/trophy.svg" />
+            } @else {
+                <i
+                    [ngClass]="suggestedWinner.icon"
+                    class="pi"
+                    data-TestId="suggested-winner-icon"></i>
+            }
+            <span
+                [innerHTML]="suggestedWinner.legend | dm"
+                class="flex-grow-1"
+                data-TestId="suggested-winner-legend"></span>
         </div>
-    </div>
-    <div *ngIf="scheduling" class="flex align-items-center justify-content-center gap-3">
-        <i class="pi pi-calendar"></i>
-        <div class="flex-grow-1">
-            <span data-TestId="schedule-start-date">
-                {{ scheduling.startDate | date: 'longDate' }}
-            </span>
-            -
-            <span data-TestId="schedule-end-date">{{ scheduling.endDate | date: 'longDate' }}</span>
+    }
+    @if (goals) {
+        <div class="flex align-items-center justify-content-center gap-3">
+            <i class="pi pi-flag"></i>
+            <div class="flex-grow-1">
+                <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
+                <span data-TestId="goal-label">{{ goals.primary.name }}</span>
+            </div>
         </div>
-    </div>
+    }
+    @if (scheduling) {
+        <div class="flex align-items-center justify-content-center gap-3">
+            <i class="pi pi-calendar"></i>
+            <div class="flex-grow-1">
+                <span data-TestId="schedule-start-date">
+                    {{ scheduling.startDate | date: 'longDate' }}
+                </span>
+                -
+                <span data-TestId="schedule-end-date">
+                    {{ scheduling.endDate | date: 'longDate' }}
+                </span>
+            </div>
+        </div>
+    }
     <div class="flex align-items-center justify-content-center gap-3">
         <i class="pi pi-user"></i>
         <div class="flex-grow-1" data-TestId="summary-sessions-reached">
@@ -45,7 +58,3 @@
             pButton></button>
     </div>
 </div>
-
-<ng-template #defaultLegendIconTpl>
-    <i [ngClass]="suggestedWinner.icon" class="pi" data-TestId="suggested-winner-icon"></i>
-</ng-template>

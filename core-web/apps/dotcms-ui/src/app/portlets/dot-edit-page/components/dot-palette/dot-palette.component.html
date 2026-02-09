@@ -6,7 +6,7 @@
             [items]="vm.contentTypes"
             [loading]="vm.loading"
             [viewContentlet]="vm.viewContentlet"
-            #contentTypes></dot-palette-content-type>
+            #contentTypes />
         <dot-palette-contentlets
             (back)="switchView()"
             (filter)="filterContentlets($event)"
@@ -14,6 +14,6 @@
             [items]="vm.contentlets"
             [loading]="vm.loading"
             [totalRecords]="vm.totalRecords"
-            #contentlets></dot-palette-contentlets>
+            #contentlets />
     </div>
 }

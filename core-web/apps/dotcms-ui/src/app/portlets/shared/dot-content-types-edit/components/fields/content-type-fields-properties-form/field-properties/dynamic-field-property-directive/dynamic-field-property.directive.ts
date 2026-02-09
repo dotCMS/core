@@ -3,6 +3,7 @@ import {
     Directive,
     Input,
     OnChanges,
+    OnDestroy,
     SimpleChanges,
     ViewContainerRef,
     inject
@@ -10,6 +11,7 @@ import {
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotCMSContentTypeField, DotDynamicFieldComponent } from '@dotcms/dotcms-models';
+import { isEqual } from '@dotcms/utils';
 
 import { FieldPropertyService } from '../../../service';
 
@@ -17,34 +19,83 @@ import { FieldPropertyService } from '../../../service';
     selector: '[dotDynamicFieldProperty]',
     standalone: false
 })
-export class DynamicFieldPropertyDirective implements OnChanges {
+export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     private viewContainerRef = inject(ViewContainerRef);
     private fieldPropertyService = inject(FieldPropertyService);
+    private componentRef: ComponentRef<DotDynamicFieldComponent> | null = null;
+    private previousFieldId: string | null = null;
+    private previousPropertyName: string | null = null;
 
     @Input() propertyName: string;
     @Input() field: DotCMSContentTypeField;
     @Input() group: UntypedFormGroup;
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.field.currentValue) {
-            this.createComponent(this.propertyName);
+        const fieldChanged = changes.field;
+        const propertyNameChanged = changes.propertyName;
+
+        // Only create component if field or propertyName actually changed
+        if (
+            fieldChanged?.currentValue &&
+            (fieldChanged.firstChange ||
+                !isEqual(fieldChanged.previousValue, fieldChanged.currentValue) ||
+                propertyNameChanged?.firstChange ||
+                propertyNameChanged?.previousValue !== propertyNameChanged?.currentValue)
+        ) {
+            const currentFieldId = this.field?.id || null;
+            const currentPropertyName = this.propertyName;
+
+            // Check if we need to recreate the component
+            const shouldRecreate =
+                !this.componentRef ||
+                this.previousFieldId !== currentFieldId ||
+                this.previousPropertyName !== currentPropertyName;
+
+            if (shouldRecreate) {
+                this.destroyComponent();
+                this.createComponent(this.propertyName);
+                this.previousFieldId = currentFieldId;
+                this.previousPropertyName = currentPropertyName;
+            } else {
+                // Update existing component instance if field changed but same field/property
+                this.updateComponent();
+            }
         }
     }
 
-    private createComponent(property): void {
-        const component = this.fieldPropertyService.getComponent(property);
-        const componentRef: ComponentRef<DotDynamicFieldComponent> =
-            this.viewContainerRef.createComponent(component);
+    ngOnDestroy(): void {
+        this.destroyComponent();
+    }
 
-        componentRef.instance.property = {
+    private createComponent(property: string): void {
+        const component = this.fieldPropertyService.getComponent(property);
+        this.componentRef = this.viewContainerRef.createComponent(component);
+
+        this.updateComponent();
+    }
+
+    private updateComponent(): void {
+        if (!this.componentRef || !this.field) {
+            return;
+        }
+
+        this.componentRef.instance.property = {
             field: this.field,
             name: this.propertyName,
             value: this.field[this.propertyName]
         };
 
-        componentRef.instance.group = this.group;
-        componentRef.instance.helpText = this.fieldPropertyService.getFieldType(
+        this.componentRef.instance.group = this.group;
+        this.componentRef.instance.helpText = this.fieldPropertyService.getFieldType(
             this.field.clazz
         ).helpText;
+    }
+
+    private destroyComponent(): void {
+        if (this.componentRef) {
+            this.componentRef.destroy();
+            this.componentRef = null;
+        }
+        this.viewContainerRef.clear();
     }
 }

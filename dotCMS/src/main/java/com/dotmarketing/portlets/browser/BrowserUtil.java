@@ -78,7 +78,7 @@ public class BrowserUtil {
             throws DotDataException, DotSecurityException {
 
         final String  currentHostId = WebAPILocator.getHostWebAPI().getCurrentHost().getIdentifier();
-        return  APILocator.getHostAPI().findByName(currentHostId, user, false);
+        return APILocator.getHostAPI().find(currentHostId, user, false);
     }
 
     private static Optional<Folder> resolveWithFolderHostField(

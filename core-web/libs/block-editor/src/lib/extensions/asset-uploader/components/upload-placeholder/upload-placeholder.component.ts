@@ -2,16 +2,16 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Output, Input } from 
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotSpinnerModule } from '@dotcms/ui';
+import { DotSpinnerComponent } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-upload-placeholder',
     templateUrl: './upload-placeholder.component.html',
     styleUrls: ['./upload-placeholder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ButtonModule, DotSpinnerModule]
+    imports: [ButtonModule, DotSpinnerComponent]
 })
 export class UploadPlaceholderComponent {
-    @Output() cancel = new EventEmitter<boolean>();
+    @Output() canceled = new EventEmitter<boolean>();
     @Input() type: string;
 }

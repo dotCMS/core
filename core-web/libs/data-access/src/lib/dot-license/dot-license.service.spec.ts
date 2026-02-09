@@ -1,12 +1,11 @@
 import { of } from 'rxjs';
 
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed, getTestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { DotLicenseService } from './dot-license.service';
 
 describe('DotLicenseService', () => {
-    let injector: TestBed;
     let dotLicenseService: DotLicenseService;
     let httpMock: HttpTestingController;
 
@@ -15,9 +14,8 @@ describe('DotLicenseService', () => {
             imports: [HttpClientTestingModule],
             providers: [DotLicenseService]
         });
-        injector = getTestBed();
-        dotLicenseService = injector.get(DotLicenseService);
-        httpMock = injector.get(HttpTestingController);
+        dotLicenseService = TestBed.inject(DotLicenseService);
+        httpMock = TestBed.inject(HttpTestingController);
     });
 
     it('should call the BE with correct endpoint url and method', () => {

@@ -35,14 +35,14 @@ describe('ContentTypeFieldsAddRowComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [ContentTypeFieldsAddRowComponent],
             imports: [
                 TooltipModule,
                 BrowserAnimationsModule,
                 ButtonModule,
                 SplitButtonModule,
                 RouterTestingModule,
-                DotMessagePipe
+                DotMessagePipe,
+                ContentTypeFieldsAddRowComponent
             ],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         });

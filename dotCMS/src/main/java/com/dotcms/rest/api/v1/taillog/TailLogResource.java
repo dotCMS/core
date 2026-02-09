@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.taillog;
 
+import static com.dotmarketing.util.FileUtil.isValidFilePath;
+import static com.dotmarketing.util.FileUtil.sanitizeFilePath;
+
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
@@ -30,6 +33,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -44,11 +48,11 @@ public class TailLogResource {
 
     public static final int LINES_PER_PAGE = Config.getIntProperty("TAIL_LOG_LINES_PER_PAGE",10);
 
-    //This is in secodns
+    //This is in seconds
     public static final int KEEP_ALIVE_EVENT_INTERVAL = Config.getIntProperty("KEEP_ALIVE_EVENT_INTERVAL",20);
 
     @GET
-    @Path("/{fileName}/_tail")
+    @Path("/{fileName:.+}/_tail")
     @JSONP
     @NoCache
     @Produces(SseFeature.SERVER_SENT_EVENTS)
@@ -67,8 +71,12 @@ public class TailLogResource {
             return sendError("Empty File name param");
         }
 
+        //This prevents any evil attack attempt allowing for paths including subfolders
+        if(!isValidFilePath(fileName)){
+            return sendError("Invalid File name param");
+        }
 
-        final String sanitizedFileName = FileUtil.sanitizeFileName(fileName);
+        final String sanitizedFileName = sanitizeFilePath(fileName);
         String tailLogLofFolder = Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
         if (!tailLogLofFolder.endsWith(File.separator)) {
             tailLogLofFolder = tailLogLofFolder + File.separator;
@@ -78,7 +86,7 @@ public class TailLogResource {
         final File logFile 	= new File(FileUtil.getAbsolutlePath(tailLogLofFolder + sanitizedFileName));
 
 
-        // if the logFile is outside of the logFolder, die
+        // if the logFile is outside the logFolder, die
         if ( !logFolder.exists() || !logFolder.canRead()
                 ||   !logFile.getCanonicalPath().startsWith(logFolder.getCanonicalPath())) {
 
@@ -184,7 +192,7 @@ public class TailLogResource {
                 int pageNumber = 1;
                 while (!eventOutput.isClosed()) {
                     final String write = listener.getThenDispose();
-                    if (write.length() > 0) {
+                    if (!write.isEmpty()) {
                         final String prepWrite = String.format(
                                 "<p class=\"log page%d\" data-page=\"%d\" data-logNumber=\"%d\" style=\"margin:0\">%s</p>",
                                 pageNumber, pageNumber, logNumber, write);

@@ -1,6 +1,6 @@
-<dot-icon class="field-drag" name="drag_indicator"></dot-icon>
+<dot-icon class="field-drag" name="drag_indicator" />
 
-<dot-icon class="field-icon" name="{{ icon }}"></dot-icon>
+<dot-icon class="field-icon" name="{{ icon }}" />
 <div class="field-properties">
     <div class="field-properties__info-container">
         <span class="info-container__name">{{ field.name }}</span>
@@ -9,12 +9,12 @@
                 (click)="removeItem($event)"
                 id="info-container__delete"
                 styleClass="p-button-text p-button-sm p-button-danger p-button-rounded"
-                icon="pi pi-trash"></p-button>
+                icon="pi pi-trash" />
         }
     </div>
     <div class="field-properties__actions-container">
         @if (field.variable) {
-            <dot-copy-link [label]="field.variable" [copy]="field.variable"></dot-copy-link>
+            <dot-copy-link [label]="field.variable" [copy]="field.variable" />
         }
 
         @if (isSmall) {
@@ -25,7 +25,7 @@
                         [class.open]="open"
                         data-testid="field-info-button"
                         styleClass="p-button-text p-button-sm  p-button-rounded"
-                        icon="pi pi-info-circle"></p-button>
+                        icon="pi pi-info-circle" />
                 }
             </div>
         } @else {

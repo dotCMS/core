@@ -25,11 +25,12 @@ import { IBundle } from '../services/bundle-service';
             width="700"
             header="Add to Bundle"
             appendTo="body">
-            <p-message
-                *ngIf="errorMessage"
-                [text]="errorMessage"
-                style="margin-bottom: 16px; display: block;"
-                severity="error"></p-message>
+            @if (errorMessage) {
+                <p-message
+                    [text]="errorMessage"
+                    style="margin-bottom: 16px; display: block;"
+                    severity="error" />
+            }
             <cw-input-dropdown
                 (onDropDownChange)="setSelectedBundle($event)"
                 (keyup.enter)="addToBundle.emit(selectedBundle)"
@@ -37,7 +38,7 @@ import { IBundle } from '../services/bundle-service';
                 [options]="options"
                 [value]="bundleStores ? bundleStores[0]?.id : null"
                 flex
-                allowAdditions="true"></cw-input-dropdown>
+                allowAdditions="true" />
             <p-footer>
                 <button
                     (click)="cancel.emit()"

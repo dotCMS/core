@@ -2,17 +2,12 @@ import { of, throwError } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotFieldValidationMessageComponent } from '@dotcms/ui';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -37,16 +32,7 @@ describe('ForgotPasswordComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [ForgotPasswordComponent],
-            imports: [
-                BrowserAnimationsModule,
-                FormsModule,
-                ReactiveFormsModule,
-                ButtonModule,
-                InputTextModule,
-                DotFieldValidationMessageComponent,
-                RouterTestingModule
-            ],
+            imports: [ForgotPasswordComponent, BrowserAnimationsModule, RouterTestingModule],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },

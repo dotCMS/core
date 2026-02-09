@@ -1,0 +1,161 @@
+<style>
+    #ogPreview_tag {display: none;}
+
+    .card-wrapper {
+        width: 600px;
+        height: 395px;
+        border: solid 1px #d3d3d3;
+        overflow: hidden;
+    }
+    .img-wrapper {
+        height: 313px;
+        overflow: hidden;
+    }
+    #cardImage {
+        object-fit: cover;
+        object-position: center center;
+        width: 600px;
+        height: 313px;
+    }
+    .text-wrapper {
+        text-align: left;
+        padding: 10px 12px;
+        background-color: #f2f3f5;
+        line-height: 16.8px;
+        height: 83px;
+    }
+    #cardHost {
+        text-transform: uppercase;
+        margin: 0;
+        color: #606770;
+        font-size: 12px;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 16px;
+        margin-bottom: 2px;
+    }
+    #cardTitle {
+        font-weight: bold;
+        margin: 0 0 0.15em;
+        font-size: 16px;
+        color: #1d2129;
+        line-height: 20px;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    }
+    #cardDescription {
+        color: #606770;
+        font-size: 14px;
+        line-height: 20px;
+        word-break: break-word;
+    }
+
+    /* Dialog styles */
+    #ogPreview {
+        border: none;
+        border-radius: 4px;
+        padding: 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    #ogPreview::backdrop {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    .dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid #d3d3d3;
+        background-color: #fff;
+    }
+    .dialog-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #1877f2;
+    }
+    .dialog-close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #606770;
+        padding: 0;
+        line-height: 1;
+    }
+    .dialog-close-btn:hover {
+        color: #1d2129;
+    }
+</style>
+
+<button id="ogPreviewButton">Preview</button>
+
+<dialog id="ogPreview">
+    <div class="dialog-header">
+        <h2 class="dialog-title">Facebook</h2>
+        <button id="ogPreviewCloseBtn" class="dialog-close-btn">&times;</button>
+    </div>
+    <div class="card-wrapper">
+        <div class="img-wrapper"><img id="cardImage" src=""></div>
+        <div class="text-wrapper">
+            <div id="cardHost">$!{host.map.aliases}</div>
+            <div id="cardTitle"></div>
+            <div id="cardDescription"></div>
+        </div>
+    </div>
+</dialog>
+
+<script>
+    function truncateDescription(text, maxLength) {
+        if (text.length > maxLength) {
+            return text.substring(0, maxLength) + "...";
+        }
+        return text;
+    }
+
+    DotCustomFieldApi.ready(() => {
+        const ogTitleField = DotCustomFieldApi.getField('ogTitle');
+        const ogDescriptionField = DotCustomFieldApi.getField('ogDescription');
+        const ogImageField = DotCustomFieldApi.getField('ogImage');
+
+        const dialog = document.getElementById('ogPreview');
+        const previewButton = document.getElementById('ogPreviewButton');
+        const closeButton = document.getElementById('ogPreviewCloseBtn');
+        const cardImage = document.getElementById('cardImage');
+        const cardTitle = document.getElementById('cardTitle');
+        const cardDescription = document.getElementById('cardDescription');
+
+        // Open dialog and populate preview
+        previewButton.addEventListener('click', () => {
+            const ogTitle = ogTitleField.getValue() || '';
+            const ogDescription = ogDescriptionField.getValue() || '';
+
+            // Get image from ogImage field container
+            const imgInode = ogImageField.getValue() || '';
+            const imgUrl = imgInode ? `/dA/${imgInode}/asset/500w/50q/` : '';
+
+            // Truncate description to 92 characters
+            const truncatedDescription = truncateDescription(ogDescription, 92);
+
+            // Update preview card
+            cardImage.src = imgUrl;
+            cardTitle.textContent = ogTitle;
+            cardDescription.textContent = truncatedDescription;
+
+            dialog.showModal();
+        });
+
+        // Close dialog
+        closeButton.addEventListener('click', () => {
+            dialog.close();
+        });
+
+        // Close dialog when clicking outside
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                dialog.close();
+            }
+        });
+    });
+</script>

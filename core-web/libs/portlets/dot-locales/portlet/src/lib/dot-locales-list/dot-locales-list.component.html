@@ -29,15 +29,15 @@
             <tr>
                 <th scope="col" pSortableColumn="isoCode">
                     {{ 'locales.locale' | dm }}
-                    <p-sortIcon field="isoCode"></p-sortIcon>
+                    <p-sortIcon field="isoCode" />
                 </th>
                 <th scope="col" pSortableColumn="language">
                     {{ 'locales.language' | dm }}
-                    <p-sortIcon field="language"></p-sortIcon>
+                    <p-sortIcon field="language" />
                 </th>
                 <th scope="col" pSortableColumn="country">
                     {{ 'locales.country' | dm }}
-                    <p-sortIcon field="country"></p-sortIcon>
+                    <p-sortIcon field="country" />
                 </th>
                 <th scope="col">{{ 'locales.variables' | dm }}</th>
                 <th scope="col" style="width: 40px">{{ 'locales.menu' | dm }}</th>
@@ -55,7 +55,7 @@
                 <td>{{ locale.country }} - {{ locale.countryCode }}</td>
                 <td>{{ locale.variables.count }}/{{ locale.variables.total }}</td>
                 <td>
-                    <dot-action-menu-button [actions]="locale.actions"></dot-action-menu-button>
+                    <dot-action-menu-button [actions]="locale.actions" />
                 </td>
             </tr>
         </ng-template>
@@ -63,4 +63,4 @@
 }
 
 <p-confirmDialog [key]="dialogKey" [style]="{ width: '30vw' }" />
-<p-toast></p-toast>
+<p-toast />

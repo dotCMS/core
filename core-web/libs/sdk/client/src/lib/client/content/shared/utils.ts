@@ -20,7 +20,9 @@ import { CONTENT_TYPE_MAIN_FIELDS } from './const';
  * @returns {string} The sanitized query string.
  */
 export function sanitizeQueryForContentType(query: string, contentType: string): string {
-    return query.replace(/\+([^+:]*?):/g, (original, field) => {
+    // Match field names that start with letter/underscore, followed by alphanumeric/underscore/dot
+    // This excludes Lucene grouping operators like +(...)
+    return query.replace(/\+([a-zA-Z_][a-zA-Z0-9_.]*):/g, (original, field) => {
         return !CONTENT_TYPE_MAIN_FIELDS.includes(field) // Fields that are not content type fields
             ? `+${contentType}.${field}:` // Should have this format: +contentTypeVar.field:
             : original; // Return the field if it is a content type field

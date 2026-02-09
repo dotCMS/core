@@ -17,7 +17,6 @@ export enum SIDEBAR_SIZES {
  *
  */
 @Directive({
-    standalone: true,
     selector: '[dotSidebar]'
 })
 export class DotSidebarDirective {

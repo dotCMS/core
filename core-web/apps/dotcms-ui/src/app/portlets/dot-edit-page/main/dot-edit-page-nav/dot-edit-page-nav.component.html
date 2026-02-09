@@ -1,5 +1,5 @@
 <ul class="edit-page-nav">
-    @for (item of model | async; track item) {
+    @for (item of model | async; track item.label) {
         <li data-testId="menuListItems">
             @if (!item.needsEntepriseLicense) {
                 <a
@@ -14,7 +14,7 @@
                     [routerLink]="!item.disabled && item.link ? ['./' + item.link] : null"
                     class="edit-page-nav__item"
                     pTooltip="{{ item.tooltip }}">
-                    <dot-icon [name]="item.icon" size="32"></dot-icon>
+                    <dot-icon [name]="item.icon" size="32" />
                     <span class="edit-page-nav__item-text" data-testId="menuListItemText">
                         {{ item.label }}
                     </span>
@@ -24,7 +24,7 @@
                     [pTooltip]="'editpage.toolbar.nav.license.enterprise.only' | dm"
                     class="edit-page-nav__item edit-page-nav__item--disabled"
                     tooltipPosition="left">
-                    <dot-icon [name]="item.icon" size="32"></dot-icon>
+                    <dot-icon [name]="item.icon" size="32" />
                     <span class="edit-page-nav__item-text" data-testId="menuListItemText">
                         {{ item.label }}
                     </span>
@@ -33,4 +33,4 @@
         </li>
     }
 </ul>
-<dot-page-tools-seo [currentPageUrlParams]="currentUrlParams" #pageTools></dot-page-tools-seo>
+<dot-page-tools-seo [currentPageUrlParams]="currentUrlParams" #pageTools />

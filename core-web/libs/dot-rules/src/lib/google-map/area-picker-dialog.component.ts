@@ -35,9 +35,13 @@ let mapIdCounter = 1;
             [headerText]="headerText"
             [hidden]="hidden"
             [okEnabled]="true">
-            <div *ngIf="!hidden" class="cw-dialog-body">
-                <div *ngIf="!hidden" class="g-map" id="{{ mapId }}"></div>
-            </div>
+            @if (!hidden) {
+                <div class="cw-dialog-body">
+                    @if (!hidden) {
+                        <div class="g-map" id="{{ mapId }}"></div>
+                    }
+                </div>
+            }
         </cw-modal-dialog>
     `,
     standalone: false

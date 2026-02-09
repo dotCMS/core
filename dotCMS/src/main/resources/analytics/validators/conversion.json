@@ -1,0 +1,27 @@
+{
+  "conversion": {
+    "type": "json_object",
+    "required": true,
+
+    "allowed_attributes": {
+      "name": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  "page": {
+    "type": "json_object",
+    "required": true,
+    "allowed_attributes": {
+      "url": {
+        "type": "string",
+        "required": true
+      },
+      "title": {
+        "type": "string",
+        "required": false
+      }
+    }
+  }
+}

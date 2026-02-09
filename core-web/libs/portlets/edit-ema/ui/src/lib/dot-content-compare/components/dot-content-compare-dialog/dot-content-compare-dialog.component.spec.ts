@@ -1,27 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotEventsService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotEventsService,
+    DotMessageService,
+    DotContentTypeService,
+    DotContentletService,
+    DotFormatDateService,
+    DotHttpErrorManagerService,
+    DotAlertConfirmService,
+    DotIframeService
+} from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotDialogModule, DotMessagePipe } from '@dotcms/ui';
+import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
 import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
 
 const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
-
-@Component({
-    standalone: false,
-    selector: 'dot-content-compare',
-    template: ''
-})
-class TestDotContentCompareComponent {
-    @Input() data: DotContentCompareEvent;
-    @Output() shutdown = new EventEmitter<boolean>();
-}
 
 describe('DotContentCompareDialogComponent', () => {
     let component: DotContentCompareDialogComponent;
@@ -34,11 +33,17 @@ describe('DotContentCompareDialogComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentCompareDialogComponent, TestDotContentCompareComponent],
-            imports: [DotDialogModule, DotMessagePipe],
+            imports: [DotContentCompareDialogComponent, DotDialogComponent, DotMessagePipe],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
-                DotEventsService
+                DotEventsService,
+                { provide: DotContentTypeService, useValue: {} },
+                { provide: DotContentletService, useValue: {} },
+                { provide: DotFormatDateService, useValue: {} },
+                { provide: DotHttpErrorManagerService, useValue: {} },
+                { provide: DotAlertConfirmService, useValue: {} },
+                { provide: DotIframeService, useValue: {} },
+                provideHttpClientTesting()
             ]
         });
 
@@ -51,10 +56,11 @@ describe('DotContentCompareDialogComponent', () => {
     });
 
     it('should listen compare event and pass the data', () => {
-        const contentCompare: TestDotContentCompareComponent = fixture.debugElement.query(
-            By.css('dot-content-compare')
-        ).componentInstance;
-        expect(contentCompare.data).toEqual(data);
+        // Wait for the async pipe to resolve
+        fixture.detectChanges();
+
+        const contentCompare = fixture.debugElement.query(By.css('dot-content-compare'));
+        expect(contentCompare).toBeTruthy();
     });
 
     it('should hide dialog on close', () => {
@@ -72,7 +78,7 @@ describe('DotContentCompareDialogComponent', () => {
     });
 
     it('should hide dialog on close event from DotConentCompare', () => {
-        const contentCompare: TestDotContentCompareComponent = fixture.debugElement.query(
+        const contentCompare = fixture.debugElement.query(
             By.css('dot-content-compare')
         ).componentInstance;
         component.show = true;

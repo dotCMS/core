@@ -113,7 +113,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
             [loading]="state.loading"
             [showRules]="state.showRules"
             [pageId]="pageId"
-            [isContentletHost]="isContentletHost"></cw-rule-engine>
+            [isContentletHost]="isContentletHost" />
     `,
     standalone: false
 })

@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotEventsService } from '@dotcms/data-access';
-import { DotSpinnerModule } from '@dotcms/ui';
+import { DotSpinnerComponent } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from './dot-global-message.component';
 
@@ -13,9 +13,8 @@ describe('DotGlobalMessageComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotGlobalMessageComponent],
-            providers: [DotEventsService],
-            imports: [DotSpinnerModule]
+            imports: [DotGlobalMessageComponent, DotSpinnerComponent],
+            providers: [DotEventsService]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotGlobalMessageComponent);

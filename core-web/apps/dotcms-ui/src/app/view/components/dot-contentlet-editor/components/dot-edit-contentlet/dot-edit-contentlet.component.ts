@@ -1,8 +1,10 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
+import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 
 /**
  * Allow user to edit a contentlet to DotCMS instance
@@ -15,7 +17,7 @@ import { DotContentletEditorService } from '../../services/dot-contentlet-editor
     selector: 'dot-edit-contentlet',
     templateUrl: './dot-edit-contentlet.component.html',
     styleUrls: ['./dot-edit-contentlet.component.scss'],
-    standalone: false
+    imports: [CommonModule, DotContentletWrapperComponent]
 })
 export class DotEditContentletComponent implements OnInit {
     private dotContentletEditorService = inject(DotContentletEditorService);

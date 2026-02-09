@@ -40,7 +40,6 @@ const BLOCK_EDITOR_FIELD = {
 @Component({
     selector: 'dot-app-mock-form',
     imports: [BlockEditorModule],
-    standalone: true,
     template: `
         <form [formGroup]="form">
             <dot-block-editor formControlName="block"></dot-block-editor>

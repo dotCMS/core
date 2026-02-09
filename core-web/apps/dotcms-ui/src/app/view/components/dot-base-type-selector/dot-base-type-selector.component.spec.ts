@@ -36,8 +36,7 @@ describe('DotBaseTypeSelectorComponent', () => {
 
     beforeEach(() => {
         DOTTestBed.configureTestingModule({
-            declarations: [DotBaseTypeSelectorComponent],
-            imports: [BrowserAnimationsModule],
+            imports: [DotBaseTypeSelectorComponent, BrowserAnimationsModule],
             providers: [
                 {
                     provide: DotMessageService,

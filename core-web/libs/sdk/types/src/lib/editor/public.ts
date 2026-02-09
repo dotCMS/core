@@ -150,6 +150,10 @@ export enum DotCMSUVEAction {
      */
     EDIT_CONTENTLET = 'edit-contentlet',
     /**
+     * Tell the editor to register style schemas
+     */
+    REGISTER_STYLE_SCHEMAS = 'register-style-schemas',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'

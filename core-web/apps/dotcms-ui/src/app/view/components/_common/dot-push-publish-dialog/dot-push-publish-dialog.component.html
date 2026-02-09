@@ -8,7 +8,7 @@
         <dot-push-publish-form
             (value)="formData = $event"
             (valid)="updateFormValid($event)"
-            [data]="eventData"></dot-push-publish-form>
+            [data]="eventData" />
     }
     @if (errorMessage) {
         <span class="dot-push-publish-dialog__error">{{ errorMessage }}</span>

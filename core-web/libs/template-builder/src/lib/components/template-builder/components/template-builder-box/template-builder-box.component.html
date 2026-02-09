@@ -1,7 +1,7 @@
 <ng-container
     [ngTemplateOutlet]="
         boxVariant !== templateBuilderSizes.small ? largeTemplate : smallTemplate
-    "></ng-container>
+    " />
 
 <!-- Move to Another place -->
 <p-dialog
@@ -13,7 +13,7 @@
     [modal]="true"
     [dismissableMask]="true"
     data-testId="edit-box-dialog">
-    <ng-container [ngTemplateOutlet]="largeTemplate"></ng-container>
+    <ng-container [ngTemplateOutlet]="largeTemplate" />
 </p-dialog>
 
 <!-- Large -->
@@ -51,14 +51,14 @@
                         (onClick)="editClasses.emit()"
                         data-testId="box-style-class-button"
                         icon="pi pi-palette"
-                        styleClass="p-button-rounded p-button-text p-button-sm"></p-button>
+                        styleClass="p-button-rounded p-button-text p-button-sm" />
                 }
 
                 @if (actions.includes('delete')) {
                     <dotcms-remove-confirm-dialog
                         (deleteConfirmed)="requestColumnDelete()"
                         (deleteRejected)="deleteColumnRejected.emit()"
-                        [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
+                        [skipConfirmation]="items.length === 0" />
                 }
             </div>
         </div>
@@ -88,20 +88,20 @@
                 (onClick)="dialogVisible = true"
                 icon="pi pi-plus"
                 styleClass="p-button-rounded  p-button-text p-button-sm"
-                data-testId="btn-plus-small"></p-button>
+                data-testId="btn-plus-small" />
         }
         @if (actions.includes('edit')) {
             <p-button
                 (onClick)="editClasses.emit()"
                 data-testId="box-style-class-button-small"
                 icon="pi pi-palette"
-                styleClass="p-button-rounded  p-button-text p-button-sm"></p-button>
+                styleClass="p-button-rounded  p-button-text p-button-sm" />
         }
         @if (actions.includes('delete')) {
             <dotcms-remove-confirm-dialog
                 (deleteConfirmed)="deleteColumn.emit()"
                 (deleteRejected)="deleteColumnRejected.emit()"
-                [skipConfirmation]="items.length === 0"></dotcms-remove-confirm-dialog>
+                [skipConfirmation]="items.length === 0" />
         }
     </div>
 </ng-template>

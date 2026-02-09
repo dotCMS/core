@@ -17,8 +17,6 @@ import {
     DotLanguagesService,
     DotMessageService,
     DotPropertiesService,
-    DotUploadFileService,
-    DotAiService,
     DotWorkflowActionsFireService,
     DotContentTypeService
 } from '@dotcms/data-access';
@@ -27,7 +25,7 @@ import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
     DotMessagePipe,
-    DotSpinnerModule
+    DotSpinnerComponent
 } from '@dotcms/ui';
 
 //Editor
@@ -69,7 +67,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DialogModule,
         InputTextareaModule,
         PaginatorModule,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DotBubbleMenuComponent,
         TiptapBubbleMenuDirective,
         DragHandleDirective,
@@ -85,10 +83,8 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         FloatingButtonComponent
     ],
     providers: [
-        DotUploadFileService,
         LoggerService,
         StringUtils,
-        DotAiService,
         ConfirmationService,
         DotPropertiesService,
         DotContentSearchService,
@@ -107,7 +103,7 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         SharedModule,
         BubbleFormComponent,
         DotBlockEditorComponent,
-        DotSpinnerModule,
+        DotSpinnerComponent,
         DragHandleDirective
     ]
 })

@@ -5,7 +5,8 @@ import {
     HostListener,
     Input,
     OnInit,
-    ViewChild
+    ViewChild,
+    inject
 } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
 
@@ -86,11 +87,9 @@ export class SuggestionsComponent implements OnInit {
         e.preventDefault();
     }
 
-    constructor(
-        private suggestionsService: SuggestionsService,
-        private dotLanguagesService: DotLanguagesService,
-        private cd: ChangeDetectorRef
-    ) {}
+    private readonly suggestionsService = inject(SuggestionsService);
+    private readonly dotLanguagesService = inject(DotLanguagesService);
+    private readonly cd = inject(ChangeDetectorRef);
 
     ngOnInit(): void {
         this.initialItems = this.items;

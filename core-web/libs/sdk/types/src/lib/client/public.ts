@@ -91,6 +91,12 @@ export interface DotHttpClient {
      * - Consumers expect DotHttpError with status, statusText, and data properties for proper error handling
      */
     request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
+
+    //  This is my proposal to add this method to the interface. We will need to stream data on AI Gen/Chat
+    // requestStream(
+    //     url: string,
+    //     options?: DotRequestOptions
+    // ): Promise<{ body: ReadableStream<BufferSource>; contentLength: number }>;
 }
 
 /**
@@ -182,6 +188,12 @@ export abstract class BaseHttpClient implements DotHttpClient {
      * - Use createHttpError() helper for HTTP response errors
      */
     abstract request<T = unknown>(url: string, options?: DotRequestOptions): Promise<T>;
+
+    //  This is my proposal to add this method to the class. We will need to stream data on AI Gen/Chat
+    // abstract requestStream(
+    //     url: string,
+    //     options?: DotRequestOptions
+    // ): Promise<{ body: ReadableStream<BufferSource>; contentLength: number }>;
 
     /**
      * Creates a standardized HttpError from HTTP response details.

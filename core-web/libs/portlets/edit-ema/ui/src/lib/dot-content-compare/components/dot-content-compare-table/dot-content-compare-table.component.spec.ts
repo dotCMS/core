@@ -22,6 +22,7 @@ import { MockDotMessageService, mockMatchMedia } from '@dotcms/utils-testing';
 import { DotContentCompareTableComponent } from './dot-content-compare-table.component';
 
 import { DotContentCompareTableData } from '../../store/dot-content-compare.store';
+import { DotContentCompareBlockEditorComponent } from '../dot-content-compare-block-editor/dot-content-compare-block-editor.component';
 import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-compare-preview-field/dot-content-compare-preview-field.component';
 
 @Component({
@@ -286,12 +287,11 @@ describe('DotContentCompareTableComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [
-                TestHostComponent,
-                DotContentCompareTableComponent,
-                DotContentComparePreviewFieldComponent
-            ],
+            declarations: [TestHostComponent],
             imports: [
+                DotContentCompareTableComponent,
+                DotContentComparePreviewFieldComponent,
+                DotContentCompareBlockEditorComponent,
                 TableModule,
                 DropdownModule,
                 SelectButtonModule,
@@ -337,7 +337,7 @@ describe('DotContentCompareTableComponent', () => {
                 de
                     .query(By.css('[data-testId="table-tittle"]'))
                     .nativeElement.innerHTML.replace(/^\s+|\s+$/gm, '')
-            ).toEqual(dotContentCompareTableDataMock.working.identifier);
+            ).toEqual('edit.content.sidebar.history.menu.current');
         });
         it('should show dropdown', () => {
             const dropdown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;

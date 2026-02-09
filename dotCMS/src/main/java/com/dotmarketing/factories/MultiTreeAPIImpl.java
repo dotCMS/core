@@ -8,6 +8,7 @@ import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.rendering.velocity.services.PageLoader;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.VariantAPI;
@@ -40,6 +41,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableList;
@@ -79,6 +81,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             Lazy.of(() -> Config.getBooleanProperty("DELETE_ORPHANED_CONTENTS_FROM_CONTAINER", true));
     private static final String SELECT_MULTITREES_BY_VARIANT = "SELECT * FROM multi_tree WHERE variant_id = ?";
     private final Lazy<MultiTreeCache> multiTreeCache = Lazy.of(CacheLocator::getMultiTreeCache);
+    private static final ObjectMapper jsonMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     private static final String DELETE_ALL_MULTI_TREE_RELATED_TO_IDENTIFIER_SQL =
             "delete from multi_tree where child = ? or parent1 = ? or parent2 = ?";
@@ -101,7 +104,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String UPDATE_MULTI_TREE_PERSONALIZATION = "update multi_tree set personalization = ? where personalization = ?";
     private static final String SELECT_SQL = "select * from multi_tree where parent1 = ? and parent2 = ? and child = ? and  relation_type = ? and personalization = ? and variant_id = ?";
 
-    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id) values (?,?,?,?,?,?,?)  ";
+    private static final String INSERT_SQL = "insert into multi_tree (parent1, parent2, child, relation_type, tree_order, personalization, variant_id, style_properties) values (?,?,?,?,?,?,?,?::jsonb)";
 
     private static final String SELECT_BY_PAGE = "select * from multi_tree where parent1 = ? order by tree_order";
     private static final String SELECT_BY_PAGE_AND_PERSONALIZATION = "select * from multi_tree where parent1 = ? and personalization = ? and variant_id = ? order by tree_order";
@@ -761,10 +764,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 throw new IllegalArgumentException(errorMsg);
             }
 
+            final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
+
             insertParams
                     .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
                             tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(),
-                            copiedMultiTreeVariantId));
+                            copiedMultiTreeVariantId, stylePropertiesJson));
         }
         db.executeBatch(INSERT_SQL, insertParams);
     }
@@ -864,9 +869,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         if (!mTrees.isEmpty()) {
             final List<Params> insertParams = Lists.newArrayList();
             for (final MultiTree tree : mTrees) {
+                final String stylePropertiesJson = serializeStyleProperties(tree.getStyleProperties());
+
                 insertParams
                         .add(new Params(pageId, tree.getContainerAsID(), tree.getContentlet(),
-                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId()));
+                                tree.getRelationType(), tree.getTreeOrder(), tree.getPersonalization(), tree.getVariantId(), stylePropertiesJson));
             }
 
             db.executeBatch(INSERT_SQL, insertParams);
@@ -912,10 +919,30 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         Logger.debug(this, () -> String.format("_dbInsert -> Saving MultiTree: %s", multiTree));
 
-        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage()).addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
-                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder()).addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId()).loadResult();
+        final String stylePropertiesJson = serializeStyleProperties(multiTree.getStyleProperties());
+
+        new DotConnect().setSQL(INSERT_SQL).addParam(multiTree.getHtmlPage())
+                .addParam(multiTree.getContainerAsID()).addParam(multiTree.getContentlet())
+                .addParam(multiTree.getRelationType()).addParam(multiTree.getTreeOrder())
+                .addObject(multiTree.getPersonalization()).addParam(multiTree.getVariantId())
+                .addParam(stylePropertiesJson)
+                .loadResult();
     }
 
+    /**
+     * Serializes styleProperties Map to JSON string for database storage.
+     * Returns null if the map is null or empty.
+     *
+     * @param styleProperties Map of style properties
+     * @return JSON string or null
+     */
+    private String serializeStyleProperties(final Map<String, Object> styleProperties) {
+        return Try.of(() -> UtilMethods.isSet(styleProperties)
+                        ? jsonMapper.writeValueAsString(styleProperties)
+                        : null)
+                .onFailure(e -> Logger.error(this, "Error serializing style properties: " + e.getMessage(), e))
+                .getOrNull();
+    }
 
     /**
      * Update the version_ts of all versions of the HTML Page with the given id. If a MultiTree Object
@@ -1101,13 +1128,13 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
         for (final MultiTree multiTree : multiTrees) {
 
-            Container container   = null;
+            Container container;
             final String    containerId     = multiTree.getContainerAsID();
             final String    personalization = multiTree.getPersonalization();
 
             try {
 
-                container = liveMode?
+                container = liveMode ?
                         containerAPI.getLiveContainerById(containerId, systemUser, false):
                         containerAPI.getWorkingContainerById(containerId, systemUser, false);
 
@@ -1137,7 +1164,9 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
 
                 if (container != null) {
 
-                    myContents.add(new PersonalizedContentlet(multiTree.getContentlet(), personalization, multiTree.getTreeOrder()));
+                    myContents.add(
+                            new PersonalizedContentlet(multiTree.getContentlet(), personalization,
+                                    multiTree.getTreeOrder(), multiTree.getStyleProperties()));
                 }
 
                 pageContents.put(containerId, multiTree.getRelationType(), myContents);

@@ -45,7 +45,6 @@ import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
 import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { PushPublishServiceMock } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
-import { PushPublishEnvSelectorModule } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.module';
 
 const messageServiceMock = new MockDotMessageService({
     'contenttypes.content.push_publish.action.push': 'Push',
@@ -125,7 +124,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     beforeEach(() => {
         pushPublishServiceMock = new PushPublishServiceMock();
         TestBed.configureTestingModule({
-            declarations: [DotPushPublishFormComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
@@ -140,11 +139,12 @@ xdescribe('DotPushPublishFormComponent', () => {
                 ConfirmationService
             ],
             imports: [
+                DotPushPublishFormComponent,
                 AutoFocusModule,
                 FormsModule,
                 CalendarModule,
                 DotDialogModule,
-                PushPublishEnvSelectorModule,
+                PushPublishEnvSelectorComponent,
                 ReactiveFormsModule,
                 DropdownModule,
                 DotFieldValidationMessageComponent,

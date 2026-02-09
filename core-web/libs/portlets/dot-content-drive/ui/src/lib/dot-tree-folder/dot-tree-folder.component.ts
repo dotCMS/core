@@ -17,6 +17,7 @@ import { TreeModule, TreeNodeExpandEvent, TreeNodeCollapseEvent } from 'primeng/
 
 import { DotMessagePipe, FolderNamePipe } from '@dotcms/ui';
 
+import { ALL_FOLDER } from '../shared/constants';
 import {
     DotFolderTreeNodeData,
     DotContentDriveUploadFiles,
@@ -123,6 +124,8 @@ export class DotTreeFolderComponent {
     readonly treeStyleClasses = computed(
         () => `w-full h-full ${this.$showFolderIconOnFirstOnly() ? 'first-only' : 'folder-all'}`
     );
+
+    protected readonly ALL_FOLDER_KEY = ALL_FOLDER.key;
 
     /**
      * @description Set the dropzone as active when the drag enters the dropzone

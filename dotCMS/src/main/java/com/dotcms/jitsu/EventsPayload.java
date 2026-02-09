@@ -3,6 +3,7 @@ package com.dotcms.jitsu;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.json.JSONObject;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public abstract class EventsPayload {
     }
 
 
-    public abstract Iterable<EventPayload> payloads();
+    public abstract Collection<EventPayload> payloads();
 
     public static class EventPayload {
         private JSONObject jsonObject;

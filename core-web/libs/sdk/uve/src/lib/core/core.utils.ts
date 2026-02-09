@@ -1,13 +1,17 @@
 import {
     UVE_MODE,
-    UVEState,
+    UVEEventHandler,
+    UVEEventPayloadMap,
     UVEEventSubscription,
     UVEEventType,
-    UVEEventPayloadMap,
-    UVEEventHandler
+    UVEState
 } from '@dotcms/types';
 
-import { __UVE_EVENTS__, __UVE_EVENT_ERROR_FALLBACK__ } from '../../internal/constants';
+import {
+    __UVE_EVENT_ERROR_FALLBACK__,
+    __UVE_EVENTS__,
+    ANALYTICS_WINDOWS_ACTIVE_KEY
+} from '../../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -108,4 +112,56 @@ export function createUVESubscription<T extends UVEEventType>(
     }
 
     return eventCallback(callback as UVEEventHandler);
+}
+
+/**
+ * Checks if DotCMS Analytics is active by verifying the global window flag.
+ *
+ * This function checks for the presence of the `__dotAnalyticsActive__` flag on the window object,
+ * which is set by the `@dotcms/analytics` SDK when Analytics is successfully initialized.
+ *
+ * This utility can be used in any JavaScript framework (React, Angular, Vue, etc.) to conditionally
+ * enable analytics-related features or data attributes.
+ *
+ * @export
+ * @returns {boolean} true if Analytics is initialized and active, false otherwise
+ *
+ * @example
+ * ```ts
+ * // React example
+ * import { isAnalyticsActive } from '@dotcms/uve/internal';
+ *
+ * function MyComponent() {
+ *   const shouldTrack = isAnalyticsActive();
+ *
+ *   if (shouldTrack) {
+ *     // Add analytics tracking
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Angular example
+ * import { isAnalyticsActive } from '@dotcms/uve/internal';
+ *
+ * if (isAnalyticsActive()) {
+ *   // Apply analytics attributes to elements
+ *   element.setAttribute('data-dot-object', 'contentlet');
+ * }
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Vanilla JavaScript / Any framework
+ * import { isAnalyticsActive } from '@dotcms/uve/internal';
+ *
+ * if (isAnalyticsActive()) {
+ *   console.log('DotCMS Analytics is active');
+ * }
+ * ```
+ */
+export function isAnalyticsActive(): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return typeof window !== 'undefined' && (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] === true;
 }

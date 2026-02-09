@@ -1,8 +1,5 @@
 @if (vm$ | async; as vm) {
-    <p-contextMenu
-        (onHide)="closedActionsContextMenu()"
-        [model]="vm.pages.menuActions"
-        #cm></p-contextMenu>
+    <p-contextMenu (onHide)="closedActionsContextMenu()" [model]="vm.pages.menuActions" #cm />
     <p-table
         (onLazyLoad)="loadPagesLazy($event)"
         (onRowSelect)="onRowSelect($event)"
@@ -47,12 +44,12 @@
                         (onChange)="setPagesLanguage($event.value)"
                         [(ngModel)]="vm.languageIdValue"
                         [options]="vm.languageOptions"
-                        class="dot-pages-listing-header__language-input"></p-dropdown>
+                        class="dot-pages-listing-header__language-input" />
                     <p-checkbox
                         (onChange)="setPagesArchived($event.checked)"
                         [(ngModel)]="vm.showArchivedValue"
                         [binary]="true"
-                        [label]="'Show-Archived' | dm"></p-checkbox>
+                        [label]="'Show-Archived' | dm" />
                 </div>
                 <button
                     (click)="store.getPageTypes()"
@@ -67,26 +64,26 @@
                 <tr>
                     <th pSortableColumn="title" style="width: 25%">
                         {{ 'title' | dm }}
-                        <p-sortIcon field="title"></p-sortIcon>
+                        <p-sortIcon field="title" />
                     </th>
                     <th pSortableColumn="urlMap" style="width: 20%">
                         {{ 'url' | dm }}
-                        <p-sortIcon field="urlMap"></p-sortIcon>
+                        <p-sortIcon field="urlMap" />
                     </th>
                     <th pSortableColumn="contentType" style="width: 12%">
                         {{ 'type' | dm }}
-                        <p-sortIcon field="contentType"></p-sortIcon>
+                        <p-sortIcon field="contentType" />
                     </th>
                     <th pSortableColumn="languageId" style="width: 12%">
                         {{ 'status' | dm }}
-                        <p-sortIcon field="languageId"></p-sortIcon>
+                        <p-sortIcon field="languageId" />
                     </th>
                     <th style="width: 12%">
                         {{ 'Last-Editor' | dm }}
                     </th>
                     <th pSortableColumn="modDate" style="width: 14%">
                         {{ 'Last-Edited' | dm }}
-                        <p-sortIcon field="modDate"></p-sortIcon>
+                        <p-sortIcon field="modDate" />
                     </th>
                     <th style="width: 5%"></th>
                 </tr>
@@ -113,15 +110,11 @@
                 </td>
                 <td>
                     <div class="dot-pages-table__status-field">
-                        <dot-state-icon
-                            [labels]="dotStateLabels"
-                            [state]="rowData"
-                            size="14px"></dot-state-icon>
+                        <dot-state-icon [labels]="dotStateLabels" [state]="rowData" size="14px" />
                         <dot-badge bordered="{true}">
                             {{ vm.languageLabels[rowData['languageId']] }}
                         </dot-badge>
-                        <dot-contentlet-lock-icon
-                            locked="{{ rowData['locked'] }}"></dot-contentlet-lock-icon>
+                        <dot-contentlet-lock-icon locked="{{ rowData['locked'] }}" />
                     </div>
                 </td>
                 <td>
@@ -139,7 +132,7 @@
                         "
                         id="pageActionButton-{{ rowIndex }}"
                         icon="pi pi-ellipsis-v"
-                        styleClass="p-button-rounded p-button-sm p-button-text"></p-button>
+                        styleClass="p-button-rounded p-button-sm p-button-text" />
                 </td>
             </tr>
         </ng-template>

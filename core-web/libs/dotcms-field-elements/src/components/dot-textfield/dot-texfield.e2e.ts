@@ -1,4 +1,5 @@
 import { E2EElement, E2EPage, newE2EPage, EventSpy } from '@stencil/core/testing';
+
 import { dotTestUtil } from '../../utils';
 
 describe('dot-textfield', () => {

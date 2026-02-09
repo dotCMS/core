@@ -1,19 +1,14 @@
 import { DotFolder } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
-import {
-    ALL_FOLDER,
-    buildTreeFolderNodes,
-    createTreeNode,
-    generateAllParentPaths
-} from './tree-folder.utils';
+import { buildTreeFolderNodes, createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 describe('Sidebar Utils', () => {
     describe('ALL_FOLDER constant', () => {
         it('should have correct structure', () => {
             expect(ALL_FOLDER).toEqual({
                 key: 'ALL_FOLDER',
-                label: 'All',
+                label: 'content-drive.all-folder.label',
                 loading: false,
                 data: {
                     type: 'folder',

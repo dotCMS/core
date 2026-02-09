@@ -1,4 +1,5 @@
 import { newE2EPage, E2EPage, E2EElement } from '@stencil/core/testing';
+
 import { dotFormLayoutMock } from '../../../test';
 
 describe('dot-form-column', () => {

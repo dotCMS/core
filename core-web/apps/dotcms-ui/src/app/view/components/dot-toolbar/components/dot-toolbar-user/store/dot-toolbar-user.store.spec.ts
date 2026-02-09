@@ -1,4 +1,5 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -6,6 +7,7 @@ import {
     DotEventsService,
     DotMessageService,
     DotRouterService,
+    DotSystemConfigService,
     DotIframeService
 } from '@dotcms/data-access';
 import {
@@ -19,6 +21,7 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
@@ -60,7 +63,14 @@ describe('DotToolbarUserStore', () => {
                 },
                 { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
-                { provide: LoginService, useClass: LoginServiceMock }
+                { provide: LoginService, useClass: LoginServiceMock },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => ({}) }
+                },
+                GlobalStore,
+                provideHttpClient(),
+                provideHttpClientTesting()
             ]
         });
 
@@ -85,8 +95,8 @@ describe('DotToolbarUserStore', () => {
                 email: mockAuth.loginAsUser.emailAddress,
                 name: mockAuth.loginAsUser.name
             });
-            expect(showLoginAs).toBeFalse();
-            expect(showMyAccount).toBeFalse();
+            expect(showLoginAs).toBe(false);
+            expect(showMyAccount).toBe(false);
         });
     });
 
@@ -120,7 +130,7 @@ describe('DotToolbarUserStore', () => {
         it('should change its state value to false', () => {
             store.showLoginAs(false);
             store.state$.subscribe((state) => {
-                expect(state.showLoginAs).toBeFalse();
+                expect(state.showLoginAs).toBe(false);
             });
         });
     });
@@ -136,7 +146,7 @@ describe('DotToolbarUserStore', () => {
         it('should change its state value to false', () => {
             store.showMyAccount(false);
             store.state$.subscribe((state) => {
-                expect(state.showMyAccount).toBeFalse();
+                expect(state.showMyAccount).toBe(false);
             });
         });
     });

@@ -1,9 +1,15 @@
 import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { SharedModule } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { delay, take } from 'rxjs/operators';
 
 import { DotSessionStorageService, PaginatorService } from '@dotcms/data-access';
 import { DotPageMode, DotPageRenderState, DotPersona } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import {
@@ -11,6 +17,8 @@ import {
     SearchableDropdownComponent
 } from '../_common/searchable-dropdown/component/searchable-dropdown.component';
 import { DotAddPersonaDialogComponent } from '../dot-add-persona-dialog/dot-add-persona-dialog.component';
+import { DotPersonaSelectedItemComponent } from '../dot-persona-selected-item/dot-persona-selected-item.component';
+import { DotPersonaSelectorOptionComponent } from '../dot-persona-selector-option/dot-persona-selector-option.component';
 
 export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
 
@@ -25,7 +33,18 @@ export const DEFAULT_PERSONA_IDENTIFIER_BY_BACKEND = 'modes.persona.no.persona';
     selector: 'dot-persona-selector',
     styleUrls: ['./dot-persona-selector.component.scss'],
     templateUrl: 'dot-persona-selector.component.html',
-    standalone: false
+    imports: [
+        FormsModule,
+        ButtonModule,
+        TooltipModule,
+        SharedModule,
+        DotMessagePipe,
+        SearchableDropdownComponent,
+        DotPersonaSelectedItemComponent,
+        DotPersonaSelectorOptionComponent,
+        DotAddPersonaDialogComponent
+    ],
+    providers: [PaginatorService, IframeOverlayService]
 })
 export class DotPersonaSelectorComponent implements OnInit {
     paginationService = inject(PaginatorService);

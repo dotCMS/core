@@ -21,7 +21,7 @@ import { BundleService, IBundle } from '../services/bundle-service';
             (addToBundle)="addToBundle($event)"
             [bundleStores]="bundleService.bundles$ | async"
             [hidden]="hidden"
-            [errorMessage]="errorMessage | async"></cw-add-to-bundle-dialog-component>
+            [errorMessage]="errorMessage | async" />
     `,
     standalone: false
 })

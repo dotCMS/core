@@ -10,6 +10,7 @@ import com.dotcms.api.client.files.traversal.data.Retriever;
 import com.dotcms.api.client.files.traversal.exception.TraversalTaskException;
 import com.dotcms.api.client.task.TaskProcessor;
 import com.dotcms.api.traversal.TreeNode;
+import com.dotcms.cli.common.DotCliIgnoreFileFilter;
 import com.dotcms.cli.common.HiddenFileFilter;
 import com.dotcms.common.LocalPathStructure;
 import com.dotcms.model.asset.AbstractAssetSync.PushType;
@@ -21,6 +22,7 @@ import com.dotcms.model.asset.FolderSync.Builder;
 import com.dotcms.model.asset.FolderView;
 import com.google.common.base.Strings;
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -90,6 +92,20 @@ public class LocalFolderTraversalTask extends
     }
 
     /**
+     * Returns the appropriate FileFilter based on whether DotCliIgnore is configured.
+     * If DotCliIgnore is present in the task parameters, returns a DotCliIgnoreFileFilter
+     * that filters based on .dotcliignore patterns. Otherwise, returns the default HiddenFileFilter.
+     *
+     * @return FileFilter instance for filtering files during traversal
+     */
+    private FileFilter getFileFilter() {
+        return traversalTaskParams.dotCliIgnore()
+                .map(DotCliIgnoreFileFilter::new)
+                .map(FileFilter.class::cast)
+                .orElse(new HiddenFileFilter());
+    }
+
+    /**
      * Executes the folder traversal task and returns a TreeNode representing the directory tree
      * rooted at the folder specified in the constructor.
      *
@@ -139,7 +155,7 @@ public class LocalFolderTraversalTask extends
 
             List<CompletableFuture<TraverseTaskResult>> futures = new ArrayList<>();
 
-            File[] files = folderOrFile.listFiles(new HiddenFileFilter());
+            File[] files = folderOrFile.listFiles(getFileFilter());
 
             if (files != null) {
 
@@ -213,7 +229,7 @@ public class LocalFolderTraversalTask extends
 
             var assetVersions = AssetVersionsView.builder();
 
-            File[] files = folderOrFile.listFiles(new HiddenFileFilter());
+            File[] files = folderOrFile.listFiles(getFileFilter());
 
             try {
                 // First, retrieving the folder from the remote server

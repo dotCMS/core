@@ -12,7 +12,9 @@ import { DotTag } from '@dotcms/dotcms-models';
  * @export
  * @class DotTagsService
  */
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotTagsService {
     private coreWebService = inject(CoreWebService);
 

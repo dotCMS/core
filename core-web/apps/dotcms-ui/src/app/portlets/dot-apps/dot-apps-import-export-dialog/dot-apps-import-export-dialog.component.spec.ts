@@ -8,6 +8,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
 import { InputTextModule } from 'primeng/inputtext';
+import { PasswordModule } from 'primeng/password';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -18,7 +19,8 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotAutofocusDirective,
-    DotDialogModule,
+    DotDialogComponent,
+    DotFieldRequiredDirective,
     DotMessagePipe,
     DotSafeHtmlPipe
 } from '@dotcms/ui';
@@ -79,14 +81,17 @@ describe('DotAppsImportExportDialogComponent', () => {
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotAppsImportExportDialogComponent, HostTestComponent],
+            declarations: [HostTestComponent],
             imports: [
+                DotAppsImportExportDialogComponent,
                 InputTextModule,
+                PasswordModule,
                 DotAutofocusDirective,
-                DotDialogModule,
+                DotDialogComponent,
                 CommonModule,
                 ReactiveFormsModule,
                 DotSafeHtmlPipe,
+                DotFieldRequiredDirective,
                 DotMessagePipe,
                 HttpClientTestingModule
             ],

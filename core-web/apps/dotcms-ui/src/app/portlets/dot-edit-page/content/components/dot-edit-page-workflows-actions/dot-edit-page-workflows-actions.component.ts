@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,6 +13,8 @@ import {
 } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
+import { MenuModule } from 'primeng/menu';
 
 import { catchError, map, take, tap } from 'rxjs/operators';
 
@@ -37,7 +40,7 @@ import {
     templateUrl: './dot-edit-page-workflows-actions.component.html',
     styleUrls: ['./dot-edit-page-workflows-actions.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [CommonModule, ButtonModule, MenuModule]
 })
 export class DotEditPageWorkflowsActionsComponent implements OnChanges {
     private dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);

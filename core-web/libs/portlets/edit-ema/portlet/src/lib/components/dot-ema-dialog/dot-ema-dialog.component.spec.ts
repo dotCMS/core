@@ -18,6 +18,7 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     DotAlertConfirmService,
+    DotContentletService,
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotIframeService,
@@ -139,6 +140,7 @@ describe('DotEmaDialogComponent', () => {
                 useValue: new MockDotMessageService({})
             },
             mockProvider(DotContentTypeService),
+            mockProvider(DotContentletService),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotAlertConfirmService),
             mockProvider(DotIframeService),

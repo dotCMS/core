@@ -7,7 +7,8 @@ import {
     Input,
     OnDestroy,
     OnInit,
-    Renderer2
+    Renderer2,
+    inject
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -28,10 +29,8 @@ import { Content, Editor, JSONContent } from '@tiptap/core';
 export class EditorDirective implements OnInit, ControlValueAccessor, OnDestroy {
     @Input() editor!: Editor;
 
-    constructor(
-        private el: ElementRef<HTMLElement>,
-        private _renderer: Renderer2
-    ) {}
+    private readonly el = inject(ElementRef<HTMLElement>);
+    private readonly _renderer = inject(Renderer2);
 
     private onChange: (value: Content) => void = () => {
         /** */

@@ -1,5 +1,5 @@
 <div class="row-header">
-    <dot-icon class="row-header__drag" name="drag_handle"></dot-icon>
+    <dot-icon class="row-header__drag" name="drag_handle" />
 </div>
 <div class="row-columns">
     @for (column of fieldRow.columns; track column; let i = $index) {
@@ -16,14 +16,14 @@
                     [pTooltip]="'contenttypes.action.delete' | dm"
                     class="row-header__remove"
                     icon="pi pi-trash"
-                    styleClass="p-button-rounded p-button-text p-button-sm p-button-danger"></p-button>
+                    styleClass="p-button-rounded p-button-text p-button-sm p-button-danger" />
             }
             @for (field of column.fields; track field) {
                 <dot-content-type-field-dragabble-item
                     (remove)="onRemoveField($event)"
                     (edit)="this.editField.emit(field)"
                     [field]="field"
-                    [isSmall]="fieldRow.columns.length > 1"></dot-content-type-field-dragabble-item>
+                    [isSmall]="fieldRow.columns.length > 1" />
             }
         </div>
     }

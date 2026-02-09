@@ -1,3 +1,4 @@
+import { PropValidationInfo } from './props/models';
 import {
     dateValidator,
     dateTimeValidator,
@@ -7,7 +8,6 @@ import {
     timeValidator,
     dateRangeValidator
 } from './props/validators';
-import { PropValidationInfo } from './props/models';
 
 const PROP_VALIDATION_HANDLING = {
     date: dateValidator,
@@ -38,7 +38,7 @@ function validateProp<PropType>(
     propInfo: PropValidationInfo<PropType>,
     validatorType?: string
 ): void {
-    if (!!propInfo.value) {
+    if (propInfo.value) {
         PROP_VALIDATION_HANDLING[validatorType || propInfo.name](propInfo);
     }
 }
