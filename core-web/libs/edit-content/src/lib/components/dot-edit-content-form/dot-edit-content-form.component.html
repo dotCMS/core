@@ -80,107 +80,97 @@
 <!-- Append template to add to the tabs -->
 <ng-template #appendContent>
     <div
-        class="flex items-center w-full min-h-[52px] pr-4"
+        class="flex items-center w-full min-h-[52px] pr-4 gap-4 ml-auto"
         data-testId="edit-content-actions"
         [class.dot-edit-content-actions--sidebar-open]="showSidebar">
         <!-- Left group for lock controls -->
-        <div class="flex items-center gap-4">
-            @if (!$store.isViewingHistoricalVersion()) {
-                @if (canLock) {
-                    <div
-                        class="flex items-center gap-2"
-                        [class.locked]="isContentLocked"
-                        data-testid="content-lock-controls">
-                        <p-toggleSwitch
-                            [ngModel]="isContentLocked"
-                            [disabled]="!canLock"
-                            (onChange)="onContentLockChange($event)"
-                            inputId="lockSwitch"
-                            data-testId="content-lock-switch" />
-                        <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
-                    </div>
-                }
-            }
-        </div>
-
-        <!-- Right group for all other actions -->
-        <div class="flex items-center gap-4 ml-auto">
-            @if ($store.isViewingHistoricalVersion()) {
-                <!-- Historical version actions - only Restore -->
-                <button
-                    pButton
-                    (click)="$store.restoreCurrentHistoricalVersion()"
-                    data-testId="restore-historical-version-button">
-                    {{ 'edit.content.sidebar.history.restore' | dm }}
-                </button>
-                <!-- Compare button hidden as requested -->
-            } @else {
-                <!-- Normal actions -->
-                @if ($showPreviewLink()) {
-                    <button
-                        pButton
-                        class="p-button-link p-button-md"
-                        text="true"
-                        data-testId="preview-button"
-                        (click)="showPreview()">
-                        {{ 'edit.content.preview-link' | dm }}
-                    </button>
-                }
-
-                @if (showWorkflowActions) {
-                    <dot-workflow-actions
-                        data-testId="workflow-actions"
-                        (actionFired)="
-                            fireWorkflowAction({
-                                workflow: $event,
-                                inode: contentlet?.inode,
-                                contentType: contentType.variable,
-                                languageId: currentLocaleId,
-                                identifier: currentIdentifier
-                            })
-                        "
-                        [actions]="actions"
-                        [groupActions]="true" />
-                }
-            }
-
-            @if (!showSidebar) {
-                <!-- Sidebar toggle: only rendered when sidebar is collapsed to avoid white space when open -->
+        @if (!$store.isViewingHistoricalVersion()) {
+            @if (canLock) {
                 <div
-                    class="flex items-center border-l border-gray-300 min-h-[52px] min-w-16 justify-center"
-                    data-testId="sidebar-toggle">
-                    <p-button
-                        [rounded]="true"
-                        [text]="true"
-                        (click)="$store.toggleSidebar()"
-                        [size]="'large'"
-                        data-testId="sidebar-toggle-button">
-                        <svg
-                            class="stroke-current w-6 h-6"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 20 20"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg">
-                            <rect
-                                x="2.70588"
-                                y="3.17659"
-                                width="14.5882"
-                                height="13.6471"
-                                rx="1.17647"
-                                stroke="currentColor"
-                                stroke-width="1.41176" />
-                            <line
-                                x1="12.3528"
-                                y1="16.1223"
-                                x2="12.3528"
-                                y2="3.87797"
-                                stroke="currentColor"
-                                stroke-width="1.88235" />
-                        </svg>
-                    </p-button>
+                    class="flex items-center gap-2"
+                    [class.locked]="isContentLocked"
+                    data-testid="content-lock-controls">
+                    <p-toggleSwitch
+                        [ngModel]="isContentLocked"
+                        [disabled]="!canLock"
+                        (onChange)="onContentLockChange($event)"
+                        inputId="lockSwitch"
+                        data-testId="content-lock-switch" />
+                    <label for="lockSwitch" class="text-sm">{{ lockSwitchLabel | dm }}</label>
                 </div>
             }
-        </div>
+        }
+
+        @if ($store.isViewingHistoricalVersion()) {
+            <!-- Historical version actions - only Restore -->
+            <button
+                pButton
+                (click)="$store.restoreCurrentHistoricalVersion()"
+                data-testId="restore-historical-version-button">
+                {{ 'edit.content.sidebar.history.restore' | dm }}
+            </button>
+            <!-- Compare button hidden as requested -->
+        } @else {
+            <!-- Normal actions -->
+            @if ($showPreviewLink()) {
+                <button pButton [text]="true" data-testId="preview-button" (click)="showPreview()">
+                    {{ 'edit.content.preview-link' | dm }}
+                </button>
+            }
+
+            @if (showWorkflowActions) {
+                <dot-workflow-actions
+                    data-testId="workflow-actions"
+                    (actionFired)="
+                        fireWorkflowAction({
+                            workflow: $event,
+                            inode: contentlet?.inode,
+                            contentType: contentType.variable,
+                            languageId: currentLocaleId,
+                            identifier: currentIdentifier
+                        })
+                    "
+                    [actions]="actions"
+                    [groupActions]="true" />
+            }
+        }
+
+        @if (!showSidebar) {
+            <!-- Sidebar toggle: only rendered when sidebar is collapsed to avoid white space when open -->
+            <div
+                class="flex items-center border-l border-gray-300 min-h-[52px] min-w-16 justify-center"
+                data-testId="sidebar-toggle">
+                <p-button
+                    [rounded]="true"
+                    [text]="true"
+                    (click)="$store.toggleSidebar()"
+                    [size]="'large'"
+                    data-testId="sidebar-toggle-button">
+                    <svg
+                        class="stroke-current w-6 h-6"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <rect
+                            x="2.70588"
+                            y="3.17659"
+                            width="14.5882"
+                            height="13.6471"
+                            rx="1.17647"
+                            stroke="currentColor"
+                            stroke-width="1.41176" />
+                        <line
+                            x1="12.3528"
+                            y1="16.1223"
+                            x2="12.3528"
+                            y2="3.87797"
+                            stroke="currentColor"
+                            stroke-width="1.88235" />
+                    </svg>
+                </p-button>
+            </div>
+        }
     </div>
 </ng-template>

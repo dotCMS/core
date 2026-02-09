@@ -1,5 +1,5 @@
 <div
-    class="dot-file-field__root flex justify-center items-center w-full rounded-md border-[1.5px] border-gray-400 p-2 h-[14.4rem] min-w-[12.5rem]"
+    class="dot-file-field__root flex justify-center items-center w-full rounded-md border-[1.5px] border-[var(--p-inputtext-border-color)] p-2 h-[14.4rem] min-w-[12.5rem]"
     [class.border-dashed]="store.isUploading()"
     [class.dot-file-field__root--empty]="store.isInit()"
     [class.dot-file-field__root--preview]="store.isPreview()"
@@ -7,7 +7,7 @@
     @switch (store.fileStatus()) {
         @case ('init') {
             <div
-                class="dot-file-field__drop-zone border-[1.5px] border-dashed border-gray-500 rounded-md h-full flex-1 overflow-auto mr-2 transition-all duration-200"
+                class="dot-file-field__drop-zone border-[1.5px] border-dashed border-gray-400 rounded-md h-full flex-1 overflow-auto mr-2 transition-all duration-200"
                 [class.dot-file-field__drop-zone--active]="store.dropZoneActive()"
                 [class.pointer-events-none]="$isDisabled()">
                 <input
