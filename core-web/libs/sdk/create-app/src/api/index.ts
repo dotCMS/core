@@ -1,12 +1,9 @@
 import axios from 'axios';
+import chalk from 'chalk';
 import { Ok, type Result, Err } from 'ts-results';
 
 import { DOTCMS_DEMO_SITE, DOTCMS_EMA_CONFIG_API, DOTCMS_TOKEN_API } from '../constants';
-import {
-    FailedToGetDemoSiteIdentifierError,
-    FailedToGetDotcmsTokenError,
-    FailedToSetUpUVEConfig
-} from '../errors';
+import { FailedToGetDemoSiteIdentifierError, FailedToSetUpUVEConfig } from '../errors';
 
 import type {
     DemoSiteResponse,
@@ -27,14 +24,45 @@ export class DotCMSApi {
     }: {
         payload: GetUserTokenRequest;
         url?: string;
-    }): Promise<Result<string, FailedToGetDotcmsTokenError>> {
+    }): Promise<Result<string, string>> {
+        const endpoint = url || this.defaultTokenApi;
+
         try {
-            const endpoint = url || this.defaultTokenApi;
             const res = await axios.post<GetUserTokenResponse>(endpoint, payload);
             return Ok(res.data.entity.token);
         } catch (err) {
-            console.error('dotCMS failed to get token' + JSON.stringify(err));
-            return Err(new FailedToGetDotcmsTokenError());
+            // Provide specific error messages based on error type
+            if (axios.isAxiosError(err)) {
+                if (err.response?.status === 401) {
+                    return Err(
+                        chalk.red('\n❌ Authentication failed\n\n') +
+                            chalk.white('Invalid username or password.\n\n') +
+                            chalk.yellow('Please check your credentials and try again:\n') +
+                            chalk.white('  • Verify your username is correct\n') +
+                            chalk.white('  • Ensure your password is correct\n') +
+                            chalk.white('  • Check if your account is active\n')
+                    );
+                } else if (err.code === 'ECONNREFUSED') {
+                    return Err(
+                        chalk.red('\n❌ Connection refused\n\n') +
+                            chalk.white(`Could not connect to dotCMS at: ${endpoint}\n\n`) +
+                            chalk.yellow('Please verify:\n') +
+                            chalk.white('  • The URL is correct\n') +
+                            chalk.white('  • The dotCMS instance is running\n') +
+                            chalk.white('  • There are no firewall issues\n')
+                    );
+                } else if (err.response) {
+                    return Err(
+                        chalk.red(`\n❌ Server error (${err.response.status})\n\n`) +
+                            chalk.white('The dotCMS server returned an error.\n') +
+                            chalk.gray(`Details: ${err.response.statusText || 'Unknown error'}\n`)
+                    );
+                }
+            }
+            return Err(
+                chalk.red('\n❌ Failed to get authentication token\n\n') +
+                    chalk.gray(err instanceof Error ? err.message : String(err))
+            );
         }
     }
 
