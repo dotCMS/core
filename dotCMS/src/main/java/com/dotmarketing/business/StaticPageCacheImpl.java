@@ -67,7 +67,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
 
     @Override
     public void add(IHTMLPage page, final String pageContent, PageCacheParameters pageCacheParams) {
-        if (UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
+        if (page == null || UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
             return;
         }
 
@@ -85,7 +85,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
     @Override
     public String get(final IHTMLPage page, final PageCacheParameters pageCacheParams) {
 
-        if (UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
+        if (page == null || UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
             return null;
         }
 
@@ -107,7 +107,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
     @Override
     public void remove(IHTMLPage page, PageCacheParameters pageCacheParams) {
 
-        if (UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
+        if (page == null || UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
             return;
         }
 
