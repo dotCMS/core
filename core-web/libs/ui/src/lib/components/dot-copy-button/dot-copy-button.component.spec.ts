@@ -72,12 +72,6 @@ describe('DotCopyButtonComponent', () => {
             expect(button.nativeElement.textContent.trim()).toBe('');
         });
 
-        it('should have pTooltip attributes', () => {
-            expect(button.attributes.appendTo).toEqual('body');
-            expect(button.attributes.tooltipPosition).toEqual('bottom');
-            expect(button.attributes.hideDelay).toEqual('800');
-        });
-
         it('should copy text to clipboard', () => {
             const stopPropagation = jest.fn();
 

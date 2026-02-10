@@ -6,9 +6,11 @@
     [class.pointer-events-none]="disabled">
     <div
         class="flex items-center justify-center w-16 h-16 rounded-full p-4"
-        [style.color]="disabled ? 'var(--text-gray-400)' : 'var(--color-palette-primary-500)'"
+        [style.color]="
+            disabled ? 'var(--field-disabled-color)' : 'var(--color-palette-primary-500)'
+        "
         [style.background-color]="
-            disabled ? 'var(--bg-gray-200)' : 'var(--color-palette-primary-200)'
+            disabled ? 'var(--field-disabled-bgcolor)' : 'var(--color-palette-primary-200)'
         "
         data-testId="ui-message-icon-container">
         <i

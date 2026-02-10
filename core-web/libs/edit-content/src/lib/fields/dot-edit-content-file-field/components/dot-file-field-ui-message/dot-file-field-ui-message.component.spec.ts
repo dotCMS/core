@@ -66,7 +66,7 @@ describe('DotFileFieldUiMessageComponent', () => {
 
         it('should add pointer-events-none class to root element', () => {
             const rootElement = spectator.query(
-                '[data-testid="ui-message-icon-container"]'
+                byTestId('ui-message-icon-container')
             )?.parentElement;
             expect(rootElement).toHaveClass('pointer-events-none');
         });

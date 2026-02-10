@@ -6,17 +6,15 @@
     [pTooltip]="tooltipContent"
     [tooltipPosition]="tooltipPosition()"
     [tooltipOptions]="{
-        showDelay: 100,
-        hideDelay: 100,
+        showDelay: 800,
+        hideDelay: 800,
         escape: false,
         positionStyle: 'absolute',
         appendTo: 'body'
     }"
     size="small"
-    hideDelay="800"
     icon="pi pi-copy"
     data-testid="copy-to-clipboard"
-    type="button-sm"
     variant="text" />
 
 <ng-template #tooltipContent>
