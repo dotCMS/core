@@ -12,7 +12,7 @@ public interface StartupTask {
 	boolean forceRun();
 	
 	/**
-	 * The instructions to execute.
+	 * The code/sql/instructions to execute.
 	 * @throws DotDataException
 	 * @throws DotRuntimeException
 	 */
