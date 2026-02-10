@@ -108,14 +108,20 @@
                     ]
                 },
                 "development": {
-                    "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
-                    "baseHref": "/dotAdmin/",
+                    "deployUrl": "/dotAdmin/",
+                    "outputPath": {
+                        "base": "../../tomcat9/webapps/ROOT/dotAdmin",
+                        "browser": ""
+                    },
+                    "baseHref": "",
                     "optimization": false,
-                    "sourceMap": true,
-                    "namedChunks": true,
+                    "sourceMap": false,
+                    "namedChunks": false,
                     "extractLicenses": false,
                     "fileReplacements": [],
+                    "progress": false,
                     "outputHashing": "none",
+                    "commonChunk": true,
                     "budgets": [],
                     "externalDependencies": ["date-fns/locale"]
                 }
@@ -124,25 +130,15 @@
             "dependsOn": ["^build"]
         },
         "serve": {
-            "continuous": true,
-            "executor": "@angular-devkit/build-angular:dev-server",
             "dependsOn": [],
-
+            "executor": "@angular-devkit/build-angular:dev-server",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
-                "liveReload": true,
+                "hmr": true,
+                "liveReload": false,
                 "watch": true
-            },
-            "configurations": {
-                "production": {
-                    "buildTarget": "dotcms-ui:build:production"
-                },
-                "development": {
-                    "buildTarget": "dotcms-ui:build:development"
-                }
-            },
-            "defaultConfiguration": "development"
+            }
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",

@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 import { catchError, map, pluck } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
-import { DEFAULT_VARIANT_ID, DotPersona, DotPagination } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotPagination, DotPersona } from '@dotcms/dotcms-models';
 import { DotCMSGraphQLPage, DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../shared/consts';
@@ -112,15 +112,10 @@ export class DotPageApiService {
         const payload = {
             identifier: containerIdentifier,
             uuid: containerUUID,
-            contentletsId: [contentletIdentifier],
-            styleProperties: {
-                [contentletIdentifier]: styleProperties
-            }
+            [contentletIdentifier]: styleProperties
         };
 
-        return this.http
-            .post(`/api/v1/page/${pageId}/content`, [payload])
-            .pipe(catchError(() => EMPTY));
+        return this.http.put(`/api/v1/page/${pageId}/styles`, [payload]);
     }
 
     /**

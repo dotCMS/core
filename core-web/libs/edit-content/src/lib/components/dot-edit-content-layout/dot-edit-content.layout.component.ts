@@ -1,16 +1,16 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    effect,
     inject,
     input,
     model,
-    effect,
     output
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
@@ -84,6 +84,7 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         ButtonModule,
         ToastModule,
         MessagesModule,
+        DynamicDialogModule,
         DotEditContentFormComponent,
         DotEditContentSidebarComponent,
         ConfirmDialogModule,

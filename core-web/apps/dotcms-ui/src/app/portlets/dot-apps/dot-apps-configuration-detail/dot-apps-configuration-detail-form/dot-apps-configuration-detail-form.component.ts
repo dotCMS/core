@@ -94,13 +94,15 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
     ngOnInit() {
         const group = {};
 
-        this.$formFields().forEach((field: DotAppsSecret) => {
-            const status = this.resolveFieldStatus(field);
-            group[field.name] = new UntypedFormControl(
-                this.getFieldValue(field, status),
-                field.required && status === FieldStatus.EDITABLE ? Validators.required : null
-            );
-        });
+        this.$formFields()
+            .filter((field: DotAppsSecret) => field.type !== 'HEADING' && field.type !== 'INFO')
+            .forEach((field: DotAppsSecret) => {
+                const status = this.resolveFieldStatus(field);
+                group[field.name] = new UntypedFormControl(
+                    this.getFieldValue(field, status),
+                    field.required && status === FieldStatus.EDITABLE ? Validators.required : null
+                );
+            });
 
         this.myFormGroup = new UntypedFormGroup(group);
 
