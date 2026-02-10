@@ -364,20 +364,22 @@ export class DynamicRouteService {
         let registered = 0;
 
         for (const item of menuItems) {
-            if (item.angular && item.angularModule) {
+            const angularModule = item.initParams?.['angular-module'];
+
+            if (item.angular && angularModule) {
                 const path = this.extractPathFromUrl(item.url);
                 let success = false;
 
-                if (item.angularModule.startsWith('remote:')) {
+                if (angularModule.startsWith('remote:')) {
                     // Remote Module Federation format:
                     // remote:<remoteEntry>|<remoteName>|<exposedModule>
-                    success = this.registerRemoteModuleFromString(path, item.angularModule, {
+                    success = this.registerRemoteModuleFromString(path, angularModule, {
                         portletId: item.id,
                         label: item.label
                     });
                 } else {
                     // Local module format: @dotcms/portlets/my-custom
-                    const loader = ANGULAR_MODULE_REGISTRY[item.angularModule];
+                    const loader = ANGULAR_MODULE_REGISTRY[angularModule];
 
                     if (loader) {
                         success = this.registerRoute({
@@ -391,7 +393,7 @@ export class DynamicRouteService {
                     } else {
                         this.logger.warn(
                             this,
-                            `No module loader registered for '${item.angularModule}' (portlet: ${item.id})`
+                            `No module loader registered for '${angularModule}' (portlet: ${item.id})`
                         );
                     }
                 }

@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Helper for the {@link MenuResource}
@@ -62,9 +63,9 @@ public class MenuHelper implements Serializable {
             String linkName = normalizeLinkName(LanguageUtil.get(locale, PORTLET_KEY_PREFIX + portletId));
             boolean isAngular = isAngular(portlet);
             boolean isAjax = isAjax(portlet);
-            String angularModule = getAngularModule(portlet);
+            Map<String, String> initParams = portlet.getInitParams();
 
-            menuItems.add(new MenuItem(portletId, url, linkName, isAngular, isAjax, angularModule));
+            menuItems.add(new MenuItem(portletId, url, linkName, isAngular, isAjax, initParams));
         }
         return menuItems;
     }

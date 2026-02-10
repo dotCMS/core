@@ -33,7 +33,10 @@ describe('DefaultGuardService', () => {
                     url: '/my-dynamic-portlet',
                     ajax: false,
                     angular: true,
-                    angularModule: 'remote:http://localhost:4201/remoteEntry.js|myPlugin|./Routes'
+                    initParams: {
+                        'angular-module':
+                            'remote:http://localhost:4201/remoteEntry.js|myPlugin|./Routes'
+                    }
                 }
             ]
         }

@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.menu;
 
+import java.util.Map;
+
 /**
  * Created by freddyrodriguez on 18/5/16.
  */
@@ -10,7 +12,7 @@ public class MenuItem {
     private String label;
     private boolean angular = false;
     private boolean isAjax = false;
-    private String angularModule;
+    private Map<String, String> initParams;
 
     /**
      * Generate a Submenu portlet
@@ -21,7 +23,7 @@ public class MenuItem {
      * @param isAjax if the portlet is an BaseRestPortlet portlet
      */
     public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax) {
-        this(id, url, label, isAngular, isAjax, null);
+        this(id, url, label, isAngular, isAjax, Map.of());
     }
 
     /**
@@ -32,15 +34,16 @@ public class MenuItem {
      * @param label         Portlet label
      * @param isAngular     if the portlet is an PortletController portlet
      * @param isAjax        if the portlet is an BaseRestPortlet portlet
-     * @param angularModule the Angular module path for dynamic lazy loading (e.g., "@dotcms/portlets/my-custom")
+     * @param initParams the Angular module path for dynamic lazy loading (e.g., "@dotcms/portlets/my-custom")
      */
-    public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax, String angularModule) {
+    public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax,
+            Map<String, String> initParams) {
         this.url = url;
         this.id = id;
         this.label = label;
         this.angular = isAngular;
         this.isAjax = isAjax;
-        this.angularModule = angularModule;
+        this.initParams = initParams;
     }
 
     /**
@@ -89,7 +92,7 @@ public class MenuItem {
      *
      * @return the Angular module path (e.g., "@dotcms/portlets/my-custom"), or null if not set
      */
-    public String getAngularModule() {
-        return angularModule;
+    public Map<String, String> getInitParams() {
+        return initParams;
     }
 }
