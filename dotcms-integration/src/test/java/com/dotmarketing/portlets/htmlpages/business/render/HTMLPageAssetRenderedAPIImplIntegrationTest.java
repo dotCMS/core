@@ -94,6 +94,10 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     private static User sharedUser;
     private static User sharedAdminUser;
 
+    // Separate user/role without any permissions — used by *ThrowDotSecurityException tests
+    private static Role sharedNoPermsRole;
+    private static User sharedNoPermsUser;
+
     private HttpServletRequest request;
     private Host host;
     private User user;
@@ -140,6 +144,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
         sharedAdminUser = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), sharedAdminUser);
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), sharedAdminUser);
+
+        // Separate no-permissions user/role for security tests
+        sharedNoPermsRole = new RoleDataGen().nextPersisted();
+        sharedNoPermsUser = new UserDataGen().roles(sharedNoPermsRole).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), sharedNoPermsUser);
     }
 
     private void init () throws DotDataException, DotSecurityException {
@@ -561,6 +570,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseHostIdParameterAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(request.getParameter("host_id")).thenReturn(this.host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -583,6 +598,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseHostNameParameterAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getParameter(Host.HOST_VELOCITY_VAR_NAME)).thenReturn(host.getName());
@@ -604,6 +625,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseSessionHostAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(session.getAttribute( WebKeys.CMS_SELECTED_HOST_ID )).thenReturn(host.getIdentifier());
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
@@ -625,6 +652,12 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     @Test(expected = DotSecurityException.class)
     public void shouldUseDefaultHostAndThrowDotSecurityException() throws DotDataException, DotSecurityException {
         init();
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
+
         final PageMode pageMode = PageMode.WORKING;
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
         when(request.getAttribute(WebKeys.CURRENT_HOST)).thenReturn(host);
@@ -648,6 +681,11 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
     public void shouldUseRequestServerNameAndThrowDotSecurityException()
             throws DotDataException, DotSecurityException {
         init(host);
+        // Use no-permissions user to ensure DotSecurityException is thrown
+        role = sharedNoPermsRole;
+        user = sharedNoPermsUser;
+        htmlPageAsset = createPage(APILocator.systemUser(), role, new TemplateDataGen().nextPersisted());
+        when(request.getRequestURI()).thenReturn(htmlPageAsset.getURI());
 
         when(request.getServerName()).thenReturn(host.getHostname());
         final PageMode pageMode = PageMode.WORKING;
