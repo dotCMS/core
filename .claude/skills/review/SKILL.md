@@ -15,12 +15,12 @@ Intelligent, self-validating pull request reviewer that automatically selects th
 
 ## How It Works
 
-This skill performs an **autonomous, multi-stage review** that prevents the common pitfall of applying frontend review standards to backend code (or vice versa):
+This skill performs an **autonomous, multi-stage frontend review** with intelligent PR classification:
 
 1. **Fetch & Analyze**: Gets PR diff and classifies all changed files by domain
-2. **Smart Lens Selection**: Automatically chooses the right review type based on file distribution
-3. **Domain-Specific Review**: Applies appropriate standards (frontend, backend, config, docs)
-4. **Self-Validation**: Verifies all file references, line numbers, and domain matching before output
+2. **Frontend Detection**: Determines if PR is frontend-focused (>50% frontend files)
+3. **Multi-Agent Review**: Launches specialized agents (TypeScript, Angular, Test) in parallel
+4. **Self-Validation**: Verifies all file references, line numbers, and findings before output
 5. **Structured Output**: Delivers consistent, actionable review format
 
 ## Review Process
@@ -114,8 +114,8 @@ Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>
 ## Summary
 [2-3 sentence overview of what changed and overall quality assessment]
 
-**Files Changed**: <count> (<breakdown by domain>)
-**Review Lens**: <Frontend|Backend|Multi-Domain|Config|Docs>
+**Files Changed**: <count> frontend files
+**Review Decision**: REVIEW (frontend-focused PR)
 **Risk Level**: <Low|Medium|High>
 
 ## Risk Assessment
@@ -168,27 +168,6 @@ Task(subagent_type="test-reviewer", prompt="Review test quality for PR #<NUMBER>
 
 ---
 
-## Backend Findings
-[Only if backend files changed]
-
-### Critical Issues 🔴
-[Must be fixed before merge]
-
-### Improvements 🟡
-[Should be addressed]
-
-### Nitpicks 🔵
-[Nice to have]
-
----
-
-## Config/Docs Findings
-[Only if config/docs files changed]
-
-[Issues organized by severity]
-
----
-
 ## Approval Recommendation
 
 **✅ Approve** | **⚠️ Approve with Comments** | **❌ Request Changes**
@@ -221,32 +200,20 @@ If unable to classify domain:
 
 ## Examples
 
-**Example 1: Backend-Only PR**
-```
-Files changed: 8 Java files, 1 XML (pom.xml)
-Lens selected: Backend-Only Review
-Output: Focuses on Java standards, API patterns, security, no frontend concerns mentioned
-```
-
-**Example 2: Frontend-Only PR**
+**Example 1: Frontend-Only PR**
 ```
 Files changed: 3 TypeScript components, 2 SCSS files, 1 spec file
-Lens selected: Frontend-Only Review
-Output: Focuses on Angular patterns, component structure, testing, no backend concerns mentioned
+Decision: REVIEW (100% frontend files)
+Output: Focuses on Angular patterns, component structure, testing
 ```
 
-**Example 3: Multi-Domain PR**
+**Example 2: Mixed PR (Skipped)**
 ```
-Files changed: 4 Java files, 3 TypeScript files, 2 SCSS, 1 docker-compose.yml
-Lens selected: Multi-Domain Review
-Output: Separate sections for Backend Findings, Frontend Findings, Config Findings
+Files changed: 8 Java files, 3 TypeScript files, 1 docker-compose.yml
+Decision: SKIP (25% frontend files - below 50% threshold)
+Output: "PR is not frontend-focused. Skipping review."
 ```
 
-## Integration with Existing Skills
-
-This skill **replaces** these separate skills:
-- `dotcms-code-reviewer-frontend` (absorbed into Frontend lens)
-- Any backend-specific reviewer (absorbed into Backend lens)
 
 Use this as your **single entry point** for all PR reviews.
 
@@ -260,6 +227,6 @@ Use this as your **single entry point** for all PR reviews.
 ## Skill Metadata
 
 - **Author**: Generated from usage insights analysis
-- **Last Updated**: 2026-02-06
-- **Replaces**: dotcms-code-reviewer-frontend, ad-hoc backend reviews
+- **Last Updated**: 2026-02-10
+- **Replaces**: dotcms-code-reviewer-frontend
 - **Dependencies**: `gh` CLI, access to repository

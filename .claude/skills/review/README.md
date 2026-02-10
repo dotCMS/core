@@ -1,38 +1,38 @@
 # Autonomous PR Review Skill
 
-**Single-command, intelligent PR reviews** that automatically detect whether changes are frontend, backend, config, or docs — and apply the appropriate review standards.
+**Single-command, intelligent frontend PR reviews** that automatically detect whether a PR is frontend-focused and launches specialized review agents in parallel.
 
 ## Problem Solved
 
 Previously, you had to:
-- Manually determine if a PR was frontend or backend
-- Run different review skills depending on the domain
-- Deal with Claude applying the wrong review lens (frontend reviewer on backend code)
-- Validate that the review matched the actual changes
+- Manually determine if a PR had enough frontend changes to warrant review
+- Run review agents individually (TypeScript, Angular, Test)
+- Deal with reviewing non-frontend PRs that didn't need frontend analysis
+- Manually consolidate findings from multiple review passes
 
 This skill **automates all of that** with a single command.
 
 ## Quick Start
 
 ```bash
-# Review any PR - automatically selects correct lens
+# Review any PR - automatically detects if frontend-focused
 /review 34535
 /review https://github.com/dotCMS/core/pull/34535
 
 # That's it! The skill will:
 # 1. Fetch the PR diff
-# 2. Classify files (frontend/backend/config/docs)
-# 3. Select the right review lens
-# 4. Apply domain-specific standards
-# 5. Self-validate before showing you results
+# 2. Classify files (frontend vs non-frontend)
+# 3. Determine if frontend-focused (>50% frontend files)
+# 4. Launch specialized agents in parallel (TypeScript, Angular, Test)
+# 5. Consolidate findings and self-validate before showing results
 ```
 
 ## What Makes This Special
 
-### 🎯 Automatic Domain Detection
-- Analyzes file extensions and paths
-- Calculates percentage of changes per domain
-- Selects primary review lens based on data (not guessing)
+### 🎯 Automatic Frontend Detection
+- Analyzes file extensions and paths to identify frontend files
+- Calculates percentage of frontend changes in the PR
+- Only proceeds with review if >50% of files are frontend (TypeScript, Angular, tests, SCSS)
 
 ### 🤖 Specialized Review Agents (NEW!)
 For frontend code, launches **3 parallel expert agents** using registered agent types:
@@ -56,21 +56,15 @@ See [`.claude/agents/README.md`](../../agents/README.md) for agent details.
 Before showing you the review, it verifies:
 - All referenced files actually exist in the diff
 - Line numbers are accurate
-- Review lens matches the actual changes
+- All findings are within frontend domain scope
 - No contradictory recommendations
 - No duplicate findings across agents
 
-### 📊 Multi-Domain Support
-For PRs that touch both frontend and backend:
-- Provides **separate sections** for each domain
-- Applies appropriate standards to each
-- Clear risk assessment per domain
-
-### 🔍 Comprehensive Standards
-- **Frontend** (3 specialized agents):
-  - TypeScript type safety and quality
-  - Modern Angular patterns and architecture
-  - Spectator test patterns and coverage
+### 🔍 Comprehensive Frontend Standards
+Three specialized agents work in parallel to review:
+- **TypeScript Type Safety**: Generics, type quality, null handling, unsafe patterns
+- **Angular Patterns**: Modern syntax (@if/@for), standalone components, lifecycle, subscriptions
+- **Test Quality**: Spectator patterns, coverage, mocking, async handling
 
 ## File Structure
 
@@ -83,9 +77,7 @@ For PRs that touch both frontend and backend:
 │   └── test-reviewer.md              # Test quality specialist
 └── skills/review/
     ├── SKILL.md                      # Main skill logic (orchestrates agents)
-    ├── README.md                     # This file
-    └── references/
-        └── README.md                 # References docs/frontend/ as source of truth
+    └── README.md                     # This file
 ```
 
 ## Examples
@@ -183,7 +175,7 @@ As Claude's capabilities improve, this skill could:
 - Ensure `gh` CLI is authenticated: `gh auth status`
 
 **"Review seems to miss files"**:
-- Large PRs may need focus: "Review backend changes only"
+- Large PRs may need focus: "Focus on TypeScript type issues" or "Review only test files"
 - Check if PR is from a fork (may have permission issues)
 
 **"Wrong lens selected"**:

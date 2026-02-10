@@ -15,12 +15,7 @@ This directory contains **repository-specific skills** for Claude Code that enha
 └── skills/
     └── review/                       # Autonomous PR Review System
         ├── SKILL.md                  # Main skill orchestrator (invokes agents)
-        ├── README.md                 # Skill documentation
-        ├── USAGE_EXAMPLES.md         # Usage examples
-        ├── PERMISSIONS.md            # Permission configuration
-        ├── IMPROVEMENTS.md           # Improvement roadmap
-        └── references/               # Points to docs/frontend/ (source of truth)
-            └── README.md
+        └── README.md                 # Skill documentation
 ```
 
 **Key Architectural Point**:
@@ -32,9 +27,9 @@ This directory contains **repository-specific skills** for Claude Code that enha
 
 ### `/review` - Autonomous PR Review System
 
-Intelligent, multi-agent PR reviewer that automatically:
-1. **Classifies files** by domain (frontend, backend, config, docs)
-2. **Launches specialized agents** in parallel for comprehensive review
+Intelligent, multi-agent frontend PR reviewer that automatically:
+1. **Detects frontend PRs** (>50% TypeScript/Angular/test files)
+2. **Launches specialized agents** in parallel (TypeScript, Angular, Test)
 3. **Consolidates findings** by severity with confidence scores
 4. **Provides actionable feedback** with file:line references and fixes
 
@@ -53,13 +48,10 @@ Intelligent, multi-agent PR reviewer that automatically:
 - 🟣 **Angular Reviewer**: Modern syntax, component architecture, lifecycle (confidence ≥ 75)
 - 🟢 **Test Reviewer**: Spectator patterns, coverage, test quality (confidence ≥ 75)
 
-**Review Domains**:
-- ✅ **Frontend** (79%+ frontend files): Launches 3 specialized agents
-- ✅ **Backend** (80%+ Java files): Java standards, REST API, security
-- ✅ **Multi-Domain**: Separate sections for each domain
-- ✅ **Config/Docs**: Syntax validation, security checks
-
-See [`review/USAGE_EXAMPLES.md`](review/USAGE_EXAMPLES.md) for detailed examples.
+**Review Criteria**:
+- ✅ **Proceeds with review** if >50% of changed files are frontend (TypeScript, Angular, tests, SCSS)
+- ✅ **Skips review** if <50% frontend files (suggests PR is not frontend-focused)
+- ✅ **Launches 3 agents** in parallel for comprehensive coverage
 
 ## 🔄 Local vs Global Skills
 
@@ -68,7 +60,6 @@ See [`review/USAGE_EXAMPLES.md`](review/USAGE_EXAMPLES.md) for detailed examples
 - ✅ Shared with the entire team
 - ✅ Project-specific workflows and patterns
 - ✅ Updated via git commits/PRs
-- ✅ Works for both backend (Java) and frontend (Angular/TypeScript)
 
 **Global Skills** (`~/.claude/skills/`):
 - Personal skills not specific to this project
@@ -112,11 +103,6 @@ Skills are essentially **structured prompts with logic** that guide Claude throu
 ### Test Quality
 [Same structure]
 
-## Backend Findings (if applicable)
-### Critical Issues 🔴
-### Improvements 🟡
-### Nitpicks 🔵
-
 ## Approval Recommendation
 ✅ Approve | ⚠️ Approve with Comments | ❌ Request Changes
 ```
@@ -157,7 +143,6 @@ To add a new skill for this repository:
 Each skill has its own documentation:
 - **`SKILL.md`**: The skill logic (what Claude executes)
 - **`README.md`**: User-facing documentation
-- **`USAGE_EXAMPLES.md`**: Practical examples and use cases
 
 ## 🎨 Skill Design Patterns
 
@@ -225,8 +210,7 @@ To improve existing skills:
 
 - [Claude Code Documentation](https://docs.anthropic.com/claude/docs)
 - [Review Skill Documentation](review/README.md)
-- [Review Agent Documentation](review/agents/README.md)
-- [Usage Examples](review/USAGE_EXAMPLES.md)
+- [Review Agent Documentation](../agents/README.md)
 - [DotCMS CLAUDE.md](../CLAUDE.md) - Project guidelines
 - [Frontend Guidelines](../core-web/CLAUDE.md) - Angular/TypeScript standards
 
