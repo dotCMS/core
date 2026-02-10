@@ -53,10 +53,8 @@
                         }
                     </div>
                 </ng-template>
-                <ng-template #empty>
-                    <span
-                        class="block text-[var(--gray-800)] text-sm bg-[var(--gray-100)]"
-                        data-testid="empty-state">
+                <ng-template #emptymessage>
+                    <span class="block" data-testid="empty-state">
                         {{ 'edit.content.sidebar.activities.empty' | dm }}
                     </span>
                 </ng-template>

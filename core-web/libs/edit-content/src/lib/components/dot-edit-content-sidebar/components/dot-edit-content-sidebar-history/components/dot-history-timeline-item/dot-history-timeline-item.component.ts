@@ -51,7 +51,6 @@ import {
     ],
     providers: [DatePipe],
     templateUrl: './dot-history-timeline-item.component.html',
-    styleUrls: ['./dot-history-timeline-item.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotHistoryTimelineItemComponent {

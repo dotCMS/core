@@ -2,7 +2,7 @@
 <div data-testid="pushpublish-item" class="block w-full">
     <div
         data-testid="content-wrapper"
-        class="flex items-center justify-between gap-2 rounded-lg bg-white p-2 cursor-pointer hover:bg-gray-50 transition-colors min-w-0"
+        class="flex items-center justify-between gap-2 rounded-lg bg-white p-2 mb-3 cursor-pointer hover:bg-gray-100 transition-colors min-w-0"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
         [tooltipOptions]="{
@@ -14,7 +14,7 @@
         }">
         <ng-template #tooltipContent>
             <div class="min-w-0 max-w-[280px] py-1">
-                <ul class="text-gray-600 text-xs space-y-1 list-none pl-0 m-0">
+                <ul class="text-xs space-y-1 list-none pl-0 m-0">
                     <li>{{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}</li>
                     <li>
                         {{ 'edit.content.sidebar.pushpublish.environment' | dm }}:
@@ -27,9 +27,9 @@
             </div>
         </ng-template>
 
-        <div class="flex flex-col gap-2 flex-1 min-w-0">
-            <div class="flex items-center gap-2 flex-wrap">
-                <span data-testid="time-display" class="font-semibold text-gray-900 text-sm">
+        <div class="flex flex-col w-full gap-2 flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+                <span data-testid="time-display" class="font-semibold text-gray-900">
                     {{ item.pushDate | dotRelativeDate }}
                 </span>
                 <div class="flex items-center gap-1" data-testid="bundle-id-section">

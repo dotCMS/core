@@ -1,7 +1,7 @@
 <div data-testid="history-item" class="block pb-5">
     <div
         data-testid="content-wrapper"
-        class="flex items-center justify-between gap-3 rounded-lg bg-white p-3 pt-0 cursor-pointer hover:bg-gray-50 transition-colors"
+        class="flex items-center justify-between gap-3 rounded-lg bg-white p-2 mb-3 cursor-pointer hover:bg-gray-100 transition-colors"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
         [tooltipOptions]="{
@@ -9,17 +9,14 @@
             hideDelay: 100,
             escape: false,
             positionStyle: 'absolute',
-            appendTo: 'body',
-            tooltipStyleClass: 'dot-history-timeline-item-tooltip'
+            appendTo: 'body'
         }">
         <ng-template #tooltipContent>
-            <div class="dot-history-timeline-item-tooltip-content min-w-0 max-w-[280px] py-1">
-                <h4
-                    data-testid="overlay-title"
-                    class="font-semibold text-gray-900 text-sm leading-snug mb-2">
+            <div class="min-w-0 max-w-[280px] py-1">
+                <h4 data-testid="overlay-title" class="font-semibold text-sm leading-snug mb-2">
                     {{ $item().title }}
                 </h4>
-                <ul class="text-gray-600 text-xs space-y-1 list-none pl-0 m-0">
+                <ul class="text-xs space-y-1 list-none pl-0 m-0">
                     <li>{{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}</li>
                     <li>{{ $item().languageFlag }}</li>
                     @if ($item().experimentVariant) {
