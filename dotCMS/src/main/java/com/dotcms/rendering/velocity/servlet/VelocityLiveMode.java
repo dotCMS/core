@@ -207,7 +207,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     }
 
-
     /**
      * Builds PageCacheParameters with all necessary cache keys for page caching.
      *
@@ -222,15 +221,14 @@ public class VelocityLiveMode extends VelocityModeHandler {
         String vanityUrl = request.getAttribute(VANITY_URL_OBJECT) != null
                 ? ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId
                 : "";
+
         String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
         String persona = Try.of(() -> visitorAPI.getVisitor(request, false).get().getPersona().getKeyTag())
                 .getOrElse("");
 
-        final String pageUrl = Try.of(() -> htmlPage.getURI())
-                .getOrElse((String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI));
-
-
+        String pageUrl = Try.of(htmlPage::getURI).getOrElse((String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI));
         Date modDate = htmlPage.getModDate() != null ? htmlPage.getModDate() : new Date(0);
+        String variant = WebAPILocator.getVariantWebAPI().currentVariantId();
 
         return new PageCacheParameters(
                 "pageUrl:" + pageUrl,
@@ -243,7 +241,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 "pageInode:" + htmlPage.getInode(),
                 "modDate:" + modDate.getTime(),
                 "vanity:" + vanityUrl,
-                "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
+                "variant:" + variant
         );
     }
 
