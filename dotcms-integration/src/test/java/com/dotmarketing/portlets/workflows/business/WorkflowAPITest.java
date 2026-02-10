@@ -3775,6 +3775,8 @@ public class WorkflowAPITest extends IntegrationTestBase {
     public void testPushIndexUpdate() throws Exception{
         final WorkflowScheme scheme = addWorkflowScheme(
                 "WorkflowSchemePushIndexUpdate_" + System.currentTimeMillis());
+        addWorkflowStep("PushIndexUpdateStep_" + System.currentTimeMillis(),
+                1, false, false, scheme.getId());
         ContentType pushIndexContentType = null;
         Contentlet contentlet = null;
         final boolean allowManualUnpause =

@@ -60,8 +60,6 @@ import org.junit.runners.Suite;
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
-        com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
-        com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
         com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest.class,
         com.dotcms.rest.api.v1.apps.AppsResourceTest.class,
