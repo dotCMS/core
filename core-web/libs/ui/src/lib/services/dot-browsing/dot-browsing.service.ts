@@ -233,7 +233,7 @@ export class DotBrowsingService {
     #createPaths(path: string): string[] {
         const split = path.split('/').filter((item) => item !== '');
         // Backend may append default route "/index" as last segment; it's a default page, not a folder.
-        if (split.length > 0 && split.at(-1)?.toLowerCase() === 'index') {
+        if (split.length > 0 && split[split.length - 1].toLowerCase() === 'index') {
             split.pop();
         }
 
