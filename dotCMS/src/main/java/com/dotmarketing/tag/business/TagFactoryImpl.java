@@ -496,6 +496,13 @@ public class TagFactoryImpl implements TagFactory {
                 tagCache.removeByInode(cachedTagInode.getInode());
             }
         }
+
+        // Invalidate cache for the old tag state (before mutation) in case hostId changed.
+        // The incoming tag may already have a new hostId, so look up the current DB state.
+        final Tag existingTag = getTagByTagId(tag.getTagId());
+        if ( existingTag != null && !existingTag.getHostId().equals(tag.getHostId()) ) {
+            tagCache.remove(existingTag);
+        }
         tagCache.remove(tag);
 
         //Execute the update
@@ -820,13 +827,17 @@ public class TagFactoryImpl implements TagFactory {
      * @return The effective tag storage ID
      */
     private String getEffectiveTagStorage(Host host) {
+        // System host tags are always stored with host_id = "SYSTEM_HOST"
+        if (host.isSystemHost()) {
+            return Host.SYSTEM_HOST;
+        }
+
         Object tagStorage = host.getMap().get("tagStorage");
-        
-        // If no tagStorage set, use site's own identifier (consistent with TagAPIImpl)
+
         if (!UtilMethods.isSet(tagStorage)) {
             return host.getIdentifier();
         }
-        
+
         return tagStorage.toString();
     }
 
