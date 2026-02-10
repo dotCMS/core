@@ -2,7 +2,6 @@ import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/j
 
 import { DatePipe } from '@angular/common';
 import { fakeAsync, tick } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
@@ -182,20 +181,10 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             expect(historyTimeline).toBeTruthy();
         });
 
-        it('should configure p-scroller with correct properties', () => {
-            const scrollerElement = spectator.query('p-scroller');
-            expect(scrollerElement).toBeTruthy();
-
-            // Verify scrollHeight attribute is set correctly
-            expect(scrollerElement.getAttribute('scrollHeight')).toBe('100%');
-
-            // Access the PrimeNG Scroller component instance to verify properties
-            const scrollerDebugElement = spectator.debugElement.query(By.css('p-scroller'));
-            const scrollerComponent = scrollerDebugElement?.componentInstance;
-
-            expect(scrollerComponent).toBeTruthy();
-            expect(scrollerComponent.itemSize).toBe(83);
-            expect(scrollerComponent.lazy).toBe(true);
+        it('should render timeline container with correct structure', () => {
+            const timelineContainer = spectator.query(byTestId('history-timeline-container'));
+            expect(timelineContainer).toBeTruthy();
+            expect(timelineContainer).toHaveClass('overflow-y-auto');
         });
     });
 
@@ -302,8 +291,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         it('should emit timelineItemAction through template click binding', () => {
             const actionSpy = jest.spyOn(spectator.component.timelineItemAction, 'emit');
 
-            // Since p-scroller doesn't render items in test environment,
-            // we'll test the output emission directly by simulating what the template would do
+            // Test the output emission directly by simulating what the template would do
             spectator.component.timelineItemAction.emit({
                 type: DotHistoryTimelineItemActionType.VIEW,
                 item: mockHistoryItems[0]

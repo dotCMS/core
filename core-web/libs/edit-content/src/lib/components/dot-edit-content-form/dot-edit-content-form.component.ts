@@ -88,7 +88,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  */
 @Component({
     selector: 'dot-edit-content-form',
-
     templateUrl: './dot-edit-content-form.component.html',
     imports: [
         CommonModule,

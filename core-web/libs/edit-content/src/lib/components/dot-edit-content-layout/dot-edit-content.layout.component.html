@@ -17,7 +17,6 @@
         data-testId="edit-content-layout__topBar">
         @if (isEnabledNewContentEditor && showBetaMessage) {
             <p-message
-                class="edit-content-layout__beta-message"
                 [style.animation]="'slideIn 0.15s ease-out'"
                 severity="info"
                 data-testId="edit-content-layout__beta-message">
@@ -30,7 +29,11 @@
                             {{ 'edit.content.layout.back.to.old.edit.content' | dm }}
                             <a
                                 href="#"
-                                (click)="$event.preventDefault(); $store.disableNewContentEditor()"
+                                (click)="
+                                    $event.preventDefault();
+                                    closeMessage('betaMessage');
+                                    $store.disableNewContentEditor()
+                                "
                                 data-testId="edit-content-layout__beta-message-link">
                                 {{ 'edit.content.layout.back.to.old.edit.content.switch' | dm }}
                             </a>
@@ -40,7 +43,7 @@
                         <p-button
                             type="button"
                             icon="pi pi-times"
-                            (onClick)="closeMessage('betaMessage')"
+                            (click)="$event.stopPropagation(); closeMessage('betaMessage')"
                             [rounded]="true"
                             [text]="true"
                             data-testId="edit-content-layout__beta-message-close-button"
@@ -53,7 +56,7 @@
 
         @if (lockWarningMessage) {
             <p-message severity="warn" data-testId="edit-content-layout__lock-warning">
-                <ng-template pTemplate>
+                <ng-template #container>
                     <div class="flex w-full items-center gap-1">
                         <i class="pi pi-exclamation-triangle shrink-0 size-4"></i>
                         <div
@@ -70,7 +73,7 @@
                 [style.animation]="'slideIn 0.15s ease-out'"
                 severity="warn"
                 data-testId="edit-content-layout__select-workflow-warning">
-                <ng-template pTemplate>
+                <ng-template #container>
                     <div class="flex w-full items-center gap-1">
                         <i class="pi pi-info-circle shrink-0 size-4"></i>
                         <div class="flex items-center mr-auto gap-1">
@@ -97,7 +100,7 @@
 
         @if (showInvalidMessage) {
             <p-message severity="error" data-testId="edit-content-layout__lock-warning">
-                <ng-template pTemplate>
+                <ng-template #container>
                     <div class="flex w-full items-center gap-1">
                         <i class="pi pi-times-circle shrink-0 size-4"></i>
                         <div

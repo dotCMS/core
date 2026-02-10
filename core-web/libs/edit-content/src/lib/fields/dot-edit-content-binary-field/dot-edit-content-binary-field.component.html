@@ -8,7 +8,7 @@
         [class.opacity-50]="disabled"
         [class.pointer-events-none]="disabled"
         [class.border-dashed]="vm.status === BinaryFieldStatus.UPLOADING"
-        class="flex h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 rounded-md border border-gray-400 p-2 min-[306px]:flex-row">
+        class="flex h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 rounded-md border border-[var(--p-inputtext-border-color)] p-2 min-[306px]:flex-row">
         @switch (vm.status) {
             @case (BinaryFieldStatus.INIT) {
                 <div

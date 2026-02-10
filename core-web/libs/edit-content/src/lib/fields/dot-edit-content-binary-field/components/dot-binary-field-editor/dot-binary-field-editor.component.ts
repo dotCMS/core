@@ -115,7 +115,8 @@ export class DotBinaryFieldEditorComponent implements OnInit {
         event.stopPropagation();
     }
 
-    ngOnInit(): void {
+    constructor() {
+        // Effects must be called in constructor (injection context)
         effect(() => {
             this._userMonacoOptions.set(this.$userMonacoOptions() ?? {});
         });
@@ -127,6 +128,11 @@ export class DotBinaryFieldEditorComponent implements OnInit {
                 this.setEditorLanguage(fileName);
             }
         });
+    }
+
+    ngOnInit(): void {
+        // Initialize form values with initial input values
+        this.setFormValues();
 
         this.name.valueChanges
             .pipe(debounceTime(350))

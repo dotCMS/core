@@ -2,7 +2,6 @@
 @let contentType = $store.contentType();
 @let activeIndex = $store.activeSidebarTab();
 @let isNew = $store.isNew();
-@let isCopyingLocale = $store.isCopyingLocale();
 
 <!-- Information Component -->
 @let isLoadingInformation = $store.isLoadingInformation();
@@ -134,7 +133,6 @@
             (onClick)="$store.toggleSidebar()"
             [rounded]="true"
             [text]="true"
-            [icon]="'pi pi-arrow-right'"
             size="small"
             ariaLabel="Toggle sidebar"
             data-testId="toggle-button"
