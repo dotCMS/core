@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
@@ -11,7 +12,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { take } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
@@ -48,24 +50,20 @@ export class DotTagsListComponent {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
 
-    private searchTimeout: ReturnType<typeof setTimeout> | null = null;
+    private searchSubject = new Subject<string>();
 
     constructor() {
-        this.destroyRef.onDestroy(() => {
-            if (this.searchTimeout) {
-                clearTimeout(this.searchTimeout);
-            }
-        });
+        this.searchSubject
+            .pipe(
+                debounceTime(300),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe((value) => this.store.setFilter(value));
     }
 
     onSearch(value: string): void {
-        if (this.searchTimeout) {
-            clearTimeout(this.searchTimeout);
-        }
-
-        this.searchTimeout = setTimeout(() => {
-            this.store.setFilter(value);
-        }, 300);
+        this.searchSubject.next(value);
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {
