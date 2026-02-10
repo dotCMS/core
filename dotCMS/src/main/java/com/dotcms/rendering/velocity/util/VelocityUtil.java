@@ -473,7 +473,7 @@ public class VelocityUtil {
         }
 
 		final User user = PortalUtil.getUser(request);
-		if(null != user && PageMode.LIVE.equals(PageMode.get(request)) && LoginMode.BE.equals(LoginMode.get(request))){
+		if (null != user && PageMode.LIVE.equals(PageMode.get(request)) && LoginMode.BE.equals(LoginMode.get(request))) {
 			return false;
 		}
 
