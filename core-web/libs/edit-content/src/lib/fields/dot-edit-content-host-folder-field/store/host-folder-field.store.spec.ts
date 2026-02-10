@@ -2,13 +2,14 @@ import { createFakeEvent } from '@ngneat/spectator';
 import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
+import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
-import { SYSTEM_HOST_NAME, HostFolderFiledStore } from './host-folder-field.store';
+import { HostFolderFiledStore, SYSTEM_HOST_NAME } from './host-folder-field.store';
 
-import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK } from '../../../utils/mocks';
+import { TREE_SELECT_MOCK, TREE_SELECT_SITES_MOCK } from '../../../utils/mocks';
 
 describe('HostFolderFiledStore', () => {
     let store: InstanceType<typeof HostFolderFiledStore>;
@@ -147,6 +148,82 @@ describe('HostFolderFiledStore', () => {
             store.chooseNode(mockItem);
             const value = store.pathToSave();
             expect(value).toBe(null);
+        });
+    });
+
+    describe('Method: loadChildren', () => {
+        const mockFolders: TreeNodeItem[] = [
+            {
+                key: 'folder-1',
+                label: 'demo.dotcms.com/level1/',
+                data: {
+                    id: 'folder-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '/level1/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder'
+            }
+        ];
+
+        it('should call getFoldersTreeNode and update node when node has no children', fakeAsync(() => {
+            service.getFoldersTreeNode.mockReturnValue(
+                of({
+                    parent: {
+                        id: 'parent-1',
+                        hostName: 'demo.dotcms.com',
+                        path: '/level1',
+                        addChildrenAllowed: true
+                    },
+                    folders: mockFolders
+                })
+            );
+
+            const nodeWithoutChildren = {
+                ...TREE_SELECT_MOCK[0].children[0],
+                children: undefined
+            };
+            const event = {
+                originalEvent: createFakeEvent('click'),
+                node: nodeWithoutChildren
+            };
+
+            store.loadChildren(event);
+            tick();
+
+            expect(service.getFoldersTreeNode).toHaveBeenCalledWith('demo.dotcms.com//level1/');
+            expect(nodeWithoutChildren.leaf).toBe(true);
+            expect(nodeWithoutChildren.icon).toBe('pi pi-folder-open');
+            expect(nodeWithoutChildren.children).toEqual(mockFolders);
+            expect(store.nodeExpaned()).toBe(nodeWithoutChildren);
+        }));
+
+        it('should not call getFoldersTreeNode when node already has children (avoids overwriting tree from buildTreeByPaths)', () => {
+            const existingChild: TreeNodeItem = {
+                key: 'existing-child',
+                label: 'Existing',
+                data: {
+                    id: 'existing-child',
+                    hostname: 'demo.dotcms.com',
+                    path: '/level1/existing/',
+                    type: 'folder'
+                },
+                expandedIcon: 'pi pi-folder-open',
+                collapsedIcon: 'pi pi-folder'
+            };
+            const nodeWithChildren = {
+                ...TREE_SELECT_MOCK[0].children[0],
+                children: [existingChild]
+            };
+            const event = {
+                originalEvent: createFakeEvent('click'),
+                node: nodeWithChildren
+            };
+
+            store.loadChildren(event);
+
+            expect(service.getFoldersTreeNode).not.toHaveBeenCalled();
         });
     });
 });

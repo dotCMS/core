@@ -174,10 +174,17 @@ export const HostFolderFiledStore = signalStore(
                 )
             ),
             /**
-             *  Load children of a node
+             * Load children of a node.
+             * Skips the request when the node already has children (e.g. from buildTreeByPaths or
+             * a previous expand) to avoid overwriting the tree and losing items like the parent
+             * injected for pagination.
              */
             loadChildren: rxMethod<TreeNodeSelectItem>(
                 pipe(
+                    filter((event: TreeNodeSelectItem) => {
+                        const { node } = event;
+                        return !Array.isArray(node.children);
+                    }),
                     exhaustMap((event: TreeNodeSelectItem) => {
                         const { node } = event;
                         const { hostname, path } = node.data;
