@@ -144,7 +144,12 @@ export class DotBrowsingService {
                         const next = array[index + 1];
                         const currentParent = node.parent;
                         if (next && currentParent && currentParent.path !== '/') {
-                            next.folders.unshift(this.#createFolderTreeNode(currentParent));
+                            const hasParentFolder = next.folders.some(
+                                (folder) => folder.key === currentParent.id
+                            );
+                            if (!hasParentFolder) {
+                                next.folders.unshift(this.#createFolderTreeNode(currentParent));
+                            }
                         }
                         return node;
                     })

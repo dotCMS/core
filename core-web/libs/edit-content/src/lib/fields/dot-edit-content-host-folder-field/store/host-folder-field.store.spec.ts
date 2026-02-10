@@ -199,6 +199,35 @@ describe('HostFolderFiledStore', () => {
             expect(store.nodeExpaned()).toBe(nodeWithoutChildren);
         }));
 
+        it('should call getFoldersTreeNode when node has empty children array (e.g. from buildTreeByPaths placeholder)', fakeAsync(() => {
+            service.getFoldersTreeNode.mockReturnValue(
+                of({
+                    parent: {
+                        id: 'parent-1',
+                        hostName: 'demo.dotcms.com',
+                        path: '/level1',
+                        addChildrenAllowed: true
+                    },
+                    folders: mockFolders
+                })
+            );
+
+            const nodeWithEmptyChildren = {
+                ...TREE_SELECT_MOCK[0].children[0],
+                children: [] as TreeNodeItem[]
+            };
+            const event = {
+                originalEvent: createFakeEvent('click'),
+                node: nodeWithEmptyChildren
+            };
+
+            store.loadChildren(event);
+            tick();
+
+            expect(service.getFoldersTreeNode).toHaveBeenCalledWith('demo.dotcms.com//level1/');
+            expect(nodeWithEmptyChildren.children).toEqual(mockFolders);
+        }));
+
         it('should not call getFoldersTreeNode when node already has children (avoids overwriting tree from buildTreeByPaths)', () => {
             const existingChild: TreeNodeItem = {
                 key: 'existing-child',
