@@ -17,8 +17,8 @@ import { ColumnComponent } from '../column/column.component';
     selector: 'dotcms-row',
     imports: [ColumnComponent],
     template: `
-        <div class="dot-row-container">
-            <div [class]="customClasses()" data-dot-object="row" data-testid="dotcms-row">
+        <div [class]="customClasses()">
+            <div class="dot-row" data-dot-object="row" data-testid="dotcms-row">
                 @for (column of row.columns; track $index) {
                     <dotcms-column [column]="column" />
                 }
@@ -37,6 +37,6 @@ export class RowComponent implements OnChanges {
     customClasses = signal('');
 
     ngOnChanges() {
-        this.customClasses.set(combineClasses([this.row.styleClass ?? '', 'dot-row']));
+        this.customClasses.set(combineClasses(['dot-row-container', this.row.styleClass ?? '']));
     }
 }

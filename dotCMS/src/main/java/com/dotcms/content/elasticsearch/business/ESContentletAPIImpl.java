@@ -218,6 +218,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -437,6 +438,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
                 user,
                 respectFrontendRoles)) {
+            
+            if (contentlet.isHTMLPage()) {
+                try {
+                    final ContentType contentType = contentlet.getContentType();
+                    final com.dotcms.contenttype.model.field.Field urlField = contentType != null 
+                            ? contentType.fieldMap().get(HTMLPageAssetAPI.URL_FIELD) : null;
+                    
+                    if (urlField != null && UtilMethods.isSet(urlField.defaultValue())) {
+                        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                        if (identifier != null && UtilMethods.isSet(identifier.getAssetName())) {
+                            contentlet.setStringProperty(HTMLPageAssetAPI.URL_FIELD, identifier.getAssetName());
+                        }
+                    }
+                } catch (Exception e) {
+                    Logger.debug(this, "Could not populate URL for HTML Page: " + e.getMessage());
+                }
+            }
+            
             return contentlet;
         } else {
             final String userId = (user == null) ? "Unknown" : user.getUserId();
@@ -8047,6 +8066,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
+            // validate charLimit for Story Block fields
+            if (field.getFieldType().equals(Field.FieldType.STORY_BLOCK_FIELD.toString())
+                    && fieldValue instanceof String) {
+                final Optional<String> charLimitOpt = newField.fieldVariableValue("charLimit");
+                if (charLimitOpt.isPresent()) {
+                    try {
+                        final int charLimit = Integer.parseInt(charLimitOpt.get());
+                        if (charLimit > 0) {
+                            final OptionalInt charCountOpt = StoryBlockUtil.getCharCount((String) fieldValue);
+                            if (charCountOpt.isPresent() && charCountOpt.getAsInt() > charLimit) {
+                                hasError = true;
+                                cveBuilder.addCharLimitField(field, charLimit);
+                                Logger.warn(this, String.format(
+                                        "Story Block Field [%s] exceeds character limit: %d / %d",
+                                        field.getVelocityVarName(), charCountOpt.getAsInt(), charLimit));
+                                continue;
+                            }
+                        }
+                    } catch (final NumberFormatException e) {
+                        Logger.warn(this, String.format(
+                                "Invalid charLimit value '%s' for Story Block Field [%s]",
+                                charLimitOpt.get(), field.getVelocityVarName()));
+                    }
+                }
+            }
+
             // validate binary
             if (isFieldTypeBinary(field)) {
                 this.validateBinary((File) fieldValue, field.getVelocityVarName(), field, contentType);
@@ -8267,6 +8312,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             if (UtilMethods.isSet(url)) {
+                // Extract only the last part after the last /
+                if (url.contains("/")) {
+                    url = url.substring(url.lastIndexOf('/') + 1);
+                }
                 contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
                 Identifier folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
                 String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER) ? "/" + url

@@ -1,11 +1,42 @@
 # Frontend Testing Patterns
 
+This document follows [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): use the `$` prefix for signals in component examples, `setInput()` for inputs, `byTestId()` for selection, and Spectator as the single testing harness.
+
 ## Tech Stack for Testing
-- **Testing Framework**: Jest
-- **Testing Library**: Spectator + @testing-library/angular
-- **Coverage Tool**: Jest Coverage
-- **Mocking**: Jest + ts-mockito
+- **Testing Framework**: Jest or Vitest
+- **Testing Library**: **Spectator (required)** — use `@ngneat/spectator` with `@ngneat/spectator/jest` (Jest) or `@ngneat/spectator` (Vitest)
+- **Coverage Tool**: Jest Coverage / Vitest coverage
+- **Mocking**: Jest/Vitest + `mockProvider` from Spectator; **domain mocks** from `@dotcms/utils-testing` (createFake functions)
 - **E2E**: Playwright (when needed)
+
+## Spectator API (Required)
+
+Always use Spectator with Jest or Vitest via the `@ngneat/spectator` package. Use these APIs consistently:
+
+| API | Use for |
+|-----|--------|
+| **`createComponentFactory`** | Component tests — creates a factory that returns a `Spectator<C>` and the component under test |
+| **`createDirectiveFactory`** | Directive tests — creates a host and the directive instance |
+| **`createPipeFactory`** | Pipe tests — creates a host and the pipe instance |
+| **`createServiceFactory`** | Service tests — creates a Spectator service wrapper |
+| **`createHostFactory`** | Custom host component for testing directives/components in a wrapper |
+| **`createRoutingFactory`** | Component tests with routing (Router, ActivatedRoute) |
+| **`createHttpFactory`** | Service/component tests that need `HttpClient` with built-in mocking |
+| **`Spectator`** | Type the spectator instance: `let spectator: Spectator<MyComponent>` |
+| **`byTestId(testId)`** | Select elements by `data-testid` — **always prefer over CSS selectors** |
+| **`mockProvider(Service, stubs?)`** | Mock a service in `providers` with optional method stubs |
+| **`spectator.detectChanges()`** | Trigger change detection after state/input changes |
+| **`spectator.setInput(name, value)`** | Set a component input (use this; never set inputs directly on the component) |
+| **`spectator.click(selector)`** | Simulate a click on an element (e.g. `spectator.click(byTestId('submit-button'))`) |
+
+### Other Spectator factories
+- **`createDirectiveFactory`** — For directives: creates a host component and the directive instance.
+- **`createPipeFactory`** — For pipes: creates a host and the pipe instance for testing transform logic.
+- **`createHostFactory`** — Custom host component (e.g. for testing a directive or component inside a wrapper).
+- **`createRoutingFactory`** — Component tests with routing: provides `Router`, `ActivatedRoute`, and routing helpers.
+- **`createHttpFactory`** — Service or component tests that need `HttpClient`: provides a mocked HTTP backend.
+
+Use the factory that matches what you are testing (component, directive, pipe, service, routing, HTTP).
 
 ## File Structure and Organization
 - Test files must be named with `.spec.ts` suffix
@@ -29,96 +60,100 @@ component-name/
 ## Spectator Testing Framework (Required)
 
 ### Component Testing Setup
+Use **`createComponentFactory`** to create the factory, the **`Spectator`** class to type the instance, **`mockProvider`** for mocks, **`byTestId`** for selection, **`setInput`** for inputs, **`detectChanges`** after changes, and **`click`** for user actions.
+
 ```typescript
-import { Spectator, createComponentFactory, byTestId } from '@ngneat/spectator';
+import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { mockProvider } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 describe('DotMyComponent', () => {
-    let spectator: Spectator<DotMyComponent>;
-    let mockService: SpyObject<MyService>;
-    
-    const createComponent = createComponentFactory({
-        component: DotMyComponent,
-        imports: [CommonModule, DotTestingModule],
-        providers: [
-            mockProvider(MyService, {
-                getItems: jest.fn().mockReturnValue(of(mockItems)),
-                saveItem: jest.fn().mockReturnValue(of(mockItem)),
-                deleteItem: jest.fn().mockReturnValue(of(void 0))
-            })
-        ]
-    });
-    
-    beforeEach(() => {
-        spectator = createComponent();
-        mockService = spectator.inject(MyService) as SpyObject<MyService>;
-    });
-    
-    // Tests here...
+  let spectator: Spectator<DotMyComponent>;
+  let mockService: SpyObject<MyService>;
+
+  const createComponent = createComponentFactory({
+    component: DotMyComponent,
+    imports: [CommonModule, DotTestingModule],
+    providers: [
+      mockProvider(MyService, {
+        getItems: jest.fn().mockReturnValue(of(mockItems)),
+        saveItem: jest.fn().mockReturnValue(of(mockItem)),
+        deleteItem: jest.fn().mockReturnValue(of(undefined))
+      })
+    ]
+  });
+
+  beforeEach(() => {
+    spectator = createComponent();
+    mockService = spectator.inject(MyService) as SpyObject<MyService>;
+  });
+
+  it('should show items when input is set', () => {
+    spectator.setInput('config', mockConfig);
+    spectator.detectChanges();
+    expect(spectator.query(byTestId('items-list'))).toBeVisible();
+  });
 });
 ```
+
+For **Vitest**, use `@ngneat/spectator` (or the Vitest-specific entry if your version provides one) and replace `jest.fn()` with `vi.fn()`.
 
 ### Required Testing Patterns
 
 #### Input Signal Testing
+Use **`setInput`** to set component inputs and **`detectChanges`** after changes. Component signals follow ANGULAR_STANDARDS (`$` prefix), so the input may be declared as `$config` in the component; use the **binding name** in `setInput` (typically without the `$`).
+
 ```typescript
 it('should update display when input changes', () => {
-    // Arrange
-    const initialConfig = { apiEndpoint: '/api/v1/test', pageSize: 10 };
-    const updatedConfig = { apiEndpoint: '/api/v1/updated', pageSize: 20 };
-    
-    // Act - ALWAYS use setInput for component inputs
-    spectator.setInput('config', initialConfig);
-    spectator.detectChanges();
-    
-    // Assert initial state
-    expect(spectator.component.config()).toEqual(initialConfig);
-    
-    // Act - Update input
-    spectator.setInput('config', updatedConfig);
-    spectator.detectChanges();
-    
-    // Assert updated state
-    expect(spectator.component.config()).toEqual(updatedConfig);
+  const initialConfig = { apiEndpoint: '/api/v1/test', pageSize: 10 };
+  const updatedConfig = { apiEndpoint: '/api/v1/updated', pageSize: 20 };
+
+  spectator.setInput('config', initialConfig);
+  spectator.detectChanges();
+
+  expect(spectator.component.$config()).toEqual(initialConfig);
+
+  spectator.setInput('config', updatedConfig);
+  spectator.detectChanges();
+
+  expect(spectator.component.$config()).toEqual(updatedConfig);
 });
 
-// ❌ NEVER set inputs directly
+// ❌ NEVER set inputs directly on the component
 it('should NOT do this', () => {
-    // This is WRONG - will not trigger change detection
-    spectator.component.config = signal(newConfig);
+  // WRONG — does not trigger change detection; use setInput instead
+  spectator.component.$config = signal(newConfig);
 });
 ```
 
 #### Output Signal Testing
+Use **`click`** with **`byTestId`** to trigger the action; assert on the output emit (component uses `$` prefix for outputs per ANGULAR_STANDARDS).
+
 ```typescript
 it('should emit output when item is selected', () => {
-    // Arrange
-    const item = mockItems[0];
-    const itemSelectedSpy = jest.spyOn(spectator.component.itemSelected, 'emit');
-    
-    // Act
-    spectator.click(byTestId(`item-${item.id}`));
-    
-    // Assert
-    expect(itemSelectedSpy).toHaveBeenCalledWith(item);
+  const item = mockItems[0];
+  const emitSpy = jest.spyOn(spectator.component.$itemSelected, 'emit');
+
+  spectator.click(byTestId(`item-${item.id}`));
+
+  expect(emitSpy).toHaveBeenCalledWith(item);
 });
 ```
 
 #### User Interaction Testing
+Use **`click`**, **`typeInElement`**, and **`byTestId`** to simulate user actions; call **`detectChanges`** when needed after async or state updates.
+
 ```typescript
 it('should handle user interactions', () => {
-    // ✅ Test user interactions, not implementation details
-    spectator.click(byTestId('submit-button'));
-    expect(spectator.query(byTestId('success-message'))).toBeVisible();
-    
-    // ✅ Test form inputs
-    spectator.typeInElement('test value', byTestId('name-input'));
-    expect(spectator.query(byTestId('name-input'))).toHaveValue('test value');
-    
-    // ✅ Test dropdown selection
-    spectator.selectOption(byTestId('status-dropdown'), 'active');
-    expect(spectator.query(byTestId('status-dropdown'))).toHaveValue('active');
+  spectator.click(byTestId('submit-button'));
+  spectator.detectChanges();
+  expect(spectator.query(byTestId('success-message'))).toBeVisible();
+
+  spectator.typeInElement('test value', byTestId('name-input'));
+  expect(spectator.query(byTestId('name-input'))).toHaveValue('test value');
+
+  spectator.selectOption(byTestId('status-dropdown'), 'active');
+  expect(spectator.query(byTestId('status-dropdown'))).toHaveValue('active');
 });
 ```
 
@@ -170,8 +205,10 @@ data-testid="[what-it-is]-[what-it-does]"
 - **Dialogs**: `data-testid="confirmation-dialog"`, `data-testid="delete-dialog"`
 
 ### Data-TestId Usage (Required)
+Use the **`byTestId(testId)`** function to select elements by `data-testid`. Do not rely on CSS classes or tag names for behavior tests.
+
 ```typescript
-// ✅ ALWAYS use data-testid for element selection
+// ✅ ALWAYS use byTestId for element selection
 const button = spectator.query(byTestId('submit-button'));
 const input = spectator.query(byTestId('name-input'));
 const listItem = spectator.query(byTestId('item-123'));
@@ -182,191 +219,174 @@ const deleteButton = spectator.query(byTestId('delete-button'));
 const confirmDialog = spectator.query(byTestId('confirm-dialog'));
 
 // ❌ Don't use generic selectors
-const button = spectator.query('button'); // Too generic
-const input = spectator.query('.my-input'); // CSS class coupling
+const button = spectator.query('button');       // Too generic
+const input = spectator.query('.my-input');     // CSS class coupling
 ```
 
 ### Component Template with Test IDs
+Templates should expose `data-testid` on interactive and assertable elements so tests can use **`byTestId`**.
+
 ```typescript
 @Component({
-    template: `
-        <form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
-            <input 
-                formControlName="name"
-                [data-testid]="'name-input'"
-                placeholder="Enter name"
-            />
-            
-            <select 
-                formControlName="status"
-                [data-testid]="'status-dropdown'"
-            >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-            
-            <button 
-                type="submit"
-                [disabled]="!formGroup.valid"
-                [data-testid]="'submit-button'"
-            >
-                Submit
-            </button>
-            
-            @if (showSuccess) {
-                <div [data-testid]="'success-message'">
-                    Successfully saved!
-                </div>
-            }
-        </form>
-    `
+  selector: 'dot-form',
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './dot-form.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFormComponent {
-    // Component implementation
+  readonly formGroup = this.fb.group({ name: [''], status: ['active'] });
+  readonly $showSuccess = signal(false);
+  // ...
 }
 ```
+
+Template (`.html`): use `[data-testid]` on inputs, buttons, and messages.
 
 ## State Testing Patterns
 
 ### Signal State Testing
+Component state signals use the `$` prefix per ANGULAR_STANDARDS. Use **`click`** to trigger actions and **`detectChanges`** to flush updates.
+
 ```typescript
 it('should manage loading state correctly', () => {
-    // Assert initial state
-    expect(spectator.component.loading()).toBe(false);
-    
-    // Trigger loading
-    spectator.click(byTestId('load-button'));
-    
-    // Assert loading state
-    expect(spectator.component.loading()).toBe(true);
-    expect(spectator.query(byTestId('loading-indicator'))).toBeVisible();
-    
-    // Wait for completion
-    spectator.detectChanges();
-    
-    // Assert completed state
-    expect(spectator.component.loading()).toBe(false);
-    expect(spectator.query(byTestId('loading-indicator'))).not.toBeVisible();
+  expect(spectator.component.$loading()).toBe(false);
+
+  spectator.click(byTestId('load-button'));
+  spectator.detectChanges();
+
+  expect(spectator.component.$loading()).toBe(true);
+  expect(spectator.query(byTestId('loading-indicator'))).toBeVisible();
+
+  spectator.detectChanges(); // after async completes
+
+  expect(spectator.component.$loading()).toBe(false);
+  expect(spectator.query(byTestId('loading-indicator'))).not.toBeVisible();
 });
 
 it('should handle error states', () => {
-    // Arrange - Mock service to return error
-    mockService.getItems.mockReturnValue(throwError(() => new Error('API Error')));
-    
-    // Act
-    spectator.click(byTestId('load-button'));
-    spectator.detectChanges();
-    
-    // Assert error state
-    expect(spectator.component.error()).toBe('Failed to load items');
-    expect(spectator.query(byTestId('error-message'))).toBeVisible();
+  mockService.getItems.mockReturnValue(throwError(() => new Error('API Error')));
+
+  spectator.click(byTestId('load-button'));
+  spectator.detectChanges();
+
+  expect(spectator.component.$error()).toBe('Failed to load items');
+  expect(spectator.query(byTestId('error-message'))).toBeVisible();
 });
 ```
 
 ### Computed Signal Testing
+Use **`setInput`** for inputs that drive computed state; for internal state signals (e.g. when testing store-less components), set the signal only when not exposed as an input. Prefer testing computed results via user-visible output (e.g. list length, visible rows).
+
 ```typescript
 it('should compute filtered items correctly', () => {
-    // Arrange
-    const items: MyItem[] = [
-        { id: '1', name: 'Apple', status: 'active' },
-        { id: '2', name: 'Banana', status: 'inactive' },
-        { id: '3', name: 'Cherry', status: 'active' }
-    ];
-    
-    spectator.component.items.set(items);
-    
-    // Act - Set filter
-    spectator.component.statusFilter.set('active');
-    
-    // Assert computed result
-    const filteredItems = spectator.component.filteredItems();
-    expect(filteredItems).toHaveLength(2);
-    expect(filteredItems.map(i => i.name)).toEqual(['Apple', 'Cherry']);
+  const items: MyItem[] = [
+    { id: '1', name: 'Apple', status: 'active' },
+    { id: '2', name: 'Banana', status: 'inactive' },
+    { id: '3', name: 'Cherry', status: 'active' }
+  ];
+
+  spectator.setInput('items', items);
+  spectator.setInput('statusFilter', 'active');
+  spectator.detectChanges();
+
+  const filteredItems = spectator.component.$filteredItems();
+  expect(filteredItems).toHaveLength(2);
+  expect(filteredItems.map((i: MyItem) => i.name)).toEqual(['Apple', 'Cherry']);
 });
 ```
 
 ## Service Testing Patterns
 
-### Service Mock Setup
+### Using `createServiceFactory` (Preferred)
+Use **`createServiceFactory`** from Spectator for service tests so you get a typed **`SpectatorService<MyService>`** and consistent setup with **`mockProvider`**.
+
 ```typescript
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { mockProvider } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
+import { MyService } from './my.service';
+import { HttpClient } from '@angular/common/http';
+
 describe('MyService', () => {
-    let service: MyService;
-    let httpMock: SpyObject<HttpClient>;
-    
-    beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [
-                MyService,
-                mockProvider(HttpClient)
-            ]
-        });
-        
-        service = TestBed.inject(MyService);
-        httpMock = TestBed.inject(HttpClient) as SpyObject<HttpClient>;
+  let spectator: SpectatorService<MyService>;
+  let httpMock: SpyObject<HttpClient>;
+
+  const createService = createServiceFactory({
+    service: MyService,
+    mocks: [HttpClient]
+  });
+
+  beforeEach(() => {
+    spectator = createService();
+    httpMock = spectator.inject(HttpClient) as SpyObject<HttpClient>;
+  });
+
+  it('should get items from API', () => {
+    const mockResponse = [mockItem1, mockItem2];
+    httpMock.get.mockReturnValue(of(mockResponse));
+
+    let result: MyItem[] = [];
+    spectator.service.getItems().subscribe((items) => (result = items));
+
+    expect(httpMock.get).toHaveBeenCalledWith('/api/v1/items');
+    expect(result).toEqual(mockResponse);
+  });
+
+  it('should handle API errors', () => {
+    const errorResponse = new Error('API Error');
+    httpMock.get.mockReturnValue(throwError(() => errorResponse));
+
+    let error: unknown;
+    spectator.service.getItems().subscribe({
+      next: () => {},
+      error: (err: unknown) => (error = err)
     });
-    
-    it('should get items from API', () => {
-        // Arrange
-        const mockResponse = [mockItem1, mockItem2];
-        httpMock.get.mockReturnValue(of(mockResponse));
-        
-        // Act
-        let result: MyItem[] = [];
-        service.getItems().subscribe(items => result = items);
-        
-        // Assert
-        expect(httpMock.get).toHaveBeenCalledWith('/api/v1/items');
-        expect(result).toEqual(mockResponse);
-    });
-    
-    it('should handle API errors', () => {
-        // Arrange
-        const errorResponse = new Error('API Error');
-        httpMock.get.mockReturnValue(throwError(() => errorResponse));
-        
-        // Act
-        let error: any;
-        service.getItems().subscribe({
-            next: () => {},
-            error: (err) => error = err
-        });
-        
-        // Assert
-        expect(error).toBe(errorResponse);
-        expect(service.error()).toBe('Failed to load items');
-    });
+
+    expect(error).toBe(errorResponse);
+    expect(spectator.service.$error()).toBe('Failed to load items');
+  });
+});
+```
+
+### Alternative: TestBed + mockProvider
+When not using `createServiceFactory`, still use **`mockProvider`** for dependencies:
+
+```typescript
+beforeEach(() => {
+  TestBed.configureTestingModule({
+    providers: [MyService, mockProvider(HttpClient, { get: jest.fn().mockReturnValue(of([])) })]
+  });
+  service = TestBed.inject(MyService);
 });
 ```
 
 ## CSS Class Testing
 
 ### Class Assertion Pattern
+Use **`detectChanges`** after changing state so the template updates. Use **separate string arguments** for `toHaveClass` (per ANGULAR_STANDARDS). Component signals use `$` prefix.
+
 ```typescript
 it('should apply correct CSS classes', () => {
-    // ✅ Test multiple classes with separate string arguments
-    const icon = spectator.query(byTestId('status-icon'));
-    expect(icon).toHaveClass('pi', 'pi-check');
-    
-    // ✅ Test conditional classes
-    spectator.component.isActive.set(true);
-    spectator.detectChanges();
-    
-    const item = spectator.query(byTestId('item-card'));
-    expect(item).toHaveClass('item-card', 'item-card--active');
-    
-    // ✅ Test class removal
-    spectator.component.isActive.set(false);
-    spectator.detectChanges();
-    
-    expect(item).toHaveClass('item-card');
-    expect(item).not.toHaveClass('item-card--active');
+  const icon = spectator.query(byTestId('status-icon'));
+  expect(icon).toHaveClass('pi', 'pi-check');
+
+  spectator.component.$isActive.set(true);
+  spectator.detectChanges();
+
+  const item = spectator.query(byTestId('item-card'));
+  expect(item).toHaveClass('item-card', 'item-card--active');
+
+  spectator.component.$isActive.set(false);
+  spectator.detectChanges();
+
+  expect(item).toHaveClass('item-card');
+  expect(item).not.toHaveClass('item-card--active');
 });
 
 // ❌ Don't use object notation for class testing
 it('should NOT test classes like this', () => {
-    const element = spectator.query(byTestId('element'));
-    // This is WRONG
-    expect(element).toHaveClass({ 'pi': true, 'pi-check': true });
+  const element = spectator.query(byTestId('element'));
+  expect(element).toHaveClass({ pi: true, 'pi-check': true }); // WRONG
 });
 ```
 
@@ -409,97 +429,127 @@ it('should handle form submission', () => {
 ## Async Testing Patterns
 
 ### Observable Testing
+Use **`click`** to trigger async work, **`detectChanges`** after awaiting, and component signals with `$` prefix.
+
 ```typescript
 it('should handle async operations', async () => {
-    // Arrange
-    const loadingPromise = new Promise(resolve => setTimeout(resolve, 100));
-    mockService.getItems.mockReturnValue(from(loadingPromise).pipe(
-        map(() => mockItems)
-    ));
-    
-    // Act
-    spectator.click(byTestId('load-button'));
-    
-    // Assert loading state
-    expect(spectator.component.loading()).toBe(true);
-    expect(spectator.query(byTestId('loading-indicator'))).toBeVisible();
-    
-    // Wait for async operation
-    await loadingPromise;
-    spectator.detectChanges();
-    
-    // Assert completed state
-    expect(spectator.component.loading()).toBe(false);
-    expect(spectator.query(byTestId('loading-indicator'))).not.toBeVisible();
-    expect(spectator.component.items()).toEqual(mockItems);
+  const loadingPromise = new Promise<void>((resolve) => setTimeout(resolve, 100));
+  mockService.getItems.mockReturnValue(
+    from(loadingPromise).pipe(map(() => mockItems))
+  );
+
+  spectator.click(byTestId('load-button'));
+
+  expect(spectator.component.$loading()).toBe(true);
+  expect(spectator.query(byTestId('loading-indicator'))).toBeVisible();
+
+  await loadingPromise;
+  spectator.detectChanges();
+
+  expect(spectator.component.$loading()).toBe(false);
+  expect(spectator.query(byTestId('loading-indicator'))).not.toBeVisible();
+  expect(spectator.component.$items()).toEqual(mockItems);
 });
 ```
 
 ## Integration Testing Patterns
 
 ### Component Integration Testing
+Use **`createComponentFactory`**, **`Spectator`**, **`mockProvider`**, **`byTestId`**, **`click`**, and **`detectChanges`** for integration tests.
+
 ```typescript
 describe('DotFeatureContainer Integration', () => {
-    let spectator: Spectator<DotFeatureContainerComponent>;
-    
-    const createComponent = createComponentFactory({
-        component: DotFeatureContainerComponent,
-        imports: [
-            CommonModule,
-            DotTestingModule,
-            DotFeatureListComponent,
-            DotFeatureDetailsComponent
-        ],
-        providers: [
-            mockProvider(FeatureService, {
-                getItems: jest.fn().mockReturnValue(of(mockItems))
-            })
-        ]
-    });
-    
-    beforeEach(() => {
-        spectator = createComponent();
-    });
-    
-    it('should handle full user workflow', () => {
-        // Load items
-        expect(spectator.queryAll(byTestId('item-card'))).toHaveLength(mockItems.length);
-        
-        // Select item
-        spectator.click(byTestId('item-1'));
-        expect(spectator.query(byTestId('item-details'))).toBeVisible();
-        
-        // Edit item
-        spectator.click(byTestId('edit-button'));
-        spectator.typeInElement('Updated Name', byTestId('name-input'));
-        spectator.click(byTestId('save-button'));
-        
-        // Verify update
-        expect(spectator.query(byTestId('item-1'))).toContainText('Updated Name');
-    });
+  let spectator: Spectator<DotFeatureContainerComponent>;
+
+  const createComponent = createComponentFactory({
+    component: DotFeatureContainerComponent,
+    imports: [
+      CommonModule,
+      DotTestingModule,
+      DotFeatureListComponent,
+      DotFeatureDetailsComponent
+    ],
+    providers: [
+      mockProvider(FeatureService, {
+        getItems: jest.fn().mockReturnValue(of(mockItems))
+      })
+    ]
+  });
+
+  beforeEach(() => {
+    spectator = createComponent();
+  });
+
+  it('should handle full user workflow', () => {
+    expect(spectator.queryAll(byTestId('item-card'))).toHaveLength(mockItems.length);
+
+    spectator.click(byTestId('item-1'));
+    spectator.detectChanges();
+    expect(spectator.query(byTestId('item-details'))).toBeVisible();
+
+    spectator.click(byTestId('edit-button'));
+    spectator.typeInElement('Updated Name', byTestId('name-input'));
+    spectator.click(byTestId('save-button'));
+    spectator.detectChanges();
+
+    expect(spectator.query(byTestId('item-1'))).toContainText('Updated Name');
+  });
 });
 ```
 
 ## Test Data Management
 
-### Mock Data Setup
+### Use @dotcms/utils-testing createFake Functions (Required)
+
+**Always use `@dotcms/utils-testing` createFake functions for domain objects. Never create manual mocks.**
+
 ```typescript
-// test-data.ts
+import {
+    createFakeContentlet,
+    createFakeContentType,
+    createFakeLanguage,
+    createFakeSite,
+    createFakeFolder,
+    createFakeTextField,
+    createFakeDateTimeField,
+    createFakeCustomField
+} from '@dotcms/utils-testing';
+
+// ✅ Use createFake with overrides for test-specific values
+const contentlet = createFakeContentlet({ inode: '123', title: 'Test Content' });
+const site = createFakeSite({ name: 'Demo Site' });
+const language = createFakeLanguage({ id: 1, languageCode: 'en' });
+const folder = createFakeFolder({ path: '/images' });
+const contentType = createFakeContentType({ variable: 'Blog' });
+const textField = createFakeTextField({ variable: 'title', required: true });
+
+// ❌ Never create manual mocks for domain objects
+const badContentlet = {
+    inode: '123',
+    contentType: 'Blog',
+    title: 'Test',
+    // ... dozens of required properties
+};
+```
+
+**Available createFake functions in `@dotcms/utils-testing`:**
+
+| Category | Functions |
+|----------|-----------|
+| **Content** | `createFakeContentlet`, `createFakeContentType` |
+| **Locale/Site** | `createFakeLanguage`, `createFakeSite`, `createFakeFolder` |
+| **Fields** | `createFakeBaseField`, `createFakeTextField`, `createFakeTextAreaField`, `createFakeDateField`, `createFakeDateTimeField`, `createFakeTimeField`, `createFakeSelectField`, `createFakeMultiSelectField`, `createFakeRadioField`, `createFakeCheckboxField`, `createFakeFileField`, `createFakeImageField`, `createFakeJSONField`, `createFakeTagField`, `createFakeRelationshipField`, `createFakeHostFolderField`, `createFakeCustomField`, `createFakeKeyValueField`, `createFakeWYSIWYGField`, `createFakeBlockEditorField`, `createFakeBinaryField`, `createFakeRowField`, `createFakeColumnField`, `createFakeTabDividerField`, `createFakeLineDividerField`, `createFakeConstantField`, `createFakeHiddenField`, `createFakeColumnBreakField`, `createFakeCategoryField` |
+| **Events** | `createFakeEvent`, `createFakeMouseEvent`, `createFakeKeyboardEvent` |
+
+### Custom Mock Data (when no createFake exists)
+
+For domain types that do not have a createFake function, define minimal mock data in a shared test file:
+
+```typescript
+// test-data.ts — only when no createFake exists
 export const mockItems: MyItem[] = [
-    {
-        id: '1',
-        name: 'Test Item 1',
-        description: 'Test Description 1',
-        status: 'active',
-        createdDate: new Date('2023-01-01')
-    },
-    {
-        id: '2',
-        name: 'Test Item 2',
-        description: 'Test Description 2',
-        status: 'inactive',
-        createdDate: new Date('2023-01-02')
-    }
+    { id: '1', name: 'Test Item 1', status: 'active' },
+    { id: '2', name: 'Test Item 2', status: 'inactive' }
 ];
 
 export const mockConfig: MyFeatureConfig = {
@@ -620,25 +670,27 @@ describe('UserForm', () => {
 ## Testing Utilities
 
 ### Custom Test Helpers
+Use **`detectChanges`** and **`byTestId`** inside helpers. Type the spectator with a generic (avoid `any` per [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md)).
+
 ```typescript
 // test-helpers.ts
-export function waitForAsyncOperation(spectator: Spectator<any>): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            spectator.detectChanges();
-            resolve();
-        }, 0);
-    });
+export function waitForAsyncOperation<T>(spectator: Spectator<T>): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      spectator.detectChanges();
+      resolve();
+    }, 0);
+  });
 }
 
-export function fillForm(spectator: Spectator<any>, formData: Record<string, string>): void {
-    Object.entries(formData).forEach(([field, value]) => {
-        spectator.typeInElement(value, byTestId(`${field}-input`));
-    });
+export function fillForm<T>(spectator: Spectator<T>, formData: Record<string, string>): void {
+  Object.entries(formData).forEach(([field, value]) => {
+    spectator.typeInElement(value, byTestId(`${field}-input`));
+  });
 }
 
-export function expectElementToBeVisible(spectator: Spectator<any>, testId: string): void {
-    expect(spectator.query(byTestId(testId))).toBeVisible();
+export function expectElementToBeVisible<T>(spectator: Spectator<T>, testId: string): void {
+  expect(spectator.query(byTestId(testId))).toBeVisible();
 }
 ```
 
@@ -646,18 +698,21 @@ export function expectElementToBeVisible(spectator: Spectator<any>, testId: stri
 
 ### What NOT to Do
 ```typescript
-// ❌ Don't set component inputs directly
-spectator.component.inputProperty = 'value';
+// ❌ Don't set component inputs directly — use setInput()
+spectator.component.config = signal(newConfig);
 
-// ❌ Don't use generic selectors
+// ❌ Don't use generic selectors — use byTestId
 spectator.query('button');
 spectator.query('.my-class');
 
-// ❌ Don't test implementation details
-expect(spectator.component.privateMethod).toHaveBeenCalled();
+// ❌ Don't create manual mocks for domain objects — use createFake from @dotcms/utils-testing
+const contentlet = { inode: '123', contentType: 'Blog', title: 'Test', /* ... */ };
+
+// ❌ Don't test implementation details (e.g. private methods or internal calls)
+expect(spectator.component['privateMethod']).toHaveBeenCalled();
 
 // ❌ Don't use object notation for class testing
-expect(element).toHaveClass({ 'class1': true, 'class2': false });
+expect(element).toHaveClass({ class1: true, class2: false });
 ```
 
 ### Best Practices
@@ -665,10 +720,16 @@ expect(element).toHaveClass({ 'class1': true, 'class2': false });
 // ✅ Use setInput for component inputs
 spectator.setInput('inputProperty', 'value');
 
-// ✅ Use data-testid for element selection
+// ✅ Use byTestId for element selection
 spectator.query(byTestId('submit-button'));
 
-// ✅ Test behavior, not implementation
+// ✅ Use createFake from @dotcms/utils-testing for domain mocks
+const contentlet = createFakeContentlet({ inode: '123', title: 'Test' });
+
+// ✅ Trigger change detection after state/input changes
+spectator.detectChanges();
+
+// ✅ Use click for user actions
 spectator.click(byTestId('submit-button'));
 expect(spectator.query(byTestId('success-message'))).toBeVisible();
 
@@ -677,8 +738,8 @@ expect(element).toHaveClass('class1', 'class2');
 ```
 
 ## Location Information
-- **Test files**: Located alongside component files with `.spec.ts` suffix
-- **Test utilities**: Found in `libs/utils/src/lib/testing/`
-- **Mock data**: Typically in `*.mock.ts` files or test setup files
-- **Spectator**: Imported from `@ngneat/spectator`
-- **Jest matchers**: Additional matchers available in `@ngneat/spectator/jest`
+- **Test files**: Alongside the file under test with `.spec.ts` suffix
+- **Test utilities**: `libs/utils/src/lib/testing/`
+- **Mock data**: Use `@dotcms/utils-testing` createFake functions; fallback to `*.mock.ts` only when no createFake exists
+- **Spectator**: `@ngneat/spectator` (Jest: `@ngneat/spectator/jest`). Use **createComponentFactory**, **createDirectiveFactory**, **createPipeFactory**, **createServiceFactory**, **createHostFactory**, **createRoutingFactory**, **createHttpFactory**, **Spectator**, **byTestId**, **mockProvider**, **detectChanges**, **setInput**, **click** as documented above.
+- **See also**: [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md), [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) (testing stores), [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md), [docs/frontend/README.md](./README.md)

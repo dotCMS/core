@@ -102,12 +102,18 @@ export function withSave() {
                     return dotPageApiService.saveStyleProperties(payload).pipe(
                         tap({
                             next: () => {
-                                // Success - optimistic update remains, no rollback needed
+                                // Success - clear history and set current state as the new base (last saved state)
+                                // This ensures future rollbacks always go back to this saved state
+                                const currentResponse = store.graphqlResponse();
+                                if (currentResponse) {
+                                    store.clearHistory();
+                                    store.addHistory(currentResponse);
+                                }
                             },
                             error: (error) => {
                                 console.error('Error saving style properties:', error);
 
-                                // Rollback the optimistic update
+                                // Rollback the optimistic update to the last saved state
                                 const rolledBack = store.rollbackGraphqlResponse();
 
                                 if (!rolledBack) {
@@ -131,7 +137,7 @@ export function withSave() {
                         catchError((error) => {
                             console.error('Error saving style properties:', error);
                             // Re-throw error so component can handle it (show toast, etc.)
-                            // Rollback is already handled in tapResponse error callback
+                            // Rollback is already handled in tap error callback
                             return throwError(() => error);
                         })
                     );

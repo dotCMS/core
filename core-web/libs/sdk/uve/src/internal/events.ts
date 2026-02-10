@@ -157,7 +157,7 @@ export function onContentletHovered(callback: UVEEventHandler) {
             widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
             onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages'],
             ...(foundElement.dataset?.['dotStyleProperties'] && {
-                styleProperties: JSON.parse(foundElement.dataset['dotStyleProperties'])
+                dotStyleProperties: JSON.parse(foundElement.dataset['dotStyleProperties'])
             })
         };
 

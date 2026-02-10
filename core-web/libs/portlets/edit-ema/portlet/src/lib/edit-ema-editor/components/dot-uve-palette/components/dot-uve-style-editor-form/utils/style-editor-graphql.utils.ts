@@ -1,6 +1,11 @@
-import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageResponse } from '@dotcms/types';
+import {
+    DotCMSBasicContentlet,
+    DotCMSPageAsset,
+    DotCMSPageResponse,
+    StyleEditorProperties
+} from '@dotcms/types';
 
-import { ActionPayload, StyleEditorProperties } from '../../../../../../shared/models';
+import { ActionPayload } from '../../../../../../shared/models';
 
 /**
  * Type representing a GraphQL response that can be either:
@@ -57,7 +62,7 @@ export function updateStylePropertiesInGraphQL(
 
     contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
         if (contentlet?.identifier === contentletId) {
-            contentlet.styleProperties = styleProperties;
+            contentlet.dotStyleProperties = styleProperties;
         }
     });
 
@@ -97,5 +102,5 @@ export function extractStylePropertiesFromGraphQL(
         (c: DotCMSBasicContentlet) => c?.identifier === contentletId
     );
 
-    return contentlet?.styleProperties || null;
+    return contentlet?.dotStyleProperties || null;
 }

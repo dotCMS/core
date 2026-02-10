@@ -238,6 +238,35 @@ runs:
         name: docker-build-context
         path: dotCMS/target/docker-build.tar
 
+    - id: get-sdkman-version
+      name: Get SDKMAN Java Version
+      if: ${{ inputs.generate-docker == 'true' }}
+      shell: bash
+      run: |
+        if [ -f ".sdkmanrc" ]; then
+          SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {print $2}' .sdkmanrc)
+          echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
+          echo "Extracted SDKMAN_JAVA_VERSION: ${SDKMAN_JAVA_VERSION}"
+        else
+          echo "Error: .sdkmanrc file not found"
+          exit 1
+        fi
+
+    - id: build-docker-image-from-archive
+      name: Build Docker Image from Archive
+      if: ${{ inputs.generate-docker == 'true' }}
+      shell: bash
+      run: |
+        # Extract the build context from the tar archive
+        mkdir -p /tmp/docker-context
+        tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context
+
+        # Build the Docker image from the extracted context
+        docker build --build-arg SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION}" -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context
+
+        # Verify the image was created
+        docker images dotcms/dotcms-test:${{ inputs.version }}
+
     - id: save-docker-image
       name: Save Docker Image to Tar File
       if: ${{ inputs.generate-docker == 'true' }}
