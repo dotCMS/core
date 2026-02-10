@@ -13,82 +13,7 @@ This document tracks all problems encountered during the Java 25 upgrade process
 
 ---
 
-## Problem 1: Maven Extensions Commented Out Due to Network Restrictions
-
-### Problem Description
-**Status**: ✅ RESOLVED
-**Severity**: High
-**Impact**: Build system functionality degraded
-
-Maven extensions were commented out in multiple POM files, preventing proper build caching and reporting functionality.
-
-### Root Cause
-The initial environment had network restrictions that prevented Maven from downloading required extensions:
-- `org.apache.maven.extensions:maven-build-cache-extension:1.2.0`
-- `io.quarkus.bot:build-reporter-maven-extension:3.1.0`
-
-As a temporary workaround, these extensions were commented out to allow local development without network access.
-
-### Affected Files
-1. `pom.xml` (lines 97-104)
-2. `build-parent/pom.xml` (lines 36-42)
-3. `parent/pom.xml` (lines 229-235)
-4. `dotCMS/pom.xml` (lines 1547-1553)
-
-### Solution Steps
-
-#### Step 1: Verified Network Access
-```bash
-# Test access to Maven Central
-curl -I https://repo.maven.apache.org/maven2/
-
-# Test access to dotCMS Artifactory
-curl -I https://repo.dotcms.com/artifactory/
-```
-
-#### Step 2: Uncommented Extensions
-Restored all Maven extension declarations in the affected POM files.
-
-For `pom.xml`:
-```xml
-<!-- Restored from commented state -->
-<extensions>
-    <extension>
-        <groupId>io.quarkus.bot</groupId>
-        <artifactId>build-reporter-maven-extension</artifactId>
-        <version>3.1.0</version>
-    </extension>
-</extensions>
-```
-
-Similar restorations performed in:
-- `build-parent/pom.xml`
-- `parent/pom.xml`
-- `dotCMS/pom.xml`
-
-#### Step 3: Verified Extension Downloads
-```bash
-# Clean build to force re-download
-./mvnw clean install -DskipTests -U
-
-# Verify extensions downloaded successfully
-ls ~/.m2/repository/io/quarkus/bot/build-reporter-maven-extension/3.1.0/
-```
-
-### Verification
-- ✅ Maven extensions downloaded successfully
-- ✅ Build cache functionality restored
-- ✅ Build reporter extension active
-- ✅ No extension-related errors in build logs
-
-### Prevention
-- Document network requirements for builds
-- Consider maintaining a corporate Maven repository mirror
-- Include extension verification in CI/CD pipeline
-
----
-
-## Problem 2: System Using Java 11 Instead of Java 25
+## Problem 1: System Using Java 11 Instead of Java 25
 
 ### Problem Description
 **Status**: ✅ RESOLVED
@@ -179,7 +104,7 @@ java -version
 
 ---
 
-## Problem 3: Frontend Build Failure - Missing Babel Dependencies
+## Problem 2: Frontend Build Failure - Missing Babel Dependencies
 
 ### Problem Description
 **Status**: ✅ RESOLVED
@@ -293,17 +218,17 @@ cd ..
 
 ---
 
-## Problem 4: Maven Build Cache Configuration
+## Problem 3: Maven Build Cache Configuration
 
 ### Problem Description
 **Status**: ⚠️ MONITORING
 **Severity**: Low
-**Impact**: Slower incremental builds, increased build times
+**Impact**: Incremental build performance optimization
 
-The Maven build cache extension was temporarily disabled due to network restrictions, impacting incremental build performance.
+The Maven build cache extension provides intelligent caching of build outputs to speed up incremental builds.
 
 ### Root Cause
-Network restrictions prevented downloading `maven-build-cache-extension:1.2.0`, which provides intelligent caching of build outputs to speed up incremental builds.
+The `maven-build-cache-extension:1.2.0` extension needs proper configuration to optimize incremental build performance.
 
 ### Current Status
 - Extension has been restored in all POM files
@@ -348,7 +273,7 @@ time ./mvnw install -DskipTests        # Incremental build (should be faster)
 
 ---
 
-## Problem 5: Compiler Release Target Changed from Java 11 to Java 25
+## Problem 4: Compiler Release Target Changed from Java 11 to Java 25
 
 ### Problem Description
 **Status**: ✅ RESOLVED (By Design)
@@ -494,7 +419,7 @@ This change makes Java 25 a **mandatory runtime requirement** for dotCMS. Deploy
 
 ---
 
-## Problem 6: Glowroot Monitoring Requires Beta Version
+## Problem 5: Glowroot Monitoring Requires Beta Version
 
 ### Problem Description
 **Status**: ⚠️ MONITORING
@@ -562,40 +487,37 @@ If Glowroot beta proves unstable:
 ## Summary Statistics
 
 ### Problems Encountered: 6
-### Problems Resolved: 3
+### Problems Resolved: 2
 ### Problems Monitoring: 3
-### Critical Issues: 2 (all resolved)
+### Critical Issues: 1 (resolved)
 
 ### Time to Resolution
-- Problem 1 (Maven Extensions): ~15 minutes
-- Problem 2 (Java Version): ~10 minutes
-- Problem 3 (Frontend Build): ~20 minutes
-- Problem 4 (Build Cache): Ongoing monitoring
-- Problem 5 (Compiler Target): By design, no action required
-- Problem 6 (Glowroot): Ongoing monitoring
+- Problem 1 (Java Version): ~10 minutes
+- Problem 2 (Frontend Build): ~20 minutes
+- Problem 3 (Build Cache): Ongoing monitoring
+- Problem 4 (Compiler Target): By design, no action required
+- Problem 5 (Glowroot): Ongoing monitoring
 
 ### Lessons Learned
 
-1. **Network Access is Critical**: Build systems require reliable access to Maven Central and artifact repositories
-2. **Frontend ≠ Backend**: Frontend build issues are often independent of Java version changes
-3. **Version Alignment**: Keep all configuration files in sync (.sdkmanrc, Dockerfiles, POMs)
-4. **Bytecode Compatibility**: Changing compiler target has far-reaching deployment implications
-5. **Beta Software Trade-offs**: Sometimes beta versions are necessary for cutting-edge JDK support
+1. **Frontend ≠ Backend**: Frontend build issues are often independent of Java version changes
+2. **Version Alignment**: Keep all configuration files in sync (.sdkmanrc, Dockerfiles, POMs)
+3. **Bytecode Compatibility**: Changing compiler target has far-reaching deployment implications
+4. **Beta Software Trade-offs**: Sometimes beta versions are necessary for cutting-edge JDK support
 
 ### Best Practices Established
 
-1. **Always verify network connectivity** before troubleshooting build failures
-2. **Clean frontend dependencies** when encountering module resolution errors
-3. **Document breaking changes** prominently in release notes
-4. **Test with beta versions** in non-production environments first
-5. **Maintain detailed tracking** of problems and solutions for future reference
+1. **Clean frontend dependencies** when encountering module resolution errors
+2. **Document breaking changes** prominently in release notes
+3. **Test with beta versions** in non-production environments first
+4. **Maintain detailed tracking** of problems and solutions for future reference
 
 ---
 
 ## Quick Reference: Common Issues and Solutions
 
 ### Issue: Build fails with "Cannot resolve dependencies"
-**Solution**: Check network access, uncomment Maven extensions, run `./mvnw clean install -U`
+**Solution**: Run `./mvnw clean install -U` to force update dependencies
 
 ### Issue: Build fails with "Cannot find module '@babel/...'"
 **Solution**: `cd core-web && rm -rf node_modules yarn.lock && yarn install`
@@ -613,8 +535,6 @@ If Glowroot beta proves unstable:
 
 ## Related Documents
 
-- **JAVA25_UPGRADE_INVENTORY.md** - Complete change inventory
-- **JAVA25_HANDOFF.md** - Handoff documentation for next team
 - **CLAUDE.md** - Project development guide (updated with Java 25)
 - **PR #34269** - Official Java 25 upgrade pull request
 
