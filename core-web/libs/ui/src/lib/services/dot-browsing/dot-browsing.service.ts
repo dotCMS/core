@@ -231,9 +231,11 @@ export class DotBrowsingService {
      * ```
      */
     #createPaths(path: string): string[] {
-        // Backend may append default route "/index" to folder paths; it's a default page, not a folder.
-        const normalizedPath = path.replace(/\/index\/?$/i, '');
-        const split = normalizedPath.split('/').filter((item) => item !== '');
+        const split = path.split('/').filter((item) => item !== '');
+        // Backend may append default route "/index" as last segment; it's a default page, not a folder.
+        if (split.length > 0 && split.at(-1)?.toLowerCase() === 'index') {
+            split.pop();
+        }
 
         return split.reduce((array, item, index) => {
             const prev = array[index - 1];
