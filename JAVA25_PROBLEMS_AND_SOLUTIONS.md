@@ -98,7 +98,7 @@ ls ~/.m2/repository/io/quarkus/bot/build-reporter-maven-extension/3.1.0/
 The development system had Java 11 as the active JDK version, preventing compilation and execution of Java 25-targeted code.
 
 ### Root Cause
-The system's default Java version was not updated after configuration changes to target Java 25. While `.sdkmanrc` was updated to `java=25.0.1-ms`, SDKMAN had not yet installed or activated this version.
+The system's default Java version was not updated after configuration changes to target Java 25. While `.sdkmanrc` was updated to `java=25.0.2-ms`, SDKMAN had not yet installed or activated this version.
 
 ### Detection
 ```bash
@@ -129,21 +129,21 @@ source "$HOME/.sdkman/bin/sdkman-init.sh"
 sdk list java | grep 25
 
 # Install Microsoft OpenJDK 25.0.1
-sdk install java 25.0.1-ms
+sdk install java 25.0.2-ms
 
 # Expected output:
-# Downloading: java 25.0.1-ms
-# Installing: java 25.0.1-ms
+# Downloading: java 25.0.2-ms
+# Installing: java 25.0.2-ms
 # Done installing!
 ```
 
 #### Step 3: Activated Java 25
 ```bash
 # Use Java 25 for current session
-sdk use java 25.0.1-ms
+sdk use java 25.0.2-ms
 
 # Set Java 25 as default for all sessions
-sdk default java 25.0.1-ms
+sdk default java 25.0.2-ms
 
 # Verify installation
 java -version
@@ -156,7 +156,7 @@ java -version
 
 # Expected output should include:
 # Java version: 25.0.1, vendor: Microsoft
-# Java home: /Users/username/.sdkman/candidates/java/25.0.1-ms
+# Java home: /Users/username/.sdkman/candidates/java/25.0.2-ms
 ```
 
 ### Verification
@@ -169,7 +169,7 @@ java -version
 ```diff
 # .sdkmanrc
 -java=21.0.8-ms
-+java=25.0.1-ms
++java=25.0.2-ms
 ```
 
 ### Prevention
@@ -388,7 +388,7 @@ This is **NOT a problem** but a **critical architectural change** that requires 
 #### 1. Development Environments
 ```bash
 # ALL developers must use Java 25
-sdk default java 25.0.1-ms
+sdk default java 25.0.2-ms
 
 # Build will fail on older Java versions
 ./mvnw clean install -DskipTests
@@ -435,7 +435,7 @@ java -cp dotCMS/target/dotcms.jar com.dotmarketing.startup.Main
 # Expected error: UnsupportedClassVersionError: ... class file version 69.0
 
 # Run on Java 25 (should succeed)
-sdk use java 25.0.1-ms
+sdk use java 25.0.2-ms
 java -cp dotCMS/target/dotcms.jar com.dotmarketing.startup.Main
 # Expected: Successful startup
 ```
@@ -601,7 +601,7 @@ If Glowroot beta proves unstable:
 **Solution**: `cd core-web && rm -rf node_modules yarn.lock && yarn install`
 
 ### Issue: Wrong Java version active
-**Solution**: `sdk use java 25.0.1-ms` or `sdk default java 25.0.1-ms`
+**Solution**: `sdk use java 25.0.2-ms` or `sdk default java 25.0.2-ms`
 
 ### Issue: Bytecode version error at runtime
 **Solution**: Ensure runtime JVM is Java 25+ (check `java -version`)
