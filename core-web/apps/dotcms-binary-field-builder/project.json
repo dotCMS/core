@@ -23,8 +23,6 @@
                 "styles": [
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/dotcms-theme/_misc.scss",
-                    "libs/dotcms-scss/angular/dotcms-theme/components/buttons/common.scss",
-                    "libs/dotcms-scss/angular/dotcms-theme/components/buttons/_button.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/components/form/_inputtext.scss",
                     "libs/dotcms-scss/angular/dotcms-theme/utils/_validation.scss",
                     "libs/dotcms-scss/angular/_prime-icons.scss"

@@ -120,7 +120,7 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                 takeUntil(this.destroy$),
                 startWith(this.form.value),
                 pairwise(),
-                debounceTime(300)
+                debounceTime(100)
             )
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({

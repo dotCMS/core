@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, HostListener, inject } from '@angular/core';
 
-import { ButtonDirective } from 'primeng/button';
+import { ButtonDirective, ButtonModule } from 'primeng/button';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -10,8 +10,9 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     changeDetection: ChangeDetectionStrategy.OnPush,
     hostDirectives: [ButtonDirective],
     host: {
-        class: 'p-button-icon-only p-button-rounded p-button-text p-button-sm'
-    }
+        class: 'p-button-icon-only p-button-rounded p-button-text p-button'
+    },
+    imports: [ButtonModule]
 })
 export class DotContentDriveTreeTogglerComponent {
     #store = inject(DotContentDriveStore);
