@@ -69,8 +69,7 @@
                     "node_modules/prismjs/themes/prism-okaidia.css",
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
-                    "apps/dotcms-ui/src/style.css",
-                    "node_modules/gridstack/dist/gridstack.min.css"
+                    "apps/dotcms-ui/src/style.css"
                 ],
                 "scripts": [],
                 "stylePreprocessorOptions": {
@@ -108,20 +107,14 @@
                     ]
                 },
                 "development": {
-                    "deployUrl": "/dotAdmin/",
-                    "outputPath": {
-                        "base": "../../tomcat9/webapps/ROOT/dotAdmin",
-                        "browser": ""
-                    },
-                    "baseHref": "",
+                    "outputPath": "../../tomcat9/webapps/ROOT/dotAdmin",
+                    "baseHref": "/dotAdmin/",
                     "optimization": false,
-                    "sourceMap": false,
-                    "namedChunks": false,
+                    "sourceMap": true,
+                    "namedChunks": true,
                     "extractLicenses": false,
                     "fileReplacements": [],
-                    "progress": false,
                     "outputHashing": "none",
-                    "commonChunk": true,
                     "budgets": [],
                     "externalDependencies": ["date-fns/locale"]
                 }
@@ -130,15 +123,25 @@
             "dependsOn": ["^build"]
         },
         "serve": {
-            "dependsOn": [],
+            "continuous": true,
             "executor": "@angular-devkit/build-angular:dev-server",
+            "dependsOn": [],
+
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
-                "hmr": true,
-                "liveReload": false,
+                "liveReload": true,
                 "watch": true
-            }
+            },
+            "configurations": {
+                "production": {
+                    "buildTarget": "dotcms-ui:build:production"
+                },
+                "development": {
+                    "buildTarget": "dotcms-ui:build:development"
+                }
+            },
+            "defaultConfiguration": "development"
         },
         "extract-i18n": {
             "executor": "@angular-devkit/build-angular:extract-i18n",
