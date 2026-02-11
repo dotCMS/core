@@ -1,6 +1,6 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="field">
-        <label for="tagName">{{ 'tags.form.tag-name' | dm }}</label>
+        <label for="tagName" dotFieldRequired>{{ 'tags.form.tag-name' | dm }}</label>
         <input
             pInputText
             id="tagName"
