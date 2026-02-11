@@ -41,7 +41,9 @@ public interface ContentletAPIPreHook {
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
 	 * @return false if the hook should stop the transaction
+	 * @deprecated This method is intended for test purposes only.
 	 */
+	@Deprecated
 	public default boolean findAllContent(int offset, int limit){
       return true;
     }

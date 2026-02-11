@@ -478,9 +478,10 @@ public class ContentMapTest extends IntegrationTestBase {
     public void testGetRecycledRequest() throws DotDataException, DotSecurityException {
 
         final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllContent(1, 5);
-        if (contentlets.isEmpty()) {
+        if(contentlets.isEmpty()) {
             throw new DotDataException("No contentlets found");
         }
+
         final Contentlet content = contentlets.get(0);
         final User user = APILocator.systemUser();
         final boolean EDIT_OR_PREVIEW_MODE = true;

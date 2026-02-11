@@ -84,15 +84,18 @@ public interface ContentletAPI {
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
 	/**
-	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
-	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
+	 * Use to retrieve all version of all content in the database.  This is not a common method to use.
+	 * Only use if you need to do maintenance tasks like search and replace something in every piece
 	 * of content.  Doesn't respect permissions.
 	 *
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
 	 * @return List<Contentlet> list of contentlets
 	 * @throws DotDataException
+	 * @deprecated This method is intended for test purposes only and may cause performance issues
+	 *             in production environments. Use more targeted query methods instead.
 	 */
+	@Deprecated
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException;
 	
 	/**

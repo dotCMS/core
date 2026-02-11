@@ -45,7 +45,9 @@ public interface ContentletAPIPostHook {
 	 * @param offset can be 0 if no offset
 	 * @param limit can be 0 of no limit
 	 * @param returnValue - value returned by primary API Method
+	 * @deprecated This method is intended for test purposes only.
 	 */
+	@Deprecated
 	public default void findAllContent(int offset, int limit, List<Contentlet> returnValue){}
 	
 	/**
