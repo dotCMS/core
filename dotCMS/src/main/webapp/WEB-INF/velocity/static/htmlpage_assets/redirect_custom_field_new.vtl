@@ -17,6 +17,12 @@
     };
     updateClearButtonVisibility();
 
+    // Sync typed URL to field value so it is saved
+    redirectURLBox.addEventListener("input", () => {
+      redirectField.setValue(redirectURLBox.value || "");
+      updateClearButtonVisibility();
+    });
+
     // Handle clear button click
     clearRedirectButton.addEventListener("click", () => {
       redirectURLBox.value = "";
