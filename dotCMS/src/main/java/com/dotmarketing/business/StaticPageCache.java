@@ -81,7 +81,10 @@ public abstract class StaticPageCache implements Cachable {
 	 *
 	 * @param page
 	 *            - The {@link IHTMLPage} object.
+	 * @param pageCacheParams
+	 *            - Values used to delete a specific page from the cache.
 	 */
-	abstract public void remove(IHTMLPage page);
+	abstract public void remove(IHTMLPage page,
+			PageCacheParameters pageCacheParams);
 
 }

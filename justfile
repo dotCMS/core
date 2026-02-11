@@ -156,7 +156,7 @@ build-core-only:
 
 # Prepares the environment for running integration tests in an IDE
 test-integration-ide:
-    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true -Dtomcat.port=8080
+    ./mvnw -pl :dotcms-integration pre-integration-test -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true -Dtomcat.port=8080 -Dmaven.build.cache.enabled=false
 
 # Stops integration test services
 test-integration-stop:

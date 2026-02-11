@@ -69,7 +69,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
     @Override
     @Deprecated
     public void add(IHTMLPage page, final String pageContent, PageCacheParameters pageCacheParams) {
-        if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
+        if (page == null || UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
             return;
         }
 
@@ -103,7 +103,7 @@ public class StaticPageCacheImpl extends StaticPageCache {
     @Deprecated
     public String get(final IHTMLPage page, final PageCacheParameters pageCacheParams) {
 
-        if (UtilMethods.isEmpty(() -> page.getIdentifier()) || pageCacheParams == null) {
+        if (page == null || UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
             return null;
         }
 
@@ -166,7 +166,12 @@ public class StaticPageCacheImpl extends StaticPageCache {
     @Override
     public void remove(IHTMLPage page) {
 
-        // not implemented
+        if (page == null || UtilMethods.isEmpty(page::getIdentifier) || pageCacheParams == null) {
+            return;
+        }
+
+        final String cacheKey = pageCacheParams.getKey();
+        this.cache.remove(cacheKey, PRIMARY_GROUP);
 
     }
 

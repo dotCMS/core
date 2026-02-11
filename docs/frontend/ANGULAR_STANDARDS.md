@@ -300,4 +300,3 @@ yarn install                   # NOT npm install
 - [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) — PrimeFlex, BEM, SCSS
 - [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) — Spectator, byTestId, setInput
 - [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) — Strict types, as const, # private
-- [docs/frontend/README.md](./README.md) — Index of all frontend docs
