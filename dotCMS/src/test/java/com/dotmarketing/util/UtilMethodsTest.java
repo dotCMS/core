@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.portal.model.User;
 import java.util.Base64;
 import org.junit.Assert;
@@ -21,6 +22,31 @@ import org.junit.jupiter.api.Assertions;
  * Unit test for {@link UtilMethods}
  */
 public class UtilMethodsTest extends UnitTestBase {
+
+
+	@Test
+	public void testIsNPEThrown() {
+
+		HTMLPageAsset page = null;
+		try {
+			assertFalse(UtilMethods.isSet(page::getIdentifier));
+		} catch (NullPointerException e) {
+			assertTrue("Throws an NPE", true);
+			return;
+		}
+		assertTrue("Should have thrown an NPE!", false);
+	}
+
+	@Test
+	public void testNoNPEThrown() {
+		HTMLPageAsset page = null;
+		assertFalse(UtilMethods.isSet(() -> page.getIdentifier()));
+
+	}
+
+
+
+
 
 	@Test
 	public void testIsValidURL_Valid() {
