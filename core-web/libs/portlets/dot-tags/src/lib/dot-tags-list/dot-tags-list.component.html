@@ -14,32 +14,27 @@
         </p-iconField>
 
         <div class="flex gap-2 ml-auto">
-            <p-button
-                [label]="'tags.export' | dm"
-                icon="pi pi-download"
-                [outlined]="true"
-                [disabled]="store.selectedTags().length === 0"
-                (onClick)="store.exportSelectedTags()"
-                data-testid="tag-export-btn" />
-            <p-button
-                [label]="'tags.import' | dm"
-                icon="pi pi-upload"
-                [outlined]="true"
-                (onClick)="openImportDialog()"
-                data-testid="tag-import-btn" />
-            <p-button
-                [label]="'tags.delete' | dm"
-                icon="pi pi-trash"
-                severity="danger"
-                [outlined]="true"
-                [disabled]="store.selectedTags().length === 0"
-                (onClick)="confirmDelete()"
-                data-testid="tag-delete-btn" />
-            <p-button
+            @if (store.selectedTags().length > 0) {
+                <p-button
+                    [label]="'tags.export' | dm"
+                    icon="pi pi-download"
+                    [outlined]="true"
+                    (onClick)="store.exportSelectedTags()"
+                    data-testid="tag-export-btn" />
+                <p-button
+                    [label]="'tags.delete' | dm"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    (onClick)="confirmDelete()"
+                    data-testid="tag-delete-btn" />
+            }
+            <p-splitButton
                 [label]="'tags.add.tag' | dm"
                 icon="pi pi-plus"
                 (onClick)="openCreateDialog()"
-                data-testid="tag-add-btn" />
+                [model]="addTagMenuItems"
+                data-testid="tag-add-split-btn" />
         </div>
     </div>
 </p-toolbar>

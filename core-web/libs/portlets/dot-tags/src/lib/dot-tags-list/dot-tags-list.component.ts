@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -35,6 +36,7 @@ import { DotTagsImportComponent } from '../dot-tags-import/dot-tags-import.compo
         IconFieldModule,
         InputIconModule,
         ConfirmDialogModule,
+        SplitButtonModule,
         ToolbarModule,
         DotMessagePipe
     ],
@@ -51,6 +53,14 @@ export class DotTagsListComponent {
     private readonly destroyRef = inject(DestroyRef);
 
     private searchSubject = new Subject<string>();
+
+    readonly addTagMenuItems: MenuItem[] = [
+        {
+            label: this.dotMessageService.get('tags.import'),
+            icon: 'pi pi-upload',
+            command: () => this.openImportDialog()
+        }
+    ];
 
     constructor() {
         this.searchSubject
@@ -83,7 +93,9 @@ export class DotTagsListComponent {
     openCreateDialog(): void {
         const ref = this.dialogService.open(DotTagsCreateComponent, {
             header: this.dotMessageService.get('tags.add.tag'),
-            width: '400px'
+            width: '400px',
+            closable: true,
+            closeOnEscape: true
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
@@ -97,7 +109,9 @@ export class DotTagsListComponent {
         const ref = this.dialogService.open(DotTagsCreateComponent, {
             header: this.dotMessageService.get('tags.edit.tag'),
             width: '400px',
-            data: { tag }
+            data: { tag },
+            closable: true,
+            closeOnEscape: true
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
@@ -115,6 +129,9 @@ export class DotTagsListComponent {
             header: this.dotMessageService.get('tags.confirm.delete.header'),
             acceptButtonStyleClass: 'p-button-outlined',
             rejectButtonStyleClass: 'p-button-primary',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
             accept: () => this.store.deleteTags()
         });
     }
@@ -122,7 +139,9 @@ export class DotTagsListComponent {
     openImportDialog(): void {
         const ref = this.dialogService.open(DotTagsImportComponent, {
             header: this.dotMessageService.get('tags.import.header'),
-            width: '500px'
+            width: '500px',
+            closable: true,
+            closeOnEscape: true
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {

@@ -79,6 +79,7 @@ spectator.setInput('prop', value);           // ALWAYS use setInput
 - **State**: Use NgRx signals (`@ngrx/signals`) for state management
 - **Styling**: Tailwind CSS + PrimeFlex utilities
 - **Testing**: Jest + Spectator, use `data-testid` for selectors
+- **Dialogs**: All dialogs must have `closable: true` and `closeOnEscape: true` to allow closing via X button and ESC key
 
 ### Form Markup
 
@@ -132,6 +133,7 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 
 - Mock `DialogService.open` to return `{ onClose: new Subject() }`, then emit a value and complete the subject
 - Two `describe` blocks for create/edit dialog: one with `DynamicDialogConfig.data: {}`, one with `data: { item }`
+- Test that dialogs are configured with `closable: true` and `closeOnEscape: true`
 
 ### DotSiteComponent Mocking
 
