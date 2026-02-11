@@ -117,6 +117,9 @@ node_modules/
 !/core-web/.yarn/sdks
 !/core-web/.yarn/versions
 
+# Stencil-generated types (regenerated on every build; causes CI "changes during build" failure if tracked)
+/core-web/libs/dotcms-webcomponents/src/components.d.ts
+
 # misc
 /core-web/.nx
 /core-web/.angular/cache
