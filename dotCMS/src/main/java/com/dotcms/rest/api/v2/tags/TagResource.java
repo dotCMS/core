@@ -6,6 +6,7 @@ import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityListView;
 import com.dotcms.rest.ResponseEntityRestTagListView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
@@ -66,6 +67,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -232,13 +234,16 @@ public class TagResource {
      */
     @Operation(
             summary = "Create tags",
-            description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
+            description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. " +
+                    "The response separates newly created tags from duplicates (tags that already existed with the same name and site)."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201",
-                    description = "Tags created successfully",
+            @ApiResponse(responseCode = "200",
+                    description = "Tag creation result with 'created' and 'duplicates' lists",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityRestTagListView.class))),
+                            schema = @Schema(type = "object",
+                                    description = "Response with 'entity' containing 'created' (list of newly created RestTag) " +
+                                            "and 'duplicates' (list of already existing RestTag)"))),
             @ApiResponse(responseCode = "400",
                     description = "Bad Request - Invalid tag data with field-level error details",
                     content = @Content(mediaType = "application/json")),
@@ -276,45 +281,76 @@ public class TagResource {
             form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
-        // Create all tags
-        final List<Tag> savedTags = saveTags(request, tagForms, user);
+        // Create tags and separate new from existing
+        final TagSaveResult saveResult = saveTags(request, tagForms, user);
 
-        // Convert to RestTag list for response
-        final List<RestTag> resultList = savedTags.stream()
+        // Convert both lists to RestTag
+        final List<RestTag> createdList = saveResult.created.stream()
+            .map(TagsResourceHelper::toRestTag)
+            .collect(Collectors.toList());
+        final List<RestTag> duplicateList = saveResult.duplicates.stream()
             .map(TagsResourceHelper::toRestTag)
             .collect(Collectors.toList());
 
-        return Response.status(Response.Status.CREATED)
-                .entity(new ResponseEntityRestTagListView(resultList))
-                .build();
+        final Map<String, Object> responseData = new LinkedHashMap<>();
+        responseData.put("created", createdList);
+        responseData.put("duplicates", duplicateList);
+
+        return Response.ok(new ResponseEntityView<>(responseData)).build();
     }
 
 
     /**
-     * Saves Tags in dotCMS using a list-based approach.
+     * Container for tag save results separating newly created tags from duplicates.
+     */
+    private static class TagSaveResult {
+        final List<Tag> created;
+        final List<Tag> duplicates;
+
+        TagSaveResult(final List<Tag> created, final List<Tag> duplicates) {
+            this.created = created;
+            this.duplicates = duplicates;
+        }
+    }
+
+    /**
+     * Saves Tags in dotCMS using a list-based approach. Checks for existing tags
+     * before creating and separates new tags from duplicates.
      *
      * @param request   The current instance of the {@link HttpServletRequest}.
      * @param tagForms  The {@link List} of {@link TagForm} containing the Tags to save.
      * @param user      The {@link User} performing the operation.
      *
-     * @return List of created {@link Tag} objects.
+     * @return A {@link TagSaveResult} with created and duplicate tag lists.
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
     @WrapInTransaction
-    private List<Tag> saveTags(final HttpServletRequest request,
-                               final List<TagForm> tagForms,
-                               final User user)
+    private TagSaveResult saveTags(final HttpServletRequest request,
+                                   final List<TagForm> tagForms,
+                                   final User user)
             throws DotDataException, DotSecurityException {
 
-        final List<Tag> savedTags = new ArrayList<>();
+        final List<Tag> created = new ArrayList<>();
+        final List<Tag> duplicates = new ArrayList<>();
 
         for (TagForm form : tagForms) {
             // Resolve site
             final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
 
-            // Create or get tag
+            // Check if tag already exists
+            final Tag existing = tagAPI.getTagByNameAndHost(
+                    form.getName().toLowerCase(), siteId);
+            if (existing != null && UtilMethods.isSet(existing.getTagId())) {
+                Logger.debug(TagResource.class,
+                        String.format("Tag '%s' already exists, marking as duplicate",
+                                form.getName()));
+                duplicates.add(existing);
+                continue;
+            }
+
+            // Create tag
             final boolean persona = (form.getPersona() != null) ? form.getPersona() : false;
             final Tag tag = tagAPI.getTagAndCreate(
                 form.getName(),
@@ -324,7 +360,7 @@ public class TagResource {
                 false
             );
 
-            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", tag.getTagName()));
+            Logger.debug(TagResource.class, String.format("Created Tag '%s'", tag.getTagName()));
 
             // Bind to owner if specified
             if (UtilMethods.isSet(form.getOwnerId())) {
@@ -334,10 +370,10 @@ public class TagResource {
                         tag.getTagName(), form.getOwnerId()));
             }
 
-            savedTags.add(tag);
+            created.add(tag);
         }
 
-        return savedTags;
+        return new TagSaveResult(created, duplicates);
     }
 
     /**
@@ -841,7 +877,8 @@ public class TagResource {
      */
     @Operation(
         summary = "Import tags from CSV file",
-        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics and error information for each failed row."
+        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics including successCount (newly created), " +
+                "duplicateCount (already existed), failureCount (errors), and error information for each failed row."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
@@ -886,13 +923,15 @@ public class TagResource {
         final Map<String, Object> stats = Map.of(
             "totalRows", result.totalRows,
             "successCount", result.successCount,
+            "duplicateCount", result.duplicateCount,
             "failureCount", result.errors.size(),
-            "success", result.errors.isEmpty()
+            "success", result.errors.isEmpty() && result.duplicateCount == 0
         );
 
         Logger.info(TagResource.class, String.format(
-            "Tag import completed for user '%s': %d total, %d success, %d errors",
-            user.getUserId(), result.totalRows, result.successCount, result.errors.size()));
+            "Tag import completed for user '%s': %d total, %d success, %d duplicates, %d errors",
+            user.getUserId(), result.totalRows, result.successCount,
+            result.duplicateCount, result.errors.size()));
 
         // Return a detailed response with statistics and errors
         return new ResponseEntityTagOperationView(

@@ -4069,12 +4069,9 @@
 								"type": "text/javascript",
 								"packages": {},
 								"exec": [
-									"// Skip status check for Tags endpoint since it correctly returns 201",
-									"if (!pm.request.url.toString().includes('/api/v2/tags')) {",
-									"    pm.test(\"HTTP Status code must be successful\", function () {",
-									"        pm.response.to.have.status(200);",
-									"    });",
-									"}",
+									"pm.test(\"HTTP Status code must be successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
 									""
 								]
 							}

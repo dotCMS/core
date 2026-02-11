@@ -61,11 +61,13 @@ public class TagsResourceHelper {
     public static class TagImportResult {
         public final int totalRows;
         public final int successCount;
+        public final int duplicateCount;
         public final List<ErrorEntity> errors;
-        
-        public TagImportResult(int totalRows, int successCount, List<ErrorEntity> errors) {
+
+        public TagImportResult(int totalRows, int successCount, int duplicateCount, List<ErrorEntity> errors) {
             this.totalRows = totalRows;
             this.successCount = successCount;
+            this.duplicateCount = duplicateCount;
             this.errors = errors;
         }
     }
@@ -261,6 +263,7 @@ public class TagsResourceHelper {
             throws IOException, DotDataException, DotSecurityException {
         int lineNumber = 0;
         int successCount = 0;
+        int duplicateCount = 0;
         final List<ErrorEntity> errors = new ArrayList<>();
         
         final byte[] bytes = Files.readAllBytes(inputFile.toPath());
@@ -303,13 +306,19 @@ public class TagsResourceHelper {
                     }
                     continue;
                 }
-                // Create the tag
+                // Create the tag (check for duplicates first)
                 try {
                     final String validateSite = getValidateSite(siteId, user, request);
+                    final Tag existing = tagAPI.getTagByNameAndHost(
+                            tagName.toLowerCase(), validateSite);
+                    if (existing != null && UtilMethods.isSet(existing.getTagId())) {
+                        duplicateCount++;
+                        continue;
+                    }
                     final Tag tag = tagAPI
                             .getTagAndCreate(tagName, StringPool.BLANK, validateSite);
-                    if(null != tag){
-                       successCount++;
+                    if (null != tag) {
+                        successCount++;
                     }
                 } catch (final GenericTagException e) {
                     errors.add(new ErrorEntity(
@@ -324,11 +333,11 @@ public class TagsResourceHelper {
             }
         }
         
-        Logger.debug(TagsResourceHelper.class, 
-            String.format("Tag import finished. Total: %d, Success: %d, Errors: %d",
-                lineNumber, successCount, errors.size()));
-        
-        return new TagImportResult(lineNumber, successCount, errors);
+        Logger.debug(TagsResourceHelper.class,
+            String.format("Tag import finished. Total: %d, Success: %d, Duplicates: %d, Errors: %d",
+                lineNumber, successCount, duplicateCount, errors.size()));
+
+        return new TagImportResult(lineNumber, successCount, duplicateCount, errors);
     }
 
     /**
