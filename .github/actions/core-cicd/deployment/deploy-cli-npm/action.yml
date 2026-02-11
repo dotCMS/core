@@ -27,10 +27,6 @@ inputs:
     default: ${{ github.run_id }}
     description: 'The run id of the cli artifacts'
     required: false
-  java-suffix:
-    description: 'Suffix for Java version isolation (e.g., -java25). Appended to NPM version after rc.'
-    required: false
-    default: ''
 outputs:
   npm-package-version:
     description: 'NPM package version'
@@ -144,12 +140,6 @@ runs:
           NPM_PACKAGE_VERSION_TAG="latest"
           NPM_PACKAGE_VERSION=${MVN_PACKAGE_VERSION}
         fi;
-
-        # Append java-suffix if provided (e.g., 1.0.0-rc1 becomes 1.0.0-rc1-java25)
-        if [ -n "${{ inputs.java-suffix }}" ]; then
-          NPM_PACKAGE_VERSION="${NPM_PACKAGE_VERSION}${{ inputs.java-suffix }}"
-          echo "::debug::NPM_PACKAGE_VERSION with java suffix: $NPM_PACKAGE_VERSION"
-        fi
 
         echo "::debug::NPM_PACKAGE_VERSION: $NPM_PACKAGE_VERSION"
         echo "::debug::NPM_PACKAGE_VERSION_TAG: $NPM_PACKAGE_VERSION_TAG"

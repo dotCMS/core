@@ -34,10 +34,6 @@ inputs:
   artifact-run-id:
     default: ${{ github.run_id }}
     description: 'The run id of the core artifacts'
-  java-suffix:
-    description: 'Suffix for Java version isolation (e.g., -java25). Appended to artifact version.'
-    required: false
-    default: ''
 
 runs:
   using: "composite"
@@ -55,7 +51,6 @@ runs:
         stage-name: "Deploy Artifacts Validate"
         maven-args: "validate" # We don't need to build just get the repo and use validate to check everything exists
         artifacts-from: ${{ inputs.artifact-run-id }}
-        artifact-suffix: ${{ inputs.java-suffix }}
 
     - uses: jfrog/setup-jfrog-cli@v4
 
@@ -127,13 +122,7 @@ runs:
       run: |
         echo "::group::Extract project version"
         version=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-        # Append java-suffix if provided (e.g., 1.0.0-SNAPSHOT becomes 1.0.0-SNAPSHOT-java25)
-        if [ -n "${{ inputs.java-suffix }}" ]; then
-          version="${version}${{ inputs.java-suffix }}"
-          echo "::notice::version with java suffix: $version"
-        else
-          echo "::notice::version: $version"
-        fi
+        echo "::notice::version: $version"
         echo "version=$version" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
