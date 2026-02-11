@@ -1,6 +1,6 @@
 /**
  * =====================================================================================
- * 1) EngagementDaily Cube
+ * EngagementDaily Cube
  * =====================================================================================
  *
  * Source table:
@@ -33,6 +33,7 @@
 cube(`EngagementDaily`, {
     sql: `
     SELECT
+      cluster_id,
       customer_id,
       context_site_id,
       day,
@@ -45,6 +46,10 @@ cube(`EngagementDaily`, {
       total_duration_engaged,
       updated_at
     FROM clickhouse_test_db.engagement_daily
+    WHERE ${FILTER_PARAMS.EngagementDaily.customerId.filter('customer_id')} AND (
+        ${FILTER_PARAMS.EngagementDaily.clusterId ? FILTER_PARAMS.EngagementDaily.clusterId.filter('cluster_id') : '1=1'}
+            OR (${FILTER_PARAMS.EngagementDaily.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
+        ${FILTER_PARAMS.EngagementDaily.day.filter('day')}
   `,
 
     measures: {
