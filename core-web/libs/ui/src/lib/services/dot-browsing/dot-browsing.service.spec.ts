@@ -516,6 +516,84 @@ describe('DotBrowsingService', () => {
                 done();
             });
         });
+
+        it('should find target folder when parent is missing from paginated response (unshift parent into next.folders)', (done) => {
+            // Simulates: getFolders('//demo.com/level1/') has limited pagination and does NOT return
+            // the folder for level2; the service unshifts currentParent into next.folders so the
+            // reduce can still find it and set folder.children / result.node.
+            const path = 'demo.com/level1/level2';
+
+            const level2Parent = createFakeFolder({
+                id: 'parent-level2',
+                hostName: 'demo.com',
+                path: '/level1/level2',
+                addChildrenAllowed: true
+            });
+
+            const level2Folders: DotFolder[] = [
+                level2Parent,
+                createFakeFolder({
+                    id: 'child-level2',
+                    hostName: 'demo.com',
+                    path: '/level1/level2/child',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const level1Parent = createFakeFolder({
+                id: 'parent-level1',
+                hostName: 'demo.com',
+                path: '/level1',
+                addChildrenAllowed: true
+            });
+
+            // Pagination: level1 response does NOT include level2 (only other siblings)
+            const level1Folders: DotFolder[] = [
+                level1Parent,
+                createFakeFolder({
+                    id: 'sibling-a',
+                    hostName: 'demo.com',
+                    path: '/level1/sibling-a',
+                    addChildrenAllowed: true
+                })
+            ];
+
+            const rootFolders: DotFolder[] = [
+                createFakeFolder({
+                    id: 'root',
+                    hostName: 'demo.com',
+                    path: '/',
+                    addChildrenAllowed: true
+                }),
+                level1Parent
+            ];
+
+            dotFolderService.getFolders.mockImplementation((requestedPath: string) => {
+                if (requestedPath === '//demo.com/level1/level2/') {
+                    return of(level2Folders);
+                }
+                if (requestedPath === '//demo.com/level1/') {
+                    return of(level1Folders);
+                }
+                if (requestedPath === '//demo.com/') {
+                    return of(rootFolders);
+                }
+                return of([]);
+            });
+
+            spectator.service.buildTreeByPaths(path).subscribe((result) => {
+                expect(result.tree).toBeDefined();
+                expect(result.node).toBeDefined();
+                // Target node should be the level2 folder (linked from level1.folders via unshift)
+                expect(result.node?.key).toBe('parent-level2');
+                expect(result.node?.data?.path).toBe('/level1/level2');
+                // Children were attached by reduce (level2's folders)
+                expect(result.node?.children).toBeDefined();
+                expect(Array.isArray(result.node?.children)).toBe(true);
+                expect(result.node?.children?.length).toBeGreaterThan(0);
+                done();
+            });
+        });
     });
 
     describe('getCurrentSiteAsTreeNodeItem', () => {
