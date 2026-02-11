@@ -741,7 +741,7 @@ public class PageRenderUtil implements Serializable {
             // No need to apply the Time Machine date, just return the contentlet based on the mode.showLive
             final Optional<Contentlet> contentletOpt = contentletAPI.findContentletByIdentifierOrFallback(
                     contentletIdentifier, mode.showLive, languageId,
-                    user, true);
+                    user, true, variantName);
 
             return contentletOpt.orElse(null);
 
