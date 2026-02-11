@@ -23,7 +23,7 @@
     data-testId="table"
     scrollHeight="flex"
     [pt]="$ptConfig()">
-    <ng-template pTemplate="header">
+    <ng-template #header>
         <tr data-testId="header-row">
             <th [style.width]="'3rem'">
                 <p-tableHeaderCheckbox data-testId="header-checkbox" />
@@ -46,7 +46,7 @@
         </tr>
     </ng-template>
 
-    <ng-template pTemplate="body" let-item>
+    <ng-template #body let-item>
         @let isFolder = item.type === 'folder';
 
         @if ($loading() || !$items().length) {
@@ -100,7 +100,8 @@
                         } @else {
                             <i
                                 class="pi pi-folder text-4xl! flex! items-center! justify-center! w-full! h-full! text-gray-700"
-                                data-testId="folder-icon"></i>
+                                data-testId="folder-icon"
+                                [attr.data-table-id]="item.identifier"></i>
                         }
                     </div>
                     <span

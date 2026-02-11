@@ -4,15 +4,19 @@
     [class]="$clazz()"
     [label]="label()"
     [pTooltip]="tooltipContent"
-    appendTo="body"
+    [tooltipPosition]="tooltipPosition()"
+    [tooltipOptions]="{
+        showDelay: 800,
+        hideDelay: 800,
+        escape: false,
+        positionStyle: 'absolute',
+        appendTo: 'body'
+    }"
     size="small"
-    hideDelay="800"
     icon="pi pi-copy"
-    tooltipPosition="bottom"
     data-testid="copy-to-clipboard"
-    type="button-sm"
-    variant="text"></p-button>
+    variant="text" />
 
 <ng-template #tooltipContent>
-    <span data-testid="tooltip-content">{{ $tooltipText() }}</span>
+    <span data-testid="tooltip-content" class="whitespace-nowrap">{{ $tooltipText() }}</span>
 </ng-template>

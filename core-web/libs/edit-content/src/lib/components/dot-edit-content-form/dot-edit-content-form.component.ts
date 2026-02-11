@@ -61,6 +61,7 @@ import {
     isFilteredType,
     processFieldValue
 } from '../../utils/functions.util';
+import { blockEditorRequiredValidator } from '../../utils/validators';
 import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit-content-field.component';
 
 /**
@@ -87,7 +88,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
  */
 @Component({
     selector: 'dot-edit-content-form',
-
     templateUrl: './dot-edit-content-form.component.html',
     imports: [
         CommonModule,
@@ -531,7 +531,13 @@ export class DotEditContentFormComponent implements OnInit {
         const validators: ValidatorFn[] = [];
 
         if (field.required) {
-            validators.push(Validators.required);
+            // Block Editor needs a custom validator that checks for actual text content,
+            // not just the presence of a JSON structure
+            if (field.fieldType === FIELD_TYPES.BLOCK_EDITOR) {
+                validators.push(blockEditorRequiredValidator());
+            } else {
+                validators.push(Validators.required);
+            }
         }
 
         if (field.regexCheck) {

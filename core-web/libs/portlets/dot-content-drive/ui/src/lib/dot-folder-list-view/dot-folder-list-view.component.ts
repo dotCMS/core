@@ -410,8 +410,8 @@ export class DotFolderListViewComponent implements OnInit {
             this.renderer.addClass(wrapper, 'drag-image-item');
             this.renderer.addClass(wrapper, `drag-image-item-${idx}`);
 
-            // Check if first child is an img - if so, copy its HTML
-            const firstChild = thumbnail.firstElementChild;
+            // Check if the thumbnail is an icon or an image - if so, copy its HTML
+            const firstChild = thumbnail.tagName === 'I' ? thumbnail : thumbnail.firstElementChild;
 
             if (!firstChild) {
                 return;

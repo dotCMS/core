@@ -330,7 +330,8 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         if (
             fieldMock.fieldType !== FIELD_TYPES.DATE &&
             fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
-            fieldMock.fieldType !== FIELD_TYPES.TIME
+            fieldMock.fieldType !== FIELD_TYPES.TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.BLOCK_EDITOR
         ) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();

@@ -1,7 +1,7 @@
 @if (canAccessPortlet) {
     <dot-iframe
         (custom)="onCustomEvent($event)"
-        [isLoading]="isLoading"
+        [isLoading]="isLoading()"
         [src]="url | async"
         #iframe />
 } @else {

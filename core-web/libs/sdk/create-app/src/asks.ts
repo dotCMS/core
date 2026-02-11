@@ -4,6 +4,7 @@ import inquirer from 'inquirer';
 import path from 'path';
 
 import { FRAMEWORKS_CHOICES } from './constants';
+import { validateProjectName, validateUrl } from './utils/validation';
 
 import type { SupportedFrontEndFrameworks } from './types';
 
@@ -32,7 +33,15 @@ export async function askProjectName() {
             type: 'input',
             name: 'projectName',
             message: 'What is your project name ?',
-            default: `my-dotcms-app`
+            default: `my-dotcms-app`,
+            validate: (input: string) => {
+                try {
+                    validateProjectName(input);
+                    return true;
+                } catch (error) {
+                    return error instanceof Error ? error.message : String(error);
+                }
+            }
         }
     ]);
     return ans.projectName;
@@ -62,7 +71,15 @@ export async function askDotcmsCloudUrl() {
             type: 'input',
             name: 'url',
             message: 'dotCMS instance URL:',
-            default: `https://demo.dotcms.com`
+            default: `https://demo.dotcms.com`,
+            validate: (input: string) => {
+                try {
+                    validateUrl(input);
+                    return true;
+                } catch (error) {
+                    return error instanceof Error ? error.message : String(error);
+                }
+            }
         }
     ]);
     return ans.url;
@@ -77,14 +94,20 @@ export async function askUserNameForDotcmsCloud() {
             type: 'input',
             name: 'username',
             message: 'Username:',
-            default: `admin@dotcms.com`
+            default: `admin@dotcms.com`,
+            validate: (input: string) => {
+                if (!input || input.trim() === '') {
+                    return 'Username cannot be empty';
+                }
+                return true;
+            }
         }
     ]);
     return ans.username;
 }
 
 /**
- * Ask user the ulsername of the dotCMS instance
+ * Ask user the password of the dotCMS instance
  */
 export async function askPasswordForDotcmsCloud() {
     const ans = await inquirer.prompt([
@@ -93,7 +116,13 @@ export async function askPasswordForDotcmsCloud() {
             name: 'password',
             mask: '•',
             message: 'Password:',
-            default: `admin`
+            default: `admin`,
+            validate: (input: string) => {
+                if (!input || input.trim() === '') {
+                    return 'Password cannot be empty';
+                }
+                return true;
+            }
         }
     ]);
     return ans.password;
@@ -124,7 +153,7 @@ export async function askCloudOrLocalInstance(): Promise<boolean> {
         {
             type: 'select',
             name: 'isCloud',
-            message: 'Do you have an exsisting dotCMS instance?',
+            message: 'Do you have an existing dotCMS instance?',
             choices: [
                 { name: 'Yes - I have a dotCMS instance URL', value: true },
                 { name: 'No - Spin up dotCMS locally with Docker', value: false }
@@ -142,9 +171,27 @@ export async function askCloudOrLocalInstance(): Promise<boolean> {
  * user enters: "."
  * projectName: "my-app"
  * final path becomes "./my-app"
+ *
+ * @remarks
+ * - Prevents nested directories when basePath already ends with projectName
+ * - Example: basePath="/tmp/my-app" + projectName="my-app" → "/tmp/my-app" (not "/tmp/my-app/my-app")
+ * - Handles both absolute and relative paths correctly
  */
 export async function prepareDirectory(basePath: string, projectName: string) {
-    const targetPath = path.resolve(basePath, projectName);
+    // Resolve basePath to absolute path for consistent comparison
+    const resolvedBasePath = path.resolve(basePath);
+    const basePathDirName = path.basename(resolvedBasePath);
+
+    // Check if basePath already ends with the project name
+    // This prevents nested directories like "/tmp/my-app/my-app"
+    let targetPath: string;
+    if (basePathDirName === projectName) {
+        // User specified full path including project name (e.g., "-d /tmp/my-app" with projectName="my-app")
+        targetPath = resolvedBasePath;
+    } else {
+        // User specified parent directory (e.g., "-d /tmp" with projectName="my-app")
+        targetPath = path.resolve(resolvedBasePath, projectName);
+    }
 
     // If path doesn't exist → create
     if (!fs.existsSync(targetPath)) {

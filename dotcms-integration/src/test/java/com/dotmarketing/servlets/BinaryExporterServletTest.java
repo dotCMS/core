@@ -114,6 +114,14 @@ public class BinaryExporterServletTest {
     private static String userEmailAndPassword;
     private static ApiToken apiToken;
 
+    // Shared file assets to avoid recreating per test iteration
+    private static Folder sharedFolder;
+    private static Contentlet sharedFileAsset;         // no special permissions (anonymous accessible)
+    private static Contentlet sharedFileAssetWithPerms; // role-based permissions only
+
+    // Shared file asset for requestWebpImage tests
+    private static Contentlet sharedWebpFileAsset;
+
     /**
      * Prepare testing environment
      */
@@ -141,6 +149,44 @@ public class BinaryExporterServletTest {
            user.getUserId(), Date.from(Instant.now().plus(Duration.ofDays(10))),
            APILocator.systemUser().getUserId() , "127.0.0.1");
 
+        // Create shared folder and file assets for requestBinaryFile tests
+        sharedFolder = new FolderDataGen().site(host).nextPersisted();
+
+        final Path tmpSourcePath1 = Files.createTempFile("shared-noperm-", ".png");
+        final Path tmpSourcePath2 = Files.createTempFile("shared-perm-", ".png");
+        try {
+            Files.write(tmpSourcePath1, ShortyServletAndTitleImageTest.pngPixel);
+            Files.write(tmpSourcePath2, ShortyServletAndTitleImageTest.pngPixel);
+
+            // File asset without special permissions (anonymous accessible)
+            sharedFileAsset = new FileAssetDataGen(
+                    sharedFolder, tmpSourcePath1.toFile()).nextPersisted();
+            ContentletDataGen.publish(sharedFileAsset);
+            assertTrue(APILocator.getContentletAPI().isInodeIndexed(
+                    sharedFileAsset.getInode(), true, 1000));
+
+            // File asset with role-based permissions (separate file to avoid name collision)
+            sharedFileAssetWithPerms = new FileAssetDataGen(
+                    sharedFolder, tmpSourcePath2.toFile()).nextPersisted();
+            ContentletDataGen.publish(sharedFileAssetWithPerms);
+            assertTrue(APILocator.getContentletAPI().isInodeIndexed(
+                    sharedFileAssetWithPerms.getInode(), true, 1000));
+            ServletTestUtils.addPermissions(sharedFileAssetWithPerms, role);
+        } finally {
+            Files.deleteIfExists(tmpSourcePath1);
+            Files.deleteIfExists(tmpSourcePath2);
+        }
+
+        // Create shared file asset for requestWebpImage tests
+        final URL pngResource = BinaryExporterServletTest.class.getClassLoader()
+                .getResource("images/issue21652.png");
+        if (pngResource != null && !"jar".equals(pngResource.getProtocol())) {
+            sharedWebpFileAsset = new FileAssetDataGen(new File(pngResource.getFile()))
+                    .host(host)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
     }
 
     /**
@@ -149,6 +195,18 @@ public class BinaryExporterServletTest {
     @AfterClass
     public static void cleanup() {
         User systemUser = APILocator.systemUser();
+        if (UtilMethods.isSet(sharedWebpFileAsset) && UtilMethods.isSet(sharedWebpFileAsset.getInode())) {
+            FileAssetDataGen.remove(sharedWebpFileAsset);
+        }
+        if (UtilMethods.isSet(sharedFileAssetWithPerms) && UtilMethods.isSet(sharedFileAssetWithPerms.getInode())) {
+            FileAssetDataGen.remove(sharedFileAssetWithPerms);
+        }
+        if (UtilMethods.isSet(sharedFileAsset) && UtilMethods.isSet(sharedFileAsset.getInode())) {
+            FileAssetDataGen.remove(sharedFileAsset);
+        }
+        if (UtilMethods.isSet(sharedFolder) && UtilMethods.isSet(sharedFolder.getInode())) {
+            FolderDataGen.remove(sharedFolder);
+        }
         if (UtilMethods.isSet(host) && UtilMethods.isSet(host.getIdentifier())) {
             try {
                 host.setIndexPolicy(IndexPolicy.WAIT_FOR);
@@ -219,18 +277,11 @@ public class BinaryExporterServletTest {
         final boolean permissionsRequired = permissionType.equals(PERMISSIONS_REQUIRED);
         final boolean useDefaultLanguage = languageType.equals(DEFAULT_LANGUAGE);
 
-        Contentlet fileAsset = null;
-        final Folder folder = new FolderDataGen().site(host).nextPersisted();
-        try (TmpBinaryFile tmpSourceFile = new TmpBinaryFile(true);
-             TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false)) {
+        // Use shared file assets created in @BeforeClass
+        final Contentlet fileAsset = permissionsRequired
+                ? sharedFileAssetWithPerms : sharedFileAsset;
 
-            // Checkin file
-            fileAsset = checkinFileAsset(tmpSourceFile, folder);
-
-            // Set asset permissions
-            if (permissionsRequired) {
-                ServletTestUtils.addPermissions(fileAsset, role);
-            }
+        try (TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false)) {
 
             // Build request and response
             final String fileURI = "/contentAsset/raw-data/"
@@ -273,13 +324,6 @@ public class BinaryExporterServletTest {
                 assertArrayEquals(ShortyServletAndTitleImageTest.pngPixel, responseContent);
             }
 
-        } finally {
-            if (UtilMethods.isSet(fileAsset) && UtilMethods.isSet(fileAsset.getInode())) {
-                FileAssetDataGen.remove(fileAsset);
-            }
-            if (UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
-                FolderDataGen.remove(folder);
-            }
         }
 
     }
@@ -360,41 +404,31 @@ public class BinaryExporterServletTest {
     public void requestWebpImage(final String userAgent, final String expectedContentType)
             throws DotDataException, DotSecurityException, ServletException, IOException {
 
-        Contentlet fileContentlet = null;
+        // Use shared file asset created in @BeforeClass
+        final Contentlet fileContentlet = sharedWebpFileAsset;
 
-        try {
-            File png = getResourceFile("images/issue21652.png");
+        final String fileURI = "/contentAsset/image/" + fileContentlet.getInode()
+                + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader("user-agent")).thenReturn(userAgent);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getRequestURI()).thenReturn(fileURI);
+        when(request.getServletPath()).thenReturn("/contentAsset");
+        when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
+                .thenReturn("image/webp");
 
-            fileContentlet = new FileAssetDataGen(png).host(host)
-                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
+                .thenReturn("image/jpeg");
 
-            final String fileURI = "/contentAsset/image/" + fileContentlet.getInode()
-                    + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
-            final HttpServletRequest request = mock(HttpServletRequest.class);
-            when(request.getHeader("user-agent")).thenReturn(userAgent);
-            when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
-            when(request.getRequestURI()).thenReturn(fileURI);
-            when(request.getServletPath()).thenReturn("/contentAsset");
-            when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))
-                    .thenReturn("image/webp");
+        final HttpServletResponse response = new MockHttpContentTypeResponse(
+                new MockHttpResponse().response());
 
-            when(Config.CONTEXT.getMimeType(matches(".*\\.jpg")))
-                    .thenReturn("image/jpeg");
+        // Send servlet request
+        final BinaryExporterServlet binaryExporterServlet = new BinaryExporterServlet();
+        binaryExporterServlet.init();
+        binaryExporterServlet.doGet(request, response);
 
-            final HttpServletResponse response = new MockHttpContentTypeResponse(
-                    new MockHttpResponse().response());
-
-            // Send servlet request
-            final BinaryExporterServlet binaryExporterServlet = new BinaryExporterServlet();
-            binaryExporterServlet.init();
-            binaryExporterServlet.doGet(request, response);
-
-            assertEquals(expectedContentType, response.getContentType());
-        } finally {
-            if(fileContentlet!=null) {
-                ContentletDataGen.remove(fileContentlet);
-            }
-        }
+        assertEquals(expectedContentType, response.getContentType());
 
     }
 
@@ -404,18 +438,6 @@ public class BinaryExporterServletTest {
 
     private static String normalizeLineEnds(String s) {
         return s.replace("\r\n", "\n").replace('\r', '\n');
-    }
-
-    private Contentlet checkinFileAsset(final TmpBinaryFile tmpSourceFile, final Folder folder)
-            throws DotSecurityException, DotDataException {
-
-        final Contentlet fileAsset = new FileAssetDataGen(
-                folder, tmpSourceFile.getFile()).nextPersisted();
-        ContentletDataGen.publish(fileAsset);
-        assertTrue(APILocator.getContentletAPI().isInodeIndexed(
-                fileAsset.getInode(), true, 1000));
-        return fileAsset;
-
     }
 
     private HttpServletRequest mockServletRequest(final String fileURI) {
