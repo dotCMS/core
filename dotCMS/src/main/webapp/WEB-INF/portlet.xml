@@ -460,4 +460,11 @@
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>tags-new</portlet-name>
+        <display-name>Tags</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/tags-new</portlet-url>
+    </portlet>
+
 </portlet-app>

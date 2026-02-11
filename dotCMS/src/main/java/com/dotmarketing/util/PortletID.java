@@ -31,6 +31,7 @@ public enum PortletID {
     PUBLISHING_QUEUE, 
     QUERY_TOOL, 
     TAGS,
+    TAGS_NEW("tags-new"),
     TEMPLATES,
     TIME_MACHINE,
     REPORTS,
