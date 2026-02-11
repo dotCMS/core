@@ -84,7 +84,10 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
     const fullPath = `${hostName}${url}`;
 
     try {
-        if (baseType === DotCMSBaseTypesContentTypes.FILEASSET) {
+        if (
+            baseType === DotCMSBaseTypesContentTypes.FILEASSET ||
+            baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+        ) {
             // For file assets, remove the filename to get the directory path
             const pathSegments = fullPath.split('/');
             if (pathSegments.length > 1) {
