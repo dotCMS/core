@@ -25,14 +25,14 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'containers',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-containers/dot-containers.routes').then(
+            import('@portlets/dot-containers/dot-containers.routes').then(
                 (m) => m.dotContainersRoutes
             )
     },
     {
         path: 'categories',
         loadChildren: () =>
-            import('@dotcms/app/portlets/dot-categories/dot-categories.routes').then(
+            import('@portlets/dot-categories/dot-categories.routes').then(
                 (m) => m.dotCategoriesRoutes
             )
     },
@@ -41,7 +41,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         loadChildren: () =>
-            import('@portlets/dot-templates/dot-templates.routes').then((m) => m.DotTemplatesRoutes)
+            import('@portlets/dot-templates/dot-templates.routes').then((m) => m.dotTemplatesRoutes)
     },
     {
         path: 'content-types-angular',
@@ -63,7 +63,7 @@ const PORTLETS_ANGULAR: Route[] = [
             reuseRoute: false
         },
         loadChildren: () =>
-            import('@dotcms/portlets/dot-locales/portlet').then((m) => m.DotLocalesRoutes)
+            import('@dotcms/portlets/dot-locales/portlet').then((m) => m.dotLocalesRoutes)
     },
     // TODO: We need a fix from BE to remove those redirects
     {
@@ -84,7 +84,7 @@ const PORTLETS_ANGULAR: Route[] = [
             reuseRoute: false
         },
         loadChildren: () =>
-            import('@dotcms/portlets/dot-analytics/portlet').then((m) => m.DotAnalyticsRoutes)
+            import('@dotcms/portlets/dot-analytics/portlet').then((m) => m.dotAnalyticsRoutes)
     },
     {
         path: 'forms',
@@ -114,7 +114,7 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivateChild: [MenuGuardService],
         path: 'apps',
         loadChildren: () =>
-            import('./portlets/dot-apps/dot-apps.routes').then((m) => m.dotAppsRoutes)
+            import('@portlets/dot-apps/dot-apps.routes').then((m) => m.dotAppsRoutes)
     },
     {
         path: 'edit-page',
@@ -126,7 +126,7 @@ const PORTLETS_ANGULAR: Route[] = [
                 return inject(EmaAppConfigurationService).get(route.queryParams.url);
             }
         },
-        loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.DotEmaRoutes)
+        loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.dotEmaRoutes)
     },
     {
         canActivate: [editContentGuard],
@@ -134,7 +134,7 @@ const PORTLETS_ANGULAR: Route[] = [
         data: {
             reuseRoute: false
         },
-        loadChildren: () => import('@dotcms/edit-content').then((m) => m.DotEditContentRoutes)
+        loadChildren: () => import('@dotcms/edit-content').then((m) => m.dotEditContentRoutes)
     },
     {
         canActivate: [MenuGuardService, PagesGuardService],
@@ -147,13 +147,18 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivateChild: [MenuGuardService],
         path: 'content-drive',
         loadChildren: () =>
-            import('@dotcms/portlets/content-drive/portlet').then((m) => m.DotContentDriveRoutes)
+            import('@dotcms/portlets/content-drive/portlet').then((m) => m.dotContentDriveRoutes)
     },
     {
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         path: 'usage',
-        loadChildren: () => import('@dotcms/portlets/dot-usage').then((m) => m.DotUsageRoutes)
+        loadChildren: () => import('@dotcms/portlets/dot-usage').then((m) => m.dotUsageRoutes)
+    },
+    {
+        path: 'tags-new',
+        data: { reuseRoute: false },
+        loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
     },
     {
         path: '',

@@ -1,11 +1,10 @@
 {
   "mcpServers": {
-    "nx-mcp": {
+    "chrome-devtools": {
+      "type": "stdio",
       "command": "npx",
-      "args": [
-        "-y",
-        "nx-mcp@latest"
-      ]
+      "args": ["chrome-devtools-mcp@latest"],
+      "env": {}
     },
     "primeng": {
       "command": "npx",

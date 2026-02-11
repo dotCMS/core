@@ -1,1 +1,1 @@
-export * from './lib/dot-experiments-portlet-routes';
+export * from './lib/lib.routes';
