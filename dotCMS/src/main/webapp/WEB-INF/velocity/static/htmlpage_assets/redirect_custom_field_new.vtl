@@ -17,10 +17,30 @@
     };
     updateClearButtonVisibility();
 
-    // Sync typed URL to field value so it is saved
-    redirectURLBox.addEventListener("input", () => {
+    const debounce = (callback, wait) => {
+      let timeoutId = null;
+      return (...args) => {
+        window.clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => {
+          callback.apply(null, args);
+        }, wait);
+      };
+    };
+
+    const syncValueToField = () => {
       redirectField.setValue(redirectURLBox.value || "");
+    };
+    const debouncedSync = debounce(syncValueToField, 300);
+
+    // Sync typed URL to field value so it is saved (debounced to avoid UI lag from validation on every keystroke)
+    redirectURLBox.addEventListener("input", () => {
       updateClearButtonVisibility();
+      debouncedSync();
+    });
+
+    // Sync immediately on blur so the form has the latest value when leaving the field
+    redirectURLBox.addEventListener("blur", () => {
+      syncValueToField();
     });
 
     // Handle clear button click
