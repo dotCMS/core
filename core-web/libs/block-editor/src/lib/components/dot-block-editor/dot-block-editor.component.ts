@@ -17,7 +17,12 @@ import {
     SimpleChanges,
     ViewContainerRef
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+    AbstractControl,
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR,
+    NgControl
+} from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -52,23 +57,23 @@ import {
     AssetUploader,
     BubbleAssetFormExtension,
     BubbleFormExtension,
+    DotCMSTableExtensions,
     DotComands,
     DotConfigExtension,
-    DotTableCellContextMenu,
     DotFloatingButton,
-    DotCMSTableExtensions,
+    DotTableCellContextMenu,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
 import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
+    DEFAULT_LANG_ID,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
     RestoreDefaultDOMAttrs,
-    SetDocAttrStep,
-    DEFAULT_LANG_ID
+    SetDocAttrStep
 } from '../../shared';
 
 @Component({
@@ -93,6 +98,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
+    @Input() hasFieldError = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
     public allowedContentTypes: string;
@@ -149,6 +155,35 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         // The constant used by Medium for words an adult can read per minute is 265
         // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
         return Math.ceil(this.characterCount.words() / 265);
+    }
+
+    /**
+     * Returns the charLimitExceeded error if it exists on the control.
+     * Used in the template to display the error message.
+     */
+    get charLimitError(): { max: number; actual: number } | null {
+        const ngControl = this.#injector.get(NgControl, null);
+
+        return ngControl?.control?.errors?.['charLimitExceeded'] ?? null;
+    }
+
+    /**
+     * Returns true if the editor should show error styling (red border).
+     * Combines the external error state (from parent) with internal charLimit validation.
+     */
+    get hasError(): boolean {
+        return this.hasFieldError || !!this.charLimitError;
+    }
+
+    /**
+     * Returns true if the control has a required error and has been touched.
+     * Used to display the required error message in the footer.
+     */
+    get requiredError(): boolean {
+        const ngControl = this.#injector.get(NgControl, null);
+        const control = ngControl?.control;
+
+        return !!(control?.errors?.['required'] && control?.touched);
     }
 
     registerOnChange(fn: (value: string) => void) {
@@ -229,7 +264,62 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
         this.valueChange.emit(value);
         this.onChange?.(JSON.stringify(value));
-        this.onTouched?.();
+        this.updateCharLimitValidity();
+    }
+
+    /**
+     * Updates the form control validity based on charLimit.
+     * When character count exceeds charLimit, sets charLimitExceeded error
+     * so the form cannot be saved.
+     *
+     * @private
+     * @memberof DotBlockEditorComponent
+     */
+    private updateCharLimitValidity(): void {
+        const ngControl = this.#injector.get(NgControl, null);
+        const control = ngControl?.control;
+        if (!control) {
+            return;
+        }
+
+        const limit = this.charLimit;
+        if (!Number.isFinite(limit) || limit <= 0) {
+            this.clearCharLimitError(control);
+
+            return;
+        }
+
+        const count = this.characterCount?.characters?.() ?? 0;
+        if (count > limit) {
+            control.setErrors({
+                ...(control.errors || {}),
+                charLimitExceeded: { max: limit, actual: count }
+            });
+            control.markAsTouched();
+        } else {
+            this.clearCharLimitError(control);
+        }
+    }
+
+    /**
+     * Removes the charLimitExceeded error from the control while preserving other errors.
+     *
+     * @private
+     * @param {AbstractControl} control - The form control to clear the error from
+     * @memberof DotBlockEditorComponent
+     */
+    private clearCharLimitError(control: AbstractControl): void {
+        const errors = control.errors;
+        if (!errors || !('charLimitExceeded' in errors)) {
+            return;
+        }
+
+        // Remove charLimitExceeded while preserving other errors
+        const rest = Object.keys(errors)
+            .filter((key) => key !== 'charLimitExceeded')
+            .reduce((acc, key) => ({ ...acc, [key]: errors[key] }), {});
+
+        control.setErrors(Object.keys(rest).length > 0 ? rest : null);
     }
 
     setAllowedBlocks(blocks: string) {
@@ -248,7 +338,20 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         this.editor.on('create', () => {
             this.setEditorContent(this.value);
             this.updateCharCount();
+            // Validate char limit on initial load (e.g., existing content over limit)
+            this.updateCharLimitValidity();
         });
+
+        // Validate char limit on every update (typing, paste, etc.)
+        this.editor.on('update', () => {
+            this.updateCharLimitValidity();
+        });
+
+        // Mark control as touched when user leaves the editor (proper ControlValueAccessor pattern)
+        this.editor.on('blur', () => {
+            this.onTouched?.();
+        });
+
         this.subject
             .pipe(takeUntil(this.destroy$), debounceTime(250))
             .subscribe(() => this.updateCharCount());

@@ -2,6 +2,7 @@ package com.dotcms.exception;
 
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BADTYPE;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_CARDINALITY;
+import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_CHAR_LIMIT;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_BAD_REL;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_INVALID_REL_CONTENT;
 import static com.dotmarketing.portlets.contentlet.business.DotContentletValidationException.VALIDATION_FAILED_PATTERN;
@@ -349,6 +350,19 @@ public class ExceptionUtil {
                             .add(new ValidationError(field.getVelocityVarName(), errorString));
                 }
 
+            }
+
+            if (ve.hasCharLimitErrors()) {
+                final List<Field> reqs = ve.getNotValidFields().get(VALIDATION_FAILED_CHAR_LIMIT);
+                final Map<String, Integer> charLimitMaxByFieldVar = ve.getCharLimitMaxByFieldVar();
+                for (final Field field : reqs) {
+                    final Integer maxLimit = charLimitMaxByFieldVar.get(field.getVelocityVarName());
+                    String errorString = LanguageUtil.get(user, "dot.edit.content.form.field.charLimitExceeded",
+                            maxLimit != null ? maxLimit : 0);
+                    contentValidationErrors
+                            .computeIfAbsent(VALIDATION_FAILED_CHAR_LIMIT, k -> new ArrayList<>())
+                            .add(new ValidationError(field.getVelocityVarName(), errorString));
+                }
             }
 
             if (ve.hasRelationshipErrors()) {
