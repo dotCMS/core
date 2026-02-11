@@ -69,8 +69,7 @@
                     "node_modules/prismjs/themes/prism-okaidia.css",
                     "node_modules/primeicons/primeicons.css",
                     "libs/dotcms-scss/angular/styles.scss",
-                    "apps/dotcms-ui/src/style.css",
-                    "node_modules/gridstack/dist/gridstack.min.css"
+                    "apps/dotcms-ui/src/style.css"
                 ],
                 "scripts": [],
                 "stylePreprocessorOptions": {
