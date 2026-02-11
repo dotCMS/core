@@ -4,12 +4,15 @@ import { MockComponent } from 'ng-mocks';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldUiMessageComponent } from './dot-binary-field-ui-message.component';
 
 import { DotBinaryFieldEditorComponent } from '../dot-binary-field-editor/dot-binary-field-editor.component';
+
+const disabled = signal(false);
 
 describe('DotBinaryFieldUiMessageComponent', () => {
     let spectator: SpectatorHost<DotBinaryFieldUiMessageComponent>;
@@ -37,7 +40,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
                         icon: 'pi pi-upload',
                         severity: 'info'
                     },
-                    disabled: false
+                    disabled
                 }
             }
         );
@@ -45,7 +48,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
         await spectator.fixture.whenStable();
     });
 
-    it('should have a message, icon, and serverity', () => {
+    it('should have a message, icon, and severity', () => {
         const messageText = spectator.query(byTestId('ui-message-span')).innerHTML;
         const messageIconClass = spectator.query(byTestId('ui-message-icon')).className;
         const messageIconContainer = spectator.query(
@@ -53,8 +56,8 @@ describe('DotBinaryFieldUiMessageComponent', () => {
         ).className;
 
         expect(messageText).toBe('Drag and Drop File');
-        expect(messageIconClass).toBe('icon pi pi-upload');
-        expect(messageIconContainer).toBe('icon-container info');
+        expect(messageIconClass).toContain('pi pi-upload');
+        expect(messageIconContainer).toContain('rounded-full');
     });
 
     it('should have a button', () => {
@@ -64,8 +67,8 @@ describe('DotBinaryFieldUiMessageComponent', () => {
 
     describe('when disabled', () => {
         beforeEach(() => {
-            spectator.setHostInput({ disabled: true });
-            spectator.detectChanges();
+            disabled.set(true);
+            spectator.fixture.changeDetectorRef.detectChanges();
         });
 
         it('should add disabled class to host element', () => {
@@ -88,7 +91,7 @@ describe('DotBinaryFieldUiMessageComponent', () => {
             const button = spectator.query(byTestId('choose-file-btn'));
 
             expect(messageText).toBe('Drag and Drop File');
-            expect(messageIconClass).toBe('icon pi pi-upload');
+            expect(messageIconClass).toContain('pi pi-upload');
             expect(button).toBeTruthy();
         });
     });

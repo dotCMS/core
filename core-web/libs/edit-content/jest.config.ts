@@ -8,8 +8,9 @@ export default {
         '^.+\\.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
+                tsconfig: '<rootDir>/tsconfig.spec.json',
                 stringifyContentPathRegex: '\\.(html|svg)$',
-                tsconfig: '<rootDir>/tsconfig.spec.json'
+                isolatedModules: true
             }
         ]
     },

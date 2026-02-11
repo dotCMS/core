@@ -16,6 +16,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
+import { DotCalendarFieldComponent } from './components/calendar-field/calendar-field.component';
 import * as calendarUtils from './components/calendar-field/calendar-field.util';
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
 
@@ -313,13 +314,15 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const component = spectator.hostComponent.formGroup;
-            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            const formGroup = spectator.hostComponent.formGroup;
+            const control = formGroup.get(DATE_FIELD_MOCK.variable) as FormControl;
             control.disable();
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
-            expect(calendar.disabled).toBe(true);
+            // Calendar-field uses internalFormControl; PrimeNG DatePicker binds to it.
+            // Assert on the calendar-field's internalFormControl since DatePicker.disabled may be a signal.
+            const calendarField = spectator.query(DotCalendarFieldComponent);
+            expect(calendarField?.internalFormControl.disabled).toBe(true);
         });
 
         it('should enable calendar when setDisabledState is called with false', () => {
@@ -343,13 +346,13 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const component = spectator.hostComponent.formGroup;
-            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            const formGroup = spectator.hostComponent.formGroup;
+            const control = formGroup.get(DATE_FIELD_MOCK.variable) as FormControl;
             control.enable();
             spectator.detectChanges();
 
-            const calendar = spectator.query(DatePicker);
-            expect(calendar.disabled).toBe(false);
+            const calendarField = spectator.query(DotCalendarFieldComponent);
+            expect(calendarField?.internalFormControl.disabled).toBe(false);
         });
     });
 

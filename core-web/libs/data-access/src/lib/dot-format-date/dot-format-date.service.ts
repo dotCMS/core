@@ -8,8 +8,7 @@ import {
     parse
 } from 'date-fns';
 
-import { inject, Injectable, Signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { inject, Injectable, Signal, toSignal } from '@angular/core';
 
 import { DotcmsConfigService, DotTimeZone, LoginService } from '@dotcms/dotcms-js';
 import { DotLocaleOptions } from '@dotcms/dotcms-models';

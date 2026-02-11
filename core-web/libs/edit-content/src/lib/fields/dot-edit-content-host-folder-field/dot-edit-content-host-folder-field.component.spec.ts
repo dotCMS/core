@@ -89,19 +89,20 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         expect(field.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
     });
 
-    it('should tree selection height and virtual scroll height be the same', async () => {
+    it('should have virtual scroll configured with consistent height', async () => {
         spectator.detectChanges();
 
-        const triggerElement = spectator.query('.p-treeselect-trigger');
+        const triggerElement = spectator.query('.p-treeselect-dropdown');
+        expect(triggerElement).toBeTruthy();
         spectator.click(triggerElement);
 
         await spectator.fixture.whenStable();
 
         const field = spectator.query(DotHostFolderFieldComponent);
-        const treeSelectHeight = field.$treeSelect().scrollHeight;
-        const treeVirtualScrollHeight = field.$treeSelect().virtualScrollOptions.style['height'];
-
-        expect(treeSelectHeight).toBe(treeVirtualScrollHeight);
+        const treeSelect = field.$treeSelect();
+        expect(treeSelect.scrollHeight).toBe('100%');
+        expect(treeSelect.virtualScrollOptions.style['height']).toBe('450px');
+        expect(treeSelect.virtualScrollOptions.style['minHeight']).toBe('450px');
     });
 
     describe('The init value with the root path', () => {

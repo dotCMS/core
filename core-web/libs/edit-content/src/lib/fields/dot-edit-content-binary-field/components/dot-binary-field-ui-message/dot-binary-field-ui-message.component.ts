@@ -9,7 +9,10 @@ import { UiMessageI } from '../../interfaces';
     selector: 'dot-binary-field-ui-message',
     imports: [CommonModule, DotMessagePipe],
     templateUrl: './dot-binary-field-ui-message.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '[class.disabled]': '$disabled()'
+    }
 })
 export class DotBinaryFieldUiMessageComponent {
     $uiMessage = input<UiMessageI>(undefined, { alias: 'uiMessage' });

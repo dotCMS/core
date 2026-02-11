@@ -18,6 +18,7 @@
                     @for (item of column; track item.key) {
                         <div
                             data-testId="category-item"
+                            [attr.data-clicked]="item.clicked ? 'true' : null"
                             class="flex content-center items-center h-10 flex-nowrap transition-colors duration-200 animate-[fadeIn_0.2s_ease-out] animate-fill-forwards hover:bg-(--color-palette-primary-100)"
                             [ngClass]="{ 'bg-(--color-palette-primary-200)': item.clicked }">
                             <p-checkbox

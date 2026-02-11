@@ -1,9 +1,9 @@
-import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
 
 import { DatePipe } from '@angular/common';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
 import {
     DotEmptyContainerComponent,
@@ -90,7 +90,10 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         'edit.content.sidebar.history.versions': 'Versions',
         'edit.content.sidebar.history.push.publish': 'Push Publish',
         'edit.content.sidebar.history.empty.message':
-            "This content doesn't have any version history yet."
+            "This content doesn't have any version history yet.",
+        'edit.content.sidebar.history.push.publish.empty.message':
+            "This content doesn't have any push publish history yet.",
+        'edit.content.sidebar.history.push.publish.delete.all': 'Delete All'
     });
 
     const createComponent = createComponentFactory({
@@ -99,7 +102,8 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             DatePipe,
             DotMessagePipe,
             DotRelativeDatePipe,
-            { provide: DotMessageService, useValue: messageServiceMock }
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotFormatDateService)
         ],
         imports: [
             DotEmptyContainerComponent,
