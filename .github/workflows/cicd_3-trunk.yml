@@ -39,6 +39,21 @@ on:
         description: 'Disable Semgrep job'
         type: boolean
         default: false
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        type: string
+        required: false
+        default: ''
+      maven-compiler-release:
+        description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1, -java25-ms). If not set, derived from java-version major.'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   # Initialize the trunk check process
@@ -57,6 +72,10 @@ jobs:
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     permissions:
       contents: read
       packages: write
@@ -71,6 +90,9 @@ jobs:
       run-all-tests: ${{ inputs.run-all-tests || false }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       e2e: false
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:
@@ -88,10 +110,11 @@ jobs:
       SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   # CLI Build job - builds CLI artifacts
+  # Skipped when java-version is overridden due to GraalVM/Quarkus compatibility requirements
   build-cli:
     name: CLI Build
     needs: [ initialize,test ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && !inputs.java-version
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
@@ -107,6 +130,8 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       publish-npm-sdk-libs: ${{ needs.initialize.outputs.sdk_libs != 'false' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}

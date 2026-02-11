@@ -50,6 +50,16 @@ on:
         description: 'Update GitHub labels'
         type: boolean
         default: true
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        required: false
+        type: string
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1-ms). If not set, derived from java-version major.'
+        required: false
+        type: string
+        default: ''
     secrets:
       EE_REPO_USERNAME:
         required: false
@@ -83,14 +93,36 @@ jobs:
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
 
+      - name: Compute Java Suffix
+        id: java-suffix
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.java-version }}" ]; then
+            # Priority: explicit artifact-suffix > derived from java-version major
+            if [ -n "${{ inputs.artifact-suffix }}" ]; then
+              JAVA_SUFFIX="${{ inputs.artifact-suffix }}"
+              echo "Using explicit artifact suffix: ${JAVA_SUFFIX}"
+            else
+              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+              JAVA_SUFFIX="-java${JAVA_MAJOR}"
+              echo "Using derived artifact suffix: ${JAVA_SUFFIX}"
+            fi
+          else
+            JAVA_SUFFIX=""
+          fi
+          echo "suffix=${JAVA_SUFFIX}" >> "$GITHUB_OUTPUT"
+          echo "Java suffix: '${JAVA_SUFFIX}'"
+
       - name: Setup Java
         id: setup-java
         uses: ./.github/actions/core-cicd/setup-java
+        with:
+          java-version: ${{ inputs.java-version }}
 
       - name: Restore Maven Repository
         uses: actions/download-artifact@v4
         with:
-          name: maven-repo
+          name: maven-repo${{ steps.java-suffix.outputs.suffix }}
           path: ~/.m2/repository
 
       - name: Configure Maven Settings
@@ -129,7 +161,7 @@ jobs:
 
           site_dir=./dotCMS/target/site
           javadoc_dir=${site_dir}/javadocs
-          s3_uri=s3://static.dotcms.com/docs/${{ inputs.release_version }}/javadocs
+          s3_uri=s3://static.dotcms.com/docs/${{ inputs.release_version }}${{ steps.java-suffix.outputs.suffix }}/javadocs
 
           mv ${site_dir}/apidocs ${javadoc_dir}
           echo "Running: aws s3 cp ${javadoc_dir} ${s3_uri} --recursive"

@@ -93,6 +93,12 @@ inputs:
     description: 'Require GraalVM to be installed'
     required: true
     default: 'false'
+  maven-compiler-release:
+    description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+    required: false
+  artifact-suffix:
+    description: 'Suffix for artifact names (e.g., -java25). Computed from java-version if not provided.'
+    required: false
 runs:
   using: 'composite'
   steps:
@@ -104,6 +110,23 @@ runs:
         java-version: ${{ inputs.java-version }}
         require-graalvm: ${{ inputs.native || inputs.require-graalvm }}
         graalvm-version: ${{ inputs.graalvm-version }}
+
+    - name: Compute Artifact Suffix
+      id: artifact-suffix
+      shell: bash
+      run: |
+        # Use provided artifact-suffix if set, otherwise compute from java-version
+        if [ -n "${{ inputs.artifact-suffix }}" ]; then
+          ARTIFACT_SUFFIX="${{ inputs.artifact-suffix }}"
+        elif [ -n "${{ inputs.java-version }}" ]; then
+          JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+          ARTIFACT_SUFFIX="-java${JAVA_MAJOR}"
+        else
+          ARTIFACT_SUFFIX=""
+        fi
+        echo "suffix=${ARTIFACT_SUFFIX}" >> $GITHUB_OUTPUT
+        echo "Artifact suffix: '${ARTIFACT_SUFFIX}'"
+
     - id: setup-license
       if: ${{ inputs.dotcms-license != '' }}
       name: Setup License
@@ -171,7 +194,7 @@ runs:
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
-        name: maven-repo
+        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ~/.m2/repository
 
     - id: restore-artifact-docker-image
@@ -179,7 +202,7 @@ runs:
       if: ${{ inputs.needs-docker-image == 'true' }}
       uses: actions/download-artifact@v4
       with:
-        name: docker-image
+        name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/docker-image
 
     - name: Load Docker image from tar file
@@ -194,7 +217,7 @@ runs:
       with:
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
-        name: "build-classes"
+        name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
 
     - id: run-maven-build
       name: Run Maven Build
@@ -209,7 +232,22 @@ runs:
         if [[ "${{ inputs.native }}" == "true" ]]; then
           DEFAULT_ARGS="$DEFAULT_ARGS -Pnative"
         fi
-        FINAL_ARGS=$(echo "$DEFAULT_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+
+        # Add Maven compiler release override flag
+        # Priority: explicit maven-compiler-release > default from java-version major > project defaults
+        COMPILER_ARGS=""
+        if [[ -n "${{ inputs.maven-compiler-release }}" ]]; then
+          # Explicit release override takes precedence
+          COMPILER_ARGS="-Dmaven.compiler.release=${{ inputs.maven-compiler-release }}"
+          echo "Using explicit maven.compiler.release=${{ inputs.maven-compiler-release }}"
+        elif [[ -n "${{ inputs.java-version }}" ]]; then
+          # Default compiler release to match the overridden Java version
+          JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+          COMPILER_ARGS="-Dmaven.compiler.release=${JAVA_MAJOR}"
+          echo "Defaulting maven.compiler.release=${JAVA_MAJOR} to match java-version"
+        fi
+
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
           echo "Building Maven with args $FINAL_ARGS"
@@ -227,7 +265,7 @@ runs:
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: maven-repo
+        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ~/.m2/repository
 
     - id: persist-docker-build-context
@@ -235,7 +273,7 @@ runs:
       if: ${{ inputs.generate-docker == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: docker-build-context
+        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
         path: dotCMS/target/docker-build.tar
 
     - id: get-sdkman-version
@@ -243,14 +281,18 @@ runs:
       if: ${{ inputs.generate-docker == 'true' }}
       shell: bash
       run: |
-        if [ -f ".sdkmanrc" ]; then
+        # Use provided java-version if set, otherwise read from .sdkmanrc
+        if [ -n "${{ inputs.java-version }}" ]; then
+          SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
+          echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+        elif [ -f ".sdkmanrc" ]; then
           SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {print $2}' .sdkmanrc)
-          echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
-          echo "Extracted SDKMAN_JAVA_VERSION: ${SDKMAN_JAVA_VERSION}"
+          echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
         else
-          echo "Error: .sdkmanrc file not found"
+          echo "Error: .sdkmanrc file not found and no java-version override provided"
           exit 1
         fi
+        echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
 
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive
@@ -278,7 +320,7 @@ runs:
       uses: actions/upload-artifact@v4
       if: ${{ inputs.generate-docker == 'true' }}
       with:
-        name: docker-image
+        name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/image.tar
 
     - id: persist-build-classes
@@ -286,7 +328,7 @@ runs:
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@v4
       with:
-        name: "build-classes"
+        name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
         path: |
           **/target/classes/**/*.class
           **/target/generated-sources/**/*.java

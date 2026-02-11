@@ -35,6 +35,9 @@ on:
         required: false
         type: string
         default: '1.0.0-SNAPSHOT'
+      # Note: Java override inputs are intentionally not supported for CLI native builds
+      # due to GraalVM/Quarkus compatibility requirements. The calling workflows skip
+      # CLI builds when java-version is overridden.
     outputs:
       artifact-id:
         description: 'The ID of the uploaded artifact'
@@ -89,6 +92,7 @@ jobs:
           ref: ${{ env.BRANCH }}
 
       # Use custom Maven job action to build the native image
+      # Note: Java override not supported for CLI - uses default from .sdkmanrc
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           cleanup-runner: true
