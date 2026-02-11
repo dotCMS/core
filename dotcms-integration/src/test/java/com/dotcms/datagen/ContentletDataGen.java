@@ -363,6 +363,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @WrapInTransaction
     public static void archive(Contentlet contentlet) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentletAPI.archive(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -377,6 +378,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @WrapInTransaction
     public static void delete(Contentlet contentlet) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentletAPI.delete(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -405,6 +407,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
         if (null != contentlet) {
             try {
+                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 APILocator.getContentletAPI().destroy(contentlet, APILocator.systemUser(), false);
             } catch (Exception e) {
                 if (failSilently) {

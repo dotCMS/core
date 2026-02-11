@@ -147,6 +147,8 @@ public class ContentMapTest extends IntegrationTestBase {
 
         APILocator.getPermissionAPI().save(catsPermsSystemHost, APILocator.systemHost(),
                 APILocator.systemUser(), false);
+        // Ensure permissions are properly propagated to child categories
+        APILocator.getPermissionAPI().resetPermissionsUnder(APILocator.systemHost());
 
         //Create Categories
         final Category categoryChild1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords("RoadBike").setCategoryVelocityVarName("roadBike").next();
@@ -476,10 +478,9 @@ public class ContentMapTest extends IntegrationTestBase {
     public void testGetRecycledRequest() throws DotDataException, DotSecurityException {
 
         final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllContent(1, 5);
-        if(contentlets.isEmpty()) {
+        if (contentlets.isEmpty()) {
             throw new DotDataException("No contentlets found");
         }
-
         final Contentlet content = contentlets.get(0);
         final User user = APILocator.systemUser();
         final boolean EDIT_OR_PREVIEW_MODE = true;
