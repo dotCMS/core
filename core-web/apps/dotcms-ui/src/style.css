@@ -26,6 +26,14 @@ a:visited {
     @apply w-full space-y-5;
 }
 
+/* This class is added by the dotFieldRequired directive */
+.p-label-input-required::after {
+    @apply text-red-500;
+    content: '*';
+    margin-left: 2px;
+    vertical-align: middle;
+}
+
 /*
 Since we using space-y-5, we need to hide the empty fields.
 This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.

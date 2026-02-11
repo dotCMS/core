@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -13,7 +15,6 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -64,11 +65,7 @@ export class DotTagsListComponent {
 
     constructor() {
         this.searchSubject
-            .pipe(
-                debounceTime(300),
-                distinctUntilChanged(),
-                takeUntilDestroyed(this.destroyRef)
-            )
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
             .subscribe((value) => this.store.setFilter(value));
     }
 
