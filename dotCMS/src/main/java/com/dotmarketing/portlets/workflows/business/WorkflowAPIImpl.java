@@ -661,9 +661,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		try {
 
 			Logger.info(WorkflowAPIImpl.class, String.format("Saving Schemas [ %s ] for Content type '%s'",
-					String.join(",", schemesIds), contentType.inode()));
+					String.join(",", schemesIds), contentType.variable()));
 			SecurityLogger.logInfo(this.getClass(), ()-> String.format("Saving Schemas [ %s ] for Content type '%s'",
-					String.join(",", schemesIds), contentType.inode()));
+					String.join(",", schemesIds), contentType.variable()));
 
 			workFlowFactory.saveSchemeIdsForContentType(contentType.inode(),
 					schemesIds.stream().map(this::getLongIdForScheme).collect(Collectors.toSet()),
@@ -676,7 +676,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
         } catch (final DotDataException | DotSecurityException e) {
 
 			Logger.error(WorkflowAPIImpl.class, String.format("Error saving Schemas [ %s ] for Content Type '%s': %s",
-					String.join(",", schemesIds), contentType.inode(), e.getMessage()));
+					String.join(",", schemesIds), contentType.variable(), e.getMessage()));
 		}
 	}
 
@@ -728,7 +728,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} else {
 
 			try {
-					Logger.debug(this, () -> "Finding the schemes for: " + contentType);
+				Logger.debug(this, () -> "Finding the schemes for: " + contentType.variable());
 					final List<WorkflowScheme> contentTypeSchemes = hasValidLicense() ?
 							this.workFlowFactory.findSchemesForStruct(contentType.inode()) :
 							Arrays.asList(workFlowFactory.findSystemWorkflow()) ;
