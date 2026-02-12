@@ -130,17 +130,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         if: ${{ inputs.change-detection == 'enabled' }}
+        with:
+          # Fetch enough history to find merge-base for accurate PR comparison
+          fetch-depth: 0
+
+      # Calculate the correct base for comparison
+      # For PRs in workflow_call context, paths-filter doesn't recognize it as a PR event
+      # and falls back to git diff. We need to provide the merge-base explicitly.
+      - name: Calculate comparison base
+        if: ${{ inputs.change-detection == 'enabled' }}
+        id: calc-base
+        run: |
+          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
+            # PR context: calculate merge-base between PR head and base branch
+            PR_HEAD="${{ github.event.pull_request.head.sha }}"
+            PR_BASE="${{ github.event.pull_request.base.sha }}"
+            MERGE_BASE=$(git merge-base "$PR_HEAD" "$PR_BASE")
+            echo "PR detected - using merge-base: $MERGE_BASE"
+            echo "base=$MERGE_BASE" >> $GITHUB_OUTPUT
+            echo "ref=$PR_HEAD" >> $GITHUB_OUTPUT
+          elif [ -n "${{ github.event.merge_group.base_sha }}" ]; then
+            # Merge queue context
+            echo "Merge queue detected"
+            echo "base=${{ github.event.merge_group.base_sha }}" >> $GITHUB_OUTPUT
+            echo "ref=" >> $GITHUB_OUTPUT
+          else
+            # Other contexts (push, etc.) - let paths-filter use defaults
+            echo "Non-PR context - using defaults"
+            echo "base=" >> $GITHUB_OUTPUT
+            echo "ref=" >> $GITHUB_OUTPUT
+          fi
 
       # Execute the paths-filter step to determine changes
-      # For PRs, explicitly use the PR base SHA to ensure accurate comparison
-      # even when the branch is not rebased onto latest main
       - uses: dorny/paths-filter@v3.0.1
         if: ${{ inputs.change-detection == 'enabled' }}
         id: filter
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
-          base: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || '' }}
+          base: ${{ steps.calc-base.outputs.base }}
+          ref: ${{ steps.calc-base.outputs.ref }}
 
       - name: Rewrite Filter
         id: filter-rewrite
