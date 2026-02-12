@@ -132,12 +132,15 @@ jobs:
         if: ${{ inputs.change-detection == 'enabled' }}
 
       # Execute the paths-filter step to determine changes
+      # For PRs, explicitly use the PR base SHA to ensure accurate comparison
+      # even when the branch is not rebased onto latest main
       - uses: dorny/paths-filter@v3.0.1
         if: ${{ inputs.change-detection == 'enabled' }}
         id: filter
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
+          base: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || '' }}
 
       - name: Rewrite Filter
         id: filter-rewrite
