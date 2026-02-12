@@ -1,6 +1,6 @@
 /**
  * =====================================================================================
- * 3) SessionsByBrowserDaily Cube
+ * SessionsByBrowserDaily Cube
  * =====================================================================================
  *
  * Source table:
@@ -17,6 +17,7 @@
 cube(`SessionsByBrowserDaily`, {
     sql: `
         SELECT
+            cluster_id,
             customer_id,
             context_site_id,
             day,
@@ -26,6 +27,10 @@ cube(`SessionsByBrowserDaily`, {
             total_duration_engaged_seconds,
             updated_at
         FROM clickhouse_test_db.sessions_by_browser_daily
+        WHERE ${FILTER_PARAMS.SessionsByBrowserDaily.customerId.filter('customer_id')} AND (
+            ${FILTER_PARAMS.SessionsByBrowserDaily.clusterId ? FILTER_PARAMS.SessionsByBrowserDaily.clusterId.filter('cluster_id') : '1=1'}
+                OR (${FILTER_PARAMS.SessionsByBrowserDaily.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
+            ${FILTER_PARAMS.SessionsByBrowserDaily.day.filter('day')}
     `,
 
     measures: {

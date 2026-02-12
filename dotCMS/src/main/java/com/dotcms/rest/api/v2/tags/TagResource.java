@@ -479,25 +479,34 @@ public class TagResource {
         }
         targetSiteId = targetHost.getIdentifier();
 
+        // 4b. Resolve through tagStorage (consistent with TagAPIImpl.saveTag behavior)
+        final String effectiveSiteId;
+        if (!targetSiteId.equals(Host.SYSTEM_HOST)) {
+            final Object tagStorage = targetHost.getMap().get("tagStorage");
+            effectiveSiteId = UtilMethods.isSet(tagStorage) ? tagStorage.toString() : targetSiteId;
+        } else {
+            effectiveSiteId = Host.SYSTEM_HOST;
+        }
+
         // 5. Check for duplicate if name or site is changing
-        //    Resolve tag storage so the check matches where tags are actually stored
-        final String targetStorageHostId = helper.resolveTagStorageHost(targetSiteId);
+        //    Use effectiveSiteId (resolved tag storage) so the check matches where tags are stored
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
-                !existingTag.getHostId().equals(targetStorageHostId)) {
+                !existingTag.getHostId().equals(effectiveSiteId)) {
 
             final Tag duplicateCheck = Try.of(() ->
-                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetStorageHostId)).getOrNull();
-            
+                    tagAPI.getTagByNameAndHost(tagForm.getName(), effectiveSiteId)).getOrNull();
+
+
             if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
                 throw new BadRequestException(
-                    String.format("Tag '%s' already exists for site '%s'", 
-                        tagForm.getName(), targetSiteId)
+                    String.format("Tag '%s' already exists for site '%s'",
+                        tagForm.getName(), effectiveSiteId)
                 );
             }
         }
 
         // 6. Update the tag
-        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, targetSiteId);
+        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, effectiveSiteId);
 
         // 7. Get updated tag and return
         final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
