@@ -783,7 +783,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	/**
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
+	 */
 	@Override
+	@Deprecated
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllContent(offset, limit);
