@@ -130,46 +130,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         if: ${{ inputs.change-detection == 'enabled' }}
-        with:
-          # Fetch enough history to find merge-base for accurate PR comparison
-          fetch-depth: 0
-
-      # Calculate the correct base for comparison
-      # For PRs in workflow_call context, paths-filter doesn't recognize it as a PR event
-      # and falls back to git diff. We need to provide the merge-base explicitly.
-      - name: Calculate comparison base
-        if: ${{ inputs.change-detection == 'enabled' }}
-        id: calc-base
-        run: |
-          if [ -n "${{ github.event.pull_request.head.sha }}" ]; then
-            # PR context: calculate merge-base between PR head and base branch
-            PR_HEAD="${{ github.event.pull_request.head.sha }}"
-            PR_BASE="${{ github.event.pull_request.base.sha }}"
-            MERGE_BASE=$(git merge-base "$PR_HEAD" "$PR_BASE")
-            echo "PR detected - using merge-base: $MERGE_BASE"
-            echo "base=$MERGE_BASE" >> $GITHUB_OUTPUT
-            echo "ref=$PR_HEAD" >> $GITHUB_OUTPUT
-          elif [ -n "${{ github.event.merge_group.base_sha }}" ]; then
-            # Merge queue context
-            echo "Merge queue detected"
-            echo "base=${{ github.event.merge_group.base_sha }}" >> $GITHUB_OUTPUT
-            echo "ref=" >> $GITHUB_OUTPUT
-          else
-            # Other contexts (push, etc.) - let paths-filter use defaults
-            echo "Non-PR context - using defaults"
-            echo "base=" >> $GITHUB_OUTPUT
-            echo "ref=" >> $GITHUB_OUTPUT
-          fi
 
       # Execute the paths-filter step to determine changes
+      # For PRs, paths-filter automatically uses GitHub API to get changed files
       - uses: dorny/paths-filter@v3.0.1
         if: ${{ inputs.change-detection == 'enabled' }}
         id: filter
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
-          base: ${{ steps.calc-base.outputs.base }}
-          ref: ${{ steps.calc-base.outputs.ref }}
 
       - name: Rewrite Filter
         id: filter-rewrite
@@ -260,8 +229,6 @@ jobs:
         env:
           FILTERS_JSON: ${{ steps.filter-rewrite.outputs.filters }}
           CHANGES_JSON: ${{ steps.filter.outputs.changes }}
-          CALC_BASE: ${{ steps.calc-base.outputs.base }}
-          CALC_REF: ${{ steps.calc-base.outputs.ref }}
           CHANGE_DETECTION: ${{ inputs.change-detection }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -284,21 +251,53 @@ jobs:
             echo "| Context | Pull Request #$PR_NUMBER |" >> $GITHUB_STEP_SUMMARY
             echo "| PR Head | \`${PR_HEAD_SHA:0:12}\` |" >> $GITHUB_STEP_SUMMARY
             echo "| PR Base | \`${PR_BASE_SHA:0:12}\` |" >> $GITHUB_STEP_SUMMARY
-            echo "| Merge Base | \`${CALC_BASE:0:12}\` |" >> $GITHUB_STEP_SUMMARY
           elif [ -n "$MERGE_GROUP_HEAD" ]; then
             echo "| Context | Merge Queue |" >> $GITHUB_STEP_SUMMARY
-            echo "| Base | \`${CALC_BASE:0:12}\` |" >> $GITHUB_STEP_SUMMARY
           else
             echo "| Context | Push/Other |" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Changed areas section
+          # PR Labels section (only for PRs)
+          if [ -n "$PR_NUMBER" ]; then
+            echo "### PR Labels" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Label mapping (must match .github/area-labels.yml)
+            declare -A label_map
+            label_map[area_backend]="Area : Backend"
+            label_map[area_frontend]="Area : Frontend"
+            label_map[area_cli]="Area : CLI"
+            label_map[area_sdk]="Area : SDK"
+            label_map[area_documentation]="Area : Documentation"
+            label_map[area_cicd]="Area : CI/CD"
+
+            labels_to_apply=""
+            if [ -n "$CHANGES_JSON" ] && [ "$CHANGES_JSON" != "null" ] && [ "$CHANGES_JSON" != "[]" ]; then
+              for area in "${!label_map[@]}"; do
+                if echo "$CHANGES_JSON" | jq -e --arg a "$area" 'index($a) != null' > /dev/null 2>&1; then
+                  if [ -n "$labels_to_apply" ]; then
+                    labels_to_apply="$labels_to_apply, "
+                  fi
+                  labels_to_apply="$labels_to_apply\`${label_map[$area]}\`"
+                fi
+              done
+            fi
+
+            if [ -n "$labels_to_apply" ]; then
+              echo "Labels to apply: $labels_to_apply" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "_No area labels to apply_" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Detected changes section
           echo "### Detected Changes" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -n "$CHANGES_JSON" ] && [ "$CHANGES_JSON" != "null" ] && [ "$CHANGES_JSON" != "[]" ]; then
-            echo "Areas with changes:" >> $GITHUB_STEP_SUMMARY
+            echo "Filters that matched:" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             # Parse JSON array and display as list
             echo "$CHANGES_JSON" | jq -r '.[]' | while read -r change; do
