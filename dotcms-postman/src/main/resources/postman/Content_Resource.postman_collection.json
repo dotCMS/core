@@ -3626,8 +3626,8 @@
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"HTTP Status code must be 201 for tag creation\", function () {",
-											"    pm.response.to.have.status(201);",
+											"pm.test(\"HTTP Status code must be 200 for tag creation\", function () {",
+											"    pm.response.to.have.status(200);",
 											"});"
 										],
 										"type": "text/javascript",
