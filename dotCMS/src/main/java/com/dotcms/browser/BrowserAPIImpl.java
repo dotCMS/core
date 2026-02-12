@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -149,9 +150,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                     if (startRow >= 0 && maxRows > 0) {
                         // Use the new exhaustive page collection when pagination parameters are valid
                         final PageCollectionResult pageResult = collectCompletePage(browserQuery, startRow, maxRows, sqlQuery);
-                        //So the number of contentlets that were processed plus the row number.
-                        //Gives us a reasonable start row to calculate if there's another page waiting ahead
-                        final int nextPageStartRow = (startRow + pageResult.totalProcessedInodes -1);
+                        // Use the actual database row position where we stopped searching instead of a count-based calculation
+                        // This ensures we check for the next page from the correct position in the database
+                        final int nextPageStartRow = pageResult.lastDbRowPosition;
                         //We're passing maxRows value in 1 as that's all we need to know there's ahead to assume there's another page
                         final boolean hasNextPage = hasNextPage(browserQuery, nextPageStartRow,1,sqlQuery);
                         return new ContentUnderParent(pageResult.contentlets, count.get(), hasNextPage);
@@ -203,6 +204,40 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Collects inodes from the database along with their actual database row positions.
+     * This is used to track the exact position in the database of each inode for accurate pagination.
+     *
+     * @param startRow The starting row for the database query
+     * @param maxRows The maximum number of rows to fetch
+     * @param sqlQuery The SQL query configuration
+     * @return A map where the key is the inode and the value is its database row position
+     * @throws DotDataException if there's an error accessing the database
+     */
+    Map<String, Integer> collectInodesFromDBWithPositions(int startRow, int maxRows, SelectAndCountQueries sqlQuery) throws DotDataException {
+        final Map<String, Integer> inodesWithPositions = new LinkedHashMap<>();
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+
+        //Set Pagination params only if they make sense
+        if(startRow >= 0 && maxRows > 0) {
+            dcSelect.setStartRow(startRow)
+                    .setMaxRows(maxRows);
+        }
+
+        @SuppressWarnings("unchecked") final List<Map<String, String>> loadResults = dcSelect.loadResults();
+
+        // Track the actual database position for each inode
+        int currentPosition = startRow;
+        for (Map<String, String> result : loadResults) {
+            final String inode = result.get("inode");
+            inodesWithPositions.put(inode, currentPosition);
+            currentPosition++;
+        }
+
+        return inodesWithPositions;
+    }
+
+    /**
      * Collects contentlets iteratively to complete the requested page size, handling cases where
      * permission filtering reduces the number of available contentlets below the requested amount.
      * This method will keep fetching additional candidate inodes until the page is complete or
@@ -224,6 +259,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final Set<String> allProcessedInodes = new LinkedHashSet<>();
         int currentStartRow = startRow;
         int remainingNeeded = maxRows;
+        int lastViableContentletDbPosition = startRow - 1; // Track the DB position of the last viable contentlet
 
         // Maximum iterations to prevent infinite loops
         final int maxIterations = Math.max(10, maxRows * 2);
@@ -240,14 +276,18 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.debug(this, String.format("Iteration %d: collecting %d candidates starting from row %d (need %d more)",
                     iterations, fetchSize, currentStartRow, remainingNeeded));
 
-            // Collect candidate inodes from the database
-            final Set<String> candidateInodes = collectInodesFromDB(currentStartRow, fetchSize, sqlQuery);
+            // Collect candidate inodes from the database WITH their positions
+            // We need positions to tack the last visited row accurate pagination continuity
+            final Map<String, Integer> candidateInodesWithPositions = collectInodesFromDBWithPositions(currentStartRow, fetchSize, sqlQuery);
 
             // If no more candidates available, stop the loop
-            if (candidateInodes.isEmpty()) {
+            if (candidateInodesWithPositions.isEmpty()) {
                 Logger.debug(this, "No more candidate inodes found - stopping collection");
                 break;
             }
+
+            // Get just the inode set for duplicate checking
+            final Set<String> candidateInodes = candidateInodesWithPositions.keySet();
 
             // Remove already processed inodes to avoid duplicates
             candidateInodes.removeAll(allProcessedInodes);
@@ -265,11 +305,17 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.debug(this, String.format("Iteration %d: %d candidates → %d after permission filtering",
                     iterations, candidateInodes.size(), filteredContentlets.size()));
 
-            // Add the filtered contentlets to our collection
+            // Add the filtered contentlets to our collection and track the position of the last one added
             for (final Contentlet contentlet : filteredContentlets) {
                 if (collectedContentlets.size() < maxRows) {
                     collectedContentlets.add(contentlet);
                     remainingNeeded--;
+
+                    // Update the position of the last viable contentlet
+                    final Integer position = candidateInodesWithPositions.get(contentlet.getInode());
+                    if (position != null) {
+                        lastViableContentletDbPosition = position;
+                    }
                 }
             }
 
@@ -286,10 +332,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
         }
 
-        Logger.debug(this, String.format("Page collection completed: collected %d contentlets, lastRowVisited=%s, iterations=%d",
-                collectedContentlets.size(), currentStartRow, iterations));
+        Logger.debug(this, String.format("Page collection completed: collected %d contentlets, lastViableDbPosition=%d, iterations=%d",
+                collectedContentlets.size(), lastViableContentletDbPosition, iterations));
 
-        return new PageCollectionResult(collectedContentlets, allProcessedInodes.size());
+        // The next page should start after the last viable contentlet position
+        final int nextPageStartRow = lastViableContentletDbPosition + 1;
+
+        return new PageCollectionResult(collectedContentlets, allProcessedInodes.size(), nextPageStartRow);
     }
 
     /**
@@ -315,9 +364,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     static class PageCollectionResult {
         final List<Contentlet> contentlets;
         final int totalProcessedInodes;
-        PageCollectionResult(List<Contentlet> contentlets, int totalProcessedInodes) {
+        final int lastDbRowPosition;
+        PageCollectionResult(List<Contentlet> contentlets, int totalProcessedInodes, int lastDbRowPosition) {
             this.contentlets = contentlets;
             this.totalProcessedInodes = totalProcessedInodes;
+            this.lastDbRowPosition = lastDbRowPosition;
         }
     }
 
