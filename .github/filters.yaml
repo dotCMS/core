@@ -39,7 +39,36 @@ sdk_libs:
   - 'core-web/libs/sdk/**'
 
 # PR area labeling filters
-documentation:
+# These are separate from test-triggering filters to avoid false positives
+# (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
+area_backend:
+  - 'dotCMS/**'
+  - 'dotcms-integration/**'
+  - 'dotcms-postman/**'
+  - 'test-karate/**'
+  - 'bom/**'
+  - 'build-parent/**'
+  - 'parent/**'
+  - 'osgi-base/**'
+  - 'plugins-core/**'
+  - 'maven-plugins/**'
+  - 'independent-projects/**'
+  - 'reports/**'
+  - 'pom.xml'
+  - '!dotCMS/src/main/webapp/html/**/*.{css,js}'
+
+area_frontend:
+  - 'core-web/**'
+  - 'dotCMS/src/main/webapp/html/**/*.{css,js}'
+  - '!core-web/libs/sdk/**'
+
+area_cli:
+  - 'tools/dotcms-cli/**'
+
+area_sdk:
+  - 'core-web/libs/sdk/**'
+
+area_documentation:
   - 'docs/**'
   - '*.md'
   - 'CLAUDE.md'
@@ -48,9 +77,10 @@ documentation:
   - 'dotCMS/*.md'
   - 'tools/**/*.md'
 
-cicd:
+area_cicd:
   - '.github/**'
   - '!.github/ISSUE_TEMPLATE/**'
+  - '!.github/**/*.md'
 
 jvm_unit_test:
   - *backend

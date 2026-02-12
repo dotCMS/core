@@ -19,10 +19,10 @@
 # - A PR can have multiple area labels if it touches multiple areas
 # - Labels use "Area : " prefix to distinguish from feature labels ("dotCMS : ")
 
-# Filter key -> Label name
-backend: "Area : Backend"
-frontend: "Area : Frontend"
-cli: "Area : CLI"
-sdk_libs: "Area : SDK"
-documentation: "Area : Documentation"
-cicd: "Area : CI/CD"
+# Filter key -> Label name (uses area_* filters from filters.yaml)
+area_backend: "Area : Backend"
+area_frontend: "Area : Frontend"
+area_cli: "Area : CLI"
+area_sdk: "Area : SDK"
+area_documentation: "Area : Documentation"
+area_cicd: "Area : CI/CD"
