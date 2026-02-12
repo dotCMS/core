@@ -339,9 +339,13 @@ public class TagResource {
             // Resolve site
             final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
 
-            // Check if tag already exists
+            // Resolve tag storage host — tags may be stored under a different host
+            // (e.g. SYSTEM_HOST) than the site passed in the form
+            final String tagStorageHostId = helper.resolveTagStorageHost(siteId);
+
+            // Check if tag already exists at the actual storage location
             final Tag existing = tagAPI.getTagByNameAndHost(
-                    form.getName().toLowerCase(), siteId);
+                    form.getName().toLowerCase(), tagStorageHostId);
             if (existing != null && UtilMethods.isSet(existing.getTagId())) {
                 Logger.debug(TagResource.class,
                         String.format("Tag '%s' already exists, marking as duplicate",
@@ -476,11 +480,13 @@ public class TagResource {
         targetSiteId = targetHost.getIdentifier();
 
         // 5. Check for duplicate if name or site is changing
+        //    Resolve tag storage so the check matches where tags are actually stored
+        final String targetStorageHostId = helper.resolveTagStorageHost(targetSiteId);
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
-                !existingTag.getHostId().equals(targetSiteId)) {
-            
+                !existingTag.getHostId().equals(targetStorageHostId)) {
+
             final Tag duplicateCheck = Try.of(() ->
-                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetSiteId)).getOrNull();
+                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetStorageHostId)).getOrNull();
             
             if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
                 throw new BadRequestException(

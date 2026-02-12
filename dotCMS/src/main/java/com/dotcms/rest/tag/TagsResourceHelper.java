@@ -7,6 +7,7 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v2.tags.TagValidationHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -309,8 +310,9 @@ public class TagsResourceHelper {
                 // Create the tag (check for duplicates first)
                 try {
                     final String validateSite = getValidateSite(siteId, user, request);
+                    final String tagStorageHostId = resolveTagStorageHost(validateSite);
                     final Tag existing = tagAPI.getTagByNameAndHost(
-                            tagName.toLowerCase(), validateSite);
+                            tagName.toLowerCase(), tagStorageHostId);
                     if (existing != null && UtilMethods.isSet(existing.getTagId())) {
                         duplicateCount++;
                         continue;
@@ -349,6 +351,27 @@ public class TagsResourceHelper {
     private boolean isHeaderLine(String tagName, String siteId) {
         return tagName.toLowerCase().contains("tag name") && siteId.toLowerCase()
                 .contains("host id");
+    }
+
+    /**
+     * Resolves the tag storage host for a given site ID. Tags created for a site
+     * are stored under the site's configured tagStorage host (which may differ from
+     * the site itself). This method resolves that target host so duplicate detection
+     * checks the correct location.
+     *
+     * @param siteId The validated site ID to resolve tag storage for
+     * @return The host ID where tags are actually stored
+     */
+    public String resolveTagStorageHost(final String siteId) {
+        if (!UtilMethods.isSet(siteId) || Host.SYSTEM_HOST.equals(siteId)) {
+            return Host.SYSTEM_HOST;
+        }
+        final Host host = Try.of(
+                () -> hostAPI.find(siteId, APILocator.systemUser(), false)).getOrNull();
+        if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+            return host.getTagStorage();
+        }
+        return Host.SYSTEM_HOST;
     }
 
     /**
