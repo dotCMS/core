@@ -39,9 +39,11 @@ public interface ContentletAPIPreHook {
 
 	/**
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
+	 * @param limit can be 0 if no limit
 	 * @return false if the hook should stop the transaction
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public default boolean findAllContent(int offset, int limit){
       return true;
     }

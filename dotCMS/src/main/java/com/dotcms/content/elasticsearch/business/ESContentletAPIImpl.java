@@ -378,8 +378,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentFactory.loadField(inode, field.dbColumn());
     }
 
+    /**
+     * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
+     */
     @CloseDBIfOpened
     @Override
+    @Deprecated
     public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException {
         return contentFactory.findAllCurrent(offset, limit);
     }
