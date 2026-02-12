@@ -30,7 +30,7 @@ jobs:
       postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
-      cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' }}
+      cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: false
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
