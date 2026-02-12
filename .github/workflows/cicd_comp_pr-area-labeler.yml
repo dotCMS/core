@@ -41,7 +41,6 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const yaml = require('js-yaml');
 
             // Only run for pull requests
             if (!context.payload.pull_request) {
@@ -51,11 +50,23 @@ jobs:
 
             const prNumber = context.payload.pull_request.number;
 
-            // Read label mapping from config file
-            let labelMapping;
+            // Read and parse simple YAML config (key: value format)
+            // Format: filterName: "Label Name"
+            let labelMapping = {};
             try {
               const configContent = fs.readFileSync('.github/area-labels.yml', 'utf8');
-              labelMapping = yaml.load(configContent);
+              const lines = configContent.split('\n');
+              for (const line of lines) {
+                // Skip comments and empty lines
+                const trimmed = line.trim();
+                if (!trimmed || trimmed.startsWith('#')) continue;
+
+                // Parse key: value or key: "value"
+                const match = trimmed.match(/^(\w+):\s*["']?([^"'#]+)["']?\s*(?:#.*)?$/);
+                if (match) {
+                  labelMapping[match[1]] = match[2].trim();
+                }
+              }
               console.log('Label mapping:', JSON.stringify(labelMapping, null, 2));
             } catch (e) {
               console.error('Failed to read area-labels.yml:', e.message);
