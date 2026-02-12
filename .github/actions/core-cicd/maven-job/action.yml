@@ -233,18 +233,19 @@ runs:
           DEFAULT_ARGS="$DEFAULT_ARGS -Pnative"
         fi
 
-        # Add Maven compiler release override flag
+        # Add Maven compiler release override flag for core modules
         # Priority: explicit maven-compiler-release > default from java-version major > project defaults
+        # Note: Core modules use dotcms.core.compiler.release (default 11), CLI uses dotcms.cli.compiler.release (default 11) for Quarkus/GraalVM compatibility
         COMPILER_ARGS=""
         if [[ -n "${{ inputs.maven-compiler-release }}" ]]; then
           # Explicit release override takes precedence
-          COMPILER_ARGS="-Dmaven.compiler.release=${{ inputs.maven-compiler-release }}"
-          echo "Using explicit maven.compiler.release=${{ inputs.maven-compiler-release }}"
+          COMPILER_ARGS="-Ddotcms.core.compiler.release=${{ inputs.maven-compiler-release }}"
+          echo "Using explicit dotcms.core.compiler.release=${{ inputs.maven-compiler-release }}"
         elif [[ -n "${{ inputs.java-version }}" ]]; then
           # Default compiler release to match the overridden Java version
           JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-          COMPILER_ARGS="-Dmaven.compiler.release=${JAVA_MAJOR}"
-          echo "Defaulting maven.compiler.release=${JAVA_MAJOR} to match java-version"
+          COMPILER_ARGS="-Ddotcms.core.compiler.release=${JAVA_MAJOR}"
+          echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
         FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
