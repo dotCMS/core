@@ -253,3 +253,83 @@ jobs:
           echo "Output JSON: ${filters_json}"
 
           echo "::endgroup::"
+
+      # Generate step summary for workflow run visibility
+      - name: Generate Summary
+        if: ${{ inputs.change-detection == 'enabled' }}
+        env:
+          FILTERS_JSON: ${{ steps.filter-rewrite.outputs.filters }}
+          CHANGES_JSON: ${{ steps.filter.outputs.changes }}
+          CALC_BASE: ${{ steps.calc-base.outputs.base }}
+          CALC_REF: ${{ steps.calc-base.outputs.ref }}
+          CHANGE_DETECTION: ${{ inputs.change-detection }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_HEAD: ${{ github.event.merge_group.head_sha }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'HEADER'
+          ## 🔍 Change Detection Summary
+
+          HEADER
+
+          # Configuration section
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Change Detection | \`$CHANGE_DETECTION\` |" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$PR_NUMBER" ]; then
+            echo "| Context | Pull Request #$PR_NUMBER |" >> $GITHUB_STEP_SUMMARY
+            echo "| PR Head | \`${PR_HEAD_SHA:0:12}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| PR Base | \`${PR_BASE_SHA:0:12}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| Merge Base | \`${CALC_BASE:0:12}\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ -n "$MERGE_GROUP_HEAD" ]; then
+            echo "| Context | Merge Queue |" >> $GITHUB_STEP_SUMMARY
+            echo "| Base | \`${CALC_BASE:0:12}\` |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Context | Push/Other |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Changed areas section
+          echo "### Detected Changes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$CHANGES_JSON" ] && [ "$CHANGES_JSON" != "null" ] && [ "$CHANGES_JSON" != "[]" ]; then
+            echo "Areas with changes:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            # Parse JSON array and display as list
+            echo "$CHANGES_JSON" | jq -r '.[]' | while read -r change; do
+              case "$change" in
+                area_*) echo "- 🏷️ \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                backend) echo "- ⚙️ \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                frontend) echo "- 🎨 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                cli) echo "- 💻 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                build) echo "- 🔨 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                jvm_unit_test) echo "- 🧪 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                *) echo "- 📁 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+              esac
+            done
+          else
+            echo "_No file changes detected by paths-filter_" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Build/Test matrix section
+          echo "### Build & Test Matrix" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Parse filters JSON and display status
+          for component in build backend frontend cli jvm_unit_test; do
+            value=$(echo "$FILTERS_JSON" | jq -r --arg k "$component" '.[$k] // "false"')
+            if [ "$value" == "true" ]; then
+              echo "| $component | ✅ Will run |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $component | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
