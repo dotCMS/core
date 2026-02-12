@@ -36,7 +36,21 @@ cli: &cli
   - *backend
 
 sdk_libs:
-  - 'core-web/libs/sdk/**'  
+  - 'core-web/libs/sdk/**'
+
+# PR area labeling filters
+documentation:
+  - 'docs/**'
+  - '*.md'
+  - 'CLAUDE.md'
+  - '.github/**/*.md'
+  - 'core-web/*.md'
+  - 'dotCMS/*.md'
+  - 'tools/**/*.md'
+
+cicd:
+  - '.github/**'
+  - '!.github/ISSUE_TEMPLATE/**'
 
 jvm_unit_test:
   - *backend

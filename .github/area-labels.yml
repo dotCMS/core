@@ -1,0 +1,28 @@
+# Area Label Mapping
+#
+# Maps dorny/paths-filter keys (from filters.yaml) to GitHub labels.
+# Only filters listed here will have labels applied to PRs.
+#
+# How it works:
+# 1. When a PR is opened/updated, dorny/paths-filter checks which filters match
+# 2. The 'changes' output contains a JSON array of matched filter names
+# 3. This config maps those filter names to GitHub label names
+# 4. Labels are applied to the PR (duplicates are skipped)
+#
+# To add a new area label:
+# 1. Add the filter pattern to filters.yaml (under "# PR area labeling filters")
+# 2. Add the mapping below (filter_key: "Label Name")
+# 3. Create the label in GitHub with matching name and color
+#
+# Notes:
+# - Not all filters need labels (e.g., 'build', 'jvm_unit_test' are for CI logic only)
+# - A PR can have multiple area labels if it touches multiple areas
+# - Labels use "Area : " prefix to distinguish from feature labels ("dotCMS : ")
+
+# Filter key -> Label name
+backend: "Area : Backend"
+frontend: "Area : Frontend"
+cli: "Area : CLI"
+sdk_libs: "Area : SDK"
+documentation: "Area : Documentation"
+cicd: "Area : CI/CD"

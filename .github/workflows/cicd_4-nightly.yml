@@ -55,7 +55,9 @@ jobs:
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    # Nightly runs all tests - no change detection needed
     with:
+      change-detection: 'disabled'
       reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }}
 

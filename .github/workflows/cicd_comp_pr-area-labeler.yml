@@ -1,0 +1,124 @@
+# PR Area Labeler Component
+#
+# Applies Area : labels to PRs based on changed file paths.
+# Uses the 'changes' output from dorny/paths-filter and maps to labels
+# via the config file at .github/area-labels.yml
+#
+# Only filters with mappings in area-labels.yml will have labels applied.
+#
+# To add a new area label:
+# 1. Add filter pattern to .github/filters.yaml
+# 2. Add mapping to .github/area-labels.yml
+# That's it!
+
+name: PR Area Labeler
+
+on:
+  workflow_call:
+    inputs:
+      changes:
+        description: 'JSON array of filter names that matched (from dorny/paths-filter)'
+        type: string
+        required: true
+
+jobs:
+  apply-labels:
+    name: Apply Area Labels
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    continue-on-error: true
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout for config
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/area-labels.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Apply Area Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+
+            // Only run for pull requests
+            if (!context.payload.pull_request) {
+              console.log('Not a pull request, skipping labeling');
+              return;
+            }
+
+            const prNumber = context.payload.pull_request.number;
+
+            // Read label mapping from config file
+            let labelMapping;
+            try {
+              const configContent = fs.readFileSync('.github/area-labels.yml', 'utf8');
+              labelMapping = yaml.load(configContent);
+              console.log('Label mapping:', JSON.stringify(labelMapping, null, 2));
+            } catch (e) {
+              console.error('Failed to read area-labels.yml:', e.message);
+              return;
+            }
+
+            // Parse changes array from dorny/paths-filter
+            let changes;
+            try {
+              const changesInput = '${{ inputs.changes }}';
+              // Handle empty, null, or undefined input
+              if (!changesInput || changesInput === 'null' || changesInput === '') {
+                console.log('No changes input provided, skipping labeling');
+                return;
+              }
+              changes = JSON.parse(changesInput);
+              // Ensure we have an array
+              if (!Array.isArray(changes)) {
+                console.log('Changes is not an array, skipping labeling');
+                return;
+              }
+              console.log('Changed filters:', changes);
+            } catch (e) {
+              console.error('Failed to parse changes JSON:', e.message);
+              return;
+            }
+
+            // Determine labels to add based on config mapping
+            const labelsToAdd = [];
+            for (const filterKey of changes) {
+              if (labelMapping[filterKey]) {
+                labelsToAdd.push(labelMapping[filterKey]);
+              }
+            }
+
+            if (labelsToAdd.length === 0) {
+              console.log('No mapped area labels to apply');
+              return;
+            }
+
+            console.log(`Labels to apply: ${labelsToAdd.join(', ')}`);
+
+            // Get current PR labels to avoid duplicates
+            const { data: prData } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            const existingLabels = prData.labels.map(l => l.name);
+            const newLabels = labelsToAdd.filter(l => !existingLabels.includes(l));
+
+            if (newLabels.length === 0) {
+              console.log('All area labels already applied');
+              return;
+            }
+
+            // Add labels to PR
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              labels: newLabels
+            });
+
+            console.log(`Applied labels to PR #${prNumber}: ${newLabels.join(', ')}`);
