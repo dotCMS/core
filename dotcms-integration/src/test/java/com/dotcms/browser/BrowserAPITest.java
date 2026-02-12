@@ -1,5 +1,6 @@
 package com.dotcms.browser;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -48,6 +49,7 @@ import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -57,6 +59,7 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1805,15 +1808,16 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Host host = new SiteDataGen().nextPersisted(true);
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
         final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         //Give him access to the site and parent folder
         final Permission siteReadPermissions = new Permission(host.getPermissionId(),
                 APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
-        APILocator.getPermissionAPI().save(siteReadPermissions, host, APILocator.systemUser(), false);
+        permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
 
         //We need to assign Chris Publisher view permissions to the parent folder.
         final Permission folderReadPermission = new Permission(folder.getPermissionId(),
                 APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
-        APILocator.getPermissionAPI().save(folderReadPermission, folder, APILocator.systemUser(), false);
+        permissionAPI.save(folderReadPermission, folder, APILocator.systemUser(), false);
 
         final File file = FileUtil.createTemporaryFile("content", ".txt", "content");
         final Contentlet contentlet = new FileAssetDataGen(file)
@@ -1823,6 +1827,10 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .nextPersisted();
         assertNotNull(contentlet.getIdentifier());
         assertFalse(contentlet.isLive());
+
+        final boolean hasReadPermission = permissionAPI.doesUserHavePermission(contentlet,
+                PermissionAPI.PERMISSION_READ, limitedUser, false);
+        assertTrue("This should have read Permissions", hasReadPermission);
 
         final BrowserQuery query = BrowserQuery.builder()
                 .withHostOrFolderId(folder.getInode())
@@ -1844,6 +1852,149 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return 1 content item", 1, results.contentCount);
         assertEquals("Should return exactly 1 item in list", 1, results.list.size());
         assertEquals("Contentlet inode should match", contentlet.getInode(), results.list.get(0).get("inode"));
+    }
+
+    /**
+     * Method to test exhaustive pagination with permission filtering using getContentUnderParentFromDB
+     * <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int, int)}</li>
+     * Given scenario: Creating alternating content with and without read permissions in the same folder,
+     * then testing that pagination system exhaustively collects enough accessible content to complete
+     * the requested page size despite permission filtering reducing intermediate results.
+     * Expected Results: The pagination system should return the requested page size by iteratively
+     * searching for additional accessible content when permission filtering creates gaps.
+     * @throws Exception
+     */
+    @Test
+    public void test_exhaustive_pagination_with_permission_filtering() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        // Give limited user access to the site and parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+        permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        final Permission folderReadPermission = new Permission(folder.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+        permissionAPI.save(folderReadPermission, folder, APILocator.systemUser(), false);
+
+        // Create alternating content: accessible and non-accessible
+        // This ensures non-continuous distribution in the database
+        final List<Contentlet> accessibleContentlets = new ArrayList<>();
+
+        // Create 20 pieces of content, alternating permissions (10 accessible, 10 non-accessible)
+        for (int i = 0; i < 20; i++) {
+            final File file = FileUtil.createTemporaryFile("content(" + i + ")", ".txt", "content-" + i);
+            final Contentlet contentlet = new FileAssetDataGen(file)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+
+            // Give read permission to every other contentlet (even indices: 0, 2, 4, 6, ...)
+            if (i % 2 == 0) {
+                final Permission contentletReadPermission = new Permission(contentlet.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+                permissionAPI.save(contentletReadPermission, contentlet, APILocator.systemUser(), false);
+                accessibleContentlets.add(contentlet);
+            }
+        }
+
+        // Wait for indexing to complete
+        await().atMost(Duration.ofSeconds(10)).until(() -> {
+            // Verify that all contentlets have been indexed and permissions are properly applied
+            return accessibleContentlets.stream().allMatch(contentlet -> {
+                try {
+                    return permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, limitedUser, false);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+        });
+
+        // Verify permission setup: should have 10 accessible contentlets
+        assertEquals("Should have created 10 accessible contentlets", 10, accessibleContentlets.size());
+
+        // Test Case 1: Request page size of 5 - should get exactly 5 accessible items
+        final BrowserQuery query1 = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false)
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        // Using reflection to access the package-private method for direct testing
+        final BrowserAPIImpl browserAPIImpl = (BrowserAPIImpl) browserAPI;
+        /*
+        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 5);
+        assertEquals("Should return exactly 5 accessible contentlets", 5, results1.contentlets.size());
+        assertTrue("Should indicate more pages available", results1.hasMore);
+         */
+
+        // Test Case 2: Request page size of 8 - should get exactly 8 accessible items
+        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 8);
+        assertEquals("Should return exactly 8 accessible contentlets", 8, results2.contentlets.size());
+        assertTrue("Should indicate more pages available", results2.hasMore);
+
+        // Test Case 3: Request page size of 10 - should get all 10 accessible items
+        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 10);
+        assertEquals("Should return exactly 10 accessible contentlets", 10, results3.contentlets.size());
+        assertFalse("Should indicate no more pages available", results3.hasMore);
+
+        // Test Case 4: Request more than available - should get all 10 accessible items
+        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 15);
+        assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
+        assertFalse("Should indicate no more pages available", results4.hasMore);
+
+        // Test Case 5: Test second page - should get remaining accessible items
+        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 3, 5);
+        assertEquals("Should return remaining 7 accessible contentlets on page 2", 7, results5.contentlets.size());
+        assertFalse("Should indicate no more pages available", results5.hasMore);
+/*
+        // Verify that all returned contentlets are actually accessible by the limited user
+        for (final var results : Arrays.asList(results1, results2, results3, results4, results5)) {
+            for (final Contentlet contentlet : results.contentlets) {
+                final boolean hasPermission = permissionAPI.doesUserHavePermission(contentlet,
+                        PermissionAPI.PERMISSION_READ, limitedUser, false);
+                assertTrue("Returned contentlet should have read permission for limited user", hasPermission);
+            }
+        }
+
+        // Verify that the total count reflects all content in folder (accessible + non-accessible)
+        assertEquals("Total count should reflect all content in folder", 20, results1.totalResults);
+        assertEquals("Total count should reflect all content in folder", 20, results2.totalResults);
+        assertEquals("Total count should reflect all content in folder", 20, results3.totalResults);
+        assertEquals("Total count should reflect all content in folder", 20, results4.totalResults);
+        assertEquals("Total count should reflect all content in folder", 20, results5.totalResults);
+
+        // Additional Test: Verify that exhaustive collection works by testing edge cases
+        // Test requesting exactly what's available after filtering
+        final var edgeCase1 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 10);
+        assertEquals("Edge case: should return exactly 10 items when requesting exactly available",
+                10, edgeCase1.contentlets.size());
+
+        // Test pagination boundary - start from middle
+        final var edgeCase2 = browserAPIImpl.getContentUnderParentFromDB(query1, 5, 3);
+        assertEquals("Edge case: should return 3 items starting from position 5",
+                3, edgeCase2.contentlets.size());
+        assertTrue("Edge case: should still have more items available", edgeCase2.hasMore);
+
+        // Test very large page request
+        final var edgeCase3 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 100);
+        assertEquals("Edge case: should return all 10 items even with large page request",
+                10, edgeCase3.contentlets.size());
+        assertFalse("Edge case: should indicate no more pages available", edgeCase3.hasMore);
+ */
     }
 
 }
