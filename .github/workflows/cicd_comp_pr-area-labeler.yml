@@ -94,22 +94,23 @@ jobs:
               return;
             }
 
-            // Determine labels to add based on config mapping
-            const labelsToAdd = [];
+            // Configuration: Set to false to keep labels even when areas are no longer changed
+            const removeStaleLabels = true;
+
+            // Get all possible area labels from config
+            const allAreaLabels = Object.values(labelMapping);
+
+            // Determine labels that should be applied based on current changes
+            const labelsToApply = [];
             for (const filterKey of changes) {
               if (labelMapping[filterKey]) {
-                labelsToAdd.push(labelMapping[filterKey]);
+                labelsToApply.push(labelMapping[filterKey]);
               }
             }
 
-            if (labelsToAdd.length === 0) {
-              console.log('No mapped area labels to apply');
-              return;
-            }
+            console.log(`Area labels for current changes: ${labelsToApply.length > 0 ? labelsToApply.join(', ') : '(none)'}`);
 
-            console.log(`Labels to apply: ${labelsToAdd.join(', ')}`);
-
-            // Get current PR labels to avoid duplicates
+            // Get current PR labels
             const { data: prData } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -117,19 +118,38 @@ jobs:
             });
 
             const existingLabels = prData.labels.map(l => l.name);
-            const newLabels = labelsToAdd.filter(l => !existingLabels.includes(l));
 
-            if (newLabels.length === 0) {
-              console.log('All area labels already applied');
+            // Determine labels to add (not already present)
+            const labelsToAdd = labelsToApply.filter(l => !existingLabels.includes(l));
+
+            // Determine stale area labels to remove (area labels that no longer apply)
+            const labelsToRemove = removeStaleLabels
+              ? existingLabels.filter(l => allAreaLabels.includes(l) && !labelsToApply.includes(l))
+              : [];
+
+            if (labelsToAdd.length === 0 && labelsToRemove.length === 0) {
+              console.log('Area labels are up to date');
               return;
             }
 
-            // Add labels to PR
-            await github.rest.issues.addLabels({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              labels: newLabels
-            });
+            // Add new labels
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                labels: labelsToAdd
+              });
+              console.log(`Added labels: ${labelsToAdd.join(', ')}`);
+            }
 
-            console.log(`Applied labels to PR #${prNumber}: ${newLabels.join(', ')}`);
+            // Remove stale labels
+            for (const label of labelsToRemove) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                name: label
+              });
+              console.log(`Removed stale label: ${label}`);
+            }
