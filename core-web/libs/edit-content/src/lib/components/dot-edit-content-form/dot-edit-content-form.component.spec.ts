@@ -348,15 +348,29 @@ describe('DotFormComponent', () => {
             });
 
             it('should render workflow actions and sidebar toggle in append area', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
+                const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton =
+                    spectator.query(byTestId('sidebar-toggle-button')) ??
+                    sidebarToggle?.querySelector('button');
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
 
                 expect(workflowActions).toBeTruthy();
+                expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
+                // Ensure sidebar is closed (button only renders when !showSidebar)
+                if (store.isSidebarOpen()) {
+                    store.toggleSidebar();
+                    spectator.detectChanges();
+                }
+
+                const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton =
+                    spectator.query(byTestId('sidebar-toggle-button')) ??
+                    sidebarToggle?.querySelector('button');
+                expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
 
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
