@@ -53,12 +53,10 @@ area_backend:
   - 'independent-projects/**'
   - 'reports/**'
   - 'pom.xml'
-  - '!dotCMS/src/main/webapp/html/**/*.{css,js}'
 
 area_frontend:
   - 'core-web/**'
   - 'dotCMS/src/main/webapp/html/**/*.{css,js}'
-  - '!core-web/libs/sdk/**'
 
 area_cli:
   - 'tools/dotcms-cli/**'
