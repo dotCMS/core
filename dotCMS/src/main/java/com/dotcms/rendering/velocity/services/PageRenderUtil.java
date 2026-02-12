@@ -743,7 +743,26 @@ public class PageRenderUtil implements Serializable {
                     contentletIdentifier, mode.showLive, languageId,
                     user, true, variantName);
 
-            return contentletOpt.orElse(null);
+            if (contentletOpt.isPresent()) {
+                return contentletOpt.get();
+            }
+
+            // If not found with language fallback, try to find in any language with the specified variant
+            // This allows pages to show content from other languages when the content type allows fallback
+            // but the content doesn't exist in the page's language or default language
+            try {
+                final Contentlet anyLanguageContentlet = contentletAPI.findContentletByIdentifierAnyLanguage(
+                        contentletIdentifier, variantName);
+
+                // Check if this content type allows language fallback
+                if (anyLanguageContentlet != null && anyLanguageContentlet.getContentType().languageFallback()) {
+                    return anyLanguageContentlet;
+                }
+            } catch (Exception e) {
+                Logger.debug(this, "Could not find contentlet in any language: " + e.getMessage());
+            }
+
+            return null;
 
         } catch (final DotContentletStateException e) {
             // Expected behavior, DotContentletState Exception is used for flow control
