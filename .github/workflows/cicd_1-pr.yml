@@ -53,6 +53,7 @@ jobs:
     with:
       changes: ${{ needs.initialize.outputs.changes }}
     permissions:
+      contents: read
       pull-requests: write
 
   # Build job - only runs if no artifacts were found during initialization
