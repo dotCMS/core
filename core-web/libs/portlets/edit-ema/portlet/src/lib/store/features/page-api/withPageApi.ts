@@ -61,6 +61,13 @@ export interface WithPageApiDeps {
     addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
 
     // Page accessors
+    // TODO: Revisit this - there should be a better way to access these from store directly
+    // without passing as dependencies. Current issue: TypeScript cannot guarantee these methods
+    // exist on store type at composition time since withPageApi is composed AFTER withPage.
+    // Possible solutions to explore:
+    // - Reorder feature composition (may break other dependencies)
+    // - Use props type assertion (tried, creates circular type issues)
+    // - Access via store with type assertion (loses type safety)
     pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     pageClientResponse: () => DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } } | null;
     pageData: () => DotCMSPage | null;
