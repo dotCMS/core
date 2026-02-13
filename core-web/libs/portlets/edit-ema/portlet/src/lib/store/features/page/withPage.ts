@@ -256,7 +256,7 @@ export function withPage() {
                 const pageDataValue = pageData();
                 const viewAsData = pageViewAs();
                 const languageId = viewAsData?.language?.id;
-                const translatedLanguages = untracked(() => store.languages());
+                const translatedLanguages = untracked(() => store.pageLanguages());
                 const currentLanguage = translatedLanguages.find(
                     (lang) => lang.id === languageId
                 );

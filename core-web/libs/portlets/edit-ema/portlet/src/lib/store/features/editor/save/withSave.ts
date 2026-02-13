@@ -18,13 +18,13 @@ import { UVEState } from '../../../models';
 
 export interface WithSaveDeps {
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
-    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    $requestWithParams: () => { query: string; variables: Record<string, string> } | null;
     setPageAssetResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
     rollbackPageAssetResponse: () => boolean;
     clearHistory: () => void;
     addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
     pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
-    pageClientResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } } | null>;
+    pageClientResponse: () => DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } } | null;
     pageData: () => any;  // Page data accessor
     pageTemplate: () => any;  // Page template accessor
 }
@@ -45,7 +45,7 @@ export function withSave(deps: WithSaveDeps) {
                     pipe(
                         tap(() => {
                             patchState(store, {
-                                status: UVE_STATUS.LOADING
+                                uveStatus: UVE_STATUS.LOADING
                             });
                         }),
                         switchMap((pageContainers) => {
@@ -70,13 +70,13 @@ export function withSave(deps: WithSaveDeps) {
                                         tapResponse(
                                             () => {
                                                 patchState(store, {
-                                                    status: UVE_STATUS.LOADED
+                                                    uveStatus: UVE_STATUS.LOADED
                                                 });
                                             },
                                             (e) => {
                                                 console.error(e);
                                                 patchState(store, {
-                                                    status: UVE_STATUS.ERROR
+                                                    uveStatus: UVE_STATUS.ERROR
                                                 });
                                             }
                                         )
@@ -85,7 +85,7 @@ export function withSave(deps: WithSaveDeps) {
                                 catchError((e) => {
                                     console.error(e);
                                     patchState(store, {
-                                        status: UVE_STATUS.ERROR
+                                        uveStatus: UVE_STATUS.ERROR
                                     });
 
                                     return EMPTY;
@@ -98,7 +98,7 @@ export function withSave(deps: WithSaveDeps) {
                     pipe(
                         tap(() => {
                             patchState(store, {
-                                status: UVE_STATUS.LOADING
+                                uveStatus: UVE_STATUS.LOADING
                             });
                         }),
                         switchMap((sortedRows) => {
@@ -147,13 +147,13 @@ export function withSave(deps: WithSaveDeps) {
                                     (pageRender: DotCMSPageAsset) => {
                                         deps.setPageAssetResponse({ pageAsset: pageRender });
                                         patchState(store, {
-                                            status: UVE_STATUS.LOADED
+                                            uveStatus: UVE_STATUS.LOADED
                                         });
                                     },
                                     (e) => {
                                         console.error(e);
                                         patchState(store, {
-                                            status: UVE_STATUS.ERROR
+                                            uveStatus: UVE_STATUS.ERROR
                                         });
                                     }
                                 )
@@ -162,7 +162,7 @@ export function withSave(deps: WithSaveDeps) {
                         catchError((e) => {
                             console.error(e);
                             patchState(store, {
-                                status: UVE_STATUS.ERROR
+                                uveStatus: UVE_STATUS.ERROR
                             });
 
                             return EMPTY;

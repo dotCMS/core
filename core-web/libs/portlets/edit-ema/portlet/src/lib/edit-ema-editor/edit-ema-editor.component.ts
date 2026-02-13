@@ -279,7 +279,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewIsEditState();
-        const isEnterprise = this.uveStore.isEnterprise();
+        const isEnterprise = this.uveStore.uveIsEnterprise();
         return canEditPage && isEditState && isEnterprise;
     });
 
@@ -290,11 +290,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const isClientReady = this.uveStore.isClientReady();
         const state = this.uveStore.editorState();
         const device = this.uveStore.viewDevice();
-        const orientation = this.uveStore.viewOrientation();
+        const orientation = this.uveStore.viewDeviceOrientation();
 
         const isEditMode = mode === UVE_MODE.EDIT;
         const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
-        const isLoading = !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
+        const isLoading = !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
         const { dragIsActive } = getEditorStates(state);
         const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
         const wrapper = getWrapperMeasures(device, orientation);
@@ -313,7 +313,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         const isEditMode = mode === UVE_MODE.EDIT;
         const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
-        return !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
+        return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
     });
 
     protected readonly $dropzone = computed(() => {
@@ -1469,7 +1469,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         type: DotCMSInlineEditingType;
         data?: DotCMSInlineEditingPayload;
     }) {
-        if (!this.uveStore.isEnterprise()) {
+        if (!this.uveStore.uveIsEnterprise()) {
             this.#dotAlertConfirmService.alert({
                 header: this.dotMessageService.get('dot.common.license.enterprise.only.error'),
                 message: this.dotMessageService.get('editpage.not.lincese.error')

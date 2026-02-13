@@ -134,7 +134,7 @@
                         }"
                         [ngStyle]="$iframeWrapperStyles()"
                         class="iframe-wrapper">
-                        @if (uveStore.status() === UVE_STATUS.ERROR) {
+                        @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
                         }
                         <dot-uve-iframe
@@ -170,7 +170,7 @@
                                 (addContent)="handleAddContent($event)"
                                 (selectContent)="handleSelectContent($event)"
                                 [contentletArea]="$contentArea"
-                                [isEnterprise]="uveStore.isEnterprise()"
+                                [isEnterprise]="uveStore.uveIsEnterprise()"
                                 [allowContentDelete]="$allowContentDelete()"
                                 [showStyleEditorOption]="uveStore.editorCanEditStyles()"
                                 data-testId="contentlet-tools" />

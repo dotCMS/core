@@ -111,7 +111,7 @@ export class DotUveToolbarComponent {
     protected readonly $currentLanguage = this.#store.pageLanguage;
 
     protected readonly $runningExperiment = computed(() => {
-        const experiment = this.#store.experiment?.();
+        const experiment = this.#store.pageExperiment?.();
         const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
 
         return isExperimentRunning ? experiment : null;
@@ -161,7 +161,7 @@ export class DotUveToolbarComponent {
         return {
             currentDevice: this.#store.viewDevice(),
             currentSocialMedia: this.#store.viewSocialMedia(),
-            currentOrientation: this.#store.viewOrientation()
+            currentOrientation: this.#store.viewDeviceOrientation()
         };
     });
 
@@ -251,7 +251,7 @@ export class DotUveToolbarComponent {
         }
 
         // Handle variant action - navigate to experiment configuration
-        const currentExperiment = this.#store.experiment();
+        const currentExperiment = this.#store.pageExperiment();
 
         if (currentExperiment) {
             this.#router.navigate(
@@ -282,7 +282,7 @@ export class DotUveToolbarComponent {
     onLanguageSelected(language: number) {
         const language_id = language.toString();
 
-        const languages = this.#store.languages();
+        const languages = this.#store.pageLanguages();
         const currentLanguage = languages.find((lang) => lang.id === language);
 
         const languageHasTranslation = languages.find(

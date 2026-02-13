@@ -10,6 +10,7 @@ import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { withPage } from './features/page/withPage';
 import { withTrack } from './features/track/withTrack';
+import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { withViewZoom } from './features/zoom/withZoom';
 import { Orientation, PageType, UVEState } from './models';
@@ -20,15 +21,22 @@ import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
 const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
+    // UVE system state (managed by withUve)
+    uveStatus: UVE_STATUS.LOADING,
+    uveIsEnterprise: false,
+    uveCurrentUser: null,
+    // Flags (managed by withFlags)
     flags: {}, // Will be populated by withFlags feature
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
+    // Page state (managed by withPage)
     pageParams: null,
-    status: UVE_STATUS.LOADING,
+    pageLanguages: [],
     pageType: PageType.TRADITIONAL,
+    pageExperiment: null,
+    pageErrorCode: null,
+    // Workflow state (managed by withWorkflow)
+    workflowActions: [],
+    workflowIsLoading: false,
+    workflowLockIsLoading: false,
     // Note: Page asset properties removed (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
     // Access via computed signals: store.pageData(), store.pageSite(), store.pageContainers(), etc.
     // Editor state (flattened with editor* prefix)
@@ -43,12 +51,17 @@ const initialState: UVEState = {
     editorStyleSchemas: [],
     // View state (flattened with view* prefix)
     viewDevice: DEFAULT_DEVICE,
-    viewOrientation: Orientation.LANDSCAPE,
+    viewDeviceOrientation: Orientation.LANDSCAPE,
     viewSocialMedia: null,
     viewParams: null,
     viewIsEditState: true,
     viewIsPreviewModeActive: false,
-    viewOgTagsResults: null
+    viewOgTagsResults: null,
+    // View zoom (merged from withViewZoom)
+    viewZoomLevel: 1,
+    viewZoomIsActive: false,
+    viewZoomIframeDocHeight: 0,
+    viewZoomGestureStartZoom: 1
 };
 
 /**
@@ -74,6 +87,7 @@ const initialState: UVEState = {
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
+    withUve(),
     withFlags(UVE_FEATURE_FLAGS),
     withPage(),
     withTrack(),
@@ -88,17 +102,10 @@ export const UVEStore = signalStore(
     })),
     withMethods((store) => {
         return {
-            setUveStatus(status: UVE_STATUS) {
-                patchState(store, {
-                    status
-                });
-            },
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
                 // Single source of truth - pageAsset properties accessed via computed signals
                 store.setPageAssetResponse({ pageAsset: pageAPIResponse });
-                patchState(store, {
-                    status: UVE_STATUS.LOADED
-                });
+                store.setUveStatus(UVE_STATUS.LOADED);
             }
         };
     }),
@@ -108,13 +115,13 @@ export const UVEStore = signalStore(
     withEditor(),
     withFeature((store) => withSave({
         requestMetadata: () => store.requestMetadata(),
-        $requestWithParams: store.$requestWithParams,
+        $requestWithParams: () => store.$requestWithParams(),
         setPageAssetResponse: (response) => store.setPageAssetResponse(response),
         rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
         clearHistory: () => store.clearHistory(),
         addHistory: (response) => store.addHistory(response),
         pageAssetResponse: () => store.pageAssetResponse(),
-        pageClientResponse: store.pageClientResponse,
+        pageClientResponse: () => store.pageClientResponse(),
         pageData: () => store.pageData(),
         pageTemplate: () => store.pageTemplate()
     }))

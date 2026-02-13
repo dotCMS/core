@@ -70,8 +70,8 @@ export class DotEmaShellComponent implements OnInit {
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
         const page = this.uveStore.pageData();
         const template = this.uveStore.pageTemplate();
-        const isLoading = this.uveStore.status() === UVE_STATUS.LOADING;
-        const isEnterpriseLicense = this.uveStore.isEnterprise();
+        const isLoading = this.uveStore.uveStatus() === UVE_STATUS.LOADING;
+        const isEnterpriseLicense = this.uveStore.uveIsEnterprise();
         const templateDrawed = template?.drawed;
         const isLayoutDisabled = !page?.canEdit || !templateDrawed;
         const canSeeRulesExists = page && 'canSeeRules' in page;
@@ -141,7 +141,7 @@ export class DotEmaShellComponent implements OnInit {
 
     // Component builds error display locally
     protected readonly $errorDisplay = computed<{ code: number; pageInfo: InfoPage } | null>(() => {
-        const errorCode = this.uveStore.errorCode();
+        const errorCode = this.uveStore.pageErrorCode();
         if (!errorCode) return null;
 
         return getErrorPayload(errorCode);

@@ -81,22 +81,43 @@ export interface ViewState {
     ogTagsResults: SeoMetaTagsResult[] | null;
 }
 
+/**
+ * UVE Store State Interface
+ *
+ * Completely flat state structure following NgRx Signal Store best practices.
+ * Each root-level property receives its own Signal wrapper for fine-grained reactivity.
+ *
+ * State is organized by domain using prefixes:
+ * - uve*: Global editor system state (withUve)
+ * - flags: Feature flags (withFlags)
+ * - page*: Page asset data and metadata (withPage)
+ * - workflow*: Workflow actions and lock state (withWorkflow)
+ * - editor*: Editor UI state (withEditor)
+ * - view*: View modes and preview state (withView)
+ */
 export interface UVEState {
-    // ============ DOMAIN STATE ============
-    languages: DotLanguage[];
-    isEnterprise: boolean;
-    currentUser?: CurrentUser;
-    experiment?: DotExperiment;
-    pageParams?: DotPageAssetParams;
-    workflowActions?: DotCMSWorkflowAction[];
-    status: UVE_STATUS;
-    errorCode?: number;
-    pageType: PageType;
+    // ============ UVE SYSTEM (withUve) ============
+    uveStatus: UVE_STATUS;
+    uveIsEnterprise: boolean;
+    uveCurrentUser: CurrentUser | null;
 
+    // ============ FLAGS (withFlags) ============
     // Note: flags added by withFlags feature - kept optional for backwards compatibility
     flags?: UVEFlags;
 
-    // ============ EDITOR STATE ============
+    // ============ PAGE DOMAIN (withPage) ============
+    pageParams: DotPageAssetParams | null;
+    pageLanguages: DotLanguage[];
+    pageType: PageType;
+    pageExperiment: DotExperiment | null;
+    pageErrorCode: number | null;
+
+    // ============ WORKFLOW (withWorkflow) ============
+    workflowActions: DotCMSWorkflowAction[];
+    workflowIsLoading: boolean;
+    workflowLockIsLoading: boolean;
+
+    // ============ EDITOR STATE (withEditor) ============
     editorDragItem: EmaDragItem | null;
     editorBounds: Container[];
     editorState: EDITOR_STATE;
@@ -107,14 +128,20 @@ export interface UVEState {
     editorOgTags: SeoMetaTags | null;
     editorStyleSchemas: StyleEditorFormSchema[];
 
-    // ============ VIEW STATE ============
+    // ============ VIEW STATE (withView) ============
     viewDevice: DotDeviceListItem | null;
-    viewOrientation: Orientation | null;
+    viewDeviceOrientation: Orientation | null;
     viewSocialMedia: string | null;
     viewParams: DotUveViewParams | null;
-    viewIsEditState: boolean;
-    viewIsPreviewModeActive: boolean;
+    viewIsEditState: boolean;           // TODO: Replace with viewMode enum
+    viewIsPreviewModeActive: boolean;   // TODO: Remove - unused
     viewOgTagsResults: SeoMetaTagsResult[] | null;
+
+    // View zoom (merged from withViewZoom)
+    viewZoomLevel: number;
+    viewZoomIsActive: boolean;
+    viewZoomIframeDocHeight: number;
+    viewZoomGestureStartZoom: number;
 }
 
 /**

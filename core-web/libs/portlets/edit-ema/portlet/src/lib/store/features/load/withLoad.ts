@@ -87,7 +87,7 @@ export function withLoad(deps: WithLoadDeps) {
                         tap((pageParams) => {
                             deps.resetClientConfiguration();
                             patchState(store, {
-                                status: UVE_STATUS.LOADING,
+                                uveStatus: UVE_STATUS.LOADING,
                                 pageParams
                             });
                         }),
@@ -128,8 +128,8 @@ export function withLoad(deps: WithLoadDeps) {
                                     console.error('Error UVEStore', err);
 
                                     patchState(store, {
-                                        errorCode: errorStatus,
-                                        status: UVE_STATUS.ERROR
+                                        pageErrorCode: errorStatus,
+                                        uveStatus: UVE_STATUS.ERROR
                                     });
 
                                     return EMPTY;
@@ -151,8 +151,8 @@ export function withLoad(deps: WithLoadDeps) {
                                             console.error('Error UVEStore', err);
 
                                             patchState(store, {
-                                                errorCode: errorStatus,
-                                                status: UVE_STATUS.ERROR
+                                                pageErrorCode: errorStatus,
+                                                uveStatus: UVE_STATUS.ERROR
                                             });
 
                                             return EMPTY;
@@ -162,14 +162,14 @@ export function withLoad(deps: WithLoadDeps) {
                                             deps.addHistory({ pageAsset });
 
                                             patchState(store, {
-                                                isEnterprise,
-                                                currentUser,
-                                                experiment,
-                                                languages,
+                                                uveIsEnterprise: isEnterprise,
+                                                uveCurrentUser: currentUser,
+                                                pageExperiment: experiment,
+                                                pageLanguages: languages,
                                                 pageType: pageParams.clientHost
                                                     ? PageType.HEADLESS
                                                     : PageType.TRADITIONAL,
-                                                status: UVE_STATUS.LOADED
+                                                uveStatus: UVE_STATUS.LOADED
                                             });
                                         })
                                     );
@@ -182,7 +182,7 @@ export function withLoad(deps: WithLoadDeps) {
                     pipe(
                         tap((params) => {
                             patchState(store, {
-                                status: UVE_STATUS.LOADING
+                                uveStatus: UVE_STATUS.LOADING
                             });
 
                             if (params) {
@@ -209,8 +209,8 @@ export function withLoad(deps: WithLoadDeps) {
                                 }),
                                 tap((languages) => {
                                     patchState(store, {
-                                        languages,
-                                        status: UVE_STATUS.LOADED
+                                        pageLanguages: languages,
+                                        uveStatus: UVE_STATUS.LOADED
                                     });
                                 }),
                                 catchError((err: HttpErrorResponse) => {
@@ -218,8 +218,8 @@ export function withLoad(deps: WithLoadDeps) {
                                     console.error('Error UVEStore', err);
 
                                     patchState(store, {
-                                        errorCode: errorStatus,
-                                        status: UVE_STATUS.ERROR
+                                        pageErrorCode: errorStatus,
+                                        uveStatus: UVE_STATUS.ERROR
                                     });
 
                                     return EMPTY;

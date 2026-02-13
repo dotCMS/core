@@ -80,7 +80,7 @@ export function withView(_deps?: WithViewDeps) {
                 if (!getIsDefaultVariant(viewAs?.variantId)) {
                     const variantId = viewAs.variantId;
 
-                    const currentExperiment = store.experiment?.();
+                    const currentExperiment = store.pageExperiment?.();
 
                     const name =
                         currentExperiment?.trafficProportion.variants.find(
@@ -125,7 +125,7 @@ export function withView(_deps?: WithViewDeps) {
                     viewDevice: device,
                     viewSocialMedia: null,
                     viewIsEditState: false,
-                    viewOrientation: newOrientation,
+                    viewDeviceOrientation: newOrientation,
                     viewParams: {
                         ...(store.viewParams() || {}),
                         device: device.inode,
@@ -136,7 +136,7 @@ export function withView(_deps?: WithViewDeps) {
             },
             viewSetOrientation: (orientation: Orientation) => {
                 patchState(store, {
-                    viewOrientation: orientation,
+                    viewDeviceOrientation: orientation,
                     viewParams: store.viewParams() ? {
                         ...store.viewParams(),
                         orientation
@@ -146,7 +146,7 @@ export function withView(_deps?: WithViewDeps) {
             viewSetSEO: (socialMedia: string | null) => {
                 patchState(store, {
                     viewDevice: null,
-                    viewOrientation: null,
+                    viewDeviceOrientation: null,
                     viewSocialMedia: socialMedia,
                     viewIsEditState: false,
                     viewParams: {
@@ -162,7 +162,7 @@ export function withView(_deps?: WithViewDeps) {
                     viewDevice: null,
                     viewSocialMedia: null,
                     viewIsEditState: true,
-                    viewOrientation: null,
+                    viewDeviceOrientation: null,
                     viewParams: {
                         ...(store.viewParams() || {}),
                         device: null,

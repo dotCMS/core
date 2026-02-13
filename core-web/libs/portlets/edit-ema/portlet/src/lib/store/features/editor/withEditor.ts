@@ -83,7 +83,7 @@ export function withEditor() {
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
-                ].includes(store.experiment()?.status);
+                ].includes(store.pageExperiment()?.status);
 
                 if (!isPageEditable || isExperimentRunning) {
                     return false;
@@ -104,7 +104,7 @@ export function withEditor() {
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
-                ].includes(store.experiment()?.status);
+                ].includes(store.pageExperiment()?.status);
 
                 return (canEditPage || canDrawTemplate) && !isExperimentRunning && !store.workflowIsPageLocked();
             });
@@ -114,7 +114,7 @@ export function withEditor() {
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
-                ].includes(store.experiment()?.status);
+                ].includes(store.pageExperiment()?.status);
 
                 return canEditPage && !isExperimentRunning && !store.workflowIsPageLocked();
             });
@@ -133,7 +133,7 @@ export function withEditor() {
             });
 
             const editorEnableInlineEdit = computed(() => {
-                return store.viewIsEditState() && store.isEnterprise();
+                return store.viewIsEditState() && store.uveIsEnterprise();
             });
 
 

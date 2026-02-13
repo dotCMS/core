@@ -90,7 +90,7 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
         }),
         withComputed((store) => {
             const workflowIsPageLocked = computed(() => {
-                return computeIsPageLocked(store.pageData(), store.currentUser());
+                return computeIsPageLocked(store.pageData(), store.uveCurrentUser());
             });
 
             const systemIsLockFeatureEnabled = computed(() =>
@@ -113,7 +113,7 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
 
             const $workflowLockOptions = computed<ToggleLockOptions | null>(() => {
                 const page = store.pageData();
-                const user = store.currentUser();
+                const user = store.uveCurrentUser();
 
                 if (!page) {
                     return null;
@@ -221,8 +221,8 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {
                                         patchState(store, {
-                                            errorCode: errorStatus,
-                                            status: UVE_STATUS.ERROR
+                                            pageErrorCode: errorStatus,
+                                            uveStatus: UVE_STATUS.ERROR
                                         });
                                     }
                                 })
