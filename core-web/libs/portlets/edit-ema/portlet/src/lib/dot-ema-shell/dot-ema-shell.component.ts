@@ -147,9 +147,9 @@ export class DotEmaShellComponent implements OnInit {
 
         if (pageAPIResponse) {
             this.#globalStore.addNewBreadcrumb({
-                label: pageAPIResponse?.page.title,
+                label: pageAPIResponse.page?.title,
                 url: newURL,
-                id: `${pageAPIResponse?.page.identifier}`
+                id: `${pageAPIResponse.page?.identifier}`
             });
         }
     });
