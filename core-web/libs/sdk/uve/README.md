@@ -227,7 +227,7 @@ The SDK uses several key types from `@dotcms/types`:
 
 ```typescript
 import {
-    DotCMSContentlet,
+    DotCMSBasicContentlet,
     DotCMSPageResponse,
     DotCMSUVEConfig,
     DotCMSInlineEditingType,
@@ -474,11 +474,11 @@ sendMessageToUVE({
 #### DotCMSUVEMessage<T>
 
 | Event (DotCMSUVEAction)            | Payload (T)                                                   |
-| ---------------------------------- | ------------------------------------------------------------- | ------- |
+| ---------------------------------- | ------------------------------------------------------------- |
 | `NAVIGATION_UPDATE`                | `{ url: string }`                                             |
 | `SET_BOUNDS`                       | `DotCMSContainerBound[]`                                      |
 | `SET_CONTENTLET`                   | `DotCMSBasicContentlet`                                       |
-| `IFRAME_SCROLL`                    | `'up'                                                         | 'down'` |
+| `IFRAME_SCROLL`                    | `'up' \| 'down'`                                              |
 | `IFRAME_SCROLL_END`                | ---                                                           |
 | `REORDER_MENU`                     | `DotCMSReorderMenuConfig`                                     |
 | `INIT_INLINE_EDITING`              | `DotCMSInlineEditingPayload`                                  |
@@ -1082,10 +1082,10 @@ Style Editor values are managed internally by UVE and passed to your components 
 When rendering contentlets, style properties are accessed through the `dotStyleProperties` prop:
 
 ```typescript
-import { DotCMSContentlet } from '@dotcms/types';
+import { DotCMSBasicContentlet } from '@dotcms/types';
 
 interface ActivityProps {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSBasicContentlet;
     dotStyleProperties?: Record<string, any>;
 }
 

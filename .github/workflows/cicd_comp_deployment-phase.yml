@@ -109,6 +109,8 @@ jobs:
           build_run_id: ${{ inputs.artifact-run-id }}
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
+          docker-use-ref: false
+          version: ${{ inputs.environment }}
           latest: ${{ inputs.latest }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
@@ -145,6 +147,8 @@ jobs:
           docker_context: dev-env
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
+          docker-use-ref: false
+          version: ${{ inputs.environment }}
           latest: true
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}

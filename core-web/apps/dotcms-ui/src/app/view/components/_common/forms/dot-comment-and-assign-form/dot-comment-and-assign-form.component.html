@@ -13,6 +13,9 @@
                     [style]="{ width: '100%' }"
                     id="dotRoles"
                     formControlName="assign"
+                    [filter]="true"
+                    filterBy="label"
+                    [filterPlaceholder]="'search' | dm"
                     appendTo="body" />
             </div>
         }
