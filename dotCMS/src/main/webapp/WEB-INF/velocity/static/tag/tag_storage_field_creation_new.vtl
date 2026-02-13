@@ -121,16 +121,6 @@
       });
     }
 
-    if (typeof DotCustomFieldApi !== "undefined" && DotCustomFieldApi.ready) {
-      DotCustomFieldApi.ready(initTagStorageField);
-    } else {
-      if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", function() {
-          setTimeout(initTagStorageField, 100);
-        });
-      } else {
-        setTimeout(initTagStorageField, 100);
-      }
-    }
+    DotCustomFieldApi.ready(initTagStorageField);
   })();
 </script>
