@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.content.index.IndexSourceHelper.isOpenSearchReadEnabled;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -17,6 +18,7 @@ import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -120,7 +122,6 @@ import org.apache.lucene.search.TotalHits.Relation;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.search.ClearScrollRequest;
-import org.elasticsearch.action.search.ClearScrollResponse;
 import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -134,13 +135,13 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
 import org.elasticsearch.search.sort.SortOrder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -151,7 +152,7 @@ import org.jetbrains.annotations.NotNull;
  * @since Mar 22, 2012
  *
  */
-public class ESContentFactoryImpl extends ContentletFactory {
+public class ESContentFactoryImpl implements ContentletFactory {
 
     private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
     private static final String[] ES_FIELDS = {"inode", "identifier"};
@@ -279,14 +280,14 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected Object loadField(String inode, String fieldContentlet) throws DotDataException {
+	public Object loadField(String inode, String fieldContentlet) throws DotDataException {
 	    String sql="SELECT "+fieldContentlet+" FROM contentlet WHERE inode=?";
 	    DotConnect dc=new DotConnect();
 	    dc.setSQL(sql);
 	    dc.addParam(inode);
-	    ArrayList results=dc.loadResults();
-	    if(results.size()==0) return null;
-	    Map m=(Map)results.get(0);
+	    List<?> results=dc.loadResults();
+	    if(results.isEmpty()) return null;
+	    Map<?,?> m=(Map<?,?>)results.get(0);
 	    return m.get(fieldContentlet);
 	}
 
@@ -294,7 +295,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * {@inheritDoc}
      */
     @Override
-    protected Object loadJsonField(final String inode,
+    public Object loadJsonField(final String inode,
             final com.dotcms.contenttype.model.field.Field field) throws DotDataException {
 
         String loadJsonFieldValueSQL = null;
@@ -332,7 +333,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
+	public void cleanField(String structureInode, Field field) throws DotDataException, DotStateException, DotSecurityException {
 	    StringBuffer sql = new StringBuffer("update contentlet set " );
         if(field.getFieldContentlet().indexOf("float") != -1){
         	if(DbConnectionFactory.isMySql())
@@ -364,7 +365,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected long contentletCount() throws DotDataException {
+	public long contentletCount() throws DotDataException {
 	    DotConnect dc = new DotConnect();
         dc.setSQL("select count(*) as count from contentlet");
         List<Map<String,String>> results = dc.loadResults();
@@ -373,7 +374,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected long contentletIdentifierCount() throws DotDataException {
+	public long contentletIdentifierCount() throws DotDataException {
 	    DotConnect dc = new DotConnect();
         if(DbConnectionFactory.isOracle()){
             dc.setSQL("select count(*) as count from (select distinct identifier from contentlet)");
@@ -387,7 +388,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<Map<String, Serializable>> DBSearch(Query query, List<Field> fields, String structureInode) throws ValidationException,
+	public List<Map<String, Serializable>> DBSearch(Query query, List<Field> fields, String structureInode) throws ValidationException,
 			DotDataException {
 	    Map<String, Field> velVarfieldsMap = null;
         Map<String, Field> fieldsMap = null;
@@ -579,12 +580,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected void delete(List<Contentlet> contentlets) throws DotDataException {
+	public void delete(List<Contentlet> contentlets) throws DotDataException {
 		delete(contentlets, true);
 	}
 
 	@Override
-	protected void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException {
+	public void delete(List<Contentlet> contentlets, boolean deleteIdentifier) throws DotDataException {
         /*
          First thing to do is to clean up the trees for the given Contentles
          */
@@ -711,7 +712,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @throws DotDataException An error occurred when interacting with the data source.
      */
     @Override
-    protected int deleteOldContent(final Date deleteFrom) throws DotDataException {
+    public int deleteOldContent(final Date deleteFrom) throws DotDataException {
 
         return new DropOldContentletRunner(deleteFrom).deleteOldContent();
     }
@@ -788,7 +789,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected void deleteVersion(final Contentlet contentlet) throws DotDataException {
+	public void deleteVersion(final Contentlet contentlet) throws DotDataException {
 	    final String conInode = contentlet.getInode();
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("delete from tree where child = ? or parent = ?");
@@ -856,7 +857,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-    protected Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    public Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         return find(inode, false);
     }
 
@@ -873,7 +874,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    protected Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    public Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
@@ -897,7 +898,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
     }
     @Override
-    protected Contentlet find(final String inode, String variant) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    public Contentlet find(final String inode, String variant) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
@@ -947,12 +948,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected List<Contentlet> findAllCurrent() throws DotDataException {
+	public List<Contentlet> findAllCurrent() throws DotDataException {
 		throw new DotDataException("findAllCurrent() will blow your stack off, use findAllCurrent(offset, limit)");
 	}
 
     @Override
-    protected List<Contentlet> findAllCurrent(final int offset, final int limit) throws DotDataException {
+    public List<Contentlet> findAllCurrent(final int offset, final int limit) throws DotDataException {
 
         final int ultimateLimit = Math.min(limit, MAX_LIMIT);
         final List<Contentlet> contentlets = new ArrayList<>();
@@ -979,7 +980,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected List<Contentlet> findAllUserVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
+	public List<Contentlet> findAllUserVersions(final Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
         if(!InodeUtils.isSet(identifier.getId())) {
             return Collections.emptyList();
         }
@@ -1003,17 +1004,17 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
-    protected List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException {
+    public List<Contentlet> findAllVersions(final Identifier identifier) throws DotDataException {
         return findAllVersions(identifier, true);
     }
 
     @Override
-    protected List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException {
+    public List<Contentlet> findAllVersions(final Identifier identifier, final boolean bringOldVersions) throws DotDataException {
         return findAllVersions(identifier, bringOldVersions, null);
     }
 
     @Override
-    protected  List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
+    public  List<Contentlet> findAllVersions(final Identifier identifier, final Variant variant)
             throws DotDataException {
         DotPreconditions.notNull(identifier, () -> "Identifier cannot be null");
         DotPreconditions.notNull(variant, () -> "Variant cannot be null");
@@ -1153,13 +1154,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-    protected List<Contentlet> findByStructure(String structureInode, int limit, int offset)
+    public List<Contentlet> findByStructure(String structureInode, int limit, int offset)
             throws DotDataException, DotStateException, DotSecurityException {
         return findByStructure(structureInode, null, limit, offset);
     }
 
     @Override
-    protected List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
+    public List<Contentlet> findByStructure(String structureInode, Date maxDate, int limit,
             int offset) throws DotDataException, DotStateException, DotSecurityException {
         final DotConnect dotConnect = new DotConnect();
         final StringBuilder select = new StringBuilder();
@@ -1229,12 +1230,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
+	public Contentlet findContentletByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException {
         return findContentletByIdentifier(identifier, live, languageId, DEFAULT_VARIANT.name());
     }
 
     @Override
-    protected Contentlet findContentletByIdentifier(final String identifier, final Boolean live,
+    public Contentlet findContentletByIdentifier(final String identifier, final Boolean live,
             final Long languageId, final String variantId) throws DotDataException {
 
         final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
@@ -1248,7 +1249,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .getOrElseThrow(DotRuntimeException::new);
 	}
 
-    protected Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
+    public Contentlet findContentletByIdentifier(final String identifier, final long languageId, final String variantId, final Date timeMachineDate)
             throws DotDataException {
 
         final String variant = UtilMethods.isSet(variantId) ? variantId : DEFAULT_VARIANT.name();
@@ -1286,15 +1287,15 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
-	    
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier) throws DotDataException, DotSecurityException {
+
 	    // Looking content up this way can avoid any DB hits as these calls are all cached.
 	    return findContentletByIdentifierAnyLanguage(identifier, false);
 
     }
 
     @Override
-    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier,
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier,
             final String variant) throws DotDataException, DotSecurityException {
 
         // Looking content up this way can avoid any DB hits as these calls are all cached.
@@ -1303,7 +1304,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, final boolean includeDeleted) throws DotDataException, DotSecurityException {
         final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
                 .findAnyContentletVersionInfo(identifier, true);
 
@@ -1323,7 +1324,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-    protected Contentlet findContentletByIdentifierAnyLanguage(final String identifier, String variant, final boolean includeDeleted) throws DotDataException, DotSecurityException {
+    public Contentlet findContentletByIdentifierAnyLanguage(final String identifier, String variant, final boolean includeDeleted) throws DotDataException, DotSecurityException {
         final Optional<ContentletVersionInfo> contentVersionDeleted = FactoryLocator.getVersionableFactory()
                 .findAnyContentletVersionInfo(identifier, variant, true);
 
@@ -1343,12 +1344,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
 	@Override
-	protected Contentlet findContentletForLanguage(long languageId, Identifier identifier) throws DotDataException {
+	public Contentlet findContentletForLanguage(long languageId, Identifier identifier) throws DotDataException {
 		return findContentletByIdentifier(identifier.getId(), false, languageId);
 	}
 
   @Override
-  protected List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
+  public List<Contentlet> findContentlets(final List<String> inodes) throws DotDataException {
 
     final HashMap<String, Contentlet> conMap = new HashMap<>();
     for (String i : inodes) {
@@ -1357,7 +1358,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         conMap.put(contentlet.getInode(), processCachedContentlet(contentlet));
       }
     }
-    
+
     if (conMap.size() != inodes.size()) {
         final List<String> missingCons = new ArrayList<>(
                 CollectionUtils.subtract(inodes, conMap.keySet()));
@@ -1397,10 +1398,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected List<Contentlet> findContentletsByHost(final String hostId, final int limit,
+	public List<Contentlet> findContentletsByHost(final String hostId, final int limit,
             final int offset) {
 		try {
+            if(isOpenSearchReadEnabled()){
 
+            }
 		    final SearchRequest searchRequest = new SearchRequest();
             final SearchSourceBuilder searchSourceBuilder = createSearchSourceBuilder("+conhost:"
                     +hostId).size(limit).from(offset);
@@ -1414,7 +1417,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     @NotNull
     private List<Contentlet> getContentletsFromSearchResponse(final SearchRequest searchRequest) {
 
-        final SearchHits hits = cachedIndexSearch(searchRequest);
+        final SearchHits hits = _cachedIndexSearch(searchRequest);
 
         final List<Contentlet> contentlets = new ArrayList<>();
         for (int i = 0; i < hits.getHits().length; i++) {
@@ -1428,7 +1431,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-	protected List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
+	public List<Contentlet> findContentletsByIdentifier(String identifier, Boolean live, Long languageId) throws DotDataException, DotStateException, DotSecurityException {
 	    final List<Contentlet> contentlets = new ArrayList<>();
         final StringBuilder queryBuffer = new StringBuilder();
         final DotConnect dotConnect = new DotConnect();
@@ -1460,7 +1463,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<Contentlet> findContentletsWithFieldValue(final String structureInode, final Field field) throws DotDataException {
+	public List<Contentlet> findContentletsWithFieldValue(final String structureInode, final Field field) throws DotDataException {
 	    final List<Contentlet> contentlets = new ArrayList<>();
 
         try {
@@ -1505,7 +1508,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<Contentlet> findPageContentlets(final String HTMLPageIdentifier,
+	public List<Contentlet> findPageContentlets(final String HTMLPageIdentifier,
             final String containerIdentifier, String orderby, final boolean working,
             long languageId) throws DotDataException, DotStateException, DotSecurityException {
 
@@ -1559,11 +1562,11 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 
-	protected List<Contentlet> findPageContentletFromCache(final String HTMLPageIdentifier,
+	public List<Contentlet> findPageContentletFromCache(final String HTMLPageIdentifier,
             final String containerIdentifier, String orderby, final boolean working,
             long languageId) throws DotDataException, DotStateException, DotSecurityException {
         StringBuilder condition = new StringBuilder();
-        
+
         if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
             orderby = " multi_tree.tree_order ";
         }
@@ -1592,7 +1595,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         dotConnect.addParam(false);
         dotConnect.addParam(HTMLPageIdentifier);
         dotConnect.addParam(containerIdentifier);
-        
+
         final List<Map<String,Object>> results = dotConnect.loadObjectResults();
         final List<Contentlet> contentlets = new ArrayList<>();
         for(final Map<String,Object> resultMap:results){
@@ -1603,18 +1606,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         return contentlets;
     }
-	
-	
-	
-	
-	
+
+
+
+
+
 	@Override
-	protected List<Contentlet> getContentletsByIdentifier(String identifier) throws DotDataException, DotStateException, DotSecurityException {
+	public List<Contentlet> getContentletsByIdentifier(String identifier) throws DotDataException, DotStateException, DotSecurityException {
 	    return getContentletsByIdentifier(identifier, null);
 	}
 
 	@Override
-	protected List<Contentlet> getContentletsByIdentifier(final String identifier, final Boolean live)
+	public List<Contentlet> getContentletsByIdentifier(final String identifier, final Boolean live)
             throws DotDataException, DotStateException, DotSecurityException {
 
 	    final StringBuilder queryBuffer = new StringBuilder();
@@ -1638,7 +1641,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected Identifier getRelatedIdentifier(final Contentlet contentlet, final String relationshipType) throws DotDataException {
+	public Identifier getRelatedIdentifier(final Contentlet contentlet, final String relationshipType) throws DotDataException {
 
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT identifier.* from identifier identifier, tree tree, inode inode ")
@@ -1656,7 +1659,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected List<Link> getRelatedLinks(Contentlet contentlet) throws DotDataException {
+	public List<Link> getRelatedLinks(Contentlet contentlet) throws DotDataException {
 
         final StringBuilder sql = new StringBuilder();
         sql.append("SELECT links.* from links links, tree tree, inode inode ")
@@ -1673,9 +1676,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected long indexCount(final String query) {
+	public long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
+        if(isOpenSearchReadEnabled()){
+
+        }
         final CountRequest countRequest = getCountRequest(qq);
         return cachedIndexCount(countRequest);
     }
@@ -1689,8 +1695,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return countRequest;
     }
 
+    @NotNull
+    private org.opensearch.client.opensearch.core.CountRequest getCountRequestOS(final String queryString) {
+        org.opensearch.client.opensearch._types.query_dsl.Query query =
+            org.opensearch.client.opensearch._types.query_dsl.QueryStringQuery.of(q -> q
+                .query(queryString)
+            ).toQuery();
+
+        return org.opensearch.client.opensearch.core.CountRequest.of(c -> c
+            .index(inferIndexToHit(queryString))
+            .query(query)
+        );
+    }
+
    private String inferIndexToHit(final String query)  {
        // we check the query to figure out which indexes to hit
+       if(isOpenSearchReadEnabled()) {
+           return inferVersionedIndex(query);
+       }
 
        final IndiciesInfo info;
        try {
@@ -1707,6 +1729,41 @@ public class ESContentFactoryImpl extends ContentletFactory {
        }
        return indexToHit;
    }
+
+    /**
+     * Determines the appropriate versioned index to use based on the provided query string.
+     * This method inspects the query to decide whether to return the live or working index.
+     * If no matching index is found, null is returned.
+     *
+     * @param query the search query used to determine the appropriate versioned index
+     * @return the name of the versioned index to use, or null if no suitable index is found
+     * @throws DotRuntimeException if the default versioned indices cannot be loaded
+     */
+    private @Nullable String inferVersionedIndex(String query) {
+        String indexNameToHit = null;
+        final Optional<VersionedIndices> optional = Try.of(()->APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices()).get();
+        if (optional.isEmpty()){
+            throw new DotRuntimeException("Unable to load default versioned indices, falling back to default index");
+        } else {
+            final VersionedIndices versionedIndices = optional.get();
+            final Optional<String> live = versionedIndices.live();
+            final Optional<String> working = versionedIndices.working();
+            if(query.contains("+live:true") && !query.contains("+deleted:true")) {
+                if(live.isPresent()){
+                    indexNameToHit = live.get();
+                } else {
+                    Logger.warn(this, "No live index found when inferring index for query: " + query);
+                }
+            } else {
+               if(working.isPresent()){
+                   indexNameToHit = working.get();
+               } else {
+                   Logger.warn(this, "No working index found when inferring index for query: " + query);
+               }
+            }
+            return indexNameToHit;
+        }
+    }
 
     /**
      * It will call createRequest with null as sortBy parameter
@@ -1794,7 +1851,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @param searchRequest
      * @return
      */
-    SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
+    SearchHits _cachedIndexSearch(final SearchRequest searchRequest) {
         
         final Optional<SearchHits> optionalHits = shouldQueryCache() ? queryCache.get(searchRequest) : Optional.empty();
         if(optionalHits.isPresent()) {
@@ -1823,12 +1880,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
             return ERROR_HIT;
         } catch(final IllegalStateException e) {
-            rebuildRestHighLevelClientIfNeeded(e);
+            ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
-                rebuildRestHighLevelClientIfNeeded(e);
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                             searchRequest.source().toString(), e.getMessage());
@@ -1885,12 +1942,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             }
             return -1L;
         } catch(final IllegalStateException e) {
-            rebuildRestHighLevelClientIfNeeded(e);
+            ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
-                rebuildRestHighLevelClientIfNeeded(e);
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     countRequest.source().toString(), e.getMessage());
@@ -1901,7 +1958,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
     @Override
-    protected SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
+    public SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
@@ -1959,7 +2016,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             searchSourceBuilder.sort("moddate", SortOrder.DESC);
         }
         searchRequest.source(searchSourceBuilder);
-        return cachedIndexSearch(searchRequest);
+        return _cachedIndexSearch(searchRequest);
 
 
     }
@@ -2004,12 +2061,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             Logger.warn(this.getClass(), "----------------------------------------------");
             return new PaginatedArrayList<>();
         } catch (final IllegalStateException e) {
-            rebuildRestHighLevelClientIfNeeded(e);
+            ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             Logger.warnAndDebug(ESContentFactoryImpl.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
             if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
-                rebuildRestHighLevelClientIfNeeded(e);
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     query, e.getMessage());
@@ -2096,8 +2153,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
-        String[] sortbyArr = sortBy.split(",");
-        for (String sort : sortbyArr) {
+        String[] sortByArr = sortBy.split(",");
+        for (String sort : sortByArr) {
             String[] x = sort.trim().split(" ");
             srb.sort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw")
                     .order(x.length > 1 && x[1].equalsIgnoreCase("desc") ?
@@ -2107,7 +2164,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
     }
 
     @Override
-	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	public void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	   User systemUser =  APILocator.getUserAPI().getSystemUser();
        User userToReplace = APILocator.getUserAPI().loadUserById(userId);
 	   updateUserReferences(userToReplace,systemUser.getUserId(), systemUser );
@@ -2122,7 +2179,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
          * @exception DotDataException There is a data inconsistency
          * @throws DotSecurityException
          */
-	protected void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	public void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
         final DotConnect dc = new DotConnect();
         try {
             dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ?");
@@ -2250,7 +2307,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-    protected Contentlet save(final Contentlet contentlet, final String existingInode)
+    public Contentlet save(final Contentlet contentlet, final String existingInode)
             throws DotDataException, DotStateException, DotSecurityException {
 
         final String inode = getInode(existingInode, contentlet);
@@ -2527,13 +2584,13 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	protected void save(List<Contentlet> contentlets) throws DotDataException, DotStateException, DotSecurityException {
+	public void save(List<Contentlet> contentlets) throws DotDataException, DotStateException, DotSecurityException {
 		for(Contentlet con : contentlets)
 		    save(con);
 	}
 
 	@Override
-	protected List<Contentlet> search(String query, int limit, int offset, String sortBy) throws DotDataException, DotStateException, DotSecurityException {
+	public List<Contentlet> search(String query, int limit, int offset, String sortBy) throws DotDataException, DotStateException, DotSecurityException {
 	    SearchHits hits = indexSearch(query, limit, offset, sortBy);
 	    List<String> inodes=new ArrayList<>();
 	    for(SearchHit h : hits)
@@ -2542,7 +2599,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected void UpdateContentWithSystemHost(final String hostIdentifier) throws DotDataException {
+	public void UpdateContentWithSystemHost(final String hostIdentifier) throws DotDataException {
 		final Host systemHost = APILocator.getHostAPI().findSystemHost();
 		for (int i = 0; i < 10000; i++) {
 			final int offset = i * 1000;
@@ -2553,7 +2610,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected void removeFolderReferences(final Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	public void removeFolderReferences(final Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	    Identifier folderId = null;
         try{
             folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());
@@ -3112,7 +3169,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	 * @throws DotDataException
 	 *             An error occurred when updating the contents.
 	 */
-    protected void clearField(String structureInode, Date maxDate, Field field) throws DotDataException {
+    public void clearField(String structureInode, Date maxDate, Field field) throws DotDataException {
         // we are not a db field;
         if(field.getFieldContentlet() == null  || ! (field.getFieldContentlet().matches("^.*\\d+$"))){
           return;
@@ -3179,7 +3236,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return builder.build();
     }
 
-    protected void clearField(String structureInode, Field field) throws DotDataException {
+    public void clearField(String structureInode, Field field) throws DotDataException {
         clearField(structureInode, null, field);
     }
 
