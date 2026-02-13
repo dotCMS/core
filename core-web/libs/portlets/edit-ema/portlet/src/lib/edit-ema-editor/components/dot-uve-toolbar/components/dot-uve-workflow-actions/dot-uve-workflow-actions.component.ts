@@ -38,10 +38,10 @@ export class DotUveWorkflowActionsComponent {
     private readonly messageService = inject(MessageService);
     readonly #uveStore = inject(UVEStore);
 
-    inode = computed(() => this.#uveStore.page().inode);
+    inode = computed(() => this.#uveStore.pageData().inode);
     actions = this.#uveStore.workflowActions;
-    loading = this.#uveStore.workflowLoading;
-    canEdit = this.#uveStore.$canEditPageContent;
+    loading = this.#uveStore.workflowIsLoading;
+    canEdit = this.#uveStore.editorCanEditContent;
 
     private readonly successMessage = {
         severity: 'info',
@@ -157,7 +157,7 @@ export class DotUveWorkflowActionsComponent {
         const languageChanged = language_id !== currentParams.language_id;
 
         if (urlChanged || languageChanged) {
-            this.#uveStore.loadPageAsset({
+            this.#uveStore.pageLoad({
                 url,
                 language_id
             });
@@ -165,6 +165,6 @@ export class DotUveWorkflowActionsComponent {
             return;
         }
 
-        this.#uveStore.reloadCurrentPage();
+        this.#uveStore.pageReload();
     }
 }

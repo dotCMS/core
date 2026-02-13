@@ -28,9 +28,9 @@ import { PageType, UVEState } from '../../models';
  */
 export interface WithLoadMethods {
     // Methods
-    updatePageParams: (params: Partial<DotPageAssetParams>) => void;
-    loadPageAsset: RxMethod<Partial<DotPageAssetParams>>;
-    reloadCurrentPage: RxMethod<Partial<DotPageAssetParams> | void>;
+    pageUpdateParams: (params: Partial<DotPageAssetParams>) => void;
+    pageLoad: RxMethod<Partial<DotPageAssetParams>>;
+    pageReload: RxMethod<Partial<DotPageAssetParams> | void>;
 }
 
 /**
@@ -39,10 +39,10 @@ export interface WithLoadMethods {
  */
 export interface WithLoadDeps {
     resetClientConfiguration: () => void;
-    getWorkflowActions: (inode: string) => void;
-    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
-    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
-    setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    workflowFetch: (inode: string) => void;
+    requestMetadata: () => { query: string; variables: Record<string, string> } | null;
+    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    setPageAssetResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
     addHistory: (state: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
 }
 
@@ -63,7 +63,7 @@ export function withLoad(deps: WithLoadDeps) {
         },
         withMethods((store) => {
             return {
-                updatePageParams: (params: Partial<DotPageAssetParams>) => {
+                pageUpdateParams: (params: Partial<DotPageAssetParams>) => {
                     patchState(store, {
                         pageParams: {
                             ...store.pageParams(),
@@ -89,7 +89,7 @@ export function withLoad(deps: WithLoadDeps) {
                  * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                loadPageAsset: rxMethod<Partial<DotPageAssetParams>>(
+                pageLoad: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
                             if (!store.pageParams()) {
@@ -138,7 +138,7 @@ export function withLoad(deps: WithLoadDeps) {
                                 currentUser: loginService.getCurrentUser()
                             }).pipe(
                                 tap(({ pageAsset }) => {
-                                    deps.getWorkflowActions(pageAsset?.page?.inode);
+                                    deps.workflowFetch(pageAsset?.page?.inode);
                                 }),
                                 catchError((err: HttpErrorResponse) => {
                                     const errorStatus = err.status;
@@ -175,18 +175,10 @@ export function withLoad(deps: WithLoadDeps) {
                                             return EMPTY;
                                         }),
                                         tap(({ experiment, languages }) => {
-                                            deps.setGraphqlResponse({ pageAsset });
+                                            deps.setPageAssetResponse({ pageAsset });
                                             deps.addHistory({ pageAsset });
 
                                             patchState(store, {
-                                                page: pageAsset?.page,
-                                                site: pageAsset?.site,
-                                                viewAs: pageAsset?.viewAs,
-                                                template: pageAsset?.template,
-                                                urlContentMap: pageAsset?.urlContentMap,
-                                                containers: pageAsset?.containers,
-                                                vanityUrl: pageAsset?.vanityUrl,
-                                                numberContents: pageAsset?.numberContents,
                                                 isEnterprise,
                                                 currentUser,
                                                 experiment,
@@ -210,7 +202,7 @@ export function withLoad(deps: WithLoadDeps) {
                  * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
                  * @memberof DotEmaShellComponent
                  */
-                reloadCurrentPage: rxMethod<Partial<DotPageAssetParams> | void>(
+                pageReload: rxMethod<Partial<DotPageAssetParams> | void>(
                     pipe(
                         tap((params) => {
                             patchState(store, {
@@ -218,31 +210,21 @@ export function withLoad(deps: WithLoadDeps) {
                             });
 
                             if (params) {
-                                store.updatePageParams(params);
+                                store.pageUpdateParams(params);
                             }
                         }),
                         switchMap(() => {
-                            const pageRequest = !deps.graphqlRequest()
+                            const pageRequest = !deps.requestMetadata()
                                 ? dotPageApiService.get(store.pageParams())
-                                : dotPageApiService.getGraphQLPage(deps.$graphqlWithParams()).pipe(
-                                      tap((response) => deps.setGraphqlResponse(response)),
+                                : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
+                                      tap((response) => deps.setPageAssetResponse(response)),
                                       map((response) => response.pageAsset)
                                   );
 
                             return pageRequest.pipe(
                                 tap((pageAsset) => {
-                                    deps.setGraphqlResponse({ pageAsset });
-                                    patchState(store, {
-                                        page: pageAsset?.page,
-                                        site: pageAsset?.site,
-                                        viewAs: pageAsset?.viewAs,
-                                        template: pageAsset?.template,
-                                        urlContentMap: pageAsset?.urlContentMap,
-                                        containers: pageAsset?.containers,
-                                        vanityUrl: pageAsset?.vanityUrl,
-                                        numberContents: pageAsset?.numberContents
-                                    });
-                                    deps.getWorkflowActions(pageAsset?.page?.inode);
+                                    deps.setPageAssetResponse({ pageAsset });
+                                    deps.workflowFetch(pageAsset?.page?.inode);
                                 }),
                                 switchMap((pageAsset) => {
                                     return dotLanguagesService.getLanguagesUsedPage(

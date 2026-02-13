@@ -68,17 +68,17 @@ export const uveStoreMock = signalStore(
     withFeature(() => withClient()),
     withWorkflow(),
     withMethods((store) => ({
-        setPageAPIResponse: (pageAPIResponse: DotCMSPageAsset) => {
-            store.setGraphqlResponse({ pageAsset: pageAPIResponse });
+        setPageAPIResponse: (pageAssetResponse: DotCMSPageAsset) => {
+            store.setPageAssetResponse({ pageAsset: pageAssetResponse });
             patchState(store, {
-                page: pageAPIResponse.page,
-                site: pageAPIResponse.site,
-                template: pageAPIResponse.template,
-                containers: pageAPIResponse.containers,
-                viewAs: pageAPIResponse.viewAs,
-                vanityUrl: pageAPIResponse.vanityUrl,
-                urlContentMap: pageAPIResponse.urlContentMap,
-                numberContents: pageAPIResponse.numberContents
+                page: pageAssetResponse.page,
+                site: pageAssetResponse.site,
+                template: pageAssetResponse.template,
+                containers: pageAssetResponse.containers,
+                viewAs: pageAssetResponse.viewAs,
+                vanityUrl: pageAssetResponse.vanityUrl,
+                urlContentMap: pageAssetResponse.urlContentMap,
+                numberContents: pageAssetResponse.numberContents
             });
         }
     }))
@@ -109,29 +109,29 @@ describe('withLoad', () => {
 
     it('should start with the initial state', () => {
         expect(store.workflowActions()).toEqual([]);
-        expect(store.workflowLoading()).toBe(true);
+        expect(store.workflowIsLoading()).toBe(true);
     });
 
-    it('should react to the pageAPIResponse', () => {
+    it('should react to the pageAssetResponse', () => {
         store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
         expect(store.workflowActions()).toEqual([]);
-        expect(store.workflowLoading()).toBe(true);
+        expect(store.workflowIsLoading()).toBe(true);
     });
 
     describe('withMethods', () => {
-        describe('getWorkflowActions', () => {
+        describe('workflowFetch', () => {
             it('should call get workflow actions using the provided inode', () => {
                 const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
-                store.getWorkflowActions('123');
-                expect(store.workflowLoading()).toBe(false);
+                store.workflowFetch('123');
+                expect(store.workflowIsLoading()).toBe(false);
                 expect(store.workflowActions()).toEqual(mockWorkflowsActions);
                 expect(spyWorkflowActions).toHaveBeenCalledWith('123');
             });
         });
 
-        it('should set workflowLoading to true', () => {
+        it('should set workflowIsLoading to true', () => {
             store.setWorkflowActionLoading(true);
-            expect(store.workflowLoading()).toBe(true);
+            expect(store.workflowIsLoading()).toBe(true);
         });
     });
 

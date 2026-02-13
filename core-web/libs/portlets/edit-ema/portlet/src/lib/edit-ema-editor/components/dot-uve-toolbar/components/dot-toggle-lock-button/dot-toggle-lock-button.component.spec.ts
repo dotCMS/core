@@ -346,7 +346,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
     });
 
-    describe('computed $lockLoading', () => {
+    describe('computed $workflowLockIsLoading', () => {
         it('should return true when loading', () => {
             const lockOptions: ToggleLockOptions = {
                 inode: 'test-inode',
@@ -361,7 +361,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
             spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
-            expect(spectator.component.$lockLoading()).toBe(true);
+            expect(spectator.component.$workflowLockIsLoading()).toBe(true);
         });
 
         it('should return false when not loading', () => {
@@ -378,7 +378,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
             spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
-            expect(spectator.component.$lockLoading()).toBe(false);
+            expect(spectator.component.$workflowLockIsLoading()).toBe(false);
         });
     });
 
@@ -449,7 +449,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
     });
 
-    describe('computed $toggleLockOptions', () => {
+    describe('computed $workflowLockOptions', () => {
         it('should be an alias for toggleLockOptions input', () => {
             const lockOptions: ToggleLockOptions = {
                 inode: 'alias-test-inode',
@@ -464,7 +464,7 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
             spectator.setInput('toggleLockOptions', lockOptions);
             spectator.detectChanges();
 
-            expect(spectator.component.$toggleLockOptions()).toEqual(lockOptions);
+            expect(spectator.component.$workflowLockOptions()).toEqual(lockOptions);
         });
     });
 

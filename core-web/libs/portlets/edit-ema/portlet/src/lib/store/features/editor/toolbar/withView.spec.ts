@@ -416,11 +416,11 @@ describe('withView', () => {
     });
 
     describe('methods', () => {
-        describe('setDevice', () => {
+        describe('viewSetDevice', () => {
             it('should set the device and viewParams', () => {
                 const iphone = mockDotDevices[0];
 
-                store.setDevice(iphone);
+                store.viewSetDevice(iphone);
                 expect(store.view().device).toBe(iphone);
                 expect(store.view().orientation).toBe(Orientation.LANDSCAPE); // This mock is on landscape, because the width is greater than the height
 
@@ -434,7 +434,7 @@ describe('withView', () => {
             it('should set the device and orientation', () => {
                 const iphone = mockDotDevices[0];
 
-                store.setDevice(iphone, Orientation.PORTRAIT);
+                store.viewSetDevice(iphone, Orientation.PORTRAIT);
                 expect(store.view().device).toBe(iphone);
                 expect(store.view().orientation).toBe(Orientation.PORTRAIT);
 
@@ -446,13 +446,13 @@ describe('withView', () => {
             });
         });
 
-        describe('setOrientation', () => {
+        describe('viewSetOrientation', () => {
             it('should set the orientation and the view params', () => {
                 // First set a device so viewParams is not null
-                store.setDevice(mockDotDevices[0]);
+                store.viewSetDevice(mockDotDevices[0]);
 
                 // Now change orientation
-                store.setOrientation(Orientation.PORTRAIT);
+                store.viewSetOrientation(Orientation.PORTRAIT);
                 expect(store.view().orientation).toBe(Orientation.PORTRAIT);
 
                 expect(store.view().viewParams).toEqual({
@@ -462,12 +462,12 @@ describe('withView', () => {
                 });
             });
 
-            describe('clearDeviceAndSocialMedia', () => {
+            describe('viewClearDeviceAndSocialMedia', () => {
                 // We have to extend this test because we have to test the social media
                 it('should clear the device and social media', () => {
-                    store.setDevice(mockDotDevices[0]);
+                    store.viewSetDevice(mockDotDevices[0]);
 
-                    store.clearDeviceAndSocialMedia();
+                    store.viewClearDeviceAndSocialMedia();
 
                     expect(store.view().device).toBe(null);
                     expect(store.view().socialMedia).toBe(null);
@@ -482,9 +482,9 @@ describe('withView', () => {
             });
         });
 
-        describe('setSEO', () => {
+        describe('viewSetSEO', () => {
             it('should set the seo, update viewparams, and remove device and orientation', () => {
-                store.setSEO('seo');
+                store.viewSetSEO('seo');
 
                 expect(store.view().socialMedia).toBe('seo');
                 expect(store.view().device).toBe(null);

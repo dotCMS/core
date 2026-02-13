@@ -478,7 +478,7 @@ describe('EditEmaEditorComponent', () => {
             addMessageSpy = jest.spyOn(messageService, 'add');
             jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
-            store.loadPageAsset({
+            store.pageLoad({
                 clientHost: 'http://localhost:3000',
                 url: 'index',
                 language_id: '1',
@@ -531,7 +531,7 @@ describe('EditEmaEditorComponent', () => {
 
                 const iphone = { ...mockDotDevices[0], icon: 'someIcon' };
 
-                store.setDevice(iphone);
+                store.viewSetDevice(iphone);
 
                 spectator.detectChanges();
 
@@ -571,7 +571,7 @@ describe('EditEmaEditorComponent', () => {
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                 spectator.detectChanges();
-                store.loadPageAsset({
+                store.pageLoad({
                     url: 'index',
                     language_id: '5',
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -593,7 +593,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.loadPageAsset({
+                store.pageLoad({
                     url: 'index',
                     language_id: '5',
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -620,7 +620,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                store.loadPageAsset({
+                store.pageLoad({
                     url: 'index',
                     language_id: '9'
                 });
@@ -1122,7 +1122,7 @@ describe('EditEmaEditorComponent', () => {
                     };
 
                     // First, ensure page starts in locked state
-                    const initialResponse = store.pageAPIResponse();
+                    const initialResponse = store.pageAssetResponse();
                     store.updatePageResponse({
                         ...initialResponse,
                         page: {
@@ -1143,11 +1143,11 @@ describe('EditEmaEditorComponent', () => {
                     expect(resetActiveContentletSpy).not.toHaveBeenCalled();
 
                     // Verify toggleLockOptions has a value (feature flag enabled)
-                    expect(store.$toggleLockOptions()).not.toBeNull();
-                    expect(store.$toggleLockOptions()?.isLocked).toBe(true);
+                    expect(store.$workflowLockOptions()).not.toBeNull();
+                    expect(store.$workflowLockOptions()?.isLocked).toBe(true);
 
                     // Unlock the page (this should trigger the effect)
-                    const lockedResponse = store.pageAPIResponse();
+                    const lockedResponse = store.pageAssetResponse();
                     store.updatePageResponse({
                         ...lockedResponse,
                         page: {
@@ -1171,7 +1171,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(store.activeContentlet()).toBeNull();
 
                     // Set page as locked first
-                    const currentResponse = store.pageAPIResponse();
+                    const currentResponse = store.pageAssetResponse();
                     store.updatePageResponse({
                         ...currentResponse,
                         page: {
@@ -1184,7 +1184,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Unlock the page
-                    const lockedResponse = store.pageAPIResponse();
+                    const lockedResponse = store.pageAssetResponse();
                     store.updatePageResponse({
                         ...lockedResponse,
                         page: {
@@ -1349,7 +1349,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectChanges();
 
-                    store.loadPageAsset({
+                    store.pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '1',
@@ -2434,7 +2434,7 @@ describe('EditEmaEditorComponent', () => {
 
                         window.dispatchEvent(dragEnter);
 
-                        expect(store.editor().state).toBe(EDITOR_STATE.IDLE);
+                        expect(store.editorState()).toBe(EDITOR_STATE.IDLE);
                         expect(setEditorDragItemSpy).not.toHaveBeenCalled();
                         expect(setEditorStateSpy).not.toHaveBeenCalled();
                     });
@@ -3153,7 +3153,7 @@ describe('EditEmaEditorComponent', () => {
                         jest.useFakeTimers(); // Mock the timers
                         spectator.detectChanges();
 
-                        store.loadPageAsset({
+                        store.pageLoad({
                             url: 'index',
                             language_id: '3',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -3193,7 +3193,7 @@ describe('EditEmaEditorComponent', () => {
 
                         iframe.nativeElement.contentWindow.scrollTo(0, 100); //Scroll down
 
-                        store.loadPageAsset({
+                        store.pageLoad({
                             url: 'index',
                             language_id: '4',
                             [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -3218,7 +3218,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should navigate to new url and change persona when postMessage SET_URL', () => {
-                    const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                    const spypageLoad = jest.spyOn(store, 'pageLoad');
 
                     spectator.detectChanges();
 
@@ -3234,7 +3234,7 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(spyloadPageAsset).toHaveBeenCalledWith({
+                    expect(spypageLoad).toHaveBeenCalledWith({
                         url: '/some',
                         [PERSONA_KEY]: 'modes.persona.no.persona'
                     });
@@ -3262,7 +3262,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('set url to a different route should set the editor state to loading', () => {
-                    const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                    const spypageLoad = jest.spyOn(store, 'pageLoad');
 
                     spectator.detectChanges();
 
@@ -3278,7 +3278,7 @@ describe('EditEmaEditorComponent', () => {
                         })
                     );
 
-                    expect(spyloadPageAsset).toHaveBeenCalledWith({
+                    expect(spypageLoad).toHaveBeenCalledWith({
                         [PERSONA_KEY]: 'modes.persona.no.persona',
                         url: '/some'
                     });
@@ -3289,7 +3289,7 @@ describe('EditEmaEditorComponent', () => {
 
                     const url = "/ultra-cool-url-that-doesn't-exist";
 
-                    store.loadPageAsset({
+                    store.pageLoad({
                         url,
                         language_id: '5',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
@@ -3328,7 +3328,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
 
                     spectator.detectChanges();
-                    store.loadPageAsset({
+                    store.pageLoad({
                         url: 'index',
                         language_id: '5',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
@@ -3349,7 +3349,7 @@ describe('EditEmaEditorComponent', () => {
                             jest.spyOn(dotPageApiService, 'get').mockReturnValue(
                                 of(MOCK_RESPONSE_VTL)
                             );
-                            store.loadPageAsset({ url: 'index', clientHost: null });
+                            store.pageLoad({ url: 'index', clientHost: null });
                         });
 
                         it('should call injectBaseTag with the right data', () => {
@@ -3397,7 +3397,7 @@ describe('EditEmaEditorComponent', () => {
                             jest.spyOn(dotPageApiService, 'get').mockReturnValue(
                                 of(PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK)
                             );
-                            store.loadPageAsset({ url: 'index', clientHost: null });
+                            store.pageLoad({ url: 'index', clientHost: null });
                         });
 
                         it('should add script and styles to iframe for advance templates', () => {
@@ -3516,7 +3516,7 @@ describe('EditEmaEditorComponent', () => {
             describe('CUSTOMER ACTIONS', () => {
                 describe('CLIENT_READY', () => {
                     it('should set client GraphQL configuration and call the reload', () => {
-                        const setClientConfigurationSpy = jest.spyOn(store, 'setCustomGraphQL');
+                        const setClientConfigurationSpy = jest.spyOn(store, 'setRequestMetadata');
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = {
@@ -3539,7 +3539,7 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should set call reloadCurrentPage when client is ready', () => {
-                        const setCustomGraphQLSpy = jest.spyOn(store, 'setCustomGraphQL');
+                        const setRequestMetadataSpy = jest.spyOn(store, 'setRequestMetadata');
                         const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
 
                         const config = { params: { depth: '1' } };
@@ -3554,7 +3554,7 @@ describe('EditEmaEditorComponent', () => {
                             })
                         );
 
-                        expect(setCustomGraphQLSpy).not.toHaveBeenCalled();
+                        expect(setRequestMetadataSpy).not.toHaveBeenCalled();
                         expect(reloadSpy).toHaveBeenCalled();
                     });
                 });
@@ -3562,14 +3562,14 @@ describe('EditEmaEditorComponent', () => {
 
             describe('language selected', () => {
                 it('should update the URL and language when the user create a new translation changing the URL', () => {
-                    store.loadPageAsset({
+                    store.pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'index',
                         language_id: '2',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
-                    const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
 
                     spectator.detectChanges();
                     const dialog = spectator.debugElement.query(
@@ -3598,21 +3598,21 @@ describe('EditEmaEditorComponent', () => {
                         })
                     });
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/new-url-here',
                         language_id: '1'
                     });
                 });
 
                 it('should update the language when the user create a new translation', () => {
-                    store.loadPageAsset({
+                    store.pageLoad({
                         clientHost: 'http://localhost:3000',
                         url: 'test-url',
                         language_id: '1',
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
 
-                    const loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    const pageLoadSpy = jest.spyOn(store, 'pageLoad');
                     spectator.detectChanges();
 
                     const dialog = spectator.debugElement.query(
@@ -3630,7 +3630,7 @@ describe('EditEmaEditorComponent', () => {
                         })
                     });
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         language_id: '2'
                     });
                 });
@@ -3645,7 +3645,7 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('should have display none when there is SEO view', () => {
-                    store.setSEO('test');
+                    store.viewSetSEO('test');
                     spectator.detectChanges();
                     const editorContent = spectator.query(
                         byTestId('editor-content')
@@ -3655,11 +3655,11 @@ describe('EditEmaEditorComponent', () => {
             });
 
             describe('handleInternalNav', () => {
-                let loadPageAssetSpy: jest.SpyInstance;
+                let pageLoadSpy: jest.SpyInstance;
                 let windowOpenSpy: jest.SpyInstance;
 
                 beforeEach(() => {
-                    loadPageAssetSpy = jest.spyOn(store, 'loadPageAsset');
+                    pageLoadSpy = jest.spyOn(store, 'pageLoad');
                     windowOpenSpy = jest.spyOn(window, 'open').mockImplementation();
 
                     // Mock location.origin
@@ -3685,8 +3685,8 @@ describe('EditEmaEditorComponent', () => {
                     } as unknown as MouseEvent;
 
                     // Mock the store state for inline editing (Phase 3: nested editor state)
-                    jest.spyOn(store, 'editor').mockReturnValue({
-                        ...store.editor(),
+                    jest.spyOn(store, 'editorState').mockReturnValue({
+                        ...store.editorState(),
                         state: isInlineEditing ? EDITOR_STATE.INLINE_EDITING : EDITOR_STATE.IDLE
                     });
 
@@ -3699,11 +3699,11 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, 'editor').mockReturnValue({ ...store.editor(), state: EDITOR_STATE.IDLE });
+                    jest.spyOn(store, ''editorState'').mockReturnValue({ ...store.editorState(), state: EDITOR_STATE.IDLE });
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                 });
 
@@ -3712,7 +3712,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                 });
 
@@ -3723,7 +3723,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.component.handleInternalNav(mockEvent);
 
                     expect(windowOpenSpy).toHaveBeenCalledWith(externalUrl, '_blank');
-                    expect(loadPageAssetSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
                 });
 
                 it('should load page asset with pathname only for internal URL without query params', () => {
@@ -3732,7 +3732,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/test-page'
                     });
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
@@ -3745,7 +3745,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/test-page',
                         param1: 'value1',
                         param2: 'value2'
@@ -3760,7 +3760,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/test-page',
                         path: '/home/user',
                         name: 'John Doe'
@@ -3775,7 +3775,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/test-page',
                         language_id: '2',
                         mode: 'EDIT',
@@ -3791,7 +3791,7 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/relative-page',
                         param: 'value'
                     });
@@ -3812,11 +3812,11 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, 'editor').mockReturnValue({ ...store.editor(), state: EDITOR_STATE.IDLE });
+                    jest.spyOn(store, ''editorState'').mockReturnValue({ ...store.editorState(), state: EDITOR_STATE.IDLE });
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(loadPageAssetSpy).toHaveBeenCalledWith({
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/fallback-page',
                         test: '123'
                     });

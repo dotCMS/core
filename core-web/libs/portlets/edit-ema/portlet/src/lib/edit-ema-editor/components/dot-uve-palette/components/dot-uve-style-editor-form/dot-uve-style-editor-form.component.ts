@@ -100,7 +100,7 @@ export class DotUveStyleEditorFormComponent {
      * Builds a form from the schema using the form builder service
      */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const activeContentlet = this.#uveStore.editor.activeContentlet();
+        const activeContentlet = this.#uveStore.editorActiveContentlet();
 
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
@@ -115,7 +115,7 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
-     * Restores form values from the rolled-back graphqlResponse state.
+     * Restores form values from the rolled-back pageAssetResponse state.
      * Used when rollback occurs to sync form with restored state.
      *
      * This method rebuilds the entire form (rather than patching) to trigger
@@ -123,7 +123,7 @@ export class DotUveStyleEditorFormComponent {
      * pending debounced saves from the old form instance.
      */
     #restoreFormFromRollback(): void {
-        const activeContentlet = this.#uveStore.editor.activeContentlet();
+        const activeContentlet = this.#uveStore.editorActiveContentlet();
         const schema = this.$schema();
 
         if (!activeContentlet || !schema) {
@@ -131,9 +131,9 @@ export class DotUveStyleEditorFormComponent {
         }
 
         try {
-            // Use the internal graphqlResponse signal directly (it's already been rolled back)
+            // Use the internal pageAssetResponse signal directly (it's already been rolled back)
             // This ensures we get the rolled-back state, not the computed wrapper
-            const rolledBackGraphqlResponse = this.#uveStore.graphqlResponse();
+            const rolledBackGraphqlResponse = this.#uveStore.pageAssetResponse();
 
             if (!rolledBackGraphqlResponse) {
                 return;
@@ -188,7 +188,7 @@ export class DotUveStyleEditorFormComponent {
                         // to a different contentlet during the debounce period
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.editor.activeContentlet()
+                            activeContentlet: this.#uveStore.editorActiveContentlet()
                         })),
                         tap(({ formValues, activeContentlet }) =>
                             this.#updateIframeImmediately(formValues, activeContentlet)
@@ -216,13 +216,13 @@ export class DotUveStyleEditorFormComponent {
         }
 
         try {
-            // Get the internal graphqlResponse for optimistic update
-            const internalGraphqlResponse = this.#uveStore.graphqlResponse();
+            // Get the internal pageAssetResponse for optimistic update
+            const internalGraphqlResponse = this.#uveStore.pageAssetResponse();
             if (!internalGraphqlResponse) {
                 return;
             }
 
-            // Deep clone the graphqlResponse before mutating to prevent affecting history entries
+            // Deep clone the pageAssetResponse before mutating to prevent affecting history entries
             // This ensures that mutations don't affect the stored state in history
             const clonedResponse = structuredClone(internalGraphqlResponse);
 
@@ -235,11 +235,11 @@ export class DotUveStyleEditorFormComponent {
 
             // Optimistic update: Update state WITHOUT saving to history
             // History is only saved when we actually call the API (in #saveStyleProperties)
-            this.#uveStore.setGraphqlResponse(updatedInternalResponse);
+            this.#uveStore.setPageAssetResponse(updatedInternalResponse);
 
             // Send updated response to iframe immediately for instant feedback
             // Get the updated custom response (computed will reflect the changes)
-            const updatedCustomResponse = this.#uveStore.$customGraphqlResponse();
+            const updatedCustomResponse = this.#uveStore.pageClientResponse();
             if (!updatedCustomResponse) {
                 return;
             }
@@ -271,7 +271,7 @@ export class DotUveStyleEditorFormComponent {
 
         // Save current state to history BEFORE making the API call
         // This ensures that if the API call fails, we can rollback to this exact state
-        const currentGraphqlResponse = this.#uveStore.graphqlResponse();
+        const currentGraphqlResponse = this.#uveStore.pageAssetResponse();
         if (currentGraphqlResponse) {
             this.#uveStore.addHistory(currentGraphqlResponse);
         }

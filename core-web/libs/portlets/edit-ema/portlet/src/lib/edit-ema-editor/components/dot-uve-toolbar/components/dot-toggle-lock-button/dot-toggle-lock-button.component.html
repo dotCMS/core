@@ -1,17 +1,17 @@
-@if ($toggleLockOptions()) {
+@if ($workflowLockOptions()) {
     <button
         class="lock-button"
-        [class.lock-button--locked]="$toggleLockOptions().isLocked"
-        [class.lock-button--unlocked]="!$toggleLockOptions().isLocked"
-        [class.lock-button--disabled]="!$toggleLockOptions().canLock"
-        [disabled]="$lockLoading()"
+        [class.lock-button--locked]="$workflowLockOptions().isLocked"
+        [class.lock-button--unlocked]="!$workflowLockOptions().isLocked"
+        [class.lock-button--disabled]="!$workflowLockOptions().canLock"
+        [disabled]="$workflowLockIsLoading()"
         [pTooltip]="
-            $toggleLockOptions().canLock ? null : ('uve.editor.toggle.lock.button.disabled' | dm)
+            $workflowLockOptions().canLock ? null : ('uve.editor.toggle.lock.button.disabled' | dm)
         "
         tooltipPosition="bottom"
         (click)="toggleLock()"
         data-testId="toggle-lock-button">
-        <i [class]="$toggleLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"></i>
+        <i [class]="$workflowLockOptions().isLocked ? 'pi pi-lock' : 'pi pi-lock-open'"></i>
         <span>{{ $buttonLabel() | dm }}</span>
     </button>
 } @else {

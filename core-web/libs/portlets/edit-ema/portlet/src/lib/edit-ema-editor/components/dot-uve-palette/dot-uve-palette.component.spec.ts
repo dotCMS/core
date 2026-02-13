@@ -62,7 +62,7 @@ const mockUVEStore = {
     })),
     // Expose activeContentlet for test control
     activeContentlet: mockActiveContentlet,
-    // Normalized page response properties (replacing pageAPIResponse)
+    // Normalized page response properties (replacing pageAssetResponse)
     page: signal(null),
     site: signal(null),
     viewAs: signal(null),

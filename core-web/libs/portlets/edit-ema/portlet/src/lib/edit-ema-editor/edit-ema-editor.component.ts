@@ -204,13 +204,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     readonly $rightSidebarActiveTab = this.#rightSidebarTabState.currentTab;
-    readonly $showStyleEditorTab = computed(() => this.uveStore.$canEditStyles());
+    readonly $showStyleEditorTab = computed(() => this.uveStore.editorCanEditStyles());
     readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
         return this.uveStore.$styleSchema();
     });
 
     protected readonly $contentletEditData = computed(() => {
-        const { container, contentlet: contentletPayload } = this.uveStore.editor.activeContentlet() ?? {};
+        const { container, contentlet: contentletPayload } = this.uveStore.editorActiveContentlet() ?? {};
         // Removed pageAPIResponse - use normalized accessors
 
         const contentType = this.$contenttypes().find(
@@ -227,7 +227,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Get the full contentlet from containers using container identifier and uuid
         let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
-        const containers = this.uveStore.containers();
+        const containers = this.uveStore.pageContainers();
         if (container?.identifier && container?.uuid && contentletPayload?.identifier && containers) {
             const containerData = containers[container.identifier];
             const contentletUuid = `uuid-${container.uuid}`;
@@ -271,13 +271,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
     protected readonly $showDialogs = computed<boolean>(() => {
-        const canEditPage = this.uveStore.$canEditPageContent();
+        const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.view().isEditState;
         return canEditPage && isEditState;
     });
 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
-        const canEditPage = this.uveStore.$canEditPageContent();
+        const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.view().isEditState;
         const isEnterprise = this.uveStore.isEnterprise();
         return canEditPage && isEditState && isEnterprise;
@@ -285,20 +285,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected readonly $iframeProps = computed(() => {
         // Use it to create dependencies to the pageAPIResponse
-        const mode = this.uveStore.$mode();
+        const mode = this.uveStore.viewMode();
         const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
-        const editor = this.uveStore.editor();
-        const toolbar = this.uveStore.view();
-        const state = editor.state;
-        const device = toolbar.device;
+        const state = this.uveStore.editorState();
+        const device = this.uveStore.view().device;
+        const orientation = this.uveStore.view().orientation;
 
         const isEditMode = mode === UVE_MODE.EDIT;
         const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
         const isLoading = !isPageReady || this.uveStore.status() === UVE_STATUS.LOADING;
         const { dragIsActive } = getEditorStates(state);
         const iframeOpacity = isLoading || !isPageReady ? '0.5' : '1';
-        const wrapper = getWrapperMeasures(device, toolbar.orientation);
+        const wrapper = getWrapperMeasures(device, orientation);
 
         return {
             opacity: iframeOpacity,
@@ -308,7 +307,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $progressBar = computed<boolean>(() => {
-        const mode = this.uveStore.$mode();
+        const mode = this.uveStore.viewMode();
         const pageType = this.uveStore.pageType();
         const isClientReady = this.uveStore.isClientReady();
 
@@ -318,11 +317,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $dropzone = computed(() => {
-        const canEditPage = this.uveStore.$canEditPageContent();
-        const editor = this.uveStore.editor();
-        const state = editor.state;
-        const bounds = editor.bounds;
-        const dragItem = editor.dragItem;
+        const canEditPage = this.uveStore.editorCanEditContent();
+        const state = this.uveStore.editorState();
+        const bounds = this.uveStore.editorBounds();
+        const dragItem = this.uveStore.editorDragItem();
 
         const showDropzone = canEditPage && state === EDITOR_STATE.DRAGGING;
 
@@ -335,10 +333,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     protected readonly $seoResults = computed(() => {
-        const toolbar = this.uveStore.view();
-        const editor = this.uveStore.editor();
-        const socialMedia = toolbar.socialMedia;
-        const ogTags = editor.ogTags;
+        const socialMedia = this.uveStore.view().socialMedia;
+        const ogTags = this.uveStore.editorOgTags();
         const shouldShowSeoResults = socialMedia && ogTags;
 
         return shouldShowSeoResults
@@ -349,7 +345,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             : null;
     });
 
-    readonly $mode = this.uveStore.$mode;
+    readonly $mode = this.uveStore.viewMode;
 
     // Phase 4.3: Component-level computed (was in withEditor with cross-feature dependency)
     readonly $editorContentStyles = computed<Record<string, string>>(() => {
@@ -363,15 +359,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly ogTagsResults$ = toObservable(computed(() => this.uveStore.view().ogTagsResults));
 
     get $paletteOpen() {
-        return this.uveStore.editor.panels.palette.open();
+        return this.uveStore.editorPaletteOpen();
     }
     get $rightSidebarOpen() {
-        return this.uveStore.editor.panels.rightSidebar.open();
+        return this.uveStore.editorRightSidebarOpen();
     }
-    readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    readonly $workflowLockOptions = this.uveStore.$workflowLockOptions;
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     get $contentArea() {
-        return this.uveStore.editor.contentArea();
+        return this.uveStore.editorContentArea();
     }
     readonly $allowContentDelete = this.uveStore.$allowContentDelete;
     readonly $isDragging = this.uveStore.$isDragging;
@@ -384,8 +380,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return this.$paletteOpen ? PALETTE_CLASSES.OPEN : PALETTE_CLASSES.CLOSED;
     });
 
-    readonly $canvasOuterStyles = this.uveStore.$canvasOuterStyles;
-    readonly $canvasInnerStyles = this.uveStore.$canvasInnerStyles;
+    readonly $viewCanvasOuterStyles = this.uveStore.$viewCanvasOuterStyles;
+    readonly $viewCanvasInnerStyles = this.uveStore.$viewCanvasInnerStyles;
 
     readonly $iframeWrapperStyles = computed((): Record<string, string> => {
         const wrapper = this.$iframeProps().wrapper;
@@ -414,11 +410,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $pageURL = computed((): string => {
         // Removed pageAPIResponse - use normalized accessors
-        if (!this.uveStore.page()?.pageURI) {
+        if (!this.uveStore.pageData()?.pageURI) {
             return '';
         }
-        const site = this.uveStore.site();
-        const page = this.uveStore.page();
+        const site = this.uveStore.pageSite();
+        const page = this.uveStore.pageData();
         const hostname = site?.hostname || 'mysite.com';
         const protocol = page?.httpsRequired ? 'https' : 'http';
         const pageURI = page.pageURI;
@@ -431,7 +427,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     readonly $translatePageEffect = effect(() => {
-        const { page, currentLanguage } = this.uveStore.$translateProps();
+        const { page, currentLanguage } = this.uveStore.pageTranslateProps();
 
         if (currentLanguage && !currentLanguage?.translated) {
             this.createNewTranslation(currentLanguage, page);
@@ -479,8 +475,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * selection should be cleared to prevent editing conflicts.
      */
     readonly $resetActiveContentletOnUnlockEffect = effect(() => {
-        const toggleLockOptions = this.$toggleLockOptions();
-        const activeContentlet = this.uveStore.editor.activeContentlet();
+        const toggleLockOptions = this.$workflowLockOptions();
+        const activeContentlet = this.uveStore.editorActiveContentlet();
 
         // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
         if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
@@ -669,7 +665,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         const data: ClientData = JSON.parse(payload || '{}');
         const file = event.dataTransfer?.files[0];
-        const dragItem = this.uveStore.editor().dragItem;
+        const dragItem = this.uveStore.editorDragItem();
 
         if (file) {
             this.handleFileUpload({
@@ -703,7 +699,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     handleInternalNav(e: MouseEvent) {
         const target = e.target as HTMLAnchorElement;
         const href = target.href || target.closest('a')?.getAttribute('href');
-        const isInlineEditing = this.uveStore.editor().state === EDITOR_STATE.INLINE_EDITING;
+        const isInlineEditing = this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
         if (!href || isInlineEditing) {
@@ -720,7 +716,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.uveStore.loadPageAsset({ url: url.pathname, ...urlQueryParams });
+        this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
     }
 
@@ -742,7 +738,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframePageLoad(): void {
-        if (this.uveStore.editor().state === EDITOR_STATE.INLINE_EDITING) {
+        if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
 
@@ -750,7 +746,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     onIframeDocHeightChange(height: number): void {
-        this.uveStore.setIframeDocHeight(height);
+        this.uveStore.viewSetIframeDocHeight(height);
         this.#clampScrollWithinBounds();
     }
 
@@ -781,7 +777,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof EditEmaEditorComponent
      */
     #checkAndResetActiveContentlet(pageContainers: PageContainer[]): void {
-        const activeContentlet = this.uveStore.editor.activeContentlet();
+        const activeContentlet = this.uveStore.editorActiveContentlet();
 
         if (!activeContentlet?.contentlet?.identifier) {
             return;
@@ -859,7 +855,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             // Check if active contentlet was removed during move operation
             this.#checkAndResetActiveContentlet(pageContainers);
 
-            this.uveStore.savePage(pageContainers);
+            this.uveStore.editorSave(pageContainers);
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
@@ -868,7 +864,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             this.dialog.createContentletFromPalette({
                 ...dragItem.draggedPayload.item,
                 actionPayload: payload,
-                language_id: this.uveStore.$languageId()
+                language_id: this.uveStore.pageLanguageId()
             });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
@@ -889,7 +885,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             // Check if active contentlet was removed during temp insert operation
             this.#checkAndResetActiveContentlet(pageContainers);
 
-            this.uveStore.savePage(pageContainers);
+            this.uveStore.editorSave(pageContainers);
         }
     }
     /**
@@ -914,7 +910,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 // Check if active contentlet was removed during delete operation
                 this.#checkAndResetActiveContentlet(pageContainers);
 
-                this.uveStore.savePage(pageContainers);
+                this.uveStore.editorSave(pageContainers);
             }
         });
     }
@@ -950,7 +946,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                this.uveStore.savePage(pageContainers);
+                this.uveStore.editorSave(pageContainers);
                 this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
@@ -963,7 +959,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 }
 
                 if (!actionPayload) {
-                    this.uveStore.reloadCurrentPage();
+                    this.uveStore.pageReload();
 
                     return;
                 }
@@ -994,7 +990,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                this.uveStore.savePage(pageContainers);
+                this.uveStore.editorSave(pageContainers);
             },
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
@@ -1034,7 +1030,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                             }
                             this.uveStore.setUveStatus(UVE_STATUS.LOADED);
                         } else {
-                            this.uveStore.savePage(pageContainers);
+                            this.uveStore.editorSave(pageContainers);
                             this.dialog.resetDialog();
                         }
                     });
@@ -1049,7 +1045,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     life: 2000
                 });
 
-                this.uveStore.reloadCurrentPage();
+                this.uveStore.pageReload();
                 this.dialog.resetDialog();
 
                 // This is a temporary solution to "reload" the content by reloading the window
@@ -1084,18 +1080,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
                 const targetUrl = getTargetUrl(
                     url.pathname,
-                    this.uveStore.urlContentMap()
+                    this.uveStore.pageUrlContentMap()
                 );
                 const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
 
                 if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
                     // Navigate to the new URL if it's different from the current one
-                    this.uveStore.loadPageAsset({ url: targetUrl, language_id });
+                    this.uveStore.pageLoad({ url: targetUrl, language_id });
 
                     return;
                 }
 
-                this.uveStore.loadPageAsset({
+                this.uveStore.pageLoad({
                     language_id
                 });
             }
@@ -1284,13 +1280,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             .subscribe(({ URL_MAP_FOR_CONTENT }) => {
                 if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
                     // If the URL is different, we need to navigate to the new URL
-                    this.uveStore.loadPageAsset({ url: URL_MAP_FOR_CONTENT });
+                    this.uveStore.pageLoad({ url: URL_MAP_FOR_CONTENT });
 
                     return;
                 }
 
                 // If the URL is the same, we need to fetch the new page data
-                this.uveStore.reloadCurrentPage();
+                this.uveStore.pageReload();
             });
     }
 
@@ -1349,7 +1345,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * Reloads the component from the dialog/sidebar.
      */
     reloadPage() {
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
     }
 
     /**
@@ -1531,14 +1527,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof DotEmaShellComponent
      */
     #goBackToCurrentLanguage(): void {
-        this.uveStore.loadPageAsset({ language_id: '1' });
+        this.uveStore.pageLoad({ language_id: '1' });
     }
 
     #clientPayload() {
-        const graphqlResponse = this.uveStore.$customGraphqlResponse();
+        const clientResponse = this.uveStore.pageClientResponse();
 
-        if (graphqlResponse) {
-            return graphqlResponse;
+        if (clientResponse) {
+            return clientResponse;
         }
 
         return {
@@ -1565,7 +1561,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
         const params = this.uveStore.pageParams();
-        const siteId = this.uveStore.site()?.identifier;
+        const siteId = this.uveStore.pageSite()?.identifier;
         const host = params?.clientHost || this.window.location.origin;
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
 
@@ -1670,11 +1666,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Use getBoundingClientRect() which accounts for all transforms including zoom
         const elementRect = htmlElement.getBoundingClientRect();
-        const zoomLevel = this.uveStore.$zoomLevel();
+        const viewZoomLevel = this.uveStore.$viewZoomLevel();
 
-        // elementRect.top works correctly at 100% zoom (zoomLevel = 1)
+        // elementRect.top works correctly at 100% zoom (viewZoomLevel = 1)
         // For other zoom levels, convert from scaled to unscaled coordinates
-        const scrollTop = elementRect.top * zoomLevel;
+        const scrollTop = elementRect.top * viewZoomLevel;
 
         // Scroll the editor-content smoothly
         editorContentElement.scrollTo({

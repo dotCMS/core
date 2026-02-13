@@ -78,10 +78,10 @@ describe('UVEStore', () => {
 
     it('should have initial state', () => {
         expect(store.isClientReady()).toBeFalsy();
-        expect(store.graphqlRequest()).toEqual(null);
-        expect(store.graphqlResponse()).toEqual(null);
+        expect(store.requestMetadata()).toEqual(null);
+        expect(store.pageAssetResponse()).toEqual(null);
         expect(store.isClientReady()).toBe(false);
-        expect(store.legacyGraphqlResponse()).toBe(false);
+        expect(store.legacyResponseFormat()).toBe(false);
     });
 
     describe('withMethods', () => {
@@ -100,9 +100,9 @@ describe('UVEStore', () => {
                     }
                 };
 
-                store.setCustomGraphQL(graphql, true);
+                store.setCustomClient(graphql, true);
 
-                expect(store.graphqlRequest()).toEqual(graphql);
+                expect(store.requestMetadata()).toEqual(graphql);
             });
         });
 
@@ -112,21 +112,21 @@ describe('UVEStore', () => {
                 variables: null
             };
 
-            store.setCustomGraphQL(graphql, true);
+            store.setCustomClient(graphql, true);
             store.resetClientConfiguration();
 
-            expect(store.graphqlRequest()).toEqual(null);
+            expect(store.requestMetadata()).toEqual(null);
         });
     });
 
-    describe('$graphqlWithParams', () => {
+    describe('$requestWithParams', () => {
         it('should return null when graphql is null', () => {
-            expect(store.$graphqlWithParams()).toBeNull();
+            expect(store.$requestWithParams()).toBeNull();
         });
 
         it('should return null when graphql is not set', () => {
             store.resetClientConfiguration();
-            expect(store.$graphqlWithParams()).toBeNull();
+            expect(store.$requestWithParams()).toBeNull();
         });
 
         it('should merge graphql variables with page params', () => {
@@ -146,9 +146,9 @@ describe('UVEStore', () => {
             };
 
             patchState(store, { pageParams });
-            store.setCustomGraphQL(graphql, false);
+            store.setCustomClient(graphql, false);
 
-            const result = store.$graphqlWithParams();
+            const result = store.$requestWithParams();
 
             expect(result).toEqual({
                 query: 'test query',
@@ -181,9 +181,9 @@ describe('UVEStore', () => {
             };
 
             patchState(store, { pageParams });
-            store.setCustomGraphQL(graphql, false);
+            store.setCustomClient(graphql, false);
 
-            const result = store.$graphqlWithParams();
+            const result = store.$requestWithParams();
 
             expect(result).toEqual({
                 query: 'test query',
@@ -215,9 +215,9 @@ describe('UVEStore', () => {
             };
 
             patchState(store, { pageParams });
-            store.setCustomGraphQL(graphql, false);
+            store.setCustomClient(graphql, false);
 
-            const result = store.$graphqlWithParams();
+            const result = store.$requestWithParams();
 
             expect(result).toEqual({
                 query: 'test query',

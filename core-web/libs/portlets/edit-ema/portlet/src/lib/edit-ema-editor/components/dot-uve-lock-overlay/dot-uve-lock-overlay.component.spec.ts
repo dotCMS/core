@@ -40,7 +40,7 @@ describe('DotUveLockOverlayComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    $toggleLockOptions: mockToggleLockOptions
+                    $workflowLockOptions: mockToggleLockOptions
                 }
             }
         ],

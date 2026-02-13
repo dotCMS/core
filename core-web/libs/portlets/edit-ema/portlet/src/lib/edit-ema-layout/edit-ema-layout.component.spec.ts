@@ -154,7 +154,7 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.loadPageAsset({
+        store.pageLoad({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',

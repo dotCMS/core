@@ -285,7 +285,7 @@ export class DotUveBridgeService {
             this.iframeElement.style.height = `${Math.ceil(height)}px`;
             this.$iframeDocHeight.set(Math.ceil(height));
             if (this.store) {
-                this.store.setIframeDocHeight(Math.ceil(height));
+                this.store.viewSetIframeDocHeight(Math.ceil(height));
             }
             onClampScroll();
         }

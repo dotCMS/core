@@ -54,7 +54,7 @@ export class DotUveIframeComponent {
     readonly $iframeDocHeight = signal<number>(0);
 
     readonly $pageRender = this.uveStore.$pageRender;
-    readonly $enableInlineEdit = this.uveStore.$enableInlineEdit;
+    readonly $enableInlineEdit = this.uveStore.editorEnableInlineEdit;
     readonly $isTraditionalPageEffect = effect(() => {
         const isTraditional = this.uveStore.pageType() === PageType.TRADITIONAL;
         const pageRender = this.$pageRender();
@@ -190,7 +190,7 @@ export class DotUveIframeComponent {
         this.dotSeoMetaTagsService.getMetaTagsResults(doc).subscribe((results) => {
             const ogTags = this.dotSeoMetaTagsUtilService.getMetaTags(doc);
             this.uveStore.setOgTags(ogTags);
-            this.uveStore.setOGTagResults(results);
+            this.uveStore.viewSetOGTagResults(results);
         });
     }
 

@@ -352,14 +352,14 @@ describe('DotEmaShellComponent', () => {
 
     describe('with queryParams', () => {
         it('should trigger an store load with default values', () => {
-            const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+            const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
             spectator.detectChanges();
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
         });
 
-        describe('Sanitize url when called loadPageAsset', () => {
+        describe('Sanitize url when called pageLoad', () => {
             it('should sanitize when url is index', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spypageLoad = jest.spyOn(store, 'pageLoad');
                 const spyLocation = jest.spyOn(location, 'go');
 
                 const params = {
@@ -373,14 +373,14 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ ...params, url: '/index' });
+                expect(spypageLoad).toHaveBeenCalledWith({ ...params, url: '/index' });
                 expect(spyLocation).toHaveBeenCalledWith(
                     '/?language_id=1&url=%2Findex&variantName=DEFAULT&mode=EDIT_MODE'
                 );
             });
 
             it('should sanitize when url is nested', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spypageLoad = jest.spyOn(store, 'pageLoad');
 
                 const spyLocation = jest.spyOn(location, 'go');
 
@@ -395,7 +395,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                expect(spypageLoad).toHaveBeenCalledWith({
                     ...params,
                     url: '/some-url/some-nested-url'
                 });
@@ -405,7 +405,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should sanitize when url is nested and ends in index', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spypageLoad = jest.spyOn(store, 'pageLoad');
                 const spyLocation = jest.spyOn(location, 'go');
 
                 const params = {
@@ -419,7 +419,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                expect(spypageLoad).toHaveBeenCalledWith({
                     ...params,
                     url: '/some-url/index'
                 });
@@ -429,7 +429,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should receive `personaId` query param', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spypageLoad = jest.spyOn(store, 'pageLoad');
                 const spyLocation = jest.spyOn(location, 'go');
 
                 const queryParams = {
@@ -451,7 +451,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 spectator.detectChanges();
-                expect(spyloadPageAsset).toHaveBeenCalledWith(expectedParams);
+                expect(spypageLoad).toHaveBeenCalledWith(expectedParams);
                 expect(spyLocation).toHaveBeenCalledWith(
                     '/?url=%2Fsome-url%2Findex&language_id=1&mode=EDIT_MODE&personaId=someCoolDude'
                 );
@@ -538,13 +538,13 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
-        it('should call store.loadPageAsset when the `loadPageAsset` is called', () => {
-            const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
-            const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+        it('should call store.pageLoad when the `pageLoad` is called', () => {
+            const spypageLoad = jest.spyOn(store, 'pageLoad');
+            const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
             const spyLocation = jest.spyOn(location, 'go');
 
             spectator.detectChanges();
-            expect(spyloadPageAsset).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
+            expect(spypageLoad).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyStoreLoadPage).toHaveBeenCalledWith(INITIAL_PAGE_PARAMS);
             expect(spyLocation).toHaveBeenCalledWith(
                 '/?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE'
@@ -617,11 +617,11 @@ describe('DotEmaShellComponent', () => {
                 };
 
                 const expectURL = router.createUrlTree([], { queryParams: userParams });
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const spyUrlTree = jest.spyOn(router, 'createUrlTree');
                 const spyLocation = jest.spyOn(location, 'go');
 
-                store.loadPageAsset(pageParams);
+                store.pageLoad(pageParams);
                 spectator.detectChanges();
 
                 expect(spyStoreLoadPage).toHaveBeenCalledWith(pageParams);
@@ -651,7 +651,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.loadPageAsset(params);
+                store.pageLoad(params);
                 spectator.detectChanges();
 
                 expect(spyLocation).toHaveBeenCalledWith(
@@ -684,7 +684,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.loadPageAsset(params);
+                store.pageLoad(params);
                 spectator.detectChanges();
 
                 expect(spyLocation).toHaveBeenCalledWith(
@@ -714,7 +714,7 @@ describe('DotEmaShellComponent', () => {
                     })
                 );
 
-                store.loadPageAsset(params);
+                store.pageLoad(params);
                 spectator.detectChanges();
 
                 // Should treat these as the same URL and not include clientHost
@@ -726,7 +726,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('ClientHost', () => {
             it('should trigger init the store without the clientHost queryParam when it is not allowed', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:4200'
@@ -747,7 +747,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a load when changing the clientHost and it is on the allowedDevURLs', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramsWithAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -765,7 +765,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is empty', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:3000'
@@ -783,7 +783,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is has a wrong data type', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -802,7 +802,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the allowedDevURLs is is not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -821,7 +821,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the options are not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -842,7 +842,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should trigger a navigate without the clientHost queryParam when the uveConfig is not present', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const paramWithNotAllowedHost = {
                     ...INITIAL_PAGE_PARAMS,
                     clientHost: 'http://localhost:1111'
@@ -863,7 +863,7 @@ describe('DotEmaShellComponent', () => {
 
         describe('Editor Mode', () => {
             it('should set mode to EDIT when wrong mode is passed', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
                     mode: 'WRONG'
@@ -880,7 +880,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should set mode to EDIT when wrong mode is not passed', () => {
-                const spyStoreLoadPage = jest.spyOn(store, 'loadPageAsset');
+                const spyStoreLoadPage = jest.spyOn(store, 'pageLoad');
                 const params = {
                     ...INITIAL_PAGE_PARAMS,
                     mode: undefined
@@ -914,7 +914,7 @@ describe('DotEmaShellComponent', () => {
             beforeEach(() => spectator.detectChanges());
 
             it('should update page params when saving and the url changed', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spypageLoad = jest.spyOn(store, 'pageLoad');
 
                 spectator.detectChanges();
 
@@ -930,11 +930,11 @@ describe('DotEmaShellComponent', () => {
                 );
                 spectator.detectChanges();
 
-                expect(spyloadPageAsset).toHaveBeenCalledWith({ url: '/my-awesome-page' });
+                expect(spypageLoad).toHaveBeenCalledWith({ url: '/my-awesome-page' });
             });
 
             it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
-                const spyGetWorkflowActions = jest.spyOn(store, 'getWorkflowActions');
+                const spyGetWorkflowActions = jest.spyOn(store, 'workflowFetch');
 
                 spectator.detectChanges();
 
@@ -982,10 +982,10 @@ describe('DotEmaShellComponent', () => {
 
             it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', () => {
                 const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
-                // Spy on normalized properties instead of pageAPIResponse
+                // Spy on normalized properties instead of pageAssetResponse
                 jest.spyOn(store, 'page').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP.page);
                 jest.spyOn(store, 'urlContentMap').mockReturnValue(PAGE_RESPONSE_URL_CONTENT_MAP.urlContentMap);
-                store.loadPageAsset({
+                store.pageLoad({
                     url: '/test-url',
                     language_id: '1',
                     [PERSONA_KEY]: '1'

@@ -41,6 +41,7 @@ import {
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { PageContextComputed } from '../withPageContext';
+import { PageAssetComputed } from '../withPageAsset';
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
@@ -52,7 +53,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 
 /**
  * Phase 3.2: Add computed and methods to handle the Editor UI
- * Editor state is now nested under store.editor()
+ * Phase 6: Flattened editor state with domain-prefixed properties (editor*)
  *
  * Phase 5: Refactored to use only shared contracts from PageContextComputed.
  * No longer requires explicit dependencies - all cross-cutting concerns are
@@ -65,53 +66,52 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageContextComputed>()
+            props: type<PageContextComputed & PageAssetComputed>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
             return {
                 $allowContentDelete: computed<boolean>(() => {
-                    const numberContents = store.numberContents();
-                    const viewAs = store.viewAs();
+                    const numberContents = store.pageNumberContents();
+                    const viewAs = store.pageViewAs();
                     const persona = viewAs?.persona;
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
                 $allowedContentTypes: computed<Record<string, true>>(() => {
-                    return getContentTypeVarRecord(store.containers());
+                    return getContentTypeVarRecord(store.pageContainers());
                 }),
                 $showContentletControls: computed<boolean>(() => {
-                    const editor = store.editor();
-                    const contentletPosition = editor.contentArea;
-                    const canEditPage = store.$canEditPageContent();
-                    const isIdle = editor.state === EDITOR_STATE.IDLE;
+                    const contentletPosition = store.editorContentArea();
+                    const canEditPage = store.editorCanEditContent();
+                    const isIdle = store.editorState() === EDITOR_STATE.IDLE;
 
                     return !!contentletPosition && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
-                    const activeContentlet = store.editor.activeContentlet();
-                    const styleSchemas = store.editor.styleSchemas();
+                    const activeContentlet = store.editorActiveContentlet();
+                    const styleSchemas = store.editorStyleSchemas();
                     const contentSchema = styleSchemas.find(
                         (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
                     );
                     return contentSchema;
                 }),
                 $isDragging: computed<boolean>(() => {
-                    const editorState = store.editor().state;
+                    const editorState = store.editorState();
                     return (
                         editorState === EDITOR_STATE.DRAGGING ||
                         editorState === EDITOR_STATE.SCROLL_DRAG
                     );
                 }),
                 $areaContentType: computed<string>(() => {
-                    return store.editor().contentArea?.payload?.contentlet?.contentType ?? '';
+                    return store.editorContentArea()?.payload?.contentlet?.contentType ?? '';
                 }),
                 $pageData: computed<PageData>(() => {
-                    const page = store.page();
-                    const viewAs = store.viewAs();
-                    const containersData = store.containers();
+                    const page = store.pageData();
+                    const viewAs = store.pageViewAs();
+                    const containersData = store.pageContainers();
 
                     const containers: PageDataContainer[] =
                         mapContainerStructureToArrayOfContainers(containersData);
@@ -127,16 +127,16 @@ export function withEditor() {
                 }),
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
-                        code: store.page()?.rendered,
+                        code: store.pageData()?.rendered,
                         pageType: store.pageType(),
-                        enableInlineEdit: store.$enableInlineEdit()
+                        enableInlineEdit: store.editorEnableInlineEdit()
                     };
                 }),
                 $pageRender: computed<string>(() => {
-                    return store.page()?.rendered;
+                    return store.pageData()?.rendered;
                 }),
                 $editorIsInDraggingState: computed<boolean>(() => {
-                    return store.editor().state === EDITOR_STATE.DRAGGING;
+                    return store.editorState() === EDITOR_STATE.DRAGGING;
                 }),
                 $iframeURL: computed<string | InstanceType<typeof String>>(() => {
                     /*
@@ -144,7 +144,7 @@ export function withEditor() {
                         This should change in future UVE improvements.
                         More info: https://github.com/dotCMS/core/issues/31475 and https://github.com/dotCMS/core/issues/32139
                      */
-                    const vanityUrlData = store.vanityUrl();
+                    const vanityUrlData = store.pageVanityUrl();
                     const vanityURL = vanityUrlData?.url;
                     const pageType = untracked(() => store.pageType());
                     const params = untracked(() => store.pageParams());
@@ -171,87 +171,56 @@ export function withEditor() {
         withMethods((store) => {
             return {
                 updateEditorScrollState() {
-                    const editor = store.editor();
+                    const dragItem = store.editorDragItem();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            bounds: [],
-                            contentArea: null,
-                            state: editor.dragItem ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
-                        }
+                        editorBounds: [],
+                        editorContentArea: null,
+                        editorState: dragItem ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
                 updateEditorOnScrollEnd() {
-                    const editor = store.editor();
+                    const dragItem = store.editorDragItem();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            state: editor.dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
-                        }
+                        editorState: dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
                     });
                 },
                 updateEditorScrollDragState() {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            state: EDITOR_STATE.SCROLL_DRAG,
-                            bounds: []
-                        }
+                        editorState: EDITOR_STATE.SCROLL_DRAG,
+                        editorBounds: []
                     });
                 },
                 setEditorState(state: EDITOR_STATE) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            state
-                        }
+                        editorState: state
                     });
                 },
                 setEditorDragItem(dragItem: EmaDragItem) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            dragItem,
-                            state: EDITOR_STATE.DRAGGING
-                        }
+                        editorDragItem: dragItem,
+                        editorState: EDITOR_STATE.DRAGGING
                     });
                 },
                 setEditorBounds(bounds: Container[]) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            bounds
-                        }
+                        editorBounds: bounds
                     });
                 },
                 setStyleSchemas(styleSchemas: StyleEditorFormSchema[]) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            styleSchemas
-                        }
+                        editorStyleSchemas: styleSchemas
                     });
                 },
                 resetEditorProperties() {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            dragItem: null,
-                            contentArea: null,
-                            bounds: [],
-                            state: EDITOR_STATE.IDLE
-                        }
+                        editorDragItem: null,
+                        editorContentArea: null,
+                        editorBounds: [],
+                        editorState: EDITOR_STATE.IDLE
                     });
                 },
                 setContentletArea(contentArea: ContentletArea) {
-                    const editor = store.editor();
-                    const currentArea = editor.contentArea;
+                    const currentArea = store.editorContentArea();
                     const isSameX = currentArea?.x === contentArea?.x;
                     const isSameY = currentArea?.y === contentArea?.y;
 
@@ -265,46 +234,26 @@ export function withEditor() {
                         return;
                     }
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            contentArea,
-                            state: EDITOR_STATE.IDLE
-                        }
+                        editorContentArea: contentArea,
+                        editorState: EDITOR_STATE.IDLE
                     });
                 },
                 setActiveContentlet(contentlet: ActionPayload) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            activeContentlet: contentlet,
-                            panels: {
-                                ...editor.panels,
-                                palette: {
-                                    open: true
-                                    // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
-                                }
-                            }
-                        }
+                        editorActiveContentlet: contentlet,
+                        editorPaletteOpen: true
+                        // Tab switching now handled by DotUvePaletteComponent watching activeContentlet
                     });
                 },
                 resetActiveContentlet() {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            activeContentlet: null
-                        }
+                        editorActiveContentlet: null
                     });
                 },
                 resetContentletArea() {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            contentArea: null,
-                            state: EDITOR_STATE.IDLE
-                        }
+                        editorContentArea: null,
+                        editorState: EDITOR_STATE.IDLE
                     });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
@@ -342,7 +291,7 @@ export function withEditor() {
                     } = container;
 
                     const { personalization, id: pageId } = store.$pageData();
-                    const variantId = store.$variantId();
+                    const variantId = store.pageVariantId();
                     const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
 
                     return {
@@ -356,36 +305,18 @@ export function withEditor() {
                     };
                 },
                 setOgTags(ogTags: SeoMetaTags) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            ogTags
-                        }
+                        editorOgTags: ogTags
                     });
                 },
                 setPaletteOpen(open: boolean) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            panels: {
-                                ...editor.panels,
-                                palette: { open }
-                            }
-                        }
+                        editorPaletteOpen: open
                     });
                 },
                 setRightSidebarOpen(open: boolean) {
-                    const editor = store.editor();
                     patchState(store, {
-                        editor: {
-                            ...editor,
-                            panels: {
-                                ...editor.panels,
-                                rightSidebar: { open }
-                            }
-                        }
+                        editorRightSidebarOpen: open
                     });
                 }
             };

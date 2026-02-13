@@ -98,7 +98,7 @@ export class DotUveToolbarComponent {
     // Component builds its own toolbar props locally (Phase 2.3: Move view models from store to components)
     protected readonly $bookmarksUrl = computed<string>(() => {
         const params = this.#store.pageParams();
-        const site = this.#store.site();
+        const site = this.#store.pageSite();
 
         return createFavoritePagesURL({
             languageId: Number(params?.language_id),
@@ -107,8 +107,8 @@ export class DotUveToolbarComponent {
         });
     });
 
-    // Use store's $currentLanguage instead of redefining it
-    protected readonly $currentLanguage = this.#store.$currentLanguage;
+    // Use store's pageLanguage instead of redefining it
+    protected readonly $currentLanguage = this.#store.pageLanguage;
 
     protected readonly $runningExperiment = computed(() => {
         const experiment = this.#store.experiment?.();
@@ -118,7 +118,7 @@ export class DotUveToolbarComponent {
     });
 
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
-    readonly $mode = this.#store.$mode;
+    readonly $mode = this.#store.viewMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
@@ -127,8 +127,8 @@ export class DotUveToolbarComponent {
         return this.#store.view().socialMedia;
     }
     readonly $urlContentMap = this.#store.$urlContentMap;
-    readonly $isPaletteOpen = this.#store.editor.panels.palette.open();
-    readonly $canEditPage = this.#store.$canEditPageContent();
+    readonly $isPaletteOpen = this.#store.editorPaletteOpen();
+    readonly $canEditPage = this.#store.editorCanEditContent();
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -146,11 +146,11 @@ export class DotUveToolbarComponent {
     });
 
     readonly $pageInode = computed(() => {
-        return this.#store.page().inode;
+        return this.#store.pageData().inode;
     });
 
-    readonly $actions = this.#store.workflowLoading;
-    readonly $workflowLoding = this.#store.workflowLoading;
+    readonly $actions = this.#store.workflowIsLoading;
+    readonly $workflowLoding = this.#store.workflowIsLoading;
 
     protected defaultDevices = DEFAULT_DEVICES;
     protected $MIN_DATE = signal(this.#getMinDate());
@@ -169,14 +169,14 @@ export class DotUveToolbarComponent {
     });
 
     // Build complete toggle lock options for presentational component
-    readonly $toggleLockOptions = computed(() => {
-        const storeLockOptions = this.#store.$toggleLockOptions();
+    readonly $workflowLockOptions = computed(() => {
+        const storeLockOptions = this.#store.$workflowLockOptions();
 
         if (!storeLockOptions) {
             return null;
         }
 
-        const loading = this.#store.lockLoading();
+        const loading = this.#store.workflowLockIsLoading();
         const disabled = !storeLockOptions.canLock;
         const message = storeLockOptions.canLock
             ? 'editpage.toolbar.page.release.lock.locked.by.user'
@@ -205,7 +205,7 @@ export class DotUveToolbarComponent {
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
-        this.#store.loadPageAsset({
+        this.#store.pageLoad({
             mode: UVE_MODE.LIVE,
             publishDate: publishDateUTC
         });
@@ -219,8 +219,8 @@ export class DotUveToolbarComponent {
      * Handle toggle lock event from presentational DotToggleLockButtonComponent
      * @param event Lock toggle event with inode and lock states
      */
-    handleToggleLock(event: { inode: string; isLocked: boolean; isLockedByCurrentUser: boolean }) {
-        this.#store.toggleLock(event.inode, event.isLocked, event.isLockedByCurrentUser);
+    handleToggleLock(event: { inode: string; isLocked: boolean; isLockedByCurrentUser: boolean; lockedBy?: string }) {
+        this.#store.workflowToggleLock(event.inode, event.isLocked, event.isLockedByCurrentUser, event.lockedBy);
     }
 
     /**
@@ -231,13 +231,13 @@ export class DotUveToolbarComponent {
     handleDeviceSelectorChange(change: DeviceSelectorChange) {
         switch (change.type) {
             case 'device':
-                this.#store.setDevice(change.device);
+                this.#store.viewSetDevice(change.device);
                 break;
             case 'socialMedia':
-                this.#store.setSEO(change.socialMedia);
+                this.#store.viewSetSEO(change.socialMedia);
                 break;
             case 'orientation':
-                this.#store.setOrientation(change.orientation);
+                this.#store.viewSetOrientation(change.orientation);
                 break;
         }
     }
@@ -248,7 +248,7 @@ export class DotUveToolbarComponent {
      */
     handleInfoDisplayAction(optionId: string) {
         if (optionId === 'device' || optionId === 'socialMedia') {
-            this.#store.clearDeviceAndSocialMedia();
+            this.#store.viewClearDeviceAndSocialMedia();
 
             return;
         }
@@ -294,12 +294,12 @@ export class DotUveToolbarComponent {
 
         if (!languageHasTranslation) {
             // Show confirmation dialog to create a new translation
-            this.createNewTranslation(currentLanguage, this.#store.page());
+            this.createNewTranslation(currentLanguage, this.#store.pageData());
 
             return;
         }
 
-        this.#store.loadPageAsset({ language_id });
+        this.#store.pageLoad({ language_id });
     }
 
     /**
@@ -319,7 +319,7 @@ export class DotUveToolbarComponent {
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
         if (existPersona) {
-            this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+            this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
 
             return;
         }
@@ -339,7 +339,7 @@ export class DotUveToolbarComponent {
             accept: () => {
                 this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
                     next: () => {
-                        this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
+                        this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
                         this.$personaSelector().fetchPersonas();
                     },
                     error: () => {
@@ -381,7 +381,7 @@ export class DotUveToolbarComponent {
                         this.$personaSelector().fetchPersonas();
 
                         if (persona.selected) {
-                            this.#store.loadPageAsset({
+                            this.#store.pageLoad({
                                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                             });
                         }
@@ -418,7 +418,7 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector().listbox.writeValue(this.$currentLanguage());
+                this.$languageSelector().listbox.writeValue(this.#store.pageLanguage());
             }
         });
     }

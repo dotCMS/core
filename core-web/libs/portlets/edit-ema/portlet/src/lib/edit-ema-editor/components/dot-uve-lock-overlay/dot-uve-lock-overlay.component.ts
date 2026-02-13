@@ -13,10 +13,10 @@ import { UVEStore } from '../../../store/dot-uve.store';
 export class DotUveLockOverlayComponent {
     readonly #store = inject(UVEStore);
 
-    $toggleLockOptions = this.#store.$toggleLockOptions;
+    $workflowLockOptions = this.#store.$workflowLockOptions;
 
     $overlayMessages = computed(() => {
-        const { isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
+        const { isLocked, isLockedByCurrentUser } = this.$workflowLockOptions();
 
         if (!isLocked) {
             return {

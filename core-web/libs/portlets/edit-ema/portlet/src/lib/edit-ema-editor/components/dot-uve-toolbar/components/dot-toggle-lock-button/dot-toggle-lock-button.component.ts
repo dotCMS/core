@@ -44,8 +44,8 @@ export class DotToggleLockButtonComponent {
     });
 
     // Legacy computed for template compatibility
-    $toggleLockOptions = this.toggleLockOptions;
-    $lockLoading = computed(() => this.toggleLockOptions().loading);
+    $workflowLockOptions = this.toggleLockOptions;
+    $workflowLockIsLoading = computed(() => this.toggleLockOptions().loading);
     $unlockButton = computed(() => ({
         show: true,
         inode: this.toggleLockOptions().inode,

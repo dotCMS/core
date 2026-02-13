@@ -73,12 +73,12 @@ const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
 const pageAPI = `/api/v1/page/${'json'}/${pageAPIQueryParams}`;
-const pageAPIResponse = MOCK_RESPONSE_HEADLESS;
-const shouldShowInfoDisplay = false || pageAPIResponse?.page.locked;
+const pageAssetResponse = MOCK_RESPONSE_HEADLESS;
+const shouldShowInfoDisplay = false || pageAssetResponse?.page.locked;
 const bookmarksUrl = createFavoritePagesURL({
     languageId: Number(params?.language_id),
     pageURI: url,
-    siteId: pageAPIResponse?.site.identifier
+    siteId: pageAssetResponse?.site.identifier
 });
 
 const baseUVEToolbarState = {
@@ -87,10 +87,10 @@ const baseUVEToolbarState = {
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
-    currentLanguage: pageAPIResponse?.viewAs.language,
+    currentLanguage: pageAssetResponse?.viewAs.language,
     urlContentMap: null,
     runningExperiment: null,
-    workflowActionsInode: pageAPIResponse?.page.inode,
+    workflowActionsInode: pageAssetResponse?.page.inode,
     unlockButton: null,
     showInfoDisplay: shouldShowInfoDisplay
 };
@@ -153,15 +153,15 @@ const baseUVEState = {
     }),
     $showWorkflowsActions: showWorkflowsActionsSignal,  // Mutable for tests
     $personaSelector: () => ({
-        pageId: pageAPIResponse?.page.identifier,
-        value: pageAPIResponse?.viewAs.persona ?? DEFAULT_PERSONA
+        pageId: pageAssetResponse?.page.identifier,
+        value: pageAssetResponse?.viewAs.persona ?? DEFAULT_PERSONA
     }),
     $infoDisplayProps: infoDisplayPropsSignal,  // Mutable for tests
     $urlContentMap: urlContentMapSignal,  // Mutable for tests
     $unlockButton: unlockButtonSignal,  // Mutable for tests
-    $toggleLockOptions: toggleLockOptionsSignal,  // Mutable for tests
+    $workflowLockOptions: toggleLockOptionsSignal,  // Mutable for tests
     reloadCurrentPage: jest.fn(),
-    loadPageAsset: jest.fn(),
+    pageLoad: jest.fn(),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
@@ -194,7 +194,7 @@ const baseUVEState = {
     ]),
     patchViewParams: jest.fn(),
     orientation: orientationSignal,  // Use the shared signal
-    clearDeviceAndSocialMedia: jest.fn(),
+    viewClearDeviceAndSocialMedia: jest.fn(),
     device: deviceSignal,  // Use the shared signal
     lockLoading: signal(false),
     toggleLock: jest.fn(),
@@ -614,14 +614,14 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should personalize - no confirmation', () => {
-                const spyloadPageAsset = jest.spyOn(store, 'loadPageAsset');
+                const spypageLoad = jest.spyOn(store, 'pageLoad');
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
                     ...personaEventMock,
                     personalized: true
                 });
                 spectator.detectChanges();
 
-                expect(spyloadPageAsset).toHaveBeenCalledWith({
+                expect(spypageLoad).toHaveBeenCalledWith({
                     [PERSONA_KEY]: '123'
                 });
             });
@@ -692,8 +692,8 @@ describe('DotUveToolbarComponent', () => {
                 expect(spectator.query(byTestId('uve-toolbar-language-selector'))).toBeTruthy();
             });
 
-            it('should call loadPageAsset when language is selected and exists that page translated', () => {
-                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'loadPageAsset');
+            it('should call pageLoad when language is selected and exists that page translated', () => {
+                const spyLoadPageAsset = jest.spyOn(baseUVEState, 'pageLoad');
 
                 spectator.triggerEventHandler(EditEmaLanguageSelectorComponent, 'selected', 1);
 
@@ -719,14 +719,14 @@ describe('DotUveToolbarComponent', () => {
 
         describe('toggle lock button', () => {
             it('should not display toggle lock button when feature is disabled', () => {
-                baseUVEState.$toggleLockOptions.set(null);
+                baseUVEState.$workflowLockOptions.set(null);
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('toggle-lock-button'))).toBeNull();
             });
 
             it('should display toggle lock button when toggle lock options are available', () => {
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode',
                     isLocked: false,
                     lockedBy: '',
@@ -741,7 +741,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should display unlocked state when page is not locked', () => {
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode',
                     isLocked: false,
                     lockedBy: '',
@@ -758,7 +758,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should display locked state when page is locked by current user', () => {
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode',
                     isLocked: true,
                     lockedBy: 'current-user',
@@ -777,7 +777,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call store.toggleLock when unlocked button is clicked', () => {
                 const spy = jest.spyOn(store, 'toggleLock');
 
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode-unlock',
                     isLocked: false,
                     lockedBy: '',
@@ -797,7 +797,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call store.toggleLock when locked button is clicked', () => {
                 const spy = jest.spyOn(store, 'toggleLock');
 
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode-lock',
                     isLocked: true,
                     lockedBy: 'current-user',
@@ -815,7 +815,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should disable button when lock operation is loading', () => {
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode',
                     isLocked: false,
                     lockedBy: '',
@@ -832,7 +832,7 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should enable button when lock operation is not loading', () => {
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode',
                     isLocked: false,
                     lockedBy: '',
@@ -851,7 +851,7 @@ describe('DotUveToolbarComponent', () => {
             it('should call store.toggleLock with correct params for page locked by another user', () => {
                 const spy = jest.spyOn(store, 'toggleLock');
 
-                baseUVEState.$toggleLockOptions.set({
+                baseUVEState.$workflowLockOptions.set({
                     inode: 'test-inode-other',
                     isLocked: true,
                     lockedBy: 'another-user',
@@ -1052,7 +1052,7 @@ describe('DotUveToolbarComponent', () => {
                 previewBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(previewBaseUveState, 'loadPageAsset');
+                const spyLoadPageAsset = jest.spyOn(previewBaseUveState, 'pageLoad');
 
                 const calendar = spectator.debugElement.query(
                     By.css('[data-testId="uve-toolbar-calendar"]')
@@ -1123,7 +1123,7 @@ describe('DotUveToolbarComponent', () => {
                 previewBaseUveState.socialMedia.set(null);
                 spectator.detectChanges();
 
-                const spyLoadPageAsset = jest.spyOn(previewBaseUveState, 'loadPageAsset');
+                const spyLoadPageAsset = jest.spyOn(previewBaseUveState, 'pageLoad');
                 const todayButton = spectator.query(byTestId('uve-toolbar-calendar-today-button'));
 
                 if (!todayButton) {
@@ -1439,16 +1439,16 @@ describe('DotUveToolbarComponent', () => {
 
         describe('DotToggleLockButtonComponent', () => {
             describe('Computed Properties', () => {
-                describe('$toggleLockOptions', () => {
+                describe('$workflowLockOptions', () => {
                     it('should return null when store options are null', () => {
-                        baseUVEState.$toggleLockOptions.set(null);
+                        baseUVEState.$workflowLockOptions.set(null);
                         spectator.detectChanges();
 
-                        expect(spectator.component.$toggleLockOptions()).toBeNull();
+                        expect(spectator.component.$workflowLockOptions()).toBeNull();
                     });
 
                     it('should build complete options object with loading state', () => {
-                        baseUVEState.$toggleLockOptions.set({
+                        baseUVEState.$workflowLockOptions.set({
                             inode: 'test-inode',
                             isLocked: false,
                             lockedBy: '',
@@ -1460,7 +1460,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.lockLoading.set(true);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$toggleLockOptions();
+                        const options = spectator.component.$workflowLockOptions();
 
                         expect(options).toEqual({
                             inode: 'test-inode',
@@ -1475,7 +1475,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should set disabled true when canLock is false', () => {
-                        baseUVEState.$toggleLockOptions.set({
+                        baseUVEState.$workflowLockOptions.set({
                             inode: 'test-inode',
                             isLocked: true,
                             lockedBy: 'another-user',
@@ -1487,7 +1487,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.lockLoading.set(false);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$toggleLockOptions();
+                        const options = spectator.component.$workflowLockOptions();
 
                         expect(options.disabled).toBe(true);
                         expect(options.message).toBe('editpage.locked-by');
@@ -1495,7 +1495,7 @@ describe('DotUveToolbarComponent', () => {
                     });
 
                     it('should include lockedBy in args when provided', () => {
-                        baseUVEState.$toggleLockOptions.set({
+                        baseUVEState.$workflowLockOptions.set({
                             inode: 'test-inode',
                             isLocked: true,
                             lockedBy: 'john.doe@example.com',
@@ -1506,7 +1506,7 @@ describe('DotUveToolbarComponent', () => {
                         });
                         spectator.detectChanges();
 
-                        const options = spectator.component.$toggleLockOptions();
+                        const options = spectator.component.$workflowLockOptions();
 
                         expect(options.args).toEqual(['john.doe@example.com']);
                     });
@@ -1516,7 +1516,7 @@ describe('DotUveToolbarComponent', () => {
             describe('Handler Methods', () => {
                 describe('handleToggleLock', () => {
                     beforeEach(() => {
-                        baseUVEState.$toggleLockOptions.set({
+                        baseUVEState.$workflowLockOptions.set({
                             inode: 'test-inode',
                             isLocked: false,
                             lockedBy: '',
@@ -1581,7 +1581,7 @@ describe('DotUveToolbarComponent', () => {
 
             describe('Template Bindings', () => {
                 beforeEach(() => {
-                    baseUVEState.$toggleLockOptions.set({
+                    baseUVEState.$workflowLockOptions.set({
                         inode: 'test-inode',
                         isLocked: false,
                         lockedBy: '',
@@ -1655,8 +1655,8 @@ describe('DotUveToolbarComponent', () => {
                         spectator.detectChanges();
                     });
 
-                    it('should call store.clearDeviceAndSocialMedia when device action is triggered', () => {
-                        const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
+                    it('should call store.viewClearDeviceAndSocialMedia when device action is triggered', () => {
+                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
 
                         spectator.triggerEventHandler(
                             DotEmaInfoDisplayComponent,
@@ -1667,8 +1667,8 @@ describe('DotUveToolbarComponent', () => {
                         expect(spy).toHaveBeenCalled();
                     });
 
-                    it('should call store.clearDeviceAndSocialMedia when socialMedia action is triggered', () => {
-                        const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
+                    it('should call store.viewClearDeviceAndSocialMedia when socialMedia action is triggered', () => {
+                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
 
                         spectator.triggerEventHandler(
                             DotEmaInfoDisplayComponent,
@@ -1679,8 +1679,8 @@ describe('DotUveToolbarComponent', () => {
                         expect(spy).toHaveBeenCalled();
                     });
 
-                    it('should not call clearDeviceAndSocialMedia for variant action', () => {
-                        const spy = jest.spyOn(store, 'clearDeviceAndSocialMedia');
+                    it('should not call viewClearDeviceAndSocialMedia for variant action', () => {
+                        const spy = jest.spyOn(store, 'viewClearDeviceAndSocialMedia');
                         spy.mockClear(); // Clear any calls from previous tests
 
                         spectator.triggerEventHandler(

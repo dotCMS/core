@@ -23,8 +23,8 @@ describe('DotEditorModeSelectorComponent', () => {
     let component: DotEditorModeSelectorComponent;
 
     const mockStoreState = {
-        $hasAccessToEditMode: true,
-        pageAPIResponse: {
+        editorHasAccessToEditMode: true,
+        pageAssetResponse: {
             ...MOCK_RESPONSE_HEADLESS,
             page: {
                 ...MOCK_RESPONSE_HEADLESS.page,
@@ -37,14 +37,14 @@ describe('DotEditorModeSelectorComponent', () => {
     };
 
     const mockStore = {
-        $hasAccessToEditMode: signal(mockStoreState.$hasAccessToEditMode),
-        pageAPIResponse: signal(mockStoreState.pageAPIResponse),
+        editorHasAccessToEditMode: signal(mockStoreState.editorHasAccessToEditMode),
+        pageAssetResponse: signal(mockStoreState.pageAssetResponse),
         pageParams: signal(mockStoreState.pageParams),
         $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
-        clearDeviceAndSocialMedia: jest.fn(),
-        loadPageAsset: jest.fn(),
+        viewClearDeviceAndSocialMedia: jest.fn(),
+        pageLoad: jest.fn(),
         trackUVEModeChange: jest.fn(),
-        $isLockFeatureEnabled: signal(mockStoreState.isLockFeatureEnabled)
+        systemIsLockFeatureEnabled: signal(mockStoreState.isLockFeatureEnabled)
     };
 
     const createComponent = createComponentFactory({
@@ -84,7 +84,7 @@ describe('DotEditorModeSelectorComponent', () => {
         });
 
         it('should exclude EDIT mode when user cannot edit page', () => {
-            mockStore.$hasAccessToEditMode.set(false);
+            mockStore.editorHasAccessToEditMode.set(false);
             spectator.detectChanges();
             const menuItems = component.$menuItems();
             expect(menuItems).toHaveLength(2);
@@ -100,15 +100,15 @@ describe('DotEditorModeSelectorComponent', () => {
     });
 
     describe('onModeChange', () => {
-        it('should not call loadPageAsset when selected mode is current mode', () => {
+        it('should not call pageLoad when selected mode is current mode', () => {
             component.onModeChange(UVE_MODE.PREVIEW);
-            expect(mockStore.loadPageAsset).not.toHaveBeenCalled();
+            expect(mockStore.pageLoad).not.toHaveBeenCalled();
         });
 
         it('should clear device and social media when switching to EDIT mode', () => {
             component.onModeChange(UVE_MODE.EDIT);
-            expect(mockStore.clearDeviceAndSocialMedia).toHaveBeenCalled();
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
+            expect(mockStore.viewClearDeviceAndSocialMedia).toHaveBeenCalled();
+            expect(mockStore.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.EDIT,
                 publishDate: undefined
             });
@@ -120,7 +120,7 @@ describe('DotEditorModeSelectorComponent', () => {
             jest.setSystemTime(now);
 
             component.onModeChange(UVE_MODE.LIVE);
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
+            expect(mockStore.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.LIVE,
                 publishDate: undefined
             });
@@ -132,18 +132,18 @@ describe('DotEditorModeSelectorComponent', () => {
     describe('$modeGuardEffect', () => {
         beforeEach(() => {
             // Reset mock store to initial state
-            mockStore.$hasAccessToEditMode.set(true);
+            mockStore.editorHasAccessToEditMode.set(true);
             mockStore.pageParams.set(pageParams);
             jest.clearAllMocks();
         });
 
         it('should switch to PREVIEW mode when in EDIT mode without edit permission', () => {
-            mockStore.$hasAccessToEditMode.set(false);
+            mockStore.editorHasAccessToEditMode.set(false);
             mockStore.pageParams.set({ ...pageParams, mode: UVE_MODE.EDIT });
 
             spectator.detectChanges();
 
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
+            expect(mockStore.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });
@@ -153,8 +153,8 @@ describe('DotEditorModeSelectorComponent', () => {
     describe('Menu Interactions', () => {
         beforeEach(() => {
             // Reset the store state
-            mockStore.$hasAccessToEditMode.set(true);
-            mockStore.pageAPIResponse.set(MOCK_RESPONSE_HEADLESS);
+            mockStore.editorHasAccessToEditMode.set(true);
+            mockStore.pageAssetResponse.set(MOCK_RESPONSE_HEADLESS);
             mockStore.pageParams.set(pageParams);
             mockStore.$hasLiveVersion.set(true);
         });
@@ -182,7 +182,7 @@ describe('DotEditorModeSelectorComponent', () => {
             const previewMenuItem = menuItems[1]; // Preview is second item
             spectator.click(previewMenuItem);
 
-            expect(mockStore.loadPageAsset).toHaveBeenCalledWith({
+            expect(mockStore.pageLoad).toHaveBeenCalledWith({
                 mode: UVE_MODE.PREVIEW,
                 publishDate: undefined
             });

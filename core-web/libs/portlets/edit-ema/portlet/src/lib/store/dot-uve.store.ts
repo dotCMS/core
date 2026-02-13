@@ -1,6 +1,4 @@
-import { patchState, signalStore, withComputed, withFeature, withMethods, withState } from '@ngrx/signals';
-
-import { computed, untracked } from '@angular/core';
+import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -13,14 +11,14 @@ import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
+import { withPageAsset } from './features/withPageAsset';
 import { withPageContext } from './features/withPageContext';
 import { withWorkflow } from './features/workflow/withWorkflow';
-import { withZoom } from './features/zoom/withZoom';
-import { Orientation, PageType, TranslateProps, UVEState } from './models';
+import { withViewZoom } from './features/zoom/withZoom';
+import { Orientation, PageType, UVEState } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
-import { normalizeQueryParams } from '../utils';
 
 // Some properties can be computed
 // Ticket: https://github.com/dotCMS/core/issues/30760
@@ -34,33 +32,19 @@ const initialState: UVEState = {
     pageParams: null,
     status: UVE_STATUS.LOADING,
     pageType: PageType.TRADITIONAL,
-    // Normalized page response properties
-    page: null,
-    site: null,
-    viewAs: null,
-    template: null,
-    urlContentMap: null,
-    containers: null,
-    vanityUrl: null,
-    numberContents: null,
-    // Phase 3.2: Nested UI state
-    editor: {
-        dragItem: null,
-        bounds: [],
-        state: EDITOR_STATE.IDLE,
-        activeContentlet: null,
-        contentArea: null,
-        panels: {
-            palette: {
-                open: true
-            },
-            rightSidebar: {
-                open: false
-            }
-        },
-        ogTags: null,
-        styleSchemas: []
-    },
+    // Note: Page asset properties removed (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
+    // Access via computed signals: store.pageData(), store.pageSite(), store.pageContainers(), etc.
+    // Editor state (flattened with editor* prefix)
+    editorDragItem: null,
+    editorBounds: [],
+    editorState: EDITOR_STATE.IDLE,
+    editorActiveContentlet: null,
+    editorContentArea: null,
+    editorPaletteOpen: true,
+    editorRightSidebarOpen: false,
+    editorOgTags: null,
+    editorStyleSchemas: [],
+    // View state
     view: {
         device: DEFAULT_DEVICE,
         orientation: Orientation.LANDSCAPE,
@@ -72,28 +56,49 @@ const initialState: UVEState = {
     }
 };
 
+/**
+ * Main UVE Store - Unified Visual Editor state management.
+ *
+ * This store manages all state for the Universal Visual Editor including:
+ * - Page content and metadata
+ * - Editor UI state (palette, sidebars, drag/drop)
+ * - Workflow actions and permissions
+ * - Client configuration and time machine (undo/redo)
+ *
+ * @example
+ * ```typescript
+ * export class MyComponent {
+ *   readonly store = inject(UVEStore);
+ *
+ *   ngOnInit() {
+ *     const page = this.store.pageData();
+ *   }
+ * }
+ * ```
+ */
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
 
     // ---- Core State Features (no dependencies) ----
     withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
-    withFeature(() => withClient()), // Client config (exposes timeMachine methods)
+    withClient(),                     // Client config (exposes timeMachine methods)
     withWorkflow(),                   // Workflow state (independent)
     withTrack(),                      // Tracking (independent)
 
     // ---- Shared Computeds ----
-    withPageContext(),                // Common computed properties (depends on flags)
+    withPageAsset(),                  // PageAsset computed properties (depends on client state)
+    withPageContext(),                // Common computed properties (depends on pageAsset)
 
     // ---- Data Loading ----
     withFeature((store) => withLoad({
         resetClientConfiguration: () => store.resetClientConfiguration(),
-        getWorkflowActions: (inode: string) => store.getWorkflowActions(inode),
-        graphqlRequest: () => store.graphqlRequest(),
-        $graphqlWithParams: store.$graphqlWithParams,
-        setGraphqlResponse: (response) => store.setGraphqlResponse(response),
+        workflowFetch: (inode: string) => store.workflowFetch(inode),
+        requestMetadata: () => store.requestMetadata(),
+        $requestWithParams: store.$requestWithParams,
+        setPageAssetResponse: (response) => store.setPageAssetResponse(response),
         addHistory: (state) => store.addHistory(state)
-    })),  // Load methods (depends on client, workflow)
+    })),  // Page load methods (depends on client, workflow)
 
     // ---- Core Store Methods ----
     withMethods((store) => {
@@ -104,17 +109,10 @@ export const UVEStore = signalStore(
                 });
             },
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
-                store.setGraphqlResponse({ pageAsset: pageAPIResponse });
+                // Single source of truth - pageAsset properties accessed via computed signals
+                store.setPageAssetResponse({ pageAsset: pageAPIResponse });
                 patchState(store, {
-                    status: UVE_STATUS.LOADED,
-                    page: pageAPIResponse?.page,
-                    site: pageAPIResponse?.site,
-                    viewAs: pageAPIResponse?.viewAs,
-                    template: pageAPIResponse?.template,
-                    urlContentMap: pageAPIResponse?.urlContentMap,
-                    containers: pageAPIResponse?.containers,
-                    vanityUrl: pageAPIResponse?.vanityUrl,
-                    numberContents: pageAPIResponse?.numberContents
+                    status: UVE_STATUS.LOADED
                 });
             }
         };
@@ -122,58 +120,32 @@ export const UVEStore = signalStore(
 
     // ---- UI Features ----
     withLayout(),                     // Layout state
-    withZoom(),                       // Zoom state
+    withViewZoom(),                   // View Zoom state
     withFeature((store) => withView({
-        $isPageLocked: () => store.$isPageLocked()
+        workflowIsPageLocked: () => store.workflowIsPageLocked(),
+        pageData: () => store.pageData(),
+        pageUrlContentMap: () => store.pageUrlContentMap(),
+        pageViewAs: () => store.pageViewAs()
     })),                              // View state - manages view modes (edit vs preview)
     withEditor(),                     // Editor state (uses shared PageContextComputed contract)
 
     // ---- Actions ----
     withFeature((store) => withSave({
-        graphqlRequest: () => store.graphqlRequest(),
-        $graphqlWithParams: store.$graphqlWithParams,
-        setGraphqlResponse: (response) => store.setGraphqlResponse(response),
-        rollbackGraphqlResponse: () => store.rollbackGraphqlResponse(),
+        requestMetadata: () => store.requestMetadata(),
+        $requestWithParams: store.$requestWithParams,
+        setPageAssetResponse: (response) => store.setPageAssetResponse(response),
+        rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
         clearHistory: () => store.clearHistory(),
         addHistory: (response) => store.addHistory(response),
-        graphqlResponse: () => store.graphqlResponse(),
-        $customGraphqlResponse: store.$customGraphqlResponse
-    })),  // Save methods (depends on client)
+        pageAssetResponse: () => store.pageAssetResponse(),
+        pageClientResponse: store.pageClientResponse,
+        pageData: () => store.pageData(),
+        pageTemplate: () => store.pageTemplate()
+    })),  // Editor save methods (depends on client)
     withFeature((store) => withLock({
-        reloadCurrentPage: () => store.reloadCurrentPage()
-    })),  // Lock methods (depends on load)
-    withComputed(
-        ({
-            page,
-            viewAs,
-            pageParams,
-            view,
-            languages,
-        }) => {
-            return {
-                $translateProps: computed<TranslateProps>(() => {
-                    const pageData = page();
-                    const viewAsData = viewAs();
-                    const languageId = viewAsData?.language?.id;
-                    const translatedLanguages = untracked(() => languages());
-                    const currentLanguage = translatedLanguages.find(
-                        (lang) => lang.id === languageId
-                    );
+        pageReload: () => store.pageReload()
+    }))  // Lock methods (depends on load)
 
-                    return {
-                        page: pageData,
-                        currentLanguage
-                    };
-                }),
-                $friendlyParams: computed(() => {
-                    const params = {
-                        ...(pageParams() ?? {}),
-                        ...(view().viewParams ?? {})
-                    };
-
-                    return normalizeQueryParams(params);
-                })
-            };
-        }
-    )
+    // ---- Store-level Computeds ----
+    // withStoreComputed()  // TODO: Re-add after reducing feature count or merging features
 );

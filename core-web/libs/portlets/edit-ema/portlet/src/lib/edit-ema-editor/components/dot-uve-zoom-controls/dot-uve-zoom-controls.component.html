@@ -3,18 +3,18 @@
     icon="pi pi-minus"
     size="small"
     [text]="true"
-    (click)="zoomOut()"
+    (click)="viewZoomOut()"
     aria-label="Zoom out"
     data-testId="zoom-out"></button>
 <div data-testId="zoom-level">
-    {{ zoomLabel() }}
+    {{ viewZoomLabel() }}
 </div>
 <button
     pButton
     icon="pi pi-plus"
     size="small"
     [text]="true"
-    (click)="zoomIn()"
+    (click)="viewZoomIn()"
     aria-label="Zoom in"
     data-testId="zoom-in"></button>
 <button

@@ -24,18 +24,21 @@ import { PersonaSelectorProps } from '../models';
 
 /**
  * Dependencies interface for withView
- * These are methods/computeds from other features that withView needs
+ * These are computed signals from other features that withView needs
  */
 export interface WithViewDeps {
-    $isPageLocked: () => boolean;
+    workflowIsPageLocked: () => boolean;
+    pageData: () => any;
+    pageUrlContentMap: () => any;
+    pageViewAs: () => any;
 }
 
 /**
  * Manages editor view modes (edit vs preview) and preview configuration.
  *
  * Responsibilities:
- * - Device preview mode (setDevice, setOrientation)
- * - SEO/social media preview mode (setSEO)
+ * - Device preview mode (viewSetDevice, viewSetOrientation)
+ * - SEO/social media preview mode (viewSetSEO)
  * - Edit vs preview state toggle (isEditState)
  * - Lock UI props for toolbar display
  * - View parameters synchronization
@@ -49,7 +52,7 @@ export function withView(deps: WithViewDeps) {
         },
         withComputed((store) => ({
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.urlContentMap();
+                return deps.pageUrlContentMap();
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
@@ -58,8 +61,8 @@ export function withView(deps: WithViewDeps) {
                     return null;
                 }
 
-                const page = store.page();
-                const isLocked = deps.$isPageLocked();
+                const page = deps.pageData();
+                const isLocked = deps.workflowIsPageLocked();
 
                 const info = {
                     message: page.canLock
@@ -79,8 +82,8 @@ export function withView(deps: WithViewDeps) {
                       }
                     : null;
             }),
-            $toggleLockOptions: computed<ToggleLockOptions | null>(() => {
-                const page = store.page();
+            $workflowLockOptions: computed<ToggleLockOptions | null>(() => {
+                const page = deps.pageData();
                 const currentUser = store.currentUser();
 
                 // Only show lock controls when feature flag is enabled AND in edit mode
@@ -111,8 +114,8 @@ export function withView(deps: WithViewDeps) {
                 };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
-                const page = store.page();
-                const viewAs = store.viewAs();
+                const page = deps.pageData();
+                const viewAs = deps.pageViewAs();
 
                 return {
                     pageId: page?.identifier,
@@ -129,7 +132,7 @@ export function withView(deps: WithViewDeps) {
                 return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
-                const viewAs = store.viewAs();
+                const viewAs = deps.pageViewAs();
                 const mode = store.pageParams()?.mode;
 
                 if (!getIsDefaultVariant(viewAs?.variantId)) {
@@ -165,14 +168,14 @@ export function withView(deps: WithViewDeps) {
                 const isPreviewMode = store.pageParams()?.mode === UVE_MODE.PREVIEW;
                 const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
-                const viewAs = store.viewAs();
+                const viewAs = deps.pageViewAs();
                 const isDefaultVariant = getIsDefaultVariant(viewAs?.variantId);
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;
             })
         })),
         withMethods((store) => ({
-            setDevice: (device: DotDevice, orientation?: Orientation) => {
+            viewSetDevice: (device: DotDevice, orientation?: Orientation) => {
                 const view = store.view();
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
 
@@ -193,7 +196,7 @@ export function withView(deps: WithViewDeps) {
                     }
                 });
             },
-            setOrientation: (orientation: Orientation) => {
+            viewSetOrientation: (orientation: Orientation) => {
                 const view = store.view();
                 patchState(store, {
                     view: {
@@ -206,7 +209,7 @@ export function withView(deps: WithViewDeps) {
                     }
                 });
             },
-            setSEO: (socialMedia: string | null) => {
+            viewSetSEO: (socialMedia: string | null) => {
                 const view = store.view();
                 patchState(store, {
                     view: {
@@ -224,7 +227,7 @@ export function withView(deps: WithViewDeps) {
                     }
                 });
             },
-            clearDeviceAndSocialMedia: () => {
+            viewClearDeviceAndSocialMedia: () => {
                 const view = store.view();
                 patchState(store, {
                     view: {
@@ -242,7 +245,7 @@ export function withView(deps: WithViewDeps) {
                     }
                 });
             },
-            setOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
+            viewSetOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
                 const view = store.view();
                 patchState(store, {
                     view: {

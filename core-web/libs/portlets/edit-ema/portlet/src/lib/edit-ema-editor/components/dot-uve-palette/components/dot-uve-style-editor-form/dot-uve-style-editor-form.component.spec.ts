@@ -84,12 +84,12 @@ describe('DotUveStyleEditorFormComponent', () => {
     let mockUveStore: {
         currentIndex: ReturnType<typeof signal<number>>;
         activeContentlet: ReturnType<typeof signal<ActionPayload | null>>;
-        graphqlResponse: ReturnType<typeof signal<DotCMSPageAsset | null>>;
-        $customGraphqlResponse: ReturnType<typeof computed<DotCMSPageAsset | null>>;
+        pageAssetResponse: ReturnType<typeof signal<DotCMSPageAsset | null>>;
+        $clientResponse: ReturnType<typeof computed<DotCMSPageAsset | null>>;
         saveStyleEditor: jest.Mock;
-        rollbackGraphqlResponse: jest.Mock;
+        rollbackPageAssetResponse: jest.Mock;
         addHistory: jest.Mock;
-        setGraphqlResponse: jest.Mock;
+        setPageAssetResponse: jest.Mock;
     };
 
     const createComponent = createComponentFactory({
@@ -140,19 +140,19 @@ describe('DotUveStyleEditorFormComponent', () => {
         }) as unknown as DotCMSPageAsset;
 
     beforeEach(() => {
-        const graphqlResponseSignal = signal<DotCMSPageAsset | null>(null);
-        const customGraphqlResponseComputed = computed(() => graphqlResponseSignal());
+        const pageAssetResponseSignal = signal<DotCMSPageAsset | null>(null);
+        const clientResponseComputed = computed(() => pageAssetResponseSignal());
 
         mockUveStore = {
             currentIndex: signal(0),
             activeContentlet: signal(null),
-            graphqlResponse: graphqlResponseSignal,
-            $customGraphqlResponse: customGraphqlResponseComputed,
+            pageAssetResponse: pageAssetResponseSignal,
+            $clientResponse: clientResponseComputed,
             saveStyleEditor: jest.fn().mockReturnValue(of({})),
-            rollbackGraphqlResponse: jest.fn().mockReturnValue(true),
+            rollbackPageAssetResponse: jest.fn().mockReturnValue(true),
             addHistory: jest.fn(),
-            setGraphqlResponse: jest.fn((response: DotCMSPageAsset | null) => {
-                graphqlResponseSignal.set(response);
+            setPageAssetResponse: jest.fn((response: DotCMSPageAsset | null) => {
+                pageAssetResponseSignal.set(response);
             })
         };
 
@@ -324,7 +324,7 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             // Set initial graphqlResponse
             const initialResponse = createMockGraphQLResponse(16);
-            mockUveStore.graphqlResponse.set(initialResponse);
+            mockUveStore.pageAssetResponse.set(initialResponse);
         });
 
         it('should restore form values after rollback on save failure', fakeAsync(() => {
@@ -349,7 +349,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
                     // Simulate store's rollback behavior: update graphqlResponse to rolled-back state
-                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    mockUveStore.pageAssetResponse.set(rolledBackResponse);
                     return new Error('Save failed');
                 })
             );
@@ -391,7 +391,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             // Mock saveStyleEditor to always fail and rollback to 16
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
-                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    mockUveStore.pageAssetResponse.set(rolledBackResponse);
                     return new Error('Save failed');
                 })
             );
@@ -450,7 +450,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             const rolledBackResponse = createMockGraphQLResponse(16);
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
-                    mockUveStore.graphqlResponse.set(rolledBackResponse);
+                    mockUveStore.pageAssetResponse.set(rolledBackResponse);
                     return new Error('Save failed');
                 })
             );

@@ -1,7 +1,7 @@
 <button
     (click)="op.toggle($event)"
     [label]="selectedLanguage()?.label"
-    [ngClass]="{ selected: selectedLanguage().id !== 1 }"
+    [ngClass]="{ selected: selectedLanguage()?.id !== 1 }"
     class="p-button-text p-button-sm"
     pButton
     icon="pi pi-globe"

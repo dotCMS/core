@@ -67,10 +67,10 @@ describe('DotUveIframeComponent', () => {
             }),
             MockProvider(UVEStore, {
                 $pageRender: signal(mockPageRender),
-                $enableInlineEdit: signal(false),
+                editorEnableInlineEdit: signal(false),
                 pageType: signal(PageType.HEADLESS),
                 setOgTags: jest.fn(),
-                setOGTagResults: jest.fn()
+                viewSetOGTagResults: jest.fn()
             })
         ]
     });
@@ -180,7 +180,7 @@ describe('DotUveIframeComponent', () => {
         beforeEach(() => {
             mockUVEStore.pageType = signal(PageType.TRADITIONAL);
             mockUVEStore.$pageRender = signal(mockPageRender);
-            mockUVEStore.$enableInlineEdit = signal(false);
+            mockUVEStore.editorEnableInlineEdit = signal(false);
 
             // Create mock iframe with contentDocument and contentWindow
             mockIframe = document.createElement('iframe');
@@ -277,7 +277,7 @@ describe('DotUveIframeComponent', () => {
             });
 
             component.iframe = { nativeElement: mockIframe } as any;
-            mockUVEStore.$enableInlineEdit = signal(false);
+            mockUVEStore.editorEnableInlineEdit = signal(false);
         });
 
         afterEach(() => {
@@ -454,7 +454,7 @@ describe('DotUveIframeComponent', () => {
             (component as any).setSeoData();
             // Wait for observable to complete
             setTimeout(() => {
-                expect(mockUVEStore.setOGTagResults).toHaveBeenCalledWith(mockSeoResults);
+                expect(mockUVEStore.viewSetOGTagResults).toHaveBeenCalledWith(mockSeoResults);
             }, 0);
         });
 
@@ -491,7 +491,7 @@ describe('DotUveIframeComponent', () => {
 
             component.iframe = { nativeElement: mockIframe } as any;
             mockUVEStore.$pageRender = signal(mockPageRender);
-            mockUVEStore.$enableInlineEdit = signal(false);
+            mockUVEStore.editorEnableInlineEdit = signal(false);
         });
 
         it('should insert page content when pageType changes to TRADITIONAL', () => {

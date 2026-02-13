@@ -9,11 +9,14 @@ import { LayoutProps } from './models';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
 
-/** WithLayout requires withClient (provides layout computed, graphqlResponse, setGraphqlResponse). */
+/** WithLayout requires withPageAsset (provides pageData, pageContainers, pageTemplate, pageLayout) and withClient (provides pageAssetResponse, setPageAssetResponse). */
 interface LayoutStoreDeps {
-    layout: () => DotCMSLayout | null;
-    graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
-    setGraphqlResponse: (r: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    pageData: () => any;
+    pageContainers: () => any;
+    pageTemplate: () => any;
+    pageLayout: () => DotCMSLayout | null;
+    pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
+    setPageAssetResponse: (r: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
 }
 
 /**
@@ -29,13 +32,12 @@ export function withLayout() {
         },
         withComputed((store) => {
             const s = store as typeof store & LayoutStoreDeps;
-            const { page, containers, template } = store;
             return {
             $layoutProps: computed<LayoutProps>(() => {
-                const pageData = page();
-                const containersData = containers();
-                const layoutData = s.layout();
-                const templateData = template();
+                const pageData = s.pageData();
+                const containersData = s.pageContainers();
+                const layoutData = s.pageLayout();
+                const templateData = s.pageTemplate();
 
                 return {
                     containersMap: mapContainerStructureToDotContainerMap(
@@ -57,9 +59,9 @@ export function withLayout() {
             const s = store as typeof store & LayoutStoreDeps;
             return {
                 updateLayout: (layout: DotCMSLayout) => {
-                    const resp = s.graphqlResponse();
+                    const resp = s.pageAssetResponse();
                     if (resp) {
-                        s.setGraphqlResponse({
+                        s.setPageAssetResponse({
                             ...resp,
                             pageAsset: { ...resp.pageAsset, layout }
                         });

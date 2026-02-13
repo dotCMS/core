@@ -16,23 +16,23 @@ import { UVEStore } from '../../../store/dot-uve.store';
 export class DotUveZoomControlsComponent {
     protected readonly store = inject(UVEStore);
 
-    readonly $zoomLevel = this.store.$zoomLevel;
-    readonly $zoomLabel = this.store.zoomLabel.bind(this.store);
+    readonly $viewZoomLevel = this.store.$viewZoomLevel;
+    readonly $viewZoomLabel = this.store.viewZoomLabel.bind(this.store);
 
-    zoomIn(): void {
-        this.store.zoomIn();
+    viewZoomIn(): void {
+        this.store.viewZoomIn();
     }
 
-    zoomOut(): void {
-        this.store.zoomOut();
+    viewZoomOut(): void {
+        this.store.viewZoomOut();
     }
 
     resetView(): void {
-        this.store.resetZoom();
+        this.store.viewZoomReset();
     }
 
-    zoomLabel(): string {
-        return this.store.zoomLabel();
+    viewZoomLabel(): string {
+        return this.store.viewZoomLabel();
     }
 }
 

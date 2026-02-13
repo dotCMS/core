@@ -96,10 +96,10 @@ const uveStoreMock = {
     layout: signal(MOCK_RESPONSE_VTL.layout),
     containers: signal(MOCK_RESPONSE_VTL.containers),
     workflowActions: signal([]),
-    workflowLoading: signal(false),
-    $canEditPageContent: () => canEditPageContentSignal(),
+    workflowIsLoading: signal(false),
+    editorCanEditContent: () => canEditPageContentSignal(),
     pageParams: signal(pageParams),
-    loadPageAsset: jest.fn(),
+    pageLoad: jest.fn(),
     reloadCurrentPage: jest.fn(),
     setWorkflowActionLoading: jest.fn()
 };
@@ -154,7 +154,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     describe('Without Workflow Actions', () => {
         it('should set action as an empty array and loading to true', () => {
-            uveStoreMock.workflowLoading.set(true);
+            uveStoreMock.workflowIsLoading.set(true);
             spectator.detectChanges();
 
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
@@ -174,7 +174,7 @@ describe('DotUveWorkflowActionsComponent', () => {
 
     describe('With Workflow Actions', () => {
         beforeEach(() => {
-            uveStoreMock.workflowLoading.set(false);
+            uveStoreMock.workflowIsLoading.set(false);
             canEditPageContentSignal.set(true);
             uveStoreMock.workflowActions.set(mockWorkflowsActions);
             spectator.detectChanges();
@@ -188,9 +188,9 @@ describe('DotUveWorkflowActionsComponent', () => {
             expect(dotWorkflowActionsComponent.disabled()).toBeFalsy();
         });
 
-        it('should fire workflow actions and loadPageAssets', () => {
+        it('should fire workflow actions and pageLoads', () => {
             const spySetWorkflowActionLoading = jest.spyOn(store, 'setWorkflowActionLoading');
-            const spyLoadPageAsset = jest.spyOn(store, 'loadPageAsset');
+            const spyLoadPageAsset = jest.spyOn(store, 'pageLoad');
             const dotWorkflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
             const spy = jest
                 .spyOn(dotWorkflowActionsFireService, 'fireTo')

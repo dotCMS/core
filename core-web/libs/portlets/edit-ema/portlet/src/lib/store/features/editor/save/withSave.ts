@@ -21,14 +21,16 @@ import { UVEState } from '../../../models';
  * These are methods/computeds from other features that withSave needs
  */
 export interface WithSaveDeps {
-    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
-    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
-    setGraphqlResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
-    rollbackGraphqlResponse: () => boolean;
+    requestMetadata: () => { query: string; variables: Record<string, string> } | null;
+    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    setPageAssetResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    rollbackPageAssetResponse: () => boolean;
     clearHistory: () => void;
     addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
-    graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
-    $customGraphqlResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; graphqlRequest: { query: string; variables: Record<string, string> } } | null>;
+    pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
+    pageClientResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } } | null>;
+    pageData: () => any;  // Page data accessor
+    pageTemplate: () => any;  // Page template accessor
 }
 
 /**
@@ -52,7 +54,7 @@ export function withSave(deps: WithSaveDeps) {
             const iframeMessenger = inject(UveIframeMessengerService);
 
             return {
-                savePage: rxMethod<PageContainer[]>(
+                editorSave: rxMethod<PageContainer[]>(
                     pipe(
                         tap(() => {
                             patchState(store, {
@@ -62,43 +64,35 @@ export function withSave(deps: WithSaveDeps) {
                         switchMap((pageContainers) => {
                             const payload = {
                                 pageContainers,
-                                pageId: store.page()?.identifier,
+                                pageId: deps.pageData()?.identifier,
                                 params: store.pageParams()
                             };
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
-                                    const pageRequest = !deps.graphqlRequest()
-                                        ? dotPageApiService.get(store.pageParams())
-                                        : dotPageApiService.getGraphQLPage(deps.$graphqlWithParams())
-                                              .pipe(
-                                                  tap((response) => deps.setGraphqlResponse(response)
-                                                  ),
+                                    const pageRequest = !deps.requestMetadata()
+                                        ? dotPageApiService.get(store.pageParams()).pipe(
+                                                  tap((pageAsset) => deps.setPageAssetResponse({ pageAsset }))
+                                              )
+                                        : dotPageApiService.getGraphQLPage(deps.$requestWithParams()).pipe(
+                                                  tap((response) => deps.setPageAssetResponse(response)),
                                                   map((response) => response.pageAsset)
                                               );
 
                                     return pageRequest.pipe(
-                                        tapResponse({
-                                            next: (pageAsset: DotCMSPageAsset) => {
+                                        tapResponse(
+                                            () => {
                                                 patchState(store, {
-                                                    status: UVE_STATUS.LOADED,
-                                                    page: pageAsset?.page,
-                                                    site: pageAsset?.site,
-                                                    viewAs: pageAsset?.viewAs,
-                                                    template: pageAsset?.template,
-                                                    urlContentMap: pageAsset?.urlContentMap,
-                                                    containers: pageAsset?.containers,
-                                                    vanityUrl: pageAsset?.vanityUrl,
-                                                    numberContents: pageAsset?.numberContents
+                                                    status: UVE_STATUS.LOADED
                                                 });
                                             },
-                                            error: (e) => {
+                                            (e) => {
                                                 console.error(e);
                                                 patchState(store, {
                                                     status: UVE_STATUS.ERROR
                                                 });
                                             }
-                                        })
+                                        )
                                     );
                                 }),
                                 catchError((e) => {
@@ -121,9 +115,9 @@ export function withSave(deps: WithSaveDeps) {
                             });
                         }),
                         switchMap((sortedRows) => {
-                            const page = store.page();
-                            const layoutData = deps.graphqlResponse()?.pageAsset?.layout;
-                            const template = store.template();
+                            const page = deps.pageData();
+                            const layoutData = deps.pageAssetResponse()?.pageAsset?.layout;
+                            const template = deps.pageTemplate();
                             if (!layoutData) {
                                 return EMPTY;
                             }
@@ -162,27 +156,20 @@ export function withSave(deps: WithSaveDeps) {
                                         map((response) => response)
                                     );
                                 }),
-                                tapResponse({
-                                    next: (pageRender: DotCMSPageAsset) => {
+                                tapResponse(
+                                    (pageRender: DotCMSPageAsset) => {
+                                        deps.setPageAssetResponse({ pageAsset: pageRender });
                                         patchState(store, {
-                                            status: UVE_STATUS.LOADED,
-                                            page: pageRender?.page,
-                                            site: pageRender?.site,
-                                            viewAs: pageRender?.viewAs,
-                                            template: pageRender?.template,
-                                            urlContentMap: pageRender?.urlContentMap,
-                                            containers: pageRender?.containers,
-                                            vanityUrl: pageRender?.vanityUrl,
-                                            numberContents: pageRender?.numberContents
+                                            status: UVE_STATUS.LOADED
                                         });
                                     },
-                                    error: (e) => {
+                                    (e) => {
                                         console.error(e);
                                         patchState(store, {
                                             status: UVE_STATUS.ERROR
                                         });
                                     }
-                                })
+                                )
                             );
                         }),
                         catchError((e) => {
@@ -210,7 +197,7 @@ export function withSave(deps: WithSaveDeps) {
                             next: () => {
                                 // Success - clear history and set current state as the new base (last saved state)
                                 // This ensures future rollbacks always go back to this saved state
-                                const currentResponse = deps.graphqlResponse();
+                                const currentResponse = deps.pageAssetResponse();
                                 if (currentResponse) {
                                     deps.clearHistory();
                                     deps.addHistory(currentResponse);
@@ -220,7 +207,7 @@ export function withSave(deps: WithSaveDeps) {
                                 console.error('Error saving style properties:', error);
 
                                 // Rollback the optimistic update to the last saved state
-                                const rolledBack = deps.rollbackGraphqlResponse();
+                                const rolledBack = deps.rollbackPageAssetResponse();
 
                                 if (!rolledBack) {
                                     console.error(
@@ -231,7 +218,7 @@ export function withSave(deps: WithSaveDeps) {
                                 }
 
                                 // Update iframe with rolled back state
-                                const rolledBackResponse = deps.$customGraphqlResponse();
+                                const rolledBackResponse = deps.pageClientResponse();
                                 if (rolledBackResponse) {
                                     iframeMessenger.sendPageData(rolledBackResponse);
                                 }

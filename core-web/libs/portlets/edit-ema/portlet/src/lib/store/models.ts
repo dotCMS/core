@@ -8,13 +8,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
-    DotCMSPage,
-    DotCMSPageAssetContainers,
-    DotCMSSite,
-    DotCMSTemplate,
-    DotCMSURLContentMap,
-    DotCMSVanityUrl,
-    DotCMSViewAs
+    DotCMSPage
 } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
@@ -110,18 +104,10 @@ export interface UVEState {
     pageParams?: DotPageAssetParams;
     workflowActions?: DotCMSWorkflowAction[];
 
-    // Normalized page response (Phase 1: Flattened structure)
-    // Required properties (null during loading/error, populated when loaded)
-    page: DotCMSPage | null;
-    site: DotCMSSite | null;
-    template: DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null;
-    containers: DotCMSPageAssetContainers | null;
-
-    // Optional properties (from API - may not be present even when loaded)
-    viewAs?: DotCMSViewAs;
-    vanityUrl?: DotCMSVanityUrl;
-    urlContentMap?: DotCMSURLContentMap;
-    numberContents?: number;
+    // Note: Page asset properties (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
+    // are now accessed via computed signals from withPageAsset feature.
+    // This eliminates duplication with pageAssetResponse in ClientConfigState.
+    // Use: store.pageData(), store.pageSite(), store.pageContainers(), etc.
 
     // Status
     status: UVE_STATUS;
@@ -138,12 +124,31 @@ export interface UVEState {
     pageType: PageType;
 
     // ============ UI STATE (Transient) ============
-    // Phase 3.2: Nested UI state for better organization
+    // Phase 6: Flattened editor state with domain-prefixed properties (editor*)
     /**
-     * Editor UI state - transient user interactions
-     * Includes drag/drop state, selected contentlet, panel preferences
+     * Editor drag and drop state
      */
-    editor: EditorUIState;
+    editorDragItem: EmaDragItem | null;
+    editorBounds: Container[];
+    editorState: EDITOR_STATE;
+
+    /**
+     * Editor contentlet management
+     */
+    editorActiveContentlet: ActionPayload | null;
+    editorContentArea: ContentletArea | null;
+
+    /**
+     * Editor UI panel preferences (user-configurable)
+     */
+    editorPaletteOpen: boolean;
+    editorRightSidebarOpen: boolean;
+
+    /**
+     * Editor-specific data
+     */
+    editorOgTags: SeoMetaTags | null;
+    editorStyleSchemas: StyleEditorFormSchema[];
 
     /**
      * View state - editor view modes (edit vs preview) and preview configuration
@@ -153,6 +158,7 @@ export interface UVEState {
 
     // Note: isClientReady removed from UVEState (only in ClientConfigState via withClient)
     // Note: viewParams moved to view.viewParams
+    // Note: editor nested object removed - flattened to editor* prefixed properties
 }
 
 /**

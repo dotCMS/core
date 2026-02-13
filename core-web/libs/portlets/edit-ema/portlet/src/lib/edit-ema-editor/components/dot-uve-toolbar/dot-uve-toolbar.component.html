@@ -63,7 +63,7 @@
     }
 
     <div class="p-toolbar-group-end">
-        @if ($toggleLockOptions(); as lockOptions) {
+        @if ($workflowLockOptions(); as lockOptions) {
             <dot-toggle-lock-button
                 [toggleLockOptions]="lockOptions"
                 (toggleLockClick)="handleToggleLock($event)"

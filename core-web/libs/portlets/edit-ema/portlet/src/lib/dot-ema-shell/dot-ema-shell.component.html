@@ -1,5 +1,5 @@
 @if ($canRead()) {
-    @if ($toggleLockOptions()?.showBanner && $showBanner()) {
+    @if ($workflowLockOptions()?.showBanner && $showBanner()) {
         <p-messages severity="warning" data-testid="message">
             <ng-template pTemplate="content">
                 <div class="flex align-items-center justify-content-between gap-2 w-full">
@@ -8,9 +8,9 @@
                         <span class="lock-message" data-testid="message-content">
                             {{
                                 'uve.shell.page.locked.locked.by'
-                                    | dm: [$toggleLockOptions().lockedBy]
+                                    | dm: [$workflowLockOptions().lockedBy]
                             }}
-                            @if ($toggleLockOptions().canLock) {
+                            @if ($workflowLockOptions().canLock) {
                                 <button class="unlock-link" type="button" (click)="toggleLock()">
                                     {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
                                 </button>

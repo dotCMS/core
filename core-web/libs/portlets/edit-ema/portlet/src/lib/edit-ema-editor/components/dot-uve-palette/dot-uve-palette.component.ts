@@ -52,9 +52,9 @@ export class DotUvePaletteComponent {
      * Computed signals that read from UVEStore for shared state.
      * Made public for testing purposes.
      */
-    readonly $pagePath = computed(() => this.uveStore.$pageURI());
-    readonly $languageId = computed(() => this.uveStore.$languageId());
-    readonly $variantId = computed(() => this.uveStore.$variantId());
+    readonly $pagePath = computed(() => this.uveStore.pageURI());
+    readonly $languageId = computed(() => this.uveStore.pageLanguageId());
+    readonly $variantId = computed(() => this.uveStore.pageVariantId());
 
     /**
      * Active tab - read from local state, not global store.

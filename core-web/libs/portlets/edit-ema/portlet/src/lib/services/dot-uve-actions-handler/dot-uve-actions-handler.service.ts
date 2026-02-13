@@ -83,7 +83,7 @@ export class DotUveActionsHandlerService {
                 if (isSameUrl) {
                     uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    uveStore.loadPageAsset({
+                    uveStore.pageLoad({
                         url: payload.url,
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
@@ -113,11 +113,12 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;
             }) => {
-                if (uveStore.editor().state === EDITOR_STATE.INLINE_EDITING) {
+                if (uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
                     return;
                 }
 
-                const { contentlet, container } = uveStore.editor().contentArea.payload;
+                const contentArea = uveStore.editorContentArea();
+                const { contentlet, container } = contentArea.payload;
                 const currentTreeNode = uveStore.getCurrentTreeNode(container, contentlet);
 
                 this.dotCopyContentModalService
@@ -134,7 +135,7 @@ export class DotUveActionsHandlerService {
                             uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                             if (res) {
-                                uveStore.reloadCurrentPage();
+                                uveStore.pageReload();
                             }
                         })
                     )
@@ -206,7 +207,7 @@ export class DotUveActionsHandlerService {
                             }
                         })
                     )
-                    .subscribe(() => uveStore.reloadCurrentPage());
+                    .subscribe(() => uveStore.pageReload());
             },
             [DotCMSUVEAction.CLIENT_READY]: (devConfig: {
                 graphql: {
@@ -224,14 +225,14 @@ export class DotUveActionsHandlerService {
 
                 const { graphql, params, query: rawQuery } = devConfig || {};
                 const { query = rawQuery, variables } = graphql || {};
-                const legacyGraphqlResponse = !!rawQuery;
+                const legacyResponseFormat = !!rawQuery;
 
                 if (query || rawQuery) {
-                    uveStore.setCustomGraphQL({ query, variables }, legacyGraphqlResponse);
+                    uveStore.setCustomClient({ query, variables }, legacyResponseFormat);
                 }
 
                 const pageParams = convertClientParamsToPageParams(params);
-                uveStore.reloadCurrentPage(pageParams);
+                uveStore.pageReload(pageParams);
                 uveStore.setIsClientReady(true);
             },
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
@@ -242,7 +243,7 @@ export class DotUveActionsHandlerService {
                     startLevel,
                     depth,
                     pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.site().identifier
+                    hostId: uveStore.pageSite().identifier
                 });
 
                 dialog.openDialogOnUrl(

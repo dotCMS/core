@@ -136,7 +136,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
     describe('Nested State Structure', () => {
         describe('editor.panels', () => {
             it('should have nested palette and rightSidebar under panels', () => {
-                const editor = store.editor();
+                const editor = store.editorState();
 
                 expect(editor.panels).toBeDefined();
                 expect(editor.panels.palette).toBeDefined();
@@ -144,7 +144,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             });
 
             it('should initialize panels with default values', () => {
-                const panels = store.editor().panels;
+                const panels = store.editorState().panels;
 
                 expect(panels.palette.open).toBe(true); // Default: palette open
                 expect(panels.rightSidebar.open).toBe(false); // Default: sidebar closed
@@ -153,21 +153,21 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             it('should update palette.open via setPaletteOpen', () => {
                 store.setPaletteOpen(false);
 
-                expect(store.editor().panels.palette.open).toBe(false);
+                expect(store.editorState().panels.palette.open).toBe(false);
 
                 store.setPaletteOpen(true);
 
-                expect(store.editor().panels.palette.open).toBe(true);
+                expect(store.editorState().panels.palette.open).toBe(true);
             });
 
             it('should update rightSidebar.open via setRightSidebarOpen', () => {
                 store.setRightSidebarOpen(true);
 
-                expect(store.editor().panels.rightSidebar.open).toBe(true);
+                expect(store.editorState().panels.rightSidebar.open).toBe(true);
 
                 store.setRightSidebarOpen(false);
 
-                expect(store.editor().panels.rightSidebar.open).toBe(false);
+                expect(store.editorState().panels.rightSidebar.open).toBe(false);
             });
 
             it('should preserve other panel state when updating one panel', () => {
@@ -179,14 +179,14 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
                 store.setPaletteOpen(true);
 
                 // Verify palette changed but rightSidebar remained
-                expect(store.editor().panels.palette.open).toBe(true);
-                expect(store.editor().panels.rightSidebar.open).toBe(true); // Unchanged
+                expect(store.editorState().panels.palette.open).toBe(true);
+                expect(store.editorState().panels.rightSidebar.open).toBe(true); // Unchanged
             });
         });
 
         describe('editor functional state', () => {
             it('should maintain separation between panels and functional state', () => {
-                const editor = store.editor();
+                const editor = store.editorState();
 
                 // Functional state
                 expect(editor.dragItem).toBeDefined();
@@ -207,12 +207,12 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
                 // Set drag item
                 store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
 
-                expect(store.editor().dragItem).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
-                expect(store.editor().state).toBe(EDITOR_STATE.DRAGGING);
+                expect(store.editorState().dragItem).toEqual(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                expect(store.editorState()).toBe(EDITOR_STATE.DRAGGING);
 
                 // Panel state should be unaffected
-                expect(store.editor().panels.palette.open).toBe(true);
-                expect(store.editor().panels.rightSidebar.open).toBe(false);
+                expect(store.editorState().panels.palette.open).toBe(true);
+                expect(store.editorState().panels.rightSidebar.open).toBe(false);
             });
 
             it('should handle bounds state independently from panels', () => {
@@ -220,19 +220,19 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
                 store.setEditorBounds(bounds);
 
-                expect(store.editor().bounds).toEqual(bounds);
+                expect(store.editorState().bounds).toEqual(bounds);
                 // Panel state should be unaffected
-                expect(store.editor().panels.palette.open).toBe(true);
+                expect(store.editorState().panels.palette.open).toBe(true);
             });
 
             it('should handle contentArea state independently from panels', () => {
                 store.setContentletArea(MOCK_CONTENTLET_AREA);
 
-                expect(store.editor().contentArea).toEqual(MOCK_CONTENTLET_AREA);
-                expect(store.editor().state).toBe(EDITOR_STATE.IDLE);
+                expect(store.editorState().contentArea).toEqual(MOCK_CONTENTLET_AREA);
+                expect(store.editorState()).toBe(EDITOR_STATE.IDLE);
 
                 // Panel state should be unaffected
-                expect(store.editor().panels.palette.open).toBe(true);
+                expect(store.editorState().panels.palette.open).toBe(true);
             });
         });
 
@@ -261,13 +261,13 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
             it('should update toolbar state independently from editor', () => {
                 // Update toolbar
-                store.setOrientation(Orientation.PORTRAIT);
+                store.viewSetOrientation(Orientation.PORTRAIT);
 
                 expect(store.view().orientation).toBe(Orientation.PORTRAIT);
 
                 // Editor state should be unaffected
-                expect(store.editor().panels.palette.open).toBe(true);
-                expect(store.editor().state).toBe(EDITOR_STATE.IDLE);
+                expect(store.editorState().panels.palette.open).toBe(true);
+                expect(store.editorState()).toBe(EDITOR_STATE.IDLE);
             });
         });
     });
@@ -283,13 +283,13 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
             // Close palette first
             store.setPaletteOpen(false);
-            expect(store.editor().panels.palette.open).toBe(false);
+            expect(store.editorState().panels.palette.open).toBe(false);
 
             // Set active contentlet - should auto-open palette
             store.setActiveContentlet(mockContentlet);
 
             expect(store.editor.activeContentlet()).toEqual(mockContentlet);
-            expect(store.editor().panels.palette.open).toBe(true); // Auto-opened
+            expect(store.editorState().panels.palette.open).toBe(true); // Auto-opened
         });
 
         it('should reset all editor properties while preserving panel state', () => {
@@ -301,21 +301,21 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             store.setRightSidebarOpen(true);
 
             // Remember panel state
-            const paletteWasOpen = store.editor().panels.palette.open;
-            const sidebarWasOpen = store.editor().panels.rightSidebar.open;
+            const paletteWasOpen = store.editorState().panels.palette.open;
+            const sidebarWasOpen = store.editorState().panels.rightSidebar.open;
 
             // Reset editor properties
             store.resetEditorProperties();
 
             // Functional state should be reset
-            expect(store.editor().dragItem).toBeNull();
-            expect(store.editor().bounds).toEqual([]);
-            expect(store.editor().contentArea).toBeNull();
-            expect(store.editor().state).toBe(EDITOR_STATE.IDLE);
+            expect(store.editorState().dragItem).toBeNull();
+            expect(store.editorState().bounds).toEqual([]);
+            expect(store.editorState().contentArea).toBeNull();
+            expect(store.editorState()).toBe(EDITOR_STATE.IDLE);
 
             // Panel state should be preserved (user preferences)
-            expect(store.editor().panels.palette.open).toBe(paletteWasOpen);
-            expect(store.editor().panels.rightSidebar.open).toBe(sidebarWasOpen);
+            expect(store.editorState().panels.palette.open).toBe(paletteWasOpen);
+            expect(store.editorState().panels.rightSidebar.open).toBe(sidebarWasOpen);
         });
     });
 
@@ -356,8 +356,8 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
             // Debug: Check individual computed values
             // console.log('$canEditPage:', store.$canEditPage());
-            // console.log('contentArea:', store.editor().contentArea);
-            // console.log('editor.state:', store.editor().state);
+            // console.log('contentArea:', store.editorState().contentArea);
+            // console.log('editor.state:', store.editorState());
 
             // Computed should work with nested state
             // For now, just verify the computed returns a boolean based on state
@@ -384,12 +384,12 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
     describe('State Integrity', () => {
         it('should maintain immutability when updating nested state', () => {
-            const editorBefore = store.editor();
+            const editorBefore = store.editorState();
             const panelsBefore = editorBefore.panels;
 
             store.setPaletteOpen(false);
 
-            const editorAfter = store.editor();
+            const editorAfter = store.editorState();
             const panelsAfter = editorAfter.panels;
 
             // References should be different (immutable)
@@ -415,14 +415,14 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
         });
 
         it('should not affect unrelated state when updating toolbar', () => {
-            const editorBefore = store.editor();
+            const editorBefore = store.editorState();
             const statusBefore = store.status();
 
             // Update toolbar state
-            store.setOrientation(Orientation.PORTRAIT);
+            store.viewSetOrientation(Orientation.PORTRAIT);
 
             // Unrelated state should be unchanged
-            expect(store.editor()).toBe(editorBefore);
+            expect(store.editorState()).toBe(editorBefore);
             expect(store.status()).toBe(statusBefore);
         });
     });

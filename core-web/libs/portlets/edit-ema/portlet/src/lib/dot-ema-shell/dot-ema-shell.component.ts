@@ -62,14 +62,14 @@ export class DotEmaShellComponent implements OnInit {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
-    protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+    protected readonly $workflowLockOptions = this.uveStore.$workflowLockOptions;
 
     protected readonly $showBanner = signal<boolean>(true);
 
     // Component builds its own menu items (Phase 2.1: Move view models from store to components)
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
-        const page = this.uveStore.page();
-        const template = this.uveStore.template();
+        const page = this.uveStore.pageData();
+        const template = this.uveStore.pageTemplate();
         const isLoading = this.uveStore.status() === UVE_STATUS.LOADING;
         const isEnterpriseLicense = this.uveStore.isEnterprise();
         const templateDrawed = template?.drawed;
@@ -127,13 +127,13 @@ export class DotEmaShellComponent implements OnInit {
     // Component builds SEO params locally
     protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
         // Removed pageAPIResponse - use normalized accessors
-        const url = sanitizeURL(this.uveStore.page().pageURI);
+        const url = sanitizeURL(this.uveStore.pageData().pageURI);
         const currentUrl = url.startsWith('/') ? url : '/' + url;
         const requestHostName = getRequestHostName(this.uveStore.pageParams());
 
         return {
-            siteId: this.uveStore.site()?.identifier,
-            languageId: this.uveStore.viewAs()?.language.id,
+            siteId: this.uveStore.pageSite()?.identifier,
+            languageId: this.uveStore.pageViewAs()?.language.id,
             currentUrl,
             requestHostName
         };
@@ -150,7 +150,7 @@ export class DotEmaShellComponent implements OnInit {
     // Component determines read permissions locally
     protected readonly $canRead = computed<boolean>(() => {
         // Removed pageAPIResponse - use normalized accessors
-        return this.uveStore.page()?.canRead ?? false;
+        return this.uveStore.pageData()?.canRead ?? false;
     });
 
     /**
@@ -160,7 +160,7 @@ export class DotEmaShellComponent implements OnInit {
      * @memberof DotEmaShellComponent
      */
     readonly $updateQueryParamsEffect = effect(() => {
-        const params = this.uveStore.$friendlyParams();
+        const params = this.uveStore.pageFriendlyParams();
 
         const { data } = this.#activatedRoute.snapshot;
 
@@ -172,7 +172,7 @@ export class DotEmaShellComponent implements OnInit {
     });
 
     readonly $updateBreadcrumbEffect = effect(() => {
-        const page = this.uveStore.page();
+        const page = this.uveStore.pageData();
 
         if (page) {
             this.#globalStore.addNewBreadcrumb({
@@ -198,7 +198,7 @@ export class DotEmaShellComponent implements OnInit {
         // Check if we already have page data loaded with matching params
         // This prevents reloading when navigating between child routes (content <-> layout)
         const currentPageParams = this.uveStore.pageParams();
-        const hasPageData = !!this.uveStore.page();
+        const hasPageData = !!this.uveStore.pageData();
         const paramsMatch = currentPageParams &&
             currentPageParams.url === params.url &&
             currentPageParams.language_id === params.language_id &&
@@ -206,7 +206,7 @@ export class DotEmaShellComponent implements OnInit {
 
         // Only load if we don't have data or params have changed
         if (!hasPageData || !paramsMatch) {
-            this.uveStore.loadPageAsset(params);
+            this.uveStore.pageLoad(params);
         }
 
         this.#siteService.switchSite$
@@ -218,7 +218,7 @@ export class DotEmaShellComponent implements OnInit {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
                 // Removed pageAPIResponse - use normalized accessors
-                this.uveStore.getWorkflowActions(this.uveStore.page().inode);
+                this.uveStore.workflowFetch(this.uveStore.pageData().inode);
                 break;
             }
 
@@ -238,16 +238,16 @@ export class DotEmaShellComponent implements OnInit {
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.urlContentMap());
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageUrlContentMap());
 
         if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
             // Navigate to the new URL if it's different from the current one
-            this.uveStore.loadPageAsset({ url: targetUrl });
+            this.uveStore.pageLoad({ url: targetUrl });
 
             return;
         }
 
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
     }
 
     /**
@@ -260,7 +260,7 @@ export class DotEmaShellComponent implements OnInit {
         if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
-            const page = this.uveStore.page();
+            const page = this.uveStore.pageData();
 
             this.dialog.editContentlet({
                 inode: page.inode,
@@ -276,7 +276,7 @@ export class DotEmaShellComponent implements OnInit {
      * Reloads the component from the dialog.
      */
     reloadFromDialog() {
-        this.uveStore.reloadCurrentPage();
+        this.uveStore.pageReload();
     }
 
     /**
@@ -288,11 +288,11 @@ export class DotEmaShellComponent implements OnInit {
 
     /**
      * Toggles the lock state of the current page
-     * Gets lock options from toggleLockOptions signal and calls store method to handle the lock/unlock
+     * Gets lock options from workflowLockOptions signal and calls store method to handle the lock/unlock
      */
     toggleLock() {
-        const { inode, isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
-        this.uveStore.toggleLock(inode, isLocked, isLockedByCurrentUser);
+        const { inode, isLocked, isLockedByCurrentUser, lockedBy } = this.$workflowLockOptions();
+        this.uveStore.workflowToggleLock(inode, isLocked, isLockedByCurrentUser, lockedBy);
     }
 
     /**

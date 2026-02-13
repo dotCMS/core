@@ -1,4 +1,4 @@
-export interface ZoomCanvasStyles {
+export interface ViewZoomCanvasStyles {
     outer: {
         width: string;
         height: string;
@@ -12,16 +12,16 @@ export interface ZoomCanvasStyles {
 }
 
 /**
- * Zoom UI State (transient)
+ * View Zoom UI State (transient)
  * Manages zoom level, zoom mode, and canvas dimensions for the editor
  */
-export interface ZoomState {
+export interface ViewZoomState {
     /** Current zoom level (0.1 to 3.0) */
-    zoomLevel: number;
+    viewZoomLevel: number;
     /** Whether zoom mode is active (temporary state during zoom gestures) */
-    isZoomMode: boolean;
+    viewZoomIsActive: boolean;
     /** Height of the iframe document for canvas calculations */
-    iframeDocHeight: number;
+    viewIframeDocHeight: number;
     /** Zoom level at gesture start (for trackpad pinch gestures) */
-    gestureStartZoom: number;
+    viewGestureStartZoom: number;
 }

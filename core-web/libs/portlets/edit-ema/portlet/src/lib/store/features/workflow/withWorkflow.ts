@@ -16,7 +16,7 @@ import { UVEState } from '../../models';
 
 interface WithWorkflowState {
     workflowActions: DotCMSWorkflowAction[];
-    workflowLoading: boolean;
+    workflowIsLoading: boolean;
 }
 
 /**
@@ -28,8 +28,8 @@ interface WithWorkflowState {
  */
 export interface WithWorkflowMethods {
     // Methods
-    getWorkflowActions: RxMethod<string>;
-    setWorkflowActionLoading: (workflowLoading: boolean) => void;
+    workflowFetch: RxMethod<string>;
+    setWorkflowActionLoading: (workflowIsLoading: boolean) => void;
 }
 
 /**
@@ -45,7 +45,7 @@ export function withWorkflow() {
         },
         withState<WithWorkflowState>({
             workflowActions: [],
-            workflowLoading: true
+            workflowIsLoading: true
         }),
         withMethods((store) => {
             const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
@@ -54,11 +54,11 @@ export function withWorkflow() {
                 /**
                  * Load workflow actions
                  */
-                getWorkflowActions: rxMethod<string>(
+                workflowFetch: rxMethod<string>(
                     pipe(
                         tap(() => {
                             patchState(store, {
-                                workflowLoading: true
+                                workflowIsLoading: true
                             });
                         }),
                         switchMap((pageInode) => {
@@ -67,7 +67,7 @@ export function withWorkflow() {
                                     next: (workflowActions = []) => {
                                         patchState(store, {
                                             workflowActions,
-                                            workflowLoading: false
+                                            workflowIsLoading: false
                                         });
                                     },
                                     error: ({ status: errorStatus }: HttpErrorResponse) => {
@@ -81,8 +81,8 @@ export function withWorkflow() {
                         })
                     )
                 ),
-                setWorkflowActionLoading: (workflowLoading: boolean) => {
-                    patchState(store, { workflowLoading });
+                setWorkflowActionLoading: (workflowIsLoading: boolean) => {
+                    patchState(store, { workflowIsLoading });
                 }
             };
         })

@@ -46,8 +46,15 @@ const initialState: EditorToolbarState = {
 
 export function withUVEToolbar() {
     return signalStoreFeature(
+        // Note: This feature requires withPageAsset to be composed before it
+        // to provide access to pageData(), pageSite(), pageViewAs(), pageUrlContentMap(), etc.
         {
-            state: type<UVEState>()
+            state: type<UVEState & {
+                pageData: () => any;
+                pageSite: () => any;
+                pageViewAs: () => any;
+                pageUrlContentMap: () => any;
+            }>()
         },
         withState<EditorToolbarState>(initialState),
         withFlags(UVE_FEATURE_FLAGS),
@@ -66,18 +73,18 @@ export function withUVEToolbar() {
                 const bookmarksUrl = createFavoritePagesURL({
                     languageId: Number(params?.language_id),
                     pageURI: url,
-                    siteId: store.site()?.identifier
+                    siteId: store.pageSite()?.identifier
                 });
 
                 const isPageLocked = computeIsPageLocked(
-                    store.page() ?? null,
+                    store.pageData() ?? null,
                     store.currentUser()
                 );
-                const shouldShowUnlock = isPageLocked && store.page()?.canLock;
+                const shouldShowUnlock = isPageLocked && store.pageData()?.canLock;
                 const isExperimentRunning = experiment?.status === DotExperimentStatus.RUNNING;
 
                 const unlockButton = {
-                    inode: store.page()?.inode,
+                    inode: store.pageData()?.inode,
                     loading: store.status() === UVE_STATUS.LOADING
                 };
 
@@ -99,16 +106,16 @@ export function withUVEToolbar() {
                         apiUrl: pageAPI
                     },
                     preview: prevewItem,
-                    currentLanguage: store.viewAs()?.language,
+                    currentLanguage: store.pageViewAs()?.language,
                     urlContentMap: store.isEditState()
-                        ? (store.urlContentMap() ?? null)
+                        ? (store.pageUrlContentMap() ?? null)
                         : null,
                     runningExperiment: isExperimentRunning ? experiment : null,
                     unlockButton: shouldShowUnlock ? unlockButton : null
                 };
             }),
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.urlContentMap() ?? null;
+                return store.pageUrlContentMap() ?? null;
             }),
             $unlockButton: computed<UnlockOptions | null>(() => {
                 const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
@@ -119,27 +126,27 @@ export function withUVEToolbar() {
 
                 const currentUser = store.currentUser();
 
-                const isLocked = computeIsPageLocked(store.page() ?? null, currentUser);
+                const isLocked = computeIsPageLocked(store.pageData() ?? null, currentUser);
                 const info = {
-                    message: store.page()?.canLock
+                    message: store.pageData()?.canLock
                         ? 'editpage.toolbar.page.release.lock.locked.by.user'
                         : 'editpage.locked-by',
-                    args: [store.page()?.lockedByName]
+                    args: [store.pageData()?.lockedByName]
                 };
 
-                const disabled = !store.page()?.canLock;
+                const disabled = !store.pageData()?.canLock;
 
                 return isLocked
                     ? {
-                          inode: store.page()?.inode,
+                          inode: store.pageData()?.inode,
                           loading: store.status() === UVE_STATUS.LOADING,
                           info,
                           disabled
                       }
                     : null;
             }),
-            $toggleLockOptions: computed<ToggleLockOptions | null>(() => {
-                const page = store.page() ?? null;
+            $workflowLockOptions: computed<ToggleLockOptions | null>(() => {
+                const page = store.pageData() ?? null;
                 const currentUser = store.currentUser();
 
                 // Only show lock controls when feature flag is enabled AND in edit mode
@@ -172,8 +179,8 @@ export function withUVEToolbar() {
             $personaSelector: computed<PersonaSelectorProps>(() => {
 
                 return {
-                    pageId: store.page()?.identifier,
-                    value: store.viewAs()?.persona ?? DEFAULT_PERSONA
+                    pageId: store.pageData()?.identifier,
+                    value: store.pageViewAs()?.persona ?? DEFAULT_PERSONA
                 };
             }),
             $apiURL: computed<string>(() => {
@@ -188,8 +195,8 @@ export function withUVEToolbar() {
             $infoDisplayProps: computed<InfoOptions>(() => {
                 const mode = store.pageParams()?.mode;
 
-                if (!getIsDefaultVariant(store.viewAs()?.variantId)) {
-                    const variantId = store.viewAs()?.variantId;
+                if (!getIsDefaultVariant(store.pageViewAs()?.variantId)) {
+                    const variantId = store.pageViewAs()?.variantId;
 
                     const currentExperiment = store.experiment?.();
 
@@ -222,7 +229,7 @@ export function withUVEToolbar() {
                 const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
                 const isDefaultVariant = getIsDefaultVariant(
-                    store.viewAs()?.variantId
+                    store.pageViewAs()?.variantId
                 );
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;

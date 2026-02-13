@@ -22,13 +22,13 @@ import { withTimeMachine } from '../timeMachine/withTimeMachine';
  * @interface ClientConfigState
  */
 export interface ClientConfigState {
-    legacyGraphqlResponse: boolean;
+    legacyResponseFormat: boolean;
     isClientReady: boolean;
-    graphqlRequest: {
+    requestMetadata: {
         query: string;
         variables: Record<string, string>;
     };
-    graphqlResponse: {
+    pageAssetResponse: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
     };
@@ -43,30 +43,29 @@ export interface ClientConfigState {
  */
 export interface WithClientMethods {
     // State (added via withState, available as signals on the store)
-    graphqlRequest: () => { query: string; variables: Record<string, string> } | null;
-    graphqlResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
+    requestMetadata: () => { query: string; variables: Record<string, string> } | null;
+    pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     isClientReady: () => boolean;
-    legacyGraphqlResponse: () => boolean;
+    legacyResponseFormat: () => boolean;
 
-    // Computed: layout from graphqlResponse.pageAsset (single source of truth)
+    // Computed: layout from pageAssetResponse.pageAsset (single source of truth)
     layout: () => DotCMSLayout | null;
 
     // Methods
     setIsClientReady: (isClientReady: boolean) => void;
-    setCustomGraphQL: (graphqlRequest: { query: string; variables: Record<string, string> }, legacyGraphqlResponse: boolean) => void;
-    setGraphqlResponse: (graphqlResponse: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    setCustomClient: (requestMetadata: { query: string; variables: Record<string, string> }, legacyResponseFormat: boolean) => void;
+    setPageAssetResponse: (pageAssetResponse: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
     resetClientConfiguration: () => void;
 
     // Computed
-    $customGraphqlResponse: Signal<any>;
-    $graphqlWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
 }
 
 const clientState: ClientConfigState = {
-    graphqlRequest: null,
-    graphqlResponse: null,
+    requestMetadata: null,
+    pageAssetResponse: null,
     isClientReady: false,
-    legacyGraphqlResponse: false
+    legacyResponseFormat: false
 };
 
 /**
@@ -83,54 +82,54 @@ export function withClient() {
             state: type<UVEState>()
         },
         withState<ClientConfigState>(clientState),
-        // Add time machine to track graphqlResponse history for optimistic updates
-        withTimeMachine<ClientConfigState['graphqlResponse']>({
+        // Add time machine to track pageAssetResponse history for optimistic updates
+        withTimeMachine<ClientConfigState['pageAssetResponse']>({
             maxHistory: 50, // Reasonable limit for style editor undo
-            deepClone: true // Important: graphqlResponse has nested objects
+            deepClone: true // Important: pageAssetResponse has nested objects
         }),
         withMethods((store) => {
             return {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setCustomGraphQL: ({ query, variables }, legacyGraphqlResponse) => {
+                setCustomClient: ({ query, variables }, legacyResponseFormat) => {
                     patchState(store, {
-                        legacyGraphqlResponse,
-                        graphqlRequest: {
+                        legacyResponseFormat,
+                        requestMetadata: {
                             query,
                             variables
                         }
                     });
                 },
-                setGraphqlResponse: (graphqlResponse) => {
-                    patchState(store, { graphqlResponse });
+                setPageAssetResponse: (pageAssetResponse) => {
+                    patchState(store, { pageAssetResponse });
                 },
                 /**
-                 * Sets graphqlResponse optimistically by saving current state to history first.
+                 * Sets pageAssetResponse optimistically by saving current state to history first.
                  * Used for optimistic updates that can be rolled back on failure.
                  *
-                 * @param graphqlResponse - The new graphql response to set
+                 * @param pageAssetResponse - The new page asset response to set
                  */
-                setGraphqlResponseOptimistic: (
-                    graphqlResponse: ClientConfigState['graphqlResponse']
+                setPageAssetResponseOptimistic: (
+                    pageAssetResponse: ClientConfigState['pageAssetResponse']
                 ) => {
-                    const currentResponse = store.graphqlResponse();
+                    const currentResponse = store.pageAssetResponse();
                     // Save snapshot before updating (for optimistic updates rollback)
                     if (currentResponse) {
                         store.addHistory(currentResponse);
                     }
-                    patchState(store, { graphqlResponse });
+                    patchState(store, { pageAssetResponse });
                 },
                 /**
-                 * Rolls back to the previous graphqlResponse state.
+                 * Rolls back to the previous pageAssetResponse state.
                  * Used when an optimistic update fails.
                  *
                  * @returns true if rollback was successful, false if no history available
                  */
-                rollbackGraphqlResponse: (): boolean => {
+                rollbackPageAssetResponse: (): boolean => {
                     const previousState = store.undo();
                     if (previousState !== null) {
-                        patchState(store, { graphqlResponse: previousState });
+                        patchState(store, { pageAssetResponse: previousState });
                         return true;
                     }
                     return false;
@@ -144,26 +143,10 @@ export function withClient() {
         withComputed((store) => {
             return {
                 layout: computed<DotCMSLayout | null>(
-                    () => store.graphqlResponse()?.pageAsset?.layout ?? null
+                    () => store.pageAssetResponse()?.pageAsset?.layout ?? null
                 ),
-                $customGraphqlResponse: computed(() => {
-                    if (!store.graphqlResponse()) {
-                        return null;
-                    }
-
-                    // Old customers using graphQL expect only the page.
-                    // We can remove this once we are in stable and tell the devs this won't work in new dotCMS versions.
-                    if (store.legacyGraphqlResponse()) {
-                        return store.graphqlResponse()?.pageAsset;
-                    }
-
-                    return {
-                        ...store.graphqlResponse(),
-                        graphqlRequest: store.graphqlRequest()
-                    };
-                }),
-                $graphqlWithParams: computed(() => {
-                    if (!store.graphqlRequest()) {
+                $requestWithParams: computed(() => {
+                    if (!store.requestMetadata()) {
                         return null;
                     }
 
@@ -171,9 +154,9 @@ export function withClient() {
                     const { mode, language_id, url, variantName } = params;
 
                     return {
-                        ...store.graphqlRequest(),
+                        ...store.requestMetadata(),
                         variables: {
-                            ...store.graphqlRequest().variables,
+                            ...store.requestMetadata().variables,
                             url,
                             mode,
                             languageId: language_id,

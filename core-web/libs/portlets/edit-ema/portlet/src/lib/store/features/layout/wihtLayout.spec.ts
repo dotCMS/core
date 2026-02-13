@@ -76,7 +76,7 @@ describe('withLayout', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        store.setGraphqlResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
+        store.setPageAssetResponse({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
     describe('withComputed', () => {

@@ -115,10 +115,10 @@ export const uveStoreMock = signalStore(
     withClient(),
     withFeature((store) => withLoad({
         resetClientConfiguration: () => store.resetClientConfiguration(),
-        getWorkflowActions: (inode) => {}, // Mock implementation
-        graphqlRequest: () => store.graphqlRequest(),
-        $graphqlWithParams: computed(() => store.$graphqlWithParams()),
-        setGraphqlResponse: (response) => store.setGraphqlResponse(response),
+        workflowFetch: (inode) => {}, // Mock implementation
+        requestMetadata: () => store.requestMetadata(),
+        $requestWithParams: computed(() => store.$requestWithParams()),
+        setPageAssetResponse: (response) => store.setPageAssetResponse(response),
         addHistory: (state) => store.addHistory(state)
     }))
 );
@@ -206,7 +206,7 @@ describe('withLoad', () => {
     describe('withMethods', () => {
         describe('load', () => {
             it('should load the store with the base data', () => {
-                store.loadPageAsset(HEADLESS_BASE_QUERY_PARAMS);
+                store.pageLoad(HEADLESS_BASE_QUERY_PARAMS);
                 expect(store.page()).toEqual(MOCK_RESPONSE_HEADLESS.page);
                 expect(store.site()).toEqual(MOCK_RESPONSE_HEADLESS.site);
                 expect(store.template()).toEqual(MOCK_RESPONSE_HEADLESS.template);
@@ -226,7 +226,7 @@ describe('withLoad', () => {
                     buildPageAPIResponseFromMock(MOCK_RESPONSE_VTL)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(store.page()).toEqual(MOCK_RESPONSE_VTL.page);
                 expect(store.site()).toEqual(MOCK_RESPONSE_VTL.site);
@@ -254,7 +254,7 @@ describe('withLoad', () => {
                     of(permanentRedirect)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { url: forwardTo },
@@ -274,7 +274,7 @@ describe('withLoad', () => {
                     of(temporaryRedirect)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { url: forwardTo },
@@ -294,7 +294,7 @@ describe('withLoad', () => {
                     of(temporaryRedirect)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { url: forwardTo },
@@ -314,7 +314,7 @@ describe('withLoad', () => {
                     of(permanentRedirect)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).toHaveBeenCalledWith([], {
                     queryParams: { url: forwardTo },
@@ -332,7 +332,7 @@ describe('withLoad', () => {
                     of(permanentRedirect)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).not.toHaveBeenCalled();
             });
@@ -346,7 +346,7 @@ describe('withLoad', () => {
                     of(permanentRedirect)
                 );
 
-                store.loadPageAsset(VTL_BASE_QUERY_PARAMS);
+                store.pageLoad(VTL_BASE_QUERY_PARAMS);
 
                 expect(router.navigate).not.toHaveBeenCalled();
             });
@@ -357,7 +357,7 @@ describe('withLoad', () => {
                 const spy = jest
                     .spyOn(dotPageApiService, 'get')
                     .mockImplementation(() => of(MOCK_RESPONSE_HEADLESS));
-                store.reloadCurrentPage();
+                store.pageReload();
 
                 expect(spy).toHaveBeenCalledWith(pageParams);
             });
@@ -370,7 +370,7 @@ describe('withLoad', () => {
                     })
                 );
 
-                store.setCustomGraphQL(
+                store.setRequestMetadata(
                     {
                         query: 'query',
                         variables: {
@@ -381,9 +381,9 @@ describe('withLoad', () => {
                     },
                     true
                 );
-                store.reloadCurrentPage();
+                store.pageReload();
                 expect(dotPageApiService.getGraphQLPage).toHaveBeenCalledWith(
-                    store.$graphqlWithParams()
+                    store.$requestWithParams()
                 );
             });
         });

@@ -9,7 +9,7 @@ import { DotContentletLockerService, DotMessageService } from '@dotcms/data-acce
 import { UVEState } from '../../models';
 
 interface WithLockState {
-    lockLoading: boolean;
+    workflowLockIsLoading: boolean;
 }
 
 /**
@@ -17,7 +17,7 @@ interface WithLockState {
  * These are methods from other features that withLock needs
  */
 export interface WithLockDeps {
-    reloadCurrentPage: () => void;
+    pageReload: () => void;
 }
 
 /**
@@ -37,7 +37,7 @@ export function withLock(deps: WithLockDeps) {
             state: type<UVEState>()
         },
         withState<WithLockState>({
-            lockLoading: false
+            workflowLockIsLoading: false
         }),
         withMethods((store) => {
             const messageService = inject(MessageService);
@@ -49,7 +49,7 @@ export function withLock(deps: WithLockDeps) {
              * Internal method to lock a page
              */
             const lockPage = (inode: string) => {
-                patchState(store, { lockLoading: true });
+                patchState(store, { workflowLockIsLoading: true });
 
                 dotContentletLockerService.lock(inode).subscribe({
                     next: () => {
@@ -58,15 +58,11 @@ export function withLock(deps: WithLockDeps) {
                             summary: dotMessageService.get('edit.ema.page.lock'),
                             detail: dotMessageService.get('edit.ema.page.lock.success')
                         });
-                        const editor = store.editor();
                         patchState(store, {
-                            editor: {
-                                ...editor,
-                                activeContentlet: null
-                            },
-                            lockLoading: false
+                            editorActiveContentlet: null,
+                            workflowLockIsLoading: false
                         });
-                        deps.reloadCurrentPage();
+                        deps.pageReload();
                     },
                     error: () => {
                         messageService.add({
@@ -74,7 +70,7 @@ export function withLock(deps: WithLockDeps) {
                             summary: dotMessageService.get('edit.ema.page.lock'),
                             detail: dotMessageService.get('edit.ema.page.lock.error')
                         });
-                        patchState(store, { lockLoading: false });
+                        patchState(store, { workflowLockIsLoading: false });
                     }
                 });
             };
@@ -83,7 +79,7 @@ export function withLock(deps: WithLockDeps) {
              * Internal method to unlock a page
              */
             const unlockPage = (inode: string) => {
-                patchState(store, { lockLoading: true });
+                patchState(store, { workflowLockIsLoading: true });
 
                 dotContentletLockerService.unlock(inode).subscribe({
                     next: () => {
@@ -92,15 +88,11 @@ export function withLock(deps: WithLockDeps) {
                             summary: dotMessageService.get('edit.ema.page.unlock'),
                             detail: dotMessageService.get('edit.ema.page.unlock.success')
                         });
-                        const editor = store.editor();
                         patchState(store, {
-                            editor: {
-                                ...editor,
-                                activeContentlet: null
-                            },
-                            lockLoading: false
+                            editorActiveContentlet: null,
+                            workflowLockIsLoading: false
                         });
-                        deps.reloadCurrentPage();
+                        deps.pageReload();
                     },
                     error: () => {
                         messageService.add({
@@ -108,7 +100,7 @@ export function withLock(deps: WithLockDeps) {
                             summary: dotMessageService.get('edit.ema.page.unlock'),
                             detail: dotMessageService.get('edit.ema.page.unlock.error')
                         });
-                        patchState(store, { lockLoading: false });
+                        patchState(store, { workflowLockIsLoading: false });
                     }
                 });
             };
@@ -121,16 +113,16 @@ export function withLock(deps: WithLockDeps) {
                  * @param {string} inode - Page inode
                  * @param {boolean} isLocked - Current lock state
                  * @param {boolean} isLockedByCurrentUser - Whether current user owns the lock
+                 * @param {string} lockedBy - Name of user who locked the page (optional, only needed when locked by another user)
                  */
-                toggleLock(inode: string, isLocked: boolean, isLockedByCurrentUser: boolean) {
+                workflowToggleLock(inode: string, isLocked: boolean, isLockedByCurrentUser: boolean, lockedBy?: string) {
                     // Prevent multiple simultaneous lock/unlock operations
-                    if (store.lockLoading()) {
+                    if (store.workflowLockIsLoading()) {
                         return;
                     }
 
                     // If page is locked but NOT by current user, show confirmation
                     if (isLocked && !isLockedByCurrentUser) {
-                        const lockedBy = store.page().lockedByName;
 
                         confirmationService.confirm({
                             header: dotMessageService.get('uve.editor.unlock.confirm.header'),
