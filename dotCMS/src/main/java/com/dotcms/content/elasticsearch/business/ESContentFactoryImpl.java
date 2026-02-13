@@ -952,38 +952,27 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
-    protected List<Contentlet> findAllCurrent (final int offset, final int limit ) throws ElasticsearchException {
+    protected List<Contentlet> findAllCurrent(final int offset, final int limit) throws DotDataException {
 
-        final String indexToHit;
-
-        try {
-            indexToHit = APILocator.getIndiciesAPI().loadIndicies().getWorking();
-        }
-        catch(DotDataException ee) {
-            Logger.fatal(this, "Can't get indicies information",ee);
-            return null;
-        }
-
-        final SearchRequest searchRequest = new SearchRequest(indexToHit);
-        final SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.matchAllQuery());
-        searchSourceBuilder.size(limit);
-        searchSourceBuilder.from(offset);
-        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchSourceBuilder.fetchSource(new String[] {"inode"}, null);
-        searchRequest.source(searchSourceBuilder);
-
-        final SearchHits  hits = cachedIndexSearch(searchRequest);
-        
+        final int ultimateLimit = Math.min(limit, MAX_LIMIT);
         final List<Contentlet> contentlets = new ArrayList<>();
 
-        for (final SearchHit hit : hits ) {
-            try {
-                final Map<String, Object> sourceMap = hit.getSourceAsMap();
-                contentlets.add( find( sourceMap.get("inode").toString()) );
-            } catch ( Exception e ) {
-                throw new ElasticsearchException( e.getMessage(), e );
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL("SELECT working_inode FROM contentlet_version_info LIMIT ? OFFSET ?");
+            dotConnect.addParam(ultimateLimit);
+            dotConnect.addParam(offset);
+
+            final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+            for (final Map<String, Object> result : results) {
+                final Contentlet contentlet = find((String) result.get("working_inode"));
+                // Filter out null entries - content may have been deleted but version info not yet cleaned up
+                if (contentlet != null) {
+                    contentlets.add(contentlet);
+                }
             }
+        } catch (Exception e) {
+            throw new DotDataException("Error finding all current contentlets", e);
         }
 
         return contentlets;

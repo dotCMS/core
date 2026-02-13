@@ -1531,7 +1531,7 @@
             <dependency>
                 <groupId>com.dotcms</groupId>
                 <artifactId>tomcat-redis-session-manager</artifactId>
-                <version>1.4</version>
+                <version>1.5</version>
                 <scope>provided</scope>
             </dependency>
 

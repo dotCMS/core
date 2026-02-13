@@ -2585,3 +2585,10 @@ CREATE TABLE IF NOT EXISTS analytic_custom_attributes (
     event_type  varchar(255) primary key,
     custom_attribute jsonb not null
 );
+
+
+CREATE TABLE IF NOT EXISTS unique_fields
+(
+    unique_key_val VARCHAR PRIMARY KEY,
+    supporting_values JSONB
+);

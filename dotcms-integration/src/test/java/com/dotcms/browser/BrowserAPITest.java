@@ -140,10 +140,10 @@ public class BrowserAPITest extends IntegrationTestBase {
     @Test()
     public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
 
-        final SiteDataGen   siteDataGen   = new SiteDataGen();
-        final FolderDataGen folderDataGen = new FolderDataGen();
-        final Host          host          = siteDataGen.nextPersisted();
-        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+        final Host host = testHost;
+        final Folder folder = new FolderDataGen().site(host)
+                .name("multilang-" + System.currentTimeMillis())
+                .nextPersisted();
 
         final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
 
@@ -157,7 +157,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         List<Long> languages = new ArrayList<>();
         languages.add(persisted.getLanguageId());
-        languages.add(new LanguageDataGen().nextPersisted().getId());
+        languages.add(testLanguage.getId());
         languages.add(new LanguageDataGen().nextPersisted().getId());
 
         for (Long lang:languages) {
@@ -204,10 +204,10 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         // create a folder
         // create a 10 files
-        final SiteDataGen   siteDataGen   = new SiteDataGen();
-        final FolderDataGen folderDataGen = new FolderDataGen();
-        final Host          host          = siteDataGen.nextPersisted();
-        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+        final Host host = testHost;
+        final Folder folder = new FolderDataGen().site(host)
+                .name("pagination-" + System.currentTimeMillis())
+                .nextPersisted();
 
         for (int i = 0; i < 10; ++i) {
 
