@@ -1,0 +1,45 @@
+#set($isCopyingHost = false)
+#set($tagStorageFromURL = "")
+
+#if($request.getAttribute("CURRENT_URL").contains("copy_tag_storage"))
+	#set($isCopyingHost = true)
+	#set($tempURL = $request.getAttribute("CURRENT_URL"))
+	#set($beginning = $math.add($tempURL.indexOf("copy_tag_storage"), 19))
+	#set($tagStorageFromURL = $tempURL.substring($beginning,$math.add($beginning, 36)))
+#end
+
+<div class="flex flex-column gap-2">
+	<select
+		id="tagStorage_dropDown"
+		name="tagStorage_dropDown"
+		class="w-full"
+		#if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end
+	>
+		#foreach($c in $dotcontent.pull('+structureName:Host +deleted:false', 0, 'host.hostName asc'))
+			<option value="$c.identifier" #if($c.identifier.equals($tagStorage) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier))) selected="selected" #end>
+				#if(!$c.isSystemHost)
+					$c.hostName
+				#else
+					$text.get("tag-system-host")
+				#end
+			</option>
+		#end
+	</select>
+</div>
+
+<script type="application/javascript">
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField("tagStorage");
+    const dropDown = document.getElementById("tagStorage_dropDown");
+
+    const updateFieldFromSelect = () => {
+      field.setValue(dropDown.value || "");
+    };
+
+    // Sync select value to field on change
+    dropDown.addEventListener("change", updateFieldFromSelect);
+
+    // Initial sync on load (select is pre-populated by VTL, ensure field has the value)
+    updateFieldFromSelect();
+  });
+</script>
