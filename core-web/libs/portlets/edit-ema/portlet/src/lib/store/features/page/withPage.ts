@@ -25,7 +25,7 @@ import {
 import { PERSONA_KEY } from '../../../shared/consts';
 import { normalizeQueryParams } from '../../../utils';
 import { TranslateProps, UVEState } from '../../models';
-import { withTimeMachine } from '../timeMachine/withTimeMachine';
+import { withHistory } from '../history/withHistory';
 
 /**
  * Page loading configuration state
@@ -126,9 +126,10 @@ export function withPage() {
             state: type<UVEState>()
         },
         withState<PageLoadingConfigState>(pageLoadingConfigState),
-        // Add time machine to track pageAssetResponse history for optimistic updates
-        withTimeMachine<PageLoadingConfigState['pageAssetResponse']>({
-            maxHistory: 50, // Reasonable limit for style editor undo
+        // Add history tracking for undo/redo of page changes (style editor, layout, etc.)
+        withHistory<PageLoadingConfigState['pageAssetResponse']>({
+            selector: (store) => store.pageAssetResponse(),
+            maxHistory: 50, // Reasonable limit for undo operations
             deepClone: true // Important: pageAssetResponse has nested objects
         }),
         withMethods((store) => {
@@ -154,7 +155,7 @@ export function withPage() {
                     const currentResponse = store.pageAssetResponse();
                     // Save snapshot before updating (for optimistic updates rollback)
                     if (currentResponse) {
-                        store.addHistory(currentResponse);
+                        store.addToHistory(currentResponse);
                     }
                     patchState(store, { pageAssetResponse });
                 },

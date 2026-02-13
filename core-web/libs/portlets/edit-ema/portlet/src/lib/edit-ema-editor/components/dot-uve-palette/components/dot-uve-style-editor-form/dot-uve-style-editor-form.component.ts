@@ -273,7 +273,7 @@ export class DotUveStyleEditorFormComponent {
         // This ensures that if the API call fails, we can rollback to this exact state
         const currentGraphqlResponse = this.#uveStore.pageAssetResponse();
         if (currentGraphqlResponse) {
-            this.#uveStore.addHistory(currentGraphqlResponse);
+            this.#uveStore.addToHistory(currentGraphqlResponse);
         }
 
         // Use the store's saveStyleEditor method which handles API call and rollback on failure

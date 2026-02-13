@@ -98,7 +98,7 @@ export const UVEStore = signalStore(
         requestMetadata: () => store.requestMetadata(),
         $requestWithParams: store.$requestWithParams,
         setPageAssetResponse: (response) => store.setPageAssetResponse(response),
-        addHistory: (state) => store.addHistory(state)
+        addHistory: (state) => store.addToHistory(state)
     })),
     withMethods((store) => {
         return {
@@ -119,7 +119,7 @@ export const UVEStore = signalStore(
         setPageAssetResponse: (response) => store.setPageAssetResponse(response),
         rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
         clearHistory: () => store.clearHistory(),
-        addHistory: (response) => store.addHistory(response),
+        addHistory: (response) => store.addToHistory(response),
         pageAssetResponse: () => store.pageAssetResponse(),
         pageClientResponse: () => store.pageClientResponse(),
         pageData: () => store.pageData(),
