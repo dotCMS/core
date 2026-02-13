@@ -1,5 +1,6 @@
-import { computed, Signal } from '@angular/core';
 import { patchState, signalStoreFeature, withComputed, withMethods, withState } from '@ngrx/signals';
+
+import { computed } from '@angular/core';
 
 /**
  * Configuration for the history feature
@@ -8,7 +9,15 @@ import { patchState, signalStoreFeature, withComputed, withMethods, withState } 
 export interface WithHistoryConfig<T> {
     /**
      * Selector function to get the current state value
+     *
+     * Note: Uses `any` for the store parameter to keep the API simple and avoid requiring callers
+     * to cast. This is acceptable because:
+     * 1. withHistory is a generic composition utility that works with any store type
+     * 2. We only care about the return type (T | null), not the store's structure
+     * 3. The alternative (adding a Store generic parameter) would complicate the API
+     * 4. The selector is only used internally by the feature, not exposed to external callers
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     selector: (store: any) => T | null;
 
     /**
