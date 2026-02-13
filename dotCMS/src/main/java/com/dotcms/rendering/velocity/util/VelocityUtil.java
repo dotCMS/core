@@ -24,15 +24,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowProcessor;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
-import com.dotmarketing.util.PortletURLUtil;
-import com.dotmarketing.util.StringUtils;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
@@ -479,10 +471,17 @@ public class VelocityUtil {
         if (page == null || page.getCacheTTL() < 1) {
             return false;
         }
+
+		final User user = PortalUtil.getUser(request);
+		if (null != user && PageMode.LIVE.equals(PageMode.get(request)) && LoginMode.BE.equals(LoginMode.get(request))) {
+			return false;
+		}
+
         // don't cache posts
         if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod()) ) {
             return false;
         }
+
         // nocache passed either as a session var, as a request var or as a
         // request attribute
         if (NO.equals(request.getParameter(DOTCACHE))
@@ -492,8 +491,6 @@ public class VelocityUtil {
 				|| (request.getSession(false) != null && REFRESH.equals(request.getSession(true).getAttribute(DOTCACHE))) ) {
             return false;
         }
-
-
 
         return true;
     }
