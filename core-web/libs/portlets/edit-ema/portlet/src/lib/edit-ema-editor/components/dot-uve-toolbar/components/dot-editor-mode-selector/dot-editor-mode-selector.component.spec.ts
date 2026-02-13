@@ -8,7 +8,6 @@ import { UVE_MODE } from '@dotcms/types';
 import { DotEditorModeSelectorComponent } from './dot-editor-mode-selector.component';
 
 import { PERSONA_KEY } from '../../../../../shared/consts';
-import { MOCK_RESPONSE_HEADLESS } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const pageParams = {
@@ -24,13 +23,6 @@ describe('DotEditorModeSelectorComponent', () => {
 
     const mockStoreState = {
         editorHasAccessToEditMode: true,
-        pageAssetResponse: {
-            ...MOCK_RESPONSE_HEADLESS,
-            page: {
-                ...MOCK_RESPONSE_HEADLESS.page,
-                live: true
-            }
-        },
         hasLiveVersion: true,
         pageParams,
         isLockFeatureEnabled: false
@@ -38,7 +30,6 @@ describe('DotEditorModeSelectorComponent', () => {
 
     const mockStore = {
         editorHasAccessToEditMode: signal(mockStoreState.editorHasAccessToEditMode),
-        pageAssetResponse: signal(mockStoreState.pageAssetResponse),
         pageParams: signal(mockStoreState.pageParams),
         $hasLiveVersion: signal(mockStoreState.hasLiveVersion),
         viewClearDeviceAndSocialMedia: jest.fn(),
@@ -154,7 +145,6 @@ describe('DotEditorModeSelectorComponent', () => {
         beforeEach(() => {
             // Reset the store state
             mockStore.editorHasAccessToEditMode.set(true);
-            mockStore.pageAssetResponse.set(MOCK_RESPONSE_HEADLESS);
             mockStore.pageParams.set(pageParams);
             mockStore.$hasLiveVersion.set(true);
         });

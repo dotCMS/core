@@ -125,6 +125,10 @@ const viewSignal = computed(() => ({
 
 // Mutable signal for pageParams control (for test control)
 const pageParamsSignal = signal({ ...params, mode: UVE_MODE.EDIT });
+const pageSnapshotSignal = signal({
+    ...MOCK_RESPONSE_VTL,
+    clientResponse: MOCK_RESPONSE_VTL
+});
 
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
@@ -132,12 +136,7 @@ const baseUVEState = {
     setSEO: jest.fn(),
     setOrientation: jest.fn(),
     pageParams: pageParamsSignal,
-    page: signal(MOCK_RESPONSE_VTL.page),
-    site: signal(MOCK_RESPONSE_VTL.site),
-    viewAs: signal(MOCK_RESPONSE_VTL.viewAs),
-    template: signal(MOCK_RESPONSE_VTL.template),
-    layout: signal(MOCK_RESPONSE_VTL.layout),
-    containers: signal(MOCK_RESPONSE_VTL.containers),
+    page: pageSnapshotSignal,
     // View state signal
     view: viewSignal,
     // Computed properties (most are functions, some are mutable signals for test control)

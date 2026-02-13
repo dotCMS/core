@@ -227,7 +227,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         // Get the full contentlet from containers using container identifier and uuid
         let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
-        const containers = this.uveStore.pageContainers();
+        const containers = this.uveStore.page()?.containers;
         if (container?.identifier && container?.uuid && contentletPayload?.identifier && containers) {
             const containerData = containers[container.identifier];
             const contentletUuid = `uuid-${container.uuid}`;
@@ -410,11 +410,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $pageURL = computed((): string => {
         // Removed pageAPIResponse - use normalized accessors
-        if (!this.uveStore.pageData()?.pageURI) {
+        if (!this.uveStore.page()?.page?.pageURI) {
             return '';
         }
-        const site = this.uveStore.pageSite();
-        const page = this.uveStore.pageData();
+        const site = this.uveStore.page()?.site;
+        const page = this.uveStore.page()?.page;
         const hostname = site?.hostname || 'mysite.com';
         const protocol = page?.httpsRequired ? 'https' : 'http';
         const pageURI = page.pageURI;
@@ -1080,7 +1080,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
                 const targetUrl = getTargetUrl(
                     url.pathname,
-                    this.uveStore.pageUrlContentMap()
+                    this.uveStore.page()?.urlContentMap
                 );
                 const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
 
@@ -1531,7 +1531,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     #clientPayload() {
-        const clientResponse = this.uveStore.pageClientResponse();
+        const clientResponse = this.uveStore.page()?.clientResponse;
 
         if (clientResponse) {
             return clientResponse;
@@ -1561,7 +1561,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
         const params = this.uveStore.pageParams();
-        const siteId = this.uveStore.pageSite()?.identifier;
+        const siteId = this.uveStore.page()?.site?.identifier;
         const host = params?.clientHost || this.window.location.origin;
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
 

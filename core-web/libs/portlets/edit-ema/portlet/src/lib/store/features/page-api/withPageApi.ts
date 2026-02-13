@@ -12,7 +12,7 @@ import { catchError, map, shareReplay, switchMap, take, tap } from 'rxjs/operato
 import { DotExperimentsService, DotLanguagesService, DotLicenseService, DotPageLayoutService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { DotCMSPage, DotCMSPageAsset, DotCMSTemplate, DotPageAssetLayoutRow } from '@dotcms/types';
+import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
@@ -20,6 +20,7 @@ import { UVE_STATUS } from '../../../shared/enums';
 import { DotPageAssetParams, PageContainer, SaveStylePropertiesPayload } from '../../../shared/models';
 import { isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
+import { PageSnapshot } from '../page/withPage';
 
 /**
  * Interface defining the methods provided by withPageApi
@@ -57,21 +58,11 @@ export interface WithPageApiDeps {
     rollbackPageAssetResponse: () => boolean;
 
     // History management
-    clearHistory: () => void;
     addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    resetHistoryToCurrent: () => void;
 
-    // Page accessors
-    // TODO: Revisit this - there should be a better way to access these from store directly
-    // without passing as dependencies. Current issue: TypeScript cannot guarantee these methods
-    // exist on store type at composition time since withPageApi is composed AFTER withPage.
-    // Possible solutions to explore:
-    // - Reorder feature composition (may break other dependencies)
-    // - Use props type assertion (tried, creates circular type issues)
-    // - Access via store with type assertion (loses type safety)
-    pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
-    pageClientResponse: () => DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } } | null;
-    pageData: () => DotCMSPage | null;
-    pageTemplate: () => DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null;
+    // Page access (single accessor)
+    page: () => PageSnapshot;
 }
 
 /**
@@ -299,7 +290,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                         switchMap((pageContainers) => {
                             const payload = {
                                 pageContainers,
-                                pageId: deps.pageData()?.identifier,
+                                pageId: deps.page()?.page?.identifier,
                                 params: store.pageParams()
                             };
 
@@ -355,9 +346,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                             });
                         }),
                         switchMap((sortedRows) => {
-                            const page = deps.pageData();
-                            const layoutData = deps.pageAssetResponse()?.pageAsset?.layout;
-                            const template = deps.pageTemplate();
+                            const page = deps.page()?.page;
+                            const layoutData = deps.page()?.layout;
+                            const template = deps.page()?.template;
                             if (!layoutData) {
                                 return EMPTY;
                             }
@@ -438,11 +429,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                             next: () => {
                                 // Success - clear history and set current state as the new base (last saved state)
                                 // This ensures future rollbacks always go back to this saved state
-                                const currentResponse = deps.pageAssetResponse();
-                                if (currentResponse) {
-                                    deps.clearHistory();
-                                    deps.addHistory(currentResponse);
-                                }
+                                deps.resetHistoryToCurrent();
                             },
                             error: (error) => {
                                 console.error('Error saving style properties:', error);
@@ -459,7 +446,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 }
 
                                 // Update iframe with rolled back state
-                                const rolledBackResponse = deps.pageClientResponse();
+                                const rolledBackResponse = deps.page()?.clientResponse;
                                 if (rolledBackResponse) {
                                     iframeMessenger.sendPageData(rolledBackResponse);
                                 }

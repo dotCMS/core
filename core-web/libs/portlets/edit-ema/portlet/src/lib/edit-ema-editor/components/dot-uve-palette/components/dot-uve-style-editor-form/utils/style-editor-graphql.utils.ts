@@ -1,47 +1,25 @@
 import {
     DotCMSBasicContentlet,
     DotCMSPageAsset,
-    DotCMSPageResponse,
     StyleEditorProperties
 } from '@dotcms/types';
 
 import { ActionPayload } from '../../../../../../shared/models';
 
 /**
- * Type representing a GraphQL response that can be either:
- * - Direct DotCMSPageAsset
- * - Wrapped response with pageAsset property
- */
-export type GraphQLResponse =
-    | DotCMSPageAsset
-    | {
-          graphql?: DotCMSPageResponse['graphql'];
-          pageAsset: DotCMSPageAsset;
-          content?: Record<string, unknown>;
-      };
-
-/**
- * Extracts the pageAsset from a GraphQL response, handling both wrapped and unwrapped formats
- */
-function extractPageAsset(response: GraphQLResponse): DotCMSPageAsset {
-    return 'pageAsset' in response ? response.pageAsset : response;
-}
-
-/**
  * Updates style properties in a GraphQL response for a specific contentlet.
  * Mutates the response in place and returns it.
  *
- * @param graphqlResponse - The graphql response to update
+ * @param pageAsset - The page asset to update
  * @param payload - The action payload containing container and contentlet info
  * @param styleProperties - The style properties to apply
  * @returns The updated graphql response (same reference, mutated)
  */
 export function updateStylePropertiesInGraphQL(
-    graphqlResponse: GraphQLResponse,
+    pageAsset: DotCMSPageAsset,
     payload: ActionPayload,
     styleProperties: StyleEditorProperties
-): GraphQLResponse {
-    const pageAsset = extractPageAsset(graphqlResponse);
+): DotCMSPageAsset {
     const containerId = payload.container.identifier;
     const contentletId = payload.contentlet.identifier;
     const uuid = payload.container.uuid;
@@ -50,14 +28,14 @@ export function updateStylePropertiesInGraphQL(
 
     if (!container) {
         console.error(`Container with id ${containerId} not found`);
-        return graphqlResponse;
+        return pageAsset;
     }
 
     const contentlets = container.contentlets[`uuid-${uuid}`];
 
     if (!contentlets) {
         console.error(`Contentlet with uuid ${uuid} not found`);
-        return graphqlResponse;
+        return pageAsset;
     }
 
     contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
@@ -66,22 +44,21 @@ export function updateStylePropertiesInGraphQL(
         }
     });
 
-    return graphqlResponse;
+    return pageAsset;
 }
 
 /**
  * Extracts style properties from a GraphQL response for a specific contentlet.
  * Reverse operation of updateStylePropertiesInGraphQL.
  *
- * @param graphqlResponse - The graphql response to extract from
+ * @param pageAsset - The page asset to extract from
  * @param payload - The action payload containing container and contentlet info
  * @returns The style properties object or null if not found
  */
 export function extractStylePropertiesFromGraphQL(
-    graphqlResponse: GraphQLResponse,
+    pageAsset: DotCMSPageAsset,
     payload: ActionPayload
 ): StyleEditorProperties | null {
-    const pageAsset = extractPageAsset(graphqlResponse);
     const containerId = payload.container.identifier;
     const contentletId = payload.contentlet.identifier;
     const uuid = payload.container.uuid;

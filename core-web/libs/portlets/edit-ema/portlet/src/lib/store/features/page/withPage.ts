@@ -10,17 +10,7 @@ import {
 import { computed, Signal, untracked } from '@angular/core';
 
 import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
-import {
-    DotCMSLayout,
-    DotCMSPage,
-    DotCMSPageAsset,
-    DotCMSPageAssetContainers,
-    DotCMSSite,
-    DotCMSTemplate,
-    DotCMSURLContentMap,
-    DotCMSVanityUrl,
-    DotCMSViewAs
-} from '@dotcms/types';
+import { DotCMSPage, DotCMSPageAsset } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../../../shared/consts';
 import { normalizeQueryParams } from '../../../utils';
@@ -49,25 +39,22 @@ export interface PageLoadingConfigState {
     };
 }
 
-export interface PageAssetComputed {
-    pageData: Signal<DotCMSPage | null>;
-    pageSite: Signal<DotCMSSite | null>;
+export type PageClientResponse =
+    | DotCMSPageAsset
+    | {
+          pageAsset: DotCMSPageAsset;
+          content?: Record<string, unknown>;
+          requestMetadata: { query: string; variables: Record<string, string> } | null;
+      };
 
-    pageContainers: Signal<DotCMSPageAssetContainers | null>;
+export type PageSnapshot = (DotCMSPageAsset & {
+    content?: Record<string, unknown>;
+    requestMetadata?: { query: string; variables: Record<string, string> } | null;
+    clientResponse?: PageClientResponse | null;
+}) | null;
 
-    pageTemplate: Signal<DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null>;
-
-    pageLayout: Signal<DotCMSLayout | null>;
-
-    pageViewAs: Signal<DotCMSViewAs | null>;
-
-    pageVanityUrl: Signal<DotCMSVanityUrl | null>;
-
-    pageUrlContentMap: Signal<DotCMSURLContentMap | null>;
-
-    pageNumberContents: Signal<number | null>;
-
-    pageClientResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } | null } | null>;
+export interface PageComputed {
+    page: Signal<PageSnapshot>;
 
     // Page context properties (merged from withPageContext)
     pageLanguageId: Signal<number>;
@@ -82,7 +69,7 @@ export interface PageAssetComputed {
  * Complete interface for withPage feature
  * Combines page data access, page loading configuration, and page operations
  */
-export interface WithPageMethods extends PageAssetComputed {
+export interface WithPageMethods extends PageComputed {
     // Page loading configuration state
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
     pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
@@ -93,7 +80,10 @@ export interface WithPageMethods extends PageAssetComputed {
     setIsClientReady: (isClientReady: boolean) => void;
     setCustomClient: (requestMetadata: { query: string; variables: Record<string, string> }, legacyResponseFormat: boolean) => void;
     setPageAssetResponse: (pageAssetResponse: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+    setPageAsset: (pageAsset: DotCMSPageAsset) => void;
     resetClientConfiguration: () => void;
+    addCurrentPageToHistory: () => void;
+    resetHistoryToCurrent: () => void;
 
     // Computed
     $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
@@ -149,6 +139,16 @@ export function withPage() {
                 setPageAssetResponse: (pageAssetResponse) => {
                     patchState(store, { pageAssetResponse });
                 },
+                setPageAsset: (pageAsset) => {
+                    const currentResponse = store.pageAssetResponse();
+                    const nextResponse = currentResponse
+                        ? {
+                            ...currentResponse,
+                            pageAsset
+                        }
+                        : { pageAsset };
+                    patchState(store, { pageAssetResponse: nextResponse });
+                },
                 setPageAssetResponseOptimistic: (
                     pageAssetResponse: PageLoadingConfigState['pageAssetResponse']
                 ) => {
@@ -170,60 +170,45 @@ export function withPage() {
                 resetClientConfiguration: () => {
                     patchState(store, { ...pageLoadingConfigState });
                     store.clearHistory();
+                },
+                addCurrentPageToHistory: () => {
+                    const currentResponse = store.pageAssetResponse();
+                    if (currentResponse) {
+                        store.addToHistory(currentResponse);
+                    }
+                },
+                resetHistoryToCurrent: () => {
+                    const currentResponse = store.pageAssetResponse();
+                    if (currentResponse) {
+                        store.clearHistory();
+                        store.addToHistory(currentResponse);
+                    } else {
+                        store.clearHistory();
+                    }
                 }
             };
         }),
         withComputed((store) => {
-            const pageData = computed<DotCMSPage | null>(
-                () => store.pageAssetResponse()?.pageAsset?.page ?? null
-            );
-
-            const pageSite = computed<DotCMSSite | null>(
-                () => store.pageAssetResponse()?.pageAsset?.site ?? null
-            );
-
-            const pageContainers = computed<DotCMSPageAssetContainers | null>(
-                () => store.pageAssetResponse()?.pageAsset?.containers ?? null
-            );
-
-            const pageTemplate = computed<DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null>(
-                () => store.pageAssetResponse()?.pageAsset?.template ?? null
-            );
-
-            const pageLayout = computed<DotCMSLayout | null>(
-                () => store.pageAssetResponse()?.pageAsset?.layout ?? null
-            );
-
-            const pageViewAs = computed<DotCMSViewAs | null>(
-                () => store.pageAssetResponse()?.pageAsset?.viewAs ?? null
-            );
-
-            const pageVanityUrl = computed<DotCMSVanityUrl | null>(
-                () => store.pageAssetResponse()?.pageAsset?.vanityUrl ?? null
-            );
-
-            const pageUrlContentMap = computed<DotCMSURLContentMap | null>(
-                () => store.pageAssetResponse()?.pageAsset?.urlContentMap ?? null
-            );
-
-            const pageNumberContents = computed<number | null>(
-                () => store.pageAssetResponse()?.pageAsset?.numberContents ?? null
-            );
-
-            const pageClientResponse = computed(() => {
-                if (!store.pageAssetResponse()) {
+            const page = computed<PageSnapshot>(() => {
+                const response = store.pageAssetResponse();
+                if (!response) {
                     return null;
                 }
 
-                // Old customers using graphQL expect only the page.
-                // We can remove this once we are in stable and tell the devs this won't work in new dotCMS versions.
-                if (store.legacyResponseFormat()) {
-                    return store.pageAssetResponse()?.pageAsset;
-                }
+                const asset = response.pageAsset;
+                const requestMetadata = store.requestMetadata();
+                const clientResponse = store.legacyResponseFormat()
+                    ? asset
+                    : {
+                        ...response,
+                        requestMetadata
+                    };
 
                 return {
-                    ...store.pageAssetResponse(),
-                    requestMetadata: store.requestMetadata()
+                    ...asset,
+                    content: response.content,
+                    requestMetadata,
+                    clientResponse
                 };
             });
 
@@ -248,14 +233,14 @@ export function withPage() {
                 };
             });
 
-            const pageLanguageId = computed(() => pageViewAs()?.language?.id || 1);
-            const pageLanguage = computed(() => pageViewAs()?.language);
-            const pageURI = computed(() => pageData()?.pageURI ?? '');
+            const pageLanguageId = computed(() => page()?.viewAs?.language?.id || 1);
+            const pageLanguage = computed(() => page()?.viewAs?.language);
+            const pageURI = computed(() => page()?.page?.pageURI ?? '');
             const pageVariantId = computed(() => store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID);
 
             const pageTranslateProps = computed<TranslateProps>(() => {
-                const pageDataValue = pageData();
-                const viewAsData = pageViewAs();
+                const pageDataValue = page()?.page as DotCMSPage;
+                const viewAsData = page()?.viewAs;
                 const languageId = viewAsData?.language?.id;
                 const translatedLanguages = untracked(() => store.pageLanguages());
                 const currentLanguage = translatedLanguages.find(
@@ -278,16 +263,7 @@ export function withPage() {
             });
 
             return {
-                pageData,
-                pageSite,
-                pageContainers,
-                pageTemplate,
-                pageLayout,
-                pageViewAs,
-                pageVanityUrl,
-                pageUrlContentMap,
-                pageNumberContents,
-                pageClientResponse,
+                page,
                 $requestWithParams,
                 // Page context computeds
                 pageLanguageId,
@@ -296,7 +272,7 @@ export function withPage() {
                 pageVariantId,
                 pageTranslateProps,
                 pageFriendlyParams
-            } satisfies Omit<PageAssetComputed, 'pageLayout'> & { pageLayout: Signal<DotCMSLayout | null>, $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null> };
+            } satisfies PageComputed & { $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null> };
         })
     );
 }

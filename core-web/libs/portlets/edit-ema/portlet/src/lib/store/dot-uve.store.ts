@@ -36,7 +36,7 @@ const initialState: UVEState = {
     workflowIsLoading: false,
     workflowLockIsLoading: false,
     // Note: Page asset properties removed (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
-    // Access via computed signals: store.pageData(), store.pageSite(), store.pageContainers(), etc.
+    // Access via computed signal: store.page()
     // Editor state (flattened with editor* prefix)
     editorDragItem: null,
     editorBounds: [],
@@ -75,11 +75,11 @@ const initialState: UVEState = {
  * 3. withFlags - Feature flags
  * 4. withPage - Page data + history (composes withHistory)
  * 5. withTrack - Analytics (standalone)
- * 6. withWorkflow - Workflow + lock (needs PageAssetComputed, uses pageReload via type assertion)
+ * 6. withWorkflow - Workflow + lock (needs PageComputed, uses pageReload via type assertion)
  * 7. withMethods - updatePageResponse helper
  * 8. withLayout - Layout operations (needs page data)
  * 9. withView - View modes + zoom (needs page params)
- * 10. withEditor - Editor UI (needs PageAssetComputed, WorkflowComputed, ViewComputed)
+ * 10. withEditor - Editor UI (needs PageComputed, WorkflowComputed, ViewComputed)
  * 11. withPageApi - Backend API (needs all above, provides pageReload)
  *
  * Note: Circular dependency exists between withWorkflow and withPageApi:
@@ -93,7 +93,7 @@ const initialState: UVEState = {
  *   readonly store = inject(UVEStore);
  *
  *   ngOnInit() {
- *     const page = this.store.pageData();
+ *     const page = this.store.page()?.page;
  *   }
  * }
  * ```
@@ -116,7 +116,7 @@ export const UVEStore = signalStore(
     withMethods((store) => {
         return {
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
-                // Single source of truth - pageAsset properties accessed via computed signals
+                // Single source of truth - pageAsset properties accessed via store.page()
                 store.setPageAssetResponse({ pageAsset: pageAPIResponse });
                 store.setUveStatus(UVE_STATUS.LOADED);
             }
@@ -145,13 +145,10 @@ export const UVEStore = signalStore(
         rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
 
         // History management
-        clearHistory: () => store.clearHistory(),
         addHistory: (response) => store.addToHistory(response),
+        resetHistoryToCurrent: () => store.resetHistoryToCurrent(),
 
-        // Page accessors
-        pageAssetResponse: () => store.pageAssetResponse(),
-        pageClientResponse: () => store.pageClientResponse(),
-        pageData: () => store.pageData(),
-        pageTemplate: () => store.pageTemplate()
+        // Page access
+        page: () => store.page()
     }))
 );

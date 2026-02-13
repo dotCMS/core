@@ -38,7 +38,7 @@ export class DotUveWorkflowActionsComponent {
     private readonly messageService = inject(MessageService);
     readonly #uveStore = inject(UVEStore);
 
-    inode = computed(() => this.#uveStore.pageData().inode);
+    inode = computed(() => this.#uveStore.page()?.page?.inode);
     actions = this.#uveStore.workflowActions;
     loading = this.#uveStore.workflowIsLoading;
     canEdit = this.#uveStore.editorCanEditContent;

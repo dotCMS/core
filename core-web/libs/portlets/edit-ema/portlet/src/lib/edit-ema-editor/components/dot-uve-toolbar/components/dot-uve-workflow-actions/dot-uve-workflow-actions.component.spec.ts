@@ -88,13 +88,13 @@ const pageParams = {
 
 const canEditPageContentSignal = signal(true);
 
+const pageSnapshotSignal = signal({
+    ...MOCK_RESPONSE_VTL,
+    clientResponse: MOCK_RESPONSE_VTL
+});
+
 const uveStoreMock = {
-    page: signal(MOCK_RESPONSE_VTL.page),
-    site: signal(MOCK_RESPONSE_VTL.site),
-    viewAs: signal(MOCK_RESPONSE_VTL.viewAs),
-    template: signal(MOCK_RESPONSE_VTL.template),
-    layout: signal(MOCK_RESPONSE_VTL.layout),
-    containers: signal(MOCK_RESPONSE_VTL.containers),
+    page: pageSnapshotSignal,
     workflowActions: signal([]),
     workflowIsLoading: signal(false),
     editorCanEditContent: () => canEditPageContentSignal(),

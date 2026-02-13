@@ -37,7 +37,7 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageAssetComputed } from '../page/withPage';
+import { PageComputed } from '../page/withPage';
 
 import type { WorkflowComputed } from '../workflow/withWorkflow';
 
@@ -77,7 +77,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
  *
  * Dependencies:
  * - UVEState: Flat editor state (editorDragItem, editorBounds, etc.)
- * - PageAssetComputed: Access to page data for edit checks
+ * - PageComputed: Access to page data for edit checks
  * - WorkflowComputed: Access to lock state for permission checks
  * - ViewComputed: Access to viewMode for edit/preview mode checks
  */
@@ -85,7 +85,7 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageAssetComputed & WorkflowComputed & ViewComputed>()
+            props: type<PageComputed & WorkflowComputed & ViewComputed>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
@@ -96,7 +96,7 @@ export function withEditor() {
             });
 
             const editorHasAccessToEditMode = computed(() => {
-                const isPageEditable = store.pageData()?.canEdit;
+                const isPageEditable = store.page()?.page?.canEdit;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
@@ -116,8 +116,8 @@ export function withEditor() {
             });
 
             const hasPermissionToEditLayout = computed(() => {
-                const canEditPage = store.pageData()?.canEdit;
-                const canDrawTemplate = store.pageTemplate()?.drawed;
+                const canEditPage = store.page()?.page?.canEdit;
+                const canDrawTemplate = store.page()?.template?.drawed;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
@@ -127,7 +127,7 @@ export function withEditor() {
             });
 
             const hasPermissionToEditStyles = computed(() => {
-                const canEditPage = store.pageData()?.canEdit;
+                const canEditPage = store.page()?.page?.canEdit;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
@@ -162,15 +162,15 @@ export function withEditor() {
                 editorHasAccessToEditMode,
 
                 $allowContentDelete: computed<boolean>(() => {
-                    const numberContents = store.pageNumberContents();
-                    const viewAs = store.pageViewAs();
+                    const numberContents = store.page()?.numberContents;
+                    const viewAs = store.page()?.viewAs;
                     const persona = viewAs?.persona;
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
                 $allowedContentTypes: computed<Record<string, true>>(() => {
-                    return getContentTypeVarRecord(store.pageContainers());
+                    return getContentTypeVarRecord(store.page()?.containers);
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.editorContentArea();
@@ -198,9 +198,9 @@ export function withEditor() {
                     return store.editorContentArea()?.payload?.contentlet?.contentType ?? '';
                 }),
                 $pageData: computed<PageData>(() => {
-                    const page = store.pageData();
-                    const viewAs = store.pageViewAs();
-                    const containersData = store.pageContainers();
+                    const page = store.page()?.page;
+                    const viewAs = store.page()?.viewAs;
+                    const containersData = store.page()?.containers ?? {};
 
                     const containers: PageDataContainer[] =
                         mapContainerStructureToArrayOfContainers(containersData);
@@ -209,20 +209,20 @@ export function withEditor() {
                     return {
                         containers,
                         personalization,
-                        id: page.identifier,
-                        languageId: viewAs.language.id,
-                        personaTag: viewAs.persona?.keyTag
+                        id: page?.identifier,
+                        languageId: viewAs?.language?.id,
+                        personaTag: viewAs?.persona?.keyTag
                     };
                 }),
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
-                        code: store.pageData()?.rendered,
+                        code: store.page()?.page?.rendered,
                         pageType: store.pageType(),
                         enableInlineEdit: editorEnableInlineEdit()
                     };
                 }),
                 $pageRender: computed<string>(() => {
-                    return store.pageData()?.rendered;
+                    return store.page()?.page?.rendered;
                 }),
                 $editorIsInDraggingState: computed<boolean>(() => {
                     return store.editorState() === EDITOR_STATE.DRAGGING;
@@ -233,7 +233,7 @@ export function withEditor() {
                         This should change in future UVE improvements.
                         More info: https://github.com/dotCMS/core/issues/31475 and https://github.com/dotCMS/core/issues/32139
                      */
-                    const vanityUrlData = store.pageVanityUrl();
+                    const vanityUrlData = store.page()?.vanityUrl;
                     const vanityURL = vanityUrlData?.url;
                     const pageType = untracked(() => store.pageType());
                     const params = untracked(() => store.pageParams());

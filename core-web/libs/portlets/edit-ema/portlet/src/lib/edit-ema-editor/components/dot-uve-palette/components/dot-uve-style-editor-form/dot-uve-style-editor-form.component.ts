@@ -19,6 +19,7 @@ import { ButtonModule } from 'primeng/button';
 import { debounceTime, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSPageAsset } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
@@ -133,15 +134,23 @@ export class DotUveStyleEditorFormComponent {
         try {
             // Use the internal pageAssetResponse signal directly (it's already been rolled back)
             // This ensures we get the rolled-back state, not the computed wrapper
-            const rolledBackGraphqlResponse = this.#uveStore.pageAssetResponse();
+            const rolledBackPage = this.#uveStore.page();
 
-            if (!rolledBackGraphqlResponse) {
+            if (!rolledBackPage) {
                 return;
             }
 
+            const rolledBackAsset = { ...rolledBackPage } as DotCMSPageAsset & {
+                content?: unknown;
+                requestMetadata?: unknown;
+                clientResponse?: unknown;
+            };
+            delete rolledBackAsset.content;
+            delete rolledBackAsset.requestMetadata;
+            delete rolledBackAsset.clientResponse;
             // Extract style properties from the rolled-back state using utility function
             const styleProperties = extractStylePropertiesFromGraphQL(
-                rolledBackGraphqlResponse,
+                rolledBackAsset,
                 activeContentlet
             );
 
@@ -217,14 +226,22 @@ export class DotUveStyleEditorFormComponent {
 
         try {
             // Get the internal pageAssetResponse for optimistic update
-            const internalGraphqlResponse = this.#uveStore.pageAssetResponse();
-            if (!internalGraphqlResponse) {
+            const internalPage = this.#uveStore.page();
+            if (!internalPage) {
                 return;
             }
 
+            const internalAsset = { ...internalPage } as DotCMSPageAsset & {
+                content?: unknown;
+                requestMetadata?: unknown;
+                clientResponse?: unknown;
+            };
+            delete internalAsset.content;
+            delete internalAsset.requestMetadata;
+            delete internalAsset.clientResponse;
             // Deep clone the pageAssetResponse before mutating to prevent affecting history entries
             // This ensures that mutations don't affect the stored state in history
-            const clonedResponse = structuredClone(internalGraphqlResponse);
+            const clonedResponse = structuredClone(internalAsset);
 
             // Update the cloned response (mutates the clone in place)
             const updatedInternalResponse = updateStylePropertiesInGraphQL(
@@ -235,11 +252,11 @@ export class DotUveStyleEditorFormComponent {
 
             // Optimistic update: Update state WITHOUT saving to history
             // History is only saved when we actually call the API (in #saveStyleProperties)
-            this.#uveStore.setPageAssetResponse(updatedInternalResponse);
+            this.#uveStore.setPageAsset(updatedInternalResponse);
 
             // Send updated response to iframe immediately for instant feedback
             // Get the updated custom response (computed will reflect the changes)
-            const updatedCustomResponse = this.#uveStore.pageClientResponse();
+            const updatedCustomResponse = this.#uveStore.page()?.clientResponse;
             if (!updatedCustomResponse) {
                 return;
             }
@@ -271,10 +288,7 @@ export class DotUveStyleEditorFormComponent {
 
         // Save current state to history BEFORE making the API call
         // This ensures that if the API call fails, we can rollback to this exact state
-        const currentGraphqlResponse = this.#uveStore.pageAssetResponse();
-        if (currentGraphqlResponse) {
-            this.#uveStore.addToHistory(currentGraphqlResponse);
-        }
+        this.#uveStore.addCurrentPageToHistory();
 
         // Use the store's saveStyleEditor method which handles API call and rollback on failure
         // Subscribe to handle success/error and show toast notifications

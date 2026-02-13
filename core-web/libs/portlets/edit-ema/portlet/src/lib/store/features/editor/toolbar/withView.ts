@@ -18,7 +18,7 @@ import {
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
-import { PageAssetComputed } from '../../../features/page/withPage';
+import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
 
@@ -64,17 +64,17 @@ export function withView(_deps?: WithViewDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageAssetComputed>()
+            props: type<PageComputed>()
         },
         withComputed((store) => ({
             viewMode: computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN),
 
-            $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return store.pageUrlContentMap();
+            $urlContentMap: computed<DotCMSURLContentMap | null>(() => {
+                return store.page()?.urlContentMap ?? null;
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
-                const page = store.pageData();
-                const viewAs = store.pageViewAs();
+                const page = store.page()?.page;
+                const viewAs = store.page()?.viewAs;
 
                 return {
                     pageId: page?.identifier,
@@ -91,7 +91,7 @@ export function withView(_deps?: WithViewDeps) {
                 return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
-                const viewAs = store.pageViewAs();
+                const viewAs = store.page()?.viewAs;
                 const mode = store.pageParams()?.mode;
 
                 if (!getIsDefaultVariant(viewAs?.variantId)) {
@@ -127,7 +127,7 @@ export function withView(_deps?: WithViewDeps) {
                 const isPreviewMode = store.pageParams()?.mode === UVE_MODE.PREVIEW;
                 const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
-                const viewAs = store.pageViewAs();
+                const viewAs = store.page()?.viewAs;
                 const isDefaultVariant = getIsDefaultVariant(viewAs?.variantId);
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;

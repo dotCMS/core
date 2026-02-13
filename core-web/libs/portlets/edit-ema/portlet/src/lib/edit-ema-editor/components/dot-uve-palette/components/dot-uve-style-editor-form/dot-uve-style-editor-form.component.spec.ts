@@ -84,12 +84,11 @@ describe('DotUveStyleEditorFormComponent', () => {
     let mockUveStore: {
         currentIndex: ReturnType<typeof signal<number>>;
         activeContentlet: ReturnType<typeof signal<ActionPayload | null>>;
-        pageAssetResponse: ReturnType<typeof signal<DotCMSPageAsset | null>>;
-        $clientResponse: ReturnType<typeof computed<DotCMSPageAsset | null>>;
+        page: ReturnType<typeof computed<DotCMSPageAsset | null>>;
         saveStyleEditor: jest.Mock;
         rollbackPageAssetResponse: jest.Mock;
-        addHistory: jest.Mock;
-        setPageAssetResponse: jest.Mock;
+        addCurrentPageToHistory: jest.Mock;
+        setPageAsset: jest.Mock;
     };
 
     const createComponent = createComponentFactory({
@@ -141,17 +140,25 @@ describe('DotUveStyleEditorFormComponent', () => {
 
     beforeEach(() => {
         const pageAssetResponseSignal = signal<DotCMSPageAsset | null>(null);
-        const clientResponseComputed = computed(() => pageAssetResponseSignal());
+        const pageComputed = computed(() => {
+            const pageAsset = pageAssetResponseSignal();
+            if (!pageAsset) {
+                return null;
+            }
+            return {
+                ...pageAsset,
+                clientResponse: pageAsset
+            };
+        });
 
         mockUveStore = {
             currentIndex: signal(0),
             activeContentlet: signal(null),
-            pageAssetResponse: pageAssetResponseSignal,
-            $clientResponse: clientResponseComputed,
+            page: pageComputed,
             saveStyleEditor: jest.fn().mockReturnValue(of({})),
             rollbackPageAssetResponse: jest.fn().mockReturnValue(true),
-            addHistory: jest.fn(),
-            setPageAssetResponse: jest.fn((response: DotCMSPageAsset | null) => {
+            addCurrentPageToHistory: jest.fn(),
+            setPageAsset: jest.fn((response: DotCMSPageAsset | null) => {
                 pageAssetResponseSignal.set(response);
             })
         };
@@ -324,7 +331,7 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             // Set initial graphqlResponse
             const initialResponse = createMockGraphQLResponse(16);
-            mockUveStore.pageAssetResponse.set(initialResponse);
+            mockUveStore.setPageAsset(initialResponse);
         });
 
         it('should restore form values after rollback on save failure', fakeAsync(() => {
@@ -349,7 +356,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
                     // Simulate store's rollback behavior: update graphqlResponse to rolled-back state
-                    mockUveStore.pageAssetResponse.set(rolledBackResponse);
+                    mockUveStore.setPageAsset(rolledBackResponse);
                     return new Error('Save failed');
                 })
             );
@@ -391,7 +398,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             // Mock saveStyleEditor to always fail and rollback to 16
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
-                    mockUveStore.pageAssetResponse.set(rolledBackResponse);
+                    mockUveStore.setPageAsset(rolledBackResponse);
                     return new Error('Save failed');
                 })
             );
@@ -450,7 +457,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             const rolledBackResponse = createMockGraphQLResponse(16);
             mockUveStore.saveStyleEditor.mockReturnValue(
                 throwError(() => {
-                    mockUveStore.pageAssetResponse.set(rolledBackResponse);
+                    mockUveStore.setPageAsset(rolledBackResponse);
                     return new Error('Save failed');
                 })
             );

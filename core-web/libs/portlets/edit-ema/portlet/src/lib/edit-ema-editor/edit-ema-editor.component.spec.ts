@@ -1075,6 +1075,19 @@ describe('EditEmaEditorComponent', () => {
 
             describe('resetActiveContentletOnUnlock', () => {
                 let resetActiveContentletSpy: jest.SpyInstance;
+                const getPageAsset = () => {
+                    const pageSnapshot = store.page();
+                    if (!pageSnapshot) {
+                        throw new Error('Expected page to be loaded in store');
+                    }
+                    const {
+                        content: _content,
+                        requestMetadata: _requestMetadata,
+                        clientResponse: _clientResponse,
+                        ...asset
+                    } = pageSnapshot;
+                    return asset;
+                };
 
                 beforeEach(() => {
                     resetActiveContentletSpy = jest.spyOn(store, 'resetActiveContentlet');
@@ -1122,7 +1135,7 @@ describe('EditEmaEditorComponent', () => {
                     };
 
                     // First, ensure page starts in locked state
-                    const initialResponse = store.pageAssetResponse();
+                    const initialResponse = getPageAsset();
                     store.updatePageResponse({
                         ...initialResponse,
                         page: {
@@ -1147,7 +1160,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(store.$workflowLockOptions()?.isLocked).toBe(true);
 
                     // Unlock the page (this should trigger the effect)
-                    const lockedResponse = store.pageAssetResponse();
+                    const lockedResponse = getPageAsset();
                     store.updatePageResponse({
                         ...lockedResponse,
                         page: {
@@ -1171,7 +1184,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(store.activeContentlet()).toBeNull();
 
                     // Set page as locked first
-                    const currentResponse = store.pageAssetResponse();
+                    const currentResponse = getPageAsset();
                     store.updatePageResponse({
                         ...currentResponse,
                         page: {
@@ -1184,7 +1197,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Unlock the page
-                    const lockedResponse = store.pageAssetResponse();
+                    const lockedResponse = getPageAsset();
                     store.updatePageResponse({
                         ...lockedResponse,
                         page: {

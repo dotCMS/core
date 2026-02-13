@@ -18,7 +18,7 @@ import { UVE_STATUS } from '../../../shared/enums';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
 
-import type { PageAssetComputed } from '../page/withPage';
+import type { PageComputed } from '../page/withPage';
 
 interface WithWorkflowState {
     workflowActions: DotCMSWorkflowAction[];
@@ -78,7 +78,7 @@ export function withWorkflow() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageAssetComputed>()
+            props: type<PageComputed>()
         },
         withState<WithWorkflowState>({
             workflowActions: [],
@@ -87,7 +87,7 @@ export function withWorkflow() {
         }),
         withComputed((store) => {
             const workflowIsPageLocked = computed(() => {
-                return computeIsPageLocked(store.pageData(), store.uveCurrentUser());
+                return computeIsPageLocked(store.page()?.page ?? null, store.uveCurrentUser());
             });
 
             const systemIsLockFeatureEnabled = computed(() =>
@@ -95,7 +95,7 @@ export function withWorkflow() {
             );
 
             const $unlockButton = computed<UnlockOptions | null>(() => {
-                const page = store.pageData();
+                const page = store.page()?.page;
                 const isLocked = workflowIsPageLocked();
 
                 if (!page || !isLocked) {
@@ -109,7 +109,7 @@ export function withWorkflow() {
             });
 
             const $workflowLockOptions = computed<ToggleLockOptions | null>(() => {
-                const page = store.pageData();
+                const page = store.page()?.page;
                 const user = store.uveCurrentUser();
 
                 if (!page) {

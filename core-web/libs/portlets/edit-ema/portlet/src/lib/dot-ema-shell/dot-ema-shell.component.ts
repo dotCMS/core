@@ -68,8 +68,8 @@ export class DotEmaShellComponent implements OnInit {
 
     // Component builds its own menu items (Phase 2.1: Move view models from store to components)
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
-        const page = this.uveStore.pageData();
-        const template = this.uveStore.pageTemplate();
+        const page = this.uveStore.page()?.page;
+        const template = this.uveStore.page()?.template;
         const isLoading = this.uveStore.uveStatus() === UVE_STATUS.LOADING;
         const isEnterpriseLicense = this.uveStore.uveIsEnterprise();
         const templateDrawed = template?.drawed;
@@ -127,13 +127,13 @@ export class DotEmaShellComponent implements OnInit {
     // Component builds SEO params locally
     protected readonly $seoParams = computed<DotPageToolUrlParams>(() => {
         // Removed pageAPIResponse - use normalized accessors
-        const url = sanitizeURL(this.uveStore.pageData().pageURI);
+        const url = sanitizeURL(this.uveStore.page()?.page?.pageURI);
         const currentUrl = url.startsWith('/') ? url : '/' + url;
         const requestHostName = getRequestHostName(this.uveStore.pageParams());
 
         return {
-            siteId: this.uveStore.pageSite()?.identifier,
-            languageId: this.uveStore.pageViewAs()?.language.id,
+            siteId: this.uveStore.page()?.site?.identifier,
+            languageId: this.uveStore.page()?.viewAs?.language?.id,
             currentUrl,
             requestHostName
         };
@@ -150,7 +150,7 @@ export class DotEmaShellComponent implements OnInit {
     // Component determines read permissions locally
     protected readonly $canRead = computed<boolean>(() => {
         // Removed pageAPIResponse - use normalized accessors
-        return this.uveStore.pageData()?.canRead ?? false;
+        return this.uveStore.page()?.page?.canRead ?? false;
     });
 
     /**
@@ -172,7 +172,7 @@ export class DotEmaShellComponent implements OnInit {
     });
 
     readonly $updateBreadcrumbEffect = effect(() => {
-        const page = this.uveStore.pageData();
+        const page = this.uveStore.page()?.page;
 
         if (page) {
             this.#globalStore.addNewBreadcrumb({
@@ -194,7 +194,7 @@ export class DotEmaShellComponent implements OnInit {
         // Check if we already have page data loaded with matching params
         // This prevents reloading when navigating between child routes (content <-> layout)
         const currentPageParams = this.uveStore.pageParams();
-        const hasPageData = !!this.uveStore.pageData();
+        const hasPageData = !!this.uveStore.page()?.page;
         const paramsMatch = currentPageParams &&
             currentPageParams.url === params.url &&
             currentPageParams.language_id === params.language_id &&
@@ -214,7 +214,7 @@ export class DotEmaShellComponent implements OnInit {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
                 // Removed pageAPIResponse - use normalized accessors
-                this.uveStore.workflowFetch(this.uveStore.pageData().inode);
+                this.uveStore.workflowFetch(this.uveStore.page()?.page?.inode);
                 break;
             }
 
@@ -234,7 +234,7 @@ export class DotEmaShellComponent implements OnInit {
     private handleSavePageEvent(event: CustomEvent): void {
         const htmlPageReferer = event.detail.payload?.htmlPageReferer;
         const url = new URL(htmlPageReferer, window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageUrlContentMap());
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.page()?.urlContentMap);
 
         if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
             // Navigate to the new URL if it's different from the current one
@@ -256,7 +256,10 @@ export class DotEmaShellComponent implements OnInit {
         if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
-            const page = this.uveStore.pageData();
+            const page = this.uveStore.page()?.page;
+            if (!page) {
+                return;
+            }
 
             this.dialog.editContentlet({
                 inode: page.inode,
