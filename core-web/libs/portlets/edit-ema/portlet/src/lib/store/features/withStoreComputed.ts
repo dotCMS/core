@@ -2,8 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, untracked } from '@angular/core';
 
-import { ClientConfigState } from './client/withClient';
-import { PageAssetComputed } from './withPageAsset';
+import { ClientConfigState, PageAssetComputed } from './client/withClient';
 
 import { normalizeQueryParams } from '../../utils';
 import { TranslateProps, UVEState } from '../models';

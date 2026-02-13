@@ -8,21 +8,23 @@ import { UVE_MODE } from '@dotcms/types';
 import { computeIsPageLocked, normalizeQueryParams } from '../../utils';
 import { PageType, TranslateProps, UVEState } from '../models';
 
-import type { PageAssetComputed } from './withPageAsset';
+import type { PageAssetComputed } from './client/withClient';
 
 /**
- * Shared computed properties available to all features in the UVE store.
+ * Shared cross-cutting computed properties available to all features in the UVE store.
  *
- * Properties use domain prefixes for clear ownership and better discoverability:
+ * Phase 6.2: Editor computeds moved to withEditor - this now contains ONLY truly
+ * cross-cutting concerns that don't belong to a specific domain.
+ *
+ * Properties use domain prefixes for clear ownership:
  * - view* - View mode and display state
- * - editor* - Editor capabilities and permissions
  * - workflow* - Workflow and lock status
  * - page* - Page context and metadata
  * - system* - System flags and enterprise features
  *
  * @remarks
- * Type store.editor to see all editor-related APIs grouped together in IntelliSense.
  * Type store.page to see all page-related APIs grouped together.
+ * For editor APIs, see withEditor feature.
  *
  * @example
  * // ✅ CORRECT: Use domain-prefixed computed signals
@@ -31,7 +33,7 @@ import type { PageAssetComputed } from './withPageAsset';
  *     { state: type<UVEState>(), props: type<PageContextComputed>() },
  *     withComputed((store) => ({
  *       myComputed: computed(() => {
- *         return store.editorCanEditContent() && someCondition;
+ *         return store.viewMode() === UVE_MODE.EDIT && someCondition;
  *       })
  *     }))
  *   );
@@ -45,38 +47,6 @@ export interface PageContextComputed {
      * Single source of truth for which mode the editor is in.
      */
     viewMode: Signal<UVE_MODE>;
-
-    // ============ Editor Domain ============
-
-    /**
-     * Whether the user can edit page content right now.
-     * Combines access permissions with current mode being EDIT.
-     */
-    editorCanEditContent: Signal<boolean>;
-
-    /**
-     * Whether the user can edit page layout right now.
-     * Checks template permissions, experiments, lock status, and edit mode.
-     */
-    editorCanEditLayout: Signal<boolean>;
-
-    /**
-     * Whether the user can edit styles right now.
-     * Requires style editor feature flag, headless page, permissions, and edit mode.
-     */
-    editorCanEditStyles: Signal<boolean>;
-
-    /**
-     * Whether inline editing is enabled for the current page.
-     * Requires editor in edit state and enterprise license.
-     */
-    editorEnableInlineEdit: Signal<boolean>;
-
-    /**
-     * Whether the current user has access to edit mode.
-     * Checks page permissions, experiments, and lock status.
-     */
-    editorHasAccessToEditMode: Signal<boolean>;
 
     // ============ Workflow Domain ============
 
@@ -128,99 +98,42 @@ export interface PageContextComputed {
 }
 
 /**
- * A single feature that starts organizing the store by grouping the common
- * computed signals shared across the other signal features.
+ * Cross-cutting computed properties shared across multiple features.
  *
- * @remarks Dev team note: keep any new shared computeds inside this feature so
- * everything stays discoverable in one place.
+ * Phase 6.2: Reduced scope - editor computeds moved to withEditor.
+ * This feature now contains ONLY truly cross-cutting concerns:
+ * - View mode (used by editor, workflow, etc.)
+ * - Page lock status (used by editor, workflow, etc.)
+ * - Page metadata (language, URI, variant, etc.)
+ * - System flags
+ *
+ * @remarks Dev team note: Keep only cross-cutting computeds here.
+ * Domain-specific logic belongs in domain features (editor, workflow, etc.)
  *
  * @export
  */
 export function withPageContext() {
     return signalStoreFeature(
-        // Note: This feature requires withPageAsset to be composed before it
+        // Note: This feature requires withClient to be composed before it
         {
             state: type<UVEState>(),
             props: type<PageAssetComputed>()
         },
         withComputed(
             (store) => {
-                // Access computed signals from withPageAsset (already available via props)
+                // Access computed signals from withClient (already available via props)
                 // Type system knows these exist because of props: type<PageAssetComputed>()
 
                 // ============ View Domain ============
                 const viewMode = computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
-
-                // ============ System Domain ============
-                const systemIsLockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
-                const styleEditorFeatureEnabled = computed(() => {
-                    const isHeadless = store.pageType() === PageType.HEADLESS;
-                    return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
-                });
 
                 // ============ Workflow Domain ============
                 const workflowIsPageLocked = computed(() => {
                     return computeIsPageLocked(store.pageData(), store.currentUser());
                 });
 
-                // ============ Editor Domain - Permissions ============
-                const editorHasAccessToEditMode = computed(() => {
-                    const isPageEditable = store.pageData()?.canEdit;
-                    const isExperimentRunning = [
-                        DotExperimentStatus.RUNNING,
-                        DotExperimentStatus.SCHEDULED
-                    ].includes(store.experiment()?.status);
-
-                    if (!isPageEditable || isExperimentRunning) {
-                        return false;
-                    }
-
-                    // When feature flag is enabled, always allow access (user can toggle lock)
-                    if (systemIsLockFeatureEnabled()) {
-                        return true;
-                    }
-
-                    // Legacy behavior: block access if page is locked
-                    return !workflowIsPageLocked();
-                });
-
-                const hasPermissionToEditLayout = computed(() => {
-                    const canEditPage = store.pageData()?.canEdit;
-                    const canDrawTemplate = store.pageTemplate()?.drawed;
-                    const isExperimentRunning = [
-                        DotExperimentStatus.RUNNING,
-                        DotExperimentStatus.SCHEDULED
-                    ].includes(store.experiment()?.status);
-
-                    return (canEditPage || canDrawTemplate) && !isExperimentRunning && !workflowIsPageLocked();
-                });
-
-                const hasPermissionToEditStyles = computed(() => {
-                    const canEditPage = store.pageData()?.canEdit;
-                    const isExperimentRunning = [
-                        DotExperimentStatus.RUNNING,
-                        DotExperimentStatus.SCHEDULED
-                    ].includes(store.experiment()?.status);
-
-                    return canEditPage && !isExperimentRunning && !workflowIsPageLocked();
-                });
-
-                // ============ Editor Domain - Capabilities ============
-                const editorCanEditContent = computed(() => {
-                    return editorHasAccessToEditMode() && viewMode() === UVE_MODE.EDIT;
-                });
-
-                const editorCanEditLayout = computed(() => {
-                    return hasPermissionToEditLayout() && viewMode() === UVE_MODE.EDIT;
-                });
-
-                const editorCanEditStyles = computed(() => {
-                    return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && viewMode() === UVE_MODE.EDIT;
-                });
-
-                const editorEnableInlineEdit = computed(() => {
-                    return store.viewIsEditState() && store.isEnterprise();
-                });
+                // ============ System Domain ============
+                const systemIsLockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
 
                 // ============ Page Domain ============
                 const pageTranslateProps = computed<TranslateProps>(() => {
@@ -255,13 +168,6 @@ export function withPageContext() {
                 return {
                     // ============ View Domain ============
                     viewMode,
-
-                    // ============ Editor Domain ============
-                    editorCanEditContent,
-                    editorCanEditLayout,
-                    editorCanEditStyles,
-                    editorEnableInlineEdit,
-                    editorHasAccessToEditMode,
 
                     // ============ Workflow Domain ============
                     workflowIsPageLocked,

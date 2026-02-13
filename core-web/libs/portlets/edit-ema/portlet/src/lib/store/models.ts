@@ -97,105 +97,69 @@ export interface ViewState {
 }
 
 /**
- * Main UVE Store State
- * Restructured to clearly separate domain state, UI state, and deprecated properties
+ * UVE Store - Initial State Interface
+ *
+ * ⚠️ IMPORTANT: This is NOT the complete store type!
+ *
+ * This interface defines ONLY the initial state properties passed to signalStore().
+ * The actual store type is built dynamically by composing features:
+ *   - withFlags adds flags state
+ *   - withClient adds pageAssetResponse, requestMetadata, time machine methods
+ *   - withPageAsset adds pageData(), pageSite(), pageContainers() computed signals
+ *   - withPageContext adds editorCanEdit(), workflowIsLocked() computed signals
+ *   - withEditor adds editor methods and computeds
+ *   - withView adds viewSetDevice(), viewSetSEO() methods
+ *   - withWorkflow adds workflow methods
+ *   - withLoad adds pageLoad(), pageReload() methods
+ *   - withSave adds editorSave() method
+ *   - withLock adds workflowToggleLock() method
+ *   - withZoom adds viewZoomIn(), viewZoomOut() methods
+ *
+ * For the complete store type, use:
+ *   ```typescript
+ *   readonly store = inject(UVEStore);
+ *   // TypeScript infers the full type automatically
+ *   ```
+ *
+ * Organization of initial state:
+ * - Domain State: Core page data, user context, workflow
+ * - Editor State: UI state for drag/drop, contentlet selection, panels
+ * - View State: Device preview, SEO preview, view modes
  */
 export interface UVEState {
-    // ============ DOMAIN STATE (Source of Truth) ============
-    // Core page data
+    // ============ DOMAIN STATE ============
     languages: DotLanguage[];
     isEnterprise: boolean;
-    flags?: UVEFlags; // Feature flags (added by withFlags feature)
     currentUser?: CurrentUser;
     experiment?: DotExperiment;
     pageParams?: DotPageAssetParams;
     workflowActions?: DotCMSWorkflowAction[];
-
-    // Note: Page asset computed signals (pageData, pageSite, pageContainers, pageTemplate, etc.)
-    // are added by withPageAsset feature and not declared here. TypeScript will infer them
-    // from the feature composition.
-
-    // Status
     status: UVE_STATUS;
     errorCode?: number;
-
-    /**
-     * Page type classification - replaces isTraditionalPage boolean
-     * - TRADITIONAL: Self-hosted by dotCMS (iframe src = '', traditional HTML)
-     * - HEADLESS: External client-hosted (iframe src = clientHost, uses APIs)
-     *
-     * Set at page load based on presence of clientHost parameter
-     * @readonly Conceptually immutable after initial load
-     */
     pageType: PageType;
 
-    // ============ UI STATE (Transient) ============
-    // Phase 6: Flattened editor state with domain-prefixed properties (editor*)
-    /**
-     * Editor drag and drop state
-     */
+    // Note: flags added by withFlags feature - kept optional for backwards compatibility
+    flags?: UVEFlags;
+
+    // ============ EDITOR STATE ============
     editorDragItem: EmaDragItem | null;
     editorBounds: Container[];
     editorState: EDITOR_STATE;
-
-    /**
-     * Editor contentlet management
-     */
     editorActiveContentlet: ActionPayload | null;
     editorContentArea: ContentletArea | null;
-
-    /**
-     * Editor UI panel preferences (user-configurable)
-     */
     editorPaletteOpen: boolean;
     editorRightSidebarOpen: boolean;
-
-    /**
-     * Editor-specific data
-     */
     editorOgTags: SeoMetaTags | null;
     editorStyleSchemas: StyleEditorFormSchema[];
 
-    // ============ VIEW STATE (Flattened from ViewState with view* prefix) ============
-    /**
-     * View device - device preview mode
-     */
+    // ============ VIEW STATE ============
     viewDevice: DotDeviceListItem | null;
-
-    /**
-     * View orientation - device orientation for preview
-     */
     viewOrientation: Orientation | null;
-
-    /**
-     * View social media - SEO/social media preview mode
-     */
     viewSocialMedia: string | null;
-
-    /**
-     * View parameters - device/SEO preview mode parameters
-     * Synchronized with viewDevice/viewOrientation/viewSocialMedia state
-     */
     viewParams: DotUveViewParams | null;
-
-    /**
-     * Is edit state - whether editor is in edit mode (vs preview mode)
-     */
     viewIsEditState: boolean;
-
-    /**
-     * Is preview mode active - whether preview mode is currently active
-     */
     viewIsPreviewModeActive: boolean;
-
-    /**
-     * OG tags results - SEO/social media preview tag results
-     */
     viewOgTagsResults: SeoMetaTagsResult[] | null;
-
-    // Note: isClientReady removed from UVEState (only in ClientConfigState via withClient)
-    // Note: editor nested object removed - flattened to editor* prefixed properties
-    // Note: view nested object removed - flattened to view* prefixed properties
 }
 
 /**

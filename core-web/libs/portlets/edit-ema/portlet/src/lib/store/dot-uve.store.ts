@@ -11,7 +11,6 @@ import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
-import { withPageAsset } from './features/withPageAsset';
 import { withPageContext } from './features/withPageContext';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { withViewZoom } from './features/zoom/withZoom';
@@ -80,13 +79,13 @@ export const UVEStore = signalStore(
 
     // ---- Core State Features (no dependencies) ----
     withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
-    withClient(),                     // Client config (exposes timeMachine methods)
+    withClient(),                     // Client config + PageAsset computeds (merged in Phase 6.1)
     withWorkflow(),                   // Workflow state (independent)
     withTrack(),                      // Tracking (independent)
 
     // ---- Shared Computeds ----
-    withPageAsset(),                  // PageAsset computed properties (depends on client state)
-    withPageContext(),                // Common computed properties (depends on pageAsset)
+    // NOTE: withPageAsset removed in Phase 6.1 - merged into withClient to eliminate duplication
+    withPageContext(),                // Common computed properties (depends on withClient pageAsset computeds)
 
     // ---- Data Loading ----
     withFeature((store) => withLoad({
@@ -147,3 +146,20 @@ export const UVEStore = signalStore(
     // ---- Store-level Computeds ----
     // withStoreComputed()  // TODO: Re-add after reducing feature count or merging features
 );
+
+/**
+ * UVE Store Type
+ *
+ * This is the complete type of the UVE store after all features are composed.
+ * Use this type when you need to reference the store type explicitly.
+ *
+ * @example
+ * ```typescript
+ * // ✅ PREFERRED: Let TypeScript infer the type
+ * readonly store = inject(UVEStore);
+ *
+ * // ✅ ALTERNATIVE: Explicit type reference
+ * readonly store: InstanceType<typeof UVEStore> = inject(UVEStore);
+ * ```
+ */
+export type UVEStoreType = InstanceType<typeof UVEStore>;

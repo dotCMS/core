@@ -6,23 +6,21 @@ import {
     withMethods,
 } from '@ngrx/signals';
 
-import { computed, inject, untracked } from '@angular/core';
+import { computed, inject, Signal, untracked } from '@angular/core';
 
-import { DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { DotExperimentStatus, DotTreeNode, SeoMetaTags } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
-import {
-    PageData,
-    PageDataContainer,
-    ReloadEditorContent
-} from './models';
+import { PageData, PageDataContainer, ReloadEditorContent } from './models';
 
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
+
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {
@@ -40,8 +38,49 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageContextComputed } from '../withPageContext';
-import { PageAssetComputed } from '../withPageAsset';
+import { PageAssetComputed } from '../client/withClient';
+import type { PageContextComputed } from '../withPageContext';
+
+/**
+ * Editor-specific computed properties contract.
+ *
+ * Phase 6.2: Moved from withPageContext to eliminate cross-feature duplication.
+ * All editor permission and capability logic centralized here.
+ *
+ * @export
+ * @interface EditorComputed
+ */
+export interface EditorComputed {
+    /**
+     * Whether the user can edit page content right now.
+     * Combines access permissions with current mode being EDIT.
+     */
+    editorCanEditContent: Signal<boolean>;
+
+    /**
+     * Whether the user can edit page layout right now.
+     * Checks template permissions, experiments, lock status, and edit mode.
+     */
+    editorCanEditLayout: Signal<boolean>;
+
+    /**
+     * Whether the user can edit styles right now.
+     * Requires style editor feature flag, headless page, permissions, and edit mode.
+     */
+    editorCanEditStyles: Signal<boolean>;
+
+    /**
+     * Whether inline editing is enabled for the current page.
+     * Requires editor in edit state and enterprise license.
+     */
+    editorEnableInlineEdit: Signal<boolean>;
+
+    /**
+     * Whether the current user has access to edit mode.
+     * Checks page permissions, experiments, and lock status.
+     */
+    editorHasAccessToEditMode: Signal<boolean>;
+}
 
 const buildIframeURL = ({ url, params, dotCMSHost }) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
@@ -52,12 +91,16 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 };
 
 /**
- * Phase 3.2: Add computed and methods to handle the Editor UI
- * Phase 6: Flattened editor state with domain-prefixed properties (editor*)
+ * Editor UI state, permissions, and capabilities.
  *
- * Phase 5: Refactored to use only shared contracts from PageContextComputed.
- * No longer requires explicit dependencies - all cross-cutting concerns are
- * accessed through the shared contract interface.
+ * Phase 6.2: Consolidated all editor logic - moved permission computeds from withPageContext.
+ * This feature now owns ALL editor-related state and logic, eliminating cross-feature duplication.
+ *
+ * Provides:
+ * - Editor UI state (drag/drop, selection, panels)
+ * - Editor permissions (canEditContent, canEditLayout, canEditStyles)
+ * - Editor capabilities (hasAccessToEditMode, enableInlineEdit)
+ * - Editor methods (setActiveContentlet, setPaletteOpen, etc.)
  *
  * @export
  * @return {*}
@@ -66,12 +109,103 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageContextComputed & PageAssetComputed>()
+            props: type<PageAssetComputed & PageContextComputed>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
+            // ============ Editor Permissions & Capabilities ============
+            // Phase 6.2: Moved from withPageContext to centralize editor logic
+
+            // Get viewMode from pageParams (was in withPageContext)
+            const viewMode = computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
+
+            // Get workflow lock status (was in withPageContext)
+            const workflowIsPageLocked = computed(() => {
+                const page = store.pageData();
+                const user = store.currentUser();
+                const isLocked = page?.locked;
+                const isLockedByCurrentUser = page?.lockedBy === user?.userId;
+                return isLocked && !isLockedByCurrentUser;
+            });
+
+            // System flags
+            const systemIsLockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+            const styleEditorFeatureEnabled = computed(() => {
+                const isHeadless = store.pageType() === PageType.HEADLESS;
+                return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
+            });
+
+            // Permission checks (private helpers)
+            const editorHasAccessToEditMode = computed(() => {
+                const isPageEditable = store.pageData()?.canEdit;
+                const isExperimentRunning = [
+                    DotExperimentStatus.RUNNING,
+                    DotExperimentStatus.SCHEDULED
+                ].includes(store.experiment()?.status);
+
+                if (!isPageEditable || isExperimentRunning) {
+                    return false;
+                }
+
+                // When feature flag is enabled, always allow access (user can toggle lock)
+                if (systemIsLockFeatureEnabled()) {
+                    return true;
+                }
+
+                // Legacy behavior: block access if page is locked
+                return !workflowIsPageLocked();
+            });
+
+            const hasPermissionToEditLayout = computed(() => {
+                const canEditPage = store.pageData()?.canEdit;
+                const canDrawTemplate = store.pageTemplate()?.drawed;
+                const isExperimentRunning = [
+                    DotExperimentStatus.RUNNING,
+                    DotExperimentStatus.SCHEDULED
+                ].includes(store.experiment()?.status);
+
+                return (canEditPage || canDrawTemplate) && !isExperimentRunning && !workflowIsPageLocked();
+            });
+
+            const hasPermissionToEditStyles = computed(() => {
+                const canEditPage = store.pageData()?.canEdit;
+                const isExperimentRunning = [
+                    DotExperimentStatus.RUNNING,
+                    DotExperimentStatus.SCHEDULED
+                ].includes(store.experiment()?.status);
+
+                return canEditPage && !isExperimentRunning && !workflowIsPageLocked();
+            });
+
+            // Public capabilities (exported via EditorComputed interface)
+            const editorCanEditContent = computed(() => {
+                return editorHasAccessToEditMode() && viewMode() === UVE_MODE.EDIT;
+            });
+
+            const editorCanEditLayout = computed(() => {
+                return hasPermissionToEditLayout() && viewMode() === UVE_MODE.EDIT;
+            });
+
+            const editorCanEditStyles = computed(() => {
+                return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && viewMode() === UVE_MODE.EDIT;
+            });
+
+            const editorEnableInlineEdit = computed(() => {
+                return store.viewIsEditState() && store.isEnterprise();
+            });
+
+            // ============ Editor UI Computeds ============
+
             return {
+                // Editor permissions & capabilities (Phase 6.2: moved from withPageContext)
+                editorCanEditContent,
+                editorCanEditLayout,
+                editorCanEditStyles,
+                editorEnableInlineEdit,
+                editorHasAccessToEditMode,
+
+                // Existing editor UI computeds
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = store.pageNumberContents();
                     const viewAs = store.pageViewAs();
@@ -85,7 +219,7 @@ export function withEditor() {
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.editorContentArea();
-                    const canEditPage = store.editorCanEditContent();
+                    const canEditPage = editorCanEditContent();
                     const isIdle = store.editorState() === EDITOR_STATE.IDLE;
 
                     return !!contentletPosition && canEditPage && isIdle;
@@ -129,7 +263,7 @@ export function withEditor() {
                     return {
                         code: store.pageData()?.rendered,
                         pageType: store.pageType(),
-                        enableInlineEdit: store.editorEnableInlineEdit()
+                        enableInlineEdit: editorEnableInlineEdit()
                     };
                 }),
                 $pageRender: computed<string>(() => {
