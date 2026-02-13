@@ -12,8 +12,7 @@ import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
-import { UVE_STATUS } from '../../../../shared/enums';
-import { InfoOptions, ToggleLockOptions, UnlockOptions } from '../../../../shared/models';
+import { InfoOptions } from '../../../../shared/models';
 import {
     getFullPageURL,
     getIsDefaultVariant,
@@ -25,9 +24,10 @@ import { PersonaSelectorProps } from '../models';
 /**
  * Dependencies interface for withView
  * These are computed signals from other features that withView needs
+ *
+ * Phase 6.2: Lock-related dependencies removed - all lock UI moved to withWorkflow
  */
 export interface WithViewDeps {
-    workflowIsPageLocked: () => boolean;
     pageData: () => any;
     pageUrlContentMap: () => any;
     pageViewAs: () => any;
@@ -51,67 +51,10 @@ export function withView(deps: WithViewDeps) {
             state: type<UVEState>()
         },
         withComputed((store) => ({
+            // Phase 6.2: $unlockButton and $workflowLockOptions moved to withWorkflow
+
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
                 return deps.pageUrlContentMap();
-            }),
-            $unlockButton: computed<UnlockOptions | null>(() => {
-                const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
-
-                if (isToggleUnlockEnabled) {
-                    return null;
-                }
-
-                const page = deps.pageData();
-                const isLocked = deps.workflowIsPageLocked();
-
-                const info = {
-                    message: page.canLock
-                        ? 'editpage.toolbar.page.release.lock.locked.by.user'
-                        : 'editpage.locked-by',
-                    args: [page.lockedByName]
-                };
-
-                const disabled = !page.canLock;
-
-                return isLocked
-                    ? {
-                          inode: page.inode,
-                          loading: store.status() === UVE_STATUS.LOADING,
-                          info,
-                          disabled
-                      }
-                    : null;
-            }),
-            $workflowLockOptions: computed<ToggleLockOptions | null>(() => {
-                const page = deps.pageData();
-                const currentUser = store.currentUser();
-
-                // Only show lock controls when feature flag is enabled AND in edit mode
-                const isToggleUnlockEnabled = store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK;
-                const isDraftMode = store.pageParams()?.mode === UVE_MODE.EDIT;
-
-                if (!isToggleUnlockEnabled || !isDraftMode) {
-                    return null;
-                }
-
-                const isLocked = !!page.locked;
-                const isLockedByCurrentUser = page.lockedBy === currentUser?.userId;
-
-                // Show overlay when page is unlocked or locked by another user
-                const showOverlay = !isLocked || !isLockedByCurrentUser;
-
-                // Show banner when page is locked by another user
-                const showBanner = isLocked && !isLockedByCurrentUser;
-
-                return {
-                    inode: page.inode,
-                    isLocked,
-                    lockedBy: page.lockedByName,
-                    canLock: page.canLock ?? false,
-                    isLockedByCurrentUser,
-                    showBanner: showBanner,
-                    showOverlay
-                };
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const page = deps.pageData();

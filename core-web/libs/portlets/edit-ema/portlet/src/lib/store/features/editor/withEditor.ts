@@ -40,6 +40,7 @@ import { PageType, UVEState } from '../../models';
 import { PageAssetComputed } from '../client/withClient';
 
 import type { PageContextComputed } from '../withPageContext';
+import type { WorkflowComputed } from '../workflow/withWorkflow';
 
 
 export interface EditorComputed {
@@ -65,30 +66,23 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageAssetComputed & PageContextComputed>()
+            props: type<PageAssetComputed & PageContextComputed & WorkflowComputed>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
-
+            // ============ View Mode ============
             const viewMode = computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
 
-            const workflowIsPageLocked = computed(() => {
-                const page = store.pageData();
-                const user = store.currentUser();
-                const isLocked = page?.locked;
-                const isLockedByCurrentUser = page?.lockedBy === user?.userId;
-                return isLocked && !isLockedByCurrentUser;
-            });
-
-            // System flags
-            const systemIsLockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+            // ============ Feature Flags ============
             const styleEditorFeatureEnabled = computed(() => {
                 const isHeadless = store.pageType() === PageType.HEADLESS;
                 return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
             });
 
-            // Permission checks (private helpers)
+            // ============ Permission Checks ============
+            // Phase 6.2: Now use store.workflowIsPageLocked() and store.systemIsLockFeatureEnabled() from withWorkflow
+
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageData()?.canEdit;
                 const isExperimentRunning = [
@@ -101,12 +95,12 @@ export function withEditor() {
                 }
 
                 // When feature flag is enabled, always allow access (user can toggle lock)
-                if (systemIsLockFeatureEnabled()) {
+                if (store.systemIsLockFeatureEnabled()) {
                     return true;
                 }
 
                 // Legacy behavior: block access if page is locked
-                return !workflowIsPageLocked();
+                return !store.workflowIsPageLocked();
             });
 
             const hasPermissionToEditLayout = computed(() => {
@@ -117,7 +111,7 @@ export function withEditor() {
                     DotExperimentStatus.SCHEDULED
                 ].includes(store.experiment()?.status);
 
-                return (canEditPage || canDrawTemplate) && !isExperimentRunning && !workflowIsPageLocked();
+                return (canEditPage || canDrawTemplate) && !isExperimentRunning && !store.workflowIsPageLocked();
             });
 
             const hasPermissionToEditStyles = computed(() => {
@@ -127,7 +121,7 @@ export function withEditor() {
                     DotExperimentStatus.SCHEDULED
                 ].includes(store.experiment()?.status);
 
-                return canEditPage && !isExperimentRunning && !workflowIsPageLocked();
+                return canEditPage && !isExperimentRunning && !store.workflowIsPageLocked();
             });
 
             // Public capabilities (exported via EditorComputed interface)

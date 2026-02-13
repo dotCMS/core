@@ -6,7 +6,6 @@ import { withClient } from './features/client/withClient';
 import { withSave } from './features/editor/save/withSave';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
-import { withLock } from './features/editor/withLock';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
@@ -80,12 +79,18 @@ export const UVEStore = signalStore(
     // ---- Core State Features (no dependencies) ----
     withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
     withClient(),                     // Client config + PageAsset computeds (merged in Phase 6.1)
-    withWorkflow(),                   // Workflow state (independent)
     withTrack(),                      // Tracking (independent)
+
+    // ---- Workflow & Lock ----
+    // Phase 6.2: Consolidated lock logic here (moved from withPageContext, withEditor, withView, withLock)
+    // Must come early - withLoad needs workflowFetch, withPageContext needs lock computeds
+    withFeature((store) => withWorkflow({
+        pageReload: () => store.pageReload?.()  // Runtime resolution after withLoad is composed
+    })),  // Workflow + lock (provides workflowFetch for withLoad)
 
     // ---- Shared Computeds ----
     // NOTE: withPageAsset removed in Phase 6.1 - merged into withClient to eliminate duplication
-    withPageContext(),                // Common computed properties (depends on withClient pageAsset computeds)
+    withPageContext(),                // Common computed properties (depends on withClient + withWorkflow)
 
     // ---- Data Loading ----
     withFeature((store) => withLoad({
@@ -119,7 +124,6 @@ export const UVEStore = signalStore(
     withLayout(),                     // Layout state
     withViewZoom(),                   // View Zoom state
     withFeature((store) => withView({
-        workflowIsPageLocked: () => store.workflowIsPageLocked(),
         pageData: () => store.pageData(),
         pageUrlContentMap: () => store.pageUrlContentMap(),
         pageViewAs: () => store.pageViewAs()
@@ -138,10 +142,9 @@ export const UVEStore = signalStore(
         pageClientResponse: store.pageClientResponse,
         pageData: () => store.pageData(),
         pageTemplate: () => store.pageTemplate()
-    })),  // Editor save methods (depends on client)
-    withFeature((store) => withLock({
-        pageReload: () => store.pageReload()
-    }))  // Lock methods (depends on load)
+    }))  // Editor save methods (depends on client)
+
+    // NOTE: withLock removed in Phase 6.2 - merged into withWorkflow
 
     // ---- Store-level Computeds ----
     // withStoreComputed()  // TODO: Re-add after reducing feature count or merging features

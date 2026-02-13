@@ -5,31 +5,26 @@ import { computed, Signal, untracked } from '@angular/core';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
-import { computeIsPageLocked, normalizeQueryParams } from '../../utils';
+import { normalizeQueryParams } from '../../utils';
 import { TranslateProps, UVEState } from '../models';
 
 import type { PageAssetComputed } from './client/withClient';
 
+/**
+ * Phase 6.2: Reduced scope - lock computeds moved to withWorkflow
+ */
 export interface PageContextComputed {
-
     viewMode: Signal<UVE_MODE>;
 
-    workflowIsPageLocked: Signal<boolean>;
+    // NOTE: Phase 6.2 - workflowIsPageLocked moved to withWorkflow
+    // NOTE: Phase 6.2 - systemIsLockFeatureEnabled moved to withWorkflow
 
     pageLanguageId: Signal<number>;
-
-
     pageLanguage: Signal<any>;
-
     pageURI: Signal<string>;
-
     pageVariantId: Signal<string>;
-
     pageTranslateProps: Signal<TranslateProps>;
-
     pageFriendlyParams: Signal<Record<string, string>>;
-
-    systemIsLockFeatureEnabled: Signal<boolean>;
 }
 
 export function withPageContext() {
@@ -41,12 +36,10 @@ export function withPageContext() {
         },
         withComputed(
             (store) => {
+                // ============ View Domain ============
                 const viewMode = computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
-                const workflowIsPageLocked = computed(() => {
-                    return computeIsPageLocked(store.pageData(), store.currentUser());
-                });
 
-                const systemIsLockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+                // ============ Page Domain ============
                 const pageTranslateProps = computed<TranslateProps>(() => {
                     const pageData = store.pageData();
                     const viewAsData = store.pageViewAs();
@@ -77,15 +70,15 @@ export function withPageContext() {
                 const pageVariantId = computed(() => store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID);
 
                 return {
+                    // View
                     viewMode,
-                    workflowIsPageLocked,
+                    // Page
                     pageLanguageId,
                     pageLanguage,
                     pageURI,
                     pageVariantId,
                     pageTranslateProps,
-                    pageFriendlyParams,
-                    systemIsLockFeatureEnabled
+                    pageFriendlyParams
                 } satisfies PageContextComputed;
             }
         )
