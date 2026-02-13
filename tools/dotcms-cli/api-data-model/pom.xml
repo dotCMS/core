@@ -13,7 +13,7 @@
     <packaging>jar</packaging>
 
     <properties>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <test.failure.ignore>false</test.failure.ignore>
         <maven.plugin.jar.version>3.3.0</maven.plugin.jar.version>
         <jackson.module.model.version>1.2.2</jackson.module.model.version>
