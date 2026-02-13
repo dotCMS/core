@@ -46,16 +46,6 @@ export interface WithLoadDeps {
     addHistory: (state: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
 }
 
-/**
- * Add load and reload method to the store
- *
- * Dependencies: Requires methods from withClient and withWorkflow
- * Pass these via the deps parameter when wrapping with withFeature
- *
- * @export
- * @param deps - Dependencies from other features (provided by withFeature wrapper)
- * @return {*}
- */
 export function withLoad(deps: WithLoadDeps) {
     return signalStoreFeature(
         {
@@ -82,13 +72,6 @@ export function withLoad(deps: WithLoadDeps) {
             const loginService = inject(LoginService);
 
             return {
-                /**
-                 * Fetches the page asset based on the provided page parameters.
-                 * This method updates the user permissions, pageAsset, and pageParams.
-                 *
-                 * @param {DotPageApiParams} pageParams - The parameters used to fetch the page asset.
-                 * @memberof DotEmaShellComponent
-                 */
                 pageLoad: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
@@ -195,13 +178,6 @@ export function withLoad(deps: WithLoadDeps) {
                         })
                     )
                 ),
-                /**
-                 * Reloads the current page to bring the latest content.
-                 * Called this method when after changes, updates, or saves.
-                 *
-                 * @param {Partial<DotPageApiParams>} params - The parameters used to fetch the page asset.
-                 * @memberof DotEmaShellComponent
-                 */
                 pageReload: rxMethod<Partial<DotPageAssetParams> | void>(
                     pipe(
                         tap((params) => {

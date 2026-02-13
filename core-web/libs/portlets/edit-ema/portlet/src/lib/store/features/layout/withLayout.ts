@@ -9,7 +9,6 @@ import { LayoutProps } from './models';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
 
-/** WithLayout requires withPageAsset (provides pageData, pageContainers, pageTemplate, pageLayout) and withClient (provides pageAssetResponse, setPageAssetResponse). */
 interface LayoutStoreDeps {
     pageData: () => any;
     pageContainers: () => any;
@@ -19,12 +18,6 @@ interface LayoutStoreDeps {
     setPageAssetResponse: (r: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
 }
 
-/**
- * Add computed properties to the store to handle the Layout UI
- *
- * @export
- * @return {*}
- */
 export function withLayout() {
     return signalStoreFeature(
         {

@@ -16,10 +16,6 @@ import { UVE_STATUS } from '../../../../shared/enums';
 import { PageContainer, SaveStylePropertiesPayload } from '../../../../shared/models';
 import { UVEState } from '../../../models';
 
-/**
- * Dependencies interface for withSave
- * These are methods/computeds from other features that withSave needs
- */
 export interface WithSaveDeps {
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
     $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
@@ -33,16 +29,7 @@ export interface WithSaveDeps {
     pageTemplate: () => any;  // Page template accessor
 }
 
-/**
- * Add methods to save the page
- *
- * Dependencies: Requires methods from withClient
- * Pass these via the deps parameter when wrapping with withFeature
- *
- * @export
- * @param deps - Dependencies from other features (provided by withFeature wrapper)
- * @return {*}
- */
+
 export function withSave(deps: WithSaveDeps) {
     return signalStoreFeature(
         {

@@ -1,4 +1,4 @@
-import { signalStoreFeature, type, withMethods, withState, patchState } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 
@@ -12,25 +12,10 @@ interface WithLockState {
     workflowLockIsLoading: boolean;
 }
 
-/**
- * Dependencies interface for withLock
- * These are methods from other features that withLock needs
- */
 export interface WithLockDeps {
     pageReload: () => void;
 }
 
-/**
- * Signal store feature that adds lock functionality to the UVE store.
- * Provides methods to lock/unlock pages and handles loading states and user notifications.
- *
- * Dependencies: Requires methods from withLoad
- * Pass these via the deps parameter when wrapping with withFeature
- *
- * @export
- * @param deps - Dependencies from other features (provided by withFeature wrapper)
- * @return {*}
- */
 export function withLock(deps: WithLockDeps) {
     return signalStoreFeature(
         {
@@ -45,9 +30,6 @@ export function withLock(deps: WithLockDeps) {
             const dotContentletLockerService = inject(DotContentletLockerService);
             const confirmationService = inject(ConfirmationService);
 
-            /**
-             * Internal method to lock a page
-             */
             const lockPage = (inode: string) => {
                 patchState(store, { workflowLockIsLoading: true });
 
@@ -106,22 +88,11 @@ export function withLock(deps: WithLockDeps) {
             };
 
             return {
-                /**
-                 * Toggle lock/unlock with conditional confirmation
-                 * Shows confirmation dialog if page is locked by another user
-                 *
-                 * @param {string} inode - Page inode
-                 * @param {boolean} isLocked - Current lock state
-                 * @param {boolean} isLockedByCurrentUser - Whether current user owns the lock
-                 * @param {string} lockedBy - Name of user who locked the page (optional, only needed when locked by another user)
-                 */
                 workflowToggleLock(inode: string, isLocked: boolean, isLockedByCurrentUser: boolean, lockedBy?: string) {
-                    // Prevent multiple simultaneous lock/unlock operations
                     if (store.workflowLockIsLoading()) {
                         return;
                     }
 
-                    // If page is locked but NOT by current user, show confirmation
                     if (isLocked && !isLockedByCurrentUser) {
 
                         confirmationService.confirm({
@@ -140,7 +111,6 @@ export function withLock(deps: WithLockDeps) {
                         return;
                     }
 
-                    // Otherwise, directly lock or unlock without confirmation
                     if (isLocked) {
                         unlockPage(inode);
                     } else {

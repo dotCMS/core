@@ -36,49 +36,19 @@ import {
     mapContainerStructureToArrayOfContainers,
     sanitizeURL
 } from '../../../utils';
-
 import { PageType, UVEState } from '../../models';
 import { PageAssetComputed } from '../client/withClient';
+
 import type { PageContextComputed } from '../withPageContext';
 
-/**
- * Editor-specific computed properties contract.
- *
- * Phase 6.2: Moved from withPageContext to eliminate cross-feature duplication.
- * All editor permission and capability logic centralized here.
- *
- * @export
- * @interface EditorComputed
- */
-export interface EditorComputed {
-    /**
-     * Whether the user can edit page content right now.
-     * Combines access permissions with current mode being EDIT.
-     */
-    editorCanEditContent: Signal<boolean>;
 
-    /**
-     * Whether the user can edit page layout right now.
-     * Checks template permissions, experiments, lock status, and edit mode.
-     */
+export interface EditorComputed {
+    editorCanEditContent: Signal<boolean>;
     editorCanEditLayout: Signal<boolean>;
 
-    /**
-     * Whether the user can edit styles right now.
-     * Requires style editor feature flag, headless page, permissions, and edit mode.
-     */
     editorCanEditStyles: Signal<boolean>;
-
-    /**
-     * Whether inline editing is enabled for the current page.
-     * Requires editor in edit state and enterprise license.
-     */
     editorEnableInlineEdit: Signal<boolean>;
 
-    /**
-     * Whether the current user has access to edit mode.
-     * Checks page permissions, experiments, and lock status.
-     */
     editorHasAccessToEditMode: Signal<boolean>;
 }
 
@@ -90,21 +60,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
     return iframeURL.toString();
 };
 
-/**
- * Editor UI state, permissions, and capabilities.
- *
- * Phase 6.2: Consolidated all editor logic - moved permission computeds from withPageContext.
- * This feature now owns ALL editor-related state and logic, eliminating cross-feature duplication.
- *
- * Provides:
- * - Editor UI state (drag/drop, selection, panels)
- * - Editor permissions (canEditContent, canEditLayout, canEditStyles)
- * - Editor capabilities (hasAccessToEditMode, enableInlineEdit)
- * - Editor methods (setActiveContentlet, setPaletteOpen, etc.)
- *
- * @export
- * @return {*}
- */
+
 export function withEditor() {
     return signalStoreFeature(
         {
@@ -114,13 +70,9 @@ export function withEditor() {
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
-            // ============ Editor Permissions & Capabilities ============
-            // Phase 6.2: Moved from withPageContext to centralize editor logic
 
-            // Get viewMode from pageParams (was in withPageContext)
             const viewMode = computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
 
-            // Get workflow lock status (was in withPageContext)
             const workflowIsPageLocked = computed(() => {
                 const page = store.pageData();
                 const user = store.currentUser();
@@ -195,17 +147,14 @@ export function withEditor() {
                 return store.viewIsEditState() && store.isEnterprise();
             });
 
-            // ============ Editor UI Computeds ============
 
             return {
-                // Editor permissions & capabilities (Phase 6.2: moved from withPageContext)
                 editorCanEditContent,
                 editorCanEditLayout,
                 editorCanEditStyles,
                 editorEnableInlineEdit,
                 editorHasAccessToEditMode,
 
-                // Existing editor UI computeds
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = store.pageNumberContents();
                     const viewAs = store.pageViewAs();
@@ -299,7 +248,6 @@ export function withEditor() {
                         dotCMSHost
                     });
                 })
-                // $editorContentStyles removed - moved to component level (Phase 4.3: cross-feature dependency)
             };
         }),
         withMethods((store) => {
