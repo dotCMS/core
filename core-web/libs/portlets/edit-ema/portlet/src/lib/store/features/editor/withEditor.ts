@@ -41,10 +41,6 @@ import { PageAssetComputed } from '../page/withPage';
 
 import type { WorkflowComputed } from '../workflow/withWorkflow';
 
-/**
- * View computeds needed by withEditor
- * Phase 6.3: viewMode now comes from withView
- */
 export interface ViewComputed {
     viewMode: Signal<UVE_MODE>;
 }
@@ -77,17 +73,10 @@ export function withEditor() {
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
-            // Phase 6.3: viewMode removed - now comes from withView (eliminating duplication)
-            // Access via store.viewMode() instead of local computed
-
-            // ============ Feature Flags ============
             const styleEditorFeatureEnabled = computed(() => {
                 const isHeadless = store.pageType() === PageType.HEADLESS;
                 return store.flags().FEATURE_FLAG_UVE_STYLE_EDITOR && isHeadless;
             });
-
-            // ============ Permission Checks ============
-            // Phase 6.2: Now use store.workflowIsPageLocked() and store.systemIsLockFeatureEnabled() from withWorkflow
 
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageData()?.canEdit;

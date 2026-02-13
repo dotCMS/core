@@ -8,14 +8,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
-    DotCMSLayout,
-    DotCMSPage,
-    DotCMSPageAssetContainers,
-    DotCMSSite,
-    DotCMSTemplate,
-    DotCMSURLContentMap,
-    DotCMSVanityUrl,
-    DotCMSViewAs
+    DotCMSPage
 } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
@@ -40,15 +33,7 @@ export enum PageType {
     HEADLESS = 'headless'
 }
 
-/**
- * Phase 3.1: UI State Interfaces
- * Clearly separate transient UI state from persistent domain state
- */
 
-/**
- * Editor UI State (transient)
- * Manages editor-specific UI state like drag/drop, palette, sidebar
- */
 export interface EditorUIState {
     // Drag and drop state
     dragItem: EmaDragItem | null;
@@ -96,36 +81,6 @@ export interface ViewState {
     ogTagsResults: SeoMetaTagsResult[] | null;
 }
 
-/**
- * UVE Store - Initial State Interface
- *
- * ⚠️ IMPORTANT: This is NOT the complete store type!
- *
- * This interface defines ONLY the initial state properties passed to signalStore().
- * The actual store type is built dynamically by composing features:
- *   - withFlags adds flags state
- *   - withClient adds pageAssetResponse, requestMetadata, time machine methods
- *   - withPageAsset adds pageData(), pageSite(), pageContainers() computed signals
- *   - withPageContext adds editorCanEdit(), workflowIsLocked() computed signals
- *   - withEditor adds editor methods and computeds
- *   - withView adds viewSetDevice(), viewSetSEO() methods
- *   - withWorkflow adds workflow methods
- *   - withLoad adds pageLoad(), pageReload() methods
- *   - withSave adds editorSave() method
- *   - withLock adds workflowToggleLock() method
- *   - withZoom adds viewZoomIn(), viewZoomOut() methods
- *
- * For the complete store type, use:
- *   ```typescript
- *   readonly store = inject(UVEStore);
- *   // TypeScript infers the full type automatically
- *   ```
- *
- * Organization of initial state:
- * - Domain State: Core page data, user context, workflow
- * - Editor State: UI state for drag/drop, contentlet selection, panels
- * - View State: Device preview, SEO preview, view modes
- */
 export interface UVEState {
     // ============ DOMAIN STATE ============
     languages: DotLanguage[];
@@ -161,11 +116,6 @@ export interface UVEState {
     viewIsPreviewModeActive: boolean;
     viewOgTagsResults: SeoMetaTagsResult[] | null;
 }
-
-/**
- * Phase 3.1: Normalized State Interfaces
- * Flatten the pageAPIResponse structure for easier access
- */
 
 /**
  * Normalized Page Domain Data

@@ -50,7 +50,6 @@ export interface PageLoadingConfigState {
 }
 
 export interface PageAssetComputed {
-    // Phase 6.3: Merged from withPageContext - all page-related computeds in one place
     pageData: Signal<DotCMSPage | null>;
     pageSite: Signal<DotCMSSite | null>;
 
@@ -248,7 +247,6 @@ export function withPage() {
                 };
             });
 
-            // Phase 6.3: Page context computeds (merged from withPageContext)
             const pageLanguageId = computed(() => pageViewAs()?.language?.id || 1);
             const pageLanguage = computed(() => pageViewAs()?.language);
             const pageURI = computed(() => pageData()?.pageURI ?? '');

@@ -74,22 +74,10 @@ const initialState: UVEState = {
 export const UVEStore = signalStore(
     { protectedState: false }, // TODO: remove when the unit tests are fixed
     withState<UVEState>(initialState),
-
-    // ---- Core State Features (no dependencies) ----
-    withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
-    withPage(),                       // Page data + loading config (merged in Phase 6.1/6.4)
-    withTrack(),                      // Tracking (independent)
-
-    // ---- Workflow & Lock ----
-    // Phase 6.2: Consolidated lock logic here (moved from withPageContext, withEditor, withView, withLock)
-    // Must come early - withLoad needs workflowFetch
-    // Note: pageReload accessed directly from store at runtime to avoid circular dependency
-    withWorkflow(),  // Workflow + lock (provides workflowFetch for withLoad)
-
-    // NOTE: Phase 6.1 - withPageAsset removed (merged into withClient to eliminate duplication)
-    // NOTE: Phase 6.3 - withPageContext removed (merged into withClient + withView)
-
-    // ---- Data Loading ----
+    withFlags(UVE_FEATURE_FLAGS),
+    withPage(),
+    withTrack(),
+    withWorkflow(),
     withFeature((store) => withLoad({
         resetClientConfiguration: () => store.resetClientConfiguration(),
         workflowFetch: (inode: string) => store.workflowFetch(inode),
@@ -97,9 +85,7 @@ export const UVEStore = signalStore(
         $requestWithParams: store.$requestWithParams,
         setPageAssetResponse: (response) => store.setPageAssetResponse(response),
         addHistory: (state) => store.addHistory(state)
-    })),  // Page load methods (depends on client, workflow)
-
-    // ---- Core Store Methods ----
+    })),
     withMethods((store) => {
         return {
             setUveStatus(status: UVE_STATUS) {
@@ -116,14 +102,10 @@ export const UVEStore = signalStore(
             }
         };
     }),
-
-    // ---- UI Features ----
-    withLayout(),                     // Layout state
-    withViewZoom(),                   // View Zoom state
-    withView(),                       // View state - manages view modes (edit vs preview)
-    withEditor(),                     // Editor state
-
-    // ---- Actions ----
+    withLayout(),
+    withViewZoom(),
+    withView(),
+    withEditor(),
     withFeature((store) => withSave({
         requestMetadata: () => store.requestMetadata(),
         $requestWithParams: store.$requestWithParams,
@@ -135,27 +117,5 @@ export const UVEStore = signalStore(
         pageClientResponse: store.pageClientResponse,
         pageData: () => store.pageData(),
         pageTemplate: () => store.pageTemplate()
-    }))  // Editor save methods (depends on client)
-
-    // NOTE: withLock removed in Phase 6.2 - merged into withWorkflow
-
-    // ---- Store-level Computeds ----
-    // withStoreComputed()  // TODO: Re-add after reducing feature count or merging features
+    }))
 );
-
-/**
- * UVE Store Type
- *
- * This is the complete type of the UVE store after all features are composed.
- * Use this type when you need to reference the store type explicitly.
- *
- * @example
- * ```typescript
- * // ✅ PREFERRED: Let TypeScript infer the type
- * readonly store = inject(UVEStore);
- *
- * // ✅ ALTERNATIVE: Explicit type reference
- * readonly store: InstanceType<typeof UVEStore> = inject(UVEStore);
- * ```
- */
-export type UVEStoreType = InstanceType<typeof UVEStore>;

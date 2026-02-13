@@ -42,34 +42,11 @@ export interface ToggleLockOptions {
     lockedBy: string | null;
 }
 
-/**
- * Interface defining workflow computeds
- * Phase 6.2: Consolidated all lock logic here (single source of truth)
- *
- * @export
- * @interface WorkflowComputed
- */
 export interface WorkflowComputed {
-    /**
-     * Whether the current page is locked by another user.
-     * Single source of truth for page lock status.
-     */
     workflowIsPageLocked: Signal<boolean>;
-
-    /**
-     * Whether the toggle lock feature flag is enabled.
-     * Controls new toggle lock UI vs. old unlock button.
-     */
     systemIsLockFeatureEnabled: Signal<boolean>;
 
-    /**
-     * Unlock button props for toolbar (when feature flag disabled).
-     */
     $unlockButton: Signal<UnlockOptions | null>;
-
-    /**
-     * Toggle lock options for toolbar (when feature flag enabled).
-     */
     $workflowLockOptions: Signal<ToggleLockOptions | null>;
 }
 
@@ -97,12 +74,6 @@ export interface WithWorkflowDeps {
 
 /**
  * Workflow and lock management.
- *
- * Phase 6.2: Consolidated ALL lock concerns into this feature (single source of truth):
- * - Lock state computation (moved from withPageContext and withEditor)
- * - Lock UI props (moved from withView)
- * - Lock operations (merged from withLock)
- *
  * @export
  * @return {*}
  */
@@ -118,9 +89,6 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
             workflowLockIsLoading: false
         }),
         withComputed((store) => {
-            // ============ Lock State (Single Source of Truth) ============
-            // Phase 6.2: Moved from withPageContext and withEditor to eliminate duplication
-
             const workflowIsPageLocked = computed(() => {
                 return computeIsPageLocked(store.pageData(), store.currentUser());
             });
@@ -128,9 +96,6 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
             const systemIsLockFeatureEnabled = computed(() =>
                 store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
             );
-
-            // ============ Lock UI Props ============
-            // Phase 6.2: Moved from withView to centralize lock concerns
 
             const $unlockButton = computed<UnlockOptions | null>(() => {
                 const page = store.pageData();
@@ -179,9 +144,6 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
             const dotMessageService = inject(DotMessageService);
             const dotContentletLockerService = inject(DotContentletLockerService);
             const confirmationService = inject(ConfirmationService);
-
-            // ============ Lock Operations ============
-            // Phase 6.2: Moved from withLock to consolidate lock concerns
 
             const lockPage = (inode: string) => {
                 patchState(store, { workflowLockIsLoading: true });
@@ -273,7 +235,6 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
                 },
                 /**
                  * Toggle page lock/unlock with confirmation dialog
-                 * Phase 6.2: Moved from withLock
                  */
                 workflowToggleLock(
                     inode: string,

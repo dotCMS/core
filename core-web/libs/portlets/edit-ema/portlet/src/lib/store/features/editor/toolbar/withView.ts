@@ -1,9 +1,9 @@
 import {
+    patchState,
     signalStoreFeature,
-    withMethods,
-    withComputed,
     type,
-    patchState
+    withComputed,
+    withMethods
 } from '@ngrx/signals';
 
 import { computed } from '@angular/core';
@@ -26,8 +26,6 @@ import { PersonaSelectorProps } from '../models';
  * Dependencies interface for withView
  * These are computed signals from other features that withView needs
  *
- * Phase 6.2: Lock-related dependencies removed - all lock UI moved to withWorkflow
- * Phase 6.3: Page data dependencies removed - withView uses PageAssetComputed from store
  */
 export interface WithViewDeps {
     // No dependencies needed - all accessed from store
@@ -52,9 +50,6 @@ export function withView(_deps?: WithViewDeps) {
             props: type<PageAssetComputed>()
         },
         withComputed((store) => ({
-            // Phase 6.2: $unlockButton and $workflowLockOptions moved to withWorkflow
-            // Phase 6.3: viewMode added (was duplicated in withPageContext and withEditor)
-
             viewMode: computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN),
 
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
