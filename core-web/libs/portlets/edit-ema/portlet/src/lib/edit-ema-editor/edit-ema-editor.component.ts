@@ -272,13 +272,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
     protected readonly $showDialogs = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
-        const isEditState = this.uveStore.viewIsEditState();
+        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
         return canEditPage && isEditState;
     });
 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
-        const isEditState = this.uveStore.viewIsEditState();
+        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
         const isEnterprise = this.uveStore.uveIsEnterprise();
         return canEditPage && isEditState && isEnterprise;
     });

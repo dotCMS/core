@@ -129,15 +129,14 @@ export interface UVEState {
     editorStyleSchemas: StyleEditorFormSchema[];
 
     // ============ VIEW STATE (withView) ============
+    // Device and social media preview
     viewDevice: DotDeviceListItem | null;
     viewDeviceOrientation: Orientation | null;
     viewSocialMedia: string | null;
     viewParams: DotUveViewParams | null;
-    viewIsEditState: boolean;           // TODO: Replace with viewMode enum
-    viewIsPreviewModeActive: boolean;   // TODO: Remove - unused
     viewOgTagsResults: SeoMetaTagsResult[] | null;
 
-    // View zoom (merged from withViewZoom)
+    // Zoom controls
     viewZoomLevel: number;
     viewZoomIsActive: boolean;
     viewZoomIframeDocHeight: number;

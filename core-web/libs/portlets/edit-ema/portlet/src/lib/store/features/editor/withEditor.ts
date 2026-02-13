@@ -133,7 +133,7 @@ export function withEditor() {
             });
 
             const editorEnableInlineEdit = computed(() => {
-                return store.viewIsEditState() && store.uveIsEnterprise();
+                return store.viewMode() === UVE_MODE.EDIT && store.uveIsEnterprise();
             });
 
 

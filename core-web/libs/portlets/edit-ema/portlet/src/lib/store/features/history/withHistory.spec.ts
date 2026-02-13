@@ -1,8 +1,9 @@
-import { patchState, signalStore, withState } from '@ngrx/signals';
+import { signalStore, withState } from '@ngrx/signals';
 
 import { withHistory } from './withHistory';
 
 // Mock structuredClone for test environment
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 global.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
 
 interface TestState {
@@ -156,10 +157,13 @@ describe('withHistory', () => {
             store.addToHistory(state);
 
             // Mutate original
-            state.nested!.data = 'mutated';
+            if (state.nested) {
+                state.nested.data = 'mutated';
+            }
 
             // History should be unchanged (deep clone)
-            expect(store.history()[0].nested!.data).toBe('original');
+            const historyEntry = store.history()[0];
+            expect(historyEntry.nested?.data).toBe('original');
         });
 
         it('should not clone when deepClone is false', () => {
@@ -177,10 +181,13 @@ describe('withHistory', () => {
             store.addToHistory(state);
 
             // Mutate original
-            state.nested!.data = 'mutated';
+            if (state.nested) {
+                state.nested.data = 'mutated';
+            }
 
             // History should reflect mutation (no clone)
-            expect(store.history()[0].nested!.data).toBe('mutated');
+            const historyEntry = store.history()[0];
+            expect(historyEntry.nested?.data).toBe('mutated');
         });
     });
 

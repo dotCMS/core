@@ -12,7 +12,6 @@ import { withPage } from './features/page/withPage';
 import { withTrack } from './features/track/withTrack';
 import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
-import { withViewZoom } from './features/zoom/withZoom';
 import { Orientation, PageType, UVEState } from './models';
 
 import { DEFAULT_DEVICE, UVE_FEATURE_FLAGS } from '../shared/consts';
@@ -49,15 +48,12 @@ const initialState: UVEState = {
     editorRightSidebarOpen: false,
     editorOgTags: null,
     editorStyleSchemas: [],
-    // View state (flattened with view* prefix)
+    // View state (device, orientation, social media, zoom)
     viewDevice: DEFAULT_DEVICE,
     viewDeviceOrientation: Orientation.LANDSCAPE,
     viewSocialMedia: null,
     viewParams: null,
-    viewIsEditState: true,
-    viewIsPreviewModeActive: false,
     viewOgTagsResults: null,
-    // View zoom (merged from withViewZoom)
     viewZoomLevel: 1,
     viewZoomIsActive: false,
     viewZoomIframeDocHeight: 0,
@@ -110,7 +106,6 @@ export const UVEStore = signalStore(
         };
     }),
     withLayout(),
-    withViewZoom(),
     withView(),
     withEditor(),
     withFeature((store) => withSave({

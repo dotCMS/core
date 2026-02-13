@@ -33,16 +33,32 @@ export interface WithViewDeps {
 }
 
 /**
- * Manages editor view modes (edit vs preview) and preview configuration.
+ * View feature for UVE store - manages editor view modes, preview configuration, and zoom controls.
  *
- * Responsibilities:
- * - Device preview mode (viewSetDevice, viewSetOrientation)
- * - SEO/social media preview mode (viewSetSEO)
- * - Edit vs preview state toggle (isEditState)
- * - Lock UI props for toolbar display
- * - View parameters synchronization
+ * This feature consolidates all view-related concerns in one place:
  *
- * View state is flattened with view* prefix (viewDevice, viewOrientation, etc.)
+ * **Device Preview:**
+ * - Select device for responsive preview (mobile, tablet, desktop)
+ * - Control device orientation (portrait/landscape)
+ * - Clear device preview to return to edit mode
+ *
+ * **SEO/Social Media Preview:**
+ * - Preview how content appears on social platforms (Facebook, Twitter, LinkedIn)
+ * - View Open Graph tags and metadata
+ *
+ * **Zoom Controls:**
+ * - Zoom in/out of the editor canvas (0.1x to 3.0x)
+ * - Reset zoom to 100%
+ * - Support for trackpad pinch gestures
+ * - Dynamic canvas dimensions based on iframe height
+ *
+ * **View Mode:**
+ * - Access current mode via `viewMode()` computed signal (EDIT/PREVIEW/LIVE)
+ * - No redundant boolean flags - use mode enum for clarity
+ *
+ * All state follows flat structure with `view*` prefix (e.g., viewDevice, viewZoomLevel).
+ *
+ * @returns Signal store feature with view management capabilities
  */
 export function withView(_deps?: WithViewDeps) {
     return signalStoreFeature(
@@ -115,6 +131,31 @@ export function withView(_deps?: WithViewDeps) {
                 const isDefaultVariant = getIsDefaultVariant(viewAs?.variantId);
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;
+            }),
+
+            // Zoom state accessors
+            $viewZoomLevel: computed(() => store.viewZoomLevel()),
+            $viewZoomIsActive: computed(() => store.viewZoomIsActive()),
+            $viewIframeDocHeight: computed(() => store.viewZoomIframeDocHeight()),
+
+            // Canvas styles for zoom transform
+            $viewCanvasOuterStyles: computed(() => {
+                const zoom = store.viewZoomLevel();
+                const height = store.viewZoomIframeDocHeight() || 800;
+                return {
+                    width: `${1520 * zoom}px`,
+                    height: `${height * zoom}px`
+                };
+            }),
+            $viewCanvasInnerStyles: computed(() => {
+                const zoom = store.viewZoomLevel();
+                const height = store.viewZoomIframeDocHeight() || 800;
+                return {
+                    width: `1520px`,
+                    height: `${height}px`,
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'top left'
+                };
             })
         })),
         withMethods((store) => ({
@@ -125,7 +166,6 @@ export function withView(_deps?: WithViewDeps) {
                 patchState(store, {
                     viewDevice: device,
                     viewSocialMedia: null,
-                    viewIsEditState: false,
                     viewDeviceOrientation: newOrientation,
                     viewParams: {
                         ...(store.viewParams() || {}),
@@ -149,7 +189,6 @@ export function withView(_deps?: WithViewDeps) {
                     viewDevice: null,
                     viewDeviceOrientation: null,
                     viewSocialMedia: socialMedia,
-                    viewIsEditState: false,
                     viewParams: {
                         ...(store.viewParams() || {}),
                         device: null,
@@ -162,7 +201,6 @@ export function withView(_deps?: WithViewDeps) {
                 patchState(store, {
                     viewDevice: null,
                     viewSocialMedia: null,
-                    viewIsEditState: true,
                     viewDeviceOrientation: null,
                     viewParams: {
                         ...(store.viewParams() || {}),
@@ -176,6 +214,75 @@ export function withView(_deps?: WithViewDeps) {
                 patchState(store, {
                     viewOgTagsResults: ogTagsResults
                 });
+            },
+
+            // Zoom methods
+            /**
+             * Increase zoom level by 0.1 (max 3.0)
+             */
+            viewZoomIn(): void {
+                const currentZoom = store.viewZoomLevel();
+                const newZoom = Math.max(0.1, Math.min(3, currentZoom + 0.1));
+                patchState(store, { viewZoomLevel: newZoom });
+            },
+
+            /**
+             * Decrease zoom level by 0.1 (min 0.1)
+             */
+            viewZoomOut(): void {
+                const currentZoom = store.viewZoomLevel();
+                const newZoom = Math.max(0.1, Math.min(3, currentZoom - 0.1));
+                patchState(store, { viewZoomLevel: newZoom });
+            },
+
+            /**
+             * Reset zoom level to 1.0 (100%)
+             */
+            viewZoomReset(): void {
+                patchState(store, { viewZoomLevel: 1 });
+            },
+
+            /**
+             * Get formatted zoom label for display (e.g., "150%")
+             */
+            viewZoomLabel(): string {
+                return `${Math.round(store.viewZoomLevel() * 100)}%`;
+            },
+
+            /**
+             * Set zoom level directly (clamped between 0.1 and 3.0)
+             */
+            viewZoomSetLevel(viewZoomLevel: number): void {
+                const clampedZoom = Math.max(0.1, Math.min(3, viewZoomLevel));
+                patchState(store, { viewZoomLevel: clampedZoom });
+            },
+
+            /**
+             * Set zoom mode state (active during zoom gestures)
+             */
+            viewZoomSetActive(viewZoomIsActive: boolean): void {
+                patchState(store, { viewZoomIsActive });
+            },
+
+            /**
+             * Set iframe document height for canvas calculations
+             */
+            viewSetIframeDocHeight(height: number): void {
+                patchState(store, { viewZoomIframeDocHeight: height });
+            },
+
+            /**
+             * Set gesture start zoom level (for trackpad pinch gestures)
+             */
+            viewZoomSetGestureStart(zoom: number): void {
+                patchState(store, { viewZoomGestureStartZoom: zoom });
+            },
+
+            /**
+             * Get current gesture start zoom level
+             */
+            viewZoomGetGestureStart(): number {
+                return store.viewZoomGestureStartZoom();
             }
         }))
     );
