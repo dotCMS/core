@@ -182,6 +182,30 @@ describe('DotEditContentFormResolutions', () => {
             expect(result).toBe('https://example.com');
         });
 
+        it('should handle HTMLPAGE by removing last path segment to get directory', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                hostName: 'https://example.com',
+                url: '/content/blog/my-page'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('https://example.com/content/blog');
+        });
+
+        it('should handle HTMLPAGE with single segment path', () => {
+            const contentlet = {
+                ...mockContentlet,
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                hostName: 'https://example.com',
+                url: '/my-page'
+            };
+
+            const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, mockField);
+            expect(result).toBe('https://example.com');
+        });
+
         it('should extract path up to /content for non-file assets', () => {
             const contentlet = {
                 ...mockContentlet,
