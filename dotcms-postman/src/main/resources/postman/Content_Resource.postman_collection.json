@@ -6427,7 +6427,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"globalSearch\": \"{{testFirstParentTitleSearch}}\",\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
+							"raw": "{\n    \"globalSearch\": \"{{testFirstParentTitleSearch}}\",\n    \"searchableFieldsByContentType\": {\n        \"{{testContentTypeVarName}}\": {}\n    },\n    \"systemSearchableFields\": {\n        \"siteId\": \"{{defaultSiteId}}\",\n        \"languageId\": 1\n    },\n    \"page\": 0,\n    \"perPage\": 40\n}",
 							"options": {
 								"raw": {
 									"language": "json"
