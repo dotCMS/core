@@ -798,19 +798,19 @@ describe('withEditor', () => {
 
             it('should use variantId from store.$variantId() when variantId is set in pageParams', () => {
                 const { container, contentlet } = ACTION_PAYLOAD_MOCK;
-                const testVariantId = 'test-variant-id-123';
+                const testVariantName = 'test-variant-name-123';
 
-                // Set variantId in pageParams
+                // Set variantName in pageParams
                 patchState(store, {
                     pageParams: {
                         ...store.pageParams(),
-                        variantId: testVariantId
+                        variantName: testVariantName
                     }
                 });
 
                 const result = store.getCurrentTreeNode(container, contentlet);
 
-                expect(result.variantId).toBe(testVariantId);
+                expect(result.variantId).toBe(testVariantName);
                 expect(result).toEqual({
                     containerId: 'container-identifier-123',
                     contentId: 'contentlet-identifier-123',
@@ -818,7 +818,7 @@ describe('withEditor', () => {
                     personalization: 'dot:persona:dot:persona',
                     relationType: 'uuid-123',
                     treeOrder: '-1',
-                    variantId: testVariantId
+                    variantId: testVariantName
                 });
             });
         });

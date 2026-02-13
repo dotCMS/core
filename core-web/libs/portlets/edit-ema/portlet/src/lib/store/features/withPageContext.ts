@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, Signal } from '@angular/core';
 
-import { DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { computeIsPageLocked } from '../../utils';
@@ -302,7 +302,7 @@ export function withPageContext() {
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $currentLanguage: computed(() => viewAs()?.language),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
-                    $variantId: computed(() => pageParams()?.variantId ?? '')
+                    $variantId: computed(() => pageParams()?.variantName ?? DEFAULT_VARIANT_ID),
                 } satisfies PageContextComputed;
             }
         )
