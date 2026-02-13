@@ -63,7 +63,24 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
     return iframeURL.toString();
 };
 
-
+/**
+ * Editor feature - Manages editor UI state and capabilities
+ *
+ * Responsibilities:
+ * - Editor UI state (drag/drop, bounds, active contentlet, content area)
+ * - Editor panel preferences (palette, right sidebar)
+ * - Edit capabilities (canEditContent, canEditLayout, canEditStyles)
+ * - Inline editing mode (based on enterprise license and edit mode)
+ * - Page render data and iframe URL generation
+ * - Style schemas for contentlet styling
+ * - SEO/OG tags management
+ *
+ * Dependencies:
+ * - UVEState: Flat editor state (editorDragItem, editorBounds, etc.)
+ * - PageAssetComputed: Access to page data for edit checks
+ * - WorkflowComputed: Access to lock state for permission checks
+ * - ViewComputed: Access to viewMode for edit/preview mode checks
+ */
 export function withEditor() {
     return signalStoreFeature(
         {

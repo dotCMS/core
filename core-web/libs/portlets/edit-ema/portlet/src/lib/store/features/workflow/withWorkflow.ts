@@ -53,32 +53,28 @@ export interface WorkflowComputed {
 /**
  * Interface defining the methods provided by withWorkflow
  * Use this as props type in dependent features
- *
- * @export
- * @interface WithWorkflowMethods
  */
 export interface WithWorkflowMethods extends WorkflowComputed {
-    // Methods
     workflowFetch: RxMethod<string>;
     setWorkflowActionLoading: (workflowIsLoading: boolean) => void;
     workflowToggleLock: (inode: string, isLocked: boolean, isLockedByCurrentUser: boolean, lockedBy?: string) => void;
 }
 
 /**
- * Workflow dependencies from other features
- * No dependencies needed - pageReload accessed directly from store at runtime
+ * Workflow and lock management feature
+ *
+ * Responsibilities:
+ * - Fetch workflow actions for the current page
+ * - Manage page lock/unlock operations
+ * - Provide lock state computeds (isPageLocked, lock options)
+ * - Support toggle lock feature flag
+ *
+ * Note: pageReload() is accessed via type assertion because withWorkflow is composed
+ * BEFORE withPageApi in the store, so TypeScript cannot guarantee the method exists
+ * at composition time. The runtime access is safe because methods are called after
+ * full store initialization.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
-export interface WithWorkflowDeps {
-    // No dependencies - avoiding circular dependency issues
-}
-
-/**
- * Workflow and lock management.
- * @export
- * @return {*}
- */
-export function withWorkflow(_deps?: WithWorkflowDeps) {
+export function withWorkflow() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
@@ -160,8 +156,9 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
                             editorActiveContentlet: null,
                             workflowLockIsLoading: false
                         });
+                        // Type assertion needed: withWorkflow composed before withPageApi
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (store as any).pageReload?.();
+                        (store as any).pageReload();
                     },
                     error: () => {
                         messageService.add({
@@ -188,8 +185,9 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
                             editorActiveContentlet: null,
                             workflowLockIsLoading: false
                         });
+                        // Type assertion needed: withWorkflow composed before withPageApi
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (store as any).pageReload?.();
+                        (store as any).pageReload();
                     },
                     error: () => {
                         messageService.add({
