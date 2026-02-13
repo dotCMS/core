@@ -81,7 +81,7 @@ export const uveStoreMock = signalStore(
     withComputed((store) => ({
         $isPageLocked: computed(() => {
             const page = store.page();
-            const currentUser = store.currentUser();
+            const currentUser = store.uveCurrentUser();
             const isLockedByOther = page?.locked && page?.lockedBy !== currentUser?.userId;
             return isLockedByOther || false;
         })

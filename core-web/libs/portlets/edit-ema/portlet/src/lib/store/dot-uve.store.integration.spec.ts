@@ -402,28 +402,28 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
 
         it('should not affect unrelated state when updating editor', () => {
             const toolbarBefore = store.view();
-            const statusBefore = store.status();
-            const languagesBefore = store.languages();
+            const statusBefore = store.uveStatus();
+            const languagesBefore = store.pageLanguages();
 
             // Update editor state
             store.setPaletteOpen(false);
 
             // Unrelated state should be unchanged
             expect(store.view()).toBe(toolbarBefore);
-            expect(store.status()).toBe(statusBefore);
-            expect(store.languages()).toBe(languagesBefore);
+            expect(store.uveStatus()).toBe(statusBefore);
+            expect(store.pageLanguages()).toBe(languagesBefore);
         });
 
         it('should not affect unrelated state when updating toolbar', () => {
             const editorBefore = store.editorState();
-            const statusBefore = store.status();
+            const statusBefore = store.uveStatus();
 
             // Update toolbar state
             store.viewSetOrientation(Orientation.PORTRAIT);
 
             // Unrelated state should be unchanged
             expect(store.editorState()).toBe(editorBefore);
-            expect(store.status()).toBe(statusBefore);
+            expect(store.uveStatus()).toBe(statusBefore);
         });
     });
 });
