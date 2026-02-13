@@ -610,7 +610,6 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
     // Clean the params that are not needed for the page
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
-    delete paramsCopy?.mode;
 
     const searchParams = new URLSearchParams(paramsCopy);
 
