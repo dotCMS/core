@@ -8,7 +8,14 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
-    DotCMSPage
+    DotCMSLayout,
+    DotCMSPage,
+    DotCMSPageAssetContainers,
+    DotCMSSite,
+    DotCMSTemplate,
+    DotCMSURLContentMap,
+    DotCMSVanityUrl,
+    DotCMSViewAs
 } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/uve';
 
@@ -104,10 +111,9 @@ export interface UVEState {
     pageParams?: DotPageAssetParams;
     workflowActions?: DotCMSWorkflowAction[];
 
-    // Note: Page asset properties (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
-    // are now accessed via computed signals from withPageAsset feature.
-    // This eliminates duplication with pageAssetResponse in ClientConfigState.
-    // Use: store.pageData(), store.pageSite(), store.pageContainers(), etc.
+    // Note: Page asset computed signals (pageData, pageSite, pageContainers, pageTemplate, etc.)
+    // are added by withPageAsset feature and not declared here. TypeScript will infer them
+    // from the feature composition.
 
     // Status
     status: UVE_STATUS;
@@ -150,15 +156,46 @@ export interface UVEState {
     editorOgTags: SeoMetaTags | null;
     editorStyleSchemas: StyleEditorFormSchema[];
 
+    // ============ VIEW STATE (Flattened from ViewState with view* prefix) ============
     /**
-     * View state - editor view modes (edit vs preview) and preview configuration
-     * Includes device state, orientation, SEO preview, and view parameters
+     * View device - device preview mode
      */
-    view: ViewState;
+    viewDevice: DotDeviceListItem | null;
+
+    /**
+     * View orientation - device orientation for preview
+     */
+    viewOrientation: Orientation | null;
+
+    /**
+     * View social media - SEO/social media preview mode
+     */
+    viewSocialMedia: string | null;
+
+    /**
+     * View parameters - device/SEO preview mode parameters
+     * Synchronized with viewDevice/viewOrientation/viewSocialMedia state
+     */
+    viewParams: DotUveViewParams | null;
+
+    /**
+     * Is edit state - whether editor is in edit mode (vs preview mode)
+     */
+    viewIsEditState: boolean;
+
+    /**
+     * Is preview mode active - whether preview mode is currently active
+     */
+    viewIsPreviewModeActive: boolean;
+
+    /**
+     * OG tags results - SEO/social media preview tag results
+     */
+    viewOgTagsResults: SeoMetaTagsResult[] | null;
 
     // Note: isClientReady removed from UVEState (only in ClientConfigState via withClient)
-    // Note: viewParams moved to view.viewParams
     // Note: editor nested object removed - flattened to editor* prefixed properties
+    // Note: view nested object removed - flattened to view* prefixed properties
 }
 
 /**

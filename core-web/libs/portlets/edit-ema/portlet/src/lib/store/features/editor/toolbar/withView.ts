@@ -43,7 +43,7 @@ export interface WithViewDeps {
  * - Lock UI props for toolbar display
  * - View parameters synchronization
  *
- * View state is nested under store.view()
+ * View state is flattened with view* prefix (viewDevice, viewOrientation, etc.)
  */
 export function withView(deps: WithViewDeps) {
     return signalStoreFeature(
@@ -176,82 +176,62 @@ export function withView(deps: WithViewDeps) {
         })),
         withMethods((store) => ({
             viewSetDevice: (device: DotDevice, orientation?: Orientation) => {
-                const view = store.view();
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
-
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
+
                 patchState(store, {
-                    view: {
-                        ...view,
-                        device,
-                        socialMedia: null,
-                        isEditState: false,
+                    viewDevice: device,
+                    viewSocialMedia: null,
+                    viewIsEditState: false,
+                    viewOrientation: newOrientation,
+                    viewParams: {
+                        ...(store.viewParams() || {}),
+                        device: device.inode,
                         orientation: newOrientation,
-                        viewParams: {
-                            ...(view.viewParams || {}),
-                            device: device.inode,
-                            orientation: newOrientation,
-                            seo: null
-                        }
+                        seo: null
                     }
                 });
             },
             viewSetOrientation: (orientation: Orientation) => {
-                const view = store.view();
                 patchState(store, {
-                    view: {
-                        ...view,
-                        orientation,
-                        viewParams: view.viewParams ? {
-                            ...view.viewParams,
-                            orientation
-                        } : view.viewParams
-                    }
+                    viewOrientation: orientation,
+                    viewParams: store.viewParams() ? {
+                        ...store.viewParams(),
+                        orientation
+                    } : store.viewParams()
                 });
             },
             viewSetSEO: (socialMedia: string | null) => {
-                const view = store.view();
                 patchState(store, {
-                    view: {
-                        ...view,
+                    viewDevice: null,
+                    viewOrientation: null,
+                    viewSocialMedia: socialMedia,
+                    viewIsEditState: false,
+                    viewParams: {
+                        ...(store.viewParams() || {}),
                         device: null,
                         orientation: null,
-                        socialMedia,
-                        isEditState: false,
-                        viewParams: {
-                            ...(view.viewParams || {}),
-                            device: null,
-                            orientation: null,
-                            seo: socialMedia
-                        }
+                        seo: socialMedia
                     }
                 });
             },
             viewClearDeviceAndSocialMedia: () => {
-                const view = store.view();
                 patchState(store, {
-                    view: {
-                        ...view,
+                    viewDevice: null,
+                    viewSocialMedia: null,
+                    viewIsEditState: true,
+                    viewOrientation: null,
+                    viewParams: {
+                        ...(store.viewParams() || {}),
                         device: null,
-                        socialMedia: null,
-                        isEditState: true,
                         orientation: null,
-                        viewParams: {
-                            ...(view.viewParams || {}),
-                            device: null,
-                            orientation: null,
-                            seo: null
-                        }
+                        seo: null
                     }
                 });
             },
             viewSetOGTagResults: (ogTagsResults: SeoMetaTagsResult[]) => {
-                const view = store.view();
                 patchState(store, {
-                    view: {
-                        ...view,
-                        ogTagsResults
-                    }
+                    viewOgTagsResults: ogTagsResults
                 });
             }
         }))

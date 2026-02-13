@@ -7,6 +7,7 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { computeIsPageLocked, normalizeQueryParams } from '../../utils';
 import { PageType, TranslateProps, UVEState } from '../models';
+
 import type { PageAssetComputed } from './withPageAsset';
 
 /**
@@ -218,7 +219,7 @@ export function withPageContext() {
                 });
 
                 const editorEnableInlineEdit = computed(() => {
-                    return store.view().isEditState && store.isEnterprise();
+                    return store.viewIsEditState() && store.isEnterprise();
                 });
 
                 // ============ Page Domain ============
@@ -240,7 +241,7 @@ export function withPageContext() {
                 const pageFriendlyParams = computed(() => {
                     const params = {
                         ...(store.pageParams() ?? {}),
-                        ...(store.view().viewParams ?? {})
+                        ...(store.viewParams() ?? {})
                     };
 
                     return normalizeQueryParams(params);

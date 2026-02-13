@@ -187,12 +187,8 @@ export class DotEmaShellComponent implements OnInit {
         const viewParams = this.#getViewParams(params.mode);
 
         // Initialize view viewParams from query parameters
-        const view = this.uveStore.view();
         patchState(this.uveStore, {
-            view: {
-                ...view,
-                viewParams
-            }
+            viewParams
         });
 
         // Check if we already have page data loaded with matching params

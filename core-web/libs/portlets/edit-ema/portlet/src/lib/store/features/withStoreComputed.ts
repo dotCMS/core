@@ -2,10 +2,11 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, untracked } from '@angular/core';
 
-import { normalizeQueryParams } from '../../utils';
-import { TranslateProps, UVEState } from '../models';
 import { ClientConfigState } from './client/withClient';
 import { PageAssetComputed } from './withPageAsset';
+
+import { normalizeQueryParams } from '../../utils';
+import { TranslateProps, UVEState } from '../models';
 
 /**
  * Store-level computed properties that depend on multiple features
@@ -37,7 +38,7 @@ export function withStoreComputed() {
                 $friendlyParams: computed(() => {
                     const params = {
                         ...(store.pageParams() ?? {}),
-                        ...(store.view().viewParams ?? {})
+                        ...(store.viewParams() ?? {})
                     };
 
                     return normalizeQueryParams(params);

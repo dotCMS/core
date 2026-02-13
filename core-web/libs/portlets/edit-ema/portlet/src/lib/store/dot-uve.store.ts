@@ -44,16 +44,14 @@ const initialState: UVEState = {
     editorRightSidebarOpen: false,
     editorOgTags: null,
     editorStyleSchemas: [],
-    // View state
-    view: {
-        device: DEFAULT_DEVICE,
-        orientation: Orientation.LANDSCAPE,
-        socialMedia: null,
-        viewParams: null,
-        isEditState: true,
-        isPreviewModeActive: false,
-        ogTagsResults: null
-    }
+    // View state (flattened with view* prefix)
+    viewDevice: DEFAULT_DEVICE,
+    viewOrientation: Orientation.LANDSCAPE,
+    viewSocialMedia: null,
+    viewParams: null,
+    viewIsEditState: true,
+    viewIsPreviewModeActive: false,
+    viewOgTagsResults: null
 };
 
 /**

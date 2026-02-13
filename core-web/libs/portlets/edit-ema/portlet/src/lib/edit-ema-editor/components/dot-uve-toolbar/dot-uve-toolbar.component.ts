@@ -123,9 +123,7 @@ export class DotUveToolbarComponent {
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
     readonly $unlockButton = this.#store.$unlockButton;
-    get $socialMedia() {
-        return this.#store.view().socialMedia;
-    }
+    readonly $socialMedia = this.#store.viewSocialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.editorPaletteOpen();
     readonly $canEditPage = this.#store.editorCanEditContent();
@@ -160,11 +158,10 @@ export class DotUveToolbarComponent {
 
     // Build unified device selector state
     readonly $deviceSelectorState = computed(() => {
-        const toolbar = this.#store.view();
         return {
-            currentDevice: toolbar.device,
-            currentSocialMedia: toolbar.socialMedia,
-            currentOrientation: toolbar.orientation
+            currentDevice: this.#store.viewDevice(),
+            currentSocialMedia: this.#store.viewSocialMedia(),
+            currentOrientation: this.#store.viewOrientation()
         };
     });
 
