@@ -593,8 +593,12 @@ public class ESIndexAPI {
 
 		Map<String,Object> map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
+		// default to 0-1 replicas
+		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
+
 		map.put("number_of_shards", shards);
-		map.put("index.auto_expand_replicas", "0-all");
+		map.put("index.auto_expand_replicas", autoExpandReplicas);
 		map.putIfAbsent("index.mapping.total_fields.limit", 10000);
 		map.putIfAbsent("index.mapping.nested_fields.limit", 10000);
 		map.putIfAbsent("index.query.default_field", Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));
