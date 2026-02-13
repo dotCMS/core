@@ -2,13 +2,12 @@ import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals'
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
-import { withSave } from './features/editor/save/withSave';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
-import { withLoad } from './features/load/withLoad';
 import { withPage } from './features/page/withPage';
+import { withPageApi } from './features/page-api/withPageApi';
 import { withTrack } from './features/track/withTrack';
 import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
@@ -88,14 +87,6 @@ export const UVEStore = signalStore(
     withPage(),
     withTrack(),
     withWorkflow(),
-    withFeature((store) => withLoad({
-        resetClientConfiguration: () => store.resetClientConfiguration(),
-        workflowFetch: (inode: string) => store.workflowFetch(inode),
-        requestMetadata: () => store.requestMetadata(),
-        $requestWithParams: store.$requestWithParams,
-        setPageAssetResponse: (response) => store.setPageAssetResponse(response),
-        addHistory: (state) => store.addToHistory(state)
-    })),
     withMethods((store) => {
         return {
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
@@ -108,13 +99,26 @@ export const UVEStore = signalStore(
     withLayout(),
     withView(),
     withEditor(),
-    withFeature((store) => withSave({
+    withFeature((store) => withPageApi({
+        // Client configuration
+        resetClientConfiguration: () => store.resetClientConfiguration(),
+
+        // Workflow
+        workflowFetch: (inode: string) => store.workflowFetch(inode),
+
+        // Request metadata
         requestMetadata: () => store.requestMetadata(),
-        $requestWithParams: () => store.$requestWithParams(),
+        $requestWithParams: store.$requestWithParams,
+
+        // Page asset management
         setPageAssetResponse: (response) => store.setPageAssetResponse(response),
         rollbackPageAssetResponse: () => store.rollbackPageAssetResponse(),
+
+        // History management
         clearHistory: () => store.clearHistory(),
         addHistory: (response) => store.addToHistory(response),
+
+        // Page accessors
         pageAssetResponse: () => store.pageAssetResponse(),
         pageClientResponse: () => store.pageClientResponse(),
         pageData: () => store.pageData(),
