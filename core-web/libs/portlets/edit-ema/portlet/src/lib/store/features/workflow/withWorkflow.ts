@@ -37,6 +37,7 @@ export interface ToggleLockOptions {
     inode: string;
     isLocked: boolean;
     isLockedByCurrentUser: boolean;
+    canLock: boolean;
     lockedBy: string | null;
 }
 
@@ -87,10 +88,10 @@ export interface WithWorkflowMethods extends WorkflowComputed {
 
 /**
  * Workflow dependencies from other features
- * pageReload is optional to avoid circular dependency - will be available at runtime
+ * No dependencies needed - pageReload accessed directly from store at runtime
  */
 export interface WithWorkflowDeps {
-    pageReload?: () => void;
+    // No dependencies - avoiding circular dependency issues
 }
 
 /**
@@ -104,7 +105,7 @@ export interface WithWorkflowDeps {
  * @export
  * @return {*}
  */
-export function withWorkflow(deps: WithWorkflowDeps) {
+export function withWorkflow(_deps?: WithWorkflowDeps) {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
@@ -159,6 +160,7 @@ export function withWorkflow(deps: WithWorkflowDeps) {
                     inode: page.inode,
                     isLocked,
                     isLockedByCurrentUser,
+                    canLock: page.canLock ?? false,
                     lockedBy: page.lockedByName
                 };
             });
@@ -194,7 +196,7 @@ export function withWorkflow(deps: WithWorkflowDeps) {
                             editorActiveContentlet: null,
                             workflowLockIsLoading: false
                         });
-                        deps.pageReload?.();
+                        (store as any).pageReload?.();
                     },
                     error: () => {
                         messageService.add({
@@ -221,7 +223,7 @@ export function withWorkflow(deps: WithWorkflowDeps) {
                             editorActiveContentlet: null,
                             workflowLockIsLoading: false
                         });
-                        deps.pageReload?.();
+                        (store as any).pageReload?.();
                     },
                     error: () => {
                         messageService.add({

@@ -84,9 +84,8 @@ export const UVEStore = signalStore(
     // ---- Workflow & Lock ----
     // Phase 6.2: Consolidated lock logic here (moved from withPageContext, withEditor, withView, withLock)
     // Must come early - withLoad needs workflowFetch, withPageContext needs lock computeds
-    withFeature((store) => withWorkflow({
-        pageReload: () => store.pageReload?.()  // Runtime resolution after withLoad is composed
-    })),  // Workflow + lock (provides workflowFetch for withLoad)
+    // Note: pageReload accessed directly from store at runtime to avoid circular dependency
+    withWorkflow(),  // Workflow + lock (provides workflowFetch for withLoad)
 
     // ---- Shared Computeds ----
     // NOTE: withPageAsset removed in Phase 6.1 - merged into withClient to eliminate duplication
