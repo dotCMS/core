@@ -43,6 +43,21 @@ on:
         required: false
         type: boolean
         default: true
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        required: false
+        type: string
+        default: ''
+      maven-compiler-release:
+        description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+        required: false
+        type: string
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1-ms). If not set, derived from java-version major.'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   # Initial JDK Build
@@ -101,6 +116,9 @@ jobs:
           cleanup-runner: true
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
+          java-version: ${{ inputs.java-version }}
+          maven-compiler-release: ${{ inputs.maven-compiler-release }}
+          artifact-suffix: ${{ inputs.artifact-suffix }}
 
       # Check for unauthorized changes to the working directory (only for PR checks)
       - name: Check for changes to source during build
