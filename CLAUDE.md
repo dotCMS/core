@@ -497,7 +497,7 @@ cd core-web && nx run dotcms-ui:serve                 # Separate Frontend dev se
 ```
 
 ### Tech Stack
-- **Backend**: Java 21 runtime, Java 11 syntax (core), Maven, Spring/CDI
+- **Backend**: Java 25 runtime, Java 11 syntax (core), Maven, Spring/CDI
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript stack details
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
@@ -782,11 +782,11 @@ try {
 - ✅ Use `APILocator.getXXXAPI()` for services
 - ✅ Use `@Value.Immutable` for data objects
 - ✅ Use JAX-RS `@Path` for REST endpoints - **See [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)**
-- ✅ Use modern Java 21 syntax (Java 11 compatible)
+- ✅ Use modern Java 25 syntax (Java 11 compatible)
 - ✅ Follow domain-driven package organization for new features
 - ✅ **@Schema Rules**: Match schema to actual return type (wrapped vs unwrapped) - **See [REST Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)**
 - ❌ Avoid DWR, Struts, portlets, console logging, direct system properties
-- ❌ Avoid Java 21 runtime features in core modules
+- ❌ Avoid Java 25 runtime features in core modules
 - ❌ **Never use raw `ResponseEntityView.class` as @Schema implementation**
 - ❌ **NEVER use `ResponseEntityView.class`** in `@Schema` - provides no meaningful API documentation
 - ❌ **NEVER omit `@Schema`** from @ApiResponse(200) - incomplete Swagger documentation

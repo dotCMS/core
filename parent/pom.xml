@@ -26,7 +26,7 @@
          support new version default in environments/environment.properties and can be changed for local developer in
         environments/dev/user-dev.properties -->
         <!--suppress UnresolvedMavenProperty -->
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.release>25</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
@@ -97,7 +97,7 @@
         <jandex-maven-plugin.version>1.2.3</jandex-maven-plugin.version>
 
         <javadoc.additional.params>-Xdoclint:none --allow-script-in-comments</javadoc.additional.params>
-        <jdk.min.version>21</jdk.min.version>
+        <jdk.min.version>25</jdk.min.version>
         <maven.compiler.argument.source>${maven.compiler.source}</maven.compiler.argument.source>
         <maven.compiler.argument.target>${maven.compiler.target}</maven.compiler.argument.target>
         <maven.compiler.argument.testSource>${maven.compiler.testSource}</maven.compiler.argument.testSource>
@@ -220,7 +220,7 @@
         <environment.properties.folder>${maven.multiModuleProjectDirectory}/environments</environment.properties.folder>
         <environment.properties.defaults>${environment.properties.folder}/environment.properties</environment.properties.defaults>
         <spotless.skip>true</spotless.skip>
-        <glowroot.version>0.14.4</glowroot.version>
+        <glowroot.version>0.14.5-beta.3-java25</glowroot.version>
         <jmeter.test.skip>true</jmeter.test.skip>
     </properties>
 
