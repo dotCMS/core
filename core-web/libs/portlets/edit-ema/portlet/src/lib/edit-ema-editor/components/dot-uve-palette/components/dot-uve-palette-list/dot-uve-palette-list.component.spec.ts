@@ -58,7 +58,15 @@ const mockStore = {
     // methods we assert on
     getContentTypes: jest.fn(),
     getContentlets: jest.fn(),
-    setLayoutMode: jest.fn()
+    setLayoutMode: jest.fn(),
+    addFavorite: jest.fn().mockImplementation((contentType: DotCMSContentType) => {
+        const current = mockStore.contenttypes();
+        mockStore.contenttypes.set([...current, contentType]);
+    }),
+    removeFavorite: jest.fn().mockImplementation((contentTypeId: string) => {
+        const current = mockStore.contenttypes();
+        mockStore.contenttypes.set(current.filter((ct) => ct.id !== contentTypeId));
+    })
 };
 
 // ===== Test Helper Functions =====
@@ -641,6 +649,69 @@ describe('DotUvePaletteListComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+    });
+
+    describe('favorite add/remove controls visibility', () => {
+        it('should show controls when adding a favorite via context menu', () => {
+            setLoadedContentTypes();
+            spectator.component['$shouldHideControls'].set(true);
+            spectator.detectChanges();
+
+            spectator.component.onContextMenu(basicContentType);
+            const command = spectator.component['$contextMenuItems']()[0]?.command;
+            expect(command).toBeDefined();
+            command?.();
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
+        });
+
+        it('should hide controls when removing last favorite via context menu', () => {
+            setFavoritesList({ spectator });
+            setLoadedContentTypes({ contentTypes: [basicContentType] });
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.$isFavoritesList.set(true);
+            spectator.detectChanges();
+
+            const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
+            (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
+
+            spectator.component.onContextMenu(basicContentType);
+            const command = spectator.component['$contextMenuItems']()[0]?.command;
+            expect(command).toBeDefined();
+            command?.();
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
+        });
+
+        it('should keep controls visible when removing a favorite but others remain', () => {
+            const secondContentType = {
+                ...basicContentType,
+                id: '2',
+                name: 'News',
+                variable: 'news'
+            } as DotCMSContentType;
+            setFavoritesList({ spectator });
+            setLoadedContentTypes({ contentTypes: [basicContentType, secondContentType] });
+            mockStore.searchParams.listType.set(DotUVEPaletteListTypes.FAVORITES);
+            mockStore.$isFavoritesList.set(true);
+            spectator.detectChanges();
+
+            const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
+            (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
+
+            spectator.component.onContextMenu(basicContentType);
+            const command = spectator.component['$contextMenuItems']()[0]?.command;
+            expect(command).toBeDefined();
+            command?.();
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
         });
     });
 
