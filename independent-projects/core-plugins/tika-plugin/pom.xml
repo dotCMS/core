@@ -13,7 +13,7 @@
         <maven.bundle.version>5.1.8</maven.bundle.version>
         <osgi.core.version>8.0.0</osgi.core.version>
         <osgi.compendium.version>7.0.0</osgi.compendium.version>
-        <tika.version>2.8.0</tika.version>
+        <tika.version>3.2.2</tika.version>
         <skip.rewrite>true</skip.rewrite>
     </properties>
     <dependencies>
