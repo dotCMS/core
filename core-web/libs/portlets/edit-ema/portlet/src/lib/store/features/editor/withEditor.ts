@@ -20,7 +20,6 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-
 import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {
@@ -37,6 +36,7 @@ import {
     mapContainerStructureToArrayOfContainers,
     sanitizeURL
 } from '../../../utils';
+
 import { PageType, UVEState } from '../../models';
 import { PageAssetComputed } from '../client/withClient';
 import type { PageContextComputed } from '../withPageContext';
