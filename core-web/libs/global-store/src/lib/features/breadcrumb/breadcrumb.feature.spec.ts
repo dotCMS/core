@@ -466,6 +466,75 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.breadcrumbs().length).toBe(3); // Home + Content + Edit
             expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
         });
+
+        it('should not treat non-content URLs as the same breadcrumb path', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit', url: '/dotAdmin/#/content/xyz', target: '_self' }
+            ]);
+
+            // Different paths that should NOT be considered equal to /content/xyz
+            store.addNewBreadcrumb({
+                label: 'Different Path 1',
+                url: '/dotAdmin/#/contentABC',
+                target: '_self'
+            });
+
+            store.addNewBreadcrumb({
+                label: 'Different Path 2',
+                url: '/dotAdmin/#/content-type',
+                target: '_self'
+            });
+
+            store.addNewBreadcrumb({
+                label: 'Different Path 3',
+                url: '/dotAdmin/#/mycontent/123',
+                target: '_self'
+            });
+
+            // Home + Content + Edit + 3 different paths
+            expect(store.breadcrumbs().length).toBe(6);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Different Path 3');
+        });
+
+        it('should handle URLs with special or encoded characters', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Special', url: '/dotAdmin/#/content/äöü', target: '_self' }
+            ]);
+
+            // Encoded version of the same content path – both match content-edit pattern so last is replaced
+            store.addNewBreadcrumb({
+                label: 'Special Encoded',
+                url: 'http://localhost/dotAdmin/#/content/%C3%A4%C3%B6%C3%BC',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(3); // Home + Content + Special Encoded (replaced)
+            expect(store.selectLastBreadcrumbLabel()).toBe('Special Encoded');
+        });
+
+        it('should safely handle empty and null URLs when adding new breadcrumbs', () => {
+            store.setBreadcrumbs([{ label: 'Content', disabled: true }]);
+
+            // Empty URL
+            store.addNewBreadcrumb({
+                label: 'Empty URL',
+                url: '',
+                target: '_self'
+            });
+
+            // Null URL casted to string type to exercise runtime null-safety
+            store.addNewBreadcrumb({
+                label: 'Null URL',
+                url: null as unknown as string,
+                target: '_self'
+            });
+
+            // Home + Content + Empty URL + Null URL
+            expect(store.breadcrumbs().length).toBe(4);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Null URL');
+        });
     });
 
     describe('Clear Breadcrumbs', () => {
