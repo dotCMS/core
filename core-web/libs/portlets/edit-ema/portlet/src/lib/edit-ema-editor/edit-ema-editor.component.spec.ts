@@ -3699,7 +3699,7 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, ''editorState'').mockReturnValue({ ...store.editorState(), state: EDITOR_STATE.IDLE });
+                    jest.spyOn(store, 'editorState').mockReturnValue({ ...store.editorState(), state: EDITOR_STATE.IDLE });
 
                     spectator.component.handleInternalNav(mockEvent);
 
@@ -3812,7 +3812,7 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    jest.spyOn(store, ''editorState'').mockReturnValue({ ...store.editorState(), state: EDITOR_STATE.IDLE });
+                    jest.spyOn(store, 'editorState').mockReturnValue({ ...store.editorState(), state: EDITOR_STATE.IDLE });
 
                     spectator.component.handleInternalNav(mockEvent);
 

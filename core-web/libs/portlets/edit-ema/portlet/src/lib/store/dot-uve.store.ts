@@ -1,4 +1,4 @@
-import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
+import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 

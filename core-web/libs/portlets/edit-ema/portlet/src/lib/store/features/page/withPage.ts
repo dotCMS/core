@@ -9,7 +9,7 @@ import {
 
 import { computed, Signal, untracked } from '@angular/core';
 
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
 import {
     DotCMSLayout,
     DotCMSPage,
@@ -67,11 +67,11 @@ export interface PageAssetComputed {
 
     pageNumberContents: Signal<number | null>;
 
-    pageClientResponse: Signal<any>;
+    pageClientResponse: Signal<DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } | null } | null>;
 
     // Page context properties (merged from withPageContext)
     pageLanguageId: Signal<number>;
-    pageLanguage: Signal<any>;
+    pageLanguage: Signal<DotLanguage | undefined>;
     pageURI: Signal<string>;
     pageVariantId: Signal<string>;
     pageTranslateProps: Signal<TranslateProps>;

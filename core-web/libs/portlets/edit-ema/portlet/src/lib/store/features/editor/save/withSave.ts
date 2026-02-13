@@ -3,12 +3,12 @@ import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe, throwError } from 'rxjs';
 
-import { inject, Signal } from '@angular/core';
+import { inject } from '@angular/core';
 
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
-import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
+import { DotCMSPage, DotCMSPageAsset, DotCMSTemplate, DotPageAssetLayoutRow } from '@dotcms/types';
 
 import { DotPageApiService } from '../../../../services/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../../services/iframe-messenger/uve-iframe-messenger.service';
@@ -25,8 +25,8 @@ export interface WithSaveDeps {
     addHistory: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
     pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     pageClientResponse: () => DotCMSPageAsset | { pageAsset: DotCMSPageAsset; content?: Record<string, unknown>; requestMetadata: { query: string; variables: Record<string, string> } } | null;
-    pageData: () => any;  // Page data accessor
-    pageTemplate: () => any;  // Page template accessor
+    pageData: () => DotCMSPage | null;
+    pageTemplate: () => DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null;
 }
 
 

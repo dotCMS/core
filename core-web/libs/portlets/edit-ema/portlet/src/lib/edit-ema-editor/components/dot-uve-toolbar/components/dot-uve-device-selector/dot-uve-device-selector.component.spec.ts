@@ -1,7 +1,6 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotDevice } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 
 import {

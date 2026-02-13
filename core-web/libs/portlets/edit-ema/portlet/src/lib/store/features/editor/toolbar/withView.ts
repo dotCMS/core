@@ -24,9 +24,10 @@ import { PersonaSelectorProps } from '../models';
 
 /**
  * Dependencies interface for withView
- * These are computed signals from other features that withView needs
- *
+ * Currently no external dependencies needed - all accessed from store
+ * Kept for future extensibility
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
 export interface WithViewDeps {
     // No dependencies needed - all accessed from store
 }

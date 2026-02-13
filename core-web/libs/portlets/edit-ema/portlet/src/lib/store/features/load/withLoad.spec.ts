@@ -115,7 +115,8 @@ export const uveStoreMock = signalStore(
     withPage(),
     withFeature((store) => withLoad({
         resetClientConfiguration: () => store.resetClientConfiguration(),
-        workflowFetch: (inode) => {}, // Mock implementation
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
+        workflowFetch: (_inode) => {}, // Mock implementation
         requestMetadata: () => store.requestMetadata(),
         $requestWithParams: computed(() => store.$requestWithParams()),
         setPageAssetResponse: (response) => store.setPageAssetResponse(response),

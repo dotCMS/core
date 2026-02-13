@@ -68,6 +68,7 @@ export interface WithWorkflowMethods extends WorkflowComputed {
  * Workflow dependencies from other features
  * No dependencies needed - pageReload accessed directly from store at runtime
  */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
 export interface WithWorkflowDeps {
     // No dependencies - avoiding circular dependency issues
 }
@@ -159,6 +160,7 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
                             editorActiveContentlet: null,
                             workflowLockIsLoading: false
                         });
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (store as any).pageReload?.();
                     },
                     error: () => {
@@ -186,6 +188,7 @@ export function withWorkflow(_deps?: WithWorkflowDeps) {
                             editorActiveContentlet: null,
                             workflowLockIsLoading: false
                         });
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (store as any).pageReload?.();
                     },
                     error: () => {

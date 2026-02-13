@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signa
 
 import { computed } from '@angular/core';
 
-import { DotCMSLayout, DotCMSPageAsset } from '@dotcms/types';
+import { DotCMSLayout, DotCMSPage, DotCMSPageAsset, DotCMSPageAssetContainers, DotCMSTemplate } from '@dotcms/types';
 
 import { LayoutProps } from './models';
 
@@ -10,9 +10,9 @@ import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
 
 interface LayoutStoreDeps {
-    pageData: () => any;
-    pageContainers: () => any;
-    pageTemplate: () => any;
+    pageData: () => DotCMSPage | null;
+    pageContainers: () => DotCMSPageAssetContainers | null;
+    pageTemplate: () => DotCMSTemplate | Pick<DotCMSTemplate, 'drawed' | 'theme' | 'anonymous' | 'identifier'> | null;
     pageLayout: () => DotCMSLayout | null;
     pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     setPageAssetResponse: (r: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
