@@ -2,13 +2,13 @@ import { patchState, signalStore, withFeature, withMethods, withState } from '@n
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
-import { withClient } from './features/client/withClient';
 import { withSave } from './features/editor/save/withSave';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
+import { withPage } from './features/page/withPage';
 import { withTrack } from './features/track/withTrack';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { withViewZoom } from './features/zoom/withZoom';
@@ -77,7 +77,7 @@ export const UVEStore = signalStore(
 
     // ---- Core State Features (no dependencies) ----
     withFlags(UVE_FEATURE_FLAGS),    // Flags first (others may depend on it)
-    withClient(),                     // Client config + PageAsset computeds (merged in Phase 6.1)
+    withPage(),                       // Page data + loading config (merged in Phase 6.1/6.4)
     withTrack(),                      // Tracking (independent)
 
     // ---- Workflow & Lock ----

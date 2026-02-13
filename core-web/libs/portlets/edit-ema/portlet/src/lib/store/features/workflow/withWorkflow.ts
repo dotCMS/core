@@ -6,9 +6,10 @@ import { pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Signal } from '@angular/core';
 
+import { ConfirmationService, MessageService } from 'primeng/api';
+
 import { switchMap, tap } from 'rxjs/operators';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotContentletLockerService, DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
@@ -17,7 +18,7 @@ import { UVE_STATUS } from '../../../shared/enums';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
 
-import type { PageAssetComputed } from '../client/withClient';
+import type { PageAssetComputed } from '../page/withPage';
 
 interface WithWorkflowState {
     workflowActions: DotCMSWorkflowAction[];

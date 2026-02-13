@@ -13,12 +13,12 @@ import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
-import { PageAssetComputed } from '../../../features/client/withClient';
 import {
     getFullPageURL,
     getIsDefaultVariant,
     getOrientation
 } from '../../../../utils';
+import { PageAssetComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
 

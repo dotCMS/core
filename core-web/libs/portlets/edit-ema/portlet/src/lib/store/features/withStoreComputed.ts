@@ -2,7 +2,7 @@ import { signalStoreFeature, type, withComputed } from '@ngrx/signals';
 
 import { computed, untracked } from '@angular/core';
 
-import { ClientConfigState, PageAssetComputed } from './client/withClient';
+import { PageLoadingConfigState, PageAssetComputed } from './page/withPage';
 
 import { normalizeQueryParams } from '../../utils';
 import { TranslateProps, UVEState } from '../models';
@@ -15,7 +15,7 @@ import { TranslateProps, UVEState } from '../models';
 export function withStoreComputed() {
     return signalStoreFeature(
         {
-            state: type<UVEState & ClientConfigState>(),
+            state: type<UVEState & PageLoadingConfigState>(),
             props: type<PageAssetComputed>()
         },
         withComputed((store) => {

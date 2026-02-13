@@ -7,14 +7,14 @@ import { DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSPageAsset } from '@dotcms/types';
 import { mockWorkflowsActions } from '@dotcms/utils-testing';
 
+import { withWorkflow } from './withWorkflow';
+
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
-
-import { withClient } from '../client/withClient';
-import { withWorkflow } from './withWorkflow';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { Orientation, PageType, UVEState } from '../../models';
+import { withPage } from '../page/withPage';
 
 const pageParams: DotPageApiParams = {
     url: 'new-url',
@@ -65,7 +65,7 @@ const initialState: UVEState = {
 export const uveStoreMock = signalStore(
     { protectedState: false },
     withState<UVEState>(initialState),
-    withFeature(() => withClient()),
+    withFeature(() => withPage()),
     withWorkflow(),
     withMethods((store) => ({
         setPageAPIResponse: (pageAssetResponse: DotCMSPageAsset) => {

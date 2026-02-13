@@ -28,12 +28,15 @@ import { TranslateProps, UVEState } from '../../models';
 import { withTimeMachine } from '../timeMachine/withTimeMachine';
 
 /**
- * Client configuration state
+ * Page loading configuration state
+ *
+ * Manages the configuration and state for loading page data from the server.
+ * This includes request metadata (query/variables), response format, and the loaded page asset.
  *
  * @export
- * @interface ClientConfigState
+ * @interface PageLoadingConfigState
  */
-export interface ClientConfigState {
+export interface PageLoadingConfigState {
     legacyResponseFormat: boolean;
     isClientReady: boolean;
     requestMetadata: {
@@ -76,13 +79,18 @@ export interface PageAssetComputed {
     pageFriendlyParams: Signal<Record<string, string>>;
 }
 
-export interface WithClientMethods extends PageAssetComputed {
+/**
+ * Complete interface for withPage feature
+ * Combines page data access, page loading configuration, and page operations
+ */
+export interface WithPageMethods extends PageAssetComputed {
+    // Page loading configuration state
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
     pageAssetResponse: () => { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> } | null;
     isClientReady: () => boolean;
     legacyResponseFormat: () => boolean;
 
-    // Methods
+    // Page loading configuration methods
     setIsClientReady: (isClientReady: boolean) => void;
     setCustomClient: (requestMetadata: { query: string; variables: Record<string, string> }, legacyResponseFormat: boolean) => void;
     setPageAssetResponse: (pageAssetResponse: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
@@ -92,22 +100,35 @@ export interface WithClientMethods extends PageAssetComputed {
     $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
 }
 
-const clientState: ClientConfigState = {
+const pageLoadingConfigState: PageLoadingConfigState = {
     requestMetadata: null,
     pageAssetResponse: null,
     isClientReady: false,
     legacyResponseFormat: false
 };
 
-
-export function withClient() {
+/**
+ * Page data and loading configuration feature
+ *
+ * Manages all page-related data and the configuration for loading pages from the server.
+ * This is the primary feature for accessing page information throughout the UVE store.
+ *
+ * Responsibilities:
+ * - Page asset data (page, site, containers, template, layout, viewAs, etc.)
+ * - Page context (language, URI, variant, translation props, friendly params)
+ * - Page loading configuration (request metadata, response format, client readiness)
+ * - Time machine for undo/redo of page changes
+ *
+ * @returns Signal store feature with page data and loading configuration
+ */
+export function withPage() {
     return signalStoreFeature(
         {
             state: type<UVEState>()
         },
-        withState<ClientConfigState>(clientState),
+        withState<PageLoadingConfigState>(pageLoadingConfigState),
         // Add time machine to track pageAssetResponse history for optimistic updates
-        withTimeMachine<ClientConfigState['pageAssetResponse']>({
+        withTimeMachine<PageLoadingConfigState['pageAssetResponse']>({
             maxHistory: 50, // Reasonable limit for style editor undo
             deepClone: true // Important: pageAssetResponse has nested objects
         }),
@@ -129,7 +150,7 @@ export function withClient() {
                     patchState(store, { pageAssetResponse });
                 },
                 setPageAssetResponseOptimistic: (
-                    pageAssetResponse: ClientConfigState['pageAssetResponse']
+                    pageAssetResponse: PageLoadingConfigState['pageAssetResponse']
                 ) => {
                     const currentResponse = store.pageAssetResponse();
                     // Save snapshot before updating (for optimistic updates rollback)
@@ -147,7 +168,7 @@ export function withClient() {
                     return false;
                 },
                 resetClientConfiguration: () => {
-                    patchState(store, { ...clientState });
+                    patchState(store, { ...pageLoadingConfigState });
                     store.clearHistory();
                 }
             };

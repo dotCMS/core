@@ -4,7 +4,7 @@ import {
     Output,
     EventEmitter,
     ChangeDetectionStrategy,
-    inject
+    inject, OnChanges
 } from '@angular/core';
 
 import { of } from 'rxjs/internal/observable/of';
@@ -126,7 +126,7 @@ import { Verify } from '../../services/validation/Verify';
     `,
     standalone: false
 })
-export class ServersideCondition {
+export class ServersideCondition implements OnChanges {
     private loggerService = inject(LoggerService);
 
     @Input() componentInstance: ServerSideFieldModel;

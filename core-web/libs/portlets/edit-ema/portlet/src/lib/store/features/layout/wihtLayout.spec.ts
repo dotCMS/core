@@ -4,14 +4,14 @@ import { signalStore, withFeature, withState } from '@ngrx/signals';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { withLayout } from './withLayout';
+
 import { DotPageApiParams } from '../../../services/dot-page-api.service';
 import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { Orientation, PageType, UVEState } from '../../models';
-
-import { withClient } from '../client/withClient';
-import { withLayout } from './withLayout';
+import { withPage } from '../page/withPage';
 
 const emptyParams = {} as DotPageApiParams;
 
@@ -61,7 +61,7 @@ const initialState: UVEState = {
 
 export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
-    withFeature(() => withClient()),
+    withFeature(() => withPage()),
     withLayout()
 );
 

@@ -1,9 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
-import { AppRulesComponent, RuleEngineModule } from '@dotcms/dot-rules';
 import { ApiRoot } from '@dotcms/dotcms-js';
 import { portletHaveLicenseResolver } from '@dotcms/ui';
+
+import { AppRulesComponent } from './app.component';
+import { RuleEngineModule } from './rule-engine.module';
 
 const routes: Routes = [
     {

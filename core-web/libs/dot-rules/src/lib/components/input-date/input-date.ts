@@ -5,7 +5,7 @@ import {
     EventEmitter,
     Input,
     Output,
-    inject
+    inject, OnChanges
 } from '@angular/core';
 import { NgControl, ControlValueAccessor } from '@angular/forms';
 
@@ -30,7 +30,7 @@ import { isEmpty } from '@dotcms/utils';
     `,
     standalone: false
 })
-export class InputDate implements ControlValueAccessor {
+export class InputDate implements ControlValueAccessor, OnChanges {
     private _elementRef = inject(ElementRef);
 
     private static DEFAULT_VALUE: Date;

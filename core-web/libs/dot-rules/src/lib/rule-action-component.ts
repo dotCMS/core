@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, OnInit, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnInit, inject, OnChanges } from '@angular/core';
 
 import { LoggerService } from '@dotcms/dotcms-js';
 
@@ -46,7 +46,7 @@ import { ServerSideTypeModel } from './services/ServerSideFieldModel';
     `,
     standalone: false
 })
-export class RuleActionComponent implements OnInit {
+export class RuleActionComponent implements OnInit, OnChanges {
     private loggerService = inject(LoggerService);
 
     @Input() action: ActionModel;

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter } from '@angular/core';
+import { Component, ChangeDetectionStrategy, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 
 import { KeyCode } from '../services/util/key-util';
 
@@ -41,7 +41,7 @@ import { KeyCode } from '../services/util/key-util';
     `,
     standalone: false
 })
-export class ModalDialogComponent {
+export class ModalDialogComponent implements OnChanges {
     @Input() okEnabled = true;
     @Input() hidden = true;
     @Input() headerText = '';

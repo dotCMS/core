@@ -51,7 +51,7 @@ import {
     VTL_BASE_QUERY_PARAMS
 } from '../../../shared/mocks';
 import { Orientation, PageType, UVEState } from '../../models';
-import { withClient } from '../client/withClient';
+import { withPage } from '../page/withPage';
 
 const buildPageAPIResponseFromMock =
     (mock) =>
@@ -112,7 +112,7 @@ const initialState: UVEState = {
 
 export const uveStoreMock = signalStore(
     withState<UVEState>(initialState),
-    withClient(),
+    withPage(),
     withFeature((store) => withLoad({
         resetClientConfiguration: () => store.resetClientConfiguration(),
         workflowFetch: (inode) => {}, // Mock implementation
