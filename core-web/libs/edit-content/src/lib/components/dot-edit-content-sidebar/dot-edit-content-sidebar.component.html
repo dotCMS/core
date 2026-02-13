@@ -15,7 +15,10 @@
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <!-- Add prepend and append areas to the tabs -->
-        <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
+        <ng-template
+            dotTabViewInsert
+            [dotTabViewAppend]="appendContent"
+            [dotTabViewAppendContext]="{ $store: $store }" />
 
         <p-tablist>
             <p-tab [value]="0">
@@ -130,7 +133,7 @@
     <div
         class="min-h-[50px] border-l border-[var(--gray-200)] flex items-center justify-center flex-0 min-w-[64px]">
         <p-button
-            (onClick)="$store.toggleSidebar()"
+            (click)="$store.toggleSidebar()"
             [rounded]="true"
             [text]="true"
             size="small"

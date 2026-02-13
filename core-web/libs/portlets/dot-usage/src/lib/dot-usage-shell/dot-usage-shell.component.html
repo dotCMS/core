@@ -12,12 +12,9 @@
 
 <p-toolbar class="block mb-6">
     <div class="p-toolbar-group-start text-sm">
-        @if (lastUpdated()) {
-            <span class="text-gray-600">
-                {{ 'usage.dashboard.lastUpdated' | dm }}:
-                {{ lastUpdated()! | date: 'short' }}
-            </span>
-        }
+        <span class="text-gray-600">
+            {{ 'usage.dashboard.cacheInfo' | dm }}
+        </span>
     </div>
 </p-toolbar>
 

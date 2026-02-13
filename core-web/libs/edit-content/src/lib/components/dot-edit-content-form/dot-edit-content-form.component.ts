@@ -189,6 +189,31 @@ export class DotEditContentFormComponent implements OnInit {
      */
     $tabs = this.$store.tabs;
 
+    /**
+     * Context for the append template passed to TabViewInsertDirective.
+     * Required for embedded view to access component variables.
+     */
+    get $appendContext() {
+        const currentLocale = this.$store.currentLocale();
+        return {
+            $store: this.$store,
+            showSidebar: this.$store.isSidebarOpen(),
+            canLock: this.$store.canLock(),
+            isContentLocked: this.$store.isContentLocked(),
+            lockSwitchLabel: this.$store.lockSwitchLabel(),
+            actions: this.$store.getActions(),
+            $showPreviewLink: this.$showPreviewLink,
+            showWorkflowActions: this.$store.showWorkflowActions(),
+            contentlet: this.$store.contentlet(),
+            contentType: this.$store.contentType(),
+            currentLocaleId: currentLocale ? currentLocale.id.toString() : '',
+            currentIdentifier: this.$store.currentIdentifier(),
+            onContentLockChange: (e: ToggleSwitchChangeEvent) => this.onContentLockChange(e),
+            showPreview: () => this.showPreview(),
+            fireWorkflowAction: (e: DotWorkflowActionParams) => this.fireWorkflowAction(e)
+        };
+    }
+
     changeDetectorRef = inject(ChangeDetectorRef);
 
     /**

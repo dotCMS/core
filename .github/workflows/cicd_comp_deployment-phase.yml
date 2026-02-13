@@ -38,6 +38,16 @@ on:
       publish-npm-sdk-libs:
         default: false
         type: boolean
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        required: false
+        type: string
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1-ms). If not set, derived from java-version major.'
+        required: false
+        type: string
+        default: ''
     outputs:
       docker_tags:
         description: 'Docker image tags that were built'
@@ -87,14 +97,30 @@ jobs:
         id: get-sdkman-version
         shell: bash
         run: |
-          if [ -f .sdkmanrc ]; then
+          # Use provided java-version if set, otherwise read from .sdkmanrc
+          if [ -n "${{ inputs.java-version }}" ]; then
+            SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
+            echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+            # Compute Java suffix for artifact isolation
+            # Priority: explicit artifact-suffix > derived from java-version major
+            if [ -n "${{ inputs.artifact-suffix }}" ]; then
+              JAVA_SUFFIX="${{ inputs.artifact-suffix }}"
+              echo "Using explicit artifact suffix: ${JAVA_SUFFIX}"
+            else
+              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+              JAVA_SUFFIX="-java${JAVA_MAJOR}"
+              echo "Using derived artifact suffix: ${JAVA_SUFFIX}"
+            fi
+          elif [ -f .sdkmanrc ]; then
             SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
-            echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
-            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
+            echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            JAVA_SUFFIX=""
           else
             echo "No .sdkmanrc file found"
             exit 1
           fi
+          echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "java_suffix=${JAVA_SUFFIX}" >> "$GITHUB_OUTPUT"
 
       # Clean up the runner to ensure a fresh environment
       - uses: ./.github/actions/core-cicd/cleanup-runner
@@ -110,15 +136,16 @@ jobs:
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
           docker-use-ref: false
-          version: ${{ inputs.environment }}
-          latest: ${{ inputs.latest }}
+          version: ${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.java_suffix }}
+          latest: ${{ inputs.latest && steps.get-sdkman-version.outputs.java_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pull: true
+          artifact_suffix: ${{ steps.get-sdkman-version.outputs.java_suffix }}
           build_args: |
-            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.java_suffix }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
       # Format tags for Slack notifications
@@ -148,21 +175,23 @@ jobs:
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
           docker-use-ref: false
-          version: ${{ inputs.environment }}
-          latest: true
+          version: ${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.java_suffix }}
+          latest: ${{ steps.get-sdkman-version.outputs.java_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           build_args: |
-            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.java_suffix }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
       # Deploy CLI artifacts to JFrog Artifactory
+      # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       - name: CLI Deploy
         continue-on-error: true
         id: cli_deploy
+        if: steps.get-sdkman-version.outputs.java_suffix == ''
         uses: ./.github/actions/core-cicd/deployment/deploy-jfrog
         with:
           artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
@@ -170,9 +199,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # Publish CLI to NPM (if required)
+      # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       - name: CLI Publish
         id: cli_publish
-        if: inputs.publish-npm-cli
+        if: inputs.publish-npm-cli && steps.get-sdkman-version.outputs.java_suffix == ''
         uses: ./.github/actions/core-cicd/deployment/deploy-cli-npm
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

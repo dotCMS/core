@@ -26,7 +26,6 @@
                 <p-button
                     data-testId="edit-workflow-button"
                     (click)="showDialog()"
-                    pButton
                     styleClass="p-button-link"
                     icon="pi pi-pencil" />
             }
@@ -34,7 +33,6 @@
             @if (workflow.resetAction) {
                 <p-button
                     (click)="onResetWorkflow.emit(workflow.resetAction.id.toString())"
-                    pButton
                     styleClass="p-button-link"
                     data-testId="reset-workflow-button"
                     icon="pi pi-replay" />

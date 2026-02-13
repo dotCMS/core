@@ -46,7 +46,8 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
-    MOCK_SINGLE_WORKFLOW_ACTIONS
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    mockMatchMedia
 } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
@@ -161,6 +162,7 @@ describe('DotFormComponent', () => {
     });
 
     beforeEach(() => {
+        mockMatchMedia();
         spectator = createComponent({ detectChanges: false });
         component = spectator.component;
         store = spectator.inject(DotEditContentStore);
@@ -320,6 +322,9 @@ describe('DotFormComponent', () => {
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
                 depth: DotContentletDepths.ONE
             }); // called with the inode of the contentlet
+            spectator.flushEffects(); // Wait for async store effects to complete
+            // Close sidebar so the sidebar toggle button is rendered (it only shows when !showSidebar)
+            store.toggleSidebar();
             spectator.detectChanges();
         });
 
@@ -330,8 +335,8 @@ describe('DotFormComponent', () => {
 
                 const tabPanels = spectator.queryAll(Tab);
                 expect(tabPanels.length).toBe(2);
-                // In PrimeNG 20, headers are template-based, so we check the rendered text
-                const tabHeaders = spectator.queryAll('.p-tab-header-text');
+                // PrimeNG v21 uses .p-tab for tab headers
+                const tabHeaders = spectator.queryAll('.p-tab');
                 expect(tabHeaders.length).toBe(2);
                 expect(tabHeaders[0]?.textContent?.trim()).toBe('Content');
                 expect(tabHeaders[1]?.textContent?.trim()).toBe('New Tab');
@@ -343,15 +348,29 @@ describe('DotFormComponent', () => {
             });
 
             it('should render workflow actions and sidebar toggle in append area', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
+                const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton =
+                    spectator.query(byTestId('sidebar-toggle-button')) ??
+                    sidebarToggle?.querySelector('button');
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
 
                 expect(workflowActions).toBeTruthy();
+                expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
+                // Ensure sidebar is closed (button only renders when !showSidebar)
+                if (store.isSidebarOpen()) {
+                    store.toggleSidebar();
+                    spectator.detectChanges();
+                }
+
+                const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton =
+                    spectator.query(byTestId('sidebar-toggle-button')) ??
+                    sidebarToggle?.querySelector('button');
+                expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
 
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');

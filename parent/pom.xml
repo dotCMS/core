@@ -26,7 +26,10 @@
          support new version default in environments/environment.properties and can be changed for local developer in
         environments/dev/user-dev.properties -->
         <!--suppress UnresolvedMavenProperty -->
-        <maven.compiler.release>11</maven.compiler.release>
+        <!-- Core modules compiler release - can be overridden via -Ddotcms.core.compiler.release
+             Defaults to 11 to maintain current bytecode compatibility -->
+        <dotcms.core.compiler.release>11</dotcms.core.compiler.release>
+        <maven.compiler.release>${dotcms.core.compiler.release}</maven.compiler.release>
         <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
         <maven.compiler.testSource>${maven.compiler.source}</maven.compiler.testSource>
@@ -81,7 +84,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20251006</starter.deploy.version>
+        <starter.deploy.version>empty_20260211</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>

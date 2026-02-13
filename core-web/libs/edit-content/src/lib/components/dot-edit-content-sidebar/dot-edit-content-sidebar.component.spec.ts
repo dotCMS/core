@@ -15,7 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { TabView, TabViewChangeEvent } from 'primeng/tabview';
+import { Tabs, TabsModule } from 'primeng/tabs';
 
 import {
     DotContentletService,
@@ -184,9 +184,9 @@ describe('DotEditContentSidebarComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should render PrimeNG TabView', () => {
-            const tabView = spectator.query(TabView);
-            expect(tabView).toBeTruthy();
+        it('should render PrimeNG Tabs', () => {
+            const tabs = spectator.query(Tabs);
+            expect(tabs).toBeTruthy();
         });
 
         describe('Components', () => {
@@ -449,17 +449,18 @@ describe('DotEditContentSidebarComponent', () => {
             expect(toggleButton).toBeTruthy();
         });
 
-        it('should render append content in TabView', () => {
-            const tabViewElement = spectator.query('p-tabview');
-            const appendContent = tabViewElement.querySelector(
-                '[data-testid="tabview-append-content"]'
-            );
+        it('should render append content in Tabs', () => {
+            const appendContent = spectator.query(byTestId('tabview-append-content'));
             expect(appendContent).toBeTruthy();
         });
 
         it('should call toggleSidebar when toggle button is clicked', () => {
+            spectator.detectChanges();
             const storeSpy = jest.spyOn(store, 'toggleSidebar');
-            spectator.click(byTestId('toggle-button'));
+            const toggleButton = spectator.query(byTestId('toggle-button'));
+            const innerButton = toggleButton?.querySelector('button') as HTMLButtonElement;
+            spectator.click(innerButton ?? (toggleButton as HTMLElement));
+            spectator.detectChanges();
             expect(storeSpy).toHaveBeenCalled();
         });
     });
@@ -699,19 +700,19 @@ describe('DotEditContentSidebarComponent', () => {
                 store.setActiveSidebarTab(1);
                 tick();
                 const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
-                spectator.component.onActiveIndexChange({ index: 0 } as TabViewChangeEvent);
+                spectator.component.onActiveIndexChange(0);
                 expect(storeSpy).toHaveBeenCalledWith(0);
             }));
 
-            it('should call setActiveSidebarTab with index 4 when last tab (permissions) is selected', fakeAsync(() => {
+            it('should call setActiveSidebarTab with index 3 when permissions tab is selected', fakeAsync(() => {
                 const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
-                spectator.component.onActiveIndexChange({ index: 4 } as TabViewChangeEvent);
-                expect(storeSpy).toHaveBeenCalledWith(4);
+                spectator.component.onActiveIndexChange(3);
+                expect(storeSpy).toHaveBeenCalledWith(3);
             }));
 
             it('should call setActiveSidebarTab with the exact index from the event', fakeAsync(() => {
                 const storeSpy = jest.spyOn(store, 'setActiveSidebarTab');
-                spectator.component.onActiveIndexChange({ index: 2 } as TabViewChangeEvent);
+                spectator.component.onActiveIndexChange(2);
                 expect(storeSpy).toHaveBeenCalledWith(2);
             }));
         });
@@ -804,12 +805,12 @@ describe('DotEditContentSidebarComponent', () => {
         });
 
         describe('Edge Cases - Tab Content Visibility', () => {
-            it('should NOT render permissions-card when on info tab (tab 0)', fakeAsync(() => {
+            it('should show information section when on info tab (tab 0)', fakeAsync(() => {
                 expect(store.activeSidebarTab()).toBe(0);
                 spectator.detectChanges();
                 tick();
-                const permissionsCard = spectator.query(byTestId('permissions-card'));
-                expect(permissionsCard).toBeFalsy();
+                const informationElement = spectator.query(byTestId('information'));
+                expect(informationElement).toBeTruthy();
             }));
 
             it('should render permissions-card only when permissions tab (tab 3) is active', fakeAsync(() => {

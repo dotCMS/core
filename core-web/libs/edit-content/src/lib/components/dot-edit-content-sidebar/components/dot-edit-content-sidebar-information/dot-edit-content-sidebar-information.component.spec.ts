@@ -16,7 +16,9 @@ import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
 const messageServiceMock = new MockDotMessageService({
-    'edit.content.sidebar.information.references-with.pages.not.used': 'No References'
+    'edit.content.sidebar.information.references-with.pages.not.used': 'No References',
+    New: 'New',
+    Published: 'Published'
 });
 
 describe('DotEditContentSidebarInformationComponent', () => {
@@ -24,6 +26,9 @@ describe('DotEditContentSidebarInformationComponent', () => {
 
     const mockContentlet = {
         inode: '123',
+        live: true,
+        working: false,
+        archived: false,
         ownerUserName: 'admin@dotcms.com',
         creationDate: new Date('2024-03-20'),
         modDate: new Date('2024-03-21'),
@@ -121,9 +126,10 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should not show status tag', () => {
+        it('should show New status tag for new contentlet', () => {
             const tag = spectator.query('p-tag');
-            expect(tag).toBeFalsy();
+            expect(tag).toBeTruthy();
+            expect(tag?.textContent).toContain('New');
         });
 
         it('should not show json link', () => {

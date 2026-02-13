@@ -16,13 +16,17 @@
                 ? 'var(--field-disabled-bgcolor, var(--gray-200))'
                 : 'var(--color-palette-primary-200)'
         "
+        [class.disabled]="disabled"
         data-testId="ui-message-icon-container">
         <i
             [ngClass]="uiMessage?.icon"
             data-testId="ui-message-icon"
             class="text-2xl! font-bold!"></i>
     </div>
-    <div class="text-center leading-snug" [class.text-gray-400]="disabled">
+    <div
+        class="text text-center leading-snug"
+        [class.disabled]="disabled"
+        [class.text-gray-400]="disabled">
         <span
             [innerHTML]="uiMessage?.message | dm: uiMessage?.args"
             data-testId="ui-message-span"></span>

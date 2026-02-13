@@ -28,7 +28,10 @@
             scrollable="false"
             class="dot-edit-content-tabview">
             <!-- Add prepend and append areas to the tabs -->
-            <ng-template dotTabViewInsert [dotTabViewAppend]="appendContent" />
+            <ng-template
+                dotTabViewInsert
+                [dotTabViewAppend]="appendContent"
+                [dotTabViewAppendContext]="$appendContext" />
 
             <p-tablist>
                 <!--

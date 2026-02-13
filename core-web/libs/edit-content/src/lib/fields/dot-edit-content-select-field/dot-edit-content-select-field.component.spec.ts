@@ -3,7 +3,7 @@ import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { Dropdown } from 'primeng/select';
+import { Select } from 'primeng/select';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -70,7 +70,7 @@ describe('DotEditContentSelectFieldComponent', () => {
                 value: 1000
             }
         ];
-        expect(spectator.query(Dropdown).options).toEqual(expectedList);
+        expect(spectator.query(Select)?.options).toEqual(expectedList);
     });
 
     describe('test DataType', () => {
@@ -115,7 +115,7 @@ describe('DotEditContentSelectFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            expect(spectator.query(Dropdown).options).toEqual(expectedList);
+            expect(spectator.query(Select)?.options).toEqual(expectedList);
         });
 
         it('should have options array as select with Bool', () => {
@@ -146,7 +146,7 @@ describe('DotEditContentSelectFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            expect(spectator.query(Dropdown).options).toEqual(expectedList);
+            expect(spectator.query(Select)?.options).toEqual(expectedList);
         });
 
         it('should have options array as select with Float', () => {
@@ -177,7 +177,7 @@ describe('DotEditContentSelectFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            expect(spectator.query(Dropdown).options).toEqual(expectedList);
+            expect(spectator.query(Select)?.options).toEqual(expectedList);
         });
 
         it('should have options array as select with Integer', () => {
@@ -212,7 +212,7 @@ describe('DotEditContentSelectFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            expect(spectator.query(Dropdown).options).toEqual(expectedList);
+            expect(spectator.query(Select)?.options).toEqual(expectedList);
         });
     });
 });
