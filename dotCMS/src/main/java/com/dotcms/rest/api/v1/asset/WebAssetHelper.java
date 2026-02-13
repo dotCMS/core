@@ -11,6 +11,8 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.ErrorEntity;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.asset.view.AssetVersionsView;
 import com.dotcms.rest.api.v1.asset.view.AssetView;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
@@ -321,7 +323,7 @@ public class WebAssetHelper {
                 });
 
         final Map<String, ? extends Serializable> metadata = Map.of(
-                "name", fileAsset.getUnderlyingFileName(),
+                "name", getUnderlyingFileName(fileAsset),
                 "title", fileAsset.getFileTitle(),
                 "path", fileAsset.getPath(),
                 "sha256", fileAsset.getSha256(),
@@ -344,6 +346,29 @@ public class WebAssetHelper {
                 .lang(language.toString())
                 .metadata(metadata)
                 .build();
+    }
+
+    
+    /**
+     * Get the underlying file name of the file asset
+     * @param fileAsset the file asset
+     * @return the underlying file name
+     * @throws BadRequestException if the underlying file name is not available
+     */
+    private String getUnderlyingFileName(FileAsset fileAsset) {
+        final String underlyingFileName = fileAsset.getUnderlyingFileName();
+        if (underlyingFileName == null) {
+            final String message = String.format(
+                    "File asset metadata is not available for asset: [%s]. " +
+                            "This may occur when the binary field of the Content Type is not indexed or the file has not been fully processed.",
+                    fileAsset.getIdentifier());
+
+            Logger.error(this, message);
+
+            final List<ErrorEntity> errors = List.of(new ErrorEntity("METADATA_NOT_AVAILABLE", message));
+            throw new BadRequestException(null, new ResponseEntityView<>(errors), message);
+        }
+        return underlyingFileName;
     }
 
     /**
