@@ -95,6 +95,15 @@ export class DotOnboardingDevComponent {
             cliCommand: '',
             disabled: true,
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
+        },
+        {
+            id: 'vtl',
+            label: 'VTL',
+            logo: '/dotAdmin/assets/logos/vtl.svg',
+            copied: false,
+            cliCommand: '',
+            disabled: true,
+            githubUrl: 'https://dev.dotcms.com/docs/velocity-viewtools'
         }
     ];
 
