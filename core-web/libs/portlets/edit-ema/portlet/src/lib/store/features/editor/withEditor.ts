@@ -39,9 +39,15 @@ import {
 import { PageType, UVEState } from '../../models';
 import { PageAssetComputed } from '../client/withClient';
 
-import type { PageContextComputed } from '../withPageContext';
 import type { WorkflowComputed } from '../workflow/withWorkflow';
 
+/**
+ * View computeds needed by withEditor
+ * Phase 6.3: viewMode now comes from withView
+ */
+export interface ViewComputed {
+    viewMode: Signal<UVE_MODE>;
+}
 
 export interface EditorComputed {
     editorCanEditContent: Signal<boolean>;
@@ -66,13 +72,13 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageAssetComputed & PageContextComputed & WorkflowComputed>()
+            props: type<PageAssetComputed & WorkflowComputed & ViewComputed>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
-            // ============ View Mode ============
-            const viewMode = computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
+            // Phase 6.3: viewMode removed - now comes from withView (eliminating duplication)
+            // Access via store.viewMode() instead of local computed
 
             // ============ Feature Flags ============
             const styleEditorFeatureEnabled = computed(() => {
@@ -126,15 +132,15 @@ export function withEditor() {
 
             // Public capabilities (exported via EditorComputed interface)
             const editorCanEditContent = computed(() => {
-                return editorHasAccessToEditMode() && viewMode() === UVE_MODE.EDIT;
+                return editorHasAccessToEditMode() && store.viewMode() === UVE_MODE.EDIT;
             });
 
             const editorCanEditLayout = computed(() => {
-                return hasPermissionToEditLayout() && viewMode() === UVE_MODE.EDIT;
+                return hasPermissionToEditLayout() && store.viewMode() === UVE_MODE.EDIT;
             });
 
             const editorCanEditStyles = computed(() => {
-                return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && viewMode() === UVE_MODE.EDIT;
+                return styleEditorFeatureEnabled() && hasPermissionToEditStyles() && store.viewMode() === UVE_MODE.EDIT;
             });
 
             const editorEnableInlineEdit = computed(() => {

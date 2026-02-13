@@ -10,7 +10,6 @@ import { withFlags } from './features/flags/withFlags';
 import { withLayout } from './features/layout/withLayout';
 import { withLoad } from './features/load/withLoad';
 import { withTrack } from './features/track/withTrack';
-import { withPageContext } from './features/withPageContext';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { withViewZoom } from './features/zoom/withZoom';
 import { Orientation, PageType, UVEState } from './models';
@@ -83,13 +82,12 @@ export const UVEStore = signalStore(
 
     // ---- Workflow & Lock ----
     // Phase 6.2: Consolidated lock logic here (moved from withPageContext, withEditor, withView, withLock)
-    // Must come early - withLoad needs workflowFetch, withPageContext needs lock computeds
+    // Must come early - withLoad needs workflowFetch
     // Note: pageReload accessed directly from store at runtime to avoid circular dependency
     withWorkflow(),  // Workflow + lock (provides workflowFetch for withLoad)
 
-    // ---- Shared Computeds ----
-    // NOTE: withPageAsset removed in Phase 6.1 - merged into withClient to eliminate duplication
-    withPageContext(),                // Common computed properties (depends on withClient + withWorkflow)
+    // NOTE: Phase 6.1 - withPageAsset removed (merged into withClient to eliminate duplication)
+    // NOTE: Phase 6.3 - withPageContext removed (merged into withClient + withView)
 
     // ---- Data Loading ----
     withFeature((store) => withLoad({
@@ -122,12 +120,8 @@ export const UVEStore = signalStore(
     // ---- UI Features ----
     withLayout(),                     // Layout state
     withViewZoom(),                   // View Zoom state
-    withFeature((store) => withView({
-        pageData: () => store.pageData(),
-        pageUrlContentMap: () => store.pageUrlContentMap(),
-        pageViewAs: () => store.pageViewAs()
-    })),                              // View state - manages view modes (edit vs preview)
-    withEditor(),                     // Editor state (uses shared PageContextComputed contract)
+    withView(),                       // View state - manages view modes (edit vs preview)
+    withEditor(),                     // Editor state
 
     // ---- Actions ----
     withFeature((store) => withSave({

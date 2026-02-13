@@ -13,6 +13,7 @@ import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
 import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
+import { PageAssetComputed } from '../../../features/client/withClient';
 import {
     getFullPageURL,
     getIsDefaultVariant,
@@ -26,11 +27,10 @@ import { PersonaSelectorProps } from '../models';
  * These are computed signals from other features that withView needs
  *
  * Phase 6.2: Lock-related dependencies removed - all lock UI moved to withWorkflow
+ * Phase 6.3: Page data dependencies removed - withView uses PageAssetComputed from store
  */
 export interface WithViewDeps {
-    pageData: () => any;
-    pageUrlContentMap: () => any;
-    pageViewAs: () => any;
+    // No dependencies needed - all accessed from store
 }
 
 /**
@@ -45,20 +45,24 @@ export interface WithViewDeps {
  *
  * View state is flattened with view* prefix (viewDevice, viewOrientation, etc.)
  */
-export function withView(deps: WithViewDeps) {
+export function withView(_deps?: WithViewDeps) {
     return signalStoreFeature(
         {
-            state: type<UVEState>()
+            state: type<UVEState>(),
+            props: type<PageAssetComputed>()
         },
         withComputed((store) => ({
             // Phase 6.2: $unlockButton and $workflowLockOptions moved to withWorkflow
+            // Phase 6.3: viewMode added (was duplicated in withPageContext and withEditor)
+
+            viewMode: computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN),
 
             $urlContentMap: computed<DotCMSURLContentMap>(() => {
-                return deps.pageUrlContentMap();
+                return store.pageUrlContentMap();
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
-                const page = deps.pageData();
-                const viewAs = deps.pageViewAs();
+                const page = store.pageData();
+                const viewAs = store.pageViewAs();
 
                 return {
                     pageId: page?.identifier,
@@ -75,7 +79,7 @@ export function withView(deps: WithViewDeps) {
                 return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
-                const viewAs = deps.pageViewAs();
+                const viewAs = store.pageViewAs();
                 const mode = store.pageParams()?.mode;
 
                 if (!getIsDefaultVariant(viewAs?.variantId)) {
@@ -111,7 +115,7 @@ export function withView(deps: WithViewDeps) {
                 const isPreviewMode = store.pageParams()?.mode === UVE_MODE.PREVIEW;
                 const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
-                const viewAs = deps.pageViewAs();
+                const viewAs = store.pageViewAs();
                 const isDefaultVariant = getIsDefaultVariant(viewAs?.variantId);
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;

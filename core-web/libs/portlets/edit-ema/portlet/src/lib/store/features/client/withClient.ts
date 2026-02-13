@@ -7,8 +7,9 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, Signal } from '@angular/core';
+import { computed, Signal, untracked } from '@angular/core';
 
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import {
     DotCMSLayout,
     DotCMSPage,
@@ -22,7 +23,8 @@ import {
 } from '@dotcms/types';
 
 import { PERSONA_KEY } from '../../../shared/consts';
-import { UVEState } from '../../models';
+import { normalizeQueryParams } from '../../../utils';
+import { TranslateProps, UVEState } from '../../models';
 import { withTimeMachine } from '../timeMachine/withTimeMachine';
 
 /**
@@ -45,6 +47,7 @@ export interface ClientConfigState {
 }
 
 export interface PageAssetComputed {
+    // Phase 6.3: Merged from withPageContext - all page-related computeds in one place
     pageData: Signal<DotCMSPage | null>;
     pageSite: Signal<DotCMSSite | null>;
 
@@ -63,6 +66,14 @@ export interface PageAssetComputed {
     pageNumberContents: Signal<number | null>;
 
     pageClientResponse: Signal<any>;
+
+    // Page context properties (merged from withPageContext)
+    pageLanguageId: Signal<number>;
+    pageLanguage: Signal<any>;
+    pageURI: Signal<string>;
+    pageVariantId: Signal<string>;
+    pageTranslateProps: Signal<TranslateProps>;
+    pageFriendlyParams: Signal<Record<string, string>>;
 }
 
 export interface WithClientMethods extends PageAssetComputed {
@@ -216,6 +227,36 @@ export function withClient() {
                 };
             });
 
+            // Phase 6.3: Page context computeds (merged from withPageContext)
+            const pageLanguageId = computed(() => pageViewAs()?.language?.id || 1);
+            const pageLanguage = computed(() => pageViewAs()?.language);
+            const pageURI = computed(() => pageData()?.pageURI ?? '');
+            const pageVariantId = computed(() => store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID);
+
+            const pageTranslateProps = computed<TranslateProps>(() => {
+                const pageDataValue = pageData();
+                const viewAsData = pageViewAs();
+                const languageId = viewAsData?.language?.id;
+                const translatedLanguages = untracked(() => store.languages());
+                const currentLanguage = translatedLanguages.find(
+                    (lang) => lang.id === languageId
+                );
+
+                return {
+                    page: pageDataValue,
+                    currentLanguage
+                };
+            });
+
+            const pageFriendlyParams = computed(() => {
+                const params = {
+                    ...(store.pageParams() ?? {}),
+                    ...(store.viewParams() ?? {})
+                };
+
+                return normalizeQueryParams(params);
+            });
+
             return {
                 pageData,
                 pageSite,
@@ -227,7 +268,14 @@ export function withClient() {
                 pageUrlContentMap,
                 pageNumberContents,
                 pageClientResponse,
-                $requestWithParams
+                $requestWithParams,
+                // Page context computeds
+                pageLanguageId,
+                pageLanguage,
+                pageURI,
+                pageVariantId,
+                pageTranslateProps,
+                pageFriendlyParams
             } satisfies Omit<PageAssetComputed, 'pageLayout'> & { pageLayout: Signal<DotCMSLayout | null>, $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null> };
         })
     );
