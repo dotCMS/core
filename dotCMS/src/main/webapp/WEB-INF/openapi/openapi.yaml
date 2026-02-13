@@ -8097,11 +8097,6 @@ paths:
       operationId: startReindex
       parameters:
       - in: query
-        name: shards
-        schema:
-          type: integer
-          format: int32
-      - in: query
         name: contentType
         schema:
           type: string
