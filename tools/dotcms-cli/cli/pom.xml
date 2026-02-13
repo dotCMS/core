@@ -16,7 +16,7 @@
         <executable-suffix/>
         <distribution.directory>${project.build.directory}/distributions</distribution.directory>
         <picocli.codegen.version>4.6.3</picocli.codegen.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <test.failure.ignore>false</test.failure.ignore>
         <docker.output.image.name>dotcms/dotcms-test</docker.output.image.name>
         <docker.version.tag>${project.version}</docker.version.tag>
