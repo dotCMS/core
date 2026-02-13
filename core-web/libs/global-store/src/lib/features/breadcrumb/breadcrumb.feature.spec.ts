@@ -305,6 +305,169 @@ describe('withBreadcrumbs Feature', () => {
         });
     });
 
+    describe('addNewBreadcrumb', () => {
+        it('should do nothing when new item has same normalized URL as last breadcrumb', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', url: '/dotAdmin/#/c/content' },
+                { label: 'Edit', id: 'edit-1', url: '/dotAdmin/#/content/123' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Same',
+                id: 'edit-2',
+                url: '/dotAdmin/#/content/123',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+        });
+
+        it('should do nothing when new item has same id as last breadcrumb', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', url: '/dotAdmin/#/c/content' },
+                { label: 'Edit', id: 'content-abc', url: '/dotAdmin/#/content/456' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Same Id',
+                id: 'content-abc',
+                url: '/dotAdmin/#/content/789',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+        });
+
+        it('should replace last breadcrumb when both new and last URL match content-edit pattern', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit Page', id: 'old-id', url: '/dotAdmin/#/content/old-id' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit New Content',
+                id: 'new-id',
+                url: '/dotAdmin/#/content/new-id',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit New Content');
+            expect(store.lastBreadcrumb()?.id).toBe('new-id');
+            expect(store.lastBreadcrumb()?.url).toBe('/dotAdmin/#/content/new-id');
+        });
+
+        it('should replace last breadcrumb when both URLs match edit-page/content pattern', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                {
+                    label: 'Edit',
+                    id: 'page-1',
+                    url: '/dotAdmin/#/edit-page/content?url=page1',
+                    target: '_self'
+                }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Other',
+                id: 'page-2',
+                url: '/dotAdmin/#/edit-page/content?url=page2',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit Other');
+        });
+
+        it('should append when new URL matches content-edit but last does not', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Content',
+                id: 'content-1',
+                url: '/dotAdmin/#/content/abc',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit Content');
+        });
+
+        it('should append when last URL matches content-edit but new does not', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit', id: 'x', url: '/dotAdmin/#/content/123', target: '_self' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Settings',
+                url: '/dotAdmin/#/settings',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Settings');
+        });
+
+        it('should append when neither URL matches content-edit pattern', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'New Page',
+                url: '/dotAdmin/#/some/page',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('New Page');
+        });
+
+        it('should append when breadcrumbs are empty (no last breadcrumb)', () => {
+            expect(store.breadcrumbs().length).toBe(0);
+
+            store.addNewBreadcrumb({
+                label: 'First',
+                url: '/dotAdmin/#/first',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('First');
+        });
+
+        it('should normalize URL by stripping /dotAdmin/# prefix for comparison', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit', url: '/dotAdmin/#/content/xyz', target: '_self' }
+            ]);
+
+            // Same path after normalization — should not add
+            store.addNewBreadcrumb({
+                label: 'Same Path',
+                url: 'http://localhost/dotAdmin/#/content/xyz',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(3); // Home + Content + Edit
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+        });
+    });
+
     describe('Clear Breadcrumbs', () => {
         beforeEach(() => {
             store.setBreadcrumbs(mockBreadcrumbs);

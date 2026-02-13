@@ -142,15 +142,23 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             const addNewBreadcrumb = (item: MenuItem) => {
-                const contentEditRegex = /\/content\/.+/;
+                // This regex matches the following cases:
+                // - /content/{id}
+                // - /edit-page/content?{params}
+                const contentEditRegex = /\/content(\/ | \?)?.+/;
                 const url = normalizeUrl(item?.url);
 
                 const lastBreadcrumb = store.lastBreadcrumb();
                 const lastBreadcrumbUrl = normalizeUrl(lastBreadcrumb?.url);
 
-                const isSameUrl = url === lastBreadcrumbUrl;
+                // Before checking if the url is the same, we need to check if the url exists in the breadcrumbs
+                const isSameUrl =
+                    url?.length && lastBreadcrumbUrl?.length && url === lastBreadcrumbUrl;
 
-                if (isSameUrl) {
+                // Before checking if the id is the same, we need to check if the id exists in the breadcrumbs
+                const isSameId = item?.id && lastBreadcrumb?.id && item.id === lastBreadcrumb.id;
+
+                if (isSameUrl || isSameId) {
                     return;
                 }
 
