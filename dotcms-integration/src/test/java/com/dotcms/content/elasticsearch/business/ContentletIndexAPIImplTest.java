@@ -203,8 +203,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         generateTestContentlets();
 
-        final List<Contentlet> contentlets = contentletAPI.findAllContent(0, 100)
-                .stream().filter(Objects::nonNull).collect(Collectors.toList());
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 100);
 
         assertNotNull(contentlets);
         assertTrue("The number of contentlet returned is: " + contentlets.size(),

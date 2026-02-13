@@ -31,10 +31,10 @@
             total_duration_engaged_seconds,
             updated_at
         FROM clickhouse_test_db.sessions_by_language_daily
-        WHERE ${FILTER_PARAMS.EngagementDaily.customerId.filter('customer_id')} AND (
-            ${FILTER_PARAMS.EngagementDaily.clusterId ? FILTER_PARAMS.EngagementDaily.clusterId.filter('cluster_id') : '1=1'}
-                OR (${FILTER_PARAMS.EngagementDaily.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
-            ${FILTER_PARAMS.EngagementDaily.day.filter('day')}
+        WHERE ${FILTER_PARAMS.SessionsByLanguageDaily.customerId.filter('customer_id')} AND (
+            ${FILTER_PARAMS.SessionsByLanguageDaily.clusterId ? FILTER_PARAMS.SessionsByLanguageDaily.clusterId.filter('cluster_id') : '1=1'}
+                OR (${FILTER_PARAMS.SessionsByLanguageDaily.clusterId ? 'FALSE' : '(cluster_id IS NULL OR cluster_id = \'\')'})) AND
+            ${FILTER_PARAMS.SessionsByLanguageDaily.day.filter('day')}
     `,
 
     measures: {

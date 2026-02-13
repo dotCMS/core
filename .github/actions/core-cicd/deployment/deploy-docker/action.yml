@@ -57,6 +57,14 @@ inputs:
     description: 'Build arguments to pass to the Docker build'
     required: false
     default: ''
+  artifact_suffix:
+    description: 'Suffix for artifact names (e.g., -java25). Used to download the correct docker-build-context artifact.'
+    required: false
+    default: ''
+  pull:
+    description: 'Pull image before building'
+    required: false
+    default: 'false'
 outputs:
   tags:
     description: "The tags that were used to build the image"
@@ -68,7 +76,7 @@ runs:
       uses: actions/download-artifact@v4
       if: inputs.build_run_id # Only download the artifact if a build run id is provided
       with:
-        name: docker-build-context
+        name: docker-build-context${{ inputs.artifact_suffix }}
         path: ${{ github.workspace }}
         run-id: ${{ inputs.build_run_id }}
         github-token: ${{ inputs.github_token }}
