@@ -1,5 +1,5 @@
 @if ($canRead()) {
-    @if ($workflowLockOptions()?.showBanner && $showBanner()) {
+    @if ($showLockBanner() && $showBanner()) {
         <p-messages severity="warning" data-testid="message">
             <ng-template pTemplate="content">
                 <div class="flex align-items-center justify-content-between gap-2 w-full">
@@ -11,7 +11,11 @@
                                     | dm: [$workflowLockOptions().lockedBy]
                             }}
                             @if ($workflowLockOptions().canLock) {
-                                <button class="unlock-link" type="button" (click)="toggleLock()">
+                                <button
+                                    class="unlock-link"
+                                    type="button"
+                                    [disabled]="$workflowLockIsLoading()"
+                                    (click)="toggleLock()">
                                     {{ 'uve.shell.page.locked.unlock.to.start.editing' | dm }}
                                 </button>
                                 {{

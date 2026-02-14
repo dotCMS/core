@@ -63,6 +63,11 @@ export class DotEmaShellComponent implements OnInit {
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
     protected readonly $workflowLockOptions = this.uveStore.$workflowLockOptions;
+    protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
+    protected readonly $showLockBanner = computed(() => {
+        const lockOptions = this.$workflowLockOptions();
+        return !!lockOptions?.isLocked && !lockOptions.isLockedByCurrentUser;
+    });
 
     protected readonly $showBanner = signal<boolean>(true);
 

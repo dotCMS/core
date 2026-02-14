@@ -365,6 +365,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return this.uveStore.editorRightSidebarOpen();
     }
     readonly $workflowLockOptions = this.uveStore.$workflowLockOptions;
+    readonly $showLockOverlay = computed(() => this.$workflowLockOptions()?.isLocked ?? false);
     readonly $showContentletControls = this.uveStore.$showContentletControls;
     get $contentArea() {
         return this.uveStore.editorContentArea();

@@ -91,7 +91,6 @@ const baseUVEToolbarState = {
     urlContentMap: null,
     runningExperiment: null,
     workflowActionsInode: pageAssetResponse?.page.inode,
-    unlockButton: null,
     showInfoDisplay: shouldShowInfoDisplay
 };
 
@@ -100,7 +99,6 @@ const showWorkflowsActionsSignal = signal(true);
 const toggleLockOptionsSignal = signal(null);
 const infoDisplayPropsSignal = signal(undefined);
 const urlContentMapSignal = signal(undefined);
-const unlockButtonSignal = signal(null);
 
 // Separate signals for view state properties (for test control)
 const deviceSignal = signal(DEFAULT_DEVICES.find((device) => device.inode === 'default'));
@@ -129,6 +127,7 @@ const pageSnapshotSignal = signal({
     ...MOCK_RESPONSE_VTL,
     clientResponse: MOCK_RESPONSE_VTL
 });
+const systemIsLockFeatureEnabledSignal = signal(true);
 
 const baseUVEState = {
     $uveToolbar: signal(baseUVEToolbarState),
@@ -136,7 +135,7 @@ const baseUVEState = {
     setSEO: jest.fn(),
     setOrientation: jest.fn(),
     pageParams: pageParamsSignal,
-    page: pageSnapshotSignal,
+    pageAsset: pageSnapshotSignal,
     // View state signal
     view: viewSignal,
     // Computed properties (most are functions, some are mutable signals for test control)
@@ -157,8 +156,8 @@ const baseUVEState = {
     }),
     $infoDisplayProps: infoDisplayPropsSignal,  // Mutable for tests
     $urlContentMap: urlContentMapSignal,  // Mutable for tests
-    $unlockButton: unlockButtonSignal,  // Mutable for tests
     $workflowLockOptions: toggleLockOptionsSignal,  // Mutable for tests
+    systemIsLockFeatureEnabled: systemIsLockFeatureEnabledSignal,
     reloadCurrentPage: jest.fn(),
     pageLoad: jest.fn(),
     $isPreviewMode: signal(false),
@@ -344,6 +343,7 @@ describe('DotUveToolbarComponent', () => {
 
     describe('base state', () => {
         beforeEach(() => {
+            systemIsLockFeatureEnabledSignal.set(true);
             spectator = createComponent({
                 providers: [mockProvider(UVEStore, baseUVEState)]
             });
@@ -399,16 +399,6 @@ describe('DotUveToolbarComponent', () => {
         describe('editor mode selector', () => {
             it('should have editor mode selector', () => {
                 expect(spectator.query(byTestId('uve-toolbar-editor-mode-selector'))).toBeTruthy();
-            });
-        });
-
-        describe('unlock button (legacy - replaced by toggle lock button)', () => {
-            it('should not render legacy unlock button when $unlockButton is null', () => {
-                baseUVEState.$unlockButton.set(null);
-                spectator.detectChanges();
-
-                // Legacy unlock button is no longer used - toggle lock button is used instead
-                expect(spectator.query(byTestId('uve-toolbar-unlock-button'))).toBeNull();
             });
         });
 
@@ -718,7 +708,14 @@ describe('DotUveToolbarComponent', () => {
 
         describe('toggle lock button', () => {
             it('should not display toggle lock button when feature is disabled', () => {
-                baseUVEState.$workflowLockOptions.set(null);
+                systemIsLockFeatureEnabledSignal.set(false);
+                baseUVEState.$workflowLockOptions.set({
+                    inode: 'test-inode',
+                    isLocked: false,
+                    lockedBy: '',
+                    canLock: true,
+                    isLockedByCurrentUser: false,
+                });
                 spectator.detectChanges();
 
                 expect(spectator.query(byTestId('toggle-lock-button'))).toBeNull();
@@ -731,8 +728,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: '',
                     canLock: true,
                     isLockedByCurrentUser: false,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 spectator.detectChanges();
 
@@ -746,8 +741,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: '',
                     canLock: true,
                     isLockedByCurrentUser: false,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 spectator.detectChanges();
 
@@ -763,8 +756,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: 'current-user',
                     canLock: true,
                     isLockedByCurrentUser: true,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 spectator.detectChanges();
 
@@ -782,8 +773,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: '',
                     canLock: true,
                     isLockedByCurrentUser: false,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 spectator.detectChanges();
 
@@ -802,8 +791,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: 'current-user',
                     canLock: true,
                     isLockedByCurrentUser: true,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 spectator.detectChanges();
 
@@ -820,8 +807,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: '',
                     canLock: true,
                     isLockedByCurrentUser: false,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 baseUVEState.lockLoading.set(true);
                 spectator.detectChanges();
@@ -837,8 +822,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: '',
                     canLock: true,
                     isLockedByCurrentUser: false,
-                    showBanner: false,
-                    showOverlay: false
                 });
                 baseUVEState.lockLoading.set(false);
                 spectator.detectChanges();
@@ -856,8 +839,6 @@ describe('DotUveToolbarComponent', () => {
                     lockedBy: 'another-user',
                     canLock: true,
                     isLockedByCurrentUser: false,
-                    showBanner: true,
-                    showOverlay: true
                 });
                 spectator.detectChanges();
 
@@ -1453,8 +1434,6 @@ describe('DotUveToolbarComponent', () => {
                             lockedBy: '',
                             canLock: true,
                             isLockedByCurrentUser: false,
-                            showBanner: false,
-                            showOverlay: false
                         });
                         baseUVEState.lockLoading.set(true);
                         spectator.detectChanges();
@@ -1480,8 +1459,6 @@ describe('DotUveToolbarComponent', () => {
                             lockedBy: 'another-user',
                             canLock: false,
                             isLockedByCurrentUser: false,
-                            showBanner: true,
-                            showOverlay: true
                         });
                         baseUVEState.lockLoading.set(false);
                         spectator.detectChanges();
@@ -1500,8 +1477,6 @@ describe('DotUveToolbarComponent', () => {
                             lockedBy: 'john.doe@example.com',
                             canLock: false,
                             isLockedByCurrentUser: false,
-                            showBanner: true,
-                            showOverlay: true
                         });
                         spectator.detectChanges();
 
@@ -1521,8 +1496,6 @@ describe('DotUveToolbarComponent', () => {
                             lockedBy: '',
                             canLock: true,
                             isLockedByCurrentUser: false,
-                            showBanner: false,
-                            showOverlay: false
                         });
                         baseUVEState.lockLoading.set(false);
                         spectator.detectChanges();
@@ -1586,8 +1559,6 @@ describe('DotUveToolbarComponent', () => {
                         lockedBy: '',
                         canLock: true,
                         isLockedByCurrentUser: false,
-                        showBanner: false,
-                        showOverlay: false
                     });
                     baseUVEState.lockLoading.set(false);
                     spectator.detectChanges();

@@ -6,15 +6,15 @@ import { pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject, Signal } from '@angular/core';
 
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { map, switchMap, tap } from 'rxjs/operators';
 
-import { switchMap, tap } from 'rxjs/operators';
-
-
-import { DotContentletLockerService, DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
+import { DotContentletLockerService, DotLanguagesService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { DotCMSWorkflowAction } from '@dotcms/dotcms-models';
+import { DotCMSPageAsset } from '@dotcms/types';
 
+import { DotPageApiService } from '../../../services/dot-page-api.service';
 import { UVE_STATUS } from '../../../shared/enums';
+import { ToggleLockOptions } from '../../../shared/models';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
 
@@ -26,27 +26,9 @@ interface WithWorkflowState {
     workflowLockIsLoading: boolean;
 }
 
-/**
- * Lock-related UI options and types
- */
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-}
-
-export interface ToggleLockOptions {
-    inode: string;
-    isLocked: boolean;
-    isLockedByCurrentUser: boolean;
-    canLock: boolean;
-    lockedBy: string | null;
-}
-
 export interface WorkflowComputed {
     workflowIsPageLocked: Signal<boolean>;
     systemIsLockFeatureEnabled: Signal<boolean>;
-
-    $unlockButton: Signal<UnlockOptions | null>;
     $workflowLockOptions: Signal<ToggleLockOptions | null>;
 }
 
@@ -94,20 +76,6 @@ export function withWorkflow() {
                 store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK
             );
 
-            const $unlockButton = computed<UnlockOptions | null>(() => {
-                const page = store.pageAsset()?.page;
-                const isLocked = workflowIsPageLocked();
-
-                if (!page || !isLocked) {
-                    return null;
-                }
-
-                return {
-                    inode: page.inode,
-                    loading: store.workflowLockIsLoading()
-                };
-            });
-
             const $workflowLockOptions = computed<ToggleLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;
                 const user = store.uveCurrentUser();
@@ -116,56 +84,100 @@ export function withWorkflow() {
                     return null;
                 }
 
-                const isLocked = page.locked;
-                const isLockedByCurrentUser = page.lockedBy === user?.userId;
+                const isLocked = Boolean(page.locked);
+                const lockedByUserId = page.lockedBy ?? '';
+                const isLockedByCurrentUser = isLocked && lockedByUserId === user?.userId;
+                const lockedByName = page.lockedByName ?? '';
+                // Some page responses omit `canLock` entirely; allow attempting lock/unlock and
+                // let backend authorization be the final source of truth.
+                const canLock = page.canLock ?? true;
 
                 return {
                     inode: page.inode,
                     isLocked,
                     isLockedByCurrentUser,
-                    canLock: page.canLock ?? false,
-                    lockedBy: page.lockedByName
+                    canLock,
+                    lockedBy: lockedByName
                 };
             });
 
             return {
                 workflowIsPageLocked,
                 systemIsLockFeatureEnabled,
-                $unlockButton,
                 $workflowLockOptions
             } satisfies WorkflowComputed;
         }),
         withMethods((store) => {
             const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
-            const messageService = inject(MessageService);
-            const dotMessageService = inject(DotMessageService);
             const dotContentletLockerService = inject(DotContentletLockerService);
-            const confirmationService = inject(ConfirmationService);
+            const dotPageApiService = inject(DotPageApiService);
+            const dotLanguagesService = inject(DotLanguagesService);
+            const pageStore = store as typeof store & {
+                requestMetadata: () => { query: string; variables: Record<string, string> } | null;
+                $requestWithParams: () => { query: string; variables: Record<string, string> } | null;
+                setPageAssetResponse: (response: { pageAsset: DotCMSPageAsset; content?: Record<string, unknown> }) => void;
+            };
+
+            const reloadPageAfterLockChange = () => {
+                const params = store.pageParams();
+
+                if (!params) {
+                    patchState(store, { workflowLockIsLoading: false });
+                    return;
+                }
+
+                patchState(store, { uveStatus: UVE_STATUS.LOADING });
+
+                const requestWithParams = pageStore.$requestWithParams?.();
+                const requestMetadata = pageStore.requestMetadata?.();
+                const pageRequest = !requestMetadata || !requestWithParams
+                    ? dotPageApiService.get(params).pipe(
+                        map((pageAsset) => ({ pageAsset }))
+                    )
+                    : dotPageApiService.getGraphQLPage(requestWithParams);
+
+                pageRequest.subscribe({
+                    next: (response) => {
+                        const pageResponse = 'pageAsset' in response ? response : { pageAsset: response };
+
+                        pageStore.setPageAssetResponse(pageResponse);
+
+                        dotLanguagesService.getLanguagesUsedPage(pageResponse.pageAsset.page.identifier).subscribe({
+                            next: (languages) => {
+                                patchState(store, {
+                                    pageLanguages: languages,
+                                    uveStatus: UVE_STATUS.LOADED,
+                                    workflowLockIsLoading: false
+                                });
+                            },
+                            error: ({ status: errorStatus }: HttpErrorResponse) => {
+                                patchState(store, {
+                                    pageErrorCode: errorStatus,
+                                    uveStatus: UVE_STATUS.ERROR,
+                                    workflowLockIsLoading: false
+                                });
+                            }
+                        });
+                    },
+                    error: ({ status: errorStatus }: HttpErrorResponse) => {
+                        patchState(store, {
+                            pageErrorCode: errorStatus,
+                            uveStatus: UVE_STATUS.ERROR,
+                            workflowLockIsLoading: false
+                        });
+                    }
+                });
+            };
 
             const lockPage = (inode: string) => {
                 patchState(store, { workflowLockIsLoading: true });
 
                 dotContentletLockerService.lock(inode).subscribe({
                     next: () => {
-                        messageService.add({
-                            severity: 'success',
-                            summary: dotMessageService.get('edit.ema.page.lock'),
-                            detail: dotMessageService.get('edit.ema.page.lock.success')
-                        });
-                        patchState(store, {
-                            editorActiveContentlet: null,
-                            workflowLockIsLoading: false
-                        });
-                        // Type assertion needed: withWorkflow composed before withPageApi
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (store as any).pageReload();
+                        patchState(store, { editorActiveContentlet: null });
+                        reloadPageAfterLockChange();
                     },
                     error: () => {
-                        messageService.add({
-                            severity: 'error',
-                            summary: dotMessageService.get('edit.ema.page.lock'),
-                            detail: dotMessageService.get('edit.ema.page.lock.error')
-                        });
                         patchState(store, { workflowLockIsLoading: false });
                     }
                 });
@@ -176,25 +188,10 @@ export function withWorkflow() {
 
                 dotContentletLockerService.unlock(inode).subscribe({
                     next: () => {
-                        messageService.add({
-                            severity: 'success',
-                            summary: dotMessageService.get('edit.ema.page.unlock'),
-                            detail: dotMessageService.get('edit.ema.page.unlock.success')
-                        });
-                        patchState(store, {
-                            editorActiveContentlet: null,
-                            workflowLockIsLoading: false
-                        });
-                        // Type assertion needed: withWorkflow composed before withPageApi
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        (store as any).pageReload();
+                        patchState(store, { editorActiveContentlet: null });
+                        reloadPageAfterLockChange();
                     },
                     error: () => {
-                        messageService.add({
-                            severity: 'error',
-                            summary: dotMessageService.get('edit.ema.page.unlock'),
-                            detail: dotMessageService.get('edit.ema.page.unlock.error')
-                        });
                         patchState(store, { workflowLockIsLoading: false });
                     }
                 });
@@ -235,7 +232,7 @@ export function withWorkflow() {
                     patchState(store, { workflowIsLoading });
                 },
                 /**
-                 * Toggle page lock/unlock with confirmation dialog
+                 * Toggle page lock/unlock
                  */
                 workflowToggleLock(
                     inode: string,
@@ -243,24 +240,9 @@ export function withWorkflow() {
                     isLockedByCurrentUser: boolean,
                     lockedBy?: string
                 ) {
-                    if (store.workflowLockIsLoading()) {
-                        return;
-                    }
-
                     if (isLocked && !isLockedByCurrentUser) {
-                        confirmationService.confirm({
-                            header: dotMessageService.get('uve.editor.unlock.confirm.header'),
-                            message: dotMessageService.get(
-                                'uve.editor.unlock.confirm.message',
-                                lockedBy
-                            ),
-                            acceptLabel: dotMessageService.get('uve.editor.unlock.confirm.accept'),
-                            rejectLabel: dotMessageService.get('dot.common.dialog.reject'),
-                            accept: () => {
-                                unlockPage(inode);
-                            }
-                        });
-
+                        void lockedBy; // kept for method signature compatibility
+                        unlockPage(inode);
                         return;
                     }
 

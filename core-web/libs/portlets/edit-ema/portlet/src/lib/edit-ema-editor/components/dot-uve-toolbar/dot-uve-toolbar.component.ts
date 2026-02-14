@@ -122,7 +122,6 @@ export class DotUveToolbarComponent {
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
     readonly $infoDisplayProps = this.#store.$infoDisplayProps;
-    readonly $unlockButton = this.#store.$unlockButton;
     readonly $socialMedia = this.#store.viewSocialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.editorPaletteOpen();
@@ -167,6 +166,10 @@ export class DotUveToolbarComponent {
 
     // Build complete toggle lock options for presentational component
     readonly $workflowLockOptions = computed(() => {
+        if (!this.#store.systemIsLockFeatureEnabled()) {
+            return null;
+        }
+
         const storeLockOptions = this.#store.$workflowLockOptions();
 
         if (!storeLockOptions) {

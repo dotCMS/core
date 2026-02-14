@@ -11,13 +11,6 @@ export interface MessagePipeOptions {
     args: string[];
 }
 
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
-}
-
 export interface InfoOptions {
     icon: string;
     info: MessagePipeOptions;
@@ -284,8 +277,6 @@ export interface ToggleLockOptions {
     lockedBy: string;
     canLock: boolean;
     isLockedByCurrentUser: boolean;
-    showBanner: boolean;
-    showOverlay: boolean;
 }
 
 export type DotUVEPaletteListType =

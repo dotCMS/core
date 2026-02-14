@@ -43,19 +43,9 @@ export class DotToggleLockButtonComponent {
             : 'uve.editor.toggle.lock.button.unlocked';
     });
 
-    // Legacy computed for template compatibility
+    // Computeds consumed by template
     $workflowLockOptions = this.toggleLockOptions;
     $workflowLockIsLoading = computed(() => this.toggleLockOptions().loading);
-    $unlockButton = computed(() => ({
-        show: true,
-        inode: this.toggleLockOptions().inode,
-        disabled: this.toggleLockOptions().disabled,
-        loading: this.toggleLockOptions().loading,
-        info: {
-            message: this.toggleLockOptions().message,
-            args: this.toggleLockOptions().args
-        }
-    }));
 
     /**
      * Toggles the lock state of the current page.
@@ -73,21 +63,6 @@ export class DotToggleLockButtonComponent {
             inode,
             isLocked,
             isLockedByCurrentUser
-        });
-    }
-
-    /**
-     * Unlocks a page with the specified inode (legacy method for backward compatibility).
-     *
-     * @param {string} inode
-     * @memberof DotToggleLockButtonComponent
-     */
-    unlockPage(inode: string) {
-        // Emit event instead of directly calling store
-        this.toggleLockClick.emit({
-            inode,
-            isLocked: true,
-            isLockedByCurrentUser: false
         });
     }
 }

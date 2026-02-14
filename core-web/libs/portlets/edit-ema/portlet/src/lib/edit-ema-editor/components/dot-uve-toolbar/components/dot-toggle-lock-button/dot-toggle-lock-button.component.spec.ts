@@ -320,32 +320,6 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
         });
     });
 
-    describe('unlockPage method (legacy)', () => {
-        it('should emit event with unlock parameters', () => {
-            const lockOptions: ToggleLockOptions = {
-                inode: 'test-inode',
-                isLocked: false,
-                isLockedByCurrentUser: false,
-                canLock: true,
-                loading: false,
-                disabled: false,
-                message: '',
-                args: []
-            };
-            spectator.setInput('toggleLockOptions', lockOptions);
-            spectator.detectChanges();
-
-            spectator.component.unlockPage('legacy-unlock-inode');
-
-            expect(emittedEvents).toHaveLength(1);
-            expect(emittedEvents[0]).toEqual({
-                inode: 'legacy-unlock-inode',
-                isLocked: true,
-                isLockedByCurrentUser: false
-            });
-        });
-    });
-
     describe('computed $workflowLockIsLoading', () => {
         it('should return true when loading', () => {
             const lockOptions: ToggleLockOptions = {
@@ -379,73 +353,6 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$workflowLockIsLoading()).toBe(false);
-        });
-    });
-
-    describe('computed $unlockButton', () => {
-        it('should return unlock button configuration', () => {
-            const lockOptions: ToggleLockOptions = {
-                inode: 'unlock-button-inode',
-                isLocked: true,
-                isLockedByCurrentUser: false,
-                canLock: false,
-                loading: true,
-                disabled: true,
-                message: 'editpage.locked-by',
-                args: ['John Doe']
-            };
-            spectator.setInput('toggleLockOptions', lockOptions);
-            spectator.detectChanges();
-
-            const unlockButton = spectator.component.$unlockButton();
-            expect(unlockButton).toEqual({
-                show: true,
-                inode: 'unlock-button-inode',
-                disabled: true,
-                loading: true,
-                info: {
-                    message: 'editpage.locked-by',
-                    args: ['John Doe']
-                }
-            });
-        });
-
-        it('should reflect changes when toggleLockOptions changes', () => {
-            const initialOptions: ToggleLockOptions = {
-                inode: 'initial-inode',
-                isLocked: false,
-                isLockedByCurrentUser: false,
-                canLock: true,
-                loading: false,
-                disabled: false,
-                message: 'initial-message',
-                args: []
-            };
-            spectator.setInput('toggleLockOptions', initialOptions);
-            spectator.detectChanges();
-
-            const initial = spectator.component.$unlockButton();
-            expect(initial.inode).toBe('initial-inode');
-            expect(initial.loading).toBe(false);
-
-            const updatedOptions: ToggleLockOptions = {
-                inode: 'updated-inode',
-                isLocked: true,
-                isLockedByCurrentUser: true,
-                canLock: true,
-                loading: true,
-                disabled: false,
-                message: 'updated-message',
-                args: ['Updated User']
-            };
-            spectator.setInput('toggleLockOptions', updatedOptions);
-            spectator.detectChanges();
-
-            const updated = spectator.component.$unlockButton();
-            expect(updated.inode).toBe('updated-inode');
-            expect(updated.loading).toBe(true);
-            expect(updated.info.message).toBe('updated-message');
-            expect(updated.info.args).toEqual(['Updated User']);
         });
     });
 
@@ -568,31 +475,6 @@ describe('DotToggleLockButtonComponent - Presentational', () => {
 
             // Should not emit any event because canLock is false
             expect(emittedEvents).toHaveLength(0);
-        });
-
-        it('should handle unlockPage with different inode than current', () => {
-            const lockOptions: ToggleLockOptions = {
-                inode: 'current-inode',
-                isLocked: true,
-                isLockedByCurrentUser: true,
-                canLock: true,
-                loading: false,
-                disabled: false,
-                message: '',
-                args: []
-            };
-            spectator.setInput('toggleLockOptions', lockOptions);
-            spectator.detectChanges();
-
-            // Call unlockPage with a different inode
-            spectator.component.unlockPage('different-inode');
-
-            expect(emittedEvents).toHaveLength(1);
-            expect(emittedEvents[0]).toEqual({
-                inode: 'different-inode',
-                isLocked: true,
-                isLockedByCurrentUser: false
-            });
         });
 
         it('should handle rapid toggleLock calls', () => {

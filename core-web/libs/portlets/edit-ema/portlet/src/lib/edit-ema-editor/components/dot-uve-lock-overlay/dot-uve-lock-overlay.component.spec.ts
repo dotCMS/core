@@ -20,8 +20,6 @@ describe('DotUveLockOverlayComponent', () => {
         lockedBy: '',
         canLock: true,
         isLockedByCurrentUser: false,
-        showBanner: false,
-        showOverlay: true
     });
 
     const createComponent = createComponentFactory({
@@ -59,8 +57,6 @@ describe('DotUveLockOverlayComponent', () => {
                 lockedBy: '',
                 canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: true
             });
             spectator.detectChanges();
         });
@@ -105,8 +101,6 @@ describe('DotUveLockOverlayComponent', () => {
                 lockedBy: 'another-user',
                 canLock: false,
                 isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
             });
             spectator.detectChanges();
         });
@@ -137,8 +131,6 @@ describe('DotUveLockOverlayComponent', () => {
                 lockedBy: '',
                 canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: true
             });
             spectator.detectChanges();
 
@@ -157,8 +149,6 @@ describe('DotUveLockOverlayComponent', () => {
                 lockedBy: 'another-user',
                 canLock: false,
                 isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
             });
             spectator.detectChanges();
 
@@ -170,20 +160,22 @@ describe('DotUveLockOverlayComponent', () => {
             });
         });
 
-        it('should return null when page is locked by current user', () => {
+        it('should return lock messages when page is locked by current user', () => {
             mockToggleLockOptions.set({
                 inode: 'test-inode',
                 isLocked: true,
                 lockedBy: 'current-user',
                 canLock: true,
                 isLockedByCurrentUser: true,
-                showBanner: false,
-                showOverlay: false
             });
             spectator.detectChanges();
 
             const messages = spectator.component.$overlayMessages();
-            expect(messages).toBeNull();
+            expect(messages).toEqual({
+                icon: 'pi pi-lock',
+                title: 'uve.editor.overlay.lock.locked.page.title',
+                message: 'uve.editor.overlay.lock.locked.page.description'
+            });
         });
     });
 });

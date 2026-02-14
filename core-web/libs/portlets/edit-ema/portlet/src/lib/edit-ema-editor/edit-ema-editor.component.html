@@ -175,7 +175,7 @@
                                 [showStyleEditorOption]="uveStore.editorCanEditStyles()"
                                 data-testId="contentlet-tools" />
                         }
-                        @if (!$workflowLockOptions()?.showOverlay && dropzone) {
+                        @if (!$showLockOverlay() && dropzone) {
                             <dot-ema-page-dropzone
                                 [containers]="dropzone.bounds"
                                 [dragItem]="dropzone.dragItem"
@@ -183,7 +183,7 @@
                                 data-testId="dropzone" />
                         }
 
-                        @if ($workflowLockOptions()?.showOverlay) {
+                        @if ($showLockOverlay()) {
                             <dot-uve-lock-overlay />
                         }
                     </div>
