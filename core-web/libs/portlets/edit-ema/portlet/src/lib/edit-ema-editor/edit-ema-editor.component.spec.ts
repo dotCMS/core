@@ -1076,7 +1076,7 @@ describe('EditEmaEditorComponent', () => {
             describe('resetActiveContentletOnUnlock', () => {
                 let resetActiveContentletSpy: jest.SpyInstance;
                 const getPageAsset = () => {
-                    const pageSnapshot = store.page();
+                    const pageSnapshot = store.pageAsset();
                     if (!pageSnapshot) {
                         throw new Error('Expected page to be loaded in store');
                     }

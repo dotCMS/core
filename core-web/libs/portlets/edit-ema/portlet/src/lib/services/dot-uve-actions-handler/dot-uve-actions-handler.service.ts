@@ -243,7 +243,7 @@ export class DotUveActionsHandlerService {
                     startLevel,
                     depth,
                     pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.page()?.site?.identifier
+                    hostId: uveStore.pageAsset()?.site?.identifier
                 });
 
                 dialog.openDialogOnUrl(

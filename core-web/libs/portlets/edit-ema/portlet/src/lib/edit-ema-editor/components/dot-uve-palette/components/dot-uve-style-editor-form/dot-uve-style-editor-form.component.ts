@@ -134,7 +134,7 @@ export class DotUveStyleEditorFormComponent {
         try {
             // Use the internal pageAssetResponse signal directly (it's already been rolled back)
             // This ensures we get the rolled-back state, not the computed wrapper
-            const rolledBackPage = this.#uveStore.page();
+            const rolledBackPage = this.#uveStore.pageAsset();
 
             if (!rolledBackPage) {
                 return;
@@ -226,7 +226,7 @@ export class DotUveStyleEditorFormComponent {
 
         try {
             // Get the internal pageAssetResponse for optimistic update
-            const internalPage = this.#uveStore.page();
+            const internalPage = this.#uveStore.pageAsset();
             if (!internalPage) {
                 return;
             }
@@ -256,7 +256,7 @@ export class DotUveStyleEditorFormComponent {
 
             // Send updated response to iframe immediately for instant feedback
             // Get the updated custom response (computed will reflect the changes)
-            const updatedCustomResponse = this.#uveStore.page()?.clientResponse;
+            const updatedCustomResponse = this.#uveStore.pageAsset()?.clientResponse;
             if (!updatedCustomResponse) {
                 return;
             }

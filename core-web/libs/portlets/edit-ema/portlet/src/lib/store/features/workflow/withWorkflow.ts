@@ -87,7 +87,7 @@ export function withWorkflow() {
         }),
         withComputed((store) => {
             const workflowIsPageLocked = computed(() => {
-                return computeIsPageLocked(store.page()?.page ?? null, store.uveCurrentUser());
+                return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
             });
 
             const systemIsLockFeatureEnabled = computed(() =>
@@ -95,7 +95,7 @@ export function withWorkflow() {
             );
 
             const $unlockButton = computed<UnlockOptions | null>(() => {
-                const page = store.page()?.page;
+                const page = store.pageAsset()?.page;
                 const isLocked = workflowIsPageLocked();
 
                 if (!page || !isLocked) {
@@ -109,7 +109,7 @@ export function withWorkflow() {
             });
 
             const $workflowLockOptions = computed<ToggleLockOptions | null>(() => {
-                const page = store.page()?.page;
+                const page = store.pageAsset()?.page;
                 const user = store.uveCurrentUser();
 
                 if (!page) {

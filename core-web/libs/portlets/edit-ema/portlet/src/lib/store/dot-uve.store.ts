@@ -36,7 +36,7 @@ const initialState: UVEState = {
     workflowIsLoading: false,
     workflowLockIsLoading: false,
     // Note: Page asset properties removed (page, site, template, containers, viewAs, vanityUrl, urlContentMap, numberContents)
-    // Access via computed signal: store.page()
+    // Access via computed signal: store.pageAsset()
     // Editor state (flattened with editor* prefix)
     editorDragItem: null,
     editorBounds: [],
@@ -93,7 +93,7 @@ const initialState: UVEState = {
  *   readonly store = inject(UVEStore);
  *
  *   ngOnInit() {
- *     const page = this.store.page()?.page;
+ *     const page = this.store.pageAsset()?.page;
  *   }
  * }
  * ```
@@ -116,7 +116,7 @@ export const UVEStore = signalStore(
     withMethods((store) => {
         return {
             updatePageResponse(pageAPIResponse: DotCMSPageAsset) {
-                // Single source of truth - pageAsset properties accessed via store.page()
+                // Single source of truth - pageAsset properties accessed via store.pageAsset()
                 store.setPageAssetResponse({ pageAsset: pageAPIResponse });
                 store.setUveStatus(UVE_STATUS.LOADED);
             }
@@ -149,6 +149,6 @@ export const UVEStore = signalStore(
         resetHistoryToCurrent: () => store.resetHistoryToCurrent(),
 
         // Page access
-        page: () => store.page()
+        pageAsset: () => store.pageAsset()
     }))
 );

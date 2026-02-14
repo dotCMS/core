@@ -96,7 +96,7 @@ export function withEditor() {
             });
 
             const editorHasAccessToEditMode = computed(() => {
-                const isPageEditable = store.page()?.page?.canEdit;
+                const isPageEditable = store.pageAsset()?.page?.canEdit;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
@@ -116,8 +116,8 @@ export function withEditor() {
             });
 
             const hasPermissionToEditLayout = computed(() => {
-                const canEditPage = store.page()?.page?.canEdit;
-                const canDrawTemplate = store.page()?.template?.drawed;
+                const canEditPage = store.pageAsset()?.page?.canEdit;
+                const canDrawTemplate = store.pageAsset()?.template?.drawed;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
@@ -127,7 +127,7 @@ export function withEditor() {
             });
 
             const hasPermissionToEditStyles = computed(() => {
-                const canEditPage = store.page()?.page?.canEdit;
+                const canEditPage = store.pageAsset()?.page?.canEdit;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
                     DotExperimentStatus.SCHEDULED
@@ -162,15 +162,15 @@ export function withEditor() {
                 editorHasAccessToEditMode,
 
                 $allowContentDelete: computed<boolean>(() => {
-                    const numberContents = store.page()?.numberContents;
-                    const viewAs = store.page()?.viewAs;
+                    const numberContents = store.pageAsset()?.numberContents;
+                    const viewAs = store.pageAsset()?.viewAs;
                     const persona = viewAs?.persona;
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
                     return numberContents > 1 || !persona || isDefaultPersona;
                 }),
                 $allowedContentTypes: computed<Record<string, true>>(() => {
-                    return getContentTypeVarRecord(store.page()?.containers);
+                    return getContentTypeVarRecord(store.pageAsset()?.containers);
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const contentletPosition = store.editorContentArea();
@@ -198,9 +198,9 @@ export function withEditor() {
                     return store.editorContentArea()?.payload?.contentlet?.contentType ?? '';
                 }),
                 $pageData: computed<PageData>(() => {
-                    const page = store.page()?.page;
-                    const viewAs = store.page()?.viewAs;
-                    const containersData = store.page()?.containers ?? {};
+                    const page = store.pageAsset()?.page;
+                    const viewAs = store.pageAsset()?.viewAs;
+                    const containersData = store.pageAsset()?.containers ?? {};
 
                     const containers: PageDataContainer[] =
                         mapContainerStructureToArrayOfContainers(containersData);
@@ -216,13 +216,13 @@ export function withEditor() {
                 }),
                 $reloadEditorContent: computed<ReloadEditorContent>(() => {
                     return {
-                        code: store.page()?.page?.rendered,
+                        code: store.pageAsset()?.page?.rendered,
                         pageType: store.pageType(),
                         enableInlineEdit: editorEnableInlineEdit()
                     };
                 }),
                 $pageRender: computed<string>(() => {
-                    return store.page()?.page?.rendered;
+                    return store.pageAsset()?.page?.rendered;
                 }),
                 $editorIsInDraggingState: computed<boolean>(() => {
                     return store.editorState() === EDITOR_STATE.DRAGGING;
@@ -233,7 +233,7 @@ export function withEditor() {
                         This should change in future UVE improvements.
                         More info: https://github.com/dotCMS/core/issues/31475 and https://github.com/dotCMS/core/issues/32139
                      */
-                    const vanityUrlData = store.page()?.vanityUrl;
+                    const vanityUrlData = store.pageAsset()?.vanityUrl;
                     const vanityURL = vanityUrlData?.url;
                     const pageType = untracked(() => store.pageType());
                     const params = untracked(() => store.pageParams());

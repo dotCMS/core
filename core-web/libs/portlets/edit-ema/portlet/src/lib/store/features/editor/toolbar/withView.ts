@@ -70,11 +70,11 @@ export function withView(_deps?: WithViewDeps) {
             viewMode: computed(() => store.pageParams()?.mode ?? UVE_MODE.UNKNOWN),
 
             $urlContentMap: computed<DotCMSURLContentMap | null>(() => {
-                return store.page()?.urlContentMap ?? null;
+                return store.pageAsset()?.urlContentMap ?? null;
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
-                const page = store.page()?.page;
-                const viewAs = store.page()?.viewAs;
+                const page = store.pageAsset()?.page;
+                const viewAs = store.pageAsset()?.viewAs;
 
                 return {
                     pageId: page?.identifier,
@@ -91,7 +91,7 @@ export function withView(_deps?: WithViewDeps) {
                 return pageAPI;
             }),
             $infoDisplayProps: computed<InfoOptions>(() => {
-                const viewAs = store.page()?.viewAs;
+                const viewAs = store.pageAsset()?.viewAs;
                 const mode = store.pageParams()?.mode;
 
                 if (!getIsDefaultVariant(viewAs?.variantId)) {
@@ -127,7 +127,7 @@ export function withView(_deps?: WithViewDeps) {
                 const isPreviewMode = store.pageParams()?.mode === UVE_MODE.PREVIEW;
                 const isLiveMode = store.pageParams()?.mode === UVE_MODE.LIVE;
 
-                const viewAs = store.page()?.viewAs;
+                const viewAs = store.pageAsset()?.viewAs;
                 const isDefaultVariant = getIsDefaultVariant(viewAs?.variantId);
 
                 return !isPreviewMode && !isLiveMode && isDefaultVariant;

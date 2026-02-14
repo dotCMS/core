@@ -62,7 +62,7 @@ export interface WithPageApiDeps {
     resetHistoryToCurrent: () => void;
 
     // Page access (single accessor)
-    page: () => PageSnapshot;
+    pageAsset: () => PageSnapshot;
 }
 
 /**
@@ -290,7 +290,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                         switchMap((pageContainers) => {
                             const payload = {
                                 pageContainers,
-                                pageId: deps.page()?.page?.identifier,
+                                pageId: deps.pageAsset()?.page?.identifier,
                                 params: store.pageParams()
                             };
 
@@ -346,9 +346,9 @@ export function withPageApi(deps: WithPageApiDeps) {
                             });
                         }),
                         switchMap((sortedRows) => {
-                            const page = deps.page()?.page;
-                            const layoutData = deps.page()?.layout;
-                            const template = deps.page()?.template;
+                            const page = deps.pageAsset()?.page;
+                            const layoutData = deps.pageAsset()?.layout;
+                            const template = deps.pageAsset()?.template;
                             if (!layoutData) {
                                 return EMPTY;
                             }
@@ -446,7 +446,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 }
 
                                 // Update iframe with rolled back state
-                                const rolledBackResponse = deps.page()?.clientResponse;
+                                const rolledBackResponse = deps.pageAsset()?.clientResponse;
                                 if (rolledBackResponse) {
                                     iframeMessenger.sendPageData(rolledBackResponse);
                                 }

@@ -54,7 +54,7 @@ export type PageSnapshot = (DotCMSPageAsset & {
 }) | null;
 
 export interface PageComputed {
-    page: Signal<PageSnapshot>;
+    pageAsset: Signal<PageSnapshot>;
 
     // Page context properties (merged from withPageContext)
     pageLanguageId: Signal<number>;
@@ -189,7 +189,7 @@ export function withPage() {
             };
         }),
         withComputed((store) => {
-            const page = computed<PageSnapshot>(() => {
+            const pageAsset = computed<PageSnapshot>(() => {
                 const response = store.pageAssetResponse();
                 if (!response) {
                     return null;
@@ -233,14 +233,14 @@ export function withPage() {
                 };
             });
 
-            const pageLanguageId = computed(() => page()?.viewAs?.language?.id || 1);
-            const pageLanguage = computed(() => page()?.viewAs?.language);
-            const pageURI = computed(() => page()?.page?.pageURI ?? '');
+            const pageLanguageId = computed(() => pageAsset()?.viewAs?.language?.id || 1);
+            const pageLanguage = computed(() => pageAsset()?.viewAs?.language);
+            const pageURI = computed(() => pageAsset()?.page?.pageURI ?? '');
             const pageVariantId = computed(() => store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID);
 
             const pageTranslateProps = computed<TranslateProps>(() => {
-                const pageDataValue = page()?.page as DotCMSPage;
-                const viewAsData = page()?.viewAs;
+                const pageDataValue = pageAsset()?.page as DotCMSPage;
+                const viewAsData = pageAsset()?.viewAs;
                 const languageId = viewAsData?.language?.id;
                 const translatedLanguages = untracked(() => store.pageLanguages());
                 const currentLanguage = translatedLanguages.find(
@@ -263,7 +263,7 @@ export function withPage() {
             });
 
             return {
-                page,
+                pageAsset,
                 $requestWithParams,
                 // Page context computeds
                 pageLanguageId,

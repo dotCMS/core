@@ -11,7 +11,7 @@ import { UVEState } from '../../models';
 import { PageSnapshot } from '../page/withPage';
 
 interface LayoutStoreDeps {
-    page: () => PageSnapshot;
+    pageAsset: () => PageSnapshot;
     setPageAsset: (pageAsset: DotCMSPageAsset) => void;
 }
 
@@ -24,7 +24,7 @@ export function withLayout() {
             const s = store as typeof store & LayoutStoreDeps;
             return {
                 $layoutProps: computed<LayoutProps>(() => {
-                    const page = s.page();
+                    const page = s.pageAsset();
                     const pageData = page?.page;
                     const containersData = page?.containers;
                     const layoutData = page?.layout;
@@ -50,7 +50,7 @@ export function withLayout() {
             const s = store as typeof store & LayoutStoreDeps;
             return {
                 updateLayout: (layout: DotCMSLayout) => {
-                    const page = s.page();
+                    const page = s.pageAsset();
                     if (page) {
                         const asset = { ...page } as DotCMSPageAsset & {
                             content?: unknown;

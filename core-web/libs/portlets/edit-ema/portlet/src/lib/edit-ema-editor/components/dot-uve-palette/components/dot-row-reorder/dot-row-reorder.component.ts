@@ -313,7 +313,7 @@ export class DotRowReorderComponent {
     protected readonly rowStyleClassControl = new FormControl<string>('', { nonNullable: true });
 
     protected rows = computed(() => {
-        const pageLayout = this.uveStore.page()?.layout;
+        const pageLayout = this.uveStore.pageAsset()?.layout;
         return pageLayout?.body?.rows ?? [];
     });
 
@@ -388,11 +388,11 @@ export class DotRowReorderComponent {
 
             // Optimistic UI update
             // Removed pageAPIResponse - use normalized accessors
-            if (this.uveStore.page()?.layout) {
+            if (this.uveStore.pageAsset()?.layout) {
                 this.uveStore.updateLayout({
-                    ...this.uveStore.page()?.layout,
+                    ...this.uveStore.pageAsset()?.layout,
                     body: {
-                        ...this.uveStore.page()?.layout.body,
+                        ...this.uveStore.pageAsset()?.layout.body,
                         rows: updatedRows
                     }
                 });
@@ -413,11 +413,11 @@ export class DotRowReorderComponent {
 
         // Optimistic UI update (so the label changes immediately)
         // Removed pageAPIResponse - use normalized accessors
-        if (this.uveStore.page()?.layout) {
+        if (this.uveStore.pageAsset()?.layout) {
             this.uveStore.updateLayout({
-                ...this.uveStore.page()?.layout,
+                ...this.uveStore.pageAsset()?.layout,
                 body: {
-                    ...this.uveStore.page()?.layout.body,
+                    ...this.uveStore.pageAsset()?.layout.body,
                     rows: updatedRows
                 }
             });
@@ -496,14 +496,14 @@ export class DotRowReorderComponent {
 
     private optimisticUpdateRows(rows: DotPageAssetLayoutRow[]): void {
         // Removed pageAPIResponse - use normalized accessors
-        if (!this.uveStore.page()?.layout) {
+        if (!this.uveStore.pageAsset()?.layout) {
             return;
         }
 
         this.uveStore.updateLayout({
-            ...this.uveStore.page()?.layout,
+            ...this.uveStore.pageAsset()?.layout,
             body: {
-                ...this.uveStore.page()?.layout.body,
+                ...this.uveStore.pageAsset()?.layout.body,
                 rows
             }
         });

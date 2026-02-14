@@ -80,7 +80,7 @@ export const uveStoreMock = signalStore(
     // Add mock $isPageLocked computed that reacts to page state (must come before withView)
     withComputed((store) => ({
         $isPageLocked: computed(() => {
-            const page = store.page();
+            const page = store.pageAsset();
             const currentUser = store.uveCurrentUser();
             const isLockedByOther = page?.locked && page?.lockedBy !== currentUser?.userId;
             return isLockedByOther || false;
@@ -286,7 +286,7 @@ describe('withView', () => {
             it('should be null if the page is not locked', () => {
                 patchState(store, {
                     page: {
-                        ...store.page(),
+                        ...store.pageAsset(),
                         locked: false
                     }
                 });
@@ -297,7 +297,7 @@ describe('withView', () => {
             it('should be null if the page is locked by the current user', () => {
                 patchState(store, {
                     page: {
-                        ...store.page(),
+                        ...store.pageAsset(),
                         locked: true,
                         lockedBy: mockCurrentUser.userId
                     },
@@ -313,7 +313,7 @@ describe('withView', () => {
             it('should return the unlock button if the page is locked but mode is preview', () => {
                 patchState(store, {
                     page: {
-                        ...store.page(),
+                        ...store.pageAsset(),
                         locked: true,
                         lockedBy: '123',
                         lockedByName: 'John Doe'
@@ -325,7 +325,7 @@ describe('withView', () => {
                 });
 
                 expect(store.$unlockButton()).toEqual({
-                    inode: store.page().inode,
+                    inode: store.pageAsset().inode,
                     disabled: false,
                     loading: false,
                     info: {
@@ -338,7 +338,7 @@ describe('withView', () => {
             it('should return the unlock button if the page is locked but mode is live', () => {
                 patchState(store, {
                     page: {
-                        ...store.page(),
+                        ...store.pageAsset(),
                         locked: true,
                         lockedBy: '123',
                         lockedByName: 'John Doe'
@@ -350,7 +350,7 @@ describe('withView', () => {
                 });
 
                 expect(store.$unlockButton()).toEqual({
-                    inode: store.page().inode,
+                    inode: store.pageAsset().inode,
                     disabled: false,
                     loading: false,
                     info: {
@@ -376,7 +376,7 @@ describe('withView', () => {
                     status: UVE_STATUS.LOADED
                 });
                 expect(store.$unlockButton()).toEqual({
-                    inode: store.page().inode,
+                    inode: store.pageAsset().inode,
                     disabled: false,
                     loading: false,
                     info: {
@@ -408,7 +408,7 @@ describe('withView', () => {
                         message: 'editpage.locked-by',
                         args: ['John Doe']
                     },
-                    inode: store.page().inode,
+                    inode: store.pageAsset().inode,
                     loading: false
                 });
             });

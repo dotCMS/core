@@ -208,7 +208,7 @@ describe('withEditor', () => {
             it('should return false when canEditPage is false', () => {
                 patchState(store, {
                     page: {
-                        ...store.page(),
+                        ...store.pageAsset(),
                         canEdit: false  // Set canEdit to false to make editorCanEditContent false
                     },
                     editorContentArea: MOCK_CONTENTLET_AREA,

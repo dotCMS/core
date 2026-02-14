@@ -98,7 +98,7 @@ export class DotUveToolbarComponent {
     // Component builds its own toolbar props locally (Phase 2.3: Move view models from store to components)
     protected readonly $bookmarksUrl = computed<string>(() => {
         const params = this.#store.pageParams();
-        const site = this.#store.page()?.site;
+        const site = this.#store.pageAsset()?.site;
 
         return createFavoritePagesURL({
             languageId: Number(params?.language_id),
@@ -144,7 +144,7 @@ export class DotUveToolbarComponent {
     });
 
     readonly $pageInode = computed(() => {
-        return this.#store.page()?.page?.inode;
+        return this.#store.pageAsset()?.page?.inode;
     });
 
     readonly $actions = this.#store.workflowIsLoading;
@@ -291,7 +291,7 @@ export class DotUveToolbarComponent {
 
         if (!languageHasTranslation) {
             // Show confirmation dialog to create a new translation
-            const page = this.#store.page()?.page;
+            const page = this.#store.pageAsset()?.page;
             if (page) {
                 this.createNewTranslation(currentLanguage, page);
             }
