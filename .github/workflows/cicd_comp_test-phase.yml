@@ -50,6 +50,21 @@ on:
         required: false
         type: boolean
         default: false
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        required: false
+        type: string
+        default: ''
+      maven-compiler-release:
+        description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+        required: false
+        type: string
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1-ms). If not set, derived from java-version major.'
+        required: false
+        type: string
+        default: ''
     secrets:
       DOTCMS_LICENSE:
         required: true
@@ -187,5 +202,6 @@ jobs:
           needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
-
-
+          java-version: ${{ inputs.java-version }}
+          maven-compiler-release: ${{ inputs.maven-compiler-release }}
+          artifact-suffix: ${{ inputs.artifact-suffix }}
