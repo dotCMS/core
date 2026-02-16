@@ -1,5 +1,6 @@
 package com.dotmarketing.filters;
 
+import com.dotcms.analytics.GoogleAnalyticsWebInterceptor;
 import com.dotcms.analytics.track.AnalyticsTrackWebInterceptor;
 import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.ema.EMAWebInterceptor;
@@ -55,6 +56,7 @@ public class InterceptorFilter extends AbstractWebInterceptorSupportFilter {
         delegate.add(new ResponseMetaDataWebInterceptor());
         delegate.add(new EventLogWebInterceptor());
         delegate.add(new CurrentVariantWebInterceptor());
+        delegate.add(new GoogleAnalyticsWebInterceptor());
         delegate.add(analyticsTrackWebInterceptor);
         APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, analyticsTrackWebInterceptor);
     } // addInterceptors.
