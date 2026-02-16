@@ -21,6 +21,9 @@ const POINTER_INITIAL_POSITION = {
     top: '0'
 };
 
+// Height in pixels for the drop indicator when container is not empty
+const DROP_INDICATOR_HEIGHT_PX = 3;
+
 @Component({
     selector: 'dot-ema-page-dropzone',
     imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
@@ -67,7 +70,7 @@ export class EmaPageDropzoneComponent {
 
         const opacity = isEmpty ? '0.1' : '1';
         // Adjust coordinates for zoom level
-        const adjustedHeight = isEmpty ? targetRect.height / this.zoomLevel : 3;
+        const adjustedHeight = isEmpty ? targetRect.height / this.zoomLevel : DROP_INDICATOR_HEIGHT_PX;
         const top = this.getTop(isEmpty);
 
         this.pointerPosition = {

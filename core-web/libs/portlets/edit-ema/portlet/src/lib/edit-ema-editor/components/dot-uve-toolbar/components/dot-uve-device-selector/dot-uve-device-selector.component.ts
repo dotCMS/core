@@ -19,6 +19,9 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../../../shared/consts';
 import { Orientation } from '../../../../../store/models';
 
+// Default device inode identifier
+const DEFAULT_DEVICE_INODE = 'default';
+
 /**
  * State - what the user has selected (changes frequently)
  */
@@ -68,7 +71,7 @@ export class DotUveDeviceSelectorComponent {
         items: this.#getSocialMediaMenuItems(SEARCH_ENGINE_TILES)
     };
     readonly $disableOrientation = computed(
-        () => this.state().currentDevice?.inode === 'default' || this.state().currentSocialMedia !== null
+        () => this.state().currentDevice?.inode === DEFAULT_DEVICE_INODE || this.state().currentSocialMedia !== null
     );
 
     readonly $menuItems = computed(() => {

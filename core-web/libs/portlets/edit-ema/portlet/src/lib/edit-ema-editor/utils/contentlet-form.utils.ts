@@ -106,7 +106,7 @@ export function getQuickEditFields(layout: DotCMSContentTypeLayoutRow[]): QuickE
     return layout
         .flatMap((row) => row.columns ?? [])
         .flatMap((column) => column.fields)
-        .filter((field) => QUICK_EDIT_SUPPORTED_FIELDS.includes(field.clazz as QuickEditFieldClass))
+        .filter((field) => isQuickEditSupportedField(field.clazz))
         .map((field) => ({
             name: field.name,
             variable: field.variable,
@@ -121,6 +121,7 @@ export function getQuickEditFields(layout: DotCMSContentTypeLayoutRow[]): QuickE
 
 /**
  * Checks if a field class is supported by the quick edit form.
+ * Type guard that properly narrows the string type to QuickEditFieldClass.
  *
  * @param clazz - The field class to check
  * @returns True if the field is supported for quick editing

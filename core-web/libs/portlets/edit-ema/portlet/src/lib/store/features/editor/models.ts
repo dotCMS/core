@@ -25,7 +25,7 @@ export interface EditorState {
     contentArea?: ContentletArea;
     palette: {
         open: boolean;
-        // currentTab removed - now managed locally in DotUvePaletteComponent
+        // currentTab is now managed as local state via signalState in DotUvePaletteComponent
     };
     rightSidebar: {
         open: boolean;
@@ -68,6 +68,6 @@ export enum UVE_PALETTE_TABS {
     CONTENT_TYPES = 0,
     WIDGETS = 1,
     FAVORITES = 2,
-    STYLE_EDITOR = 4,
-    LAYERS = 3
+    LAYERS = 3,
+    STYLE_EDITOR = 4
 }

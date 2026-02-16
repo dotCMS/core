@@ -82,16 +82,15 @@
             </div>
         }
         <div class="field flex justify-content-end gap-2">
-            <!-- TODO: Needs to translate the label -->
             <p-button
                 type="button"
-                label="Cancel"
+                [label]="'dot.common.cancel' | dm"
                 [outlined]="true"
                 (click)="handleCancel()"
                 [disabled]="loading()"></p-button>
             <p-button
                 type="submit"
-                label="Save"
+                [label]="'dot.common.save' | dm"
                 [disabled]="!$contentletForm()?.valid || loading()"
                 [loading]="loading()"></p-button>
         </div>

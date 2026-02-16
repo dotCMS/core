@@ -79,6 +79,9 @@ export class DotUveContentletQuickEditComponent {
 
     protected readonly DotCMSClazzes = DotCMSClazzes;
 
+    // Track last contentlet identifier to avoid unnecessary form rebuilds
+    private lastContentletIdentifier: string | null = null;
+
     constructor() {
         // Build form when data changes
         effect(() => {
@@ -86,9 +89,17 @@ export class DotUveContentletQuickEditComponent {
 
             if (!fields || fields.length === 0) {
                 this.contentletForm.set(null);
+                this.lastContentletIdentifier = null;
                 return;
             }
 
+            // Only rebuild form if contentlet identifier changed
+            const currentIdentifier = contentlet?.identifier || null;
+            if (currentIdentifier === this.lastContentletIdentifier) {
+                return;
+            }
+
+            this.lastContentletIdentifier = currentIdentifier;
             this.buildForm(fields, contentlet);
         });
     }

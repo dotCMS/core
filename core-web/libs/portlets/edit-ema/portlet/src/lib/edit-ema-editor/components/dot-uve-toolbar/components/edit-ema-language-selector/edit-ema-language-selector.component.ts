@@ -62,6 +62,11 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
         );
 
     ngAfterViewInit(): void {
+        const lang = this.language();
+        if (!lang) {
+            return;
+        }
+
         const selected = this.selectedLanguage();
         if (selected) {
             this.listbox.writeValue(selected);
@@ -75,6 +80,11 @@ export class EditEmaLanguageSelectorComponent implements AfterViewInit {
      * @memberof EmaLanguageSelectorComponent
      */
     onChange({ value }: ListboxChangeEvent) {
+        const lang = this.language();
+        if (!lang) {
+            return;
+        }
+
         this.selected.emit(value.id);
 
         const selected = this.selectedLanguage();
