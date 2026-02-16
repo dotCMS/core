@@ -6,7 +6,6 @@ export interface OnboardingFramework {
     logo: string;
     cliCommand: string;
     type: OnboardingFrameworkType;
-    // disabled?: boolean;
     copied: boolean;
     githubUrl?: string;
 }
