@@ -53,18 +53,14 @@ public class Task260211AddTagsNewPortletToMenu implements StartupTask {
 
         // 0. Migrate any layout entries from old id "tags-new" to "tags" (portlet id was renamed)
         final int migrated = new DotConnect()
-                .setSQL("UPDATE cms_layouts_portlets SET portlet_id = ? WHERE portlet_id = 'tags-new'")
-                .addParam(TAGS.toString())
-                .executeUpdate();
+                .executeUpdate("UPDATE cms_layouts_portlets SET portlet_id = ? WHERE portlet_id = 'tags-new'", TAGS.toString());
         if (migrated > 0) {
             Logger.info(this, "Migrated " + migrated + " layout entry(ies) from tags-new to tags");
         }
 
         // 1. Remove legacy from all layouts so it does not appear in the menu
         final int removed = new DotConnect()
-                .setSQL("DELETE FROM cms_layouts_portlets WHERE portlet_id = ?")
-                .addParam(TAGS_LEGACY.toString())
-                .executeUpdate();
+                .executeUpdate("DELETE FROM cms_layouts_portlets WHERE portlet_id = ?", TAGS_LEGACY.toString());
         if (removed > 0) {
             Logger.info(this, "Removed 'Tags Legacy' portlet from " + removed + " layout(s)");
         }
