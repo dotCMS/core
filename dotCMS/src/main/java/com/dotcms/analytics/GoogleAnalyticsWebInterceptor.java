@@ -23,18 +23,18 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Web Interceptor that automatically injects Google Analytics tracking code into HTML pages
+ * Web Interceptor that automatically injects Google Analytics 4 (GA4) tracking code into HTML pages
  * when the googleAnalytics field is populated on a site.
  * 
- * Supports both:
- * - Google Analytics 4 (GA4) format: G-XXXXXXXXXX
- * - Universal Analytics (UA) format: UA-XXXXXXXXXX-X
+ * Supports Google Analytics 4 (GA4) format: G-XXXXXXXXXX
  * 
  * Configuration:
  * - GOOGLE_ANALYTICS_AUTO_INJECT: Enable/disable auto-injection (default: true)
  * 
  * The tracking code is injected before the closing </body> tag for optimal performance.
  * Injection is skipped in EDIT_MODE and PREVIEW_MODE to avoid tracking during content editing.
+ * 
+ * Note: Universal Analytics (UA) was sunset by Google in July 2023. Only GA4 is supported.
  * 
  * @author dotCMS
  */
@@ -53,18 +53,6 @@ public class GoogleAnalyticsWebInterceptor implements WebInterceptor {
         "  function gtag(){dataLayer.push(arguments);}\n" +
         "  gtag('js', new Date());\n" +
         "  gtag('config', '%s');\n" +
-        "</script>\n";
-    
-    // Universal Analytics tracking code template
-    private static final String UA_SCRIPT_TEMPLATE = 
-        "<!-- Google Analytics -->\n" +
-        "<script>\n" +
-        "(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){\n" +
-        "(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),\n" +
-        "m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)\n" +
-        "})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');\n" +
-        "ga('create', '%s', 'auto');\n" +
-        "ga('send', 'pageview');\n" +
         "</script>\n";
 
     @Override
@@ -122,26 +110,14 @@ public class GoogleAnalyticsWebInterceptor implements WebInterceptor {
     }
     
     /**
-     * Determines the appropriate tracking script based on the tracking ID format
+     * Generates Google Analytics 4 (GA4) tracking script
      * 
-     * @param trackingId The Google Analytics tracking ID
-     * @return The formatted tracking script HTML
+     * @param trackingId The GA4 tracking ID (format: G-XXXXXXXXXX)
+     * @return The formatted GA4 tracking script HTML
      */
     @VisibleForTesting
     static String generateTrackingScript(final String trackingId) {
-        if (trackingId.startsWith("G-")) {
-            // GA4 format
-            return String.format(GA4_SCRIPT_TEMPLATE, trackingId, trackingId);
-        } else if (trackingId.startsWith("UA-")) {
-            // Universal Analytics format
-            return String.format(UA_SCRIPT_TEMPLATE, trackingId);
-        } else {
-            // Default to GA4 format if format is unclear
-            Logger.warn(GoogleAnalyticsWebInterceptor.class, 
-                       "Unknown Google Analytics tracking ID format: " + trackingId + 
-                       ". Using GA4 format.");
-            return String.format(GA4_SCRIPT_TEMPLATE, trackingId, trackingId);
-        }
+        return String.format(GA4_SCRIPT_TEMPLATE, trackingId, trackingId);
     }
     
     /**

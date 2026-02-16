@@ -1,7 +1,9 @@
-# Google Analytics Tracking Code Auto-Injection - Implementation Summary
+# Google Analytics 4 (GA4) Tracking Code Auto-Injection - Implementation Summary
 
 ## Overview
-This implementation adds automatic Google Analytics tracking code injection for dotCMS sites. When the `googleAnalytics` field is populated on a site, the tracking code is automatically injected into HTML pages.
+This implementation adds automatic Google Analytics 4 (GA4) tracking code injection for dotCMS sites. When the `googleAnalytics` field is populated on a site, the GA4 tracking code is automatically injected into HTML pages.
+
+**Note**: Only GA4 is supported. Universal Analytics (UA) was sunset by Google in July 2023.
 
 ## What Was Implemented
 
@@ -10,9 +12,9 @@ This implementation adds automatic Google Analytics tracking code injection for 
 
 A WebInterceptor that:
 - ✅ Reads the `googleAnalytics` field from the current site/host
-- ✅ Detects tracking ID format (GA4 vs Universal Analytics)
+- ✅ Generates GA4 tracking code with the provided tracking ID
 - ✅ Wraps HTTP responses to capture HTML output
-- ✅ Injects appropriate tracking code before `</body>` tag
+- ✅ Injects GA4 tracking code before `</body>` tag
 - ✅ Skips injection in EDIT_MODE and PREVIEW_MODE
 - ✅ Only processes HTML responses (text/html)
 - ✅ Controlled via `GOOGLE_ANALYTICS_AUTO_INJECT` environment variable (default: true)
@@ -139,17 +141,15 @@ curl -X PUT \
   "https://dotcms.example.com/api/v1/sites/default"
 ```
 
-## Supported Tracking ID Formats
+## Supported Tracking ID Format
 
-### GA4 (Google Analytics 4)
+### GA4 (Google Analytics 4) Only
 - **Format**: `G-XXXXXXXXXX`
 - **Example**: `G-ABC123XYZ`
 - **Script**: Injects `gtag.js` with GA4 configuration
 
-### UA (Universal Analytics)
-- **Format**: `UA-XXXXXXXXX-X`
-- **Example**: `UA-12345678-1`
-- **Script**: Injects `analytics.js` with UA configuration
+**Why GA4 Only?**  
+Universal Analytics (UA) was sunset by Google on July 1, 2023. GA4 is now the only supported version.
 
 ## Key Design Decisions
 
@@ -216,7 +216,7 @@ From the original issue:
 
 - ✅ Read `googleAnalytics` field value from current site/host context
 - ✅ Automatically inject GA4 tracking code into page when field is populated
-- ✅ Support both Universal Analytics (UA) and GA4 tracking ID formats
+- ✅ Support Google Analytics 4 (GA4) tracking ID format
 - ✅ Provide configuration option to disable auto-injection if needed
 - ⚠️ Make tracking code available in Velocity context (not implemented - not needed for auto-injection)
 - ✅ Update documentation on how to use the Google Analytics field
@@ -297,6 +297,6 @@ A: View page source and search for `gtag.js` or `analytics.js`. Check Google Ana
 
 ## Conclusion
 
-This implementation provides a **clean, minimal, and production-ready** solution for automatic Google Analytics injection in dotCMS. It follows established patterns, includes comprehensive tests and documentation, and can be enabled/disabled per environment.
+This implementation provides a **clean, minimal, and production-ready** solution for automatic Google Analytics 4 injection in dotCMS. It follows established patterns, includes comprehensive tests and documentation, and can be enabled/disabled per environment.
 
-The feature is **backward compatible** (disabled tracking IDs work as before) and **forward compatible** (supports both GA4 and legacy UA formats).
+The feature is **backward compatible** (empty or null tracking IDs work as before) and focuses on **GA4 only** (the current and future standard for Google Analytics).

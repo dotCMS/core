@@ -5,7 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Simple standalone tests for Google Analytics injection logic
+ * Simple standalone tests for Google Analytics 4 (GA4) injection logic
  * that don't require PowerMock or full environment setup.
  * 
  * @author dotCMS
@@ -32,22 +32,20 @@ public class GoogleAnalyticsWebInterceptorSimpleTest {
     }
 
     /**
-     * Test Universal Analytics script generation
+     * Test script generation with different GA4 tracking ID
      */
     @Test
-    public void testGenerateUATrackingScript() {
-        String trackingId = "UA-12345678-1";
+    public void testGenerateGA4TrackingScriptDifferentId() {
+        String trackingId = "G-REAL123TEST";
         String script = GoogleAnalyticsWebInterceptor.generateTrackingScript(trackingId);
         
-        // Verify UA script structure
-        assertTrue("Should contain analytics.js", 
-                  script.contains("analytics.js"));
-        assertTrue("Should contain ga create call", 
-                  script.contains("ga('create', '" + trackingId + "'"));
-        assertTrue("Should contain ga send pageview", 
-                  script.contains("ga('send', 'pageview')"));
-        assertTrue("Should have UA comment", 
-                  script.contains("<!-- Google Analytics -->"));
+        // Verify GA4 script structure
+        assertTrue("Should contain gtag.js", 
+                  script.contains("gtag.js?id=" + trackingId));
+        assertTrue("Should contain gtag config", 
+                  script.contains("gtag('config', '" + trackingId + "')"));
+        assertTrue("Should have dataLayer", 
+                  script.contains("window.dataLayer"));
     }
 
     /**
@@ -154,15 +152,15 @@ public class GoogleAnalyticsWebInterceptorSimpleTest {
     }
 
     /**
-     * Test unknown format defaults to GA4
+     * Test script generation with any ID format (all use GA4)
      */
     @Test
-    public void testUnknownFormatDefaultsToGA4() {
-        String trackingId = "UNKNOWN-12345";
+    public void testGenerateTrackingScriptAnyFormat() {
+        String trackingId = "CUSTOM-ID-123";
         String script = GoogleAnalyticsWebInterceptor.generateTrackingScript(trackingId);
         
-        // Should use GA4 format as default
-        assertTrue("Should use GA4 format for unknown tracking ID", 
+        // Should use GA4 format for any ID
+        assertTrue("Should use GA4 format", 
                   script.contains("gtag.js?id=" + trackingId));
         assertTrue("Should contain gtag config", 
                   script.contains("gtag('config', '" + trackingId + "')"));

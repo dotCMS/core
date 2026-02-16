@@ -171,20 +171,19 @@ public class GoogleAnalyticsWebInterceptorTest extends UnitTestBase {
     }
 
     /**
-     * Test Universal Analytics tracking script generation
+     * Test tracking script generation with any format
      */
     @Test
-    public void test_generateTrackingScript_uaFormat() {
-        // Given: UA tracking ID
-        final String trackingId = "UA-XXXXXXXXX-1";
+    public void test_generateTrackingScript_anyFormat() {
+        // Given: Any tracking ID format
+        final String trackingId = "G-ABC123XYZ";
 
         // When: Generating script
         final String script = GoogleAnalyticsWebInterceptor.generateTrackingScript(trackingId);
 
-        // Then: Should contain UA script elements
-        assertTrue(script.contains("analytics.js"));
-        assertTrue(script.contains("ga('create', '" + trackingId + "'"));
-        assertTrue(script.contains("ga('send', 'pageview')"));
+        // Then: Should use GA4 format
+        assertTrue(script.contains("gtag.js?id=" + trackingId));
+        assertTrue(script.contains("gtag('config', '" + trackingId + "')"));
     }
 
     /**
@@ -242,18 +241,18 @@ public class GoogleAnalyticsWebInterceptorTest extends UnitTestBase {
     }
 
     /**
-     * Test unknown tracking ID format defaults to GA4
+     * Test tracking script with empty ID
      */
     @Test
-    public void test_generateTrackingScript_unknownFormat_usesGA4() {
-        // Given: Unknown tracking ID format
-        final String trackingId = "UNKNOWN-123456";
+    public void test_generateTrackingScript_emptyId() {
+        // Given: Empty tracking ID
+        final String trackingId = "";
 
         // When: Generating script
         final String script = GoogleAnalyticsWebInterceptor.generateTrackingScript(trackingId);
 
-        // Then: Should use GA4 format as fallback
-        assertTrue(script.contains("gtag.js?id=" + trackingId));
-        assertTrue(script.contains("gtag('config', '" + trackingId + "')"));
+        // Then: Should still generate GA4 format script
+        assertTrue(script.contains("gtag.js"));
+        assertTrue(script.contains("gtag('config', '')"));
     }
 }

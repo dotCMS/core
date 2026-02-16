@@ -1,16 +1,18 @@
-# Google Analytics Tracking Code Auto-Injection
+# Google Analytics 4 (GA4) Tracking Code Auto-Injection
 
 ## Overview
 
-The Google Analytics auto-injection feature automatically injects GA4 or Universal Analytics tracking code into HTML pages when the `googleAnalytics` field is populated on a dotCMS site.
+The Google Analytics auto-injection feature automatically injects GA4 tracking code into HTML pages when the `googleAnalytics` field is populated on a dotCMS site.
+
+**Note**: Only Google Analytics 4 (GA4) is supported. Universal Analytics (UA) was sunset by Google in July 2023.
 
 ## How It Works
 
 The `GoogleAnalyticsWebInterceptor` is a Web Interceptor that:
 
 1. **Reads the tracking ID** from the site's `googleAnalytics` field
-2. **Detects the format** (GA4 vs Universal Analytics) based on the tracking ID prefix
-3. **Injects the appropriate tracking code** before the `</body>` tag in HTML responses
+2. **Generates GA4 tracking code** using the provided tracking ID
+3. **Injects the tracking code** before the `</body>` tag in HTML responses
 4. **Skips injection** in edit/preview modes to avoid tracking during content editing
 
 ## Configuration
@@ -31,7 +33,7 @@ GOOGLE_ANALYTICS_AUTO_INJECT=false
 
 ### Via REST API
 
-Use the Site Resource API to set the tracking ID:
+Use the Site Resource API to set the GA4 tracking ID:
 
 ```bash
 # Set GA4 tracking ID
@@ -40,13 +42,6 @@ curl -X PUT \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"googleAnalytics": "G-XXXXXXXXXX"}' \
   "https://your-dotcms-instance.com/api/v1/sites/your-site-id"
-
-# Set Universal Analytics tracking ID
-curl -X PUT \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"googleAnalytics": "UA-XXXXXXXXX-1"}' \
-  "https://your-dotcms-instance.com/api/v1/sites/your-site-id"
 ```
 
 ### Via dotCMS Admin UI
@@ -54,16 +49,16 @@ curl -X PUT \
 1. Navigate to **Sites** in the admin interface
 2. Select your site
 3. Find the **Google Analytics** field
-4. Enter your tracking ID:
-   - For GA4: `G-XXXXXXXXXX`
-   - For UA: `UA-XXXXXXXXX-X`
+4. Enter your GA4 tracking ID: `G-XXXXXXXXXX`
 5. Save the site configuration
 
-## Supported Tracking ID Formats
+## Supported Tracking ID Format
 
-### Google Analytics 4 (GA4)
+### Google Analytics 4 (GA4) Only
 
 Format: `G-XXXXXXXXXX`
+
+Example: `G-ABC123XYZ`
 
 The injected code will look like:
 
@@ -78,23 +73,11 @@ The injected code will look like:
 </script>
 ```
 
-### Universal Analytics (UA)
+**Why GA4 Only?**
 
-Format: `UA-XXXXXXXXX-X`
+Universal Analytics (UA) was sunset by Google on July 1, 2023. Google Analytics 4 is now the only supported version of Google Analytics. If you're still using UA tracking IDs, you should migrate to GA4 as soon as possible.
 
-The injected code will look like:
-
-```html
-<!-- Google Analytics -->
-<script>
-(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-ga('create', 'UA-XXXXXXXXX-X', 'auto');
-ga('send', 'pageview');
-</script>
-```
+Learn more: [Google Analytics 4 Migration Guide](https://support.google.com/analytics/answer/10759417)
 
 ## When Injection Occurs
 
@@ -256,7 +239,7 @@ If you were previously manually adding GA tracking code:
 ## Related Documentation
 
 - [Google Analytics 4 Documentation](https://developers.google.com/analytics/devguides/collection/ga4)
-- [Universal Analytics Documentation](https://developers.google.com/analytics/devguides/collection/analyticsjs)
+- [Migrate from Universal Analytics to GA4](https://support.google.com/analytics/answer/10759417)
 - [dotCMS Site API](https://www.dotcms.com/docs/latest/site-resource-api)
 
 ## Support
