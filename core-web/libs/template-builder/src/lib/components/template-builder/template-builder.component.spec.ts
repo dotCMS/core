@@ -11,6 +11,7 @@ import { pluck, take } from 'rxjs/operators';
 
 import {
     DotContainersService,
+    DotCurrentUserService,
     DotEventsService,
     DotMessageService,
     DotSystemConfigService
@@ -20,6 +21,7 @@ import {
     containersMock,
     CoreWebServiceMock,
     DotContainersServiceMock,
+    DotCurrentUserServiceMock,
     LoginServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
@@ -68,6 +70,10 @@ describe('TemplateBuilderComponent', () => {
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
+            {
+                provide: DotCurrentUserService,
+                useClass: DotCurrentUserServiceMock
+            },
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK

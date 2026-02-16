@@ -3,8 +3,13 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
 
@@ -17,6 +22,10 @@ describe('TemplateBuilderActionsComponent', () => {
     const createComponent = createComponentFactory({
         component: TemplateBuilderActionsComponent,
         providers: [
+            {
+                provide: DotCurrentUserService,
+                useClass: DotCurrentUserServiceMock
+            },
             {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
