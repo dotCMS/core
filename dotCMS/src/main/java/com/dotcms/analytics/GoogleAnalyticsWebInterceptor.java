@@ -98,10 +98,27 @@ public class GoogleAnalyticsWebInterceptor implements WebInterceptor {
         Logger.debug(this, () -> "Google Analytics tracking ID found for site '" + 
                     site.getHostname() + "': " + gaTrackingId);
         
+        // Store tracking ID in request attribute for use in afterIntercept
+        request.setAttribute("GA_TRACKING_ID", gaTrackingId);
+        
         // Wrap response to capture and modify HTML output
         final GAResponseWrapper wrappedResponse = new GAResponseWrapper(response, gaTrackingId);
         
         return Result.wrap(request, wrappedResponse);
+    }
+    
+    @Override
+    public boolean afterIntercept(final HttpServletRequest request, final HttpServletResponse response) {
+        try {
+            // Check if we have a wrapped response with content to inject
+            if (response instanceof GAResponseWrapper) {
+                final GAResponseWrapper wrappedResponse = (GAResponseWrapper) response;
+                wrappedResponse.finishResponse();
+            }
+        } catch (Exception e) {
+            Logger.error(this, "Error finalizing Google Analytics injection: " + e.getMessage(), e);
+        }
+        return true;
     }
     
     /**
@@ -201,33 +218,36 @@ public class GoogleAnalyticsWebInterceptor implements WebInterceptor {
             return writer;
         }
         
-        @Override
-        public void flushBuffer() throws IOException {
-            if (isHtmlResponse && outputStream != null) {
-                injectTrackingCodeAndWrite();
-            }
-            super.flushBuffer();
-        }
-        
         /**
-         * Called when the response is being finalized.
-         * Injects the GA tracking code before </body> and writes to the actual response.
+         * Finalizes the response by injecting GA tracking code and writing to the actual response.
+         * Should be called from afterIntercept().
          */
-        private void injectTrackingCodeAndWrite() throws IOException {
+        public void finishResponse() throws IOException {
+            if (!isHtmlResponse || outputStream == null) {
+                return;
+            }
+            
+            // Flush any pending writes
             if (writer != null) {
                 writer.flush();
             }
             
+            // Get the captured HTML content
             final String originalHtml = outputStream.toString(StandardCharsets.UTF_8.name());
+            
+            // Inject tracking code if HTML contains </body> tag
             final String modifiedHtml = injectTrackingCode(originalHtml, trackingId);
             
             // Write the modified HTML to the actual response
-            final ServletOutputStream realOutputStream = getResponse().getOutputStream();
-            realOutputStream.write(modifiedHtml.getBytes(StandardCharsets.UTF_8));
-            realOutputStream.flush();
-            
-            // Clear the buffer to avoid double-writing
-            outputStream.reset();
+            try {
+                final ServletOutputStream realOutputStream = ((HttpServletResponse) getResponse()).getOutputStream();
+                realOutputStream.write(modifiedHtml.getBytes(StandardCharsets.UTF_8));
+                realOutputStream.flush();
+            } catch (IOException e) {
+                Logger.error(GoogleAnalyticsWebInterceptor.class, 
+                           "Failed to write Google Analytics injected content: " + e.getMessage(), e);
+                throw e;
+            }
         }
         
         /**
