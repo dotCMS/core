@@ -45,7 +45,7 @@ const mockUVEStore = {
     $isStyleEditorEnabled: signal(false),
     $canEditStyles: () => false,  // Computed property used by component
     $styleSchema: signal(undefined),
-    // Phase 3: editor() method returns editor state with activeContentlet
+    // editor() method returns editor state with activeContentlet
     // Must be a computed function to reflect changes when mockActiveContentlet changes
     editor: computed(() => ({
         activeContentlet: mockActiveContentlet(),

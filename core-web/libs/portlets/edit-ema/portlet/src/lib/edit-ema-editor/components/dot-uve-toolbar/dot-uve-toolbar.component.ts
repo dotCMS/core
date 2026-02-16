@@ -95,7 +95,7 @@ export class DotUveToolbarComponent {
     // Expose enum for template usage
     readonly UVE_MODE = UVE_MODE;
 
-    // Component builds its own toolbar props locally (Phase 2.3: Move view models from store to components)
+    // Component builds its own toolbar props locally
     protected readonly $bookmarksUrl = computed<string>(() => {
         const params = this.#store.pageParams();
         const site = this.#store.pageAsset()?.site;

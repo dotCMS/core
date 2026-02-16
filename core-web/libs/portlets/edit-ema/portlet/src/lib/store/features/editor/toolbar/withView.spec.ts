@@ -48,7 +48,7 @@ const initialState: UVEState = {
     containers: MOCK_RESPONSE_HEADLESS.containers,
     vanityUrl: MOCK_RESPONSE_HEADLESS.vanityUrl,
     numberContents: MOCK_RESPONSE_HEADLESS.numberContents,
-    // Phase 3: Nested editor state
+    // Nested editor state
     editor: {
         dragItem: null,
         bounds: [],
@@ -62,7 +62,7 @@ const initialState: UVEState = {
         ogTags: null,
         styleSchemas: []
     },
-    // Phase 3: Nested view state
+    // Nested view state
     view: {
         device: null,
         orientation: Orientation.LANDSCAPE,

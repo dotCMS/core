@@ -61,7 +61,7 @@ const initialState: UVEState = {
     },
     status: UVE_STATUS.LOADED,
     pageType: PageType.HEADLESS,
-    // Phase 6: Flattened editor state with domain-prefixed properties (editor*)
+    // Flattened editor state with domain-prefixed properties (editor*)
     editorDragItem: null,
     editorBounds: [],
     editorState: EDITOR_STATE.IDLE,
@@ -71,7 +71,7 @@ const initialState: UVEState = {
     editorRightSidebarOpen: false,
     editorOgTags: null,
     editorStyleSchemas: [],
-    // Phase 3.2: Nested view state
+    // Nested view state
     view: {
         device: null,
         orientation: Orientation.LANDSCAPE,
@@ -193,7 +193,7 @@ describe('withEditor', () => {
             });
         });
 
-        // $editorProps tests removed (Phase 3): this computed was moved/removed during refactoring
+        // $editorProps tests removed : this computed was moved/removed during refactoring
 
         describe('$showContentletControls', () => {
             it('should return false when contentArea is null', () => {
@@ -479,7 +479,7 @@ describe('withEditor', () => {
             });
         });
 
-        // $editorProps tests removed (Phase 3): this computed was moved/removed during refactoring
+        // $editorProps tests removed : this computed was moved/removed during refactoring
     });
 
     describe('withMethods', () => {

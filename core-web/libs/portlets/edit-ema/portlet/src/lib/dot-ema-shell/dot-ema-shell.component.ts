@@ -71,7 +71,7 @@ export class DotEmaShellComponent implements OnInit {
 
     protected readonly $showBanner = signal<boolean>(true);
 
-    // Component builds its own menu items (Phase 2.1: Move view models from store to components)
+    // Component builds its own menu items locally
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
         const page = this.uveStore.pageAsset()?.page;
         const template = this.uveStore.pageAsset()?.template;

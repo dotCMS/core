@@ -3697,7 +3697,7 @@ describe('EditEmaEditorComponent', () => {
                         preventDefault: jest.fn()
                     } as unknown as MouseEvent;
 
-                    // Mock the store state for inline editing (Phase 3: nested editor state)
+                    // Mock the store state for inline editing
                     jest.spyOn(store, 'editorState').mockReturnValue({
                         ...store.editorState(),
                         state: isInlineEditing ? EDITOR_STATE.INLINE_EDITING : EDITOR_STATE.IDLE

@@ -269,7 +269,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
-    // Component builds its own editor props locally (Phase 2.2: Move view models from store to components)
+    // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
@@ -347,7 +347,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $mode = this.uveStore.viewMode;
 
-    // Phase 4.3: Component-level computed (was in withEditor with cross-feature dependency)
+    // Component-level computed to avoid cross-feature dependency
     readonly $editorContentStyles = computed<Record<string, string>>(() => {
         const socialMedia = this.uveStore.viewSocialMedia();
         return {

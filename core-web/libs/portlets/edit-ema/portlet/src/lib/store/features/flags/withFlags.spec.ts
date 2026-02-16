@@ -32,7 +32,7 @@ const initialState: UVEState = {
     containers: null,
     vanityUrl: null,
     numberContents: null,
-    // Phase 3: Nested editor state
+    // Nested editor state
     editor: {
         dragItem: null,
         bounds: [],
@@ -46,7 +46,7 @@ const initialState: UVEState = {
         ogTags: null,
         styleSchemas: []
     },
-    // Phase 3: Nested view state
+    // Nested view state
     view: {
         device: null,
         orientation: Orientation.LANDSCAPE,

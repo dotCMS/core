@@ -1043,7 +1043,7 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
-    describe('Phase 2.1: Local View Models', () => {
+    describe('Local View Models', () => {
         describe('$menuItems computed property', () => {
             it('should build menu items with correct structure', () => {
                 const menuItems = spectator.component['$menuItems']();

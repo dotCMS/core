@@ -42,11 +42,11 @@ import {
 } from '../shared/mocks';
 
 /**
- * Phase 3.4: Integration Tests
+ * Integration Tests
  * Tests for the refactored nested state structure (editor.panels, toolbar, etc.)
  * Verifies that the nested state architecture works correctly across the store
  */
-describe('UVEStore - Integration Tests (Phase 3)', () => {
+describe('UVEStore - Integration Tests ', () => {
     let spectator: SpectatorService<InstanceType<typeof UVEStore>>;
     let store: InstanceType<typeof UVEStore>;
 
@@ -379,7 +379,7 @@ describe('UVEStore - Integration Tests (Phase 3)', () => {
             expect(store.$editorIsInDraggingState()).toBe(false);
         });
 
-        // $editorContentStyles test removed (Phase 4.3): moved to component level to eliminate cross-feature dependency
+        // $editorContentStyles test removed : moved to component level to eliminate cross-feature dependency
     });
 
     describe('State Integrity', () => {
