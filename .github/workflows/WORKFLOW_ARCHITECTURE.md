@@ -549,20 +549,33 @@ reuse-previous-build: true
 build-on-missing-artifacts: false  # or true to build if not found
 ```
 
-### 2. Conditional Execution Pattern
+### 2. Change Detection Pattern
+```yaml
+# Controls whether to detect file changes for selective test execution (REQUIRED)
+# 'enabled': Run paths-filter, run only affected components
+# 'disabled': Skip detection, run all build/test components
+initialize:
+  uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+  with:
+    change-detection: 'enabled'   # PR, LTS, Trunk (for SDK detection)
+    # change-detection: 'disabled' # Merge queue, Nightly, Release (run all)
+```
+
+### 3. Conditional Execution Pattern
 ```yaml
 # All jobs use conditional execution based on previous job outputs
 needs: [initialize]
 if: needs.initialize.outputs.found_artifacts == 'false'
 ```
 
-### 3. Test Skipping Pattern
+### 4. Test Skipping Pattern
 ```yaml
 # Tests are conditionally run based on file changes detected in initialize
+# The filters output is a JSON object - use fromJSON() to access individual values
 with:
-  jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
-  integration: ${{ needs.initialize.outputs.backend == 'true' }}
-  frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
+  jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
+  integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+  frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
 ```
 
 ### 4. Security Pattern
