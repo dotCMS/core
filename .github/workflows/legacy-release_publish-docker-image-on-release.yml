@@ -1,4 +1,26 @@
-name: Build/Push dotCMS docker image (on release)
+#
+# ⚠️ DEPRECATED WORKFLOW - SAFE TO DELETE ⚠️
+#
+# This workflow has NEVER been used and can be safely deleted.
+#
+# Analysis:
+# - Triggered by: repository_dispatch event type 'enterprise-update'
+# - Push to release-* branches is commented out (lines 3-5)
+# - No recorded usage in workflow run history
+# - No evidence of external systems sending repository_dispatch events
+#
+# If repository_dispatch functionality is needed in future:
+# → Use: .github/workflows/cicd_8-manual-deploy.yml (can be triggered via API)
+# → Or: .github/workflows/cicd_comp_deployment-phase.yml (reusable component)
+#
+# Recommendation: DELETE THIS FILE
+#
+# Deprecation Timeline:
+# - Never used since creation
+# - Safe for immediate deletion
+#
+
+name: Build/Push dotCMS docker image (on release) [DEPRECATED - UNUSED]
 on:
 #  push:
 #    branches:

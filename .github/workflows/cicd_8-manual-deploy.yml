@@ -1,0 +1,282 @@
+#
+# Manual Deploy Workflow
+#
+# This workflow provides on-demand deployment of Docker images from any branch, tag, or commit.
+# It's designed for testing feature branches, deploying hotfixes, or creating ad-hoc builds.
+#
+# Key features:
+# - Deploy from any ref (branch, tag, or commit SHA)
+# - Safety checks to prevent accidental artifact collision with release artifacts
+# - Separate environment (GitHub UI grouping) and version (artifact naming) inputs
+# - Artifact suffix required by default to prevent Maven/Artifactory namespace collision
+# - Custom Docker tags for special builds
+# - Java version override for testing alternate Java versions
+# - Reuses modular build/deployment phases for consistency
+# - Optional dev image deployment for development environments
+#
+# Safety mechanisms:
+# - Detects if version matches release pattern (yy.mm.dd-## or yy.mm.dd_lts_v##)
+# - Blocks deployment unless allow_release_override flag is explicitly set
+# - Default artifact suffix "manual" prevents collision with production artifacts
+# - Environment input is categorical (manual, feature-test, etc.) not version-based
+#
+# Common use cases:
+# - Testing feature branches before merge
+#   Example: ref=issue-12345-feature, environment=feature-test, version=feature-test-12345
+# - Building hotfix releases from release branches
+#   Example: ref=release-25.01.01, environment=hotfix, version=hotfix-25.01.01-patch
+# - Creating custom tagged images for specific deployments
+#   Example: ref=main, environment=manual, version=customer-demo-20240216, custom_tag=acme-corp
+# - Testing alternate Java versions (e.g., Java 25)
+#   Example: ref=main, environment=release-java25, version=test-java25, java_version=25.0.2-ms
+#
+# Important: GitHub "environment" vs "version"
+# - environment: Used for GitHub deployment UI grouping (categorical: manual, feature-test, hotfix, release-java25)
+# - version: Used for Docker tags and artifact naming (unique: feature-test-123, manual-20240216)
+#
+# This workflow replaces legacy-release_publish-dotcms-docker-image.yml
+# with a modern, modular approach that's consistent with the CI/CD pipeline.
+#
+
+name: '-8 Manual Deploy'
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or commit SHA to build (e.g., main, issue-123-feature, release-25.01.01)'
+        required: true
+        type: string
+      environment:
+        description: 'GitHub deployment environment (categorical: manual, feature-test, hotfix, release, release-java25). Used for GitHub UI grouping, NOT artifact naming.'
+        required: true
+        type: string
+        default: 'manual'
+      version:
+        description: 'Version for Docker tag and artifacts (e.g., feature-test-123, manual-20240216). Prevent collision: never use actual release versions!'
+        required: true
+        type: string
+      deploy_dev_image:
+        description: 'Also deploy dev image (dotcms/dotcms-dev)'
+        type: boolean
+        default: false
+      latest:
+        description: 'Tag as latest (use cautiously - typically only for main branch deployments)'
+        type: boolean
+        default: false
+      custom_tag:
+        description: 'Additional custom Docker tag (optional, e.g., customer-demo, qa-env-1)'
+        required: false
+        type: string
+      java_version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.2-ms). Leave empty for default Java 21.'
+        required: false
+        type: string
+        default: ''
+      artifact_suffix:
+        description: 'Artifact suffix without leading separator (e.g., java25-ms, manual). If not set, derived from java-version major. REQUIRED to prevent artifact collision!'
+        required: false
+        type: string
+        default: 'manual'
+      allow_release_override:
+        description: '⚠️ DANGER: Allow overriding actual release artifacts in Maven/Artifactory. Only enable if you know what you are doing!'
+        type: boolean
+        default: false
+
+# Allow concurrent manual deploys but prevent duplicate runs for same ref+version+java
+concurrency:
+  group: manual-deploy-${{ github.event.inputs.ref }}-${{ github.event.inputs.version }}-${{ github.event.inputs.java_version }}
+  cancel-in-progress: true
+
+jobs:
+  # Safety checks - prevent accidental artifact collision
+  safety-check:
+    name: Safety Check
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      safe_to_proceed: ${{ steps.validate.outputs.safe_to_proceed }}
+      warning_message: ${{ steps.validate.outputs.warning_message }}
+    steps:
+      - name: Validate Inputs
+        id: validate
+        run: |
+          VERSION="${{ inputs.version }}"
+          ARTIFACT_SUFFIX="${{ inputs.artifact_suffix }}"
+          ALLOW_OVERRIDE="${{ inputs.allow_release_override }}"
+
+          # Check if version looks like a release version (yy.mm.dd-## or yy.mm.dd_lts_v##)
+          if [[ "${VERSION}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
+            if [[ "${ALLOW_OVERRIDE}" != "true" ]]; then
+              echo "❌ ERROR: Version '${VERSION}' matches release version pattern!"
+              echo "This could overwrite actual release artifacts in Maven/Artifactory."
+              echo ""
+              echo "To proceed, you must:"
+              echo "1. Use a different version name (e.g., ${VERSION}-test, manual-${VERSION})"
+              echo "2. OR set allow_release_override: true (dangerous!)"
+              echo ""
+              echo "safe_to_proceed=false" >> "$GITHUB_OUTPUT"
+              echo "warning_message=Version matches release pattern - blocked for safety" >> "$GITHUB_OUTPUT"
+              exit 1
+            else
+              echo "⚠️  WARNING: allow_release_override is true - proceeding with release version pattern"
+              echo "This may overwrite actual release artifacts!"
+            fi
+          fi
+
+          # Warn if artifact_suffix is empty or default
+          if [[ -z "${ARTIFACT_SUFFIX}" || "${ARTIFACT_SUFFIX}" == "manual" ]]; then
+            echo "✅ Using artifact suffix: '${ARTIFACT_SUFFIX:-manual}' (safe - prevents collision)"
+          else
+            echo "✅ Using custom artifact suffix: '${ARTIFACT_SUFFIX}'"
+          fi
+
+          # Warn if version is too generic
+          if [[ "${VERSION}" == "main" || "${VERSION}" == "master" || "${VERSION}" == "latest" ]]; then
+            echo "⚠️  WARNING: Generic version name '${VERSION}' may cause confusion"
+            echo "Consider using a more specific version like 'manual-$(date +%Y%m%d)' or 'feature-test-123'"
+          fi
+
+          echo "safe_to_proceed=true" >> "$GITHUB_OUTPUT"
+          echo "warning_message=" >> "$GITHUB_OUTPUT"
+
+  # Initialize - standard initialization phase
+  initialize:
+    name: Initialize
+    needs: [ safety-check ]
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      validation-level: 'none'
+
+  # Build - standard build phase with custom ref and version
+  build:
+    name: Build
+    needs: [ safety-check, initialize ]
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ inputs.ref }}
+      validate: false
+      version: ${{ inputs.version }}
+      generate-docker: true
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ inputs.artifact_suffix }}
+    permissions:
+      contents: read
+      packages: write
+
+  # Deployment - standard deployment phase
+  # Note: Deploys Docker images to Docker Hub
+  # Note: Deploys CLI artifacts to Artifactory (namespace protected by artifact-suffix)
+  deployment:
+    name: Deployment
+    needs: [ safety-check, initialize, build ]
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: ${{ inputs.environment }}
+      artifact-run-id: ${{ github.run_id }}
+      deploy-dev-image: ${{ inputs.deploy_dev_image }}
+      latest: ${{ inputs.latest }}
+      java-version: ${{ inputs.java_version }}
+      artifact-suffix: ${{ inputs.artifact_suffix }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Finalize - standard finalization phase
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ safety-check, initialize, build, deployment ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ github.run_id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Custom tag application (if provided)
+  apply-custom-tag:
+    name: Apply Custom Tag
+    if: success() && inputs.custom_tag != ''
+    needs: [ deployment ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3.0.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Apply Custom Tag
+        run: |
+          # Compute the primary tag from version + artifact suffix
+          VERSION="${{ inputs.version }}"
+          ARTIFACT_SUFFIX="${{ inputs.artifact_suffix }}"
+
+          # Docker uses underscore separator for suffix
+          if [[ -n "${ARTIFACT_SUFFIX}" ]]; then
+            PRIMARY_TAG="${VERSION}_${ARTIFACT_SUFFIX}"
+          else
+            PRIMARY_TAG="${VERSION}"
+          fi
+
+          CUSTOM_TAG="${{ inputs.custom_tag }}"
+
+          echo "Pulling image: dotcms/dotcms:${PRIMARY_TAG}"
+          docker pull dotcms/dotcms:${PRIMARY_TAG}
+
+          echo "Tagging as: dotcms/dotcms:${CUSTOM_TAG}"
+          docker tag dotcms/dotcms:${PRIMARY_TAG} dotcms/dotcms:${CUSTOM_TAG}
+
+          echo "Pushing custom tag: dotcms/dotcms:${CUSTOM_TAG}"
+          docker push dotcms/dotcms:${CUSTOM_TAG}
+
+          echo "✅ Custom tag applied: dotcms/dotcms:${CUSTOM_TAG}"
+
+  # Summary notification
+  summary:
+    name: Deployment Summary
+    if: always()
+    needs: [ safety-check, deployment, apply-custom-tag ]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Manual Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Ref:** \`${{ inputs.ref }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**GitHub Environment:** \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact Suffix:** \`${{ inputs.artifact_suffix || '(none)' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Docker Tags:** \`${{ needs.deployment.outputs.docker_tags }}\`" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -n "${{ inputs.custom_tag }}" ]]; then
+            echo "**Custom Tag:** \`dotcms/dotcms:${{ inputs.custom_tag }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ -n "${{ inputs.java_version }}" ]]; then
+            echo "**Java Version:** \`${{ inputs.java_version }}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ inputs.deploy_dev_image }}" == "true" ]]; then
+            echo "**Dev Image:** Deployed" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [[ "${{ needs.safety-check.outputs.warning_message }}" != "" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️  **Warning:** ${{ needs.safety-check.outputs.warning_message }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Usage" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "docker pull dotcms/dotcms:${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifact Namespace" >> $GITHUB_STEP_SUMMARY
+          echo "Maven artifacts deployed with suffix: \`${{ inputs.artifact_suffix || '(default)' }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "This prevents collision with actual release artifacts." >> $GITHUB_STEP_SUMMARY

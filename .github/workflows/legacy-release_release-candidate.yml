@@ -1,4 +1,27 @@
-name: Release Candidate Process
+#
+# ⚠️ DEPRECATED WORKFLOW - SAFE TO DELETE ⚠️
+#
+# This workflow has NEVER been used and can be safely deleted.
+#
+# Analysis:
+# - No recorded usage in workflow run history
+# - Release candidate process may no longer be part of workflow
+# - Functionality includes: changelog generation, issue labeling, RC tagging
+#
+# If release candidate functionality is needed:
+# → Changelog: Can be generated via GitHub release notes
+# → Issue labeling: Use .github/workflows/issue_comp_release-labeling.yml
+# → RC builds: Use .github/workflows/cicd_8-manual-deploy.yml with custom tag
+# → Or: Manual trigger of .github/workflows/cicd_6-release.yml with appropriate inputs
+#
+# Recommendation: DELETE THIS FILE
+#
+# Deprecation Timeline:
+# - Never used since creation
+# - Safe for immediate deletion
+#
+
+name: Release Candidate Process [DEPRECATED - UNUSED]
 on:
   workflow_dispatch:
     inputs:
