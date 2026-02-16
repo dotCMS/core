@@ -34,6 +34,21 @@ on:
         description: 'Run all tests'
         type: boolean
         default: true
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        type: string
+        required: false
+        default: ''
+      maven-compiler-release:
+        description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1, -java25-ms). If not set, derived from java-version major.'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   # Initialize the nightly build process
@@ -50,6 +65,10 @@ jobs:
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     permissions:
       contents: read
       packages: write
@@ -64,6 +83,9 @@ jobs:
       run-all-tests: ${{ inputs.run-all-tests || true }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       e2e: false
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:
@@ -71,10 +93,11 @@ jobs:
       packages: write
 
   # CLI Build job - builds CLI artifacts
+  # Skipped when java-version is overridden due to GraalVM/Quarkus compatibility requirements
   build-cli:
     name: Nightly CLI Build
     needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && !inputs.java-version
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
@@ -92,6 +115,8 @@ jobs:
       deploy-dev-image: true
       publish-npm-cli: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-cli == true ) || github.event_name == 'schedule' }}
       reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
