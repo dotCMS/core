@@ -3,6 +3,8 @@ export interface OnboardingFramework {
     label: string;
     logo: string;
     cliCommand: string;
+    text: string;
+    hasStarterkit: boolean;
     disabled?: boolean;
     copied: boolean;
     githubUrl?: string;

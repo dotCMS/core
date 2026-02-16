@@ -29,13 +29,15 @@
                         <p class="command-text">{{ framework.cliCommand }}</p>
                     } @else {
                         <p class="paragraph-text">
-                            Our interactive guide is coming soon. Try the fully configured
-                            <a
-                                target="_blank"
-                                style="text-decoration: none"
-                                href="{{ framework.githubUrl }}">
-                                {{ framework.label }} starter kit
-                            </a>
+                            {{ framework.text }}
+                            @if (framework.hasStarterkit) {
+                                <a
+                                    target="_blank"
+                                    style="text-decoration: none"
+                                    href="{{ framework.githubUrl }}">
+                                    {{ framework.label }} starter kit
+                                </a>
+                            }
                         </p>
                     }
                 </div>

@@ -48,6 +48,8 @@ export class DotOnboardingDevComponent {
             id: 'nextjs',
             label: 'Next.js',
             copied: false,
+            hasStarterkit: true,
+            text: 'Our interactive guide is coming soon. Try the fully configured',
             logo: '/dotAdmin/assets/logos/nextjs.svg',
             cliCommand: 'npx @dotcms/create-app --framework=nextjs'
         },
@@ -57,6 +59,8 @@ export class DotOnboardingDevComponent {
             logo: '/dotAdmin/assets/logos/angular.png',
             copied: false,
             disabled: false,
+            hasStarterkit: true,
+            text: 'Our interactive guide is coming soon. Try the fully configured',
             cliCommand: 'npx @dotcms/create-app --framework=angular',
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
         },
@@ -65,6 +69,8 @@ export class DotOnboardingDevComponent {
             label: 'Angular SSR',
             logo: '/dotAdmin/assets/logos/angular.png',
             copied: false,
+            hasStarterkit: true,
+            text: 'Our interactive guide is coming soon. Try the fully configured',
             cliCommand: 'npx @dotcms/create-app --framework=angular-ssr',
             disabled: false,
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
@@ -73,6 +79,8 @@ export class DotOnboardingDevComponent {
             id: 'astro',
             label: 'Astro',
             copied: false,
+            hasStarterkit: true,
+            text: 'Our interactive guide is coming soon. Try the fully configured',
             logo: '/dotAdmin/assets/logos/astro.svg',
             disabled: false,
             cliCommand: 'npx @dotcms/create-app --framework=astro',
@@ -84,6 +92,8 @@ export class DotOnboardingDevComponent {
             logo: '/dotAdmin/assets/logos/dot-net.png',
             disabled: true,
             copied: false,
+            hasStarterkit: true,
+            text: 'Our interactive guide is coming soon. Try the fully configured',
             cliCommand: '',
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         },
@@ -94,6 +104,8 @@ export class DotOnboardingDevComponent {
             copied: false,
             cliCommand: '',
             disabled: true,
+            hasStarterkit: true,
+            text: 'Our interactive guide is coming soon. Try the fully configured',
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
         },
         {
@@ -102,6 +114,8 @@ export class DotOnboardingDevComponent {
             logo: '/dotAdmin/assets/logos/vtl.svg',
             copied: false,
             cliCommand: '',
+            hasStarterkit: false,
+            text: 'Use our dotCMS Velocity templates for server-rendered and traditional CMS sites.',
             disabled: true,
             githubUrl: 'https://dev.dotcms.com/docs/velocity-viewtools'
         }
