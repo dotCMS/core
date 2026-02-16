@@ -75,11 +75,18 @@ cube('Conversion', {
             conversion.conversion_name,
             conversion.context_site_id,
             conversion.total as total_conversion,
-            ((conversion.total * 100)/ total_conversion.total ) as conv_rate,
+            if(total_conversion.total = 0, 0.0,
+               round(toFloat64(conversion.total) * 100/ total_conversion.total , 2)
+            ) as conv_rate,
             day,
             arrayMap(
-                x -> mapUpdate(x, map('conv_rate', toString((toInt64(x['conversions'])* 100) / conversion.total))),
-            top_attributed_content.top_attributed_content
+                x -> mapUpdate(x, map('conv_rate', toString(if(conversion.total = 0, 0.0,
+                                                               round((toInt64(x['conversions']) * 100) / conversion.total, 2)
+                                                            )
+                                                   )
+                                    )
+                    ),
+                    top_attributed_content.top_attributed_content
             ) as top_attributed_content
         FROM conversion 
             LEFT JOIN total_conversion ON 1 = 1

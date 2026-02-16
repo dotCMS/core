@@ -2,7 +2,6 @@ package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIGenerateImageActionletTest;
 import com.dotcms.analytics.track.RequestMatcherTest;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
@@ -45,7 +44,6 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
-        ESContentletAPIImplTest.class,
         ExperimentAPIImpIntegrationTest.class,
         ExperimentWebAPIImplIntegrationTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
@@ -59,7 +57,6 @@ import org.junit.runners.Suite.SuiteClasses;
         PushPublishBundleGeneratorTest.class,
         LegacyShortyIdApiTest.class,
         RuleBundlerTest.class,
-        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,

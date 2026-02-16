@@ -86,22 +86,32 @@ export class DotBrowsingService {
 
                 return {
                     parent,
-                    folders: folders.map((folder) => ({
-                        key: folder.id,
-                        label: `${folder.hostName}${folder.path}`,
-                        data: {
-                            id: folder.id,
-                            hostname: folder.hostName,
-                            path: folder.path,
-                            type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder',
-                        leaf: false
-                    }))
+                    folders: folders.map((folder) => this.#createFolderTreeNode(folder))
                 };
             })
         );
+    }
+
+    /**
+     * Creates a TreeNodeItem from a DotFolder
+     *
+     * @param {DotFolder} folder - The folder to create a TreeNodeItem from
+     * @returns {TreeNodeItem} The TreeNodeItem created from the DotFolder
+     */
+    #createFolderTreeNode(folder: DotFolder): TreeNodeItem {
+        return {
+            key: folder.id,
+            label: `${folder.hostName}${folder.path}`,
+            data: {
+                id: folder.id,
+                hostname: folder.hostName,
+                path: folder.path,
+                type: 'folder'
+            },
+            expandedIcon: 'pi pi-folder-open',
+            collapsedIcon: 'pi pi-folder',
+            leaf: false
+        };
     }
 
     /**
@@ -129,29 +139,45 @@ export class DotBrowsingService {
             map((response) => {
                 const [mainNode] = response;
 
-                return response.reduce(
-                    (rta, node, index, array) => {
+                return response
+                    .map((node, index, array) => {
                         const next = array[index + 1];
-                        if (next) {
-                            const folder = next.folders.find((item) => item.key === node.parent.id);
-                            if (folder) {
-                                folder.children = node.folders;
-                                if (mainNode.parent.id === folder.key) {
-                                    rta.node = folder;
-                                }
+                        const currentParent = node.parent;
+                        if (next && currentParent && currentParent.path !== '/') {
+                            const hasParentFolder = next.folders.some(
+                                (folder) => folder.key === currentParent.id
+                            );
+                            if (!hasParentFolder) {
+                                next.folders.unshift(this.#createFolderTreeNode(currentParent));
                             }
                         }
+                        return node;
+                    })
+                    .reduce(
+                        (rta, node, index, array) => {
+                            const next = array[index + 1];
+                            if (next) {
+                                const folder = next.folders.find(
+                                    (item) => item.key === node.parent.id
+                                );
+                                if (folder) {
+                                    folder.children = node.folders;
+                                    if (mainNode.parent.id === folder.key) {
+                                        rta.node = folder;
+                                    }
+                                }
+                            }
 
-                        rta.tree = {
-                            path: node.parent.path,
-                            folders: node.folders,
-                            parent: node.parent
-                        };
+                            rta.tree = {
+                                path: node.parent.path,
+                                folders: node.folders,
+                                parent: node.parent
+                            };
 
-                        return rta;
-                    },
-                    { tree: null, node: null } as CustomTreeNode
-                );
+                            return rta;
+                        },
+                        { tree: null, node: null } as CustomTreeNode
+                    );
             })
         );
     }
@@ -211,7 +237,6 @@ export class DotBrowsingService {
      */
     #createPaths(path: string): string[] {
         const split = path.split('/').filter((item) => item !== '');
-
         return split.reduce((array, item, index) => {
             const prev = array[index - 1];
             let path = `${item}/`;
