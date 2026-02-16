@@ -1030,7 +1030,7 @@
             },
             {
               "key": "Origin",
-              "value": "http://localhost:8082"
+              "value": "{{serverURL}}"
             },
             {
               "key": "Pragma",
@@ -1038,7 +1038,7 @@
             },
             {
               "key": "Referer",
-              "value": "http://localhost:8082/dotAdmin/"
+              "value": "{{serverURL}}/dotAdmin/"
             },
             {
               "key": "Sec-Fetch-Dest",
@@ -1083,7 +1083,7 @@
             }
           },
           "url": {
-            "raw": "http://localhost:8082/api/v3/contenttype/33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d/fields/468512c0-423e-4f1a-b94c-7cf8b064260a",
+            "raw": "{{serverURL}}/api/v3/contenttype/33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d/fields/468512c0-423e-4f1a-b94c-7cf8b064260a",
             "protocol": "http",
             "host": [
               "localhost"
@@ -1194,7 +1194,7 @@
             },
             {
               "key": "Origin",
-              "value": "http://localhost:8082"
+              "value": "{{serverURL}}"
             },
             {
               "key": "Pragma",
@@ -1202,7 +1202,7 @@
             },
             {
               "key": "Referer",
-              "value": "http://localhost:8082/dotAdmin/"
+              "value": "{{serverURL}}/dotAdmin/"
             },
             {
               "key": "Sec-Fetch-Dest",
@@ -1247,7 +1247,7 @@
             }
           },
           "url": {
-            "raw": "http://localhost:8082/api/v3/contenttype/33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d/fields/468512c0-423e-4f1a-b94c-7cf8b064260a",
+            "raw": "{{serverURL}}/api/v3/contenttype/33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d/fields/468512c0-423e-4f1a-b94c-7cf8b064260a",
             "protocol": "http",
             "host": [
               "localhost"
