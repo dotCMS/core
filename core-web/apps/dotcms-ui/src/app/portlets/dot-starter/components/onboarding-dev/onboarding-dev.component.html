@@ -18,7 +18,9 @@
 
 <main class="w-max mx-auto flex flex-col gap-5 bg-white rounded-md p-5">
     @for (framework of frameworks; track framework.id) {
-        <div class="grid grid-cols-[40px_1fr] items-center gap-4 border-b border-gray-200 p-4">
+        <div
+            data-testid="framework-block"
+            class="grid grid-cols-[40px_1fr] items-center gap-4 border-b border-gray-200 p-4">
             <img
                 [src]="framework.logo"
                 [alt]="framework.label"
@@ -28,22 +30,31 @@
             <div class="flex flex-col gap-2">
                 <h3 class="font-medium text-xl m-0 p-0">{{ framework.label }}</h3>
                 <div class="flex items-center gap-2 grow">
-                    @if (framework.cliCommand !== '') {
-                        <p class="font-mono text-sm bg-gray-100 rounded-md p-2 grow">
-                            {{ framework.cliCommand }}
-                        </p>
-                    } @else {
-                        <p class="text-sm text-gray-800 grow">
-                            Our interactive guide is coming soon. Try the fully configured
-                            <a
-                                target="_blank"
-                                style="text-decoration: none"
-                                href="{{ framework.githubUrl }}">
-                                {{ framework.label }} starter kit
-                            </a>
-                        </p>
+                    @switch (framework.type) {
+                        @case ('interactive') {
+                            <p class="font-mono text-sm bg-gray-100 rounded-md p-2 grow">
+                                {{ framework.cliCommand }}
+                            </p>
+                        }
+                        @case ('starter') {
+                            <p class="text-sm text-gray-800 grow">
+                                Our interactive guide is coming soon. Try the fully configured
+                                <a
+                                    target="_blank"
+                                    style="text-decoration: none"
+                                    href="{{ framework.githubUrl }}">
+                                    {{ framework.label }} starter kit
+                                </a>
+                            </p>
+                        }
+                        @case ('doc') {
+                            <p class="text-sm text-gray-800 grow">
+                                Use our dotCMS Velocity templates for server-rendered and
+                                traditional CMS sites
+                            </p>
+                        }
                     }
-                    @if (framework.cliCommand !== '') {
+                    @if (framework.type === 'interactive') {
                         <dot-copy-button [copy]="framework.cliCommand" />
                     } @else {
                         <p-button
