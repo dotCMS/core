@@ -17,6 +17,7 @@ import {
     DotSystemConfigService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
     CoreWebServiceMock,
@@ -97,6 +98,10 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotSystemConfigService,
                 useValue: { getSystemConfig: () => of({}) }
+            },
+            {
+                provide: GlobalStore,
+                useValue: { currentSiteId: () => null }
             },
             DotEventsService
         ]
