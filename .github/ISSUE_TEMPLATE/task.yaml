@@ -1,7 +1,7 @@
 name: Task
 description: Technical task or improvement that needs to be completed
-title: "[TASK] "
-labels: ["Triage"]
+title: ""
+labels: []
 type: task
 assignees: []
 projects: ["dotCMS/7"]
