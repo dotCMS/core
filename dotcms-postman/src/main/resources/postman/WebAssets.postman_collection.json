@@ -1007,72 +1007,7 @@
         "name": "Un-Index File Asset Field",
         "request": {
           "method": "PUT",
-          "header": [
-            {
-              "key": "Accept",
-              "value": "*/*"
-            },
-            {
-              "key": "Accept-Language",
-              "value": "en-US,en;q=0.9"
-            },
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            },
-            {
-              "key": "Connection",
-              "value": "keep-alive"
-            },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "key": "Origin",
-              "value": "{{serverURL}}"
-            },
-            {
-              "key": "Pragma",
-              "value": "no-cache"
-            },
-            {
-              "key": "Referer",
-              "value": "{{serverURL}}/dotAdmin/"
-            },
-            {
-              "key": "Sec-Fetch-Dest",
-              "value": "empty"
-            },
-            {
-              "key": "Sec-Fetch-Mode",
-              "value": "cors"
-            },
-            {
-              "key": "Sec-Fetch-Site",
-              "value": "same-origin"
-            },
-            {
-              "key": "User-Agent",
-              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-            },
-            {
-              "key": "sec-ch-ua",
-              "value": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\""
-            },
-            {
-              "key": "sec-ch-ua-mobile",
-              "value": "?0"
-            },
-            {
-              "key": "sec-ch-ua-platform",
-              "value": "\"macOS\""
-            },
-            {
-              "key": "Cookie",
-              "value": "DWRSESSIONID=8jMJZpMj15r*saOMl*tscFs*KMp; access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ4bW9kIjoxNzcwMzkzMzM4NTY3LCJzdWIiOiJ1c2VyLTU0OWIzZWE1LTQ4OGUtNGNhZi1iZjU4LWZmYmM2N2NjZTBiNyIsImlhdCI6MTc3MDM5MzMzOCwiaXNzIjoiZG90Y21zLXByb2R1Y3Rpb24iLCJleHAiOjE3NzA0Nzk3Mzh9.izdlL_3hw1tKd2Id_tykWDoQ6mqjbmnK8p6jSknkALY; rme=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI3MTgxNjdjOC1jN2ZmLTQyYzAtOWY1MC1mMjdlMjI4NWU2ZTMiLCJ4bW9kIjoxNzcwOTMwNDM0NjEzLCJzdWIiOiJwVVIvWmJZUTk3Q2RXTG5ETE84Z2ZBPT0iLCJpYXQiOjE3NzA5MzA0MzQsImlzcyI6ImRvdGNtcy1wcm9kdWN0aW9uIiwiZXhwIjoxNzcxMDE2ODM0fQ.Ya0jTvkzeDzq_tloN8cGSJjgWosWh4iTzO_IRucEjcI; JSESSIONID=4C054325639D67D7A5886D05D11A46C9"
-            }
-          ],
+          "header": [],
           "body": {
             "mode": "raw",
             "raw": "{\n    \"field\": {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableBinaryField\",\n        \"contentTypeId\": \"33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d\",\n        \"dataType\": \"SYSTEM\",\n        \"fieldType\": \"Binary\",\n        \"fieldTypeLabel\": \"Binary\",\n        \"fieldVariables\": [],\n        \"fixed\": true,\n        \"forceIncludeInApi\": false,\n        \"iDate\": 1323987555000,\n        \"id\": \"468512c0-423e-4f1a-b94c-7cf8b064260a\",\n        \"indexed\": false,\n        \"listed\": false,\n        \"modDate\": 1770936117000,\n        \"name\": \"File Asset\",\n        \"readOnly\": false,\n        \"required\": true,\n        \"searchable\": false,\n        \"sortOrder\": 4,\n        \"unique\": false,\n        \"variable\": \"fileAsset\",\n        \"hint\": \"\"\n    }\n}",
@@ -1168,72 +1103,7 @@
         "name": "Index File Asset Field",
         "request": {
           "method": "PUT",
-          "header": [
-            {
-              "key": "Accept",
-              "value": "*/*"
-            },
-            {
-              "key": "Accept-Language",
-              "value": "en-US,en;q=0.9"
-            },
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            },
-            {
-              "key": "Connection",
-              "value": "keep-alive"
-            },
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            },
-            {
-              "key": "Origin",
-              "value": "{{serverURL}}"
-            },
-            {
-              "key": "Pragma",
-              "value": "no-cache"
-            },
-            {
-              "key": "Referer",
-              "value": "{{serverURL}}/dotAdmin/"
-            },
-            {
-              "key": "Sec-Fetch-Dest",
-              "value": "empty"
-            },
-            {
-              "key": "Sec-Fetch-Mode",
-              "value": "cors"
-            },
-            {
-              "key": "Sec-Fetch-Site",
-              "value": "same-origin"
-            },
-            {
-              "key": "User-Agent",
-              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36"
-            },
-            {
-              "key": "sec-ch-ua",
-              "value": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\""
-            },
-            {
-              "key": "sec-ch-ua-mobile",
-              "value": "?0"
-            },
-            {
-              "key": "sec-ch-ua-platform",
-              "value": "\"macOS\""
-            },
-            {
-              "key": "Cookie",
-              "value": "DWRSESSIONID=8jMJZpMj15r*saOMl*tscFs*KMp; access_token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ4bW9kIjoxNzcwMzkzMzM4NTY3LCJzdWIiOiJ1c2VyLTU0OWIzZWE1LTQ4OGUtNGNhZi1iZjU4LWZmYmM2N2NjZTBiNyIsImlhdCI6MTc3MDM5MzMzOCwiaXNzIjoiZG90Y21zLXByb2R1Y3Rpb24iLCJleHAiOjE3NzA0Nzk3Mzh9.izdlL_3hw1tKd2Id_tykWDoQ6mqjbmnK8p6jSknkALY; rme=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI3MTgxNjdjOC1jN2ZmLTQyYzAtOWY1MC1mMjdlMjI4NWU2ZTMiLCJ4bW9kIjoxNzcwOTMwNDM0NjEzLCJzdWIiOiJwVVIvWmJZUTk3Q2RXTG5ETE84Z2ZBPT0iLCJpYXQiOjE3NzA5MzA0MzQsImlzcyI6ImRvdGNtcy1wcm9kdWN0aW9uIiwiZXhwIjoxNzcxMDE2ODM0fQ.Ya0jTvkzeDzq_tloN8cGSJjgWosWh4iTzO_IRucEjcI; JSESSIONID=4C054325639D67D7A5886D05D11A46C9"
-            }
-          ],
+          "header": [],
           "body": {
             "mode": "raw",
             "raw": "{\n    \"field\": {\n        \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableBinaryField\",\n        \"contentTypeId\": \"33888b6f-7a8e-4069-b1b6-5c1aa9d0a48d\",\n        \"dataType\": \"SYSTEM\",\n        \"fieldType\": \"Binary\",\n        \"fieldTypeLabel\": \"Binary\",\n        \"fieldVariables\": [],\n        \"fixed\": true,\n        \"forceIncludeInApi\": false,\n        \"iDate\": 1323987555000,\n        \"id\": \"468512c0-423e-4f1a-b94c-7cf8b064260a\",\n        \"indexed\": true,\n        \"listed\": false,\n        \"modDate\": 1770936117000,\n        \"name\": \"File Asset\",\n        \"readOnly\": false,\n        \"required\": true,\n        \"searchable\": false,\n        \"sortOrder\": 4,\n        \"unique\": false,\n        \"variable\": \"fileAsset\",\n        \"hint\": \"\"\n    }\n}",
