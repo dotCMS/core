@@ -135,16 +135,16 @@ describe('DotExperimentsCreateComponent', () => {
             spectator.component.form.setValue(formValues);
             spectator.detectComponentChanges();
 
-            const submitButton = spectator.query(
-                byTestId('add-experiment-button')
-            ) as HTMLButtonElement;
+            const submitButtonHost = spectator.query(byTestId('add-experiment-button'));
+            const submitButton =
+                submitButtonHost?.querySelector<HTMLButtonElement>('button') ?? submitButtonHost;
 
-            expect(submitButton.disabled).toEqual(false);
-            expect(submitButton).toContainText('Add');
+            expect(submitButton?.hasAttribute('disabled') || submitButton?.disabled).toBe(false);
+            expect(submitButtonHost).toContainText('Add');
             expect(spectator.component.form.valid).toEqual(true);
 
             const handleSubmitSpy = jest.spyOn(spectator.component, 'handleSubmit');
-            spectator.click(submitButton);
+            spectator.click(submitButtonHost);
             spectator.detectComponentChanges();
 
             expect(handleSubmitSpy).toHaveBeenCalled();
@@ -162,12 +162,12 @@ describe('DotExperimentsCreateComponent', () => {
             spectator.component.form.updateValueAndValidity();
             spectator.detectComponentChanges();
 
-            const submitButton = spectator.query(
-                byTestId('add-experiment-button')
-            ) as HTMLButtonElement;
+            const submitButtonHost = spectator.query(byTestId('add-experiment-button'));
+            const submitButton =
+                submitButtonHost?.querySelector<HTMLButtonElement>('button') ?? submitButtonHost;
 
-            expect(submitButton.disabled).toEqual(true);
-            expect(submitButton).toContainText('Add');
+            expect(submitButton?.hasAttribute('disabled') || submitButton?.disabled).toBe(true);
+            expect(submitButtonHost).toContainText('Add');
             expect(spectator.component.form.valid).toEqual(false);
 
             expect(spectator.component.form.controls.name.valid).toEqual(false);

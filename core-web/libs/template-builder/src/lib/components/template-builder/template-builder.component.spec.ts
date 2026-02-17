@@ -11,15 +11,18 @@ import { pluck, take } from 'rxjs/operators';
 
 import {
     DotContainersService,
+    DotCurrentUserService,
     DotEventsService,
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
 import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
     CoreWebServiceMock,
     DotContainersServiceMock,
+    DotCurrentUserServiceMock,
     LoginServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
@@ -69,6 +72,10 @@ describe('TemplateBuilderComponent', () => {
             DialogService,
             DynamicDialogRef,
             {
+                provide: DotCurrentUserService,
+                useClass: DotCurrentUserServiceMock
+            },
+            {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             },
@@ -91,6 +98,10 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: DotSystemConfigService,
                 useValue: { getSystemConfig: () => of({}) }
+            },
+            {
+                provide: GlobalStore,
+                useValue: { currentSiteId: () => null }
             },
             DotEventsService
         ]

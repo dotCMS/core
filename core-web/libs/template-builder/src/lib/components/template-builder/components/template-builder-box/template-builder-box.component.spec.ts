@@ -100,9 +100,10 @@ describe('TemplateBuilderBoxComponent', () => {
             spectator = createHost(HOST_TEMPLATE, {
                 hostProps: { ...DEFAULT_HOST_PROPS, width: 1 }
             });
-            expect(spectator.query(byTestId('template-builder-box-small')).classList).toContain(
-                'template-builder-box--small'
-            );
+            spectator.detectChanges();
+            const smallBox = spectator.query(byTestId('template-builder-box-small'));
+            expect(smallBox).toBeTruthy();
+            expect(smallBox?.classList).toContain('template-builder-box--small');
         });
 
         it('should render large template for large and medium variants', () => {

@@ -3,13 +3,21 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
 import { TemplateBuilderActionsComponent } from './template-builder-actions.component';
 
 import { DotTemplateBuilderStore } from '../../store/template-builder.store';
 import { DOT_MESSAGE_SERVICE_TB_MOCK } from '../../utils/mocks';
+
+const mockGlobalStore = { currentSiteId: () => null };
 
 describe('TemplateBuilderActionsComponent', () => {
     let spectator: Spectator<TemplateBuilderActionsComponent>;
@@ -18,12 +26,20 @@ describe('TemplateBuilderActionsComponent', () => {
         component: TemplateBuilderActionsComponent,
         providers: [
             {
+                provide: DotCurrentUserService,
+                useClass: DotCurrentUserServiceMock
+            },
+            {
                 provide: DotMessageService,
                 useValue: DOT_MESSAGE_SERVICE_TB_MOCK
             },
             {
                 provide: DotSystemConfigService,
                 useValue: { getSystemConfig: () => of({}) }
+            },
+            {
+                provide: GlobalStore,
+                useValue: mockGlobalStore
             },
             DotTemplateBuilderStore
         ],
