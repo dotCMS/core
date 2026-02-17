@@ -79,8 +79,15 @@ area_documentation:
 # matching the negation (e.g., '!.github/**/*.md' matches all files in core-web/, dotCMS/).
 # This is a known bug: https://github.com/dorny/paths-filter/issues/97
 #
-# Solution: Use explicit positive patterns only (no negations). Use wildcards for directories
-# with many files (workflows/, actions/) and explicit paths for individual config files.
+# Solution Options:
+# 1. Use explicit positive patterns (simple, clear) - PREFERRED for most cases
+#    Example: list each file/directory explicitly
+# 2. Use picomatch inline negation !(pattern) - ONLY when explicit listing is impractical
+#    Example (already used in backend filter): dotCMS/src/main/webapp/html/**/!(*.{css,js})
+#    This matches all files in the path EXCEPT .css and .js files
+#
+# For area_cicd, we use option 1: wildcards for directories with many files (workflows/,
+# actions/) and explicit paths for individual config files.
 #
 # This filter matches CI/CD code and configuration that affects build/test/deploy:
 # - GitHub Actions workflows (all files in workflows/)
