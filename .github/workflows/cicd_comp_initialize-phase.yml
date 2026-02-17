@@ -5,24 +5,30 @@
 # built or tested based on changes in the codebase.
 #
 # Key features:
-# - Supports incremental builds
+# - Supports incremental builds via change detection
 # - Can reuse artifacts from previous builds
 # - Determines which components (backend, frontend, CLI) need attention
-# - Configurable test skipping
+# - Configurable test skipping via CICD_SKIP_TESTS repository variable
+#
+# Outputs:
+# - filters: JSON object with all filter results
+#   Usage: fromJSON(needs.initialize.outputs.filters).backend == 'true'
+# - changes: JSON array of filter names that matched (for PR labeling)
+# - artifact-run-id: Run ID to download artifacts from
+# - found_artifacts: Whether previous build artifacts were found
 
 name: Initialize Phase
 
 on:
   workflow_call:
     inputs:
-      validation-level:
-        default: 'none'
+      change-detection:
         type: string
-        description: 'Levels of validation: none, full, or custom'
-      custom-modules:
-        default: ''
-        type: string
-        description: 'Comma-separated list of custom modules to validate'
+        required: true
+        description: |
+          Controls whether to detect file changes for selective test execution:
+          - 'enabled': Run paths-filter to detect changes, run only affected components
+          - 'disabled': Skip detection, default all build/test components to run
       reuse-previous-build:
         description: 'Indicates if the workflow should reuse the previous build'
         type: boolean
@@ -32,22 +38,18 @@ on:
         type: boolean
         default: false
     outputs:
+      # Artifact reuse outputs
       artifact-run-id:
         value: ${{ jobs.check-previous-build.outputs.artifact-run-id }}
       found_artifacts:
         value: ${{ jobs.check-previous-build.outputs.found_artifacts }}
-      build:
-        value: ${{ jobs.changes.outputs.build }}
-      backend:
-        value: ${{ jobs.changes.outputs.backend }}
-      frontend:
-        value: ${{ jobs.changes.outputs.frontend }}
-      jvm_unit_test:
-        value: ${{ jobs.changes.outputs.jvm_unit_test }}
-      cli:
-        value: ${{ jobs.changes.outputs.cli }}
-      sdk_libs:
-        value: ${{ jobs.changes.outputs.sdk_libs }}        
+      # JSON object containing all filter results - use fromJSON() to access
+      # Example: fromJSON(needs.initialize.outputs.filters).backend == 'true'
+      filters:
+        value: ${{ jobs.changes.outputs.filters }}
+      # JSON array of filter names that matched (from dorny/paths-filter) - use for labeling
+      changes:
+        value: ${{ jobs.changes.outputs.changes }}
 
 jobs:
   # This job is used as a required check to indicate that the workflow has started and is running
@@ -121,88 +123,212 @@ jobs:
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     outputs:
-      build: ${{ steps.filter-rewrite.outputs.build }}
-      backend: ${{ steps.filter-rewrite.outputs.backend }}
-      frontend: ${{ steps.filter-rewrite.outputs.frontend }}
-      jvm_unit_test: ${{ steps.filter-rewrite.outputs.jvm_unit_test }}
-      cli: ${{ steps.filter-rewrite.outputs.cli }}
-      sdk_libs: ${{ steps.filter-rewrite.outputs.sdk_libs }}
+      # JSON object with all filter results
+      filters: ${{ steps.filter-rewrite.outputs.filters }}
+      # JSON array of filter names that matched (from dorny/paths-filter)
+      changes: ${{ steps.filter.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
-        if: ${{ inputs.validation-level != 'none' }}
+        if: ${{ inputs.change-detection == 'enabled' }}
 
       # Execute the paths-filter step to determine changes
+      # For PRs, paths-filter automatically uses GitHub API to get changed files
       - uses: dorny/paths-filter@v3.0.1
-        if: ${{ inputs.validation-level != 'none' }}
+        if: ${{ inputs.change-detection == 'enabled' }}
         id: filter
         with:
           filters: .github/filters.yaml
           list-files: 'escape'
-          
+
       - name: Rewrite Filter
         id: filter-rewrite
         env:
           CICD_SKIP_TESTS: ${{ vars.CICD_SKIP_TESTS }}
+          CHANGE_DETECTION: ${{ inputs.change-detection }}
+          # All filter outputs as JSON - no need to list individually
+          FILTER_OUTPUTS: ${{ toJSON(steps.filter.outputs) }}
         run: |
-          echo "::group::Rewrite Fiter"
-          # Default action outcomes based on paths-filter action outputs
-          frontend=${{ steps.filter.outputs.frontend || 'true'}}
-          cli=${{ steps.filter.outputs.cli || 'true' }}
-          backend=${{ steps.filter.outputs.backend || 'true' }}
-          build=${{ steps.filter.outputs.build || 'true' }}
-          jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test || 'true' }}
-          sdk_libs=${{ steps.filter.outputs.sdk_libs || 'false' }}
+          echo "::group::Rewrite Filter"
 
-          # Check if the commit is to the main branch
-          skip_tests=${CICD_SKIP_TESTS:-false}  # Use environment variable, default to 'false'
+          # ============================================================
+          # FILTER CONFIGURATION
+          # ============================================================
+          # build_test_filters: Components that can be built/tested
+          #   - Default to 'true' when change-detection='disabled' (run all)
+          #   - Use detected values when change-detection='enabled'
+          #   - Can be disabled via CICD_SKIP_TESTS for test_filters subset
+          #
+          # info_filters: Informational filters (labeling, publishing decisions)
+          #   - Always use detected values or 'false' if not detected
+          #   - Not affected by CICD_SKIP_TESTS
+          #
+          # test_filters: Subset of build_test_filters affected by CICD_SKIP_TESTS
+          # ============================================================
+          build_test_filters="frontend cli backend build jvm_unit_test"
+          info_filters="sdk_libs documentation cicd"
+          test_filters="frontend cli backend jvm_unit_test"
 
-          # If skip_tests is true, set all tests to false
-          if [ "$skip_tests" == "true" ]; then
-            echo "Skipping tests as per CICD_SKIP_TESTS flag."
-            frontend=false
-            cli=false
-            backend=false
-            jvm_unit_test=false
+          declare -A results
+
+          if [ "$CHANGE_DETECTION" == "enabled" ]; then
+            echo "Change detection enabled - using paths-filter results"
+
+            # Parse filter outputs from dorny/paths-filter
+            filter_keys=$(echo "$FILTER_OUTPUTS" | jq -r 'to_entries | map(select(.key != "changes" and .key != "changes_count")) | .[].key')
+            echo "Detected filters: $filter_keys"
+
+            # Use detected values for all filters
+            for key in $filter_keys; do
+              value=$(echo "$FILTER_OUTPUTS" | jq -r --arg k "$key" '.[$k] // "false"')
+              results[$key]=$value
+            done
+          else
+            echo "Change detection disabled - defaulting build/test filters to true"
+
+            # Default build/test filters to true (run everything)
+            for key in $build_test_filters; do
+              results[$key]="true"
+            done
+
+            # Default info filters to false (no changes detected)
+            for key in $info_filters; do
+              results[$key]="false"
+            done
           fi
-          
-          # Adjust outputs based on validation_level
-          if [ "${{ inputs.validation-level }}" == "custom" ]; then
-            frontend=false
-            cli=false
-            backend=false
-            build=false
-            jvm_unit_test=false
 
-            IFS=',' read -r -a custom_modules_list <<< "${{ inputs.custom-modules }}"
-            for module in "${custom_modules_list[@]}"; do
-              if [ "${module}" == "frontend" ]; then
-                frontend=${{ steps.filter.outputs.frontend }}
-              elif [ "${module}" == "cli" ]; then
-                cli=${{ steps.filter.outputs.cli }}
-              elif [ "${module}" == "backend" ]; then
-                backend=${{ steps.filter.outputs.backend }}
-              elif [ "${module}" == "build" ]; then
-                build=${{ steps.filter.outputs.build }}
-              elif [ "${module}" == "jvm_unit_test" ]; then
-                jvm_unit_test=${{ steps.filter.outputs.jvm_unit_test }}
-              elif [ "${module}" == "sdk_libs" ]; then
-                sdk_libs=${sdk_libs}                
+          # Apply CICD_SKIP_TESTS override - disable test-related filters
+          if [ "${CICD_SKIP_TESTS:-false}" == "true" ]; then
+            echo "CICD_SKIP_TESTS is set - disabling test filters"
+            for key in $test_filters; do
+              if [[ -v "results[$key]" ]]; then
+                results[$key]="false"
               fi
             done
-          fi          
-          
-          echo "build=${build}"
-          echo "frontend=${frontend}"
-          echo "cli=${cli}"
-          echo "backend=${backend}"
-          echo "jvm_unit_test=${jvm_unit_test}"
-          echo "sdk_libs=${sdk_libs}"
+          fi
 
-          # Export the outcomes as GitHub Actions outputs
-          echo "frontend=${frontend}" >> $GITHUB_OUTPUT
-          echo "cli=${cli}" >> $GITHUB_OUTPUT
-          echo "backend=${backend}" >> $GITHUB_OUTPUT
-          echo "build=${build}" >> $GITHUB_OUTPUT
-          echo "jvm_unit_test=${jvm_unit_test}" >> $GITHUB_OUTPUT
-          echo "sdk_libs=${sdk_libs}" >> $GITHUB_OUTPUT
+          # Build JSON object from results
+          echo "Filter results:"
+          json_parts=""
+          for key in "${!results[@]}"; do
+            echo "  ${key}=${results[$key]}"
+            if [ -n "$json_parts" ]; then
+              json_parts="${json_parts},"
+            fi
+            json_parts="${json_parts}\"${key}\":\"${results[$key]}\""
+          done
+          filters_json="{${json_parts}}"
+
+          echo "filters=${filters_json}" >> $GITHUB_OUTPUT
+          echo "Output JSON: ${filters_json}"
+
           echo "::endgroup::"
+
+      # Generate step summary for workflow run visibility
+      - name: Generate Summary
+        if: ${{ inputs.change-detection == 'enabled' }}
+        env:
+          FILTERS_JSON: ${{ steps.filter-rewrite.outputs.filters }}
+          CHANGES_JSON: ${{ steps.filter.outputs.changes }}
+          CHANGE_DETECTION: ${{ inputs.change-detection }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_HEAD: ${{ github.event.merge_group.head_sha }}
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'HEADER'
+          ## 🔍 Change Detection Summary
+
+          HEADER
+
+          # Configuration section
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Change Detection | \`$CHANGE_DETECTION\` |" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$PR_NUMBER" ]; then
+            echo "| Context | Pull Request #$PR_NUMBER |" >> $GITHUB_STEP_SUMMARY
+            echo "| PR Head | \`${PR_HEAD_SHA:0:12}\` |" >> $GITHUB_STEP_SUMMARY
+            echo "| PR Base | \`${PR_BASE_SHA:0:12}\` |" >> $GITHUB_STEP_SUMMARY
+          elif [ -n "$MERGE_GROUP_HEAD" ]; then
+            echo "| Context | Merge Queue |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Context | Push/Other |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # PR Labels section (only for PRs)
+          if [ -n "$PR_NUMBER" ]; then
+            echo "### PR Labels" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # Label mapping (must match .github/area-labels.yml)
+            declare -A label_map
+            label_map[area_backend]="Area : Backend"
+            label_map[area_frontend]="Area : Frontend"
+            label_map[area_cli]="Area : CLI"
+            label_map[area_sdk]="Area : SDK"
+            label_map[area_documentation]="Area : Documentation"
+            label_map[area_cicd]="Area : CI/CD"
+
+            labels_to_apply=""
+            if [ -n "$CHANGES_JSON" ] && [ "$CHANGES_JSON" != "null" ] && [ "$CHANGES_JSON" != "[]" ]; then
+              for area in "${!label_map[@]}"; do
+                if echo "$CHANGES_JSON" | jq -e --arg a "$area" 'index($a) != null' > /dev/null 2>&1; then
+                  if [ -n "$labels_to_apply" ]; then
+                    labels_to_apply="$labels_to_apply, "
+                  fi
+                  labels_to_apply="$labels_to_apply\`${label_map[$area]}\`"
+                fi
+              done
+            fi
+
+            if [ -n "$labels_to_apply" ]; then
+              echo "Labels to apply: $labels_to_apply" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "_No area labels to apply_" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          # Detected changes section
+          echo "### Detected Changes" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "$CHANGES_JSON" ] && [ "$CHANGES_JSON" != "null" ] && [ "$CHANGES_JSON" != "[]" ]; then
+            echo "Filters that matched:" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            # Parse JSON array and display as list
+            echo "$CHANGES_JSON" | jq -r '.[]' | while read -r change; do
+              case "$change" in
+                area_*) echo "- 🏷️ \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                backend) echo "- ⚙️ \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                frontend) echo "- 🎨 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                cli) echo "- 💻 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                build) echo "- 🔨 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                jvm_unit_test) echo "- 🧪 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+                *) echo "- 📁 \`$change\`" >> $GITHUB_STEP_SUMMARY ;;
+              esac
+            done
+          else
+            echo "_No file changes detected by paths-filter_" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Build/Test matrix section
+          echo "### Build & Test Matrix" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Parse filters JSON and display status
+          for component in build backend frontend cli jvm_unit_test; do
+            value=$(echo "$FILTERS_JSON" | jq -r --arg k "$component" '.[$k] // "false"')
+            if [ "$value" == "true" ]; then
+              echo "| $component | ✅ Will run |" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "| $component | ⏭️ Skipped |" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY

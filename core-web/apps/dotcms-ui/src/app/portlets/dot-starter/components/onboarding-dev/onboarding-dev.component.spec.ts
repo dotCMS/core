@@ -26,7 +26,7 @@ describe('DotOnboardingDevComponent', () => {
     });
 
     it('should render 6 framework blocks', () => {
-        expect(spectator.queryAll('.framework-container').length).toBe(6);
+        expect(spectator.queryAll('.framework-container').length).toBe(7);
     });
 
     it('should render Next.js and Angular in the DOM', () => {

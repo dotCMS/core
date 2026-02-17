@@ -79,7 +79,7 @@ export function withPageContext() {
                     $hasAccessToEditMode,
                     $languageId: computed(() => viewAs()?.language?.id || 1),
                     $pageURI: computed(() => page()?.pageURI ?? ''),
-                    $variantId: computed(() => pageParams()?.variantId ?? DEFAULT_VARIANT_ID),
+                    $variantId: computed(() => pageParams()?.variantName ?? DEFAULT_VARIANT_ID),
                     $canEditPage: computed(() => $hasAccessToEditMode() && $isEditMode())
                 } satisfies PageContextComputed;
             }
