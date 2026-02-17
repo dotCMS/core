@@ -1,0 +1,32 @@
+{
+  "teams": {
+    "Team : Falcon": {
+      "members": [],
+      "areas": ["core-web/apps/dotcms-ui", "core-web/libs/portlets"]
+    },
+    "Team : Platform": {
+      "members": [],
+      "areas": [
+        "dotCMS/src/main/java/com/dotcms/rest",
+        "dotCMS/src/main/java/com/dotmarketing"
+      ]
+    },
+    "Team : Scout": {
+      "members": [],
+      "areas": ["core-web/libs/sdk"]
+    },
+    "Team : Maintenance": {
+      "members": [],
+      "areas": []
+    },
+    "Team : Modernization": {
+      "members": [],
+      "areas": []
+    }
+  },
+  "routing_rules": {
+    "code_age_threshold_months": 12,
+    "old_code_team": "Team : Maintenance",
+    "default_team": "Team : Platform"
+  }
+}

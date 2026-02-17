@@ -1,0 +1,76 @@
+name: Add to Triage Project
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  add-to-triage:
+    name: Add unowned issues to AI Triage project
+    runs-on: ubuntu-latest
+    # Only process issues with no assignee
+    if: github.event.issue.assignee == null
+    steps:
+      - name: Check team labels and add to project
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TRIAGE_PROJECT_TOKEN }}
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+
+            // Skip if any team label is already present
+            const teamLabels = [
+              'Team : Falcon',
+              'Team : Platform',
+              'Team : Scout',
+              'Team : Maintenance',
+              'Team : Modernization'
+            ];
+            const hasTeamLabel = labels.some(l => teamLabels.includes(l));
+            if (hasTeamLabel) {
+              console.log('Issue already has a team label — skipping.');
+              return;
+            }
+
+            // Skip Epic, Pillar, Spike — internal planning issue types
+            // Issue type is stored in issue.type (GitHub Issues type feature)
+            const issueType = issue.type?.name;
+            const skipTypes = ['Epic', 'Pillar', 'Spike'];
+            if (issueType && skipTypes.includes(issueType)) {
+              console.log(`Issue type "${issueType}" does not need external triage — skipping.`);
+              return;
+            }
+
+            // Add issue to the AI Triage Pipeline project
+            // Project number must be set as a repository variable: TRIAGE_PROJECT_NUMBER
+            const projectNumber = parseInt(process.env.TRIAGE_PROJECT_NUMBER);
+            const org = context.repo.owner;
+
+            // Get project ID
+            const projectQuery = await github.graphql(`
+              query($org: String!, $number: Int!) {
+                organization(login: $org) {
+                  projectV2(number: $number) {
+                    id
+                  }
+                }
+              }
+            `, { org, number: projectNumber });
+
+            const projectId = projectQuery.organization.projectV2.id;
+
+            // Add issue to project
+            await github.graphql(`
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                  item {
+                    id
+                  }
+                }
+              }
+            `, { projectId, contentId: issue.node_id });
+
+            console.log(`Added issue #${issue.number} to triage project.`);
+        env:
+          TRIAGE_PROJECT_NUMBER: ${{ vars.TRIAGE_PROJECT_NUMBER }}
