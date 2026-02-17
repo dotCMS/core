@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -646,24 +647,33 @@ public class DependencyManagerTest {
      */
     @Test
     public void test_PP_multiLanguage_storyBlock_should_include_dependencies() throws Exception {
-        final Host host = new SiteDataGen().nextPersisted();
-        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
-        final Language secondaryLanguage = new LanguageDataGen().nextPersisted();
-
-        // Create a temporary image file
-        final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
-        final java.io.File tempImageFile = java.io.File.createTempFile("testImage", ".jpg");
+        // Declare variables outside try block for cleanup access
+        Host host = null;
+        Language secondaryLanguage = null;
+        java.io.File tempImageFile = null;
+        Contentlet imageContentlet = null;
+        ContentType contentTypeWithStoryBlock = null;
+        Contentlet contentDefault = null;
+        Contentlet contentSecondary = null;
 
         try {
+            host = new SiteDataGen().nextPersisted();
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+            secondaryLanguage = new LanguageDataGen().nextPersisted();
+
+            // Create a temporary image file
+            final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+            tempImageFile = java.io.File.createTempFile("testImage", ".jpg");
+
             // Create an image contentlet in the default language (typical for images/videos)
-            final Contentlet imageContentlet = new FileAssetDataGen(tempImageFile)
+            imageContentlet = new FileAssetDataGen(tempImageFile)
                     .host(host)
                     .folder(imageFolder)
                     .languageId(defaultLanguage.getId())
                     .nextPersisted();
 
             // Create a ContentType with a StoryBlock field
-            final ContentType contentTypeWithStoryBlock = new ContentTypeDataGen()
+            contentTypeWithStoryBlock = new ContentTypeDataGen()
                     .host(host)
                     .nextPersisted();
 
@@ -678,7 +688,7 @@ public class DependencyManagerTest {
                     "\"attrs\":{\"textAlign\":\"left\"}," + "\"content\":[{\"type\":\"text\",\"text\":\"test content\"}]}]}";
 
             // Create contentlet in DEFAULT language with Story Block containing the image
-            Contentlet contentDefault = new ContentletDataGen(contentTypeWithStoryBlock.id())
+            contentDefault = new ContentletDataGen(contentTypeWithStoryBlock.id())
                     .languageId(defaultLanguage.getId())
                     .host(host)
                     .setProperty(storyBlockField.variable(), dummyStoryBlock)
@@ -693,7 +703,7 @@ public class DependencyManagerTest {
             contentDefault = contentletAPI.checkin(contentDefault, user, false);
 
             // Create contentlet in SECONDARY language with Story Block containing the image
-            Contentlet contentSecondary = new ContentletDataGen(contentTypeWithStoryBlock.id())
+            contentSecondary = new ContentletDataGen(contentTypeWithStoryBlock.id())
                     .languageId(secondaryLanguage.getId())
                     .host(host)
                     .setProperty(storyBlockField.variable(), dummyStoryBlock)
@@ -728,9 +738,43 @@ public class DependencyManagerTest {
             assertTrue("Image should be included when parent content is in secondary language (Bug #34464 fix)",
                     dependencyManagerSecondary.getContents().contains(imageContentlet.getIdentifier()));
         } finally {
-            // Clean up the temporary file
-            if (tempImageFile.exists()) {
+            // Clean up filesystem resource (must be done manually)
+            if (tempImageFile != null && tempImageFile.exists()) {
                 tempImageFile.delete();
+            }
+
+            // Clean up database objects to avoid test pollution
+            try {
+                // Clean up contentlets
+                if (contentDefault != null) {
+                    ContentletDataGen.remove(contentDefault);
+                }
+                if (contentSecondary != null) {
+                    ContentletDataGen.remove(contentSecondary);
+                }
+                if (imageContentlet != null) {
+                    ContentletDataGen.remove(imageContentlet);
+                }
+
+                // Clean up content type (will also remove the field)
+                if (contentTypeWithStoryBlock != null) {
+                    ContentTypeDataGen.remove(contentTypeWithStoryBlock);
+                }
+
+                // Clean up language (important to avoid ID conflicts)
+                if (secondaryLanguage != null) {
+                    LanguageDataGen.remove(secondaryLanguage);
+                }
+
+                // Clean up host (will cascade delete any remaining contentlets)
+                if (host != null) {
+                    APILocator.getHostAPI().archive(host, user, false);
+                    APILocator.getHostAPI().delete(host, user, false);
+                }
+            } catch (Exception e) {
+                // Log cleanup errors but don't fail the test
+                Logger.warn(DependencyManagerTest.class,
+                        "Error during test cleanup: " + e.getMessage(), e);
             }
         }
     }
