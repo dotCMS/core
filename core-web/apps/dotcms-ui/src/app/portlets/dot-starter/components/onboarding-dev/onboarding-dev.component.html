@@ -10,7 +10,7 @@
         class="button-link"
         (click)="resetUserProfile()"></p-button>
     <header>
-        <h1>Start with dotCMS headless development in minutes</h1>
+        <h1>Start with dotCMS development in minutes</h1>
         <p>Seamlessly integrate dotCMS into your favorite technology stack.</p>
     </header>
 
@@ -23,23 +23,37 @@
                     width="40"
                     height="40"
                     style="object-fit: contain" />
+
                 <div class="flex-column">
                     <h3>{{ framework.label }}</h3>
-                    @if (framework.cliCommand !== '') {
-                        <p class="command-text">{{ framework.cliCommand }}</p>
-                    } @else {
-                        <p class="paragraph-text">
-                            Our interactive guide is coming soon. Try the fully configured
-                            <a
-                                target="_blank"
-                                style="text-decoration: none"
-                                href="{{ framework.githubUrl }}">
-                                {{ framework.label }} starter kit
-                            </a>
-                        </p>
+
+                    @switch (framework.type) {
+                        @case ('interactive') {
+                            <p class="command-text">{{ framework.cliCommand }}</p>
+                        }
+
+                        @case ('starter') {
+                            <p class="paragraph-text">
+                                Our interactive guide is comming soon. Try the fully configured
+                                <a
+                                    target="_blank"
+                                    style="text-decoration: none"
+                                    href="{{ framework.githubUrl }}">
+                                    {{ framework.label }} starter kit
+                                </a>
+                            </p>
+                        }
+
+                        @case ('doc') {
+                            <p class="paragraph-text">
+                                Use our dotCMS Velocity templates for server-rendered and
+                                traditional CMS sites
+                            </p>
+                        }
                     }
                 </div>
-                @if (framework.cliCommand !== '') {
+
+                @if (framework.type === 'interactive') {
                     <dot-copy-button [copy]="framework.cliCommand" />
                 } @else {
                     <p-button

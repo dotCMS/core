@@ -49,32 +49,33 @@ export class DotOnboardingDevComponent {
             label: 'Next.js',
             copied: false,
             logo: '/dotAdmin/assets/logos/nextjs.svg',
+            type: 'interactive',
             cliCommand: 'npx @dotcms/create-app --framework=nextjs'
         },
         {
             id: 'angular',
             label: 'Angular',
+            type: 'interactive',
             logo: '/dotAdmin/assets/logos/angular.png',
             copied: false,
-            disabled: false,
             cliCommand: 'npx @dotcms/create-app --framework=angular',
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular'
         },
         {
             id: 'angular-ssr',
             label: 'Angular SSR',
+            type: 'interactive',
             logo: '/dotAdmin/assets/logos/angular.png',
             copied: false,
             cliCommand: 'npx @dotcms/create-app --framework=angular-ssr',
-            disabled: false,
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/angular-ssr'
         },
         {
             id: 'astro',
             label: 'Astro',
             copied: false,
+            type: 'interactive',
             logo: '/dotAdmin/assets/logos/astro.svg',
-            disabled: false,
             cliCommand: 'npx @dotcms/create-app --framework=astro',
             githubUrl: 'https://github.com/dotCMS/core/tree/main/examples/astro'
         },
@@ -82,7 +83,7 @@ export class DotOnboardingDevComponent {
             id: '.net',
             label: '.Net',
             logo: '/dotAdmin/assets/logos/dot-net.png',
-            disabled: true,
+            type: 'starter',
             copied: false,
             cliCommand: '',
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
@@ -90,11 +91,20 @@ export class DotOnboardingDevComponent {
         {
             id: 'php',
             label: 'PHP',
+            type: 'starter',
             logo: '/dotAdmin/assets/logos/php.png',
             copied: false,
             cliCommand: '',
-            disabled: true,
             githubUrl: 'https://github.com/dotCMS/dotnet-starter-example'
+        },
+        {
+            id: 'vtl',
+            label: 'VTL',
+            logo: '/dotAdmin/assets/logos/vtl.svg',
+            copied: false,
+            type: 'doc',
+            cliCommand: '',
+            githubUrl: 'https://dev.dotcms.com/docs/velocity-viewtools'
         }
     ];
 
