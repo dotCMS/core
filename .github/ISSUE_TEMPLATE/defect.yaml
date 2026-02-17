@@ -1,7 +1,7 @@
 name: Defect
 description: Report a bug or issue with existing functionality
-title: "[DEFECT] "
-labels: ["Triage","OKR : Customer Support"]
+title: ""
+labels: ["OKR : Customer Support"]
 type: bug
 assignees: []
 projects: ["dotCMS/7"]
