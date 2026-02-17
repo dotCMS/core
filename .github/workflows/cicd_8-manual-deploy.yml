@@ -4,31 +4,6 @@
 # This workflow provides on-demand deployment of Docker images from any branch, tag, or commit.
 # It's designed for testing feature branches, deploying hotfixes, or creating ad-hoc builds.
 #
-# Key features:
-# - Deploy from any ref (branch, tag, or commit SHA)
-# - Safety checks to prevent accidental artifact collision with release artifacts
-# - Separate environment (GitHub UI grouping) and version (artifact naming) inputs
-# - Artifact suffix required by default to prevent Maven/Artifactory namespace collision
-# - Custom Docker tags for special builds
-# - Java version override for testing alternate Java versions
-# - Reuses modular build/deployment phases for consistency
-# - Optional dev image deployment for development environments
-#
-# Safety mechanisms:
-# - Detects if version matches release pattern (yy.mm.dd-## or yy.mm.dd_lts_v##)
-# - Blocks deployment unless allow_release_override flag is explicitly set
-# - Default artifact suffix "manual" prevents collision with production artifacts
-# - Environment input is categorical (manual, feature-test, etc.) not version-based
-#
-# Common use cases:
-# - Testing feature branches before merge
-#   Example: ref=issue-12345-feature, environment=feature-test, version=feature-test-12345
-# - Building hotfix releases from release branches
-#   Example: ref=release-25.01.01, environment=hotfix, version=hotfix-25.01.01-patch
-# - Creating custom tagged images for specific deployments
-#   Example: ref=main, environment=manual, version=customer-demo-20240216, custom_tag=acme-corp
-# - Testing alternate Java versions (e.g., Java 25)
-#   Example: ref=main, environment=release-java25, version=test-java25, java_version=25.0.2-ms
 #
 # Important: GitHub "environment" vs "version"
 # - environment: Used for GitHub deployment UI grouping (categorical: manual, feature-test, hotfix, release-java25)
