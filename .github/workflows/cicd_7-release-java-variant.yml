@@ -5,15 +5,6 @@
 # with the primary release workflow. It triggers automatically when the primary
 # release workflow creates a release branch.
 #
-# Key features:
-# - Automatic trigger on release branch creation
-# - Manual trigger support for ad-hoc builds
-# - Parallel execution with primary release workflow
-# - Multiple Java variants can run in parallel (e.g., Java 25 + Java 23)
-# - Configurable Java version via repository variables or workflow inputs
-# - Skips one-time operations (javadocs, plugins, labels) handled by primary
-# - Produces distinct versioned artifacts (e.g., X.X.X_javaYY)
-#
 # Architecture:
 # When the primary release workflow (cicd_6-release.yml) creates a release branch,
 # this workflow automatically triggers and runs in parallel. Both workflows build
