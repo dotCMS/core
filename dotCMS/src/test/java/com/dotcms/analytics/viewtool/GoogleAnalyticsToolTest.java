@@ -245,4 +245,126 @@ public class GoogleAnalyticsToolTest {
         // Then: Should not be null
         assertNotNull(defaultTool);
     }
+
+    // ===== Tests for new function-style trackingCode() methods =====
+
+    /**
+     * Test trackingCode() method (no parameters) returns tracking code from site
+     */
+    @Test
+    public void testTrackingCode_noParams_fromSite() {
+        // Given: Site has GA4 tracking ID
+        when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
+        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITE123");
+
+        // When: Calling trackingCode()
+        String trackingCode = tool.trackingCode();
+
+        // Then: Should return tracking code with site's ID
+        assertNotNull(trackingCode);
+        assertTrue("Should contain site tracking ID", trackingCode.contains("G-SITE123"));
+        assertTrue("Should contain gtag.js script", trackingCode.contains("gtag.js?id=G-SITE123"));
+    }
+
+    /**
+     * Test trackingCode() method returns empty string when no site tracking ID
+     */
+    @Test
+    public void testTrackingCode_noParams_noSiteId() {
+        // Given: Site has no GA tracking ID
+        when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
+        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn(null);
+
+        // When: Calling trackingCode()
+        String trackingCode = tool.trackingCode();
+
+        // Then: Should return empty string
+        assertEquals("", trackingCode);
+    }
+
+    /**
+     * Test trackingCode(String) method with custom tracking ID
+     */
+    @Test
+    public void testTrackingCode_withCustomId() {
+        // Given: Custom tracking ID provided (site ID doesn't matter)
+        when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
+        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITE123");
+
+        // When: Calling trackingCode with custom ID
+        String trackingCode = tool.trackingCode("G-CUSTOM456");
+
+        // Then: Should return tracking code with custom ID, not site ID
+        assertNotNull(trackingCode);
+        assertTrue("Should contain custom tracking ID", trackingCode.contains("G-CUSTOM456"));
+        assertFalse("Should NOT contain site tracking ID", trackingCode.contains("G-SITE123"));
+    }
+
+    /**
+     * Test trackingCode(String) method with null parameter falls back to site ID
+     */
+    @Test
+    public void testTrackingCode_withNullParam_fallsBackToSite() {
+        // Given: Site has GA4 tracking ID
+        when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
+        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITE789");
+
+        // When: Calling trackingCode with null
+        String trackingCode = tool.trackingCode(null);
+
+        // Then: Should fall back to site's tracking ID
+        assertNotNull(trackingCode);
+        assertTrue("Should contain site tracking ID", trackingCode.contains("G-SITE789"));
+    }
+
+    /**
+     * Test trackingCode(String) method with empty string parameter falls back to site ID
+     */
+    @Test
+    public void testTrackingCode_withEmptyParam_fallsBackToSite() {
+        // Given: Site has GA4 tracking ID
+        when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
+        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITEABC");
+
+        // When: Calling trackingCode with empty string
+        String trackingCode = tool.trackingCode("");
+
+        // Then: Should fall back to site's tracking ID
+        assertNotNull(trackingCode);
+        assertTrue("Should contain site tracking ID", trackingCode.contains("G-SITEABC"));
+    }
+
+    /**
+     * Test trackingCode(String) with different custom ID formats
+     */
+    @Test
+    public void testTrackingCode_withDifferentIdFormats() {
+        // When: Calling trackingCode with various custom IDs
+        String trackingCode1 = tool.trackingCode("G-XXXXXXXXXX");
+        String trackingCode2 = tool.trackingCode("G-123ABC456");
+        String trackingCode3 = tool.trackingCode("G-TEST-MULTI");
+
+        // Then: All should generate valid tracking code
+        assertTrue(trackingCode1.contains("G-XXXXXXXXXX"));
+        assertTrue(trackingCode2.contains("G-123ABC456"));
+        assertTrue(trackingCode3.contains("G-TEST-MULTI"));
+    }
+
+    /**
+     * Test that getTrackingCode() still works for backward compatibility
+     */
+    @Test
+    public void testGetTrackingCode_backwardCompatibility() {
+        // Given: Site has GA4 tracking ID
+        when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
+        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-LEGACY123");
+
+        // When: Calling deprecated getTrackingCode()
+        @SuppressWarnings("deprecation")
+        String trackingCode = tool.getTrackingCode();
+
+        // Then: Should still work and return tracking code
+        assertNotNull(trackingCode);
+        assertTrue("Should contain tracking ID", trackingCode.contains("G-LEGACY123"));
+    }
 }

@@ -15,22 +15,27 @@ import javax.servlet.http.HttpServletRequest;
  * ViewTool for generating Google Analytics 4 (GA4) tracking code in Velocity templates.
  * 
  * This tool provides a simple way to include GA4 tracking code in templates by reading
- * the tracking ID from the current site's googleAnalytics field.
+ * the tracking ID from the current site's googleAnalytics field, or by providing a custom
+ * tracking ID as a parameter.
  * 
  * Usage in Velocity templates:
  * <pre>
- * ## Include GA4 tracking code
- * $googleAnalytics.trackingCode
+ * ## Include GA4 tracking code from site configuration
+ * $googleAnalytics.trackingCode()
  * 
- * ## Or with null check
+ * ## Include GA4 tracking code with custom tracking ID
+ * $googleAnalytics.trackingCode("G-CUSTOM123")
+ * 
+ * ## With null check
  * #if($googleAnalytics.trackingId)
- *   $googleAnalytics.trackingCode
+ *   $googleAnalytics.trackingCode()
  * #end
  * </pre>
  * 
  * Benefits of manual inclusion:
  * - Developers have full control over placement in the template
  * - Can be conditionally included based on user consent
+ * - Can override tracking ID with custom value
  * - No automatic HTML parsing/modification overhead
  * - More transparent and easier to debug
  * 
@@ -85,15 +90,20 @@ public class GoogleAnalyticsTool implements ViewTool {
     }
 
     /**
-     * Generates the complete Google Analytics 4 tracking code.
+     * Generates the complete Google Analytics 4 tracking code using the site's configured tracking ID.
      * 
      * This includes the gtag.js script tag and initialization code.
      * Place this code in your template where you want the tracking code to appear
      * (typically before the closing &lt;/body&gt; tag).
      * 
+     * Usage in Velocity:
+     * <pre>
+     * $googleAnalytics.trackingCode()
+     * </pre>
+     * 
      * @return The complete GA4 tracking code HTML, or empty string if no tracking ID is set
      */
-    public String getTrackingCode() {
+    public String trackingCode() {
         final String trackingId = getTrackingId();
         
         if (!UtilMethods.isSet(trackingId)) {
@@ -102,6 +112,40 @@ public class GoogleAnalyticsTool implements ViewTool {
         }
 
         return generateGA4Script(trackingId);
+    }
+
+    /**
+     * Generates the complete Google Analytics 4 tracking code using a custom tracking ID.
+     * 
+     * This allows overriding the site's tracking ID with a custom value, useful for
+     * multi-environment setups or testing purposes.
+     * 
+     * Usage in Velocity:
+     * <pre>
+     * $googleAnalytics.trackingCode("G-CUSTOM123")
+     * </pre>
+     * 
+     * @param customTrackingId the custom GA4 tracking ID to use (e.g., "G-XXXXXXXXXX")
+     * @return The complete GA4 tracking code HTML, or empty string if tracking ID is not set
+     */
+    public String trackingCode(final String customTrackingId) {
+        if (!UtilMethods.isSet(customTrackingId)) {
+            Logger.debug(this, "Custom tracking ID is empty, falling back to site configuration");
+            return trackingCode();
+        }
+
+        return generateGA4Script(customTrackingId);
+    }
+
+    /**
+     * Generates the complete Google Analytics 4 tracking code.
+     * 
+     * @deprecated Use {@link #trackingCode()} instead. This method is kept for backward compatibility.
+     * @return The complete GA4 tracking code HTML, or empty string if no tracking ID is set
+     */
+    @Deprecated
+    public String getTrackingCode() {
+        return trackingCode();
     }
 
     /**
