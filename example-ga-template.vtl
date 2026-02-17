@@ -45,14 +45,30 @@
         <h3>How it works:</h3>
         <ol>
             <li>Set the GA4 tracking ID on your site (e.g., G-XXXXXXXXXX)</li>
-            <li>Add <code>$googleAnalytics.trackingCode</code> to your template</li>
+            <li>Add <code>$googleAnalytics.trackingCode()</code> to your template</li>
             <li>The tracking code is automatically rendered when the page loads</li>
         </ol>
+        
+        <h3>Advanced Usage:</h3>
+        <p>You can also provide a custom tracking ID:</p>
+        <pre><code>$googleAnalytics.trackingCode("G-CUSTOM123")</code></pre>
+        
+        <p>This is useful for:</p>
+        <ul>
+            <li>Multi-environment setups (dev/staging/prod)</li>
+            <li>Multi-tenant configurations</li>
+            <li>Testing with different tracking IDs</li>
+        </ul>
     </div>
     
     ## Include Google Analytics tracking code before closing </body> tag
     ## This is the recommended placement for optimal page load performance
-    $googleAnalytics.trackingCode
+    ##
+    ## Option 1: Use site's configured tracking ID
+    $googleAnalytics.trackingCode()
+    ##
+    ## Option 2: Use custom tracking ID (commented out)
+    ## $googleAnalytics.trackingCode("G-CUSTOM123")
     
 </body>
 </html>

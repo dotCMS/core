@@ -26,7 +26,7 @@ curl -X PUT \
 
 ## Velocity Template Usage
 
-### Basic Usage
+### Basic Usage - Site Configuration
 
 Place the tracking code in your template (typically before the closing `</body>` tag):
 
@@ -41,10 +41,26 @@ Place the tracking code in your template (typically before the closing `</body>`
     
     ## Your page content here
     
-    ## Include GA4 tracking code
-    $googleAnalytics.trackingCode
+    ## Include GA4 tracking code from site configuration
+    $googleAnalytics.trackingCode()
 </body>
 </html>
+```
+
+### Advanced Usage - Custom Tracking ID
+
+Override the site's tracking ID with a custom value:
+
+```velocity
+## Use custom tracking ID (useful for multi-environment setups)
+$googleAnalytics.trackingCode("G-CUSTOM123")
+
+## Environment-specific tracking
+#if($config.get("ENVIRONMENT") == "production")
+    $googleAnalytics.trackingCode("G-PROD12345")
+#else
+    $googleAnalytics.trackingCode("G-DEV67890")
+#end
 ```
 
 ### With Null Check
@@ -53,7 +69,7 @@ To avoid rendering anything when no tracking ID is configured:
 
 ```velocity
 #if($googleAnalytics.trackingId)
-    $googleAnalytics.trackingCode
+    $googleAnalytics.trackingCode()
 #end
 ```
 
@@ -63,7 +79,7 @@ Include tracking only when user has given consent:
 
 ```velocity
 #if($userConsent && $googleAnalytics.trackingId)
-    $googleAnalytics.trackingCode
+    $googleAnalytics.trackingCode()
 #end
 ```
 
@@ -87,12 +103,14 @@ If you need just the tracking ID for custom implementation:
 
 | Method | Return Type | Description |
 |--------|-------------|-------------|
-| `getTrackingId()` | String | Returns the GA4 tracking ID (e.g., "G-XXXXXXXXXX") or `null` if not set |
-| `getTrackingCode()` | String | Returns the complete GA4 tracking script HTML, or empty string if not set |
+| `trackingCode()` | String | Returns GA4 tracking script using site's configured tracking ID, or empty string if not set |
+| `trackingCode(String)` | String | Returns GA4 tracking script using custom tracking ID parameter, or empty string if not set |
+| `getTrackingId()` | String | Returns the GA4 tracking ID from site configuration (e.g., "G-XXXXXXXXXX") or `null` if not set |
+| `getTrackingCode()` | String | **Deprecated** - Use `trackingCode()` instead |
 
 ### Generated Output
 
-When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingCode` generates:
+When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingCode()` generates:
 
 ```html
 <!-- Google tag (gtag.js) -->
@@ -109,6 +127,7 @@ When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingC
 
 ✅ **Full Control** - You decide exactly where the tracking code appears  
 ✅ **Consent Management** - Easy to conditionally include based on user consent  
+✅ **Custom Tracking IDs** - Can override with custom tracking ID per environment/tenant  
 ✅ **No Performance Overhead** - No automatic HTML parsing or response wrapping  
 ✅ **Transparency** - Clear what's happening, easier to debug  
 ✅ **Flexibility** - Can customize placement, add conditions, or modify output  
@@ -128,7 +147,7 @@ When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingC
     #parse($template.body)
     
     ## Analytics at the end of body
-    $googleAnalytics.trackingCode
+    $googleAnalytics.trackingCode()
 </body>
 </html>
 ```
@@ -137,7 +156,7 @@ When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingC
 
 ```velocity
 #if($request.serverName.contains("production.com"))
-    $googleAnalytics.trackingCode
+    $googleAnalytics.trackingCode()
 #end
 ```
 
@@ -145,7 +164,7 @@ When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingC
 
 ```velocity
 #if($cookietool.get("analytics_consent").value == "true")
-    $googleAnalytics.trackingCode
+    $googleAnalytics.trackingCode()
 #end
 ```
 
@@ -156,7 +175,34 @@ When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingC
     #if($request.getParameter("debug"))
         <!-- GA Tracking ID: $googleAnalytics.trackingId -->
     #end
-    $googleAnalytics.trackingCode
+    $googleAnalytics.trackingCode()
+#end
+```
+
+### Pattern 5: Multi-Environment Setup
+
+```velocity
+## Different tracking per environment
+#if($config.get("ENVIRONMENT") == "production")
+    $googleAnalytics.trackingCode("G-PROD12345")
+#elseif($config.get("ENVIRONMENT") == "staging")
+    $googleAnalytics.trackingCode("G-STAGING67")
+#else
+    $googleAnalytics.trackingCode("G-DEV890")
+#end
+```
+
+### Pattern 6: Multi-Tenant Setup
+
+```velocity
+## Different tracking per customer/tenant
+#set($tenantId = $request.getAttribute("tenantId"))
+#if($tenantId == "tenant-a")
+    $googleAnalytics.trackingCode("G-TENANTA123")
+#elseif($tenantId == "tenant-b")
+    $googleAnalytics.trackingCode("G-TENANTB456")
+#else
+    $googleAnalytics.trackingCode()
 #end
 ```
 
@@ -194,7 +240,7 @@ When a tracking ID like `G-ABC123XYZ` is configured, `$googleAnalytics.trackingC
 If you were using the previous auto-injection approach:
 
 1. **Add the ViewTool to your templates**:
-   - Add `$googleAnalytics.trackingCode` before `</body>` in your layout templates
+   - Add `$googleAnalytics.trackingCode()` before `</body>` in your layout templates
    - Or add to individual page templates as needed
 
 2. **Remove environment variable**:
