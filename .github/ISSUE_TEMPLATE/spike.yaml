@@ -1,7 +1,6 @@
 name: Spike
 description: Timeboxed research to turn unknowns into knowns
-title: ""
-labels: [""]
+labels: []
 type: spike
 assignees: []
 projects: ["dotCMS/7"]
