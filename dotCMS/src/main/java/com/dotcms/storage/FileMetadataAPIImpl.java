@@ -372,8 +372,20 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             }
 
             if (generateIfAbsent) {
-                return Try.of (()->generateContentletMetadata(contentlet).getFullMetadataMap().get(fieldVariableName)).getOrElseThrow(
-                        DotDataException::new);
+                // Generate metadata and check both full and basic metadata maps
+                // For indexed fields, metadata will be in fullMetadataMap
+                // For non-indexed fields, metadata will be in basicMetadataMap
+                final ContentletMetadata contentletMetadata = Try.of(() -> generateContentletMetadata(contentlet))
+                        .getOrElseThrow(DotDataException::new);
+                final Metadata result = get(contentletMetadata, fieldVariableName);
+
+                if (result == null) {
+                    Logger.error(this, String.format(
+                            "Unable to generate metadata for field '%s' on contentlet '%s'",
+                            fieldVariableName, contentlet.getIdentifier()));
+                }
+
+                return result;
             }
         }
         return null;
@@ -381,18 +393,18 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     }
 
     /**
-     * Given that at this point we dont know exactly if the fieldVariableName corresponds to the first indexed binary (Which would make it part of the FullMetadata)
+     * Given that at this point we don't know exactly if the fieldVariableName corresponds to the first indexed binary (Which would make it part of the FullMetadata)
      * So we check both maps to make sure we're returning the proper entry.
      * @param contentletMetadata
      * @param fieldVariableName
      * @return
      */
-    private Metadata get(final ContentletMetadata contentletMetadata, final String fieldVariableName){
+    private Metadata get(final ContentletMetadata contentletMetadata, final String fieldVariableName) {
         Metadata metadata = null;
-        if(contentletMetadata.getFullMetadataMap().get(fieldVariableName)!=null){
-           metadata = contentletMetadata.getFullMetadataMap().get(fieldVariableName);
+        if (contentletMetadata.getFullMetadataMap().get(fieldVariableName) != null) {
+            metadata = contentletMetadata.getFullMetadataMap().get(fieldVariableName);
         }
-        if(contentletMetadata.getBasicMetadataMap().get(fieldVariableName)!=null){
+        if (contentletMetadata.getBasicMetadataMap().get(fieldVariableName) != null) {
             metadata = contentletMetadata.getBasicMetadataMap().get(fieldVariableName);
         }
         return metadata;

@@ -1102,14 +1102,14 @@
         "response": []
       },
       {
-        "name": "WebAsset :: Create or Replace Fails for Indexing in Binary field",
+        "name": "WebAsset :: Create or Replace Succeeds with Non-Indexed Binary Field",
         "event": [
           {
             "listen": "test",
             "script": {
               "exec": [
-                "pm.test(\"Status is 400\", function () {",
-                "    pm.response.to.have.status(400);",
+                "pm.test(\"Status code should be 200\", function () {",
+                "    pm.response.to.have.status(200);",
                 "});",
                 "",
                 "pm.test(\"Response is JSON\", function () {",
@@ -1119,13 +1119,10 @@
                 "// Parse JSON",
                 "const json = pm.response.json();",
                 "",
-                "pm.test(\"Error array exists\", function () {",
-                "    pm.expect(json.errors).to.be.an(\"array\").that.is.not.empty;",
-                "});",
-                "",
-                "pm.test(\"Failed with METADATA_NOT_AVAILABLE\", function () {",
-                "    const first = json.errors[0];",
-                "    pm.expect(first.errorCode).to.eql(\"METADATA_NOT_AVAILABLE\");",
+                "pm.test(\"Metadata is available for non-indexed field\", function () {",
+                "    const metadata = json.entity.metadata;",
+                "    pm.expect(metadata).to.exist;",
+                "    pm.expect(metadata.name).to.eql(\"make-my-day.jpeg\");",
                 "});"
               ],
               "type": "text/javascript",
@@ -1143,7 +1140,7 @@
               {
                 "key": "file",
                 "type": "file",
-                "value": null
+                "src": "resources/WebAssets/make-my-day.jpeg"
               },
               {
                 "key": "detail",
@@ -1163,7 +1160,7 @@
               "assets"
             ]
           },
-          "description": "Testing the update"
+          "description": "Test that file upload works correctly even when the binary field is not indexed. Metadata should still be available from basicMetadataMap."
         },
         "response": []
       },
@@ -1262,56 +1259,6 @@
               "468512c0-423e-4f1a-b94c-7cf8b064260a"
             ]
           }
-        },
-        "response": []
-      },
-      {
-        "name": "WebAsset :: Create or Replace Successful",
-        "event": [
-          {
-            "listen": "test",
-            "script": {
-              "exec": [
-                "pm.test(\"Status code should be 200\", function () {",
-                "    pm.response.to.have.status(200);",
-                "});"
-              ],
-              "type": "text/javascript",
-              "packages": {},
-              "requests": {}
-            }
-          }
-        ],
-        "request": {
-          "method": "PUT",
-          "header": [],
-          "body": {
-            "mode": "formdata",
-            "formdata": [
-              {
-                "key": "file",
-                "type": "file",
-                "value": null
-              },
-              {
-                "key": "detail",
-                "value": "{\n   \"assetPath\":\"//default/newFolder/make-my-day.jpeg\",\n   \"language\":\"en_us\",\n   \"live\":true\n}",
-                "type": "text"
-              }
-            ]
-          },
-          "url": {
-            "raw": "{{serverURL}}/api/v1/assets",
-            "host": [
-              "{{serverURL}}"
-            ],
-            "path": [
-              "api",
-              "v1",
-              "assets"
-            ]
-          },
-          "description": "Testing the update"
         },
         "response": []
       },
