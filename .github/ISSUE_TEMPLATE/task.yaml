@@ -1,6 +1,5 @@
 name: Task
 description: Technical task or improvement that needs to be completed
-title: ""
 labels: []
 type: task
 assignees: []
