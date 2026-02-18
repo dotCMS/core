@@ -238,9 +238,11 @@ export class DotUveToolbarComponent {
                         this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
                         this.$personaSelector().fetchPersonas();
                     },
-                    error: (err: HttpErrorResponse) => {
+                    error: (err: unknown) => {
                         const detail =
-                            this.#getPersonalizeErrorDetail(err) ??
+                            (err instanceof HttpErrorResponse
+                                ? this.#getPersonalizeErrorDetail(err)
+                                : null) ??
                             this.#dotMessageService.get('uve.personalize.empty.page.error');
                         this.#messageService.add({
                             severity: 'error',
@@ -344,14 +346,18 @@ export class DotUveToolbarComponent {
      * Uses backend message when available (header or body); returns null for generic i18n fallback.
      */
     #getPersonalizeErrorDetail(err: HttpErrorResponse): string | null {
-        const headerMessage = err.headers?.get('error-message');
-        if (headerMessage?.trim()) {
+        const headerMessage = err.headers?.get('error-message')?.trim();
+        if (headerMessage) {
             return headerMessage;
         }
         const bodyError = err.error?.error;
         if (typeof bodyError === 'string') {
             const afterColon = bodyError.indexOf(': ');
-            return afterColon >= 0 ? bodyError.slice(afterColon + 2).trim() : bodyError.trim();
+            const trimmed =
+                afterColon >= 0 ? bodyError.slice(afterColon + 2).trim() : bodyError.trim();
+            if (trimmed) {
+                return trimmed;
+            }
         }
         return null;
     }

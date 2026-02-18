@@ -782,6 +782,64 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
+            it('should use i18n fallback when error-message header is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            headers: new HttpHeaders({ 'error-message': '   \t  ' })
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
+            it('should use i18n fallback when body error is only whitespace', () => {
+                const spyPersonalized = jest.spyOn(personalizeService, 'personalized');
+                const spyMessageService = jest.spyOn(messageService, 'add');
+
+                spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'selected', {
+                    ...personaEventMock,
+                    personalized: false
+                });
+
+                const acceptFn = (confirmationService.confirm as jest.Mock).mock.calls[0][0].accept;
+                spyPersonalized.mockReturnValue(
+                    throwError(
+                        new HttpErrorResponse({
+                            status: 400,
+                            error: { error: '   ' }
+                        })
+                    )
+                );
+
+                acceptFn();
+                spectator.detectChanges();
+
+                expect(spyMessageService).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'error',
+                    detail: 'uve.personalize.empty.page.error'
+                });
+            });
+
             it('should despersonalize', () => {
                 spectator.triggerEventHandler(EditEmaPersonaSelectorComponent, 'despersonalize', {
                     ...personaEventMock,
