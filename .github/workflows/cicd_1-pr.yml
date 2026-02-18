@@ -42,13 +42,25 @@ jobs:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
-      validation-level: 'full'
+      change-detection: 'enabled'
+
+  # Label PR by area - applies Area : labels based on changed paths
+  label-pr:
+    name: Label PR
+    needs: [initialize]
+    if: always() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_pr-area-labeler.yml
+    with:
+      changes: ${{ needs.initialize.outputs.changes }}
+    permissions:
+      contents: read
+      pull-requests: write
 
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: PR Build
     needs: [ initialize ]
-    if: needs.initialize.outputs.build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
+    if: fromJSON(needs.initialize.outputs.filters).build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
@@ -64,12 +76,12 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
-      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
-      integration: ${{ needs.initialize.outputs.backend == 'true' }}
-      postman: ${{ needs.initialize.outputs.backend == 'true' }}
-      karate: ${{ needs.initialize.outputs.backend == 'true' }}
-      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
-      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+      jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
+      integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
+      cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: false
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
@@ -77,7 +89,7 @@ jobs:
   semgrep:
     name: PR Semgrep
     needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled() &&  needs.initialize.outputs.build == 'true' &&
+    if: always() && !failure() && !cancelled() && fromJSON(needs.initialize.outputs.filters).build == 'true' &&
       (
       (github.event_name == 'workflow_dispatch' && !inputs.disable-semgrep) ||
       (github.event_name != 'workflow_dispatch' && vars.DISABLE_SEMGREP != 'true')
