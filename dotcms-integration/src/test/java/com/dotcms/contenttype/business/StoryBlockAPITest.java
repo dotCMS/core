@@ -18,6 +18,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.business.json.ContentletJsonHelper;
+import com.dotcms.contenttype.business.StoryBlockDependency;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -403,12 +404,12 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
 
         assertNotNull(newStoryBlockMap);
-        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson3);
-        assertNotNull(contentletIdList);
-        assertEquals(3, contentletIdList.size());
-        assertTrue(contentletIdList.contains(richTextContentlet1.getIdentifier()));
-        assertTrue(contentletIdList.contains(richTextContentlet2.getIdentifier()));
-        assertTrue(contentletIdList.contains(richTextContentlet3.getIdentifier()));
+        final List<StoryBlockDependency> dependencyList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson3);
+        assertNotNull(dependencyList);
+        assertEquals(3, dependencyList.size());
+        assertTrue(dependencyList.stream().anyMatch(dep -> dep.identifier().equals(richTextContentlet1.getIdentifier())));
+        assertTrue(dependencyList.stream().anyMatch(dep -> dep.identifier().equals(richTextContentlet2.getIdentifier())));
+        assertTrue(dependencyList.stream().anyMatch(dep -> dep.identifier().equals(richTextContentlet3.getIdentifier())));
     }
 
     /**
@@ -421,11 +422,11 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         final Object newStoryBlockJson1        = "<html>pufff</html>";
 
-        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
-        assertNotNull(contentletIdList);
-        assertTrue(contentletIdList.isEmpty());
+        final List<StoryBlockDependency> dependencyList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        assertNotNull(dependencyList);
+        assertTrue(dependencyList.isEmpty());
     }
-    
+
     /**
      * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
      * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
@@ -436,11 +437,11 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         final Object newStoryBlockJson1        = "{\"test\":\"test\"}";
 
-        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
-        assertNotNull(contentletIdList);
-        assertTrue(contentletIdList.isEmpty());
+        final List<StoryBlockDependency> dependencyList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        assertNotNull(dependencyList);
+        assertTrue(dependencyList.isEmpty());
     }
-    
+
     /**
      * Method to test: {@link StoryBlockAPI#getDependencies(Object)}
      * Given Scenario: Test a story block value that is a json (html in this case) see (https://github.com/dotCMS/core/issues/24299)
@@ -451,9 +452,9 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         final Object newStoryBlockJson1        = "{\"content\":\"test\"}";
 
-        final List<String> contentletIdList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
-        assertNotNull(contentletIdList);
-        assertTrue(contentletIdList.isEmpty());
+        final List<StoryBlockDependency> dependencyList = APILocator.getStoryBlockAPI().getDependencies(newStoryBlockJson1);
+        assertNotNull(dependencyList);
+        assertTrue(dependencyList.isEmpty());
     }
 
     /**
@@ -539,16 +540,16 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             );
 
 
-            final List<String> contentletIdList = APILocator.getStoryBlockAPI()
+            final List<StoryBlockDependency> dependencyList = APILocator.getStoryBlockAPI()
                     .getDependencies(storyBlockJsonWithNestedImages);
 
             // Verify both images are detected
-            assertNotNull("Dependency list should not be null", contentletIdList);
-            assertEquals("Should find 2 image dependencies", 2, contentletIdList.size());
+            assertNotNull("Dependency list should not be null", dependencyList);
+            assertEquals("Should find 2 image dependencies", 2, dependencyList.size());
             assertTrue("Should contain top-level image",
-                    contentletIdList.contains(imageFileAsset1.getIdentifier()));
+                    dependencyList.stream().anyMatch(dep -> dep.identifier().equals(imageFileAsset1.getIdentifier())));
             assertTrue("Should contain nested image inside list",
-                    contentletIdList.contains(imageFileAsset2.getIdentifier()));
+                    dependencyList.stream().anyMatch(dep -> dep.identifier().equals(imageFileAsset2.getIdentifier())));
 
         } finally {
             
