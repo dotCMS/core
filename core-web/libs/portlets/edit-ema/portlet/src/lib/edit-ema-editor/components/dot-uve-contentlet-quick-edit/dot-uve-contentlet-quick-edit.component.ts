@@ -1,5 +1,5 @@
-import { Component, input, output, inject, effect, signal, computed } from '@angular/core';
-import { FormGroup, FormBuilder, ReactiveFormsModule, Validators, AbstractControl } from '@angular/forms';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -11,6 +11,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
 import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotMessagePipe } from '@dotcms/ui';
 import { ContainerPayload } from '../../../shared/models';
 
 /**
@@ -57,7 +58,8 @@ export interface ContentletEditData {
         InputTextModule,
         InputTextareaModule,
         MultiSelectModule,
-        RadioButtonModule
+        RadioButtonModule,
+        DotMessagePipe
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
     styleUrl: './dot-uve-contentlet-quick-edit.component.scss'

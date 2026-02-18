@@ -213,6 +213,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const { container, contentlet: contentletPayload } = this.uveStore.editorActiveContentlet() ?? {};
         // Removed pageAPIResponse - use normalized accessors
 
+        console.log(this.uveStore.editorActiveContentlet())
+
+
         const contentType = this.$contenttypes().find(
             (ct) => ct.variable === contentletPayload?.contentType
         );
@@ -480,9 +483,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const activeContentlet = this.uveStore.editorActiveContentlet();
 
         // Reset activeContentlet when page is unlocked (isLocked === false) and there's an active contentlet
-        if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
-            this.uveStore.resetActiveContentlet();
-        }
+        // if (toggleLockOptions && !toggleLockOptions.isLocked && activeContentlet) {
+        //     this.uveStore.resetActiveContentlet();
+        // }
     });
 
     /**
