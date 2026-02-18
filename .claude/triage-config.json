@@ -20,7 +20,7 @@
         "core-web/apps/dotcms-ui/src/app/portlets/dot-content-types",
         "core-web/apps/dotcms-ui/src/app/portlets/dot-form-builder"
       ]
-    }
+    },
     "Team : Scout": {
       "members": ["nollymar", "fabrizzio-dotCMS", "msfreeman982", "zJaaal", "rjvelazco", "KevinDavilaDotCMS", "dario-daza"],
       "areas": [
