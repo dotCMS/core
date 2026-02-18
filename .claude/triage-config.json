@@ -68,6 +68,6 @@
   "routing_rules": {
     "code_age_threshold_months": 12,
     "old_code_team": "Team : Maintenance",
-    "default_team": "Team : Platform"
+    "default_team": "Team : Maintenance"
   }
 }

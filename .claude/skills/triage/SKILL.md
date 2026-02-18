@@ -5,39 +5,148 @@ description: Triage GitHub issues using the AI triage pipeline. Fetches the next
 
 # AI Issue Triage
 
-Runs the dotCMS AI triage pipeline for GitHub issues.
+You are now the triage orchestrator. Follow these steps exactly.
 
-## Usage
+## Step 1: Environment check
 
+Run these checks. Stop with an error message if any fail:
+```bash
+gh --version
+gh auth status
+gh repo view --json nameWithOwner --jq '.nameWithOwner'
 ```
-/triage                        # Process next issue from "Needs Triage" project column
-/triage --issue 1234           # Triage a specific issue by number
+The repo must be `dotCMS/core`. If not, stop and tell the user to run this from the repo root.
+
+## Step 2: Parse arguments and get issue number
+
+Arguments received: `$ARGUMENTS`
+
+**If `--issue <number>` is present**, extract the issue number and skip to Step 3.
+
+**If no arguments**, fetch the next issue from the queue:
+```bash
+gh issue list --repo dotCMS/core --search "is:issue no:assignee -label:\"Team : Falcon\",\"Team : Platform\",\"Team : Scout\",\"Team : Maintenance\",\"Team : Modernization\",\"Team : Enablement\",\"Flakey Test\" no:parent-issue state:open type:Task,Bug sort:updated-asc" --json title,number,url --limit 1
 ```
 
-## What it does
+Extract the `number` from the first result. If the array is empty, stop and tell the user: "No issues need triage — queue is empty."
 
-1. Fetches the issue from GitHub
-2. Runs three sub-agents **in parallel**:
-   - **Issue Validator** — checks if the issue has enough information to act on
-   - **Duplicate Detector** — searches for existing issues, PRs, and commits
-   - **Code Researcher** — finds the relevant code, traces the call chain, identifies the fix location
-3. Synthesizes findings into a **Triage Report + Technical Briefing**
-4. **Presents the proposal for your approval** before writing anything to GitHub
-5. On approval: posts the comment, sets labels, sets issue type, updates the project board
+## Step 3: Fetch the issue
 
-## Requirements
-
-- `gh` CLI authenticated with a user that has access to the dotCMS org and the triage project
-- Repository variable `TRIAGE_PROJECT_NUMBER` set to the GitHub Project number
-- The triage project must exist in the dotCMS org with these columns:
-  - Needs Triage, Needs Info, Triaged, AI Ready, AI In Progress, In Review, Done
-- Project custom fields: `Complexity` (Small/Medium/Large), `AI Confidence` (High/Medium/Low/Skip)
-
-## Invoke the triage lead
-
-Use the `triage-lead` agent with the arguments provided:
-
+```bash
+gh issue view <number> --repo dotCMS/core --json number,title,body,labels,assignees,url,projectItems
 ```
-Task: triage-lead
-Args: $ARGUMENTS
+
+## Step 4: Pre-flight check
+
+Skip and stop if:
+- Issue has any assignee
+- Issue has any label starting with `Team :`
+- Issue has a parent issue
+
+## Step 5: Run four agents IN PARALLEL
+
+Create an agent team with four teammates: one for issue validation, one for duplicate detection, one for code research, and one for team routing.
+
+You MUST make FOUR Task tool calls in a single response. Do not do any research yourself.
+
+**Agent 1** — `subagent_type: issue-validator`
+Pass the full issue content.
+
+**Agent 2** — `subagent_type: duplicate-detector`
+Pass issue number, title, body, and 3-5 keywords.
+
+**Agent 3** — `subagent_type: code-researcher`
+Pass issue number, title, full body, inferred type, and repo path (current working directory).
+
+**Agent 4** — `subagent_type: team-router`
+Pass issue title and body. The team-router will find the relevant file and determine team ownership independently.
+
+Wait for all four to complete.
+
+## Step 6: Synthesize and present proposal
+
+Combine the four results into a triage proposal. Use the `Suggested Team` from team-router, complexity from code-researcher.
+
+For priority, map severity to these exact label names:
+- Critical / Show Stopper → `Priority : 1 Show Stopper`
+- High → `Priority : 2 High`
+- Medium / Average → `Priority : 3 Average`
+- Low → `Priority : 4 Low`
+
+Show the full proposal to the user and ask: **Approve? yes / no / edit**
+
+## Step 7: Execute on approval
+
+On `yes`, run these steps in order:
+
+### 7a. Post the triage comment
+```bash
+gh issue comment <number> --repo dotCMS/core --body "..."
+```
+
+### 7b. Add labels (use exact label names from Step 6)
+```bash
+gh issue edit <number> --repo dotCMS/core --add-label "Team : X" --add-label "Priority : X X X"
+```
+
+### 7c. Add issue to the AI Triage Pipeline project and set status to Triaged
+
+First, get the project number from the repo variable:
+```bash
+gh variable get TRIAGE_PROJECT_NUMBER --repo dotCMS/core
+```
+
+Then get the item ID and field metadata using that number:
+```bash
+gh api graphql -f query='
+query {
+  organization(login: "dotCMS") {
+    projectV2(number: <TRIAGE_PROJECT_NUMBER>) {
+      id
+      fields(first: 20) {
+        nodes {
+          ... on ProjectV2SingleSelectField {
+            id
+            name
+            options { id name }
+          }
+        }
+      }
+      items(first: 5) { nodes { id } }
+    }
+  }
+}'
+```
+
+Then add the issue to the project:
+```bash
+gh api graphql -f query='
+mutation {
+  addProjectV2ItemById(input: {
+    projectId: "<project-id>"
+    contentId: "<issue-node-id>"
+  }) {
+    item { id }
+  }
+}'
+```
+
+Get the issue node ID with:
+```bash
+gh issue view <number> --repo dotCMS/core --json id --jq '.id'
+```
+
+Then set the Status field to "Triaged" using the item ID and field/option IDs discovered above:
+```bash
+gh api graphql -f query='
+mutation {
+  updateProjectV2ItemFieldValue(input: {
+    projectId: "<project-id>"
+    itemId: "<item-id>"
+    fieldId: "<status-field-id>"
+    value: { singleSelectOptionId: "<triaged-option-id>" }
+  }) {
+    projectV2Item { id }
+  }
+}'
 ```
