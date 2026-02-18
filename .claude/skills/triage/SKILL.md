@@ -43,11 +43,11 @@ Skip and stop if:
 - Issue has any label starting with `Team :`
 - Issue has a parent issue
 
-## Step 5: Run four agents IN PARALLEL
+## Step 5: Run three agents IN PARALLEL
 
-Create an agent team with four teammates: one for issue validation, one for duplicate detection, one for code research, and one for team routing.
+Create an agent team with three teammates: one for issue validation, one for duplicate detection, and one for code research.
 
-You MUST make FOUR Task tool calls in a single response. Do not do any research yourself.
+You MUST make THREE Task tool calls in a single response. Do not do any research yourself.
 
 **Agent 1** — `subagent_type: issue-validator`
 Pass the full issue content.
@@ -58,10 +58,16 @@ Pass issue number, title, body, and 3-5 keywords.
 **Agent 3** — `subagent_type: code-researcher`
 Pass issue number, title, full body, inferred type, and repo path (current working directory).
 
-**Agent 4** — `subagent_type: team-router`
-Pass issue title and body. The team-router will find the relevant file and determine team ownership independently.
+Wait for all three to complete.
 
-Wait for all four to complete.
+## Step 5b: Run team-router with code-researcher output
+
+Once code-researcher has finished, run the team-router agent — passing the `Relevant Files` list from code-researcher's output directly.
+
+**Agent 4** — `subagent_type: team-router`
+Pass the list of relevant file paths from code-researcher. Do not ask it to search for files.
+
+Wait for team-router to complete.
 
 ## Step 6: Synthesize and present proposal
 

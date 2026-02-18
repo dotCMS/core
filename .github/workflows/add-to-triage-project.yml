@@ -22,7 +22,6 @@ jobs:
             // Skip if any team label is already present
             const teamLabels = [
               'Team : Falcon',
-              'Team : Platform',
               'Team : Scout',
               'Team : Maintenance',
               'Team : Modernization'

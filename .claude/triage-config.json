@@ -20,18 +20,7 @@
         "core-web/apps/dotcms-ui/src/app/portlets/dot-content-types",
         "core-web/apps/dotcms-ui/src/app/portlets/dot-form-builder"
       ]
-    },
-    "Team : Platform": {
-      "members": ["yolabingo", "spbolton", "dcolina", "sfreudenthaler", "dsantos-dcms", "wezell"],
-      "areas": [
-        "dotCMS/src/main/java/com/dotcms/infrastructure",
-        "dotCMS/src/main/java/com/dotcms/cluster",
-        "dotCMS/src/main/java/com/dotcms/cache",
-        "dotCMS/src/main/java/com/dotcms/storage",
-        "dotCMS/src/main/java/com/dotcms/security",
-        "dotCMS/src/main/java/com/dotcms/config"
-      ]
-    },
+    }
     "Team : Scout": {
       "members": ["nollymar", "fabrizzio-dotCMS", "msfreeman982", "zJaaal", "rjvelazco", "KevinDavilaDotCMS", "dario-daza"],
       "areas": [
