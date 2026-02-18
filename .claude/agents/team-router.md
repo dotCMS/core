@@ -6,8 +6,8 @@ color: green
 allowed-tools:
   - Grep
   - Glob
+  - Read
   - Bash(git log --follow:*)
-  - Bash(cat .claude/triage-config.json)
 maxTurns: 5
 ---
 
@@ -28,15 +28,15 @@ git log --follow -1 --format="%H %aN %cd" --date=format:"%Y-%m" -- <file>
 ```
 
 ### Step 3: Read triage config
-```bash
-cat .claude/triage-config.json
-```
+Use the Read tool on `.claude/triage-config.json`.
 
 ### Step 4: Apply routing logic
 - If last commit is within `routing_rules.code_age_threshold_months` (12 months): look up the author name in `teams[*].members` — match case-insensitively — assign that team
 - If last commit is older than 12 months: assign `routing_rules.old_code_team`
 - If author not found in any team: assign `routing_rules.default_team`
 - If files span multiple teams: use the team owning the majority of files
+- If no file was found at all: assign `routing_rules.default_team`
+- **Always output a team** — never return without a `Suggested Team` value
 - **Never invent a team name** — only use exact keys from `teams` in triage-config.json
 
 ## Output Format

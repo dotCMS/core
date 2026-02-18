@@ -67,6 +67,8 @@ Wait for all four to complete.
 
 Combine the four results into a triage proposal. Use the `Suggested Team` from team-router, complexity from code-researcher.
 
+The team-router always returns a team — use it as-is. Do not re-check the triage config or do your own routing.
+
 For priority, map severity to these exact label names:
 - Critical / Show Stopper → `Priority : 1 Show Stopper`
 - High → `Priority : 2 High`
