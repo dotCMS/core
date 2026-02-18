@@ -43,31 +43,54 @@ Skip and stop if:
 - Issue has any label starting with `Team :`
 - Issue has a parent issue
 
-## Step 5: Run three agents IN PARALLEL
+## Step 5: Create agent team and run three teammates IN PARALLEL
 
-Create an agent team with three teammates: one for issue validation, one for duplicate detection, and one for code research.
+### 5a. Create the team
+
+```
+TeamCreate(team_name: "triage-<number>", description: "Triage pipeline for issue #<number>")
+```
+
+### 5b. Create the task list
+
+Create four tasks using `TaskCreate`. The team-router task must be blocked by the code-researcher task.
+
+- Task A: "Validate issue #<number> completeness" (assign to validator)
+- Task B: "Detect duplicates for issue #<number>" (assign to dup-detector)
+- Task C: "Research codebase for issue #<number>" (assign to researcher) — save the task ID
+- Task D: "Route issue #<number> to team" (assign to router) — set `addBlockedBy: [Task C ID]`
+
+### 5c. Spawn three teammates in a SINGLE message (parallel)
 
 You MUST make THREE Task tool calls in a single response. Do not do any research yourself.
 
-**Agent 1** — `subagent_type: issue-validator`
-Pass the full issue content.
+**Teammate 1** — `subagent_type: issue-validator`, `team_name: "triage-<number>"`, `name: "validator"`
+Pass the full issue content. Tell it to mark Task A as in_progress, complete it when done, and send results back to you via SendMessage.
 
-**Agent 2** — `subagent_type: duplicate-detector`
-Pass issue number, title, body, and 3-5 keywords.
+**Teammate 2** — `subagent_type: duplicate-detector`, `team_name: "triage-<number>"`, `name: "dup-detector"`
+Pass issue number, title, body, and 3-5 keywords. Tell it to mark Task B as in_progress, complete it when done, and send results back to you via SendMessage.
 
-**Agent 3** — `subagent_type: code-researcher`
-Pass issue number, title, full body, inferred type, and repo path (current working directory).
+**Teammate 3** — `subagent_type: code-researcher`, `team_name: "triage-<number>"`, `name: "researcher"`
+Pass issue number, title, full body, inferred type, and repo path (current working directory). Tell it to mark Task C as in_progress, complete it when done, and send results (especially the `Relevant Files` list) back to you via SendMessage.
 
-Wait for all three to complete.
+Wait for all three teammates to send their results via SendMessage.
 
-## Step 5b: Run team-router with code-researcher output
+### 5d. Spawn team-router after researcher completes
 
-Once code-researcher has finished, run the team-router agent — passing the `Relevant Files` list from code-researcher's output directly.
+Once you receive the researcher's SendMessage with the `Relevant Files` list, spawn the router teammate:
 
-**Agent 4** — `subagent_type: team-router`
-Pass the list of relevant file paths from code-researcher. Do not ask it to search for files.
+**Teammate 4** — `subagent_type: team-router`, `team_name: "triage-<number>"`, `name: "router"`
+Pass the `Relevant Files` list from the researcher's message directly in the prompt. Do not ask it to search for files. Tell it to mark Task D as in_progress, complete it when done, and send the suggested team back to you via SendMessage.
 
-Wait for team-router to complete.
+Wait for the router to send its result via SendMessage.
+
+### 5e. Shut down teammates and delete team
+
+After all four teammates have reported their results:
+
+1. Send `SendMessage(type: "shutdown_request")` to all four teammates.
+2. Wait for shutdown confirmations.
+3. Call `TeamDelete()` to clean up the team.
 
 ## Step 6: Synthesize and present proposal
 
