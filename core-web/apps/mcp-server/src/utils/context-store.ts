@@ -11,6 +11,7 @@ export class ContextStore {
     private isInitialized = false;
     private initializationTimestamp: Date | null = null;
     private readonly logger: Logger;
+    private readonly dataStore: Map<string, unknown> = new Map();
 
     /**
      * Private constructor to enforce singleton pattern
@@ -67,6 +68,8 @@ export class ContextStore {
         this.isInitialized = false;
         this.initializationTimestamp = null;
         this.logger.log('Context initialization state reset');
+        this.dataStore.clear();
+        this.logger.log('Context data store cleared');
     }
 
     /**
