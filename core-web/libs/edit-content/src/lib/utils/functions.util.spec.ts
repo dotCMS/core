@@ -1367,11 +1367,8 @@ describe('Utils Functions', () => {
             // Arrange
             const contentlet = createFakeContentlet({
                 locked: true,
-                lockedBy: {
-                    firstName: 'John',
-                    lastName: 'Doe',
-                    userId: 'user123'
-                }
+                lockedBy: 'user123',
+                lockedByName: 'John Doe'
             });
 
             // Act
