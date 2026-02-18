@@ -7,6 +7,10 @@ jobs:
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    # Runs ALL tests to catch flaky tests and filter gaps that PR checks might miss
+    # To enable selective testing, change to: change-detection: 'enabled'
+    with:
+      change-detection: 'disabled'
   build:
     name: Merge Group Build
     needs: [ initialize ]
@@ -21,12 +25,12 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
-      jvm_unit_test: ${{ needs.initialize.outputs.jvm_unit_test == 'true' }}
-      integration: ${{ needs.initialize.outputs.backend == 'true' }}
-      postman: ${{ needs.initialize.outputs.backend == 'true' }}
-      karate: ${{ needs.initialize.outputs.backend == 'true' }}
-      frontend: ${{ needs.initialize.outputs.frontend == 'true' }}
-      cli: ${{ needs.initialize.outputs.cli == 'true' }}
+      jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
+      integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
+      cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: false
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
