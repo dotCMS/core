@@ -1,6 +1,6 @@
 ---
 name: triage
-description: Triage GitHub issues using the AI triage pipeline. Fetches the next issue from the "Needs Triage" project column (or a specific issue), runs sub-agents to validate completeness, detect duplicates, and research the codebase, then presents a triage proposal for human approval before posting anything to GitHub.
+description: Triage GitHub issues using the AI triage pipeline. Fetches the next issue from the "Needs Triage" project column (or a specific issue), creates an agent team to validate completeness, detect duplicates, and research the codebase in parallel, then presents a triage proposal for human approval before posting anything to GitHub.
 ---
 
 # AI Issue Triage
@@ -25,7 +25,7 @@ Arguments received: `$ARGUMENTS`
 
 **If no arguments**, fetch the next issue from the queue:
 ```bash
-gh issue list --repo dotCMS/core --search "is:issue no:assignee -label:\"Team : Falcon\",\"Team : Platform\",\"Team : Scout\",\"Team : Maintenance\",\"Team : Modernization\",\"Team : Enablement\",\"Flakey Test\" no:parent-issue state:open type:Task,Bug sort:updated-asc" --json title,number,url --limit 1
+gh issue list --repo dotCMS/core --search "is:issue no:assignee -label:\"Team : Falcon\",\"Team : Platform\",\"Team : Scout\",\"Team : Maintenance\",\"Team : Modernization\",\"Team : Enablement\",\"Flakey Test\" no:parent-issue -linked:pr state:open type:Task,Bug sort:updated-asc" --json title,number,url --limit 1
 ```
 
 Extract the `number` from the first result. If the array is empty, stop and tell the user: "No issues need triage — queue is empty."
