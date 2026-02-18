@@ -1,13 +1,15 @@
 package com.dotcms.content.index.domain;
 
-import com.dotcms.content.index.domain.ImmutableSearchHits;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.immutables.value.Value;
-
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.elasticsearch.common.Nullable;
+import org.immutables.value.Value;
+import org.immutables.value.Value.Default;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Immutable wrapper for Elasticsearch SearchHits functionality.
@@ -18,21 +20,38 @@ import java.util.stream.Collectors;
 @Value.Immutable
 @JsonSerialize(as = ImmutableSearchHits.class)
 @JsonDeserialize(as = ImmutableSearchHits.class)
-public interface SearchHits {
+public interface SearchHits extends Iterable<SearchHit>{
 
+    /**
+     * Marker that serves to indicate we had an error
+     * @return
+     */
+    @Default
+    default boolean hasError(){ return false;}
     /**
      * Returns the list of search hits.
      *
      * @return the list of search hits
      */
-    List<SearchHit> getHits();
+    List<SearchHit> hits();
 
     /**
      * Returns the total hits information.
      *
      * @return the total hits
      */
-    TotalHits getTotalHits();
+    TotalHits totalHits();
+
+    /**
+     * Returns an iterator over the search hits.
+     * Implements the Iterable interface.
+     *
+     * @return an iterator for the search hits
+     */
+    @Override
+    default @NotNull Iterator<SearchHit> iterator() {
+        return hits().iterator();
+    }
 
     /**
      * Creates a new SearchHits builder.
@@ -50,7 +69,20 @@ public interface SearchHits {
      */
     static SearchHits empty() {
         return builder()
-                .totalHits(TotalHits.builder().value(0).build())
+                .totalHits(TotalHits.empty())
+                .build();
+    }
+
+    /**
+     * Creates an error SearchHits instance to represent search errors.
+     * This replaces the old ERROR_HIT constant that used Elasticsearch classes directly.
+     *
+     * @return a SearchHits instance representing an error state
+     */
+    static SearchHits errorHit() {
+        return builder()
+                .hasError(true)
+                .totalHits(TotalHits.empty())
                 .build();
     }
 
@@ -69,5 +101,14 @@ public interface SearchHits {
                 .hits(hits)
                 .totalHits(TotalHits.from(esSearchHits.getTotalHits()))
                 .build();
+    }
+
+    /**
+     * Creates a list of SearchHits from a list of Elasticsearch SearchHits.
+     * @param hits
+     * @return
+     */
+    static List<SearchHits> from(List<org.elasticsearch.search.SearchHits> hits) {
+        return hits.stream().map(SearchHits::from).collect(Collectors.toList());
     }
 }

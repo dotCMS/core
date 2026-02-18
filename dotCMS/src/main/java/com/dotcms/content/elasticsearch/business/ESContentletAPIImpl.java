@@ -1677,20 +1677,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (limit <= MAX_LIMIT) {
-            final SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
+            final com.dotcms.content.index.domain.SearchHits searchHits = contentFactory.indexSearch(queryWithPermissions, limit,
                     offset, sortBy);
             final PaginatedArrayList<ContentletSearch> list = new PaginatedArrayList<>();
-            list.setTotalResults(searchHits.getTotalHits().value);
+            list.setTotalResults(searchHits.totalHits().value());
 
-            for (final SearchHit searchHit : searchHits.getHits()) {
+            for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
                 try {
-                    final Map<String, Object> sourceMap = searchHit.getSourceAsMap();
+                    final Map<String, Object> sourceMap = searchHit.sourceAsMap();
                     final ContentletSearch conWrapper = new ContentletSearch();
-                    conWrapper.setId(searchHit.getId());
-                    conWrapper.setIndex(searchHit.getIndex());
+                    conWrapper.setId(searchHit.id());
+                    conWrapper.setIndex(searchHit.index());
                     conWrapper.setIdentifier(sourceMap.get("identifier").toString());
                     conWrapper.setInode(sourceMap.get("inode").toString());
-                    conWrapper.setScore(searchHit.getScore());
+                    conWrapper.setScore(searchHit.score());
 
                     list.add(conWrapper);
                 } catch (Exception e) {

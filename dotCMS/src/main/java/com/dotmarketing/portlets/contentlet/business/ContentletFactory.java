@@ -2,9 +2,10 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
-import com.dotcms.content.model.annotation.IndexRelation;
-import com.dotcms.content.model.annotation.IndexRelation.IndexAccess;
-import com.dotcms.content.model.annotation.IndexRelation.IndexEngine;
+import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.model.annotation.IndexMetadata;
+import com.dotcms.content.model.annotation.IndexMetadata.IndexAccess;
+import com.dotcms.content.model.annotation.IndexMetadata.IndexEngine;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
@@ -33,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.search.SearchHits;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -45,7 +45,7 @@ import org.elasticsearch.search.SearchHits;
  * @since Mar 22, 2012
  *
  */
-@IndexRelation(
+@IndexMetadata(
     access = IndexAccess.READ_ONLY,
     indexEngine = IndexEngine.ELASTICSEARCH
 )

@@ -2,6 +2,7 @@ package com.dotcms.content.index.domain;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.elasticsearch.common.document.DocumentField;
 import org.immutables.value.Value;
 
 import java.util.Map;
@@ -22,21 +23,33 @@ public interface SearchHit {
      *
      * @return the document ID
      */
-    String getId();
+    String id();
+
+    /**
+     * Returns the index name of this search hit.
+     * @return
+     */
+    String index();
 
     /**
      * Returns the source document as a map of field names to values.
      *
      * @return the source document map
      */
-    Map<String, Object> getSourceAsMap();
+    Map<String, Object> sourceAsMap();
 
     /**
      * Returns the search relevance score for this hit.
      *
      * @return the score
      */
-    float getScore();
+    float score();
+
+    /**
+     * Returns the fields of this hit.
+     * @return the fields
+     */
+    Map<String, Object> fields();
 
     /**
      * Creates a new SearchHit builder.
@@ -57,7 +70,9 @@ public interface SearchHit {
         return builder()
                 .id(esSearchHit.getId())
                 .sourceAsMap(esSearchHit.getSourceAsMap())
+                .fields(esSearchHit.getFields())
                 .score(esSearchHit.getScore())
+                .index(esSearchHit.getIndex())
                 .build();
     }
 
@@ -75,7 +90,7 @@ public interface SearchHit {
         if (source instanceof Map) {
             sourceMap = (Map<String, Object>) source;
         } else {
-            // If source is a typed object, we might need custom mapping logic here
+            // If "source" is a typed object, we might need custom mapping logic here
             // For now, we'll create an empty map as fallback
             sourceMap = Map.of();
         }

@@ -20,7 +20,17 @@ public interface TotalHits {
      *
      * @return the total hit count
      */
-    long getValue();
+    long value();
+
+    /**
+     * The relation of the total hits to the actual number of hits.
+     *
+     * @return the relation indicating if the count is exact or a lower bound
+     */
+    @Value.Default
+    default Relation relation() {
+        return Relation.EQUAL_TO;
+    }
 
     /**
      * Creates a new TotalHits builder.
@@ -32,14 +42,29 @@ public interface TotalHits {
     }
 
     /**
+     * Creates an empty TotalHits with value 0.
+     *
+     * @return a new TotalHits instance with value 0
+     */
+    static TotalHits empty() {
+        return builder()
+                .value(0L)
+                .build();
+    }
+
+    /**
      * Creates a TotalHits from an Elasticsearch TotalHits.
      *
      * @param esTotalHits the Elasticsearch TotalHits to wrap
      * @return a new TotalHits instance
      */
     static TotalHits from(org.apache.lucene.search.TotalHits esTotalHits) {
+        if (esTotalHits == null) {
+            return empty();
+        }
         return builder()
                 .value(esTotalHits.value)
+                .relation(Relation.from(esTotalHits.relation))
                 .build();
     }
 }

@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface IndexRelation {
+public @interface IndexMetadata {
 
     /**
      * Defines the type of index access this class or method performs.
