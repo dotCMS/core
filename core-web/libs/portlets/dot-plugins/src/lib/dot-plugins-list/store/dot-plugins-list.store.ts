@@ -15,6 +15,8 @@ interface DotPluginsListState {
     extraPackages: string;
     status: DotPluginsListStatus;
     ignoreSystemBundles: boolean;
+    page: number;
+    rows: number;
 }
 
 const initialState: DotPluginsListState = {
@@ -22,7 +24,9 @@ const initialState: DotPluginsListState = {
     availableJars: [],
     extraPackages: '',
     status: 'init',
-    ignoreSystemBundles: true
+    ignoreSystemBundles: true,
+    page: 1,
+    rows: 25
 };
 
 export const DotPluginsListStore = signalStore(
@@ -101,6 +105,9 @@ export const DotPluginsListStore = signalStore(
             loadExtraPackages,
             setIgnoreSystemBundles(value: boolean) {
                 patchState(store, { ignoreSystemBundles: value });
+            },
+            setPagination(page: number, rows: number) {
+                patchState(store, { page, rows });
             },
             uploadBundles(files: File[]) {
                 handlePluginAction(osgiService.uploadBundles(files), () => {

@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { SelectModule } from 'primeng/select';
-import { TableModule } from 'primeng/table';
+import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { take } from 'rxjs/operators';
@@ -42,7 +42,8 @@ const BUNDLE_STATE_LABELS: Record<number, string> = {
     ],
     templateUrl: './dot-plugins-list.component.html',
     providers: [DotPluginsListStore, DialogService, ConfirmationService],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotPluginsListComponent {
     readonly store = inject(DotPluginsListStore);
@@ -93,6 +94,13 @@ export class DotPluginsListComponent {
 
     deploySelectedJar(jar: string): void {
         this.store.deploy(jar);
+    }
+
+    onLazyLoad(event: TableLazyLoadEvent): void {
+        const rows = (event.rows as number) ?? this.store.rows();
+        const first = (event.first as number) ?? 0;
+        const page = Math.floor(first / rows) + 1;
+        this.store.setPagination(page, rows);
     }
 
     confirmUndeploy(bundle: BundleMap): void {

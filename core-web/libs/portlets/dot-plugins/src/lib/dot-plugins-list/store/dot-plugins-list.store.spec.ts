@@ -46,4 +46,15 @@ describe('DotPluginsListStore', () => {
         store.setIgnoreSystemBundles(false);
         expect(store.ignoreSystemBundles()).toBe(false);
     });
+
+    it('should have default pagination state', () => {
+        expect(store.page()).toBe(1);
+        expect(store.rows()).toBe(25);
+    });
+
+    it('should set pagination', () => {
+        store.setPagination(2, 10);
+        expect(store.page()).toBe(2);
+        expect(store.rows()).toBe(10);
+    });
 });
