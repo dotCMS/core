@@ -63,7 +63,6 @@ describe('DotCategoriesListComponent', () => {
                 sortOrder: jest.fn().mockReturnValue('ASC'),
                 breadcrumbs: jest.fn().mockReturnValue([]),
                 parentInode: jest.fn().mockReturnValue(null),
-                parentName: jest.fn().mockReturnValue(null),
                 setFilter: jest.fn(),
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
@@ -260,7 +259,9 @@ describe('DotCategoriesListComponent', () => {
         });
 
         it('should pass parentName to dialog when navigated into a parent', () => {
-            (store.parentName as jest.Mock).mockReturnValue('Parent Category');
+            (store.breadcrumbs as jest.Mock).mockReturnValue([
+                { label: 'Parent Category', id: 'parent-inode' }
+            ]);
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
@@ -275,7 +276,7 @@ describe('DotCategoriesListComponent', () => {
                     data: { parentName: 'Parent Category' }
                 })
             );
-            (store.parentName as jest.Mock).mockReturnValue(null);
+            (store.breadcrumbs as jest.Mock).mockReturnValue([]);
         });
 
         it('should open dialog and call store.createCategory on close', () => {

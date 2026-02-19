@@ -56,7 +56,6 @@ export class DotCategoriesService {
     ): Observable<DotCMSAPIResponse<DotCategory[]>> {
         let httpParams = this.#buildParams(params);
         httpParams = httpParams.set('inode', inode);
-        httpParams = httpParams.set('parentList', 'true');
 
         return this.#http.get<DotCMSAPIResponse<DotCategory[]>>('/api/v1/categories/children', {
             params: httpParams
