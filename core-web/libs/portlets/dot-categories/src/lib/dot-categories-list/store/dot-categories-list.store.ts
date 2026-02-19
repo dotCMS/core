@@ -87,13 +87,40 @@ export const DotCategoriesListStore = signalStore(
                     const firstCategory = categories[0];
                     const parentList = firstCategory?.parentList ?? [];
 
-                    // Rebuild breadcrumbs from API parentList when available,
-                    // otherwise keep existing breadcrumbs (e.g. empty child list)
-                    const breadcrumbs: MenuItem[] = store.parentInode()
-                        ? parentList.length
-                            ? parentList.map((p) => ({ label: p.name, id: p.inode }))
-                            : store.breadcrumbs()
-                        : [];
+                    let breadcrumbs: MenuItem[];
+
+                    if (!store.parentInode()) {
+                        // Root level — no breadcrumbs
+                        breadcrumbs = [];
+                    } else if (parentList.length) {
+                        // parentList contains ancestors of the children being listed.
+                        // It includes the current parent we navigated into.
+                        // We need the full trail: all items in parentList that are NOT
+                        // the top-level root, plus the current parent from query params.
+                        // Actually, parentList already represents the path from
+                        // top-level down to the current parent. We just need to use it
+                        // and append the current parent if it's not already the last item.
+                        const fromApi = parentList.map((p) => ({
+                            label: p.name,
+                            id: p.inode
+                        }));
+                        const currentInode = store.parentInode();
+                        const lastInApi = fromApi[fromApi.length - 1];
+
+                        if (lastInApi && lastInApi.id === currentInode) {
+                            // parentList already ends with the current parent
+                            breadcrumbs = fromApi;
+                        } else {
+                            // Append current parent to complete the trail
+                            breadcrumbs = [
+                                ...fromApi,
+                                { label: store.parentName() ?? '', id: currentInode }
+                            ];
+                        }
+                    } else {
+                        // No parentList (empty child list) — keep existing breadcrumbs
+                        breadcrumbs = store.breadcrumbs();
+                    }
 
                     const parentName = breadcrumbs.length
                         ? (breadcrumbs[breadcrumbs.length - 1].label as string)

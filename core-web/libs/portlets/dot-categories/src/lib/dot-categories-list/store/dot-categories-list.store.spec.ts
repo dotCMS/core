@@ -169,7 +169,8 @@ describe('DotCategoriesListStore', () => {
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
         });
 
-        it('should rebuild breadcrumbs from parentList when navigated to children', () => {
+        it('should rebuild breadcrumbs from parentList when last item matches current parent', () => {
+            // parentList: [Root, Child] and we navigated into Child
             const mockWithParentList = {
                 entity: [
                     {
@@ -184,12 +185,34 @@ describe('DotCategoriesListStore', () => {
             };
             categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
 
-            queryParams$.next({ inode: 'child-inode' });
+            queryParams$.next({ inode: 'child-inode', name: 'Child Cat' });
             spectator.flushEffects();
 
             expect(store.breadcrumbs()).toEqual([
                 { label: 'Root Cat', id: 'root-inode' },
                 { label: 'Child Cat', id: 'child-inode' }
+            ]);
+        });
+
+        it('should append current parent when parentList does not include it', () => {
+            // parentList: [Root] but we navigated into Grandchild (not in parentList)
+            const mockGrandchildren = {
+                entity: [
+                    {
+                        ...MOCK_CATEGORIES[0],
+                        parentList: [{ name: 'Root Cat', key: 'root', inode: 'root-inode' }]
+                    }
+                ],
+                pagination: { currentPage: 1, perPage: 25, totalEntries: 3 }
+            };
+            categoriesService.getChildrenPaginated.mockReturnValue(of(mockGrandchildren));
+
+            queryParams$.next({ inode: 'grandchild-inode', name: 'Grandchild Cat' });
+            spectator.flushEffects();
+
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Root Cat', id: 'root-inode' },
+                { label: 'Grandchild Cat', id: 'grandchild-inode' }
             ]);
         });
 
