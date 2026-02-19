@@ -1,121 +1,135 @@
-<p-toolbar class="gap-1 px-3 justify-start border-none!">
-    <div class="flex w-full flex-wrap items-center gap-2 py-3">
-        <label class="flex items-center gap-2">
-            <input
-                type="checkbox"
-                [ngModel]="!store.ignoreSystemBundles()"
-                (ngModelChange)="store.setIgnoreSystemBundles(!$event)"
-                data-testid="plugins-show-system-checkbox"
-                [attr.aria-label]="'plugins.show-system-bundles' | dm" />
-            <span>{{ 'plugins.show-system-bundles' | dm }}</span>
-        </label>
+<div class="flex flex-col h-full min-h-0">
+    <p-toolbar class="gap-1 px-3 justify-start border-none! flex-shrink-0">
+        <div class="flex w-full flex-wrap items-center gap-2 py-3">
+            <label class="flex items-center gap-2">
+                <input
+                    type="checkbox"
+                    [ngModel]="!store.ignoreSystemBundles()"
+                    (ngModelChange)="store.setIgnoreSystemBundles(!$event)"
+                    data-testid="plugins-show-system-checkbox"
+                    [attr.aria-label]="'plugins.show-system-bundles' | dm" />
+                <span>{{ 'plugins.show-system-bundles' | dm }}</span>
+            </label>
 
-        @if (store.availableJars().length > 0) {
-            <span class="text-color-secondary">{{ 'plugins.available-bundles' | dm }}</span>
-            <p-select
-                [options]="getAvailableJarOptions()"
-                [(ngModel)]="selectedJar"
-                [placeholder]="'plugins.select-jar' | dm"
-                optionLabel="label"
-                optionValue="value"
-                [showClear]="true"
-                data-testid="plugins-available-select"
-                [attr.aria-label]="'plugins.available-bundles' | dm"
-                styleClass="w-64" />
+            @if (store.availableJars().length > 0) {
+                <span class="text-color-secondary">{{ 'plugins.available-bundles' | dm }}</span>
+                <p-select
+                    [options]="getAvailableJarOptions()"
+                    [(ngModel)]="selectedJar"
+                    [placeholder]="'plugins.select-jar' | dm"
+                    optionLabel="label"
+                    optionValue="value"
+                    [showClear]="true"
+                    data-testid="plugins-available-select"
+                    [attr.aria-label]="'plugins.available-bundles' | dm"
+                    styleClass="w-64" />
+                <p-button
+                    [label]="'plugins.deploy' | dm"
+                    icon="pi pi-play"
+                    [disabled]="!selectedJar"
+                    (onClick)="selectedJar && deploySelectedJar(selectedJar)"
+                    data-testid="plugins-deploy-btn" />
+            }
+
             <p-button
-                [label]="'plugins.deploy' | dm"
-                icon="pi pi-play"
-                [disabled]="!selectedJar"
-                (onClick)="selectedJar && deploySelectedJar(selectedJar)"
-                data-testid="plugins-deploy-btn" />
-        }
+                [label]="'plugins.upload' | dm"
+                icon="pi pi-upload"
+                (onClick)="openUploadDialog()"
+                data-testid="plugins-upload-btn" />
+            <p-button
+                [label]="'plugins.refresh' | dm"
+                icon="pi pi-refresh"
+                [outlined]="true"
+                (onClick)="refresh()"
+                data-testid="plugins-refresh-btn" />
+            <p-button
+                [label]="'plugins.extra-packages' | dm"
+                icon="pi pi-cog"
+                [outlined]="true"
+                (onClick)="openExtraPackagesDialog()"
+                data-testid="plugins-extra-packages-btn" />
+        </div>
+    </p-toolbar>
 
-        <p-button
-            [label]="'plugins.upload' | dm"
-            icon="pi pi-upload"
-            (onClick)="openUploadDialog()"
-            data-testid="plugins-upload-btn" />
-        <p-button
-            [label]="'plugins.refresh' | dm"
-            icon="pi pi-refresh"
-            [outlined]="true"
-            (onClick)="refresh()"
-            data-testid="plugins-refresh-btn" />
-        <p-button
-            [label]="'plugins.extra-packages' | dm"
-            icon="pi pi-cog"
-            [outlined]="true"
-            (onClick)="openExtraPackagesDialog()"
-            data-testid="plugins-extra-packages-btn" />
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+        <p-table
+            [value]="store.bundles()"
+            [lazy]="false"
+            (onLazyLoad)="onLazyLoad($event)"
+            [paginator]="true"
+            [rows]="store.rows()"
+            [totalRecords]="store.bundles().length"
+            [first]="(store.page() - 1) * store.rows()"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [loading]="store.status() === 'loading'"
+            [scrollable]="true"
+            scrollHeight="flex"
+            class="flex-1 min-h-0"
+            data-testid="plugins-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>{{ 'plugins.table.name' | dm }}</th>
+                    <th>{{ 'plugins.table.state' | dm }}</th>
+                    <th>{{ 'plugins.table.jar' | dm }}</th>
+                    <th>{{ 'plugins.table.actions' | dm }}</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-bundle>
+                <tr data-testid="plugin-row">
+                    <td data-testid="plugin-name">{{ bundle.symbolicName }}</td>
+                    <td data-testid="plugin-state">{{ getStateLabel(bundle.state) | dm }}</td>
+                    <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
+                    <td data-testid="plugin-actions">
+                        @if (bundle.state !== 32) {
+                            <button
+                                type="button"
+                                class="p-button-text p-0 mr-1"
+                                (click)="store.start(bundle.jarFile)"
+                                [attr.aria-label]="'plugins.start' | dm"
+                                data-testid="plugin-start-btn">
+                                {{ 'plugins.start' | dm }}
+                            </button>
+                        }
+                        @if (bundle.state === 32) {
+                            <button
+                                type="button"
+                                class="p-button-text p-0 mr-1"
+                                (click)="store.stop(bundle.jarFile)"
+                                [attr.aria-label]="'plugins.stop' | dm"
+                                data-testid="plugin-stop-btn">
+                                {{ 'plugins.stop' | dm }}
+                            </button>
+                        }
+                        @if (!bundle.isSystem) {
+                            <span class="mx-1">|</span>
+                            <button
+                                type="button"
+                                class="p-button-text p-0 mr-1"
+                                (click)="confirmUndeploy(bundle)"
+                                [attr.aria-label]="'plugins.undeploy' | dm"
+                                data-testid="plugin-undeploy-btn">
+                                {{ 'plugins.undeploy' | dm }}
+                            </button>
+                            <span class="mx-1">|</span>
+                            <button
+                                type="button"
+                                class="p-button-text p-0"
+                                (click)="store.processExports(bundle.symbolicName)"
+                                [attr.aria-label]="'plugins.process-exports' | dm"
+                                data-testid="plugin-process-exports-btn">
+                                {{ 'plugins.process-exports' | dm }}
+                            </button>
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="4" class="text-center p-4">{{ 'plugins.empty' | dm }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
     </div>
-</p-toolbar>
-
-<p-table
-    [value]="store.bundles()"
-    [loading]="store.status() === 'loading'"
-    data-testid="plugins-table">
-    <ng-template pTemplate="header">
-        <tr>
-            <th>{{ 'plugins.table.name' | dm }}</th>
-            <th>{{ 'plugins.table.state' | dm }}</th>
-            <th>{{ 'plugins.table.jar' | dm }}</th>
-            <th>{{ 'plugins.table.actions' | dm }}</th>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-bundle>
-        <tr data-testid="plugin-row">
-            <td data-testid="plugin-name">{{ bundle.symbolicName }}</td>
-            <td data-testid="plugin-state">{{ getStateLabel(bundle.state) | dm }}</td>
-            <td data-testid="plugin-jar">{{ bundle.jarFile }}</td>
-            <td data-testid="plugin-actions">
-                @if (bundle.state !== 32) {
-                    <button
-                        type="button"
-                        class="p-button-text p-0 mr-1"
-                        (click)="store.start(bundle.jarFile)"
-                        [attr.aria-label]="'plugins.start' | dm"
-                        data-testid="plugin-start-btn">
-                        {{ 'plugins.start' | dm }}
-                    </button>
-                }
-                @if (bundle.state === 32) {
-                    <button
-                        type="button"
-                        class="p-button-text p-0 mr-1"
-                        (click)="store.stop(bundle.jarFile)"
-                        [attr.aria-label]="'plugins.stop' | dm"
-                        data-testid="plugin-stop-btn">
-                        {{ 'plugins.stop' | dm }}
-                    </button>
-                }
-                @if (!bundle.isSystem) {
-                    <span class="mx-1">|</span>
-                    <button
-                        type="button"
-                        class="p-button-text p-0 mr-1"
-                        (click)="confirmUndeploy(bundle)"
-                        [attr.aria-label]="'plugins.undeploy' | dm"
-                        data-testid="plugin-undeploy-btn">
-                        {{ 'plugins.undeploy' | dm }}
-                    </button>
-                    <span class="mx-1">|</span>
-                    <button
-                        type="button"
-                        class="p-button-text p-0"
-                        (click)="store.processExports(bundle.symbolicName)"
-                        [attr.aria-label]="'plugins.process-exports' | dm"
-                        data-testid="plugin-process-exports-btn">
-                        {{ 'plugins.process-exports' | dm }}
-                    </button>
-                }
-            </td>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="emptymessage">
-        <tr>
-            <td colspan="4" class="text-center p-4">{{ 'plugins.empty' | dm }}</td>
-        </tr>
-    </ng-template>
-</p-table>
+</div>
 
 <p-confirmDialog />
