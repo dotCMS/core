@@ -23,6 +23,7 @@ interface DotCategoriesListState {
     selectedCategories: DotCategory[];
     breadcrumbs: MenuItem[];
     parentInode: string | null;
+    parentName: string | null;
     totalRecords: number;
     page: number;
     rows: number;
@@ -37,6 +38,7 @@ const initialState: DotCategoriesListState = {
     selectedCategories: [],
     breadcrumbs: [],
     parentInode: null,
+    parentName: null,
     totalRecords: 0,
     page: 1,
     rows: 25,
@@ -89,9 +91,14 @@ export const DotCategoriesListStore = signalStore(
                         ? parentList.map((p) => ({ label: p.name, id: p.inode }))
                         : [];
 
+                    const parentName = breadcrumbs.length
+                        ? (breadcrumbs[breadcrumbs.length - 1].label as string)
+                        : store.parentName();
+
                     patchState(store, {
                         categories,
                         breadcrumbs,
+                        parentName,
                         totalRecords: response.pagination?.totalEntries ?? 0,
                         status: 'loaded'
                     });
@@ -135,7 +142,7 @@ export const DotCategoriesListStore = signalStore(
             navigateToChildren(category: DotCategory) {
                 router.navigate([], {
                     relativeTo: route,
-                    queryParams: { inode: category.inode },
+                    queryParams: { inode: category.inode, name: category.categoryName },
                     queryParamsHandling: 'merge'
                 });
             },
@@ -144,14 +151,14 @@ export const DotCategoriesListStore = signalStore(
                 if (index < 0) {
                     router.navigate([], {
                         relativeTo: route,
-                        queryParams: { inode: null },
+                        queryParams: { inode: null, name: null },
                         queryParamsHandling: 'merge'
                     });
                 } else {
                     const breadcrumb = store.breadcrumbs()[index];
                     router.navigate([], {
                         relativeTo: route,
-                        queryParams: { inode: breadcrumb?.id },
+                        queryParams: { inode: breadcrumb?.id, name: breadcrumb?.label },
                         queryParamsHandling: 'merge'
                     });
                 }
@@ -188,12 +195,14 @@ export const DotCategoriesListStore = signalStore(
             onInit() {
                 const route = inject(ActivatedRoute);
 
-                // Subscribe to query params to sync inode
+                // Subscribe to query params to sync inode and parent name
                 route.queryParams.pipe(takeUntilDestroyed()).subscribe((params) => {
                     const inode = params['inode'] || null;
+                    const name = params['name'] || null;
                     if (inode !== store.parentInode()) {
                         patchState(store, {
                             parentInode: inode,
+                            parentName: name,
                             page: 1,
                             filter: '',
                             selectedCategories: []

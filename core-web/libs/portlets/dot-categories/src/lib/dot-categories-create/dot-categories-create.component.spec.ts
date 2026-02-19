@@ -62,6 +62,11 @@ describe('DotCategoriesCreateComponent', () => {
             expect(spectator.component.isEdit).toBe(false);
         });
 
+        it('should not show parent hint when parentName is null', () => {
+            const hint = spectator.query(byTestId('category-parent-hint'));
+            expect(hint).toBeFalsy();
+        });
+
         it('should not close dialog when form is invalid', () => {
             spectator.component.onSubmit();
             expect(mockRef.close).not.toHaveBeenCalled();
@@ -85,6 +90,41 @@ describe('DotCategoriesCreateComponent', () => {
             const button = spectator.query(byTestId('category-save-btn'));
             expect(button).toBeTruthy();
             expect((button as HTMLElement).outerHTML).toContain('categories.save');
+        });
+    });
+
+    describe('create mode with parent', () => {
+        let spectator: Spectator<DotCategoriesCreateComponent>;
+        const mockRef = { close: jest.fn() };
+
+        const createComponent = createComponentFactory({
+            component: DotCategoriesCreateComponent,
+            schemas: [CUSTOM_ELEMENTS_SCHEMA],
+            providers: [
+                { provide: DynamicDialogRef, useValue: mockRef },
+                {
+                    provide: DynamicDialogConfig,
+                    useValue: { data: { parentName: 'Parent Category' } }
+                },
+                {
+                    provide: DotMessageService,
+                    useValue: new MockDotMessageService({})
+                }
+            ]
+        });
+
+        beforeEach(() => {
+            mockRef.close.mockClear();
+            spectator = createComponent();
+        });
+
+        it('should set parentName from config', () => {
+            expect(spectator.component.parentName).toBe('Parent Category');
+        });
+
+        it('should show parent hint message', () => {
+            const hint = spectator.query(byTestId('category-parent-hint'));
+            expect(hint).toBeTruthy();
         });
     });
 

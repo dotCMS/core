@@ -104,6 +104,7 @@ describe('DotCategoriesListStore', () => {
             expect(store.selectedCategories()).toEqual([]);
             expect(store.breadcrumbs()).toEqual([]);
             expect(store.parentInode()).toBeNull();
+            expect(store.parentName()).toBeNull();
             expect(store.totalRecords()).toBe(100);
             expect(store.page()).toBe(1);
             expect(store.rows()).toBe(25);
@@ -234,12 +235,12 @@ describe('DotCategoriesListStore', () => {
     });
 
     describe('navigateToChildren', () => {
-        it('should update URL with inode query param', () => {
+        it('should update URL with inode and name query params', () => {
             store.navigateToChildren(MOCK_CATEGORIES[0]);
 
             expect(router.navigate).toHaveBeenCalledWith([], {
                 relativeTo: expect.anything(),
-                queryParams: { inode: 'inode-1' },
+                queryParams: { inode: 'inode-1', name: 'Category 1' },
                 queryParamsHandling: 'merge'
             });
         });
@@ -271,7 +272,7 @@ describe('DotCategoriesListStore', () => {
 
             expect(router.navigate).toHaveBeenCalledWith([], {
                 relativeTo: expect.anything(),
-                queryParams: { inode: 'inode-1' },
+                queryParams: { inode: 'inode-1', name: 'Category 1' },
                 queryParamsHandling: 'merge'
             });
         });
@@ -281,32 +282,33 @@ describe('DotCategoriesListStore', () => {
 
             expect(router.navigate).toHaveBeenCalledWith([], {
                 relativeTo: expect.anything(),
-                queryParams: { inode: null },
+                queryParams: { inode: null, name: null },
                 queryParamsHandling: 'merge'
             });
         });
     });
 
     describe('Query params sync', () => {
-        it('should set parentInode when inode query param changes', () => {
-            queryParams$.next({ inode: 'some-inode' });
+        it('should set parentInode and parentName when query params change', () => {
+            queryParams$.next({ inode: 'some-inode', name: 'Some Category' });
 
             expect(store.parentInode()).toBe('some-inode');
+            expect(store.parentName()).toBe('Some Category');
             expect(store.page()).toBe(1);
             expect(store.filter()).toBe('');
             expect(store.selectedCategories()).toEqual([]);
         });
 
         it('should set parentInode to null when inode query param is removed', () => {
-            queryParams$.next({ inode: 'some-inode' });
+            queryParams$.next({ inode: 'some-inode', name: 'Some Category' });
             queryParams$.next({});
 
             expect(store.parentInode()).toBeNull();
+            expect(store.parentName()).toBeNull();
         });
 
         it('should not patch state if inode has not changed', () => {
             queryParams$.next({});
-            const currentPage = store.page();
 
             // Emit same empty params again
             store.setPagination(3, 25);
