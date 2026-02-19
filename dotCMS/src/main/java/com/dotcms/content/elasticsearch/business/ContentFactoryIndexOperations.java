@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.model.annotation.NoExternalDependencies;
 import java.util.List;
 
 
@@ -11,6 +12,7 @@ import java.util.List;
  *
  * @author Fabrizio Araya
  */
+@NoExternalDependencies
 public interface ContentFactoryIndexOperations {
 
     String inferIndexToHit(final String query);

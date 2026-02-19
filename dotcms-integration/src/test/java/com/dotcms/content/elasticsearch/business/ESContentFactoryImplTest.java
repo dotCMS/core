@@ -44,11 +44,10 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.lang3.BooleanUtils;
-//import org.elasticsearch.search.SearchHit;
-//import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -560,6 +559,8 @@ public class ESContentFactoryImplTest extends IntegrationTestBase {
      *
      * @throws Exception
      */
+    @Ignore("This test No longer applies, the Cached query is returned as a brand new domain object"
+            + " cuz we're no longer depending on internal library specific objects. ")
     @Test
     public void test_cached_es_query_response() throws Exception {
 
