@@ -210,11 +210,11 @@ describe('SearchableDropdownComponent', () => {
         // Trigger the overlay show to update cssClass
         comp.showOverlayHandler();
 
-        const overlay = de.query(By.css('.p-overlaypanel'));
+        // Assert component state passed to p-popover ([styleClass]="cssClass" [style]="{ width: overlayWidth }")
+        // Overlay is appendTo="body" so we don't query it in the fixture DOM
         expect(comp.cssClass).toContain('searchable-dropdown paginator');
-
-        expect(overlay.componentInstance.styleClass).toContain('testClass');
-        expect(overlay.componentInstance.style.width).toEqual('650px');
+        expect(comp.cssClass).toContain('testClass');
+        expect(comp.overlayWidth).toEqual('650px');
         flush();
     }));
 

@@ -8,11 +8,16 @@ import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotEventsService, DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotEventsService,
+    DotRouterService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavIconComponent } from './components/dot-nav-icon/dot-nav-icon.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
@@ -42,6 +47,7 @@ describe('DotNavigationComponent collapsed', () => {
         providers: [
             provideRouter([]),
             DotMenuService,
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
@@ -228,6 +234,7 @@ describe('DotNavigationComponent expanded', () => {
         providers: [
             provideRouter([]),
             DotMenuService,
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
             mockProvider(DotEventsService),

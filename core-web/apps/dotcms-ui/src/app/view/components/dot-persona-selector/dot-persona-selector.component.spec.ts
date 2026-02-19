@@ -13,6 +13,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotCurrentUserService,
     DotEventsService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -28,6 +29,7 @@ import { DotPersona, DotSystemConfig } from '@dotcms/dotcms-models';
 import {
     cleanUpDialog,
     CoreWebServiceMock,
+    DotCurrentUserServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -131,6 +133,7 @@ describe('DotPersonaSelectorComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             provideAnimations(),
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             DotSessionStorageService,
             {
                 provide: DotMessageService,
@@ -216,7 +219,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {
-        jest.spyOn(component.searchableSelect, 'toggleOverlayPanel');
+        jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
         await spectator.fixture.whenStable();
 
         const selectedItem = spectator.query('dot-persona-selected-item');
@@ -308,7 +311,7 @@ describe('DotPersonaSelectorComponent', () => {
             openOverlay();
             const addPersonaIcon = spectator.query('p-button');
 
-            jest.spyOn(component.searchableSelect, 'toggleOverlayPanel');
+            jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
 
             spectator.triggerEventHandler('dot-searchable-dropdown', 'filterChange', 'Bill');
             spectator.click(addPersonaIcon);
@@ -317,13 +320,13 @@ describe('DotPersonaSelectorComponent', () => {
             expect(personaDialog.visible).toBe(true);
             expect(personaDialog.personaName).toBe('Bill');
             personaDialog.visible = false;
-            spectator.detectChanges();
+            spectator.fixture.detectChanges(false);
         });
 
         it('should emit persona and refresh the list on Add new persona', () => {
             jest.spyOn(component.selected, 'emit');
             jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
-            jest.spyOn(component.searchableSelect, 'resetPanelMinHeight');
+            jest.spyOn(component.searchableDropdown, 'resetPanelMinHeight');
 
             spectator.triggerEventHandler(
                 'dot-add-persona-dialog',
