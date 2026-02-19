@@ -138,7 +138,6 @@ jobs:
         id: filter
         with:
           filters: .github/filters.yaml
-          list-files: 'escape'
 
       - name: Rewrite Filter
         id: filter-rewrite
