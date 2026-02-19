@@ -47,7 +47,6 @@ $number-link-icon-size: 2.28rem;
     }
 
     .dot-starter-top-main__section {
-        background-color: $white;
         counter-reset: css-counter 0;
         flex-grow: 1;
         margin-left: 0;
@@ -70,6 +69,7 @@ $number-link-icon-size: 2.28rem;
         flex-direction: column;
         margin: $spacing-3;
         padding: $spacing-5 $spacing-3;
+        background-color: $white;
 
         transition: background-color $basic-speed ease-in;
         width: 25%;

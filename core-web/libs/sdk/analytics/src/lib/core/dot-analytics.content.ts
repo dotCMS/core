@@ -1,5 +1,7 @@
 import { Analytics } from 'analytics';
 
+import { getUVEState } from '@dotcms/uve';
+
 import { dotAnalyticsClickPlugin } from './plugin/click/dot-analytics.click.plugin';
 import { dotAnalyticsEnricherPlugin } from './plugin/enricher/dot-analytics.enricher.plugin';
 import { dotAnalyticsIdentityPlugin } from './plugin/identity/dot-analytics.identity.plugin';
@@ -19,6 +21,7 @@ import {
 import {
     cleanupActivityTracking,
     getEnhancedTrackingPlugins,
+    isBrowser,
     validateAnalyticsConfig
 } from './shared/utils/dot-analytics.utils';
 
@@ -49,6 +52,15 @@ export const initializeContentAnalytics = (
         if (typeof window !== 'undefined') {
             window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
         }
+
+        return null;
+    }
+
+    // Skip all analytics when inside UVE editor to avoid unnecessary overhead
+    // and prevent interference with the editor
+    if (isBrowser() && getUVEState()) {
+        console.warn('DotCMS Analytics [Core]: Analytics disabled inside UVE editor');
+        window[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
 
         return null;
     }
