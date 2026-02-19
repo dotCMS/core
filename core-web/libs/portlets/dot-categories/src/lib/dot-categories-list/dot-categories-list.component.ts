@@ -1,0 +1,145 @@
+import { Subject } from 'rxjs';
+
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormsModule } from '@angular/forms';
+
+import { ConfirmationService } from 'primeng/api';
+import { BreadcrumbModule } from 'primeng/breadcrumb';
+import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
+import { TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { ToolbarModule } from 'primeng/toolbar';
+
+import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
+
+import { DotCategoryForm, DotMessageService } from '@dotcms/data-access';
+import { DotCategory } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotCategoriesListStore } from './store/dot-categories-list.store';
+
+import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categories-create.component';
+
+@Component({
+    selector: 'dot-categories-list',
+    standalone: true,
+    imports: [
+        FormsModule,
+        TableModule,
+        ButtonModule,
+        InputTextModule,
+        IconFieldModule,
+        InputIconModule,
+        ConfirmDialogModule,
+        BreadcrumbModule,
+        ToolbarModule,
+        DotMessagePipe
+    ],
+    templateUrl: './dot-categories-list.component.html',
+    providers: [DotCategoriesListStore, DialogService, ConfirmationService],
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotCategoriesListComponent {
+    readonly store = inject(DotCategoriesListStore);
+
+    private readonly dialogService = inject(DialogService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
+    private readonly destroyRef = inject(DestroyRef);
+
+    private searchSubject = new Subject<string>();
+
+    readonly homeItem = { icon: 'pi pi-home' };
+
+    constructor() {
+        this.searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+            .subscribe((value) => this.store.setFilter(value));
+    }
+
+    onSearch(value: string): void {
+        this.searchSubject.next(value);
+    }
+
+    onLazyLoad(event: TableLazyLoadEvent): void {
+        const rows = (event.rows as number) ?? this.store.rows();
+        const first = (event.first as number) ?? 0;
+        const page = Math.floor(first / rows) + 1;
+
+        this.store.setPagination(page, rows);
+
+        if (event.sortField) {
+            const field = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
+            const order = event.sortOrder === -1 ? 'DESC' : 'ASC';
+            this.store.setSort(field, order);
+        }
+    }
+
+    onBreadcrumbClick(index: number): void {
+        this.store.navigateToBreadcrumb(index);
+    }
+
+    onHomeClick(): void {
+        this.store.navigateToBreadcrumb(-1);
+    }
+
+    onRowDblClick(category: DotCategory): void {
+        if (category.childrenCount > 0) {
+            this.store.navigateToChildren(category);
+        }
+    }
+
+    openCreateDialog(): void {
+        const ref = this.dialogService.open(DotCategoriesCreateComponent, {
+            header: this.dotMessageService.get('categories.add.category'),
+            width: '500px',
+            closable: true,
+            closeOnEscape: true
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryForm) => {
+            if (result) {
+                this.store.createCategory(result);
+            }
+        });
+    }
+
+    openEditDialog(category: DotCategory): void {
+        const ref = this.dialogService.open(DotCategoriesCreateComponent, {
+            header: this.dotMessageService.get('categories.edit.category'),
+            width: '500px',
+            data: { category },
+            closable: true,
+            closeOnEscape: true
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryForm) => {
+            if (result) {
+                this.store.updateCategory({ ...result, inode: category.inode });
+            }
+        });
+    }
+
+    confirmDelete(): void {
+        const count = this.store.selectedCategories().length;
+
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get(
+                'categories.confirm.delete.message',
+                `${count}`
+            ),
+            header: this.dotMessageService.get('categories.confirm.delete.header'),
+            acceptButtonStyleClass: 'p-button-outlined',
+            rejectButtonStyleClass: 'p-button-primary',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            accept: () => this.store.deleteCategories()
+        });
+    }
+}

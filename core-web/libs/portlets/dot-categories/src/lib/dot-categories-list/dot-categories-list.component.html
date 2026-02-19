@@ -1,0 +1,102 @@
+<p-toolbar class="gap-1 px-3 justify-start border-none!">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'categories.search.placeholder' | dm"
+                [attr.aria-label]="'categories.search.placeholder' | dm"
+                data-testid="category-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <div class="flex gap-2 ml-auto">
+            @if (store.selectedCategories().length > 0) {
+                <p-button
+                    [label]="'categories.delete' | dm"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    (onClick)="confirmDelete()"
+                    data-testid="category-delete-btn" />
+            }
+            <p-button
+                [label]="'categories.add.category' | dm"
+                icon="pi pi-plus"
+                (onClick)="openCreateDialog()"
+                data-testid="category-add-btn" />
+        </div>
+    </div>
+</p-toolbar>
+
+@if (store.breadcrumbs().length > 0) {
+    <p-breadcrumb
+        [model]="store.breadcrumbs()"
+        [home]="homeItem"
+        (onItemClick)="onBreadcrumbClick($any($event).item ? store.breadcrumbs().indexOf($any($event).item) : -1)"
+        (homeClick)="onHomeClick()"
+        data-testid="category-breadcrumb" />
+}
+
+<!-- Table -->
+<p-table
+    [value]="store.categories()"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="true"
+    [rows]="store.rows()"
+    [totalRecords]="store.totalRecords()"
+    [first]="(store.page() - 1) * store.rows()"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    [loading]="store.status() === 'loading'"
+    [selection]="store.selectedCategories()"
+    (selectionChange)="store.setSelectedCategories($event)"
+    dataKey="inode"
+    data-testid="categories-table">
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 4rem">
+                <p-tableHeaderCheckbox />
+            </th>
+            <th pSortableColumn="category_name">
+                {{ 'categories.table.header.name' | dm }}
+                <p-sortIcon field="category_name" />
+            </th>
+            <th>{{ 'categories.table.header.key' | dm }}</th>
+            <th>{{ 'categories.table.header.variable' | dm }}</th>
+            <th>{{ 'categories.table.header.children' | dm }}</th>
+            <th pSortableColumn="sort_order">
+                {{ 'categories.table.header.sort-order' | dm }}
+                <p-sortIcon field="sort_order" />
+            </th>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-category>
+        <tr
+            data-testid="category-row"
+            class="cursor-pointer"
+            (click)="openEditDialog(category)"
+            (dblclick)="onRowDblClick(category)">
+            <td (click)="$event.stopPropagation()" (dblclick)="$event.stopPropagation()">
+                <p-tableCheckbox [value]="category" />
+            </td>
+            <td data-testid="category-name">{{ category.categoryName }}</td>
+            <td data-testid="category-key">{{ category.key }}</td>
+            <td data-testid="category-variable">{{ category.categoryVelocityVarName }}</td>
+            <td data-testid="category-children">{{ category.childrenCount }}</td>
+            <td data-testid="category-sort-order">{{ category.sortOrder }}</td>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="6" class="text-center p-4">{{ 'categories.empty' | dm }}</td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<p-confirmDialog />
