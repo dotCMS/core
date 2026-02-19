@@ -1567,11 +1567,6 @@ public class ESContentFactoryImpl implements ContentletFactory {
         return indexOperationsES.indexCount(qq);
     }
 
-
-   private String inferIndexToHit(final String query)  {
-       return indexOperationsES.inferIndexToHit(query);
-   }
-
     /**
      * Determines the appropriate versioned index to use based on the provided query string.
      * This method inspects the query to decide whether to return the live or working index.

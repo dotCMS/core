@@ -347,7 +347,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         return searchSourceBuilder;
     }
 
-    public static void addBuilderSort(String sortBy, SearchSourceBuilder srb) {
+    public static void addBuilderSort(@NotNull String sortBy, SearchSourceBuilder srb) {
         String[] sortByArr = sortBy.split(",");
         for (String sort : sortByArr) {
             String[] x = sort.trim().split(" ");

@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ContentFactoryIndexOperationsES.addBuilderSort;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
@@ -79,7 +80,7 @@ class ESContentletScrollImpl implements ESContentletScroll {
             sourceBuilder.size(batchSize);
 
             // Apply sorting using the service
-            indexOperations.addBuilderSort(sortBy, sourceBuilder);
+            addBuilderSort(sortBy, sourceBuilder);
 
             final SearchRequest searchRequest = new SearchRequest()
                     .indices(indexToHit)
