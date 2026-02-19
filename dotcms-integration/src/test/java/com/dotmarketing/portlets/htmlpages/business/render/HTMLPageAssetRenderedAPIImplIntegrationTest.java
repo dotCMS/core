@@ -3012,4 +3012,74 @@ public class HTMLPageAssetRenderedAPIImplIntegrationTest extends IntegrationTest
 
         assertTrue("Should have found and transformed legacy container UUID", foundLegacyTransformation);
     }
+
+    /**
+     * Method to test: {@link HTMLPageAssetRenderedAPI#getPageHtml(PageContext, HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: Page exists in language 2 and language 3. Widget contentlet exists ONLY in language 3.
+     * When: Rendering page in language 2 with:
+     *       - DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true
+     *       - DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE=false
+     * Should: NOT return widget in language 3 (should return empty page since widget doesn't exist in requested language
+     *         and widget fallback is disabled)
+     *
+     */
+    @Test
+    public void shouldNotReturnWidgetInWrongLanguageWhenFallbackDisabled()
+            throws WebAssetException, DotDataException, DotSecurityException {
+
+        final boolean defaultContentToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        final boolean defaultWidgetToDefaultLanguage = Config.getBooleanProperty(
+                "DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false);
+
+        Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", true);
+        Config.setProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", false);
+
+        try {
+
+            final Language language2 = new LanguageDataGen().nextPersisted();
+            final Language language3 = new LanguageDataGen().nextPersisted();
+            final Host host = new SiteDataGen().nextPersisted();
+
+            // Create a widget content type
+            ContentType widgetContentType = ContentTypeDataGen.createWidgetContentType("$widgetTitle")
+                    .host(host)
+                    .nextPersisted();
+
+            final Container container = createAndPublishContainer(host, widgetContentType);
+
+            // Create page in language 2
+            final HTMLPageAsset page = createHtmlPageAsset(language2, host, container);
+
+            // Create widget contentlet ONLY in language 3
+            final Contentlet widgetInLang3 = createContentlet(language3, host, widgetContentType,
+                    "widgetTitle", "Widget content in language 3");
+
+            addToPage(container, page, widgetInLang3);
+
+            // Create HTTP request for language 2
+            final HttpServletRequest mockRequest = createHttpServletRequest(language2, host,
+                    VariantAPI.DEFAULT_VARIANT, page);
+
+            final HttpServletResponse mockResponse = mock(HttpServletResponse.class);
+            final HttpSession session = createHttpSession(mockRequest);
+            when(session.getAttribute(WebKeys.VISITOR)).thenReturn(null);
+
+            // Render page in language 2
+            String html = APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(
+                    PageContextBuilder.builder()
+                            .setUser(APILocator.systemUser())
+                            .setPageUri(page.getURI())
+                            .setPageMode(PageMode.LIVE)
+                            .build(),
+                    mockRequest, mockResponse);
+
+            Assert.assertFalse("Widget from language 3 should NOT appear when rendering page in language 2",
+                    html.contains("Widget content in language 3"));
+        } finally {
+            // Restore original config values
+            Config.setProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", defaultContentToDefaultLanguage);
+            Config.setProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE", defaultWidgetToDefaultLanguage);
+        }
+    }
 }
