@@ -50,13 +50,10 @@ describe('DotCategoriesCreateComponent', () => {
         });
 
         it('should have an empty form initially', () => {
-            expect(spectator.component.form.value).toEqual({
+            expect(spectator.component.form.getRawValue()).toEqual({
                 categoryName: '',
-                key: '',
                 categoryVelocityVarName: '',
-                sortOrder: 0,
-                active: true,
-                description: '',
+                key: '',
                 keywords: ''
             });
         });
@@ -117,13 +114,10 @@ describe('DotCategoriesCreateComponent', () => {
         });
 
         it('should patch form with category data', () => {
-            expect(spectator.component.form.value).toEqual({
+            expect(spectator.component.form.getRawValue()).toEqual({
                 categoryName: 'Existing Category',
-                key: 'existing-key',
                 categoryVelocityVarName: 'existingVar',
-                sortOrder: 5,
-                active: true,
-                description: 'A test description',
+                key: 'existing-key',
                 keywords: 'test,keywords'
             });
         });
