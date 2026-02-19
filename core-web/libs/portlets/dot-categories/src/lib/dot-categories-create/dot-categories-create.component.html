@@ -9,6 +9,15 @@
             class="w-full" />
     </div>
     <div class="field">
+        <label for="categoryVariable">{{ 'categories.form.variable' | dm }}</label>
+        <input
+            pInputText
+            id="categoryVariable"
+            formControlName="categoryVelocityVarName"
+            data-testid="category-variable-input"
+            class="w-full" />
+    </div>
+    <div class="field">
         <label for="categoryKey">{{ 'categories.form.key' | dm }}</label>
         <input
             pInputText
@@ -18,50 +27,14 @@
             class="w-full" />
     </div>
     <div class="field">
-        <label for="categoryVariable">{{ 'categories.form.variable' | dm }}</label>
-        <input
-            pInputText
-            id="categoryVariable"
-            formControlName="categoryVelocityVarName"
-            data-testid="category-variable-input"
-            class="w-full" />
-    </div>
-    <div class="flex gap-4">
-        <div class="field flex-1">
-            <label for="categorySortOrder">{{ 'categories.form.sort-order' | dm }}</label>
-            <p-inputNumber
-                id="categorySortOrder"
-                formControlName="sortOrder"
-                data-testid="category-sort-order-input"
-                styleClass="w-full" />
-        </div>
-        <div class="field flex items-end pb-2 gap-2">
-            <p-checkbox
-                formControlName="active"
-                [binary]="true"
-                inputId="categoryActive"
-                data-testid="category-active-checkbox" />
-            <label for="categoryActive">{{ 'categories.form.active' | dm }}</label>
-        </div>
-    </div>
-    <div class="field">
-        <label for="categoryDescription">{{ 'categories.form.description' | dm }}</label>
+        <label for="categoryKeywords">{{ 'categories.form.keywords' | dm }}</label>
         <textarea
             pTextarea
-            id="categoryDescription"
-            formControlName="description"
-            data-testid="category-description-input"
-            class="w-full"
-            rows="3"></textarea>
-    </div>
-    <div class="field">
-        <label for="categoryKeywords">{{ 'categories.form.keywords' | dm }}</label>
-        <input
-            pInputText
             id="categoryKeywords"
             formControlName="keywords"
             data-testid="category-keywords-input"
-            class="w-full" />
+            class="w-full"
+            rows="3"></textarea>
     </div>
     <div class="flex justify-end gap-2 mt-4">
         <p-button
