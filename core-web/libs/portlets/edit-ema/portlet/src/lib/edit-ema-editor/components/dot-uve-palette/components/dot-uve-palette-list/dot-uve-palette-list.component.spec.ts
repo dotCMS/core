@@ -658,10 +658,14 @@ describe('DotUvePaletteListComponent', () => {
             spectator.component['$shouldHideControls'].set(true);
             spectator.detectChanges();
 
-            spectator.component.onContextMenu(basicContentType);
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
             const command = spectator.component['$contextMenuItems']()[0]?.command;
             expect(command).toBeDefined();
-            command?.();
+            command?.({ originalEvent: new MouseEvent('contextmenu'), item: {} as never });
 
             spectator.detectChanges();
 
@@ -678,10 +682,14 @@ describe('DotUvePaletteListComponent', () => {
             const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
             (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
 
-            spectator.component.onContextMenu(basicContentType);
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
             const command = spectator.component['$contextMenuItems']()[0]?.command;
             expect(command).toBeDefined();
-            command?.();
+            command?.({ originalEvent: new MouseEvent('contextmenu'), item: {} as never });
 
             spectator.detectChanges();
 
@@ -704,10 +712,14 @@ describe('DotUvePaletteListComponent', () => {
             const mockFavoriteService = spectator.inject(DotFavoriteContentTypeService);
             (mockFavoriteService.isFavorite as jest.Mock).mockReturnValue(true);
 
-            spectator.component.onContextMenu(basicContentType);
+            spectator.triggerEventHandler(
+                'dot-uve-palette-contenttype',
+                'contextMenu',
+                new MouseEvent('contextmenu')
+            );
             const command = spectator.component['$contextMenuItems']()[0]?.command;
             expect(command).toBeDefined();
-            command?.();
+            command?.({ originalEvent: new MouseEvent('contextmenu'), item: {} as never });
 
             spectator.detectChanges();
 
