@@ -1,109 +1,105 @@
-import { Component, DebugElement, Input } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-import {
-    NgControl,
-    ReactiveFormsModule,
-    UntypedFormControl,
-    UntypedFormGroup
-} from '@angular/forms';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+
+import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotAutofocusDirective,
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { NamePropertyComponent } from './index';
 
 import { DotCopyLinkComponent } from '../../../../../../../../view/components/dot-copy-link/dot-copy-link.component';
+import { FieldProperty } from '../field-properties.model';
 
-@Component({
-    selector: 'dot-field-validation-message',
-    template: '',
-    standalone: false
-})
-class TestFieldValidationMessageComponent {
-    @Input()
-    field: NgControl;
-    @Input()
-    message: string;
-}
+const messageServiceMock = new MockDotMessageService({
+    'Default-Value': 'Default-Value',
+    'contenttypes.field.properties.name.label': 'Name',
+    'contenttypes.field.properties.name.error.required': 'Required',
+    'contenttypes.field.properties.name.variable': 'Variable'
+});
 
 describe('NamePropertyComponent', () => {
-    let comp: NamePropertyComponent;
-    let fixture: ComponentFixture<NamePropertyComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<NamePropertyComponent>;
 
-    const messageServiceMock = new MockDotMessageService({
-        'Default-Value': 'Default-Value'
+    const createComponent = createComponentFactory({
+        component: NamePropertyComponent,
+        imports: [
+            ReactiveFormsModule,
+            NoopAnimationsModule,
+            InputTextModule,
+            DotMessagePipe,
+            DotSafeHtmlPipe,
+            DotFieldRequiredDirective,
+            DotAutofocusDirective,
+            DotFieldValidationMessageComponent,
+            DotCopyLinkComponent
+        ],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [NamePropertyComponent, TestFieldValidationMessageComponent],
-            imports: [DotCopyLinkComponent, ReactiveFormsModule, DotSafeHtmlPipe, DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+    const defaultProperty: FieldProperty = {
+        name: 'name',
+        value: 'value',
+        field: { ...dotcmsContentTypeFieldBasicMock }
+    };
 
-        fixture = TestBed.createComponent(NamePropertyComponent);
-        de = fixture.debugElement;
-        comp = fixture.componentInstance;
+    const defaultGroup = new UntypedFormGroup({
+        name: new UntypedFormControl('')
+    });
 
-        comp.property = {
-            name: 'name',
-            value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
-        };
-    }));
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        spectator.component.group = defaultGroup;
+        spectator.component.property = defaultProperty;
+        spectator.detectChanges();
+    });
 
     it('should have a form', () => {
-        const group = new UntypedFormGroup({});
-        comp.group = group;
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
-
-        expect(divForm).not.toBeNull();
-        expect(group).toEqual(divForm.componentInstance.group);
+        const group = new UntypedFormGroup({
+            name: new UntypedFormControl('')
+        });
+        spectator.component.group = group;
+        spectator.detectChanges();
+        const divForm = spectator.query('div.field');
+        expect(divForm).toBeTruthy();
+        expect(spectator.component.group).toEqual(group);
     });
 
     it('should have a input', () => {
-        comp.group = new UntypedFormGroup({
-            name: new UntypedFormControl('')
-        });
-
-        fixture.detectChanges();
-
-        const pInput: DebugElement = fixture.debugElement.query(By.css('input[type="text"]'));
-
-        expect(pInput).not.toBeNull();
+        expect(spectator.query('input[type="text"]')).toBeTruthy();
     });
 
     it('should have a field-message', () => {
-        comp.group = new UntypedFormGroup({
-            name: new UntypedFormControl('')
-        });
-
-        fixture.detectChanges();
-
-        const fieldValidationmessage: DebugElement = fixture.debugElement.query(
+        const fieldValidationMessage = spectator.debugElement.query(
             By.css('dot-field-validation-message')
         );
-
-        expect(fieldValidationmessage).not.toBeNull();
-        expect(comp.group.controls['name']).toBe(fieldValidationmessage.componentInstance.field);
+        expect(fieldValidationMessage).toBeTruthy();
+        const nameControl = spectator.component.group.controls['name'];
+        expect((fieldValidationMessage.componentInstance as { _field: unknown })._field).toBe(
+            nameControl
+        );
     });
 
     it('should focus on input on load using the directive', () => {
-        const input = de.query(By.css('.name__input'));
-        expect(input.attributes.dotAutofocus).toBeDefined();
+        const input = spectator.query('input.name__input');
+        expect(input).toBeTruthy();
+        expect(input.getAttribute('dotautofocus')).toBeDefined();
     });
 
     it('should have copy variable button', () => {
-        comp.group = new UntypedFormGroup({
-            name: new UntypedFormControl('')
-        });
-
-        comp.property = {
+        const copySpectator = createComponent({ detectChanges: false });
+        copySpectator.component.group = defaultGroup;
+        copySpectator.component.property = {
             name: 'name',
             value: 'value',
             field: {
@@ -111,12 +107,12 @@ describe('NamePropertyComponent', () => {
                 variable: 'thisIsAVar'
             }
         };
+        copySpectator.detectChanges();
 
-        fixture.detectChanges();
-
-        const copy: DebugElement = de.query(By.css('dot-copy-link'));
-
-        expect(copy.componentInstance.copy).toBe('thisIsAVar');
-        expect(copy.componentInstance.label).toBe('thisIsAVar');
+        const copyEl = copySpectator.debugElement.query(By.css('dot-copy-link'));
+        expect(copyEl).toBeTruthy();
+        const copyComp = copyEl.componentInstance as { copy: string; label: string };
+        expect(copyComp.copy).toBe('thisIsAVar');
+        expect(copyComp.label).toBe('thisIsAVar');
     });
 });

@@ -164,6 +164,7 @@ export class DotPageActionsService {
     #addToBundleAction(item: DotCMSContentlet): MenuItem {
         return {
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
+            disabled: true,
             command: () => this.#dotCMSPagesStore.showBundleDialog(item.identifier)
         };
     }
@@ -412,8 +413,9 @@ export class DotPageActionsService {
     }
 
     #getFavoritePageUrl(item: DotCMSContentlet): string {
+        const pageURI = item.urlMap ?? (item.url ? item.url.split('?')[0] : '');
         return generateDotFavoritePageUrl({
-            pageURI: item.urlMap || item.url.split('?')[0],
+            pageURI,
             languageId: item.languageId,
             siteId: item.host
         });
