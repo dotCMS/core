@@ -12,13 +12,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
-
+import io.vavr.control.Try;
+import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.util.Locale;
 
 /**
  * Implement LanguageWebAPI methods to manage language cache and language struts
@@ -30,7 +29,7 @@ import java.util.Locale;
  */
 public class LanguageWebAPIImpl implements LanguageWebAPI {
 
-    private LanguageAPI langAPI;
+    private final LanguageAPI langAPI;
 
     public LanguageWebAPIImpl() {
         langAPI = APILocator.getLanguageAPI();
@@ -50,34 +49,28 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     }
 
 
-
     // only try internal session and attributes
-    private Language currentLanguage(HttpServletRequest httpRequest) {
-        HttpSession sessionOpt = httpRequest.getSession(false);
-        Language lang = null;
+    private Language currentLanguage(HttpServletRequest req) {
+        HttpSession sessionOpt = req.getSession(false);
 
-        try{
-            if(sessionOpt !=null){
-                if(sessionOpt.getAttribute("tm_lang")!=null){
-                    lang = langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"));
-                }else{
-                    lang= langAPI.getLanguage((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
-                }
-            }
-            else if(UtilMethods.isSet(httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))){
-                lang= langAPI.getLanguage((String) httpRequest.getAttribute(HTMLPAGE_CURRENT_LANGUAGE));
-            }
-            if(lang==null) {
-                lang =langAPI.getDefaultLanguage();
-            }
-        }
-        catch(Exception e){
-            lang =langAPI.getDefaultLanguage();
+        if (sessionOpt == null && UtilMethods.isEmpty((String) req.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))) {
+            return langAPI.getDefaultLanguage();
         }
 
+        Language lang = UtilMethods.isSet(sessionOpt.getAttribute("tm_lang"))
+                ? Try.of(() -> langAPI.getLanguage((String) sessionOpt.getAttribute("tm_lang"))).getOrNull()
+                : null;
 
+        if (lang == null && UtilMethods.isSet(sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
+            lang = Try.of(() -> langAPI.getLanguage((String) sessionOpt.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)))
+                    .getOrNull();
+        }
 
-        return lang;
+        if (lang == null && UtilMethods.isSet(req.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))) {
+            lang = Try.of(() -> langAPI.getLanguage((String) req.getAttribute(HTMLPAGE_CURRENT_LANGUAGE))).getOrNull();
+        }
+
+        return lang != null ? lang : langAPI.getDefaultLanguage();
     }
 
 
@@ -123,22 +116,19 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
     public Language getLanguage(HttpServletRequest httpRequest) {
         final Language current = currentLanguage(httpRequest);
         final Language future = futureLanguage(httpRequest,current);
-        final Locale locale = null != future.getCountryCode()? new Locale(future.getLanguageCode(), future.getCountryCode()): new Locale(future.getLanguageCode());
-        HttpSession sessionOpt = httpRequest.getSession(false);
+        final Locale locale = null != future.getCountryCode()
+                ? new Locale(future.getLanguageCode(), future.getCountryCode())
+                : new Locale(future.getLanguageCode());
         httpRequest.setAttribute(HTMLPAGE_CURRENT_LANGUAGE, String.valueOf(future.getId()));
-
         httpRequest.setAttribute(WebKeys.LOCALE, locale);
 
         // if someone is changing langauges, we need a session
-        if(!current.equals(future)){
-            sessionOpt = httpRequest.getSession(true);
-        }
-        if(sessionOpt!=null){
+        if (current.getId() != future.getId()) {
+            HttpSession sessionOpt = httpRequest.getSession();
             //only set in session if we are not in a timemachine
             if(sessionOpt.getAttribute("tm_lang")==null){
                 sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, String.valueOf(future.getId()));
                 boolean ADMIN_MODE =   PageMode.get(httpRequest).isAdmin;
-
                 if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
                     sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
                     httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
