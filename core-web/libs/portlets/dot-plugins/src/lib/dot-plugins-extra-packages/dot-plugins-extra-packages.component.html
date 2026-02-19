@@ -1,0 +1,25 @@
+<p class="mb-4">{{ 'plugins.extra-packages.instructions' | dm }}</p>
+
+<textarea
+    pTextarea
+    [ngModel]="extraPackages()"
+    (ngModelChange)="extraPackages.set($event)"
+    rows="12"
+    class="w-full"
+    data-testid="plugins-extra-packages-textarea"
+    [attr.aria-label]="'plugins.extra-packages.title' | dm"></textarea>
+
+<div class="flex justify-end gap-2 mt-4">
+    <p-button
+        [label]="'plugins.cancel' | dm"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="close()"
+        data-testid="plugins-extra-packages-cancel-btn" />
+    <p-button
+        [label]="'plugins.save' | dm"
+        icon="pi pi-check"
+        [loading]="saving()"
+        (onClick)="save()"
+        data-testid="plugins-extra-packages-save-btn" />
+</div>
