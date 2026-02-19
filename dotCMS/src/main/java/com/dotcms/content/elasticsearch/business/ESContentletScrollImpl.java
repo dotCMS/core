@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -27,6 +28,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortOrder;
 
 /**
  * Private implementation of ESContentletScroll that encapsulates all ElasticSearch
@@ -80,7 +82,7 @@ class ESContentletScrollImpl implements ESContentletScroll {
             sourceBuilder.size(batchSize);
 
             // Apply sorting using the service
-            addBuilderSort(sortBy, sourceBuilder);
+            applySorting(sortBy, sourceBuilder);
 
             final SearchRequest searchRequest = new SearchRequest()
                     .indices(indexToHit)
@@ -209,6 +211,37 @@ class ESContentletScrollImpl implements ESContentletScroll {
 
         }
         return list;
+    }
+
+    /**
+     * Applies sorting to the search source builder based on sortBy parameter.
+     */
+    private void applySorting(String sortBy, SearchSourceBuilder searchSourceBuilder) {
+        if (UtilMethods.isSet(sortBy)) {
+            sortBy = sortBy.toLowerCase();
+
+            if (sortBy.startsWith("score")) {
+                String[] sortByCriteria = sortBy.split("[,|\\s+]");
+                String defaultSecondarySort = "moddate";
+                SortOrder defaultSecondaryOrder = SortOrder.DESC;
+
+                if (sortByCriteria.length > 2) {
+                    defaultSecondaryOrder = sortByCriteria[2].equalsIgnoreCase("desc")
+                            ? SortOrder.DESC : SortOrder.ASC;
+                }
+                if (sortByCriteria.length > 1) {
+                    defaultSecondarySort = sortByCriteria[1];
+                }
+
+                searchSourceBuilder.sort("_score", SortOrder.DESC);
+                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondaryOrder);
+            } else if (!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")
+                    && !sortBy.equals("random")) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+            }
+        } else {
+            searchSourceBuilder.sort("moddate", SortOrder.DESC);
+        }
     }
 
 }
