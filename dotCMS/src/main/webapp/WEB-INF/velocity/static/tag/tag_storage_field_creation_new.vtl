@@ -16,19 +16,19 @@
 	#set($tagStorageHostList = [])
 #end
 
-<div class="tag-storage-field-wrapper">
-  <div class="tag-storage-select-wrapper">
+<div class="custom-field-wrapper">
+  <div class="select-wrapper">
     <div id="tagStorageHolder">
       <button
         type="button"
         id="tagStorageSelectButton"
-        class="custom-select-button tag-storage-custom-select-button placeholder"
+        class="custom-select-button placeholder"
         aria-label="Select tag storage host"
         aria-haspopup="listbox"
         aria-expanded="false"
         #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end
       >Select host</button>
-      <div id="tagStorageDropdown" class="tag-storage-custom-dropdown" role="listbox">
+      <div id="tagStorageDropdown" class="custom-dropdown" role="listbox">
         #foreach($c in $tagStorageHostList)
           #if($c.isSystemHost)
             #set($optionLabel = "")
@@ -39,13 +39,13 @@
           #end
           #set($isSelected = ($UtilMethods.isSet($tagStorage) && $c.identifier.equals($tagStorage)) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier)))
           <div
-            class="tag-storage-custom-option #if($isSelected) selected #end"
+            class="custom-option #if($isSelected) selected #end"
             data-identifier="$esc.html($c.identifier)"
             data-label="$esc.html($optionLabel)"
             role="option"
             #if($isSelected) aria-selected="true" #end
           >
-            <div class="tag-storage-option-title">$esc.html($optionLabel)</div>
+            <div class="option-title">$esc.html($optionLabel)</div>
           </div>
         #end
       </div>
@@ -67,8 +67,8 @@
       var dropdown = document.getElementById("tagStorageDropdown");
       if (!holder || !button || !dropdown) return;
 
-      var options = dropdown.querySelectorAll(".tag-storage-custom-option");
-      var selectedOption = dropdown.querySelector(".tag-storage-custom-option.selected");
+      var options = dropdown.querySelectorAll(".custom-option");
+      var selectedOption = dropdown.querySelector(".custom-option.selected");
       if (selectedOption && selectedOption.dataset.label) {
         button.textContent = selectedOption.dataset.label;
         button.classList.remove("placeholder");

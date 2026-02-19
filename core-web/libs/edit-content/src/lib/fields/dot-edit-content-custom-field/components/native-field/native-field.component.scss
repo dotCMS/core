@@ -110,8 +110,7 @@
         }
 
         /* Shared custom dropdown/select styles (template field, tag storage field, etc.) */
-        .custom-field-wrapper,
-        .tag-storage-field-wrapper {
+        .custom-field-wrapper {
             font-family: $font-default;
             display: flex;
             flex-direction: column;
@@ -120,14 +119,12 @@
             min-height: 2.5rem;
         }
 
-        .select-wrapper,
-        .tag-storage-select-wrapper {
+        .select-wrapper {
             position: relative;
             width: 100%;
         }
 
-        .custom-select-button,
-        .tag-storage-custom-select-button {
+        .custom-select-button {
             width: 100%;
             padding: 0.5rem 3rem 0.5rem 0.75rem;
             font-size: 0.875rem;
@@ -189,8 +186,7 @@
             }
         }
 
-        .custom-dropdown,
-        .tag-storage-custom-dropdown {
+        .custom-dropdown {
             position: absolute;
             top: 100%;
             left: 0;
@@ -229,8 +225,7 @@
             }
         }
 
-        .custom-option,
-        .tag-storage-custom-option {
+        .custom-option {
             padding: 0.75rem 1rem;
             cursor: pointer;
             border-bottom: 1px solid $color-palette-gray-100;
@@ -249,8 +244,7 @@
             }
         }
 
-        .option-title,
-        .tag-storage-option-title {
+        .option-title {
             font-size: 0.875rem;
             color: $color-palette-gray-700;
             font-weight: 400;
