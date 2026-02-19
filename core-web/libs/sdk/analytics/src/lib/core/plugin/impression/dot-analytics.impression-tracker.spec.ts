@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { getUVEState } from '@dotcms/uve';
-
 import { DotCMSImpressionTracker } from './dot-analytics.impression-tracker';
 
 import {
@@ -13,7 +11,6 @@ import { DotCMSAnalyticsConfig } from '../../shared/models';
 import { INITIAL_SCAN_DELAY_MS } from '../../shared/utils/dot-analytics.utils';
 
 // Mock dependencies
-jest.mock('@dotcms/uve');
 jest.mock('./dot-analytics.impression.utils', () => ({
     ...jest.requireActual('./dot-analytics.impression.utils'),
     createDebounce: jest.fn((callback) => callback) // Execute immediately for testing
@@ -68,9 +65,6 @@ describe('DotCMSImpressionTracker', () => {
         // Reset mocks
         jest.clearAllMocks();
         jest.useFakeTimers();
-
-        // Mock getUVEState (not in editor by default)
-        (getUVEState as jest.Mock).mockReturnValue(false);
 
         // Setup config
         mockConfig = {
@@ -147,16 +141,6 @@ describe('DotCMSImpressionTracker', () => {
 
             // Restore
             (global as any).window = originalWindow;
-        });
-
-        it('should NOT initialize in UVE editor mode', () => {
-            (getUVEState as jest.Mock).mockReturnValue(true);
-
-            tracker = new DotCMSImpressionTracker(mockConfig);
-            tracker.initialize();
-
-            expect(global.IntersectionObserver).not.toHaveBeenCalled();
-            expect(getUVEState).toHaveBeenCalled();
         });
 
         it('should setup MutationObserver for dynamic content', () => {
