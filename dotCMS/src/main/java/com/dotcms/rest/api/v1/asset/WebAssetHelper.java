@@ -51,6 +51,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -320,18 +321,17 @@ public class WebAssetHelper {
                     return false;
                 });
 
-        final Map<String, ? extends Serializable> metadata = Map.of(
-                "name", fileAsset.getUnderlyingFileName(),
-                "title", fileAsset.getFileTitle(),
-                "path", fileAsset.getPath(),
-                "sha256", fileAsset.getSha256(),
-                "contentType", fileAsset.getMimeType(),
-                "size", fileAsset.getFileSize(),
-                "isImage", fileAsset.isImage(),
-                "width", fileAsset.getWidth(),
-                "height", fileAsset.getHeight(),
-                SORT_BY, fileAsset.getModDate().toInstant()
-        );
+        final Map<String, Serializable> metadata = new HashMap<>();
+        metadata.put("name", fileAsset.getUnderlyingFileName());
+        metadata.put("title", fileAsset.getFileTitle());
+        metadata.put("path", fileAsset.getPath());
+        metadata.put("sha256", fileAsset.getSha256());
+        metadata.put("contentType", fileAsset.getMimeType());
+        metadata.put("size", fileAsset.getFileSize());
+        metadata.put("isImage", fileAsset.isImage());
+        metadata.put("width", fileAsset.getWidth());
+        metadata.put("height", fileAsset.getHeight());
+        metadata.put(SORT_BY, fileAsset.getModDate().toInstant());
 
         return AssetView.builder()
                 .sortOrder(fileAsset.getSortOrder())

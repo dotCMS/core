@@ -18320,8 +18320,9 @@ paths:
       - Tags
     post:
       description: "Creates one or more tags. Single tag = list with one element,\
-        \ multiple tags = list with multiple elements. This operation is idempotent\
-        \ - existing tags are returned without error."
+        \ multiple tags = list with multiple elements. The response separates newly\
+        \ created tags from duplicates (tags that already existed with the same name\
+        \ and site)."
       operationId: createTags
       requestBody:
         content:
@@ -18332,12 +18333,15 @@ paths:
           \ multiple tags = list with multiple elements."
         required: true
       responses:
-        "201":
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagListView"
-          description: Tags created successfully
+                type: object
+                description: Response with 'entity' containing 'created' (list of
+                  newly created RestTag) and 'duplicates' (list of already existing
+                  RestTag)
+          description: Tag creation result with 'created' and 'duplicates' lists
         "400":
           content:
             application/json: {}
@@ -18444,8 +18448,10 @@ paths:
       - Tags
   /v2/tags/import:
     post:
-      description: Imports tags from a CSV file with row-level error reporting. Returns
-        detailed statistics and error information for each failed row.
+      description: "Imports tags from a CSV file with row-level error reporting. Returns\
+        \ detailed statistics including successCount (newly created), duplicateCount\
+        \ (already existed), failureCount (errors), and error information for each\
+        \ failed row."
       operationId: importTags_1
       requestBody:
         content:
@@ -26122,31 +26128,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/ResetAssetPermissionsView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityRestTagListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/RestTag"
         errors:
           type: array
           items:
