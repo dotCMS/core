@@ -190,4 +190,56 @@ describe('DotPageApiService', () => {
             expect(requestHeaders.get('Content-Type')).toEqual('application/json');
         });
     });
+
+    describe('saveContentlet', () => {
+        it('should send a PUT request with indexPolicy=WAIT_FOR query param', () => {
+            const contentlet = {
+                inode: 'test-inode-123',
+                title: 'Test Title',
+                body: 'Test Content'
+            };
+
+            spectator.service.saveContentlet({ contentlet }).subscribe();
+
+            const { request } = spectator.expectOne(
+                '/api/v1/workflow/actions/default/fire/EDIT?inode=test-inode-123&indexPolicy=WAIT_FOR',
+                HttpMethod.PUT
+            );
+
+            expect(request.body).toEqual({ contentlet });
+        });
+    });
+
+    describe('saveStyleProperties', () => {
+        it('should send a PUT request with correct payload structure', () => {
+            const payload = {
+                pageId: 'test-page-123',
+                containerIdentifier: 'container-id-456',
+                containerUUID: 'container-uuid-789',
+                contentletIdentifier: 'contentlet-id-abc',
+                styleProperties: {
+                    'font-size': '16px',
+                    color: '#000000'
+                }
+            };
+
+            spectator.service.saveStyleProperties(payload).subscribe();
+
+            const { request } = spectator.expectOne(
+                '/api/v1/page/test-page-123/styles',
+                HttpMethod.PUT
+            );
+
+            expect(request.body).toEqual([
+                {
+                    identifier: 'container-id-456',
+                    uuid: 'container-uuid-789',
+                    'contentlet-id-abc': {
+                        'font-size': '16px',
+                        color: '#000000'
+                    }
+                }
+            ]);
+        });
+    });
 });

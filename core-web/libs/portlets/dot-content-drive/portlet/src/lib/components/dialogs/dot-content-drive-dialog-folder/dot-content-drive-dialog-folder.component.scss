@@ -14,15 +14,16 @@
 
         // Animation
         .p-tabview-panel {
-            overflow: hidden;
+            overflow: auto;
             max-height: 0;
             opacity: 0;
             display: none;
             transition: max-height $content-drive-animation-speed $content-drive-animation-ease;
+            padding: 0 $spacing-4;
         }
 
         .p-tabview-panel[aria-hidden="false"] {
-            max-height: 30rem; /* This must be greater than the maximum expected content */
+            max-height: 24rem; /* This must be greater than the maximum expected content */
             opacity: 1;
             display: block;
         }
@@ -66,4 +67,5 @@
     justify-content: flex-end;
     gap: $spacing-3;
     margin-top: $spacing-3;
+    padding: 0 $spacing-4;
 }

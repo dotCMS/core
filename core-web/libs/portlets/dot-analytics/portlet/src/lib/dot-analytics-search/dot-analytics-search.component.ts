@@ -1,6 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { CommonModule } from '@angular/common';
 import { Component, inject, model } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -19,7 +18,6 @@ import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTION
 @Component({
     selector: 'lib-dot-analytics-search',
     imports: [
-        CommonModule,
         DotMessagePipe,
         ButtonDirective,
         MonacoEditorModule,

@@ -10,7 +10,7 @@
                     <dot-asset-search
                         (addAsset)="onSelectAsset($event)"
                         [type]="type"
-                        [languageId]="languageId"></dot-asset-search>
+                        [languageId]="languageId" />
                 </div>
             </ng-template>
         </p-tabPanel>
@@ -25,7 +25,7 @@
                         (uploadedFile)="onSelectAsset($event)"
                         (preventClose)="onPreventClose($event)"
                         (hide)="onHide($event)"
-                        [type]="type"></dot-upload-asset>
+                        [type]="type" />
                 </div>
             </ng-template>
         </p-tabPanel>
@@ -36,9 +36,7 @@
             leftIcon="pi pi-link">
             <ng-template pTemplate="content">
                 <div class="wrapper">
-                    <dot-external-asset
-                        (addAsset)="onSelectAsset($event)"
-                        [type]="type"></dot-external-asset>
+                    <dot-external-asset (addAsset)="onSelectAsset($event)" [type]="type" />
                 </div>
             </ng-template>
         </p-tabPanel>

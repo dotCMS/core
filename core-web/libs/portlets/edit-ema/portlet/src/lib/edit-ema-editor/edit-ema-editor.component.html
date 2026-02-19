@@ -1,5 +1,6 @@
 @let ogTagsResults = ogTagsResults$;
 @let showSEOTool = $editorProps().seoResults && ogTagsResults;
+@let dropzone = $editorProps().dropzone;
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
@@ -10,7 +11,20 @@
         [seoMedia]="$editorProps().seoResults.socialMedia"
         [seoOGTags]="$editorProps().seoResults.ogTags"
         [seoOGTagsResults]="ogTagsResults"
-        data-testId="results-seo-tool"></dot-results-seo-tool>
+        data-testId="results-seo-tool" />
+}
+
+@if (uveStore.$canEditPage()) {
+    <dot-uve-palette
+        [ngClass]="$paletteClass()"
+        [languageId]="uveStore.$languageId()"
+        [pagePath]="uveStore.$pageURI()"
+        [variantId]="uveStore.$variantId()"
+        [activeTab]="uveStore.palette.currentTab()"
+        [showStyleEditorTab]="uveStore.$isStyleEditorEnabled()"
+        [styleSchema]="uveStore.$styleSchema()"
+        (onTabChange)="handleTabChange($event)"
+        data-testId="palette" />
 }
 
 <div
@@ -51,40 +65,32 @@
                 data-testId="progress-bar"
                 mode="indeterminate" />
         }
-        @if ($editorProps()?.contentletTools; as contentletTools) {
-            <dot-ema-contentlet-tools
-                (edit)="handleEditContentlet($event)"
+        @if ($showContentletControls()) {
+            <dot-uve-contentlet-tools
                 (editVTL)="handleEditVTL($event)"
-                (delete)="deleteContentlet($event)"
-                (addWidget)="dialog.addWidget($event)"
-                (addForm)="dialog.addForm($event)"
-                (addContent)="dialog.addContentlet($event)"
-                [hide]="contentletTools.hide"
-                [contentletArea]="contentletTools.contentletArea"
-                [isEnterprise]="contentletTools.isEnterprise"
-                [disableDeleteButton]="contentletTools.disableDeleteButton"
+                (editContent)="handleEditContentlet($event)"
+                (deleteContent)="deleteContent($event)"
+                (addContent)="handleAddContent($event)"
+                (selectContent)="handleSelectContent($event)"
+                [contentletArea]="$contentArea()"
+                [isEnterprise]="uveStore.isEnterprise()"
+                [allowContentDelete]="$allowContentDelete()"
+                [showStyleEditorOption]="uveStore.$isStyleEditorEnabled()"
                 data-testId="contentlet-tools" />
         }
-        @if ($editorProps().dropzone; as dropzone) {
+        @if (!$toggleLockOptions()?.showOverlay && dropzone) {
             <dot-ema-page-dropzone
                 [containers]="dropzone.bounds"
                 [dragItem]="dropzone.dragItem"
                 data-testId="dropzone" />
         }
+
+        @if ($toggleLockOptions()?.showOverlay) {
+            <dot-uve-lock-overlay />
+        }
     </div>
 </div>
 
-@if ($editorProps().palette; as palette) {
-    <!-- This is to hold the place for the button that is on the nav bar -->
-    <div class="toggle-palette-placeholder" data-testId="toggle-palette-placeholder"></div>
-
-    <dot-edit-ema-palette
-        [ngClass]="palette.paletteClass"
-        [languageId]="palette.languageId"
-        [containers]="palette.containers"
-        [variantId]="palette.variantId"
-        data-testId="palette" />
-}
 @if ($editorProps().showDialogs) {
     <dot-edit-ema-dialog
         (action)="onCustomEvent($event)"
@@ -104,3 +110,11 @@
 @if ($editorProps().showBlockEditorSidebar) {
     <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
 }
+
+<div
+    #customDragImage
+    class="absolute p-3 bg-white border-1 border-round-lg z-1"
+    style="top: -1000px; left: -1000px; width: fit-content"
+    data-testId="drag-image">
+    {{ uveStore.$areaContentType() }}
+</div>

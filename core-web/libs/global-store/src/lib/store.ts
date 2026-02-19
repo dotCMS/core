@@ -5,7 +5,8 @@ import {
     withComputed,
     withHooks,
     withMethods,
-    withState
+    withState,
+    withFeature
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -17,7 +18,9 @@ import { switchMap } from 'rxjs/operators';
 import { DotSiteService } from '@dotcms/data-access';
 import { SiteEntity } from '@dotcms/dotcms-models';
 
-import { withSystem } from './with-system.feature';
+import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
+import { withMenu } from './features/menu/with-menu.feature';
+import { withSystem } from './features/with-system/with-system.feature';
 
 /**
  * Represents the global application state.
@@ -57,6 +60,7 @@ const initialState: GlobalState = {
  * - Provides currentSiteId computed for any services that need site context
  * - Stores complete site entity from API endpoint
  * - Includes withSystem feature for system configuration management
+ * - Includes withMenu feature for menu state management
  *
  * Example usage:
  * ```typescript
@@ -80,6 +84,26 @@ export const GlobalStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
     withSystem(),
+    withComputed(({ siteDetails }) => ({
+        /**
+         * Computed signal that returns the current site identifier.
+         *
+         * This is the primary computed for getting the site ID for any services
+         * that need site context (analytics, content, etc.).
+         * Returns the identifier from the loaded site entity.
+         *
+         * @returns The site identifier string or null if no site is loaded
+         *
+         * @example
+         * ```typescript
+         * const siteId = this.globalStore.currentSiteId();
+         * if (siteId) {
+         *   this.myService.fetchData(siteId);
+         * }
+         * ```
+         */
+        currentSiteId: computed(() => siteDetails()?.identifier ?? null)
+    })),
     withMethods((store, siteService = inject(DotSiteService)) => {
         return {
             /**
@@ -131,26 +155,8 @@ export const GlobalStore = signalStore(
             }
         };
     }),
-    withComputed(({ siteDetails }) => ({
-        /**
-         * Computed signal that returns the current site identifier.
-         *
-         * This is the primary computed for getting the site ID for any services
-         * that need site context (analytics, content, etc.).
-         * Returns the identifier from the loaded site entity.
-         *
-         * @returns The site identifier string or null if no site is loaded
-         *
-         * @example
-         * ```typescript
-         * const siteId = this.globalStore.currentSiteId();
-         * if (siteId) {
-         *   this.myService.fetchData(siteId);
-         * }
-         * ```
-         */
-        currentSiteId: computed(() => siteDetails()?.identifier ?? null)
-    })),
+    withMenu(),
+    withFeature(({ menuItemsEntities }) => withBreadcrumbs(menuItemsEntities)),
     withHooks({
         /**
          * Automatically loads the current site when the store is initialized.

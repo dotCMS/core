@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator';
+import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -11,7 +11,9 @@ import { DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import {
     createFakeContentlet,
     createFakeTextAreaField,
-    MockDotMessageService
+    DotLanguagesServiceMock,
+    MockDotMessageService,
+    monacoMock
 } from '@dotcms/utils-testing';
 
 import { DotEditContentTextAreaComponent } from './dot-edit-content-text-area.component';
@@ -21,6 +23,11 @@ import {
 } from './dot-edit-content-text-area.constants';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).monaco = monacoMock;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(window as any).monaco = monacoMock;
 
 const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
     variable: 'someTextArea'
@@ -52,7 +59,7 @@ describe('DotEditContentTextAreaComponent', () => {
             DotEditContentMonacoEditorControlComponent
         ],
         providers: [
-            mockProvider(DotLanguagesService),
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             provideHttpClient(),
             provideHttpClientTesting(),
             {
@@ -66,7 +73,7 @@ describe('DotEditContentTextAreaComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -216,7 +223,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -253,7 +260,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -293,7 +300,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -329,7 +336,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const switchSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -369,7 +376,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const switchBackSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -409,7 +416,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const initSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -445,7 +452,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const preserveSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -484,7 +491,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const workflowSpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
@@ -533,7 +540,7 @@ describe('DotEditContentTextAreaComponent', () => {
 
             const noPropertySpectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" [formControlName]="field.variable" />
+                    <dot-edit-content-text-area [field]="field" [contentlet]="contentlet"/>
                 </form>`,
                 {
                     hostProps: {

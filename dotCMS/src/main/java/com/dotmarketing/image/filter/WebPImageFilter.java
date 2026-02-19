@@ -17,7 +17,7 @@ public class WebPImageFilter extends ImageFilter {
 		};
 	}
 	public File runFilter(final File file, final Map<String, String[]> parameters) {
-
+        
 	    final int qualityParam = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
 
 	    Float quality = Float.valueOf(qualityParam);
@@ -46,8 +46,8 @@ public class WebPImageFilter extends ImageFilter {
 
             final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() +".tmp");
 
-	        
-	        
+
+
 	        writer.setOutput(new FileImageOutputStream(tempResultFile));
 	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
 	        writer.dispose();

@@ -1,5 +1,13 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -49,11 +57,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -61,14 +64,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * This class tests the creation, copy, update, verification and setting of
@@ -150,7 +149,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void doesRoleHavePermission() throws DotDataException, DotSecurityException {
-        Role nrole=getRole("TestingRole");
+        Role nrole = getRole("TestingRole");
 
         Permission p=new Permission();
         p.setPermission(PermissionAPI.PERMISSION_EDIT);
@@ -165,7 +164,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void doesUserHavePermission() throws DotDataException, DotSecurityException {
-        Role nrole=getRole("TestingRole2");
+        Role nrole = getRole("TestingRole2");
 
         User user= UserTestUtil.getUser("useruser", false, true);
 
@@ -340,7 +339,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         Folder f1=APILocator.getFolderAPI().findFolderByPath("/f1/", site, sysuser, false);
         Folder f2=APILocator.getFolderAPI().findFolderByPath("/f2/", site, sysuser, false);
 
-        Role nrole=getRole("TestingRole3");
+        Role nrole = getRole("TestingRole3");
 
         permissionAPI.permissionIndividually(site, f1, sysuser);
         permissionAPI.permissionIndividually(site, f2, sysuser);
@@ -368,7 +367,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void getPermissions() throws DotDataException, DotSecurityException {
-        Role nrole=getRole("TestingRole4");
+        Role nrole = getRole("TestingRole4");
 
         APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f1/", site, sysuser, false);
@@ -397,7 +396,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void getRolesWithPermission() throws DotDataException, DotSecurityException {
-        Role nrole=getRole("TestingRole6");
+        Role nrole = getRole("TestingRole6");
 
         APILocator.getFolderAPI().createFolders("/f2/", site, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f2/", site, sysuser, false);
@@ -423,7 +422,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void getUsersWithPermission() throws DotDataException, DotSecurityException {
-        Role nrole=getRole("TestingRole5");
+        Role nrole = getRole("TestingRole5");
 
         User user= UserTestUtil.getUser("useruser", false, true);
 
@@ -454,7 +453,7 @@ public class PermissionAPITest extends IntegrationTestBase {
 
     @Test
     public void save() throws DotStateException, DotDataException, DotSecurityException {
-        Role nrole=getRole("TestingRole7");
+        Role nrole = getRole("TestingRole7");
 
         APILocator.getFolderAPI().createFolders("/f4/", site, sysuser, false);
         Folder f = APILocator.getFolderAPI().findFolderByPath("/f4/", site, sysuser, false);
@@ -519,7 +518,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         site.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         site=APILocator.getHostAPI().save(site, sysuser, false);
 
-        Role nrole=getRole("TestingRole7");
+        Role nrole = getRole("TestingRole7");
 
         try {
             Folder f1 = APILocator.getFolderAPI().createFolders("/f1/", site, sysuser, false);
@@ -831,7 +830,7 @@ public class PermissionAPITest extends IntegrationTestBase {
     	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m2), m2, sysuser, false);
     	permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(m3), m3, sysuser, false);
 
-    	Role nrole=getRole("TestingRole");
+        Role nrole = getRole("TestingRole");
 
     	Permission p=new Permission(m1.getInode(),nrole.getId(),PermissionAPI.PERMISSION_CAN_ADD_CHILDREN,false);
     	permissionAPI.save(p, m1, sysuser, false);
@@ -854,7 +853,7 @@ public class PermissionAPITest extends IntegrationTestBase {
         site=APILocator.getHostAPI().save(site, sysuser, false);
         final Folder folderTheme = new FolderDataGen().site(site).title("themeFolder"+System.currentTimeMillis()).nextPersisted();
 
-        Role nrole=getRole("TestingRole10");
+        Role nrole = getRole("TestingRole10");
 
         Map<String,String> mm=new HashMap<>();
         mm.put("templateLayouts", Integer.toString(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS));

@@ -5,10 +5,13 @@
     </h3>
 </div>
 <dot-tree-folder
+    #treeFolder
     [folders]="$folders()"
     [loading]="$loading()"
     [showFolderIconOnFirstOnly]="true"
     [selectedNode]="$selectedNode()"
     (onNodeSelect)="onNodeSelect($event)"
     (onNodeExpand)="onNodeExpand($event)"
-    (onNodeCollapse)="onNodeCollapse($event)" />
+    (onNodeCollapse)="onNodeCollapse($event)"
+    (uploadFiles)="uploadFiles.emit($event)"
+    (moveItems)="moveItems.emit($event)" />

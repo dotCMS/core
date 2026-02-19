@@ -7,5 +7,11 @@
         "target": "es2016"
     },
     "files": ["src/test-setup.ts"],
-    "include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"]
+    "include": [
+        "jest.config.ts",
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.d.ts",
+        "../../../data-access/src/lib/dot-favorite-contenttype/dot-favorite-contenttype.service.spec.ts"
+    ]
 }

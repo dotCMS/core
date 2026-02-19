@@ -1,0 +1,58 @@
+<!-- Metrics Section -->
+<div class="analytics-dashboard-conversions__metrics flex gap-3 flex-wrap">
+    @for (metric of $metricsData(); track metric.name) {
+        <dot-analytics-dashboard-metrics
+            class="analytics-dashboard-conversions__metric-card"
+            [name]="metric.name"
+            [value]="metric.value || 0"
+            [subtitle]="metric.subtitle || ''"
+            [icon]="metric.icon || ''"
+            [status]="metric.status"
+            data-testid="analytics-metric-card" />
+    }
+</div>
+
+<!-- Charts Section - Two charts side by side -->
+<div class="analytics-dashboard-conversions__charts flex gap-3">
+    <!-- Conversion Trend - Line Chart (1 dataset) -->
+    <div class="analytics-dashboard-conversions__chart-half">
+        <dot-analytics-dashboard-chart
+            [title]="'analytics.charts.conversion-trend.title' | dm"
+            type="line"
+            [data]="$conversionTrendData()"
+            [status]="$conversionTrendStatus()"
+            data-testid="analytics-conversion-trend-chart" />
+    </div>
+
+    <!-- Traffic vs Conversions - Combo Chart (2 datasets: bar + line) -->
+    <div class="analytics-dashboard-conversions__chart-half">
+        <dot-analytics-dashboard-chart
+            [title]="$trafficVsConversionsTitle()"
+            type="bar"
+            [data]="$trafficVsConversionsData()"
+            [status]="$trafficVsConversionsStatus()"
+            data-testid="analytics-traffic-conversions-chart" />
+    </div>
+</div>
+
+<!-- Content Conversions Table -->
+<div class="analytics-dashboard-conversions__content-table">
+    @defer (on viewport) {
+        <dot-analytics-content-conversions-table
+            [data]="$contentConversionsData()"
+            [status]="$contentConversionsStatus()" />
+    } @placeholder {
+        <div style="min-height: 400px"></div>
+    }
+</div>
+
+<!-- Conversions Overview Table -->
+<div class="analytics-dashboard-conversions__overview-table">
+    @defer (on viewport) {
+        <dot-analytics-conversions-overview-table
+            [data]="$conversionsOverviewData()"
+            [status]="$conversionsOverviewStatus()" />
+    } @placeholder {
+        <div style="min-height: 400px"></div>
+    }
+</div>

@@ -900,6 +900,9 @@ public class JSONObject implements Serializable, Map {
      * @param bean the incoming object
      */
     private void populateMap(Object bean) {
+        if (bean == null) {
+            return;
+        }
         final Class <?> clazz = bean.getClass();
         // If clazz is a System class then set includeSuperClass to false.
         final boolean includeSuperClass = clazz.getClassLoader() != null;
@@ -924,6 +927,9 @@ public class JSONObject implements Serializable, Map {
      */
     private void populateWithMethod(Object bean, Method method)
             throws IllegalAccessException, InvocationTargetException {
+        if (bean == null || method == null) {
+            return;
+        }
         if (Modifier.isPublic(method.getModifiers()) && !isIgnorable(method)) {
             String key = key(method.getName());
             if (!key.isEmpty() && Character.isUpperCase(key.charAt(0)) && method.getParameterTypes().length == 0) {

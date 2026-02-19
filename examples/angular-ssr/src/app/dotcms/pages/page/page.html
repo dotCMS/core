@@ -1,0 +1,5 @@
+@if (pageAsset()) {
+  <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
+} @else {
+  <app-loading />
+}

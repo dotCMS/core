@@ -1,4 +1,8 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
@@ -45,27 +49,65 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
 
-    // TODO: Remove this once we have a proper solution for the text field from Backend (URL case)
-    // Remove leading "/" if present
-    return typeof value === 'string' && value.startsWith('/') ? value.substring(1) : value;
+    const shouldRemoveLeadingSlash =
+        contentlet?.baseType === 'HTMLPAGE' &&
+        field.variable === 'url' &&
+        typeof value === 'string' &&
+        value.startsWith('/');
+
+    return shouldRemoveLeadingSlash ? value.substring(1) : value;
 };
 
 /**
- * A function that provides a default resolution value for a contentlet field.
+ * Resolves the host folder path for a contentlet based on its type and URL structure.
  *
- * @param {Object} contentlet - The contentlet object.
- * @param {Object} field - The field object.
- * @returns {*} The resolved value for the field.
+ * For FILEASSET and HTMLPAGE, removes the last path segment to get the parent path:
+ * - File assets: the last segment is the filename, so the result is the directory path.
+ * - Pages: the last segment is the page URL segment (e.g. /about/team), so the result is the path of the parent folder.
+ * For other content types, extracts the path up to the '/content' segment.
+ *
+ * @param contentlet - The contentlet object containing hostName, url, and type
+ * @param field - The field object containing the default value
+ * @returns The resolved host folder path or the field's default value
  */
 const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    if (contentlet?.hostName && contentlet?.url) {
-        const path = `${contentlet?.hostName}${contentlet?.url}`;
-        const finalPath = path.slice(0, path.indexOf('/content'));
-
-        return `${finalPath}`;
+    // Early return if contentlet is invalid or missing required properties
+    if (!contentlet?.hostName || !contentlet?.url) {
+        return field?.defaultValue || '';
     }
 
-    return field.defaultValue || '';
+    const { hostName, url, baseType } = contentlet;
+
+    // Ensure hostName and url are strings
+    if (typeof hostName !== 'string' || typeof url !== 'string') {
+        return field?.defaultValue || '';
+    }
+
+    const fullPath = `${hostName}${url}`;
+
+    try {
+        if (
+            baseType === DotCMSBaseTypesContentTypes.FILEASSET ||
+            baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+        ) {
+            // Remove the last path segment: filename for file assets, page URL segment for pages
+            const pathSegments = fullPath.split('/');
+            if (pathSegments.length > 1) {
+                return pathSegments.slice(0, -1).join('/');
+            }
+            return fullPath;
+        } else {
+            // For other content types, extract path up to '/content'
+            const contentIndex = fullPath.indexOf('/content');
+            if (contentIndex !== -1) {
+                return fullPath.slice(0, contentIndex);
+            }
+            return fullPath;
+        }
+    } catch (error) {
+        console.warn('Error processing host folder path:', error);
+        return field?.defaultValue || '';
+    }
 };
 
 /**

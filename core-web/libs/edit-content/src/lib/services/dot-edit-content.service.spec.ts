@@ -7,12 +7,10 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import {
-    DotContentTypeService,
-    DotSiteService,
-    DotWorkflowActionsFireService
-} from '@dotcms/data-access';
+import { DotContentTypeService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotContentletDepths } from '@dotcms/dotcms-models';
+import { DotBrowsingService } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentService } from './dot-edit-content.service';
 
@@ -25,12 +23,12 @@ describe('DotEditContentService', () => {
     let spectator: SpectatorHttp<DotEditContentService>;
     let dotContentTypeService: SpyObject<DotContentTypeService>;
     let dotWorkflowActionsFireService: SpyObject<DotWorkflowActionsFireService>;
-    let dotSiteService: SpyObject<DotSiteService>;
+    let dotBrowsingService: SpyObject<DotBrowsingService>;
 
     const createHttp = createHttpFactory({
         service: DotEditContentService,
         providers: [
-            mockProvider(DotSiteService),
+            mockProvider(DotBrowsingService),
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowActionsFireService)
         ]
@@ -39,7 +37,7 @@ describe('DotEditContentService', () => {
         spectator = createHttp();
         dotContentTypeService = spectator.inject(DotContentTypeService);
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
-        dotSiteService = spectator.inject(DotSiteService);
+        dotBrowsingService = spectator.inject(DotBrowsingService);
     });
 
     describe('Endpoints', () => {
@@ -159,7 +157,7 @@ describe('DotEditContentService', () => {
                     languageId: 1,
                     live: true,
                     modDate: 1756414525995,
-                    modUser: 'dotcms.org.1',
+                    modUserName: 'dotcms.org.1',
                     title: 'Test Version',
                     working: true
                 }
@@ -183,6 +181,173 @@ describe('DotEditContentService', () => {
 
             const req = spectator.expectOne(
                 `/api/v1/content/versions/id/${identifier}/history?offset=2&limit=10`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should get versions with languageId parameter', (done) => {
+            const identifier = '123-456-789';
+            const languageId = 1;
+            const mockVersions = [
+                {
+                    archived: false,
+                    country: 'United States',
+                    countryCode: 'US',
+                    experimentVariant: false,
+                    inode: 'test-inode-123',
+                    isoCode: 'en-us',
+                    language: 'English',
+                    languageCode: 'en',
+                    languageFlag: 'en_US',
+                    languageId: 1,
+                    live: true,
+                    modDate: 1756414525995,
+                    modUserName: 'dotcms.org.1',
+                    title: 'Test Version',
+                    working: true
+                }
+            ];
+            const mockResponse = {
+                entity: mockVersions
+            };
+
+            spectator.service
+                .getVersions(identifier, undefined, languageId)
+                .subscribe((response) => {
+                    expect(response.entity).toEqual(mockVersions);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/versions/id/${identifier}/history?languageId=1`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should get versions with pagination and languageId parameters', (done) => {
+            const identifier = '123-456-789';
+            const paginationParams = { offset: 2, limit: 10 };
+            const languageId = 1;
+            const mockVersions = [
+                {
+                    archived: false,
+                    country: 'United States',
+                    countryCode: 'US',
+                    experimentVariant: false,
+                    inode: 'test-inode-123',
+                    isoCode: 'en-us',
+                    language: 'English',
+                    languageCode: 'en',
+                    languageFlag: 'en_US',
+                    languageId: 1,
+                    live: true,
+                    modDate: 1756414525995,
+                    modUserName: 'dotcms.org.1',
+                    title: 'Test Version',
+                    working: true
+                }
+            ];
+            const mockPagination = {
+                currentPage: 2,
+                perPage: 10,
+                totalEntries: 50,
+                totalPages: 5
+            };
+            const mockResponse = {
+                entity: mockVersions,
+                pagination: mockPagination
+            };
+
+            spectator.service
+                .getVersions(identifier, paginationParams, languageId)
+                .subscribe((response) => {
+                    expect(response.entity).toEqual(mockVersions);
+                    expect(response.pagination).toEqual(mockPagination);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/versions/id/${identifier}/history?offset=2&limit=10&languageId=1`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should delete push publish history for a contentlet', () => {
+            const identifier = '123-456-789';
+            spectator.service.deletePushPublishHistory(identifier).subscribe();
+            spectator.expectOne(
+                `/api/bundle/deletepushhistory/assetid/${identifier}`,
+                HttpMethod.GET
+            );
+        });
+
+        it('should get push publish history for a contentlet', (done) => {
+            const identifier = '123-456-789';
+            const mockPushPublishHistory = [
+                {
+                    bundleId: 'bundle-123',
+                    environment: 'production',
+                    pushDate: 1756414525995,
+                    pushedBy: 'admin@dotcms.com'
+                },
+                {
+                    bundleId: 'bundle-456',
+                    environment: 'staging',
+                    pushDate: 1756414425995,
+                    pushedBy: 'editor@dotcms.com'
+                }
+            ];
+            const mockResponse = {
+                entity: mockPushPublishHistory
+            };
+
+            spectator.service.getPushPublishHistory(identifier).subscribe((response) => {
+                expect(response.entity).toEqual(mockPushPublishHistory);
+                done();
+            });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/${identifier}/push/history`,
+                HttpMethod.GET
+            );
+            req.flush(mockResponse);
+        });
+
+        it('should get push publish history with pagination parameters', (done) => {
+            const identifier = '123-456-789';
+            const paginationParams = { offset: 2, limit: 10 };
+            const mockPushPublishHistory = [
+                {
+                    bundleId: 'bundle-789',
+                    environment: 'development',
+                    pushDate: 1756414325995,
+                    pushedBy: 'dev@dotcms.com'
+                }
+            ];
+            const mockPagination = {
+                currentPage: 2,
+                perPage: 10,
+                totalEntries: 25,
+                totalPages: 3
+            };
+            const mockResponse = {
+                entity: mockPushPublishHistory,
+                pagination: mockPagination
+            };
+
+            spectator.service
+                .getPushPublishHistory(identifier, paginationParams)
+                .subscribe((response) => {
+                    expect(response.entity).toEqual(mockPushPublishHistory);
+                    expect(response.pagination).toEqual(mockPagination);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                `/api/v1/content/${identifier}/push/history?offset=2&limit=10`,
                 HttpMethod.GET
             );
             req.flush(mockResponse);
@@ -212,21 +377,51 @@ describe('DotEditContentService', () => {
     });
 
     describe('getContentByFolder', () => {
-        it('should call siteService with correct params when only folderId is provided', () => {
-            dotSiteService.getContentByFolder.mockReturnValue(of([]));
-            spectator.service.getContentByFolder({ folderId: '123' });
+        it('should call dotBrowsingService with correct params when only hostFolderId is provided', () => {
+            const mockContentlets = [];
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
 
-            expect(dotSiteService.getContentByFolder).toHaveBeenCalledWith({
-                mimeTypes: [],
+            const params = { hostFolderId: '123' };
+            spectator.service.getContentByFolder(params);
+
+            expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith(params);
+        });
+
+        it('should call dotBrowsingService with all provided params', () => {
+            const mockContentlets = [];
+            const params = {
                 hostFolderId: '123',
-                showLinks: false,
-                showDotAssets: true,
-                showPages: false,
-                showFiles: true,
-                showFolders: false,
-                showWorking: true,
-                sortByDesc: true,
-                showArchived: false
+                mimeTypes: ['image/jpeg', 'image/png'],
+                showLinks: true,
+                showDotAssets: false,
+                showPages: true,
+                showFiles: false,
+                showFolders: true,
+                showWorking: false,
+                sortByDesc: false,
+                showArchived: true
+            };
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
+
+            spectator.service.getContentByFolder(params);
+
+            expect(dotBrowsingService.getContentByFolder).toHaveBeenCalledWith(params);
+        });
+
+        it('should return content from dotBrowsingService', (done) => {
+            const mockContentlets = [
+                createFakeContentlet({
+                    inode: 'content-1',
+                    title: 'Test Content',
+                    identifier: 'content-1'
+                })
+            ];
+            const params = { hostFolderId: '123' };
+            dotBrowsingService.getContentByFolder.mockReturnValue(of(mockContentlets));
+
+            spectator.service.getContentByFolder(params).subscribe((result) => {
+                expect(result).toEqual(mockContentlets);
+                done();
             });
         });
     });

@@ -9,13 +9,13 @@
                 [propertyName]="property"
                 [field]="formFieldData"
                 [group]="form"
-                dotDynamicFieldProperty></ng-container>
+                dotDynamicFieldProperty />
         </div>
     }
     @if (formFieldData?.relationships) {
         <dot-relationship-tree
             [contentType]="contentType"
             [isParentField]="formFieldData.relationships.isParentField"
-            [velocityVar]="formFieldData.relationships.velocityVar"></dot-relationship-tree>
+            [velocityVar]="formFieldData.relationships.velocityVar" />
     }
 </form>

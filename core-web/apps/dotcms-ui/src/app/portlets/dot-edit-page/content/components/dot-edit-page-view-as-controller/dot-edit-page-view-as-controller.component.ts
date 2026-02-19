@@ -1,6 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { DropdownModule } from 'primeng/dropdown';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
@@ -19,12 +24,26 @@ import {
     DotPersona,
     DotVariantData
 } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotDeviceSelectorComponent } from '../../../../../view/components/dot-device-selector/dot-device-selector.component';
+import { DotLanguageSelectorComponent } from '../../../../../view/components/dot-language-selector/dot-language-selector.component';
+import { DotPersonaSelectorComponent } from '../../../../../view/components/dot-persona-selector/dot-persona-selector.component';
 
 @Component({
     selector: 'dot-edit-page-view-as-controller',
     templateUrl: './dot-edit-page-view-as-controller.component.html',
     styleUrls: ['./dot-edit-page-view-as-controller.component.scss'],
-    standalone: false
+    imports: [
+        CommonModule,
+        DropdownModule,
+        FormsModule,
+        TooltipModule,
+        DotPersonaSelectorComponent,
+        DotLanguageSelectorComponent,
+        DotDeviceSelectorComponent,
+        DotMessagePipe
+    ]
 })
 export class DotEditPageViewAsControllerComponent implements OnInit {
     private dotAlertConfirmService = inject(DotAlertConfirmService);

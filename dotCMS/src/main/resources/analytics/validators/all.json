@@ -4,10 +4,10 @@
     "required": true,
 
     "allowed_attributes": {
-      "site_key": {
+      "site_auth": {
         "type": "string",
         "required": true,
-        "custom-validator": "SiteKeyValidator"
+        "custom-validator": "SiteAuthValidator"
       },
       "session_id": {
         "type": "string",
@@ -16,6 +16,29 @@
       "user_id": {
         "type": "string",
         "required": true
+      },
+      "device": {
+        "type": "json_object",
+        "required": true,
+
+        "allowed_attributes": {
+          "screen_resolution": {
+            "type": "string",
+            "required": true
+          },
+          "language": {
+            "type": "string",
+            "required": true
+          },
+          "viewport_width": {
+            "type": "string",
+            "required": true
+          },
+          "viewport_height": {
+            "type": "string",
+            "required": true
+          }
+        }
       }
     }
   },

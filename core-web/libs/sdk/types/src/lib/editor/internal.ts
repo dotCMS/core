@@ -110,4 +110,5 @@ export interface DotContentletAttributes {
     'data-dot-type': string;
     'data-dot-container': string;
     'data-dot-on-number-of-pages': string;
+    'data-dot-style-properties'?: string;
 }

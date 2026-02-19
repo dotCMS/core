@@ -1,0 +1,79 @@
+name: Claude-Code When Mentioned
+
+# Concurrency control to prevent multiple jobs running for the same PR/issue
+concurrency:
+  group: claude-${{ github.event.pull_request.number || github.event.issue.number || 'manual' }}
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode for debugging'
+        required: false
+        type: boolean
+        default: false
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  # Security gate: Check if user is dotCMS organization member
+  #
+  # REQUIREMENTS FOR CLAUDE ACCESS:
+  # 1. Must be a member of the dotCMS organization
+  # 2. Membership must be set to PUBLIC visibility
+  #
+  # TROUBLESHOOTING: If blocked, visit https://github.com/orgs/dotCMS/people
+  # and ensure your membership is public (click "Make public" if needed)
+  security-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read           # Allow repository checkout
+      # Note: Organization membership checking uses fine-grained token
+      # so no additional GITHUB_TOKEN permissions needed for that API
+    outputs:
+      authorized: ${{ steps.membership-check.outputs.is_member }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check organization membership
+        id: membership-check
+        uses: ./.github/actions/security/org-membership-check
+        with:
+          username: ${{ github.event.comment.user.login || github.actor }}
+
+      - name: Log security decision
+        run: |
+          if [ "${{ steps.membership-check.outputs.is_member }}" = "true" ]; then
+            echo "✅ Access granted: User is a dotCMS organization member"
+          else
+            echo "❌ Access denied: User failed dotCMS organization membership check"
+            echo ""
+            echo "📋 TROUBLESHOOTING: If you are a dotCMS team member:"
+            echo "   1. Visit https://github.com/orgs/dotCMS/people"
+            echo "   2. Ensure your membership is set to 'Public'"
+            echo "   3. If you're not listed, contact an organization owner"
+            echo ""
+            echo "::warning::Unauthorized user attempted to trigger Claude workflow: ${{ github.event.comment.user.login || github.actor }}"
+          fi
+
+  # Interactive Claude mentions (simplified using centralized logic)
+  claude-interactive:
+    needs: security-check
+    if: needs.security-check.outputs.authorized == 'true'
+    uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v1.0.0
+    with:
+      trigger_mode: interactive
+      allowed_tools: |
+        Bash(git status)
+        Bash(git diff)
+      timeout_minutes: 15
+      runner: ubuntu-latest
+      enable_mention_detection: true  # Uses built-in @claude mention detection
+      # custom_trigger_condition: |    # Optional: Override default mention detection
+      #   your custom condition here
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

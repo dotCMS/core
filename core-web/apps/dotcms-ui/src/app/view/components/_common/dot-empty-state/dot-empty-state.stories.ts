@@ -7,7 +7,6 @@ import { DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmptyStateComponent } from './dot-empty-state.component';
-import { DotEmptyStateModule } from './dot-empty-state.module';
 
 const messageServiceMock = new MockDotMessageService({
     'message.template.empty.title': 'Your template list is empty',
@@ -20,7 +19,7 @@ const meta: Meta<DotEmptyStateComponent> = {
     title: 'DotCMS/Structure/Empty State',
     decorators: [
         moduleMetadata({
-            imports: [DotEmptyStateModule, DotSafeHtmlPipe],
+            imports: [DotEmptyStateComponent, DotSafeHtmlPipe],
             providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
         })
     ],

@@ -1,5 +1,20 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
+import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
+import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
+import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
+import static com.dotcms.util.DotPreconditions.checkNotEmpty;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+import static com.dotmarketing.util.UtilMethods.isNotSet;
+import static com.liferay.util.StringPool.BLANK;
+import static com.liferay.util.StringPool.COMMA;
+import static com.liferay.util.StringPool.PERIOD;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
@@ -65,19 +80,6 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.time.FastDateFormat;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.action.support.master.AcknowledgedResponse;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.client.indices.GetFieldMappingsRequest;
-import org.elasticsearch.client.indices.GetFieldMappingsResponse;
-import org.elasticsearch.client.indices.GetMappingsRequest;
-import org.elasticsearch.client.indices.GetMappingsResponse;
-import org.elasticsearch.client.indices.PutMappingRequest;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.xcontent.XContentType;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
@@ -99,21 +101,18 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
-import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
-import static com.dotcms.contenttype.model.field.LegacyFieldTypes.CUSTOM_FIELD;
-import static com.dotcms.contenttype.model.type.PersonaContentType.PERSONA_KEY_TAG_FIELD_VAR;
-import static com.dotcms.util.DotPreconditions.checkNotEmpty;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-import static com.dotmarketing.util.UtilMethods.isNotSet;
-import static com.liferay.util.StringPool.BLANK;
-import static com.liferay.util.StringPool.COMMA;
-import static com.liferay.util.StringPool.PERIOD;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.time.FastDateFormat;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.indices.GetFieldMappingsRequest;
+import org.elasticsearch.client.indices.GetFieldMappingsResponse;
+import org.elasticsearch.client.indices.GetMappingsRequest;
+import org.elasticsearch.client.indices.GetMappingsResponse;
+import org.elasticsearch.client.indices.PutMappingRequest;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.XContentType;
 
 /**
  * Implementation class for the {@link ContentMappingAPI}.
@@ -127,10 +126,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	public static final String WRITE_METADATA_ON_REINDEX = "write.metadata.on.reindex";
 
 	//If you want to skip indexing metadata dotraw fields set this prop to false
-	static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
+	public static final String INDEX_DOTRAW_METADATA_FIELDS = "index.dotraw.metadata.fields";
 
 	//If you want to override and specify a set of particular fields to be included in the dotRaw generation it can be accomplished through this prop.
-	static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
+	public static final String INCLUDE_DOTRAW_METADATA_FIELDS = "include.dotraw.metadata.fields";
 
     //These are the fields included by default to be used as  metadata.fieldname_dotraw
 	static final String[] defaultIncludedDotRawMetadataFields = {
@@ -335,7 +334,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			loadCategories(contentlet, contentletMap);
 			loadFields(contentlet, contentletMap);
 			loadPermissions(contentlet, contentletMap);
+            fillCategoryPermissions(contentlet, contentletMap);
             loadRelationshipFields(contentlet, contentletMap, sw);
+
 
 			final Identifier contentIdentifier = identifierAPI.find(contentlet);
             if (null == contentIdentifier || !UtilMethods.isSet(contentIdentifier.getId())) {
@@ -508,6 +509,71 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
+
+    /**
+     * Populates a map with the required roles and permissions associated with the category fields of a given
+     * contentlet. If no categories are found, it adds a default "none" permission.
+     *
+     * @param contentlet The contentlet object containing the category fields to be analyzed and their corresponding
+     *                   permissions.
+     * @param mapLowered The map where the category-related permissions will be stored, under a specific key.
+     */
+    void fillCategoryPermissions(final Contentlet contentlet, final Map<String, Object> mapLowered) {
+        if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
+            return;
+        }
+        List<String> requiredRoles = new ArrayList<>();
+        requiredRoles.add(ESMappingConstants.MAPPED_PERMISSIONS.cms_admin_role.name());
+
+        // List of fields which have secondaryPermissionCheck=true
+        List<com.dotcms.contenttype.model.field.Field> permissionedCategories = contentlet
+                .getContentType()
+                .fields(CategoryField.class)
+                .stream()
+                .filter(f -> f.fieldVariables()
+                        .stream()
+                        .anyMatch(
+                                fv -> "secondaryPermissionCheck".equalsIgnoreCase(fv.key()) && "true".equalsIgnoreCase(
+                                        fv.value())))
+                .collect(Collectors.toList());
+
+        boolean hasCats = false;
+
+        for (com.dotcms.contenttype.model.field.Field field : permissionedCategories) {
+            List<Category> myCats = Try.of(
+                            () -> (List<Category>) APILocator.getContentletAPI()
+                                    .getFieldValue(contentlet, field, APILocator.systemUser(), false))
+                    .getOrElse(List.of());
+            if (!myCats.isEmpty()) {
+                hasCats = true;
+            }
+            Set<String> permissions = new HashSet<>();
+            myCats.forEach(cat -> {
+                Try.run(() ->
+                {
+                    APILocator.getPermissionAPI()
+                            .getPermissions(cat)
+                            .forEach(
+                                    p -> permissions.add(p.getRoleId())
+                            );
+
+                }).onFailure(e -> Logger.error(this, "Error getting permissions for category " + cat.getInode(), e));
+            });
+
+            requiredRoles.addAll(permissions);
+        }
+        if (!hasCats) {
+            requiredRoles.add(ESMappingConstants.MAPPED_PERMISSIONS.none.name());
+        }
+
+        mapLowered.put(ESMappingConstants.CATEGORY_PERMISSIONS, requiredRoles.toArray(new String[0]));
+
+
+    }
+
+
+
+
 	/**
 	 * Metadata generation happens here
 	 * @param contentlet
@@ -518,7 +584,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 */
 	private void writeMetadata(final Contentlet contentlet, final StringWriter stringWriter,
 			final Map<String, Object> mapLowered) throws IOException, DotDataException {
-		if (Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true)) {
+		if (isWriteMetadataOnReindex()) {
 
 			final ContentletMetadata metadata = fileMetadataAPI
 					.generateContentletMetadata(contentlet);
@@ -529,13 +595,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			fullMetadataMap.forEach((field, metadataValues) -> {
 				if (null != metadataValues) {
 
-					final Set<String> dotRawInclude =
-							Arrays.stream(Config.getStringArrayProperty(
-									INCLUDE_DOTRAW_METADATA_FIELDS,
-									defaultIncludedDotRawMetadataFields)).map(String::toLowerCase)
-									.collect(Collectors.toSet());
+                    final Set<String> dotRawInclude = getDotRawMetadataFields();
 
-					metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
+                    metadataValues.getFieldsMeta().forEach((metadataKey, metadataValue) -> {
 
 						final String contentData =
 								metadataValue != null ? metadataValue.toString() : BLANK;
@@ -561,7 +623,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 		}
 	}
 
-	/**
+    /**
+     * System flag that tells if metadata must be written to the index
+     * @return Bool flag
+     */
+    public static boolean isWriteMetadataOnReindex() {
+        return Config.getBooleanProperty(WRITE_METADATA_ON_REINDEX, true);
+    }
+
+    /**
+     * Return a set with the properties that will be included on the index
+     * @return Set of fields
+     */
+    public static Set<String> getDotRawMetadataFields() {
+        return Arrays.stream(Config.getStringArrayProperty(
+                INCLUDE_DOTRAW_METADATA_FIELDS,
+                defaultIncludedDotRawMetadataFields)).map(String::toLowerCase)
+                .collect(Collectors.toSet());
+    }
+
+    /**
 	 * This method takes care of populating any KeyValue Field named metadata that might exist on the ContentType definition
 	 * it must be called only once the metadata has been written @see {@link ESMappingAPIImpl#writeMetadata(Contentlet, StringWriter, Map)}
 	 * @param contentlet

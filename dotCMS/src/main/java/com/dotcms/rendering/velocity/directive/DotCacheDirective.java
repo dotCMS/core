@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.time.Duration;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
@@ -76,7 +77,7 @@ public class DotCacheDirective extends Directive {
         node.jjtGetChild(2).render(context, blockContent);
         writer.write(blockContent.toString());
         CacheLocator.getBlockDirectiveCache().add(key, Map.of(BlockDirectiveCache.PAGE_CONTENT_KEY, blockContent.toString()),
-                        ttl);
+                Duration.ofSeconds(ttl));
         return true;
 
 

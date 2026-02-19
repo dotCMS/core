@@ -28,8 +28,9 @@ import { DISABLED_WYSIWYG_FIELD } from '../../models/disabledWYSIWYG.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
+import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
-import { BaseFieldComponent } from '../shared/base-field.component';
+import { BaseWrapperField } from '../shared/base-wrapper-field';
 import {
     getCurrentEditorFromDisabled,
     updateDisabledWYSIWYGOnEditorSwitch
@@ -58,6 +59,7 @@ import {
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldFooterComponent,
+        DotCardFieldLabelComponent,
         DotMessagePipe
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,11 +70,7 @@ import {
         }
     ]
 })
-export class DotEditContentTextAreaComponent extends BaseFieldComponent {
-    /**
-     * Inject the ControlContainer
-     */
-    readonly controlContainer = inject(ControlContainer);
+export class DotEditContentTextAreaComponent extends BaseWrapperField {
     /**
      * Reference to the textarea element
      */
@@ -258,9 +256,5 @@ export class DotEditContentTextAreaComponent extends BaseFieldComponent {
      */
     get disabledWYSIWYGField() {
         return this.controlContainer.control?.get(DISABLED_WYSIWYG_FIELD);
-    }
-
-    writeValue(_: unknown): void {
-        // noop
     }
 }

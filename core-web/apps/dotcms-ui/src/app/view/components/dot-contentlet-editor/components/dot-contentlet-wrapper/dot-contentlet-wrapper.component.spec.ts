@@ -39,9 +39,11 @@ import {
 
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
-import { DotIframeDialogModule } from '../../../dot-iframe-dialog/dot-iframe-dialog.module';
+import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
 const messageServiceMock = new MockDotMessageService({
@@ -62,15 +64,23 @@ describe('DotContentletWrapperComponent', () => {
     let titleService: Title;
     let dotIframeService: DotIframeService;
     let dotEventsService: DotEventsService;
+    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
-            declarations: [DotContentletWrapperComponent],
+            imports: [
+                DotContentletWrapperComponent,
+                DotIframeDialogComponent,
+                RouterTestingModule,
+                BrowserAnimationsModule,
+                HttpClientTestingModule
+            ],
             providers: [
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
                 DotEventsService,
+                IframeOverlayService,
                 ConfirmationService,
                 DotcmsEventsService,
                 DotEventsSocket,
@@ -106,13 +116,13 @@ describe('DotContentletWrapperComponent', () => {
                     useClass: CoreWebServiceMock
                 },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotUiColorsService, useClass: MockDotUiColorsService }
-            ],
-            imports: [
-                DotIframeDialogModule,
-                RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
+                }
             ]
         });
     }));
@@ -127,6 +137,7 @@ describe('DotContentletWrapperComponent', () => {
         titleService = de.injector.get(Title);
         dotIframeService = de.injector.get(DotIframeService);
         dotEventsService = de.injector.get(DotEventsService);
+        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
         jest.spyOn(titleService, 'setTitle');
         jest.spyOn(dotIframeService, 'reload');
@@ -199,6 +210,37 @@ describe('DotContentletWrapperComponent', () => {
                     }
                 });
                 expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+            });
+
+            it('should close the dialog and navigate to content-drive when CD query params exist', () => {
+                const contentDriveParams = {
+                    folderId: '123',
+                    path: '/images'
+                };
+
+                Object.defineProperty(dotRouterService, 'currentPortlet', {
+                    value: {
+                        url: '/test?CD_folderId=123&CD_path=/images',
+                        id: '123'
+                    },
+                    writable: true
+                });
+
+                jest.spyOn(dotRouterService, 'gotoPortlet');
+
+                dotIframeDialog.triggerEventHandler('custom', {
+                    detail: {
+                        name: 'close'
+                    }
+                });
+
+                expect(dotAddContentletService.clear).toHaveBeenCalledTimes(1);
+                expect(component.header).toBe('');
+                expect(component.custom.emit).toHaveBeenCalledTimes(1);
+                expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
+                    queryParams: contentDriveParams
+                });
             });
 
             it('should called goToEdit', () => {
@@ -406,6 +448,84 @@ describe('DotContentletWrapperComponent', () => {
                     );
                 });
             });
+        });
+    });
+
+    describe('onCustomEvent', () => {
+        beforeEach(() => {
+            component.url = 'hello.world.com';
+            fixture.detectChanges();
+        });
+
+        it('should call the handler from customEventsHandler when event name exists', () => {
+            const mockEvent = {
+                detail: {
+                    name: 'close',
+                    data: {
+                        redirectUrl: 'testUrl',
+                        languageId: '1'
+                    }
+                }
+            } as CustomEvent;
+
+            jest.spyOn(component, 'onClose');
+            jest.spyOn(dotRouterService, 'goToEditPage');
+
+            component.onCustomEvent(mockEvent);
+
+            expect(component.onClose).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: 'testUrl',
+                language_id: '1'
+            });
+            expect(dotCustomEventHandlerService.handle).not.toHaveBeenCalled();
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEvent);
+        });
+
+        it('should call dotCustomEventHandlerService.handle when event name does not exist in customEventsHandler', () => {
+            const mockEvent = {
+                detail: {
+                    name: 'unknown-event',
+                    data: {
+                        someData: 'test'
+                    }
+                }
+            } as CustomEvent;
+
+            component.onCustomEvent(mockEvent);
+
+            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
+            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledTimes(1);
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEvent);
+        });
+
+        it('should always emit custom event regardless of handler existence', () => {
+            const mockEventWithHandler = {
+                detail: {
+                    name: 'edit-page',
+                    data: {
+                        url: 'some/url',
+                        languageId: '1',
+                        hostId: '123'
+                    }
+                }
+            } as CustomEvent;
+
+            const mockEventWithoutHandler = {
+                detail: {
+                    name: 'unknown-event',
+                    data: {}
+                }
+            } as CustomEvent;
+
+            jest.spyOn(dotRouterService, 'goToEditPage');
+
+            component.onCustomEvent(mockEventWithHandler);
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEventWithHandler);
+
+            component.onCustomEvent(mockEventWithoutHandler);
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEventWithoutHandler);
+            expect(component.custom.emit).toHaveBeenCalledTimes(2);
         });
     });
 });

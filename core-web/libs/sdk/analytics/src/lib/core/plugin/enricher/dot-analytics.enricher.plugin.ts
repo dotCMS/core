@@ -1,14 +1,21 @@
-import { ANALYTICS_SOURCE_TYPE, EVENT_TYPES } from '../../shared/dot-content-analytics.constants';
-import { DotCMSAnalyticsPayload } from '../../shared/dot-content-analytics.model';
-import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/dot-content-analytics.utils';
+import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
+import {
+    AnalyticsBasePayloadWithContext,
+    AnalyticsTrackPayloadWithContext,
+    EnrichedAnalyticsPayload,
+    EnrichedTrackPayload
+} from '../../shared/models';
+import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/utils/dot-analytics.utils';
 
 /**
- * Plugin that enriches the analytics payload data based on the event type.
- * Uses Analytics.js lifecycle events to inject context before processing.
- * The identity plugin runs FIRST to inject context: { session_id, site_key, user_id }
- * This enricher plugin runs SECOND to add page/device/utm data.
+ * Plugin that enriches the analytics payload data with page, UTM, and custom data.
+ * Uses Analytics.js lifecycle events to inject enriched data before the main plugin processes it.
  *
- * OPTIMIZED: Uses existing payload.properties data to avoid duplication
+ * The identity plugin runs FIRST to inject context: { session_id, site_auth, user_id, device }
+ * This enricher plugin runs SECOND to add page/utm/custom data.
+ * The main plugin runs THIRD to structure events and send to server.
+ *
+ * This plugin is ONLY responsible for data enrichment - NOT for event structuring or business logic.
  */
 export const dotAnalyticsEnricherPlugin = () => {
     return {
@@ -16,35 +23,59 @@ export const dotAnalyticsEnricherPlugin = () => {
 
         /**
          * PAGE VIEW ENRICHMENT - Runs after identity context injection
-         * Uses optimized enrichment that leverages analytics.js payload data
+         * Returns enriched payload with page, utm, and custom data added
+         * @returns {EnrichedAnalyticsPayload} Enriched payload ready for event creation
          */
-        'page:dot-analytics': ({ payload }: { payload: DotCMSAnalyticsPayload }) => {
-            return enrichPagePayloadOptimized(payload);
+        'page:dot-analytics': ({
+            payload
+        }: {
+            payload: AnalyticsBasePayloadWithContext;
+        }): EnrichedAnalyticsPayload => {
+            const enrichedData = enrichPagePayloadOptimized(payload);
+
+            if (!enrichedData.page) {
+                throw new Error('DotCMS Analytics: Missing required page data');
+            }
+
+            return enrichedData;
         },
 
-        // TODO: Fix this when we haver the final design for the track event
         /**
          * TRACK EVENT ENRICHMENT - Runs after identity context injection
-         * Creates structured track events with pre-injected context
+         * Adds page data and timestamp for predefined content events.
+         * For custom events, only adds timestamp.
+         *
+         * @returns {EnrichedTrackPayload} Enriched payload ready for event structuring
          */
-        'track:dot-analytics': ({ payload }: { payload: DotCMSAnalyticsPayload }) => {
+        'track:dot-analytics': ({
+            payload
+        }: {
+            payload: AnalyticsTrackPayloadWithContext;
+        }): EnrichedTrackPayload => {
+            const { event } = payload;
             const local_time = getLocalTime();
 
-            const enrichedPayload = {
-                events: [
-                    {
-                        event_type: EVENT_TYPES.TRACK,
-                        local_time: local_time,
-                        data: {
-                            event: payload.event,
-                            ...payload.properties,
-                            src: ANALYTICS_SOURCE_TYPE
-                        }
-                    }
-                ]
-            };
+            // For content_impression, content_click, and conversion events, add page data
+            if (
+                event === DotCMSPredefinedEventType.CONTENT_IMPRESSION ||
+                event === DotCMSPredefinedEventType.CONTENT_CLICK ||
+                event === DotCMSPredefinedEventType.CONVERSION
+            ) {
+                return {
+                    ...payload,
+                    page: {
+                        title: document.title,
+                        url: window.location.href
+                    },
+                    local_time
+                };
+            }
 
-            return enrichedPayload;
+            // For custom events, just add local_time
+            return {
+                ...payload,
+                local_time
+            };
         }
     };
 };

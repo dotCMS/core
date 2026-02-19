@@ -1,4 +1,5 @@
 import { Component, Prop, h } from '@stencil/core';
+
 import { DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
 
 @Component({

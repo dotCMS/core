@@ -76,6 +76,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
@@ -5562,6 +5563,65 @@ public class WorkflowResource {
         }
         return new ResponseContentletWorkflowStatusView(new ContentletWorkflowStatusView(scheme,
                 wfStep, wfTask));
+    }
+
+    /**
+     * Returns the workflow tasks based on the {@link WorkflowSearcherForm}
+     *
+     * @param request         The current instance of the {@link HttpServletRequest}.
+     * @param response        The current instance of the {@link HttpServletResponse}.
+     * @param workflowSearcherForm body will all filter parameters
+     *
+     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     *
+     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotSecurityException      The User calling this endpoint does not have required
+     *                                   permissions to do so.
+     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
+     *                                   view.
+     */
+    @POST
+    @Path("/tasks")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on the filter parameters on the request body",
+            description = "Retrieve the workflow tasks that matched" +
+                    "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityWorkflowTasksView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request")
+            }
+    )
+    public final ResponseEntityWorkflowTasksView getWorkflowTasks(@Context final HttpServletRequest request,
+                                                                            @Context final HttpServletResponse response,
+                                                                            final WorkflowSearcherForm workflowSearcherForm)
+            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
+
+        if (null == workflowSearcherForm) {
+
+            throw new BadRequestException("the body could not be null");
+        }
+
+        Logger.debug(this, String.format("Retrieving Workflow tasks based on the '%s'", workflowSearcherForm.toString()));
+        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true) // todo: check if here may need more than that
+                .requiredBackendUser(true).requiredFrontendUser(false).init();
+
+        final User user = initDataObject.getUser();
+        final WorkflowSearcher workflowSearcher = this.workflowHelper.toWorkflowSearcher(workflowSearcherForm, user);
+        final List<WorkflowTask> workflowTasks = workflowSearcher.findTasks();
+        final List<WorkflowTaskView> workflowTaskViews = this.workflowHelper.toWorkflowTasksView(workflowTasks);
+        return new ResponseEntityWorkflowTasksView(new WorkflowSearchResultsView(workflowSearcher.getTotalCount(),
+                workflowTaskViews));
     }
 
     /**

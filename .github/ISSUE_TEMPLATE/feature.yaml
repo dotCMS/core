@@ -1,9 +1,9 @@
 name: Feature
 description: Specific functionality within an EPIC that provides particular value
-title: "[FEATURE] "
 labels: []
 type: feature
 assignees: []
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown
@@ -12,15 +12,6 @@ body:
         **Note: This template is intended for Product team use only.**
         
         Features are specific groupings of functionality within an EPIC that provide particular value.
-
-  - type: input
-    id: feature-title
-    attributes:
-      label: Feature Title
-      description: Concise, action-based title that reflects user value
-      placeholder: "e.g., Drag and Drop File Upload Interface"
-    validations:
-      required: true
 
   - type: textarea
     id: problem

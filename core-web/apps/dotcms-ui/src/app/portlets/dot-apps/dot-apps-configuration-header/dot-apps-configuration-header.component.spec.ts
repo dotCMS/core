@@ -14,7 +14,16 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
-import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'markdown',
+    template: `
+        <ng-content></ng-content>
+    `
+})
+class MockMarkdownComponent {}
 
 @Component({
     template: `
@@ -55,14 +64,16 @@ describe('DotAppsConfigurationHeaderComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
+                DotAppsConfigurationHeaderComponent,
+                MockMarkdownComponent,
                 CommonModule,
-                DotCopyLinkModule,
+                DotCopyLinkComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 DotAvatarDirective,
                 AvatarModule
             ],
-            declarations: [DotAppsConfigurationHeaderComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -72,7 +83,21 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                 MarkdownService
             ],
             schemas: [NO_ERRORS_SCHEMA]
-        }).compileComponents();
+        })
+            .overrideComponent(DotAppsConfigurationHeaderComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        AvatarModule,
+                        MockMarkdownComponent,
+                        DotAvatarDirective,
+                        DotCopyLinkComponent,
+                        DotSafeHtmlPipe,
+                        DotMessagePipe
+                    ]
+                }
+            })
+            .compileComponents();
     }));
 
     beforeEach(() => {
@@ -116,7 +141,10 @@ describe('DotAppsConfigurationHeaderComponent', () => {
 
         expect(image).toBe(component.app.iconUrl);
         expect(size).toBe('xlarge');
-        expect(avatar.attributes['ng-reflect-text']).toBe(component.app.name);
+        // In Angular 20, ng-reflect-* attributes are not available
+        // Verify the text property on the DotAvatarDirective instance
+        const avatarDirective = avatar.injector.get(DotAvatarDirective);
+        expect(avatarDirective.text).toBe(component.app.name);
 
         expect(dotCopy.label).toBe(component.app.key);
         expect(dotCopy.copy).toBe(component.app.key);

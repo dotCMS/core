@@ -1,0 +1,16 @@
+@use "variables" as *;
+::ng-deep {
+    .p-tooltip {
+        &.tooltip-label-hint {
+            &.p-tooltip-right {
+                .p-tooltip-arrow {
+                    border-right-color: $foreground-active;
+                }
+            }
+            .p-tooltip-text {
+                background: $foreground-active;
+                color: $white;
+            }
+        }
+    }
+}

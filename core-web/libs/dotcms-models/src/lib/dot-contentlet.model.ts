@@ -116,6 +116,7 @@ export interface DotCMSContentletVersion {
     live: boolean;
     modDate: number;
     modUser: string;
+    modUserName: string;
     title: string;
     working: boolean;
 }

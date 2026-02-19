@@ -94,6 +94,8 @@ public class SecretCachedKeyStoreImpl implements SecretsStore {
 
     /**
      * {@inheritDoc}
+     * Saves the secret value to the KeyStore and invalidates the cache across cluster nodes.
+     * The cache will be repopulated on the next read, ensuring all nodes get the updated value.
      * @param variableKey
      * @param variableValue
      * @return
@@ -101,9 +103,12 @@ public class SecretCachedKeyStoreImpl implements SecretsStore {
     @Override
     public boolean saveValue(final String variableKey, final char[] variableValue) {
         try {
-            putInCache(variableKey, secretsKeyStore.saveValue(variableKey, variableValue));
+            secretsKeyStore.saveValue(variableKey, variableValue);
+            // Invalidate cache across cluster nodes instead of just updating local cache
+            // This ensures all nodes will fetch the updated value from disk on next read
+            flushCache(variableKey);
         } catch (DotCacheException e) {
-            Logger.warn(SecretCachedKeyStoreImpl.class, "Unable to save secret in cache " ,e);
+            Logger.warn(SecretCachedKeyStoreImpl.class, "Unable to invalidate secret cache after save" ,e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
         return false;
@@ -140,29 +145,6 @@ public class SecretCachedKeyStoreImpl implements SecretsStore {
      */
     private char[] getFromCache(final String key, final Supplier<char[]> defaultValue) {
         return cache.getFromCache(key, defaultValue);
-    }
-
-    /**
-     * Short hand accessor to put values in cache impl
-     * @param key
-     * @param val
-     * @throws DotCacheException
-     */
-    private void putInCache(final String key, final char[] val)
-            throws DotCacheException {
-        cache.putSecret(key, val);
-        putInCache(key);
-    }
-
-    /**
-     * Short hand accessor to get values from cache impl
-     * @param key
-     * @throws DotCacheException
-     */
-    private void putInCache(final String key) throws DotCacheException{
-        final Set <String> keys = getKeysFromCache();
-        keys.add(key);
-        cache.putKeys(keys);
     }
 
     /**

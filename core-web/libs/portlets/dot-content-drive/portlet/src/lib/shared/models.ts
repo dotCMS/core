@@ -1,4 +1,10 @@
-import { DotContentDriveItem, SiteEntity } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveFolder,
+    DotContentDriveItem,
+    DotFolder,
+    SiteEntity
+} from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { DIALOG_TYPE } from './constants';
 
@@ -75,6 +81,7 @@ export interface DotContentDriveContextMenu {
 export interface DotContentDriveDialog {
     type: keyof typeof DIALOG_TYPE;
     header: string;
+    payload?: DotContentDriveFolder;
 }
 
 /**
@@ -85,6 +92,7 @@ export interface DotContentDriveDialog {
  */
 export interface DotContentDriveState extends DotContentDriveInit {
     items: DotContentDriveItem[];
+    selectedItems: DotContentDriveItem[];
     status: DotContentDriveStatus;
     totalItems: number;
     pagination: DotContentDrivePagination;
@@ -122,3 +130,15 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  * @interface DotContentDriveDecodeFunction
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
+
+/**
+ * The parameters for the buildTreeFolderNodes function.
+ *
+ * @export
+ * @interface buildTreeFolderNodesParams
+ */
+export interface BuildTreeFolderNodesParams {
+    folderHierarchyLevels: DotFolder[][];
+    targetPath: string;
+    rootNode: DotFolderTreeNodeItem;
+}

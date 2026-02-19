@@ -5,7 +5,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { MultiSelect, MultiSelectItem } from 'primeng/multiselect';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentMultiSelectFieldComponent } from './dot-edit-content-multi-select-field.component';
 
@@ -20,6 +21,7 @@ export class MockFormComponent {
     // Host Props
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
 }
 
 // https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
@@ -51,14 +53,17 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         it('should render the options selected if the form have value', () => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-multi-select-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-multi-select-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [MULTI_SELECT_FIELD_MOCK.variable]: new FormControl(['one', 'two'])
                         }),
-                        field: MULTI_SELECT_FIELD_MOCK
+                        field: MULTI_SELECT_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [MULTI_SELECT_FIELD_MOCK.variable]: ['one', 'two']
+                        })
                     }
                 }
             );
@@ -79,14 +84,17 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-multi-select-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-multi-select-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [MULTI_SELECT_FIELD_MOCK.variable]: new FormControl()
                         }),
-                        field: MULTI_SELECT_FIELD_MOCK
+                        field: MULTI_SELECT_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [MULTI_SELECT_FIELD_MOCK.variable]: ['one', 'two']
+                        })
                     }
                 }
             );
@@ -114,7 +122,7 @@ describe('DotEditContentMultiselectFieldComponent', () => {
         };
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-multi-select-field [field]="field" [formControlName]="field.variable" />
+                <dot-edit-content-multi-select-field [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -122,7 +130,10 @@ describe('DotEditContentMultiselectFieldComponent', () => {
                         [MULTI_SELECT_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL.variable]:
                             new FormControl()
                     }),
-                    field: MULTI_SELECT_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL
+                    field: MULTI_SELECT_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL,
+                    contentlet: createFakeContentlet({
+                        [MULTI_SELECT_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL.variable]: ['one', 'two']
+                    })
                 }
             }
         );

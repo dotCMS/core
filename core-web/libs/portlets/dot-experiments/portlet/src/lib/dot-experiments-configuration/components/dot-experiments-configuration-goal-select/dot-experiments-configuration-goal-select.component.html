@@ -1,4 +1,4 @@
-<ng-container *ngIf="vm$ | async as vm">
+@if (vm$ | async; as vm) {
     <p-sidebar
         (onHide)="closeSidebar()"
         [(visible)]="vm.status.isOpen"
@@ -22,13 +22,11 @@
                                 [value]="goalsTypes.BOUNCE_RATE"
                                 detail="{{ goals.BOUNCE_RATE.description | dm }}"
                                 title="{{ goals.BOUNCE_RATE.label | dm }}" />
-
                             <dot-experiment-options-item
                                 [icon]="goals.EXIT_RATE.icon"
                                 [value]="goalsTypes.EXIT_RATE"
                                 detail="{{ goals.EXIT_RATE.description | dm }}"
                                 title="{{ goals.EXIT_RATE.label | dm }}" />
-
                             <dot-experiment-options-item
                                 [icon]="goals.REACH_PAGE.icon"
                                 [value]="goalsTypes.REACH_PAGE"
@@ -38,7 +36,6 @@
                                     <dot-experiments-goal-configuration-reach-page />
                                 </ng-template>
                             </dot-experiment-options-item>
-
                             <dot-experiment-options-item
                                 [icon]="goals.URL_PARAMETER.icon"
                                 [value]="goalsTypes.URL_PARAMETER"
@@ -65,17 +62,13 @@
                             pInputText
                             required
                             type="text" />
-
-                        <dot-field-validation-message
-                            [field]="goalNameControl"></dot-field-validation-message>
+                        <dot-field-validation-message [field]="goalNameControl" />
                     </div>
                 </div>
             </form>
         </div>
-
         <dot-experiments-goals-coming-soon />
     </p-sidebar>
-
     <ng-template #actionHeaderBtnTpl>
         <button
             (click)="save(vm.experimentId)"
@@ -86,4 +79,4 @@
             pButton
             type="submit"></button>
     </ng-template>
-</ng-container>
+}

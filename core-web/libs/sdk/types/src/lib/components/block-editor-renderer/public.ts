@@ -10,7 +10,7 @@ export interface BlockEditorMark {
 }
 
 /**
- * Represents a Content Node used by the Block Editor
+ * Represents a Node in the Block Editor
  *
  * @export
  * @interface BlockEditorNode
@@ -27,15 +27,4 @@ export interface BlockEditorNode {
     marks?: BlockEditorMark[];
     /** Optional text content */
     text?: string;
-}
-
-/**
- * Represents a Block in the Block Editor
- *
- * @export
- * @interface BlockEditorContent
- */
-export interface BlockEditorContent {
-    content?: BlockEditorNode[];
-    type: string;
 }

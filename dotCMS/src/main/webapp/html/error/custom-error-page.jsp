@@ -14,7 +14,9 @@
 <%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotmarketing.util.UtilMethods" %>
 <%@page import="com.dotmarketing.util.WebKeys"%>
-<%@page import="com.liferay.portal.language.LanguageUtil"%><%
+<%@page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="static com.dotcms.filters.interceptor.saml.SamlWebInterceptor.REFERRER_PARAMETER_KEY" %>
+<%
 out.clear();
 if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGES_FOR_BACKEND", true)){
     out.append(String.valueOf(response.getStatus()));
@@ -41,6 +43,23 @@ if(PageMode.get(request).isAdmin && Config.getBooleanProperty("SIMPLE_ERROR_PAGE
       }
       return; // empty response is better than an HTML response to a REST API call
     }
+
+    if (status == 401) {
+
+        final String referrer = (null != session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN))
+                ? (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)
+                : (null != request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI))
+                ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI) : request.getRequestURI();
+
+        if (null == session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN)){
+          session.setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, referrer);
+        }
+
+        final String forwardQueryString = (String) request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
+
+        session.setAttribute(RequestDispatcher.FORWARD_QUERY_STRING, forwardQueryString);
+    }
+
     final String errorPage = "/cms" + status + "Page";
     final Host site = WebAPILocator.getHostWebAPI().getCurrentHost(request);
     final Language language = WebAPILocator.getLanguageWebAPI().getLanguage(request);

@@ -33,6 +33,10 @@ public class WorkflowSearcher implements Serializable {
 	    return daysOld;
 	}
 
+    public void setDaysOld(int daysOld) {
+        this.daysOld = daysOld;
+    }
+
 	public boolean getShow4All() {
 	    return show4all;
 	}

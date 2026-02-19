@@ -51,6 +51,17 @@ public class MetricValue {
         }
     }
 
+    /**
+     * Returns the raw, unformatted value of the metric.
+     * This is useful when you need the original numeric value before formatting.
+     *
+     * @return the raw value object (Number for numeric values, original object otherwise)
+     */
+    @JsonIgnore
+    public Object getRawValue() {
+        return value;
+    }
+
     @Override
     public String toString() {
         return "MetricValue{" +

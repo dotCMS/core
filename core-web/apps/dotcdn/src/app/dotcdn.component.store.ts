@@ -92,20 +92,18 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 });
 
                 return this.dotCdnService.requestStats(period).pipe(
-                    tapResponse(
-                        (data: DotCDNStats) => {
+                    tapResponse({
+                        next: (data: DotCDNStats) => {
                             // Now the chart is loaded
                             this.dispatchLoading({
                                 loadingState: LoadingState.LOADED,
                                 loader: Loader.CHART
                             });
-
                             const {
                                 statsData,
                                 chartData: [chartBandwidthData, chartRequestsData],
                                 cdnDomain
                             } = this.getChartStatsData(data);
-
                             this.updateChartState({
                                 chartBandwidthData,
                                 chartRequestsData,
@@ -113,10 +111,10 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                                 cdnDomain
                             });
                         },
-                        (_error) => {
+                        error: (_error) => {
                             // TODO: Handle error
                         }
-                    )
+                    })
                 );
             })
         );

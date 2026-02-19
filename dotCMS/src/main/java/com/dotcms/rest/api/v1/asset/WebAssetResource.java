@@ -436,4 +436,6 @@ public class WebAssetResource {
         return Response.ok(new ResponseEntityView<>(folder)).build();
     }
 
+
+
 }

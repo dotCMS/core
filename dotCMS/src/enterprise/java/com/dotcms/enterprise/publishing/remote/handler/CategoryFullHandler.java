@@ -172,8 +172,7 @@ public class CategoryFullHandler implements IHandler {
 
     @WrapInTransaction
     private void deleteAllCategories() throws DotDataException {
-        HibernateUtil
-                .delete("from category in class com.dotmarketing.portlets.categories.model.Category");
+        new DotConnect().setSQL("DELETE FROM category").loadResult();
     }
 
     @WrapInTransaction

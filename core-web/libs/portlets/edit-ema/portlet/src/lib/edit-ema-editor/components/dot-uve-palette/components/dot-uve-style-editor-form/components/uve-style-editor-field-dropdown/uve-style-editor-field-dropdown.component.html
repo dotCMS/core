@@ -1,0 +1,11 @@
+<div class="form-field">
+    <label class="field-label" [attr.for]="$field().id">{{ $field().label }}</label>
+    <p-dropdown
+        [formControlName]="$field().id"
+        [options]="$options()"
+        optionLabel="label"
+        optionValue="value"
+        [showClear]="false"
+        [inputId]="$field().id"
+        class="uve-dropdown"></p-dropdown>
+</div>

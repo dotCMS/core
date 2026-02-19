@@ -2,6 +2,7 @@ import { createComponentFactory, Spectator, byTestId } from '@ngneat/spectator/j
 
 import { DatePipe } from '@angular/common';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
@@ -17,9 +18,13 @@ import {
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
+import { DotPushpublishTimelineItemComponent } from './components/dot-pushpublish-timeline-item/dot-pushpublish-timeline-item.component';
 import { DotEditContentSidebarHistoryComponent } from './dot-edit-content-sidebar-history.component';
 
-import { DotHistoryTimelineItemActionType } from '../../../../models/dot-edit-content.model';
+import {
+    DotHistoryTimelineItemActionType,
+    DotPushPublishHistoryItem
+} from '../../../../models/dot-edit-content.model';
 
 describe('DotEditContentSidebarHistoryComponent', () => {
     let spectator: Spectator<DotEditContentSidebarHistoryComponent>;
@@ -39,6 +44,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             live: true,
             modDate: Date.now() - 86400000,
             modUser: 'admin',
+            modUserName: 'Admin',
             title: 'Test Content v1',
             working: true
         },
@@ -56,8 +62,24 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             live: false,
             modDate: Date.now() - 172800000,
             modUser: 'editor',
+            modUserName: 'editor',
             title: 'Test Content v2',
             working: true
+        }
+    ];
+
+    const mockPushPublishHistoryItems: DotPushPublishHistoryItem[] = [
+        {
+            bundleId: 'bundle-123',
+            environment: 'Production',
+            pushDate: Date.now() - 86400000,
+            pushedBy: 'admin'
+        },
+        {
+            bundleId: 'bundle-456',
+            environment: 'Staging',
+            pushDate: Date.now() - 172800000,
+            pushedBy: 'editor'
         }
     ];
 
@@ -88,7 +110,8 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             DotRelativeDatePipe,
             DotSidebarAccordionComponent,
             DotSidebarAccordionTabComponent,
-            DotHistoryTimelineItemComponent
+            DotHistoryTimelineItemComponent,
+            DotPushpublishTimelineItemComponent
         ]
     });
 
@@ -162,11 +185,19 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should configure p-scroller with correct properties', () => {
-            const scroller = spectator.query('p-scroller');
-            expect(scroller).toBeTruthy();
-            expect(scroller.getAttribute('ng-reflect-item-size')).toBe('83');
-            expect(scroller.getAttribute('ng-reflect-lazy')).toBe('true');
-            expect(scroller.getAttribute('scrollHeight')).toBe('100%');
+            const scrollerElement = spectator.query('p-scroller');
+            expect(scrollerElement).toBeTruthy();
+
+            // Verify scrollHeight attribute is set correctly
+            expect(scrollerElement.getAttribute('scrollHeight')).toBe('100%');
+
+            // Access the PrimeNG Scroller component instance to verify properties
+            const scrollerDebugElement = spectator.debugElement.query(By.css('p-scroller'));
+            const scrollerComponent = scrollerDebugElement?.componentInstance;
+
+            expect(scrollerComponent).toBeTruthy();
+            expect(scrollerComponent.itemSize).toBe(83);
+            expect(scrollerComponent.lazy).toBe(true);
         });
     });
 
@@ -188,7 +219,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
         });
 
         it('should compute hasMoreItems correctly', () => {
-            spectator.setInput('pagination', mockPagination);
+            spectator.setInput('historyPagination', mockPagination);
             expect(spectator.component.$hasMoreItems()).toBe(true);
 
             const completePagination: DotPagination = {
@@ -196,20 +227,20 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 perPage: 10,
                 totalEntries: 25
             };
-            spectator.setInput('pagination', completePagination);
+            spectator.setInput('historyPagination', completePagination);
             expect(spectator.component.$hasMoreItems()).toBe(false);
         });
     });
 
     describe('Scroll Events', () => {
         beforeEach(() => {
-            spectator.setInput('pagination', mockPagination);
+            spectator.setInput('historyPagination', mockPagination);
             spectator.setInput('historyItems', mockHistoryItems);
             spectator.detectChanges();
         });
 
         it('should emit pageChange when loading next page', fakeAsync(() => {
-            const spy = jest.spyOn(spectator.component.pageChange, 'emit');
+            const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
             const scrollEvent: ScrollerLazyLoadEvent = {
                 first: 0,
@@ -224,7 +255,7 @@ describe('DotEditContentSidebarHistoryComponent', () => {
 
         it('should not emit pageChange when already loading', () => {
             spectator.setInput('status', ComponentStatus.LOADING);
-            const spy = jest.spyOn(spectator.component.pageChange, 'emit');
+            const spy = jest.spyOn(spectator.component.historyPageChange, 'emit');
 
             const scrollEvent: ScrollerLazyLoadEvent = {
                 first: 0,
@@ -354,6 +385,171 @@ describe('DotEditContentSidebarHistoryComponent', () => {
             const historicalVersionInode = spectator.component.$historicalVersionInode();
             expect(historicalVersionInode === mockHistoryItems[0].inode).toBe(false);
             expect(historicalVersionInode === mockHistoryItems[1].inode).toBe(true);
+        });
+    });
+
+    describe('Push Publish Functionality', () => {
+        describe('Push Publish Computed Properties', () => {
+            it('should compute hasPushPublishHistoryItems correctly', () => {
+                spectator.setInput('pushPublishHistoryItems', []);
+                expect(spectator.component.$hasPushPublishHistoryItems()).toBe(false);
+
+                spectator.setInput('pushPublishHistoryItems', mockPushPublishHistoryItems);
+                expect(spectator.component.$hasPushPublishHistoryItems()).toBe(true);
+            });
+
+            it('should compute hasMorePushPublishItems correctly', () => {
+                spectator.setInput('pushPublishHistoryPagination', mockPagination);
+                expect(spectator.component.$hasMorePushPublishItems()).toBe(true);
+
+                const completePagination: DotPagination = {
+                    currentPage: 3,
+                    perPage: 10,
+                    totalEntries: 25
+                };
+                spectator.setInput('pushPublishHistoryPagination', completePagination);
+                expect(spectator.component.$hasMorePushPublishItems()).toBe(false);
+            });
+        });
+
+        describe('Push Publish Scroll Events', () => {
+            beforeEach(() => {
+                spectator.setInput('pushPublishHistoryPagination', mockPagination);
+                spectator.setInput('pushPublishHistoryItems', mockPushPublishHistoryItems);
+                spectator.detectChanges();
+            });
+
+            it('should emit pushPublishPageChange when loading next page', fakeAsync(() => {
+                const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
+
+                const scrollEvent: ScrollerLazyLoadEvent = {
+                    first: 0,
+                    last: mockPushPublishHistoryItems.length - 3
+                };
+
+                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+                tick();
+
+                expect(spy).toHaveBeenCalledWith(2);
+            }));
+
+            it('should not emit pushPublishPageChange when already loading', () => {
+                spectator.setInput('status', ComponentStatus.LOADING);
+                const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
+
+                const scrollEvent: ScrollerLazyLoadEvent = {
+                    first: 0,
+                    last: mockPushPublishHistoryItems.length - 3
+                };
+
+                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+
+                expect(spy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit pushPublishPageChange when no more items to load', () => {
+                const completePagination: DotPagination = {
+                    currentPage: 3,
+                    perPage: 10,
+                    totalEntries: 25
+                };
+                spectator.setInput('pushPublishHistoryPagination', completePagination);
+
+                const spy = jest.spyOn(spectator.component.pushPublishPageChange, 'emit');
+
+                const scrollEvent: ScrollerLazyLoadEvent = {
+                    first: 0,
+                    last: mockPushPublishHistoryItems.length - 3
+                };
+
+                spectator.component.onPushPublishScrollIndexChange(scrollEvent);
+
+                expect(spy).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('Push Publish Menu Actions', () => {
+            beforeEach(() => {
+                spectator.setInput('pushPublishHistoryItems', mockPushPublishHistoryItems);
+                spectator.detectChanges();
+            });
+
+            it('should have correct menu items structure', () => {
+                const menuItems = spectator.component.$menuItems();
+
+                expect(menuItems).toHaveLength(1);
+                expect(menuItems[0]).toEqual({
+                    label: expect.any(String),
+                    icon: 'pi pi-trash',
+                    command: expect.any(Function)
+                });
+            });
+
+            it('should emit deletePushPublishHistory when menu delete action is triggered', () => {
+                const spy = jest.spyOn(spectator.component.deletePushPublishHistory, 'emit');
+                const menuItems = spectator.component.$menuItems();
+
+                menuItems[0].command();
+
+                expect(spy).toHaveBeenCalled();
+            });
+
+            it('should disable menu button when no push publish history items', () => {
+                spectator.setInput('pushPublishHistoryItems', []);
+                spectator.detectChanges();
+
+                const menuButtonComponent = spectator.query(
+                    '[data-testid="push-publish-menu-button"]'
+                );
+                expect(menuButtonComponent).toBeTruthy();
+                // Access the actual button element inside PrimeNG component
+                const actualButton = menuButtonComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton).toBeTruthy();
+                expect(actualButton.disabled).toBe(true);
+            });
+
+            it('should enable menu button when push publish history items exist', () => {
+                const menuButtonComponent = spectator.query(
+                    '[data-testid="push-publish-menu-button"]'
+                );
+                expect(menuButtonComponent).toBeTruthy();
+                // Access the actual button element inside PrimeNG component
+                const actualButton = menuButtonComponent.querySelector(
+                    'button'
+                ) as HTMLButtonElement;
+                expect(actualButton).toBeTruthy();
+                expect(actualButton.disabled).toBe(false);
+            });
+        });
+
+        describe('Push Publish Display States', () => {
+            it('should show loading state when status is LOADING', () => {
+                spectator.setInput('status', ComponentStatus.LOADING);
+                spectator.detectChanges();
+
+                const loadingState = spectator.query('[data-testid="push-publish-loading-state"]');
+                expect(loadingState).toExist();
+            });
+
+            it('should show empty state when no push publish history items', () => {
+                spectator.setInput('status', ComponentStatus.LOADED);
+                spectator.setInput('pushPublishHistoryItems', []);
+                spectator.detectChanges();
+
+                const emptyContainer = spectator.query('dot-empty-container');
+                expect(emptyContainer).toExist();
+            });
+
+            it('should show push publish timeline when items exist', () => {
+                spectator.setInput('status', ComponentStatus.LOADED);
+                spectator.setInput('pushPublishHistoryItems', mockPushPublishHistoryItems);
+                spectator.detectChanges();
+
+                const timeline = spectator.query('[data-testid="push-publish-timeline"]');
+                expect(timeline).toExist();
+            });
         });
     });
 });

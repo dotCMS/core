@@ -4,7 +4,8 @@ import {
     EventEmitter,
     Output,
     QueryList,
-    ViewChildren
+    ViewChildren,
+    inject
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -26,7 +27,7 @@ export class BubbleFormComponent {
     dynamicControls: DynamicControl<unknown>[] = [];
     form: FormGroup;
 
-    constructor(private fb: FormBuilder) {}
+    private readonly fb = inject(FormBuilder);
 
     onSubmit() {
         this.formValues.emit({ ...this.form.value });

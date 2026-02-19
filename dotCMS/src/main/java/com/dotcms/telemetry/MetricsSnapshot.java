@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Represents a snapshot of metric statistics, including all calculated metrics, separated into
  * numeric and non-numeric categories. It also contains a list of errors, indicating any metrics
- * that encountered exceptions during calculation.
+ * that encountered exceptions during calculation, and timing information for performance monitoring.
  */
 public class MetricsSnapshot {
 
@@ -29,10 +29,16 @@ public class MetricsSnapshot {
      */
     final Collection<MetricCalculationError> errors;
 
+    /**
+     * Timing information for each metric collection
+     */
+    final Collection<MetricTiming> timings;
+
     public MetricsSnapshot(final Builder builder) {
         this.stats = builder.stats;
         this.notNumericStats = builder.notNumericStats;
         this.errors = builder.errors;
+        this.timings = builder.timings;
     }
 
     @JsonProperty
@@ -43,6 +49,11 @@ public class MetricsSnapshot {
     @JsonProperty
     public Collection<MetricCalculationError> getErrors() {
         return errors;
+    }
+
+    @JsonProperty
+    public Collection<MetricTiming> getTimings() {
+        return timings;
     }
 
     @JsonAnyGetter
@@ -64,6 +75,7 @@ public class MetricsSnapshot {
                 "stats=" + stats +
                 ", notNumericStats=" + notNumericStats +
                 ", errors=" + errors +
+                ", timings=" + timings +
                 '}';
     }
 
@@ -71,6 +83,7 @@ public class MetricsSnapshot {
         private Collection<MetricValue> stats;
         private Collection<MetricValue> notNumericStats;
         private Collection<MetricCalculationError> errors;
+        private Collection<MetricTiming> timings;
 
         public Builder stats(Collection<MetricValue> stats) {
             this.stats = stats;
@@ -84,6 +97,11 @@ public class MetricsSnapshot {
 
         public Builder errors(Collection<MetricCalculationError> errors) {
             this.errors = errors;
+            return this;
+        }
+
+        public Builder timings(Collection<MetricTiming> timings) {
+            this.timings = timings;
             return this;
         }
 

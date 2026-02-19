@@ -3,6 +3,8 @@ kind: StatefulSet
 metadata:
   namespace: foo
   name: dotcms-foo-prod
+  labels:
+    app.dotcms.cloud/aws-region: us-east-1
 spec:
   selector:
     matchLabels:
@@ -51,7 +53,7 @@ spec:
               name: foo-prod-elasticsearch
               key: password
         - name: DB_BASE_URL
-          value: jdbc:postgresql://xxx.us-east-1.rds.amazonaws.com/foo_database
+          value: jdbc:postgresql://host.slug.us-east-1.rds.amazonaws.com/foo_database
         - name: DB_USERNAME
           valueFrom:
             secretKeyRef:
@@ -101,32 +103,30 @@ spec:
               - if [ ! -d /data/shared/assets/.backup ]; then mkdir /data/shared/assets/.backup;
                 fi; ln -s /data/shared/assets/.backup /data/local/dotsecure/backup;
         startupProbe:
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 50
+          timeoutSeconds: 2
           httpGet:
             path: /api/v1/probes/startup
             port: 8082
           initialDelaySeconds: 30
-          periodSeconds: 5
-          successThreshold: 1
-          failureThreshold: 18
-          timeoutSeconds: 1
         livenessProbe:
+          periodSeconds: 15
+          successThreshold: 1
+          failureThreshold: 4
+          timeoutSeconds: 2
           httpGet:
             path: /api/v1/probes/alive
             port: 8082
-          initialDelaySeconds: 1
-          periodSeconds: 30
-          successThreshold: 1
-          failureThreshold: 3
-          timeoutSeconds: 10
         readinessProbe:
+          periodSeconds: 7
+          successThreshold: 2
+          failureThreshold: 1
+          timeoutSeconds: 2
           httpGet:
             path: /api/v1/probes/alive
             port: 8082
-          initialDelaySeconds: 1
-          periodSeconds: 10
-          successThreshold: 1
-          failureThreshold: 1
-          timeoutSeconds: 5
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:

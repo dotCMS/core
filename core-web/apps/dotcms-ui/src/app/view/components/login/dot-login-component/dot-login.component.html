@@ -12,7 +12,7 @@
                     class="p-dropdown-sm"
                     #languageDropdown
                     data-testId="language"
-                    formControlName="language"></p-dropdown>
+                    formControlName="language" />
             </div>
             <h3 class="login__title" data-testId="header">
                 {{ loginInfo.i18nMessagesMap['welcome-login'] }}
@@ -41,7 +41,7 @@
                             loginInfo.i18nMessagesMap['emailAddressLabel']
                         )
                     "
-                    [field]="loginForm.get('login')"></dot-field-validation-message>
+                    [field]="loginForm.get('login')" />
             </div>
             <div class="field form__group--validation">
                 <label dotFieldRequired data-testId="passwordLabel" for="password">
@@ -61,14 +61,14 @@
                             loginInfo.i18nMessagesMap['password']
                         )
                     "
-                    [field]="loginForm.get('password')"></dot-field-validation-message>
+                    [field]="loginForm.get('password')" />
             </div>
             <div class="login__password-settings field">
                 <p-checkbox
                     [label]="loginInfo.i18nMessagesMap['remember-me']"
                     formControlName="rememberMe"
                     data-testId="rememberMe"
-                    binary="true"></p-checkbox>
+                    binary="true" />
                 @if (!isLoginInProgress) {
                     <a
                         [routerLink]="['/public/forgotPassword']"
@@ -79,7 +79,7 @@
                 }
             </div>
             <div class="field">
-                <dot-loading-indicator></dot-loading-indicator>
+                <dot-loading-indicator />
                 @if (loginForm.enabled) {
                     <button
                         (click)="logInUser()"

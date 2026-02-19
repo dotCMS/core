@@ -1,13 +1,18 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
 import com.dotcms.api.APIProvider;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.experiments.model.AbstractExperimentVariant;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import java.util.Map;
 import java.util.Set;
@@ -16,11 +21,12 @@ import static com.dotmarketing.portlets.contentlet.model.Contentlet.ARCHIVED_KEY
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.INODE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.LIVE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_DATE_KEY;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.WORKING_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.LanguageViewStrategy.mapLanguage;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.CLEAR_EXISTING_DATA;
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * This Transformation Strategy exposes a view of a Contentlet with minimum specific History
@@ -50,13 +56,41 @@ class HistoryViewStrategy extends AbstractTransformStrategy<Contentlet> {
         map.put(WORKING_KEY, contentlet.isWorking());
         map.put(LIVE_KEY, contentlet.isLive());
         map.put(ARCHIVED_KEY, contentlet.isArchived());
-        map.put(MOD_USER_KEY, contentlet.getModUser());
+        map.put(MOD_USER_NAME_KEY, this.getUserName(contentlet.getModUser()));
         map.put(MOD_DATE_KEY, contentlet.getModDate());
         this.addLanguageAttrs(contentlet, map);
         final boolean isExperimentVariant = UtilMethods.isSet(contentlet.getVariantId())
                 && contentlet.getVariantId().startsWith(AbstractExperimentVariant.EXPERIMENT_VARIANT_NAME_PREFIX);
         map.put(EXPERIMENT_VARIANT, isExperimentVariant);
         return map;
+    }
+
+    /**
+     * Returns the actual Username associated with the specified User ID. If an error occurred when
+     * retrieving user data, an empty String is returned. If the User doesn't exist anymore, the
+     * String {@code Deleted} will be returned.
+     *
+     * @param modUser The internal dotCMS User ID.
+     *
+     * @return The full Username, if it exists.
+     */
+    private String getUserName(final String modUser) {
+        if (UtilMethods.isNotSet(modUser)) {
+            return BLANK;
+        }
+        try {
+            final User user = toolBox.userAPI.loadUserById(modUser, toolBox.userAPI.getSystemUser(), false);
+            if (null == user || UtilMethods.isNotSet(user.getUserId())) {
+                return Try.of(() -> LanguageUtil.get("Deleted")).getOrElse(BLANK);
+            }
+            return user.getFullName();
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, String.format("Failed to return User with ID '%s': %s", modUser,
+                    ExceptionUtil.getErrorMessage(e)));
+            return BLANK;
+        } catch (final NoSuchUserException e) {
+            return Try.of(() -> LanguageUtil.get("Deleted")).getOrElse(BLANK);
+        }
     }
 
     /**

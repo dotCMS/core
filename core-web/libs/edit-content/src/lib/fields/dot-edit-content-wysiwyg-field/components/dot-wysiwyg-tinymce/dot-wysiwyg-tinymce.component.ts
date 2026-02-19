@@ -19,7 +19,6 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotWysiwygTinymceService } from './service/dot-wysiwyg-tinymce.service';
 
 import { getFieldVariablesParsed, stringToJson } from '../../../../utils/functions.util';
-import { BaseFieldComponent } from '../../../shared/base-field.component';
 import { DEFAULT_TINYMCE_CONFIG } from '../../dot-edit-content-wysiwyg-field.constant';
 import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-plugin.service';
 
@@ -42,7 +41,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
     ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotWysiwygTinymceComponent extends BaseFieldComponent implements OnDestroy {
+export class DotWysiwygTinymceComponent implements OnDestroy {
     #dotWysiwygPluginService = inject(DotWysiwygPluginService);
     #dotWysiwygTinymceService = inject(DotWysiwygTinymceService);
 
@@ -50,6 +49,10 @@ export class DotWysiwygTinymceComponent extends BaseFieldComponent implements On
      * Represents a required DotCMS content type field.
      */
     $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    /**
+     * Whether the field has an error.
+     */
+    $hasError = input.required<boolean>({ alias: 'hasError' });
 
     /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from
@@ -119,9 +122,5 @@ export class DotWysiwygTinymceComponent extends BaseFieldComponent implements On
     private removeEditor(): void {
         this.#editor.remove();
         this.#editor = null;
-    }
-
-    writeValue(_: unknown): void {
-        // noop
     }
 }

@@ -173,4 +173,8 @@ public enum BaseContentType {
                 .collect(Collectors.toSet());
     }
 
+    public static List<BaseContentType> allBaseTypes() {
+        return Arrays.asList(BaseContentType.values());
+    }
+
 }

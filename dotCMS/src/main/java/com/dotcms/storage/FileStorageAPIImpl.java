@@ -1,5 +1,15 @@
 package com.dotcms.storage;
 
+import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
+import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.EDITABLE_AS_TEXT;
+import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
+import static com.dotcms.storage.model.BasicMetadataFields.VERSION_KEY;
+import static com.dotmarketing.util.UtilMethods.isSet;
+
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.storage.model.BasicMetadataFields;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
@@ -13,14 +23,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-
 import java.io.File;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -30,14 +38,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import static com.dotcms.storage.StoragePersistenceAPI.HASH_OBJECT;
-import static com.dotcms.storage.model.BasicMetadataFields.CONTENT_TYPE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.EDITABLE_AS_TEXT;
-import static com.dotcms.storage.model.BasicMetadataFields.LENGTH_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.SIZE_META_KEY;
-import static com.dotcms.storage.model.BasicMetadataFields.VERSION_KEY;
-import static com.dotmarketing.util.UtilMethods.isSet;
 
 /**
  * This is the default implementation of the {@link FileStorageAPI} class.
@@ -101,6 +101,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param metaDataKeyFilter  {@link Predicate} filter the meta data key for the map result generation
      * @return Map with the metadata
      */
+    @RequestCost(Price.FILE_METADATA_GENERATE)
     private Map<String, Serializable> generateBasicMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter) {
         if (this.validBinary(binary)) {
@@ -134,6 +135,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param maxLength {@link Long} max length is used when parse the content, how many bytes do you want to parse.
      * @return Map with the metadata
      */
+    @RequestCost(Price.FILE_METADATA_GENERATE)
     private Map<String, Serializable> generateFullMetaData(final File binary,
             final Predicate<String> metaDataKeyFilter,
             final long maxLength) {
@@ -237,6 +239,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      *
      * @throws DotDataException An error occurred when persisting the generated metadata.
      */
+
     private Map<String, Serializable> generateMetadataFromFile(final File binary,
             final GenerateMetadataConfig configuration, final StorageKey storageKey, final Map<String, Serializable> onlyHasCustomMetadataMap, final StoragePersistenceAPI storage) throws DotDataException {
         validateBinary(binary);

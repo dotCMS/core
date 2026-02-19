@@ -1,4 +1,5 @@
-import { Contentlet } from '@dotcms/types';
+import { Contentlet, DotErrorContent } from '@dotcms/types';
+import { ThenableCallback } from '@dotcms/types/internal';
 
 import { Equals } from '../builders/query/lucene-syntax';
 import { QueryBuilder } from '../builders/query/query';
@@ -34,24 +35,16 @@ export type BuildQuery = (qb: QueryBuilder) => Equals;
  * @param {GetCollectionResponse<T>} value - The response value.
  * @returns {GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void} The processed response or a promise.
  */
-export type OnFullfilled<T> =
-    | ((
-          value: GetCollectionResponse<T>
-      ) => GetCollectionResponse<T> | PromiseLike<GetCollectionResponse<T>> | void)
-    | undefined
-    | null;
+export type OnFullfilled<T> = ThenableCallback<GetCollectionResponse<T>>;
 
 /**
  * Callback for a rejected promise.
  *
  * @callback OnRejected
- * @param {GetCollectionError} error - The error object.
- * @returns {GetCollectionError | PromiseLike<GetCollectionError> | void} The processed error or a promise.
+ * @param {DotErrorContent} error - The content error object.
+ * @returns {DotErrorContent | PromiseLike<DotErrorContent> | void} The processed error or a promise.
  */
-export type OnRejected =
-    | ((error: GetCollectionError) => GetCollectionError | PromiseLike<GetCollectionError> | void)
-    | undefined
-    | null;
+export type OnRejected = ThenableCallback<DotErrorContent>;
 
 /**
  * Response of the get collection method.
@@ -99,15 +92,4 @@ export interface GetCollectionRawResponse<T> {
          */
         resultsSize: number;
     };
-}
-
-/**
- * Error object for the get collection method.
- */
-export interface GetCollectionError {
-    /**
-     * The status code of the error.
-     */
-    status: number;
-    [key: string]: unknown;
 }

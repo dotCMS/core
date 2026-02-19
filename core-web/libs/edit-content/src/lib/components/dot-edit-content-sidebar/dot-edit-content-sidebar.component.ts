@@ -21,13 +21,14 @@ import { DotEditContentSidebarActivitiesComponent } from './components/dot-edit-
 import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-content-sidebar-history/dot-edit-content-sidebar-history.component';
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
+import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
 import { DotEditContentSidebarSectionComponent } from './components/dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 
 import { TabViewInsertDirective } from '../../directives/tab-view-insert/tab-view-insert.directive';
 import {
-    DotWorkflowState,
-    DotHistoryTimelineItemAction
+    DotHistoryTimelineItemAction,
+    DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
@@ -55,7 +56,8 @@ import { DotEditContentStore } from '../../store/edit-content.store';
         ButtonModule,
         DotEditContentSidebarLocalesComponent,
         DotEditContentSidebarActivitiesComponent,
-        DotEditContentSidebarHistoryComponent
+        DotEditContentSidebarHistoryComponent,
+        DotEditContentSidebarPermissionsComponent
     ]
 })
 export class DotEditContentSidebarComponent {
@@ -74,6 +76,11 @@ export class DotEditContentSidebarComponent {
     readonly $versionsItems = this.$store.versions; // All accumulated versions for infinite scroll
     readonly $versionsPagination = this.$store.versionsPagination;
     readonly $historyStatus = computed(() => this.$store.versionsStatus().status);
+    readonly $pushPublishHistoryItems = this.$store.pushPublishHistory; // All accumulated push publish history items
+    readonly $pushPublishHistoryPagination = this.$store.pushPublishHistoryPagination;
+    readonly $pushPublishHistoryStatus = computed(
+        () => this.$store.pushPublishHistoryStatus().status
+    );
 
     /**
      * Computed property that returns the workflow state of the content.
@@ -111,7 +118,6 @@ export class DotEditContentSidebarComponent {
             if (identifier) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
-                this.$store.loadVersions({ identifier, page: 1 });
             }
         });
     });
@@ -138,8 +144,7 @@ export class DotEditContentSidebarComponent {
      * @param $event - The event object containing the active index.
      */
     onActiveIndexChange($event: TabViewChangeEvent) {
-        const { index } = $event;
-        this.$store.setActiveSidebarTab(index);
+        this.$store.setActiveSidebarTab($event.index);
     }
 
     /**
@@ -166,10 +171,32 @@ export class DotEditContentSidebarComponent {
     }
 
     /**
+     * Handles pagination navigation for push publish history (automatically detects initial vs accumulation)
+     * @param page - The page number to navigate to
+     */
+    onPushPublishPageChange(page: number) {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.loadPushPublishHistory({ identifier, page });
+        }
+    }
+
+    /**
      * Handles timeline item actions from history component
      * @param action - The action object containing type and item data
      */
     onTimelineItemAction(action: DotHistoryTimelineItemAction) {
         this.$store.handleHistoryAction(action);
+    }
+
+    /**
+     * Handles delete all push publish history action
+     * Calls the store method to delete push publish history with confirmation
+     */
+    onDeletePushPublishHistory() {
+        const identifier = this.$identifier();
+        if (identifier) {
+            this.$store.deletePushPublishHistory(identifier);
+        }
     }
 }

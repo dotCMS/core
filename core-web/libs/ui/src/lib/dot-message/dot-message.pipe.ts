@@ -4,7 +4,6 @@ import { DotMessageService } from '@dotcms/data-access';
 
 @Pipe({
     name: 'dm',
-    standalone: true,
     pure: true
 })
 export class DotMessagePipe implements PipeTransform {

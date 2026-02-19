@@ -3,8 +3,7 @@ import { ChangeDetectorRef, Directive, HostListener, Input, OnInit, inject } fro
 import { Avatar } from 'primeng/avatar';
 
 @Directive({
-    selector: 'p-avatar[dotAvatar]',
-    standalone: true
+    selector: 'p-avatar[dotAvatar]'
 })
 export class DotAvatarDirective implements OnInit {
     private avatar = inject(Avatar);

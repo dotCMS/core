@@ -46,6 +46,7 @@ export interface DotWorkflowState extends DotCMSWorkflowStatus {
  * @interface UIState
  */
 export interface UIState {
+    view: 'form' | 'compare';
     activeTab: number;
     isSidebarOpen: boolean;
     activeSidebarTab: number;
@@ -105,4 +106,22 @@ export interface DotHistoryTimelineItemAction {
     type: DotHistoryTimelineItemActionType;
     /** The content version item the action is performed on */
     item: DotCMSContentletVersion;
+}
+
+/**
+ * Interface for push publish timeline items.
+ * Represents a push publish operation with bundle and environment information.
+ *
+ * @export
+ * @interface DotPushPublishHistoryItem
+ */
+export interface DotPushPublishHistoryItem {
+    /** Unique identifier for the push publish bundle */
+    bundleId: string;
+    /** Target environment for the push publish operation */
+    environment: string;
+    /** Timestamp when the content was pushed (in milliseconds) */
+    pushDate: number;
+    /** User who performed the push publish operation */
+    pushedBy: string;
 }

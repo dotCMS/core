@@ -3,6 +3,15 @@
  */
 
 /**
+ * Cube prefix types for different analytics data sources.
+ * - 'request': Pageview and request analytics
+ * - 'EventSummary': Conversion and event analytics
+ * - 'ContentAttribution': Content attribution for conversions
+ * - 'Conversion': Conversions overview data
+ */
+export type CubePrefix = 'request' | 'EventSummary' | 'ContentAttribution' | 'Conversion';
+
+/**
  * Sort direction options for ordering queries.
  * Using const assertion for sort direction management.
  */
@@ -54,7 +63,16 @@ const DimensionField = {
     PAGE_TITLE: 'pageTitle',
     USER_AGENT: 'userAgent',
     CREATED_AT: 'createdAt',
-    EVENT_TYPE: 'eventType'
+    EVENT_TYPE: 'eventType',
+    DAY: 'day',
+    IDENTIFIER: 'identifier',
+    TITLE: 'title',
+    CONVERSIONS: 'conversions',
+    EVENTS: 'events',
+    CONVERSION_NAME: 'conversionName',
+    TOTAL_CONVERSION: 'totalConversion',
+    CONV_RATE: 'convRate',
+    TOP_ATTRIBUTED_CONTENT: 'topAttributedContent'
 } as const;
 
 export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField];
@@ -66,7 +84,10 @@ export type DimensionField = (typeof DimensionField)[keyof typeof DimensionField
 const MeasureField = {
     TOTAL_REQUEST: 'totalRequest',
     TOTAL_SESSIONS: 'totalSessions',
-    TOTAL_USERS: 'totalUsers'
+    TOTAL_USERS: 'totalUsers',
+    TOTAL_EVENTS: 'totalEvents',
+    UNIQUE_VISITORS: 'uniqueVisitors',
+    UNIQUE_CONVERTING_VISITORS: 'uniqueConvertingVisitors'
 } as const;
 
 export type MeasureField = (typeof MeasureField)[keyof typeof MeasureField];

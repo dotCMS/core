@@ -1,8 +1,11 @@
 import { Observable } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
+import { DropdownModule } from 'primeng/dropdown';
 
 import { map, take } from 'rxjs/operators';
 
@@ -13,7 +16,7 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     selector: 'dot-content-type-selector',
     templateUrl: './dot-content-type-selector.component.html',
     styleUrls: ['./dot-content-type-selector.component.scss'],
-    standalone: false
+    imports: [CommonModule, DropdownModule, FormsModule]
 })
 export class DotContentTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);

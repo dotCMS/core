@@ -69,32 +69,47 @@
 
 .dot-nav__item {
     align-items: center;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
     min-height: $navigation-item-height;
-    padding: 14px 22px 13px 25px; // top and bottom padding to get min 48px height
     position: relative;
     transition: background-color $basic-speed ease;
     width: $navigation-width;
 }
 
+.dot-nav__item-main {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    gap: $spacing-2;
+    align-items: center;
+    margin-inline-start: $spacing-4;
+}
+
+.dot-nav__item-toggle {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    padding: $spacing-3 $spacing-4 $spacing-2 0;
+    position: relative;
+}
+
 .dot-nav__item-label {
-    flex: 1;
-    margin-left: $spacing-3;
     word-break: break-word;
     transition: opacity $basic-speed ease;
 }
 
-dot-icon {
+.dot-nav__item-arrow {
     opacity: 1;
     position: absolute;
-    right: $spacing-1;
+    right: $spacing-2;
     top: 50%;
     transform: translateY(-50%);
     transition: opacity $basic-speed ease;
+    font-size: $font-size-sm;
 }
 
 dot-nav-icon {
-    flex-shrink: 0;
     pointer-events: none;
 }

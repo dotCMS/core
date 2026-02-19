@@ -10,6 +10,27 @@
     height: 2.5em;
     width: 100%;
 
+    &.p-multiselect-sm {
+        @extend #form-field-sm;
+        min-height: $field-height-sm;
+
+        .p-multiselect-trigger {
+            @extend #field-trigger-sm;
+        }
+
+        &.p-multiselect-chip {
+            .p-multiselect-token {
+                @extend #field-chip-sm;
+
+                .p-icon-wrapper,
+                .p-icon-wrapper svg {
+                    height: 0.75rem;
+                    width: 0.75rem;
+                }
+            }
+        }
+    }
+
     &:not(.p-multiselect-open):hover {
         @extend #form-field-hover;
     }

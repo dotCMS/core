@@ -14,7 +14,6 @@ export interface Car {
 
 @Component({
     selector: 'dot-p-defer',
-    standalone: true,
     imports: [ToastModule, TableModule, DeferModule],
     template: `
         <div style="height:1200px">Table is not loaded yet, scroll down to initialize it.</div>

@@ -30,7 +30,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
     />
 
     <!-- HTTP Connector from upstream proxy
@@ -52,7 +52,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
     />
 
     <!-- HTTPS (SSL) Connector from upstream proxy
@@ -75,7 +75,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
     />
 
 
@@ -101,7 +101,7 @@
         noCompressionStrongETag="${CMS_NOCOMPRESSIONSTRONGETAG:-false}"
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
-        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-8192}"
+        maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
         SSLEnabled="${CMS_SSL_ENABLED:-true}"
         SSLCertificateFile="${CMS_SSL_CERTIFICATE_FILE:-/data/shared/assets/certs/local.dotcms.site.pem}"
         SSLCertificateKeyFile="${CMS_SSL_CERTIFICATE_KEY_FILE:-/data/shared/assets/certs/local.dotcms.site-key.pem}"
@@ -126,7 +126,7 @@
         maxThreads="${CMS_MANAGEMENT_CONNECTOR_THREADS:-25}"
         minSpareThreads="5"
         useSendfile="false"
-        maxHttpHeaderSize="8192"
+        maxHttpHeaderSize="16384"
         compression="off"
     />
 

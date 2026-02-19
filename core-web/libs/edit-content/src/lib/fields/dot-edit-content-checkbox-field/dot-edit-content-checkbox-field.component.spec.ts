@@ -5,7 +5,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Checkbox } from 'primeng/checkbox';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentCheckboxFieldComponent } from './dot-edit-content-checkbox-field.component';
 
@@ -20,6 +21,7 @@ export class MockFormComponent {
     // Host Props
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
+    contentlet: DotCMSContentlet;
 }
 
 describe('DotEditContentCheckboxFieldComponent', () => {
@@ -36,14 +38,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
         it('should render a checbox selected if the form have value', () => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [CHECKBOX_FIELD_MOCK.variable]: new FormControl(['one', 'two'])
                         }),
-                        field: CHECKBOX_FIELD_MOCK
+                        field: CHECKBOX_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [CHECKBOX_FIELD_MOCK.variable]: ['one', 'two']
+                        })
                     }
                 }
             );
@@ -60,14 +65,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
         beforeEach(() => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [CHECKBOX_FIELD_MOCK.variable]: new FormControl()
                         }),
-                        field: CHECKBOX_FIELD_MOCK
+                        field: CHECKBOX_FIELD_MOCK,
+                        contentlet: createFakeContentlet({
+                            [CHECKBOX_FIELD_MOCK.variable]: null
+                        })
                     }
                 }
             );
@@ -103,14 +111,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
         };
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
                     formGroup: new FormGroup({
                         [CHECKBOX_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL.variable]: new FormControl()
                     }),
-                    field: CHECKBOX_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL
+                    field: CHECKBOX_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL,
+                    contentlet: createFakeContentlet({
+                        [CHECKBOX_FIELD_MOCK_WITHOUT_VALUE_AND_LABEL.variable]: null
+                    })
                 }
             }
         );
@@ -131,14 +142,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -159,14 +173,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -187,14 +204,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -218,14 +238,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -247,14 +270,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -274,14 +300,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -297,14 +326,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -320,14 +352,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );
@@ -343,14 +378,17 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-checkbox-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             check: new FormControl('1,2')
                         }),
-                        field: field
+                        field: field,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: '1,2'
+                        })
                     }
                 }
             );

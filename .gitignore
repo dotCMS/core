@@ -14,12 +14,11 @@ bin/*.sh
 *.sublime-workspace
 
 # IDE - VSCode
-.vscode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+
+
+# Allow core-web VSCode settings
+!core-web/.vscode/
+!core-web/.vscode/**
 
 # none enterprise stuff should make it here #
 #######################################
@@ -159,7 +158,7 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 release.properties
 .flattened-pom.xml
-
+.mvn/maven-build-cache-config.xml
 /dependencies.txt
 /updates.txt
 
@@ -195,3 +194,17 @@ examples/astro/package-lock.json
 
 local/
 
+**/.yalc/
+
+# Claude Code diagnostic outputs
+.claude/diagnostics/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+*.egg

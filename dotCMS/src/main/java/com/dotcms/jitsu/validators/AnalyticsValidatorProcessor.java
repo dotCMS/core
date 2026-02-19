@@ -36,7 +36,7 @@ import java.util.Map;
  *     "site_key": {
  *       "type": "string",
  *       "required": true,
- *       "custom-validator": "SiteKeyValidator"
+ *       "custom-validator": "SiteAuthValidator"
  *     },
  *     "session_id": {
  *       "type": "string",
@@ -82,7 +82,8 @@ public class AnalyticsValidatorProcessor {
         new JsonObjectTypeValidator(),
         new JsonArrayTypeValidator(),
         new DateValidator(),
-        new SiteKeyValidator()
+        new SiteAuthValidator(),
+        new NumberTypeValidator()
     );
 
     public Validators getGlobalValidators(){
@@ -259,7 +260,8 @@ public class AnalyticsValidatorProcessor {
         JSON_OBJECT,
         JSON_ARRAY,
         STRING,
-        DATE;
+        DATE,
+        NUMBER;
     }
 
 }

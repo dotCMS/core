@@ -70,12 +70,11 @@ import { DotContainerPropertiesComponent } from './dot-container-properties.comp
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { dotEventSocketURLFactory } from '../../../../test/dot-test-bed';
-import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
+import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
 
 @Component({
     selector: 'dot-container-code',
-    template: '<div></div>',
-    standalone: false
+    template: '<div></div>'
 })
 export class DotContentEditorComponent {}
 
@@ -88,8 +87,7 @@ export class DotContentEditorComponent {}
             useExisting: forwardRef(() => DotLoopEditorComponent),
             multi: true
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotLoopEditorComponent {
     writeValue() {
@@ -114,8 +112,7 @@ export class DotLoopEditorComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
@@ -245,7 +242,8 @@ describe('DotContainerPropertiesComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [
+            declarations: [],
+            imports: [
                 DotContainerPropertiesComponent,
                 DotContentEditorComponent,
                 DotLoopEditorComponent,
@@ -300,7 +298,7 @@ describe('DotContainerPropertiesComponent', () => {
                 ReactiveFormsModule,
                 MenuModule,
                 ButtonModule,
-                DotActionButtonModule,
+                DotActionButtonComponent,
                 DotActionMenuButtonComponent,
                 DotAddToBundleComponent,
                 HttpClientTestingModule,
@@ -386,8 +384,8 @@ describe('DotContainerPropertiesComponent', () => {
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
 
@@ -410,8 +408,8 @@ describe('DotContainerPropertiesComponent', () => {
                 friendlyName: 'ASD',
                 maxContentlets: 0,
                 code: '',
-                preLoop: null,
-                postLoop: null,
+                preLoop: '',
+                postLoop: '',
                 containerStructures: []
             });
             expect(comp.clearContentConfirmationModal).toHaveBeenCalled();

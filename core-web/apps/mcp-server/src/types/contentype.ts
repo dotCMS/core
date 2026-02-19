@@ -15,31 +15,29 @@ export const ContentTypeBaseTypeEnum = z.enum([
 
 export type ContentTypeBaseType = z.infer<typeof ContentTypeBaseTypeEnum>;
 
-export const ContentTypeFieldSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    variable: z.string(),
-    required: z.boolean(),
-    indexed: z.boolean(),
-    listed: z.boolean(),
-    unique: z.boolean(),
-    searchable: z.boolean(),
-    sortOrder: z.number(),
-    values: z.string().optional(),
-    defaultValue: z.string().optional(),
-    hint: z.string().optional(),
-    regexCheck: z.string().optional(),
-    modDate: z.number().optional(),
-    iDate: z.number().optional(),
-    fieldType: z.string().optional(),
-    fieldTypeLabel: z.string().optional(),
-    contentTypeId: z.string().optional(),
-    fixed: z.boolean().optional(),
-    readOnly: z.boolean().optional(),
-    system: z.boolean().optional(),
-    dataType: z.string().optional(),
-    fieldVariables: z.array(z.record(z.any())).optional()
-});
+// Known content type clazz types - using union to allow for unknown/deprecated types
+const KnownContentTypeClazzEnum = z.enum([
+    'com.dotcms.contenttype.model.type.ImmutableDotAssetContentType',
+    'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
+    'com.dotcms.contenttype.model.type.ImmutableFormContentType',
+    'com.dotcms.contenttype.model.type.ImmutableKeyValueContentType',
+    'com.dotcms.contenttype.model.type.ImmutablePageContentType',
+    'com.dotcms.contenttype.model.type.ImmutablePersonaContentType',
+    'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    'com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType',
+    'com.dotcms.contenttype.model.type.ImmutableWidgetContentType'
+]);
+
+// Flexible content type clazz that accepts known types or any string matching the dotCMS content type pattern
+const ContentTypeClazzEnum = z.union([
+    KnownContentTypeClazzEnum,
+    z
+        .string()
+        .refine(
+            (val) => /^com\.dotcms\.contenttype\.model\.type\.Immutable\w+ContentType$/.test(val),
+            { message: 'Content type clazz must be a valid dotCMS content type' }
+        )
+]);
 
 export const WorkflowSchema = z.object({
     archived: z.boolean(),
@@ -61,8 +59,8 @@ const TabDividerClazzEnum = z.enum(['com.dotcms.contenttype.model.field.Immutabl
 const LineDividerClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
 ]);
-const FieldClazzEnum = z.enum([
-    'com.dotcms.contenttype.model.field.ImmutableBinaryField',
+// Known field clazz types - using union to allow for unknown/deprecated types
+const KnownFieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
     'com.dotcms.contenttype.model.field.ImmutableCategoryField',
     'com.dotcms.contenttype.model.field.ImmutableCheckboxField',
@@ -88,6 +86,14 @@ const FieldClazzEnum = z.enum([
     'com.dotcms.contenttype.model.field.ImmutableLineDividerField'
 ]);
 
+// Flexible field clazz that accepts known types or any string matching the dotCMS field pattern
+export const FieldClazzEnum = z.union([
+    KnownFieldClazzEnum,
+    z.string().regex(/^com\.dotcms\.contenttype\.model\.field\.Immutable\w+Field$/, {
+        message: 'Field clazz must be a valid dotCMS field type'
+    })
+]);
+
 const DividerSchema = z.object({
     clazz: RowClazzEnum.or(TabDividerClazzEnum).or(LineDividerClazzEnum),
     contentTypeId: z.string(),
@@ -95,7 +101,7 @@ const DividerSchema = z.object({
     fieldContentTypeProperties: z.array(z.any()).optional(),
     fieldType: z.string(),
     fieldTypeLabel: z.string(),
-    fieldVariables: z.array(z.record(z.any())),
+    fieldVariables: z.array(z.record(z.string(), z.any())),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     iDate: z.number(),
@@ -119,7 +125,7 @@ const ColumnDividerSchema = z.object({
     fieldContentTypeProperties: z.array(z.any()).optional(),
     fieldType: z.string(),
     fieldTypeLabel: z.string(),
-    fieldVariables: z.array(z.record(z.any())),
+    fieldVariables: z.array(z.object({ name: z.string(), value: z.any() })),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
     iDate: z.number(),
@@ -136,15 +142,16 @@ const ColumnDividerSchema = z.object({
     variable: z.string().optional()
 });
 
-const LayoutFieldSchema = z.object({
+const ContentTypeFieldSchema = z.object({
     clazz: FieldClazzEnum,
     contentTypeId: z.string(),
     dataType: z.string(),
     fieldType: z.string(),
     fieldTypeLabel: z.string(),
-    fieldVariables: z.array(z.record(z.any())),
+    fieldVariables: z.array(z.record(z.string(), z.any())),
     fixed: z.boolean(),
     forceIncludeInApi: z.boolean(),
+    hint: z.string().optional(),
     iDate: z.number(),
     id: z.string(),
     indexed: z.boolean(),
@@ -155,6 +162,7 @@ const LayoutFieldSchema = z.object({
     required: z.boolean(),
     searchable: z.boolean(),
     sortOrder: z.number(),
+    system: z.boolean().optional(),
     unique: z.boolean(),
     variable: z.string(),
     values: z.string().optional(),
@@ -163,7 +171,7 @@ const LayoutFieldSchema = z.object({
 
 const ColumnSchema = z.object({
     columnDivider: ColumnDividerSchema,
-    fields: z.array(LayoutFieldSchema)
+    fields: z.array(ContentTypeFieldSchema)
 });
 
 export const LayoutSchema = z.object({
@@ -173,7 +181,7 @@ export const LayoutSchema = z.object({
 
 export const ContentTypeSchema = z.object({
     baseType: ContentTypeBaseTypeEnum,
-    clazz: z.string(),
+    clazz: ContentTypeClazzEnum,
     defaultType: z.boolean(),
     description: z.string().optional(),
     fields: z.array(ContentTypeFieldSchema).optional(),
@@ -185,7 +193,7 @@ export const ContentTypeSchema = z.object({
     icon: z.string().optional(),
     id: z.string(),
     layout: z.array(LayoutSchema),
-    metadata: z.record(z.any()),
+    metadata: z.record(z.string(), z.any()),
     modDate: z.number(),
     multilingualable: z.boolean(),
     name: z.string(),
@@ -195,7 +203,7 @@ export const ContentTypeSchema = z.object({
     variable: z.string(),
     versionable: z.boolean(),
     workflows: z.array(WorkflowSchema).optional(),
-    systemActionMappings: z.union([z.record(z.any()), z.array(z.any())]).optional(),
+    systemActionMappings: z.union([z.record(z.string(), z.any()), z.array(z.any())]).optional(),
     owner: z.string().optional(),
     nEntries: z.number().optional(),
     detailPage: z.string().optional(),

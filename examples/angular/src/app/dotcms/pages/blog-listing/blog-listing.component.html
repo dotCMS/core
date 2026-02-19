@@ -1,0 +1,31 @@
+<div class="flex flex-col gap-4 mb-8">
+  <h1 class="text-4xl font-bold text-center">Blog Posts</h1>
+  <p class="text-gray-600 text-center">
+    Get inspired to experience the world. Our writers will give you their
+    first-hand stories and recommendations that will inspire, excite you,
+    and help you make the best decisions for planning your next adventure.
+  </p>
+</div>
+
+<!-- Search Component -->
+<app-search [query]="searchQuery()" (searchQueryChange)="onSearchQueryChange($event)" />
+
+@if (filteredBlogs().length === 0) {
+  <app-loading />
+} @else {
+  <!-- Blog Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    @for (blog of filteredBlogs(); track blog.identifier) {
+    <app-blog-card [blog]="blog" />
+    }
+  </div>
+
+  <!-- No results message -->
+  @if (filteredBlogs().length === 0) {
+  <div class="text-center py-8">
+    <p class="text-gray-500">
+      No blogs found matching your search criteria.
+    </p>
+  </div>
+  }
+}

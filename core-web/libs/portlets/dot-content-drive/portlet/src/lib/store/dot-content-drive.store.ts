@@ -13,12 +13,13 @@ import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
 
-import { DotContentSearchService } from '@dotcms/data-access';
-import { DotContentDriveItem, ESContent } from '@dotcms/dotcms-models';
+import { DotContentDriveService } from '@dotcms/data-access';
+import { DotContentDriveItem, DotContentDriveSearchRequest } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
+import { withDragging } from './features/dragging/withDragging';
 import { withSidebar } from './features/sidebar/withSidebar';
 
 import {
@@ -26,6 +27,7 @@ import {
     DEFAULT_PATH,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    MAP_NUMBERS_TO_BASE_TYPES,
     SYSTEM_HOST
 } from '../shared/constants';
 import {
@@ -39,10 +41,11 @@ import {
 import { buildContentDriveQuery, decodeFilters } from '../utils/functions';
 
 const initialState: DotContentDriveState = {
-    currentSite: SYSTEM_HOST,
+    currentSite: undefined, // So we have the actual site selected on start
     path: DEFAULT_PATH,
     filters: {},
     items: [],
+    selectedItems: [],
     status: DotContentDriveStatus.LOADING,
     totalItems: 0,
     pagination: DEFAULT_PAGINATION,
@@ -54,21 +57,40 @@ export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
     withComputed(({ path, filters, currentSite, pagination, sort }) => {
         return {
-            $searchParams: computed(() => ({
-                query: buildContentDriveQuery({
+            $request: computed<DotContentDriveSearchRequest>(() => ({
+                assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                includeSystemHost: true,
+                filters: {
+                    text: filters()?.title || '',
+                    filterFolders: true
+                },
+                language: filters()?.languageId,
+                contentTypes: filters()?.contentType,
+                baseTypes: filters()?.baseType?.map(
+                    (baseType) => MAP_NUMBERS_TO_BASE_TYPES[Number(baseType)]
+                ),
+                offset: pagination()?.offset,
+                maxResults: pagination()?.limit,
+                sortBy: sort()?.field + ':' + sort()?.order,
+                archived: false,
+                showFolders:
+                    !filters()?.baseType?.length &&
+                    !filters()?.contentType?.length &&
+                    !filters()?.languageId?.length
+            })),
+            // We will need this for the global select all in the future, so I'll leave it here for now
+            // https://github.com/dotCMS/core/issues/33338
+            $query: computed<string>(() => {
+                return buildContentDriveQuery({
                     path: path(),
-                    currentSite: currentSite(),
+                    currentSite: currentSite() ?? SYSTEM_HOST,
                     filters: filters()
-                }),
-                pagination: pagination(),
-                sort: sort(),
-                currentSite: currentSite()
-            }))
+                });
+            })
         };
     }),
     withMethods((store) => {
-        const contentSearchService = inject(DotContentSearchService);
-
+        const dotContentDriveService = inject(DotContentDriveService);
         return {
             initContentDrive({ currentSite, path, filters, isTreeExpanded }: DotContentDriveInit) {
                 patchState(store, {
@@ -111,8 +133,24 @@ export const DotContentDriveStore = signalStore(
             removeFilter(filter: string) {
                 const { [filter]: removedFilter, ...restFilters } = store.filters();
                 if (removedFilter) {
-                    patchState(store, { filters: restFilters });
+                    patchState(store, {
+                        filters: restFilters,
+                        pagination: { ...store.pagination(), offset: 0 }
+                    });
                 }
+            },
+            setPath(path: string) {
+                // Only reset the title if the path is changed and its not the default path
+                const title = path ? undefined : store.filters().title;
+
+                patchState(store, {
+                    path,
+                    pagination: { ...store.pagination(), offset: 0 },
+                    filters: {
+                        ...store.filters(),
+                        title
+                    }
+                });
             },
             setPagination(pagination: DotContentDrivePagination) {
                 patchState(store, { pagination });
@@ -126,25 +164,22 @@ export const DotContentDriveStore = signalStore(
             getFilterValue(filter: string) {
                 return store.filters()[filter];
             },
+            setSelectedItems(items: DotContentDriveItem[]) {
+                patchState(store, { selectedItems: items });
+            },
             loadItems() {
-                const { query, pagination, sort, currentSite } = store.$searchParams();
-                const { limit, offset } = pagination;
-                const { field, order } = sort;
-
-                patchState(store, { status: DotContentDriveStatus.LOADING });
+                const request = store.$request();
+                const currentSite = store.currentSite();
+                patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
 
                 // Avoid fetching content for SYSTEM_HOST sites
-                if (currentSite?.identifier === SYSTEM_HOST.identifier) {
+                if (currentSite?.identifier == SYSTEM_HOST.identifier) {
                     return;
                 }
 
-                contentSearchService
-                    .get<ESContent>({
-                        query,
-                        limit,
-                        offset,
-                        sort: `score,${field} ${order}`
-                    })
+                // Since we are using scored search for the title we need to sort by score desc
+                dotContentDriveService
+                    .search(request)
                     .pipe(
                         take(1),
                         catchError(() => {
@@ -154,17 +189,14 @@ export const DotContentDriveStore = signalStore(
                     )
                     .subscribe((response) => {
                         patchState(store, {
-                            items: response.jsonObjectView.contentlets,
-                            totalItems: response.resultsSize,
+                            items: response.list,
+                            totalItems: response.contentTotalCount,
                             status: DotContentDriveStatus.LOADED
                         });
                     });
             },
             reloadContentDrive() {
                 this.loadItems();
-            },
-            setPath(path: string) {
-                patchState(store, { path });
             }
         };
     }),
@@ -209,5 +241,6 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
-    withSidebar()
+    withSidebar(),
+    withDragging()
 );

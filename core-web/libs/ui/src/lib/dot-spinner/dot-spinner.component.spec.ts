@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
 import { DotSpinnerComponent } from './dot-spinner.component';
-import { DotSpinnerModule } from './dot-spinner.module';
 
 describe('DotSpinnerComponent', () => {
     let component: DotSpinnerComponent;
@@ -10,8 +9,7 @@ describe('DotSpinnerComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [],
-            imports: [DotSpinnerModule]
+            imports: [DotSpinnerComponent]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotSpinnerComponent);

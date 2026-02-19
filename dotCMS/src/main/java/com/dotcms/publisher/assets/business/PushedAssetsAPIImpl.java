@@ -3,6 +3,7 @@ package com.dotcms.publisher.assets.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.publisher.assets.bean.PushedAsset;
+import com.dotcms.rest.api.v1.content.PushedAssetHistory;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -10,6 +11,12 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 
+/**
+ * This class implements the {@link PushedAssetsAPI}.
+ *
+ * @author Daniel Silva
+ * @since Jul 16th, 2013
+ */
 public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 
 	private final PushedAssetsFactory pushedAssetsFactory;
@@ -137,5 +144,17 @@ public class PushedAssetsAPIImpl implements PushedAssetsAPI {
 			final String environmentId) throws DotDataException {
 		return pushedAssetsFactory.getPushedAssets(bundleId,environmentId);
 	}
+
+    @CloseDBIfOpened
+    @Override
+    public List<PushedAssetHistory> getPushedAssets(final String assetId, final int offset, final int limit) throws DotDataException {
+        return pushedAssetsFactory.getPushedAssets(assetId, offset, limit);
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public long getTotalPushedAssets(final String assetId) throws DotDataException {
+        return pushedAssetsFactory.getTotalPushedAssets(assetId);
+    }
 
 }

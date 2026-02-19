@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.DELETE_UNIQUE_FIELDS;
 import static com.dotcms.contenttype.business.uniquefields.extratable.SqlQueries.DELETE_UNIQUE_FIELDS_BY_CONTENTLET;
@@ -689,14 +690,22 @@ public class UniqueFieldDataBaseUtil {
 
     /**
      * Generates a new unique value based on the original one, using a specific format that can also
-     * be used to look for conflicting entries that were fixed.
+     * be used to look for conflicting entries that were fixed. This new value is composed of:
+     * <ol>
+     *     <li>The {@code legacy*support*} prefix.</li>
+     *     <li>A random number between 1 and 100,000, which is required in case there are more than
+     *     two Contentlets with the exact same unique value so that values don't conflict with each
+     *     other.</li>
+     *     <li>The original unique value enclosed in curly braces.</li>
+     * </ol>
      *
      * @param originalUniqueValue The original unique value.
      *
      * @return The new unique value.
      */
     private String generateUniqueName(final String originalUniqueValue) {
-        return "legacy*support*{" + originalUniqueValue + "}";
+        int randomNumber = new Random().nextInt(100000) + 1;
+        return "legacy*support*" + randomNumber + "{" + originalUniqueValue + "}";
     }
 
     /**

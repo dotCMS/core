@@ -129,6 +129,11 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     beforeEach(() => {
+        // This spec relies on async Angular stabilization (whenStable).
+        // In large Jest runs, other suites can leave fake timers enabled in the same worker,
+        // which can cause these async setups to hang/flap. Force real timers for isolation.
+        jest.useRealTimers();
+
         spectator = createComponent({
             detectChanges: false,
             props: {
@@ -600,12 +605,18 @@ describe('DotEditContentBinaryFieldComponent', () => {
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
 
-            const urlBtn = spectator.query(byTestId('action-url-btn'));
-            const editorBtn = spectator.query(byTestId('action-editor-btn'));
+            const urlBtnComponent = spectator.query(byTestId('action-url-btn'));
+            const editorBtnComponent = spectator.query(byTestId('action-editor-btn'));
 
-            // Check for ng-reflect-disabled attribute instead of disabled property for PrimeNG buttons
-            expect(urlBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
-            expect(editorBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
+            // Get the actual button elements inside the PrimeNG components
+            const actualUrlBtn = urlBtnComponent?.querySelector('button') as HTMLButtonElement;
+            const actualEditorBtn = editorBtnComponent?.querySelector(
+                'button'
+            ) as HTMLButtonElement;
+
+            // Verify buttons are actually disabled
+            expect(actualUrlBtn?.disabled).toBe(true);
+            expect(actualEditorBtn?.disabled).toBe(true);
         });
 
         it('should disable AI button when component is disabled', () => {
@@ -642,17 +653,20 @@ describe('DotEditContentBinaryFieldComponent', () => {
 
             spectator.detectChanges();
 
-            const aiBtn = spectator.query(byTestId('action-ai-btn'));
+            const aiBtnComponent = spectator.query(byTestId('action-ai-btn'));
 
             // Verify button exists
-            expect(aiBtn).toBeTruthy();
+            expect(aiBtnComponent).toBeTruthy();
 
             // Set component disabled - should disable AI button
             spectator.component.setDisabledState(true);
             spectator.detectChanges();
 
+            // Get the actual button element inside the PrimeNG component
+            const actualAiBtn = aiBtnComponent?.querySelector('button') as HTMLButtonElement;
+
             // Button should be disabled when component is disabled
-            expect(aiBtn?.getAttribute('ng-reflect-disabled')).toBe('true');
+            expect(actualAiBtn?.disabled).toBe(true);
 
             // Re-enable component
             spectator.component.setDisabledState(false);
@@ -760,6 +774,8 @@ describe('DotEditContentBinaryFieldComponent', () => {
     });
 
     afterEach(() => {
+        jest.clearAllTimers();
+        jest.useRealTimers();
         jest.resetAllMocks();
     });
 });

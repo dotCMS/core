@@ -1,4 +1,10 @@
-import { FormBridge, FormFieldValue } from '../interfaces/form-bridge.interface';
+import {
+    BrowserSelectorController,
+    BrowserSelectorOptions,
+    FormBridge,
+    FormFieldAPI,
+    FormFieldValue
+} from '../interfaces/form-bridge.interface';
 
 interface FieldCallback {
     id: symbol;
@@ -195,6 +201,59 @@ export class DojoFormBridge implements FormBridge {
     }
 
     /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     *
+     * @param fieldId - The ID of the field to get the API for.
+     * @returns A FormFieldAPI object for the specified field.
+     */
+    getField(fieldId: string): FormFieldAPI {
+        return {
+            getValue: (): FormFieldValue => {
+                return this.get(fieldId);
+            },
+
+            setValue: (value: FormFieldValue): void => {
+                this.set(fieldId, value);
+            },
+
+            onChange: (callback: (value: FormFieldValue) => void): void => {
+                this.onChangeField(fieldId, callback);
+            },
+
+            enable: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (
+                        element instanceof HTMLInputElement ||
+                        element instanceof HTMLTextAreaElement
+                    ) {
+                        element.disabled = false;
+                        element.removeAttribute('disabled');
+                    }
+                } catch (error) {
+                    console.warn('Error enabling field:', error);
+                }
+            },
+
+            disable: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (
+                        element instanceof HTMLInputElement ||
+                        element instanceof HTMLTextAreaElement
+                    ) {
+                        element.disabled = true;
+                        element.setAttribute('disabled', 'disabled');
+                    }
+                } catch (error) {
+                    console.warn('Error disabling field:', error);
+                }
+            }
+        };
+    }
+
+    /**
      * Executes callback when bridge is ready, handling iframe load.
      *
      * @param callback - The callback function to execute when the bridge is ready.
@@ -206,5 +265,27 @@ export class DojoFormBridge implements FormBridge {
         };
 
         window.addEventListener('load', this.loadHandler);
+    }
+
+    /**
+     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
+     *
+     * @param _options - Configuration options for the browser selector.
+     * @returns A controller object to manage the dialog.
+     *
+     * @example
+     * // Select a page
+     * bridge.openBrowserModal({
+     *   header: 'Select a Page',
+     *   mimeTypes: ['application/dotpage'],
+     *   onClose: (result) => console.log(result)
+     * });
+     */
+    openBrowserModal(_options: BrowserSelectorOptions): BrowserSelectorController {
+        // TODO: Implement browser selector modal for Dojo
+        return {
+            // eslint-disable-next-line @typescript-eslint/no-empty-function
+            close: () => {}
+        };
     }
 }

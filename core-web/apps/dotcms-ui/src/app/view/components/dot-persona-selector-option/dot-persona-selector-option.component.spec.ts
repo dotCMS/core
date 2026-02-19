@@ -34,8 +34,9 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            declarations: [DotPersonaSelectorOptionComponent, TestHostComponent],
+            declarations: [TestHostComponent],
             imports: [
+                DotPersonaSelectorOptionComponent,
                 BrowserAnimationsModule,
                 DotAvatarDirective,
                 BadgeModule,
@@ -71,7 +72,10 @@ describe('DotPersonaSelectorOptionComponent', () => {
 
             expect(image).toBe(mockDotPersona.photo);
             expect(avatar.query(By.css('.p-badge'))).toBeTruthy();
-            expect(avatar.attributes['ng-reflect-text']).toBe(mockDotPersona.name);
+            // In Angular 20, ng-reflect-* attributes are not available
+            // Verify the text property on the DotAvatarDirective instance
+            const avatarDirective = avatar.injector.get(DotAvatarDirective);
+            expect(avatarDirective.text).toBe(mockDotPersona.name);
         });
 
         it('should have personalized button with right properties', () => {

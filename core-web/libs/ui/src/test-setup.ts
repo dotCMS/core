@@ -3,8 +3,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import '@testing-library/jest-dom';
-import 'jest-preset-angular/setup-jest';
-import 'zone.js/testing';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+setupZoneTestEnv();
 
 // Angular testing environment setup
 import { getTestBed } from '@angular/core/testing';

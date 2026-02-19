@@ -1,4 +1,3 @@
----
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,9 +5,9 @@ metadata:
   name: foo-prod-svc
 spec:
   ports:
-    - port: 8082
-      targetPort: 8082
-      protocol: TCP
+  - port: 8082
+    targetPort: 8082
+    protocol: TCP
   type: NodePort
   selector:
     fullname: dotcms-foo-prod
@@ -26,11 +25,11 @@ metadata:
     alb.ingress.kubernetes.io/backend-protocol: HTTP
     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
     alb.ingress.kubernetes.io/healthcheck-port: '8082'
-    alb.ingress.kubernetes.io/healthcheck-path: /api/v1/alive
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '5'
+    alb.ingress.kubernetes.io/healthcheck-path: /api/v1/probes/alive
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '9'
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '2'
     alb.ingress.kubernetes.io/success-codes: '200'
-    alb.ingress.kubernetes.io/healthy-threshold-count: '5'
+    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
     alb.ingress.kubernetes.io/unhealthy-threshold-count: '2'
     alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:xxx:certificate/xxx
     alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-FS-1-2-Res-2020-10
@@ -38,24 +37,24 @@ metadata:
     alb.ingress.kubernetes.io/security-groups: sg-xxx
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
     alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
-    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=300,access_logs.s3.enabled=true,access_logs.s3.bucket=dotcms-foo-access-logs,access_logs.s3.prefix=foo/prod
+    alb.ingress.kubernetes.io/load-balancer-attributes: access_logs.s3.bucket=dotcms-foo-access-logs,access_logs.s3.enabled=true,access_logs.s3.prefix=foo/prod,deregistration_delay.timeout_seconds=30,idle_timeout.timeout_seconds=600,load_balancing.algorithm.type=least_outstanding_requests,slow_start.duration_seconds=60,stickiness.enabled=true
     alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:us-east-1:xxx:regional/webacl/foo/xxx
 spec:
   rules:
-    - host: prod.foo.example.com
-    - http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: ssl-redirect
-                port:
-                  name: use-annotation
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: foo-prod-svc
-                port:
-                  number: 8082
+  - host: prod.foo.example.com
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: ssl-redirect
+            port:
+              name: use-annotation
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: foo-prod-svc
+            port:
+              number: 8082

@@ -1,17 +1,15 @@
 package com.dotmarketing.portlets.cmsmaintenance.factories;
 
+import com.dotcms.content.elasticsearch.business.DropOldContentletRunner;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceAction;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -57,6 +55,14 @@ public class CMSMaintenanceFactory {
     public static int deleteOldAssetVersions(final Date assetsOlderThan) {
         Logger.info(CMSMaintenanceFactory.class, "------------------------------------------------------------");
         Logger.info(CMSMaintenanceFactory.class, " Executing the Drop Old Assets Versions tool");
+
+        int totalRecords = new DropOldContentletRunner(assetsOlderThan).deleteOldContent();
+
+
+
+
+
+
         Calendar startDate = Calendar.getInstance();
         startDate.setTime(assetsOlderThan);
         startDate.add(Calendar.YEAR, -2);
@@ -69,7 +75,7 @@ public class CMSMaintenanceFactory {
         Logger.info(CMSMaintenanceFactory.class, String.format("- Deleting versions older than '%s'",
                 UtilMethods.dateToHTMLDate(assetsOlderThan, "yyyy-MM-dd")));
         Logger.info(CMSMaintenanceFactory.class, " ");
-        int totalRecords = 0;
+
         while (startDate.getTime().before(assetsOlderThan) || startDate.getTime().equals(assetsOlderThan)) {
             try {
                 HibernateUtil.startTransaction();
@@ -150,11 +156,6 @@ public class CMSMaintenanceFactory {
         Logger.info(CMSMaintenanceFactory.class, String.format("-> Dropping versions older than '%s':",
                 UtilMethods.dateToHTMLDate(assetsOlderThan.getTime(), "yyyy-MM-dd")));
 
-        deletedRecords = APILocator.getContentletAPI().deleteOldContent(assetsOlderThan.getTime());
-        if (deletedRecords > 0) {
-            Logger.info(CMSMaintenanceFactory.class, String.format(statusMsg, deletedRecords, "Contentlets"));
-            totalRecords += deletedRecords;
-        }
 
         deletedRecords = APILocator.getContainerAPI().deleteOldVersions(assetsOlderThan.getTime());
         if (deletedRecords > 0) {

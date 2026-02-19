@@ -32,7 +32,6 @@ import {
     DotTempFileThumbnailComponent,
     DotFileSizeFormatPipe,
     DotMessagePipe,
-    DotSpinnerModule,
     DotCopyButtonComponent
 } from '@dotcms/ui';
 
@@ -57,7 +56,6 @@ interface dotPreviewResourceLink {
         ButtonModule,
         SkeletonModule,
         DotTempFileThumbnailComponent,
-        DotSpinnerModule,
         DialogModule,
         DotMessagePipe,
         DotFileSizeFormatPipe,

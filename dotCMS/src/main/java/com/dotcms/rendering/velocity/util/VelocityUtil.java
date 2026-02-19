@@ -2,8 +2,8 @@ package com.dotcms.rendering.velocity.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.response.BaseResponse;
 import com.dotcms.rendering.velocity.directive.DotCacheDirective;
@@ -14,9 +14,7 @@ import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.container.ContainerResource;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -32,36 +30,44 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.SystemProperties;
-
+import io.vavr.Lazy;
 import io.vavr.control.Try;
-
+import java.io.File;
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapter;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.tools.view.ToolboxManager;
 import org.apache.velocity.tools.view.context.ChainedContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
 public class VelocityUtil {
     public final static String REFRESH="refresh";
     public final static String NO="no";
     public final static String DOTCACHE="dotcache";
-	private static VelocityEngine ve = null;
+    private static final Lazy<VelocityEngine> velocityEngine = Lazy.of(() -> {
+        VelocityEngine engine = new VelocityEngine();
+        try {
+            engine.init(SystemProperties.getProperties());
+
+            Logger.debug(VelocityUtil.class, SystemProperties.getProperties().toString());
+        } catch (Exception e) {
+            Logger.error(VelocityUtil.class, e.getMessage(), e);
+            throw new DotRuntimeException(e);
+        }
+        return engine;
+    });
 	private static Map<String, String> digitToLetter = new HashMap<>();
 
 	static {
@@ -77,39 +83,18 @@ public class VelocityUtil {
 		digitToLetter.put("9", "nine");
 	}
 
-	private static class Holder {
-		private static final VelocityUtil INSTANCE = new VelocityUtil();
-	}
+    private static Lazy<com.dotcms.rendering.velocity.util.VelocityUtil> INSTANCE = Lazy.of(VelocityUtil::new);
 
 	protected VelocityUtil(){}
 
 	public static VelocityUtil getInstance() {
-		return Holder.INSTANCE;
+        return INSTANCE.get();
 	}
 
-	private synchronized static void init(){
-		if(ve != null)
-			return;
-		ve = new VelocityEngine();
-		try{
-			ve.init(SystemProperties.getProperties());
-
-			Logger.debug(VelocityUtil.class, SystemProperties.getProperties().toString());
-		}catch (Exception e) {
-			Logger.error(VelocityUtil.class,e.getMessage(),e);
-		}
-	}
-	
 	public static VelocityEngine getEngine(){
-		if(ve == null){
-			init();
-			if(ve == null){
-				Logger.fatal(VelocityUtil.class,"Velocity Engine unable to initialize : THIS SHOULD NEVER HAPPEN");
-				throw new DotRuntimeException("Velocity Engine unable to initialize : THIS SHOULD NEVER HAPPEN");
-			}
-		}
-		return ve;
-	}
+        return velocityEngine.get();
+    }
+
 	/**
 	 * Changes $ and # to velocity escapes.  This is helps filter out velocity code injections.
 	 * @param s 
@@ -125,7 +110,7 @@ public class VelocityUtil {
 	}
 
 
-	
+    @RequestCost(Price.VELOCITY_PARSE)
 	public String parseVelocity(String velocityCode, Context ctx){
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter stringWriter = new StringWriter();
@@ -254,6 +239,7 @@ public class VelocityUtil {
    * This will return a velocity context for workflow actionlet.
    * It will mock a Request and Response and then use
    */
+  @RequestCost(Price.VELOCITY_BUILD_CONTEXT)
   public Context getWorkflowContext(final WorkflowProcessor processor) {
     
     final Contentlet contentlet = processor.getContentlet();
@@ -326,6 +312,7 @@ public class VelocityUtil {
     return getWebContext(getBasicContext(), request, response);
   }
 
+    @RequestCost(Price.VELOCITY_BUILD_CONTEXT)
 	public static ChainedContext getWebContext(Context ctx, final HttpServletRequest requestIn, HttpServletResponse response) {
 
 
@@ -401,6 +388,7 @@ public class VelocityUtil {
 
 	}
 
+    @RequestCost(Price.VELOCITY_MERGE)
 	public String  merge(final String templatePath, final Context ctx) {
 		try {
 			return mergeTemplate(templatePath, ctx);
@@ -425,6 +413,7 @@ public class VelocityUtil {
 	 *
 	 * @deprecated Use the mockable version instead {@link VelocityUtil#merge(String, Context)}
 	 */
+    @RequestCost(Price.VELOCITY_MERGE)
 	public static String mergeTemplate(String templatePath, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
@@ -434,9 +423,9 @@ public class VelocityUtil {
 		template.merge(ctx, sw);
 
 		return sw.toString();
-		
 	}
-	
+
+    @RequestCost(Price.VELOCITY_MERGE)
 	public static String eval(String velocity, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter sw = new StringWriter();
@@ -478,26 +467,30 @@ public class VelocityUtil {
      */
     public static boolean shouldPageCache(final HttpServletRequest request, final IHTMLPage page)
             throws DotDataException, DotSecurityException {
-        if (LicenseUtil.getLevel() <= LicenseLevel.COMMUNITY.level) {
-            return false;
-        }
+
         if (page == null || page.getCacheTTL() < 1) {
             return false;
         }
+
+		final User user = PortalUtil.getUser(request);
+		if (null != user && PageMode.LIVE.equals(PageMode.get(request)) && LoginMode.BE.equals(LoginMode.get(request))) {
+			return false;
+		}
+
         // don't cache posts
         if (!"GET".equalsIgnoreCase(request.getMethod()) && !"HEAD".equalsIgnoreCase(request.getMethod()) ) {
             return false;
         }
+
         // nocache passed either as a session var, as a request var or as a
         // request attribute
-        if (NO.equals(request.getParameter(DOTCACHE)) || REFRESH.equals(request.getParameter(DOTCACHE))
+        if (NO.equals(request.getParameter(DOTCACHE))
+                || REFRESH.equals(request.getParameter(DOTCACHE))
                 || NO.equals(request.getAttribute(DOTCACHE))
                 || (request.getSession(false) != null && NO.equals(request.getSession(true).getAttribute(DOTCACHE)))
 				|| (request.getSession(false) != null && REFRESH.equals(request.getSession(true).getAttribute(DOTCACHE))) ) {
             return false;
         }
-
-
 
         return true;
     }

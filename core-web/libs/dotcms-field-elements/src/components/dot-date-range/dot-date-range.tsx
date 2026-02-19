@@ -10,6 +10,8 @@ import {
     Host,
     h
 } from '@stencil/core';
+import flatpickr from 'flatpickr';
+
 import { DotFieldStatus, DotFieldValueEvent, DotFieldStatusEvent } from '../../models';
 import {
     checkProp,
@@ -22,7 +24,6 @@ import {
     updateStatus,
     getHintId
 } from '../../utils';
-import flatpickr from 'flatpickr';
 
 @Component({
     tag: 'dot-date-range',

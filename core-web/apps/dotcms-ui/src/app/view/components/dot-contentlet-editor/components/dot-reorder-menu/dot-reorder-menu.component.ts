@@ -1,9 +1,13 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
+
 @Component({
     selector: 'dot-reorder-menu',
     templateUrl: './dot-reorder-menu.component.html',
-    standalone: false
+    imports: [DotMessagePipe, DotIframeDialogComponent]
 })
 export class DotReorderMenuComponent {
     @Input() url: string;

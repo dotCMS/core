@@ -1,4 +1,4 @@
-import { MarkdownModule } from 'ngx-markdown';
+import { MarkdownService } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
@@ -8,11 +8,17 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
-import { DotCopyButtonComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotAvatarDirective,
+    DotCopyButtonComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
@@ -20,7 +26,8 @@ import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-de
 
 import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
 import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
-import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
+import { DotCopyLinkComponent } from '../../../view/components/dot-copy-link/dot-copy-link.component';
+import { DotAppsConfigurationHeaderComponent } from '../dot-apps-configuration-header/dot-apps-configuration-header.component';
 
 const messages = {
     'apps.key': 'Key',
@@ -114,8 +121,7 @@ class MockDotAppsService {
 
 @Component({
     selector: 'dot-key-value-ng',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
@@ -126,8 +132,7 @@ class MockDotKeyValueComponent {
 
 @Component({
     selector: 'dot-apps-configuration-detail-form',
-    template: '',
-    standalone: false
+    template: ''
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
@@ -135,6 +140,15 @@ class MockDotAppsConfigurationDetailFormComponent {
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
 }
+
+@Component({
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'markdown',
+    template: `
+        <ng-content></ng-content>
+    `
+})
+class MockMarkdownComponent {}
 
 describe('DotAppsConfigurationDetailComponent', () => {
     let component: DotAppsConfigurationDetailComponent;
@@ -148,6 +162,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
+                DotAppsConfigurationDetailComponent,
                 RouterTestingModule.withRoutes([
                     {
                         component: DotAppsConfigurationDetailComponent,
@@ -157,16 +172,14 @@ describe('DotAppsConfigurationDetailComponent', () => {
                 ButtonModule,
                 CommonModule,
                 DotCopyButtonComponent,
-                DotAppsConfigurationHeaderModule,
+                DotAppsConfigurationHeaderComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
-                MarkdownModule.forRoot()
-            ],
-            declarations: [
-                DotAppsConfigurationDetailComponent,
                 MockDotKeyValueComponent,
-                MockDotAppsConfigurationDetailFormComponent
+                MockDotAppsConfigurationDetailFormComponent,
+                MockMarkdownComponent
             ],
+            declarations: [],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 {
@@ -181,10 +194,37 @@ describe('DotAppsConfigurationDetailComponent', () => {
                     provide: DotRouterService,
                     useClass: MockDotRouterService
                 },
-
+                MarkdownService,
                 DotAppsConfigurationDetailResolver
             ]
-        });
+        })
+            .overrideComponent(DotAppsConfigurationDetailComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        ButtonModule,
+                        DotAppsConfigurationHeaderComponent,
+                        DotCopyButtonComponent,
+                        DotSafeHtmlPipe,
+                        DotMessagePipe,
+                        MockDotKeyValueComponent,
+                        MockDotAppsConfigurationDetailFormComponent
+                    ]
+                }
+            })
+            .overrideComponent(DotAppsConfigurationHeaderComponent, {
+                set: {
+                    imports: [
+                        CommonModule,
+                        AvatarModule,
+                        MockMarkdownComponent,
+                        DotAvatarDirective,
+                        DotCopyLinkComponent,
+                        DotSafeHtmlPipe,
+                        DotMessagePipe
+                    ]
+                }
+            });
 
         fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
         component = fixture.debugElement.componentInstance;

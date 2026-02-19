@@ -1,0 +1,50 @@
+<!-- Metrics Section -->
+<div class="analytics-dashboard-pages__metrics flex gap-3 flex-wrap">
+    @for (metric of $metricsData(); track metric.name) {
+        <dot-analytics-dashboard-metrics
+            class="analytics-dashboard-pages__metric-card"
+            [name]="metric.name"
+            [value]="metric.value || 0"
+            [subtitle]="metric.subtitle || ''"
+            [icon]="metric.icon || ''"
+            [status]="metric.status"
+            data-testid="analytics-metric-card" />
+    }
+</div>
+
+<!-- Charts Section -->
+<div class="analytics-dashboard-pages__charts flex gap-3">
+    <!-- Line Chart -->
+    <div class="analytics-dashboard-pages__timeline-chart">
+        <dot-analytics-dashboard-chart
+            [title]="'analytics.charts.pageviews-timeline.title' | dm"
+            type="line"
+            [data]="$pageViewTimeLineData()"
+            [status]="$pageViewTimeLineStatus()"
+            data-testid="analytics-timeline-chart" />
+    </div>
+</div>
+
+<!-- Table and Pie Chart Section -->
+@defer (on viewport) {
+    <div class="analytics-dashboard-pages__bottom-section flex gap-3 align-items-stretch">
+        <!-- Pie Chart -->
+        <div class="analytics-dashboard-pages__device-chart">
+            <dot-analytics-dashboard-chart
+                [title]="'analytics.charts.device-breakdown.title' | dm"
+                type="pie"
+                [data]="$pageViewDeviceBrowsersData()"
+                [status]="$pageViewDeviceBrowsersStatus()"
+                data-testid="analytics-device-chart" />
+        </div>
+
+        <!-- Table -->
+        <div class="analytics-dashboard-pages__table">
+            <dot-analytics-dashboard-table
+                [tableState]="$topPagesTable()"
+                data-testid="analytics-table" />
+        </div>
+    </div>
+} @placeholder {
+    <div style="min-height: 24rem"></div>
+}

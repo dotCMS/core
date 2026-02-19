@@ -1,74 +1,128 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { getUVEState } from '@dotcms/uve';
 
-import {
-    DotCMSAnalytics,
-    DotCMSAnalyticsConfig
-} from '../../core/shared/dot-content-analytics.model';
+import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from '../../core/shared/models';
 import { initializeAnalytics } from '../internal';
 
+/** No-op analytics instance returned when analytics cannot be initialized (e.g., inside UVE) */
+const NOOP_ANALYTICS: DotCMSAnalytics = {
+    track: () => {
+        //
+    },
+    pageView: () => {
+        //
+    },
+    conversion: () => {
+        //
+    }
+};
+
 /**
- * Custom hook that handles analytics tracking for anonymous users.
- * Provides methods to track events and page views with automatic timestamp injection.
- * Automatically disables tracking when inside the UVE editor.
+ * React hook for tracking user interactions and page views in your DotCMS application.
+ *
+ * Use this hook to add analytics tracking to your React components. It automatically
+ * handles user sessions, device information, and UTM campaign parameters.
+ *
+ * **Important:** Tracking is automatically disabled when editing content in DotCMS to avoid
+ * polluting your analytics data with editor activity.
  *
  * @example
+ * Basic usage - Track custom events
  * ```tsx
- * function Button({ title, urlTitle }) {
+ * function ProductCard({ title, price }) {
  *   const { track } = useContentAnalytics({
  *     server: 'https://demo.dotcms.com',
- *     siteKey: 'my-site-key',
+ *     siteAuth: 'my-site-auth',
  *     debug: false
  *   });
  *
- *   // Track button click with custom properties
- *   return (
- *     <button onClick={() => track('btn-click', { title, urlTitle })}>
- *       See Details →
- *     </button>
- *   );
+ *   const handleAddToCart = () => {
+ *     track('add-to-cart', {
+ *       product: title,
+ *       price: price
+ *     });
+ *   };
+ *
+ *   return <button onClick={handleAddToCart}>Add to Cart</button>;
  * }
  * ```
  *
- * @param {DotCMSAnalyticsConfig} config - Required configuration object for analytics initialization
- * @returns {DotCMSAnalytics} The analytics instance with tracking capabilities
- * @throws {Error} When analytics initialization fails due to invalid configuration
+ * @example
+ * Track page views manually
+ * ```tsx
+ * function ArticlePage({ article }) {
+ *   const { pageView } = useContentAnalytics({
+ *     server: 'https://demo.dotcms.com',
+ *     siteKey: 'your-site-key'
+ *   });
+ *
+ *   useEffect(() => {
+ *     pageView({
+ *       category: article.category,
+ *       author: article.author
+ *     });
+ *   }, [article.id]);
+ * }
+ * ```
+ *
+ * @param config - Configuration object with server URL and site key
+ * @param config.server - The URL of your DotCMS Analytics server
+ * @param config.siteKey - Your unique site key for authentication
+ * @param config.debug - Optional. Set to true to see analytics events in the console
+ * @returns Object with `track()`, `pageView()`, and `conversion()` methods for analytics tracking
  */
 export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
-    const instance = initializeAnalytics(config);
-    const lastPathRef = useRef<string | null>(null);
+    // Memoize instance based on server and siteAuth (the critical config values)
+    // Only re-initialize if these change. Log once when initialization fails.
+    const instance = useMemo(() => {
+        const result = initializeAnalytics(config);
 
+        if (!result) {
+            if (getUVEState()) {
+                console.warn(
+                    'DotCMS Analytics [React]: Analytics is not initialized because the site is inside the UVE editor. All tracking calls will be ignored.'
+                );
+            } else {
+                console.error(
+                    'DotCMS Analytics [React]: Failed to initialize. Please verify the required configuration (server and siteAuth).'
+                );
+            }
+        }
+
+        return result;
+    }, [config.server, config.siteAuth]);
+
+    // When inside UVE or config is invalid, return no-op functions
+    // so consumers don't need to handle null checks.
     if (!instance) {
-        throw new Error(
-            'Failed to initialize DotContentAnalytics. Please verify the required configuration (server and siteKey).'
-        );
+        return NOOP_ANALYTICS;
     }
 
     const track = useCallback(
-        (eventName: string, payload: Record<string, unknown> = {}) => {
-            if (!getUVEState()) {
-                instance.track(eventName, {
-                    ...payload,
-                    timestamp: new Date().toISOString()
-                });
-            }
+        (eventName: string, payload: JsonObject = {}) => {
+            instance.track(eventName, payload);
         },
         [instance]
     );
 
-    const pageView = useCallback(() => {
-        if (!getUVEState()) {
-            const currentPath = window.location.pathname;
-            if (currentPath !== lastPathRef.current) {
-                lastPathRef.current = currentPath;
-                instance.pageView();
-            }
-        }
-    }, [instance]);
+    const pageView = useCallback(
+        (payload: JsonObject = {}) => {
+            instance.pageView(payload);
+        },
+        [instance]
+    );
+
+    const conversion = useCallback(
+        (name: string, options: JsonObject = {}) => {
+            instance.conversion(name, options);
+        },
+        [instance]
+    );
 
     return {
         track,
-        pageView
+        pageView,
+        conversion
     };
 };

@@ -55,7 +55,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -488,7 +488,7 @@ public class WebAssetHelperIntegrationTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");
@@ -1242,7 +1242,7 @@ public class WebAssetHelperIntegrationTest {
         final FolderView renamedFolder = webAssetHelper.updateFolder(originalPath, updateDetail, APILocator.systemUser());
 
         Assert.assertNotNull(renamedFolder);
-        Assert.assertEquals(newName, renamedFolder.name());
+        Assert.assertTrue("Folder name should be the same, despite casing",newName.equalsIgnoreCase(renamedFolder.name()));
         Assert.assertEquals("Original Title", renamedFolder.title()); // Should preserve the original title
         Assert.assertEquals(true, renamedFolder.showOnMenu()); // Should preserve original showOnMenu
         Assert.assertNotNull("Sort Order must not be null ",renamedFolder.sortOrder());

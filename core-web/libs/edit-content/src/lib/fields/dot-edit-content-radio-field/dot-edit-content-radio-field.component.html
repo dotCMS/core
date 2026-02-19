@@ -1,24 +1,30 @@
 @let options = $options();
 @let field = $field();
+@let showLabel = $showLabel();
+@let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="hasError">
-    <ng-content />
+<dot-card-field [hasError]="fieldHasError">
+    @if (showLabel) {
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+            {{ field.name }}
+        </dot-card-field-label>
+    }
     <dot-card-field-content>
         <div class="flex flex-column gap-2">
             @for (option of options; track $index) {
                 <p-radioButton
                     [inputId]="field.variable + '_' + option.value"
                     [name]="field.variable"
-                    [class.ng-invalid]="hasError"
-                    [class.ng-dirty]="hasError"
+                    [class.ng-invalid]="fieldHasError"
+                    [class.ng-dirty]="fieldHasError"
                     [value]="option.value"
                     [label]="option.label"
-                    [formControl]="formControl" />
+                    [formControlName]="field.variable" />
             }
         </div>
     </dot-card-field-content>
     <dot-card-field-footer>
-        @if (hasError) {
+        @if (fieldHasError) {
             <div class="error-message">
                 @if (isRequired) {
                     <small>{{ 'dot.edit.content.form.field.required' | dm }}</small>
@@ -26,7 +32,7 @@
             </div>
         }
 
-        @if (!hasError && field.hint) {
+        @if (!fieldHasError && field.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}

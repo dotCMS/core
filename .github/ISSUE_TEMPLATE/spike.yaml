@@ -1,24 +1,15 @@
 name: Spike
 description: Timeboxed research to turn unknowns into knowns
-title: "[SPIKE] "
-labels: [""]
+labels: []
 type: spike
 assignees: []
+projects: ["dotCMS/7"]
 
 body:
   - type: markdown
     attributes:
       value: |
         **Note: This template is intended for Engineering team use.**
-
-  - type: input
-    id: spike-title
-    attributes:
-      label: Spike Title
-      description: Clear, concise title describing the research objective
-      placeholder: "e.g., Research integration options for new authentication system"
-    validations:
-      required: true
 
   - type: textarea
     id: research-question

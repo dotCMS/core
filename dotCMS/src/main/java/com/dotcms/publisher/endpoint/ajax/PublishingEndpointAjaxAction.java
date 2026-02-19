@@ -165,6 +165,27 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
     			return;
         	}
 
+        	// Check for authKey changes for troubleshooting
+        	User user = getUser();
+        	PublishingEndPoint existingEndpoint = APILocator.getPublisherEndPointAPI().findEndPointById(id);
+        	String newAuthKey = request.getParameter("authKey");
+        	
+        	if (existingEndpoint != null) {
+        		String oldAuthKey = existingEndpoint.getAuthKey() != null ? PublicEncryptionFactory.decryptString(existingEndpoint.getAuthKey().toString()) : null;
+        		boolean oldAuthKeyEmpty = UtilMethods.isEmpty(oldAuthKey);
+        		boolean newAuthKeyEmpty = UtilMethods.isEmpty(newAuthKey);
+        		
+        		if (oldAuthKeyEmpty != newAuthKeyEmpty) {
+        			if (oldAuthKeyEmpty && !newAuthKeyEmpty) {
+        				Logger.info(getClass(), "EndPoint authKey being set from empty/null to non-empty by user: " + user.getUserId() + " (" + user.getEmailAddress() + ") for endpoint: " + serverName + " (ID: " + id + ")");
+        			} else if (!oldAuthKeyEmpty && newAuthKeyEmpty) {
+        				Logger.info(getClass(), "EndPoint authKey being cleared from non-empty to empty/null by user: " + user.getUserId() + " (" + user.getEmailAddress() + ") for endpoint: " + serverName + " (ID: " + id + ")");
+        			}
+        		} else if (!oldAuthKeyEmpty && !newAuthKeyEmpty && !oldAuthKey.equals(newAuthKey)) {
+        			Logger.info(getClass(), "EndPoint authKey being changed from one non-empty value to a different non-empty value by user: " + user.getUserId() + " (" + user.getEmailAddress() + ") for endpoint: " + serverName + " (ID: " + id + ")");
+        		}
+        	}
+
         	final String protocol = request.getParameter("protocol");
 
             PublishingEndPoint endpoint = factory.getPublishingEndPoint(protocol);

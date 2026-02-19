@@ -694,7 +694,8 @@ function undohighlight(id) {
 function getAllThreads() {
 	document.getElementById('threadList').innerHTML = "";
 	dojo.query('#threadProgress').style({display:"block"});
-    ThreadMonitorTool.getThreads({
+    const hideSystemThreads = document.getElementById("hideSystemThreads").checked;
+    ThreadMonitorTool.getThreads(hideSystemThreads, {
         callback:function(data) {
         	dojo.query('#threadProgress').style({display:"none"});
             var tempString = "";
@@ -708,8 +709,6 @@ function getAllThreads() {
                 }
             }
 
-//             var editor = dijit.byId('threadList');
-//             editor.set('value',tempString);
             dwr.util.setValue("threadList", tempString, { escapeHtml:false });
 
         },
@@ -1897,6 +1896,11 @@ dd.leftdl {
         <img style="display:none;" id="sysInfoProgress" src="/html/images/icons/round-progress-bar.gif"/>
         <br/>
          <div class="buttonRow" style="text-align:right;width:98% !important;">
+             <checkbox id="hideSystemThreads" name="hideSystemThreads" value="true" dojoType="dijit.form.CheckBox"
+                       checked="true"></checkbox>&nbsp;&nbsp;
+             <label for="hideSystemThreads"><%= LanguageUtil.get(pageContext, "Hide-System-Threads")
+                     .replaceAll("-", " ") %>
+             </label>&nbsp;&nbsp;
             <button dojoType="dijit.form.Button" onClick="getAllThreads()" iconClass="resetIcon">
                 <%= LanguageUtil.get(pageContext,"thread-tab-reload") %>
             </button>

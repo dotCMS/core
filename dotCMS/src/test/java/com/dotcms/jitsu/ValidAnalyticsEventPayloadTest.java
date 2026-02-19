@@ -17,7 +17,13 @@ public class ValidAnalyticsEventPayloadTest  {
         "\"context\": {" +
             "\"site_key\": \"xyz\"," +
             "\"session_id\": \"abc\"," +
-            "\"user_id\": \"qwe\" " +
+            "\"user_id\": \"qwe\", " +
+            "\"device\": {" +
+                "\"screen_resolution\": \"1280x720\"," +
+                "\"language\": \"en\"," +
+                "\"viewport_width\": \"1280\"," +
+                "\"viewport_height\": \"720\"" +
+            "}" +
         "}," +
          " \"events\": [" +
             "{" +
@@ -37,12 +43,6 @@ public class ValidAnalyticsEventPayloadTest  {
                         "\"doc_search\": \"a=b\"," +
                         "\"referer\": \"referer\"," +
                         "\"user_agent\": \"useragent=b\"" +
-                    "}," +
-                    "\"device\": {" +
-                        "\"screen_resolution\": \"1280x720\"," +
-                        "\"language\": \"en\"," +
-                        "\"viewport_width\": \"1280\"," +
-                        "\"viewport_height\": \"720\"" +
                     "}," +
                     "\"utm\": {" +
                         "\"medium\": \"medium\"," +
@@ -106,13 +106,14 @@ public class ValidAnalyticsEventPayloadTest  {
 
     /**
      * Method to test: {@link ValidAnalyticsEventPayload#payloads()}
-     * when: a {@link ValidAnalyticsEventPayload} is created with a payload with sevarls events
+     * when: a {@link ValidAnalyticsEventPayload} is created with a payload with several events
      * should: return a EventPayload for each event
      */
     @Test
     public void transform() throws IOException {
         Map<String, Object> payloadMap = JsonUtil.getJsonFromString(jsonPayload);
         List<Map<String, Object>> events = (List<Map<String, Object>> ) payloadMap.get("events");
+        Map<String, Object> expectedContext = (Map<String, Object>) payloadMap.get("context");
 
         final ValidAnalyticsEventPayload validAnalyticsEventPayload = new ValidAnalyticsEventPayload(payloadMap);
         int i = 0;
@@ -130,7 +131,7 @@ public class ValidAnalyticsEventPayloadTest  {
 
             Map<String, Object> dataAttributes = (Map<String, Object>) events.get(i).get("data");
             checkAttributes(payload, dataAttributes, "page", Map.of("title", "page_title", "language", "userlanguage"));
-            checkAttributes(payload, dataAttributes, "device", Map.of("language", "user_language"));
+            checkAttributes(payload, expectedContext, "device", Map.of("language", "user_language"));
 
 
             Map<String, Object> utmAttributesExpected = (Map<String, Object>)  dataAttributes.get("utm");

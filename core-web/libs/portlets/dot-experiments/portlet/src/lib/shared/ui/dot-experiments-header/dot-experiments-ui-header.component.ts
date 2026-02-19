@@ -1,4 +1,4 @@
-import { DatePipe, LowerCasePipe, NgIf, TitleCasePipe } from '@angular/common';
+import { DatePipe, LowerCasePipe, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,18 +19,16 @@ import {
     ExperimentsStatusIcons,
     RUNNING_UNTIL_DATE_FORMAT
 } from '@dotcms/dotcms-models';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-experiments-header',
     templateUrl: './dot-experiments-ui-header.component.html',
     styleUrls: ['./dot-experiments-ui-header.component.scss'],
     imports: [
-        NgIf,
         LowerCasePipe,
         DatePipe,
         TitleCasePipe,
-        DotIconModule,
         DotMessagePipe,
         SkeletonModule,
         ButtonModule,

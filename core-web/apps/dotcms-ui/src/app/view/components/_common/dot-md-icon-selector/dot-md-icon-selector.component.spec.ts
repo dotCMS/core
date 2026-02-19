@@ -38,8 +38,8 @@ describe('DotMdIconSelectorComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotTestHostComponent, DotMdIconSelectorComponent],
-            imports: [FormsModule, ReactiveFormsModule],
+            declarations: [DotTestHostComponent],
+            imports: [DotMdIconSelectorComponent, FormsModule, ReactiveFormsModule],
             schemas: [CUSTOM_ELEMENTS_SCHEMA]
         }).compileComponents();
     });

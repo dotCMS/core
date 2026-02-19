@@ -1,15 +1,26 @@
-import { CommonModule, Location } from '@angular/common';
-import { Component, DestroyRef, effect, inject, OnInit, ViewChild } from '@angular/core';
+import { Location } from '@angular/common';
+import {
+    Component,
+    DestroyRef,
+    effect,
+    inject,
+    OnInit,
+    signal,
+    untracked,
+    ViewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
+import { MessagesModule } from 'primeng/messages';
 import { ToastModule } from 'primeng/toast';
 
 import {
     DotAnalyticsTrackerService,
+    DotContentletService,
     DotESContentService,
     DotExperimentsService,
     DotFavoritePageService,
@@ -22,8 +33,9 @@ import {
 } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
+import { GlobalStore } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
-import { DotInfoPageComponent, DotNotLicenseComponent } from '@dotcms/ui';
+import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
@@ -43,6 +55,7 @@ import {
     sanitizeURL,
     shouldNavigate
 } from '../utils';
+
 @Component({
     selector: 'dot-ema-shell',
     providers: [
@@ -60,6 +73,7 @@ import {
         DotSeoMetaTagsService,
         DotSeoMetaTagsUtilService,
         DotWorkflowsActionsService,
+        DotContentletService,
         {
             provide: WINDOW,
             useValue: window
@@ -70,7 +84,6 @@ import {
     templateUrl: './dot-ema-shell.component.html',
     styleUrls: ['./dot-ema-shell.component.scss'],
     imports: [
-        CommonModule,
         ConfirmDialogModule,
         ToastModule,
         EditEmaNavigationBarComponent,
@@ -78,7 +91,9 @@ import {
         DotPageToolsSeoComponent,
         DotEmaDialogComponent,
         DotInfoPageComponent,
-        DotNotLicenseComponent
+        DotNotLicenseComponent,
+        MessagesModule,
+        DotMessagePipe
     ]
 })
 export class DotEmaShellComponent implements OnInit {
@@ -91,8 +106,11 @@ export class DotEmaShellComponent implements OnInit {
     readonly #router = inject(Router);
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
-
+    readonly #globalStore = inject(GlobalStore);
     protected readonly $shellProps = this.uveStore.$shellProps;
+    protected readonly $toggleLockOptions = this.uveStore.$toggleLockOptions;
+
+    protected readonly $showBanner = signal<boolean>(true);
 
     /**
      * Handle the update of the page params
@@ -110,6 +128,30 @@ export class DotEmaShellComponent implements OnInit {
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
 
         this.#updateLocation(cleanedParams);
+    });
+
+    readonly $updateBreadcrumbEffect = effect(() => {
+        const pageAPIResponse = this.uveStore.pageAPIResponse();
+
+        const params = untracked(() => this.uveStore.$friendlyParams());
+
+        const { data } = this.#activatedRoute.snapshot;
+
+        const baseClientHost = data?.uveConfig?.url;
+
+        const cleanedParams = normalizeQueryParams(params, baseClientHost);
+
+        const paramsString = new URLSearchParams(cleanedParams).toString();
+
+        const newURL = `#/edit-page/content?${paramsString}`;
+
+        if (pageAPIResponse) {
+            this.#globalStore.addNewBreadcrumb({
+                label: pageAPIResponse.page?.title,
+                url: newURL,
+                id: `${pageAPIResponse.page?.identifier}`
+            });
+        }
     });
 
     ngOnInit(): void {
@@ -187,6 +229,22 @@ export class DotEmaShellComponent implements OnInit {
      */
     reloadFromDialog() {
         this.uveStore.reloadCurrentPage();
+    }
+
+    /**
+     * Handles closing the banner message by setting showBanner to false
+     */
+    onCloseMessage() {
+        this.$showBanner.set(false);
+    }
+
+    /**
+     * Toggles the lock state of the current page
+     * Gets lock options from toggleLockOptions signal and calls store method to handle the lock/unlock
+     */
+    toggleLock() {
+        const { inode, isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
+        this.uveStore.toggleLock(inode, isLocked, isLockedByCurrentUser);
     }
 
     /**

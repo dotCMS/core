@@ -45,7 +45,7 @@ const I8N_BASE = 'api.sites.ruleengine';
             [comparisonValue]="comparisonValue"
             [comparisonControl]="comparisonControl"
             [comparisonOptions]="comparisonOptions"
-            [fromLabel]="fromLabel"></cw-visitors-location-component>
+            [fromLabel]="fromLabel" />
     `,
     standalone: false
 })

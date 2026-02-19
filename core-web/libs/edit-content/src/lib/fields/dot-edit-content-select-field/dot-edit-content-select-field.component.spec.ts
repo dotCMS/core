@@ -5,7 +5,8 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { Dropdown } from 'primeng/dropdown';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentSelectFieldComponent } from './dot-edit-content-select-field.component';
 
@@ -24,6 +25,7 @@ import {
 export class MockFormComponent {
     // Host Props
     formGroup: FormGroup;
+    contentlet: DotCMSContentlet;
     field: DotCMSContentTypeField;
 }
 
@@ -45,7 +47,7 @@ describe('DotEditContentSelectFieldComponent', () => {
 
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                <dot-edit-content-select-field [field]="field" [contentlet]="contentlet" />
             </form>`,
             {
                 hostProps: {
@@ -53,7 +55,10 @@ describe('DotEditContentSelectFieldComponent', () => {
                         [SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL.variable]:
                             new FormControl()
                     }),
-                    field: SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL
+                    field: SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL,
+                    contentlet: createFakeContentlet({
+                        [SELECT_FIELD_INTEGER_MOCK_WITHOUT_VALUE_AND_LABEL.variable]: null
+                    })
                 }
             }
         );
@@ -95,14 +100,17 @@ describe('DotEditContentSelectFieldComponent', () => {
 
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-select-field [field]="field" [contentlet]="contentlet"  />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [SELECT_FIELD_TEXT_MOCK.variable]: new FormControl()
                         }),
-                        field: SELECT_FIELD_TEXT_MOCK
+                        field: SELECT_FIELD_TEXT_MOCK,
+                        contentlet: createFakeContentlet({
+                            [SELECT_FIELD_TEXT_MOCK.variable]: null
+                        })
                     }
                 }
             );
@@ -123,14 +131,17 @@ describe('DotEditContentSelectFieldComponent', () => {
             ];
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-select-field [field]="field" [contentlet]="contentlet"  />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [SELECT_FIELD_BOOLEAN_MOCK.variable]: new FormControl()
                         }),
-                        field: SELECT_FIELD_BOOLEAN_MOCK
+                        field: SELECT_FIELD_BOOLEAN_MOCK,
+                        contentlet: createFakeContentlet({
+                            [SELECT_FIELD_BOOLEAN_MOCK.variable]: null
+                        })
                     }
                 }
             );
@@ -151,14 +162,17 @@ describe('DotEditContentSelectFieldComponent', () => {
             ];
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-select-field [field]="field" [contentlet]="contentlet"  />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [SELECT_FIELD_FLOAT_MOCK.variable]: new FormControl()
                         }),
-                        field: SELECT_FIELD_FLOAT_MOCK
+                        field: SELECT_FIELD_FLOAT_MOCK,
+                        contentlet: createFakeContentlet({
+                            [SELECT_FIELD_FLOAT_MOCK.variable]: null
+                        })
                     }
                 }
             );
@@ -183,14 +197,17 @@ describe('DotEditContentSelectFieldComponent', () => {
             ];
             spectator = createHost(
                 `<form [formGroup]="formGroup">
-                    <dot-edit-content-select-field [field]="field" [formControlName]="field.variable" />
+                    <dot-edit-content-select-field [field]="field" [contentlet]="contentlet"  />
                 </form>`,
                 {
                     hostProps: {
                         formGroup: new FormGroup({
                             [SELECT_FIELD_INTEGER_MOCK.variable]: new FormControl()
                         }),
-                        field: SELECT_FIELD_INTEGER_MOCK
+                        field: SELECT_FIELD_INTEGER_MOCK,
+                        contentlet: createFakeContentlet({
+                            [SELECT_FIELD_INTEGER_MOCK.variable]: null
+                        })
                     }
                 }
             );

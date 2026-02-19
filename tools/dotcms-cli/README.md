@@ -254,6 +254,60 @@ In the following table you can see the different directories and files that conf
 | `sites/`             | Dir  | Sites Directory         |
 | `.dot-workspace.yml` | File | CLI workspace marker    |
 
+## File Filtering with .dotcliignore
+
+When pushing files to dotCMS, you can exclude specific files and directories by creating a `.dotcliignore` file in your workspace. This file works similarly to `.gitignore` and supports standard glob patterns.
+
+### Pattern Syntax
+
+The `.dotcliignore` file supports the following glob patterns:
+
+- `*` - Matches any sequence of characters within a single directory level
+- `**` - Matches any sequence of characters across multiple directory levels
+- `?` - Matches any single character
+- `[]` - Matches a character class (e.g., `[abc]` or `[0-9]`)
+- `!` - Negates a pattern to re-include files that were previously excluded
+
+### Hierarchical Pattern Loading
+
+The CLI loads `.dotcliignore` files hierarchically from the current directory up to the workspace root. Patterns defined in child directories take precedence over parent directories, allowing you to override parent exclusions.
+
+### Usage Examples
+
+Create a `.dotcliignore` file in your workspace with patterns like:
+
+```
+# Ignore all log files
+*.log
+
+# Ignore build directories
+build/
+dist/
+target/
+
+# Ignore OS-specific files
+**/.DS_Store
+**/Thumbs.db
+
+# Ignore dependencies
+node_modules/
+vendor/
+
+# Re-include a specific log file (negation)
+!important.log
+```
+
+### Notes
+
+- Lines starting with `#` are treated as comments
+- Blank lines are ignored
+- Leading and trailing whitespace is automatically removed from patterns
+- To preserve trailing spaces in a pattern, escape them with a backslash: `pattern\ `
+- Patterns are evaluated relative to the workspace root
+- Directory patterns should end with `/`
+- Files matching ignore patterns will be excluded during `files push` operations
+- Pull operations are not affected by `.dotcliignore` files
+
 ## GitHub Actions Integration
 We provide support for GitHub Actions to be able to run the CLI as part of your CI/CD pipeline. 
 

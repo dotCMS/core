@@ -8,6 +8,7 @@
 @let formattedValue = $formattedValue();
 @let iconClasses = $iconClasses();
 @let metricName = $name();
+@let trendData = $trendData();
 
 <!-- Header template to avoid repetition -->
 <ng-template #metricHeader>
@@ -33,7 +34,7 @@
         <!-- Error state -->
         <div class="flex flex-column justify-content-between h-full gap-3">
             <!-- Header with title and icon -->
-            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+            <ng-container [ngTemplateOutlet]="metricHeader" />
 
             <!-- Error message centered -->
             <div
@@ -48,7 +49,7 @@
         <!-- Empty state -->
         <div class="flex flex-column justify-content-between h-full gap-3">
             <!-- Header with title and icon -->
-            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+            <ng-container [ngTemplateOutlet]="metricHeader" />
 
             <!-- Empty message centered -->
             <div
@@ -61,43 +62,92 @@
         </div>
     } @else if (isLoadingState) {
         <!-- Loading state with skeleton -->
-        <div class="flex flex-column justify-content-between h-full gap-3">
+        <div class="flex flex-column justify-content-between h-full gap-2">
             <!-- Header with title and icon skeletons -->
-            <div class="flex justify-content-between align-items-start" [@fadeInContent]>
-                <p-skeleton width="10rem" height="1.4rem"></p-skeleton>
-                @if (hasIcon) {
-                    <p-skeleton width="1.5rem" height="1.5rem" shape="circle"></p-skeleton>
-                }
+            <div class="flex align-items-start" [@fadeInContent]>
+                <p-skeleton width="8rem" height="1rem" styleClass="flex-grow-1" />
+                <p-skeleton
+                    width="1.5rem"
+                    height="1.5rem"
+                    shape="circle"
+                    styleClass="flex-shrink-0 ml-auto" />
             </div>
 
             <!-- Skeleton content -->
-            <div class="flex flex-column gap-3" [@fadeInContent]>
+            <div class="flex flex-column gap-1" [@fadeInContent]>
                 <!-- Skeleton value -->
-                <p-skeleton width="1.5rem" height="1.4rem"></p-skeleton>
+                <p-skeleton width="5rem" height="2rem" />
+                <!-- Skeleton subtitle/trend -->
+                <p-skeleton width="4rem" height="1rem" />
             </div>
-
-            <!-- Skeleton subtitle -->
-            <p-skeleton width="10rem" height="1rem" [@fadeInContent]></p-skeleton>
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
-        <div class="flex flex-column justify-content-between h-full gap-3">
+        <div class="flex flex-column justify-content-between h-full gap-2">
             <!-- Header with title and icon -->
-            <ng-container [ngTemplateOutlet]="metricHeader"></ng-container>
+            <ng-container [ngTemplateOutlet]="metricHeader" />
 
-            <!-- Contenido principal -->
-            <div class="flex flex-column gap-3" [@fadeInContent]>
-                <div class="metric-value" data-testid="metric-value">
-                    {{ formattedValue }}
-                </div>
+            @let animated = $animated();
+            @let duration = $animationDuration();
+            <div class="flex flex-column gap-1" [@fadeInContent]>
+                @if ($isFraction()) {
+                    @let fractionParts = $fractionParts();
+                    <div class="metric-value metric-value--fraction" data-testid="metric-value">
+                        <span class="metric-value__numerator">
+                            @if (fractionParts && animated) {
+                                <span
+                                    [dotCountUp]="fractionParts.numeratorValue"
+                                    [duration]="duration"></span>
+                            } @else {
+                                {{ fractionParts?.numerator }}
+                            }
+                        </span>
+                        <span class="metric-value__separator">/</span>
+                        <span class="metric-value__denominator">
+                            @if (fractionParts && animated) {
+                                <span
+                                    [dotCountUp]="fractionParts.denominatorValue"
+                                    [duration]="duration"></span>
+                            } @else {
+                                {{ fractionParts?.denominator }}
+                            }
+                        </span>
+                    </div>
+                } @else {
+                    @let numericVal = $numericValue();
+                    <div class="metric-value" data-testid="metric-value">
+                        @if (numericVal !== null && animated) {
+                            <span
+                                [dotCountUp]="numericVal.value"
+                                [duration]="duration"
+                                [suffix]="numericVal.suffix"
+                                [format]="numericVal.format"></span>
+                        } @else {
+                            {{ formattedValue }}
+                        }
+                    </div>
+                }
             </div>
 
             <!-- Subtítulo -->
-            @if (hasSubtitle) {
+            @if (hasSubtitle || trendData) {
                 <div class="metric-subtitle" data-testid="metric-subtitle" [@fadeInContent]>
+                    @if (trendData) {
+                        <span [class]="trendData.class">
+                            {{ trendData.prefix }}{{ trendData.value }}%
+                            <i
+                                [class]="
+                                    trendData.isPositive ? 'pi pi-arrow-up' : 'pi pi-arrow-down'
+                                "></i>
+                        </span>
+                    }
                     {{ metricSubtitle | dm }}
                 </div>
             }
+            <!-- Projected content -->
+            <div class="metric-projected-content" data-testid="metric-projected-content">
+                <ng-content />
+            </div>
         </div>
     }
 </p-card>

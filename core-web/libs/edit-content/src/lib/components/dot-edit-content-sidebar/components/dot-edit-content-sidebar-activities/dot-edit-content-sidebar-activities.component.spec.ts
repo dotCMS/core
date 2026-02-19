@@ -113,11 +113,11 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should have avatars with correct dotGravatar directive', () => {
-            const avatarElements = spectator.queryAll('[dotGravatar]');
+            const avatarElements = spectator.queryAll(DotGravatarDirective);
 
             expect(avatarElements.length).toBe(mockActivities.length);
-            expect(avatarElements[0]).toHaveAttribute('ng-reflect-email', mockActivities[0].email);
-            expect(avatarElements[1]).toHaveAttribute('ng-reflect-email', mockActivities[1].email);
+            expect(avatarElements[0].$email()).toBe(mockActivities[0].email);
+            expect(avatarElements[1].$email()).toBe(mockActivities[1].email);
             expect(spectator.queryAll('p-avatar').length).toBe(mockActivities.length);
         });
 

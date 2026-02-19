@@ -1,0 +1,17 @@
+<section class="flex justify-content-center p-4" role="region" aria-label="Content Permissions">
+    <div
+        class="w-full cursor-pointer"
+        role="button"
+        tabindex="0"
+        (click)="openPermissionsDialog()"
+        (keydown.enter)="openPermissionsDialog()"
+        (keydown.space)="$event.preventDefault(); openPermissionsDialog()"
+        [attr.aria-label]="'edit.content.sidebar.permissions.title' | dm"
+        data-testId="permissions-card">
+        <p-card [header]="'edit.content.sidebar.permissions.title' | dm">
+            <p class="m-0 text-600">
+                {{ 'edit.content.sidebar.permissions.setup' | dm }}
+            </p>
+        </p-card>
+    </div>
+</section>

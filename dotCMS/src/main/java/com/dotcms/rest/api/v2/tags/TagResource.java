@@ -6,10 +6,14 @@ import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityListView;
 import com.dotcms.rest.ResponseEntityRestTagListView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.util.pagination.OrderDirection;
@@ -63,6 +67,7 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -229,13 +234,16 @@ public class TagResource {
      */
     @Operation(
             summary = "Create tags",
-            description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. This operation is idempotent - existing tags are returned without error."
+            description = "Creates one or more tags. Single tag = list with one element, multiple tags = list with multiple elements. " +
+                    "The response separates newly created tags from duplicates (tags that already existed with the same name and site)."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201",
-                    description = "Tags created successfully",
+            @ApiResponse(responseCode = "200",
+                    description = "Tag creation result with 'created' and 'duplicates' lists",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityRestTagListView.class))),
+                            schema = @Schema(type = "object",
+                                    description = "Response with 'entity' containing 'created' (list of newly created RestTag) " +
+                                            "and 'duplicates' (list of already existing RestTag)"))),
             @ApiResponse(responseCode = "400",
                     description = "Bad Request - Invalid tag data with field-level error details",
                     content = @Content(mediaType = "application/json")),
@@ -273,45 +281,80 @@ public class TagResource {
             form.checkValid(); // ValidationException (a BadRequestException) will propagate with correct messages
         }
 
-        // Create all tags
-        final List<Tag> savedTags = saveTags(request, tagForms, user);
+        // Create tags and separate new from existing
+        final TagSaveResult saveResult = saveTags(request, tagForms, user);
 
-        // Convert to RestTag list for response
-        final List<RestTag> resultList = savedTags.stream()
+        // Convert both lists to RestTag
+        final List<RestTag> createdList = saveResult.created.stream()
+            .map(TagsResourceHelper::toRestTag)
+            .collect(Collectors.toList());
+        final List<RestTag> duplicateList = saveResult.duplicates.stream()
             .map(TagsResourceHelper::toRestTag)
             .collect(Collectors.toList());
 
-        return Response.status(Response.Status.CREATED)
-                .entity(new ResponseEntityRestTagListView(resultList))
-                .build();
+        final Map<String, Object> responseData = new LinkedHashMap<>();
+        responseData.put("created", createdList);
+        responseData.put("duplicates", duplicateList);
+
+        return Response.ok(new ResponseEntityView<>(responseData)).build();
     }
 
 
     /**
-     * Saves Tags in dotCMS using a list-based approach.
+     * Container for tag save results separating newly created tags from duplicates.
+     */
+    private static class TagSaveResult {
+        final List<Tag> created;
+        final List<Tag> duplicates;
+
+        TagSaveResult(final List<Tag> created, final List<Tag> duplicates) {
+            this.created = created;
+            this.duplicates = duplicates;
+        }
+    }
+
+    /**
+     * Saves Tags in dotCMS using a list-based approach. Checks for existing tags
+     * before creating and separates new tags from duplicates.
      *
      * @param request   The current instance of the {@link HttpServletRequest}.
      * @param tagForms  The {@link List} of {@link TagForm} containing the Tags to save.
      * @param user      The {@link User} performing the operation.
      *
-     * @return List of created {@link Tag} objects.
+     * @return A {@link TagSaveResult} with created and duplicate tag lists.
      * @throws DotDataException     An error occurred when persisting Tag data.
      * @throws DotSecurityException The specified user does not have the required permissions to
      *                              perform this operation.
      */
     @WrapInTransaction
-    private List<Tag> saveTags(final HttpServletRequest request,
-                               final List<TagForm> tagForms,
-                               final User user)
+    private TagSaveResult saveTags(final HttpServletRequest request,
+                                   final List<TagForm> tagForms,
+                                   final User user)
             throws DotDataException, DotSecurityException {
 
-        final List<Tag> savedTags = new ArrayList<>();
+        final List<Tag> created = new ArrayList<>();
+        final List<Tag> duplicates = new ArrayList<>();
 
         for (TagForm form : tagForms) {
             // Resolve site
             final String siteId = helper.getValidateSite(form.getSiteId(), user, request);
 
-            // Create or get tag
+            // Resolve tag storage host — tags may be stored under a different host
+            // (e.g. SYSTEM_HOST) than the site passed in the form
+            final String tagStorageHostId = helper.resolveTagStorageHost(siteId);
+
+            // Check if tag already exists at the actual storage location
+            final Tag existing = tagAPI.getTagByNameAndHost(
+                    form.getName().toLowerCase(), tagStorageHostId);
+            if (existing != null && UtilMethods.isSet(existing.getTagId())) {
+                Logger.debug(TagResource.class,
+                        String.format("Tag '%s' already exists, marking as duplicate",
+                                form.getName()));
+                duplicates.add(existing);
+                continue;
+            }
+
+            // Create tag
             final boolean persona = (form.getPersona() != null) ? form.getPersona() : false;
             final Tag tag = tagAPI.getTagAndCreate(
                 form.getName(),
@@ -321,7 +364,7 @@ public class TagResource {
                 false
             );
 
-            Logger.debug(TagResource.class, String.format("Saving Tag '%s'", tag.getTagName()));
+            Logger.debug(TagResource.class, String.format("Created Tag '%s'", tag.getTagName()));
 
             // Bind to owner if specified
             if (UtilMethods.isSet(form.getOwnerId())) {
@@ -331,10 +374,10 @@ public class TagResource {
                         tag.getTagName(), form.getOwnerId()));
             }
 
-            savedTags.add(tag);
+            created.add(tag);
         }
 
-        return savedTags;
+        return new TagSaveResult(created, duplicates);
     }
 
     /**
@@ -436,23 +479,34 @@ public class TagResource {
         }
         targetSiteId = targetHost.getIdentifier();
 
+        // 4b. Resolve through tagStorage (consistent with TagAPIImpl.saveTag behavior)
+        final String effectiveSiteId;
+        if (!targetSiteId.equals(Host.SYSTEM_HOST)) {
+            final Object tagStorage = targetHost.getMap().get("tagStorage");
+            effectiveSiteId = UtilMethods.isSet(tagStorage) ? tagStorage.toString() : targetSiteId;
+        } else {
+            effectiveSiteId = Host.SYSTEM_HOST;
+        }
+
         // 5. Check for duplicate if name or site is changing
+        //    Use effectiveSiteId (resolved tag storage) so the check matches where tags are stored
         if (!existingTag.getTagName().equals(tagForm.getName()) ||
-                !existingTag.getHostId().equals(targetSiteId)) {
-            
+                !existingTag.getHostId().equals(effectiveSiteId)) {
+
             final Tag duplicateCheck = Try.of(() ->
-                    tagAPI.getTagByNameAndHost(tagForm.getName(), targetSiteId)).getOrNull();
-            
+                    tagAPI.getTagByNameAndHost(tagForm.getName(), effectiveSiteId)).getOrNull();
+
+
             if (duplicateCheck != null && !duplicateCheck.getTagId().equals(existingTag.getTagId())) {
                 throw new BadRequestException(
-                    String.format("Tag '%s' already exists for site '%s'", 
-                        tagForm.getName(), targetSiteId)
+                    String.format("Tag '%s' already exists for site '%s'",
+                        tagForm.getName(), effectiveSiteId)
                 );
             }
         }
 
         // 6. Update the tag
-        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, targetSiteId);
+        tagAPI.updateTag(existingTag.getTagId(), tagForm.getName(), true, effectiveSiteId);
 
         // 7. Get updated tag and return
         final Tag updatedTag = tagAPI.getTagByTagId(existingTag.getTagId());
@@ -579,39 +633,106 @@ public class TagResource {
     }
 
     /**
-     * Deletes a Tag based on its ID.
+     * Deletes one or more tags based on their IDs.
+     * <p>For each tag, the user must have EDIT permission on all associated contentlets.
+     * Tags with no contentlet associations (orphan tags) are always allowed to be deleted.
+     * Returns a result showing which tags were successfully deleted and which failed.</p>
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param response The current instance of the {@link HttpServletResponse}.
-     * @param tagId    The ID of the Tag to delete.
+     * @param tagIds   The list of tag IDs to delete.
      *
-     * @return A {@link ResponseEntityBooleanView} containing the result of the delete operation.
+     * @return A {@link ResponseEntityBulkResultView} containing success count and failures.
      */
+    @Operation(
+        summary = "Delete tags",
+        description = "Deletes one or more tags by their IDs. User must have EDIT permission on all contentlets associated with each tag."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200",
+                    description = "Bulk delete result with success count and failures",
+                    content = @Content(mediaType = "application/json",
+                                      schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Invalid request - tagIds list is required",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
+                    description = "Unauthorized access",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @JSONP
-    @Path("/{tagId}")
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public ResponseEntityBooleanView delete(@Context final HttpServletRequest request,
-                                            @Context final HttpServletResponse response,
-                                            @PathParam("tagId") final String tagId) throws DotDataException {
+    public ResponseEntityBulkResultView delete(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               @RequestBody(description = "List of tag IDs to delete", required = true,
+                                                          content = @Content(schema = @Schema(type = "array",
+                                                                                            description = "Array of tag IDs",
+                                                                                            example = "[\"tag-123\", \"tag-456\", \"tag-789\"]")))
+                                               final List<String> tagIds) {
 
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
-        Logger.debug(TagResource.class,()->String.format("User '%s' is deleting tags by ID '%s'",user.getUserId(), tagId));
-        final Tag tag = Try.of(() -> tagAPI.getTagByTagId(tagId)).getOrNull();
-        if (null == tag) {
 
-            final String errorMessage = Try.of(() -> LanguageUtil
-                    .get(user.getLocale(), "tag.id.not.found", tagId))
-                    .getOrElse(String.format("Tag with id %s wasn't found.",
-                            tagId)); //fallback message
-            Logger.error(TagResource.class, errorMessage);
-            throw new DoesNotExistException(errorMessage);
+        if (tagIds == null || tagIds.isEmpty()) {
+            throw new BadRequestException("Tag IDs list is required and cannot be empty");
         }
 
-        tagAPI.deleteTag(tag);
-        return new ResponseEntityBooleanView(true);
+        Logger.debug(TagResource.class, () -> String.format(
+            "User '%s' is deleting %d tag(s): %s",
+            user.getUserId(), tagIds.size(), tagIds
+        ));
+
+        // Phase 1: Check permissions for all tags
+        final List<String> tagsToDelete = new ArrayList<>();
+        final List<FailedResultView> failedToDelete = new ArrayList<>();
+
+        for (final String tagId : tagIds) {
+            try {
+                // Check if tag exists - skip silently if not (idempotent behavior)
+                final Tag tag = tagAPI.getTagByTagId(tagId);
+                if (tag == null || !UtilMethods.isSet(tag.getTagId())) {
+                    // Tag doesn't exist - desired end state already achieved, skip silently
+                    continue;
+                }
+
+                // Check permission without deleting
+                if (!tagAPI.canDeleteTag(user, tagId)) {
+                    failedToDelete.add(new FailedResultView(tagId,
+                            String.format("User lacks permission to delete tag '%s'", tagId)));
+                } else {
+                    tagsToDelete.add(tagId);
+                }
+
+            } catch (final Exception e) {
+                Logger.debug(TagResource.class, e.getMessage(), e);
+                failedToDelete.add(new FailedResultView(tagId, e.getMessage()));
+            }
+        }
+
+        // Phase 2: Bulk delete all permitted tags in a single operation
+        if (!tagsToDelete.isEmpty()) {
+            try {
+                tagAPI.deleteTags(tagsToDelete.toArray(new String[0]));
+            } catch (final DotDataException e) {
+                Logger.error(TagResource.class, "Error during bulk tag deletion: " + e.getMessage(), e);
+                // Move all tags from toDelete to failed
+                for (final String tagId : tagsToDelete) {
+                    failedToDelete.add(new FailedResultView(tagId, "Bulk delete failed: " + e.getMessage()));
+                }
+                tagsToDelete.clear();
+            }
+        }
+
+        Logger.debug(TagResource.class, () -> String.format(
+            "Bulk delete tags completed: %d deleted, %d failed",
+            tagsToDelete.size(), failedToDelete.size()
+        ));
+
+        return new ResponseEntityBulkResultView(
+                new BulkResultView((long) tagsToDelete.size(), 0L, failedToDelete));
     }
 
     /**
@@ -771,7 +892,8 @@ public class TagResource {
      */
     @Operation(
         summary = "Import tags from CSV file",
-        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics and error information for each failed row."
+        description = "Imports tags from a CSV file with row-level error reporting. Returns detailed statistics including successCount (newly created), " +
+                "duplicateCount (already existed), failureCount (errors), and error information for each failed row."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
@@ -816,13 +938,15 @@ public class TagResource {
         final Map<String, Object> stats = Map.of(
             "totalRows", result.totalRows,
             "successCount", result.successCount,
+            "duplicateCount", result.duplicateCount,
             "failureCount", result.errors.size(),
-            "success", result.errors.isEmpty()
+            "success", result.errors.isEmpty() && result.duplicateCount == 0
         );
 
         Logger.info(TagResource.class, String.format(
-            "Tag import completed for user '%s': %d total, %d success, %d errors",
-            user.getUserId(), result.totalRows, result.successCount, result.errors.size()));
+            "Tag import completed for user '%s': %d total, %d success, %d duplicates, %d errors",
+            user.getUserId(), result.totalRows, result.successCount,
+            result.duplicateCount, result.errors.size()));
 
         // Return a detailed response with statistics and errors
         return new ResponseEntityTagOperationView(

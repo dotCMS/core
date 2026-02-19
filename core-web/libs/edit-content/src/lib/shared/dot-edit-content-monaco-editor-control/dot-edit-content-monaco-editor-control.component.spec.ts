@@ -29,6 +29,7 @@ export class MockFormComponent {
     formGroup: FormGroup;
     field: DotCMSContentTypeField;
     forceLanguage?: AvailableLanguageMonaco;
+    hasError: boolean;
 }
 
 describe('DotEditContentMonacoEditorControlComponent', () => {
@@ -45,14 +46,15 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
     beforeEach(() => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-monaco-editor-control [field]="field" [formControlName]="field.variable" [forceLanguage]="forceLanguage" />
+                <dot-edit-content-monaco-editor-control [hasError]="hasError" [field]="field" [forceLanguage]="forceLanguage" />
             </form>`,
             {
                 hostProps: {
                     formGroup: new FormGroup({
                         [WYSIWYG_MOCK.variable]: new FormControl()
                     }),
-                    field: WYSIWYG_MOCK
+                    field: WYSIWYG_MOCK,
+                    hasError: false
                 }
             }
         );

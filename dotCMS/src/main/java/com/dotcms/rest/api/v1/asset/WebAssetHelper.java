@@ -37,6 +37,8 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -46,8 +48,10 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -123,7 +127,7 @@ public class WebAssetHelper {
      * @param path the path to the asset
      * @param user current user
      * @return the asset view
-     * @throws DotDataException any data related exception
+     * @throws DotDataException any data-related exception
      * @throws DotSecurityException any security violation exception
      */
     public WebAssetView getAssetInfo(final String path, final User user)
@@ -165,7 +169,7 @@ public class WebAssetHelper {
                 .sortByDesc(true)
         ;
 
-        //We're not really looking at system but / is mapped as system folder therefore
+        //We're not really looking at system but / is mapped as system folder, therefore,
         //whenever system folder pops up we need to find the folders straight under host
         if (folder.isSystemFolder()) {
             builder.withHostOrFolderId(host.getIdentifier());
@@ -175,7 +179,7 @@ public class WebAssetHelper {
 
         if (null != assetName) {
             Logger.debug(this, String.format("Asset name: [%s]" , assetName));
-            //We're requesting an asset specifically therefore we need to find it and  build the response
+            //We're requesting an asset specifically, therefore, we need to find it and  build the response
             builder.withFileName(assetName);
 
             final List<Contentlet> folderContent = sortByIdentifier(
@@ -198,7 +202,7 @@ public class WebAssetHelper {
             //We're requesting a folder and all of its contents
             final List<Folder> subFolders = folderContent.stream().filter(Folder.class::isInstance)
                     .map(f -> (Folder) f).collect(Collectors.toList());
-            //Once we get the folder contents we need to include all other versions per identifier
+            //Once we get the folder contents, we need to include all other versions per identifier
             final Set<String> identifiers = folderContent.stream().filter(Contentlet.class::isInstance)
                     .map(f -> (Contentlet) f).map(Contentlet::getIdentifier)
                     .collect(Collectors.toSet());
@@ -317,18 +321,17 @@ public class WebAssetHelper {
                     return false;
                 });
 
-        final Map<String, ? extends Serializable> metadata = Map.of(
-                "name", fileAsset.getUnderlyingFileName(),
-                "title", fileAsset.getFileTitle(),
-                "path", fileAsset.getPath(),
-                "sha256", fileAsset.getSha256(),
-                "contentType", fileAsset.getMimeType(),
-                "size", fileAsset.getFileSize(),
-                "isImage", fileAsset.isImage(),
-                "width", fileAsset.getWidth(),
-                "height", fileAsset.getHeight(),
-                SORT_BY, fileAsset.getModDate().toInstant()
-        );
+        final Map<String, Serializable> metadata = new HashMap<>();
+        metadata.put("name", fileAsset.getUnderlyingFileName());
+        metadata.put("title", fileAsset.getFileTitle());
+        metadata.put("path", fileAsset.getPath());
+        metadata.put("sha256", fileAsset.getSha256());
+        metadata.put("contentType", fileAsset.getMimeType());
+        metadata.put("size", fileAsset.getFileSize());
+        metadata.put("isImage", fileAsset.isImage());
+        metadata.put("width", fileAsset.getWidth());
+        metadata.put("height", fileAsset.getHeight());
+        metadata.put(SORT_BY, fileAsset.getModDate().toInstant());
 
         return AssetView.builder()
                 .sortOrder(fileAsset.getSortOrder())
@@ -881,16 +884,24 @@ public class WebAssetHelper {
         if (null != meta) {
             final String name = meta.name();
             if (UtilMethods.isSet(name)) {
+                final String currentPath = folder.getPath();
+                // /application/container/
                 //If the field name is used to rename the folder to something else that already exists
-                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
-                final Folder byPath = folderAPI.findFolderByPath(PATH_SEPARATOR + folderName, host, user, false);
+                final String folderName = name.toLowerCase().trim().replaceAll("^/+", "").replaceAll("/+$", "");
+
+                // Build the new path by replacing the last component of the current path
+                final String newPath = buildNewFolderPath(currentPath, folderName);
+
+                final Folder byPath = folderAPI.findFolderByPath(newPath, host, user, false);
                 if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
                     throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
                 }
                 folder.setName(folderName);
+                folder.setPath(newPath);
             }
         }
         applyDetail(folder, host, meta);
+        //The returning folder must be set with the new path if changed
         return folder;
     }
 
@@ -934,6 +945,50 @@ public class WebAssetHelper {
             return Optional.of("_");
         }
         return Optional.empty();
+    }
+
+
+    /**
+     * Builds a new folder path by replacing the last component of the current path with the new folder name.
+     * Examples:
+     * - currentPath="/images/gallery/", folderName="lol" -> "/images/lol/"
+     * - currentPath="/", folderName="lol" -> "/lol/"
+     * - currentPath="/images/", folderName="lol" -> "/lol/"
+     * @param currentPath the current folder path
+     * @param folderName the new folder name (already cleaned)
+     * @return the new folder path
+     */
+    private String buildNewFolderPath(final String currentPath, final String folderName) {
+        if (!UtilMethods.isSet(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Handle root folder case
+        if (PATH_SEPARATOR.equals(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Remove trailing slash for processing
+        String pathToProcess = currentPath.endsWith(PATH_SEPARATOR)
+            ? currentPath.substring(0, currentPath.length() - 1)
+            : currentPath;
+
+        // Find the last separator to replace the last component
+        int lastSeparatorIndex = pathToProcess.lastIndexOf(PATH_SEPARATOR);
+
+        if (lastSeparatorIndex == -1) {
+            // No separator found, treat as root level
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        if (lastSeparatorIndex == 0) {
+            // Only root separator found (e.g., "/images")
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Replace the last component
+        String parentPath = pathToProcess.substring(0, lastSeparatorIndex);
+        return parentPath + PATH_SEPARATOR + folderName + PATH_SEPARATOR;
     }
 
     /**

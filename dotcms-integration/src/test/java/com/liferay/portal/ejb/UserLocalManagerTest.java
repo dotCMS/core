@@ -3,13 +3,9 @@ package com.liferay.portal.ejb;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.UserDataGen;
-import com.dotmarketing.business.Role;
-import com.liferay.portal.UserPasswordException;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.UUIDUtil;
@@ -17,7 +13,10 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserFirstNameException;
 import com.liferay.portal.UserLastNameException;
+import com.liferay.portal.UserPasswordException;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 /**
  * Tests for user management operations (create, validate, delete)
@@ -148,7 +147,7 @@ public class UserLocalManagerTest {
             testUser = new UserDataGen().roles(backendRole).nextPersisted();
             final String userId = testUser.getUserId();
 
-            final String testPassword = "p4ss$word";
+            final String testPassword = "p4ss|word";
             UserLocalManager userManager = UserLocalManagerFactory.getManager();
             userManager.validate(userId, testPassword, testPassword);
 
@@ -170,7 +169,7 @@ public class UserLocalManagerTest {
             testUser = new UserDataGen().roles(backendRole).nextPersisted();
             final String userId = testUser.getUserId();
 
-            final String testPassword = "p4ss!";
+            final String testPassword = "p4ss}";
             UserLocalManager userManager = UserLocalManagerFactory.getManager();
             userManager.validate(userId, testPassword, testPassword);
 

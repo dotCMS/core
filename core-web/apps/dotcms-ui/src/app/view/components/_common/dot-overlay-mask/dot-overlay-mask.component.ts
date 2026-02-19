@@ -4,6 +4,6 @@ import { Component } from '@angular/core';
     selector: 'dot-overlay-mask',
     template: '',
     styleUrls: ['./dot-overlay-mask.component.scss'],
-    standalone: false
+    imports: []
 })
 export class DotOverlayMaskComponent {}

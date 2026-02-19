@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import java.util.Map;
 
 /**
  * Copy Contentlet Form
@@ -17,6 +18,7 @@ public class CopyContentletForm {
     private final String personalization;
     private final String variantId;
     private final int treeOrder;
+    private final Map<String, Object> styleProperties;
 
     private CopyContentletForm(final Builder builder) {
         this.contentId = builder.contentId;
@@ -26,6 +28,7 @@ public class CopyContentletForm {
         this.personalization = builder.personalization;
         this.variantId = builder.variantId;
         this.treeOrder = builder.treeOrder;
+        this.styleProperties = builder.styleProperties;
     }
 
     public String getContentId() {
@@ -56,6 +59,10 @@ public class CopyContentletForm {
         return treeOrder;
     }
 
+    public Map<String, Object> getStyleProperties() {
+        return styleProperties;
+    }
+
 
     @Override
     public String toString() {
@@ -66,7 +73,8 @@ public class CopyContentletForm {
                 ", relationType='" + relationType + '\'' +
                 ", personalization='" + personalization + '\'' +
                 ", variantId='" + variantId + '\'' +
-                ", treeOrder=" + treeOrder +
+                ", treeOrder=" + treeOrder + '\'' +
+                ", styleProperties=" + styleProperties +
                 '}';
     }
 
@@ -91,6 +99,9 @@ public class CopyContentletForm {
 
         @JsonProperty
         private int treeOrder;
+
+        @JsonProperty
+        private Map<String, Object> styleProperties;
 
         public Builder contentId(String contentId) {
             this.contentId = contentId;
@@ -124,6 +135,11 @@ public class CopyContentletForm {
 
         public Builder treeOrder(int treeOrder) {
             this.treeOrder = treeOrder;
+            return this;
+        }
+
+        public Builder styleProperties(Map<String, Object> styleProperties) {
+            this.styleProperties = styleProperties;
             return this;
         }
 

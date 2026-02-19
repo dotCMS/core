@@ -1,15 +1,16 @@
 package com.dotmarketing.portlets.categories.business;
 
-import com.dotcms.util.*;
+import com.dotcms.util.CloseUtils;
+import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.DotPreconditions;
+import com.dotcms.util.JsonUtil;
+import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DeterministicIdentifierAPI;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -21,14 +22,23 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.categories.model.HierarchedCategory;
 import com.dotmarketing.portlets.categories.model.HierarchyShortCategory;
 import com.dotmarketing.portlets.categories.model.ShortCategory;
-import com.dotmarketing.util.*;
-
-
+import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.VelocityUtil;
 import java.io.IOException;
-import java.io.Serializable;
-import java.sql.*;
-import java.util.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -333,6 +343,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
     @SuppressWarnings("unchecked")
     @Override
     protected List<Category> getAllChildren(final Categorizable parentCategory) throws DotDataException {
+        if (parentCategory == null) {
+            return List.of();
+        }
 
         final Category allChildrenKey = new Category();
         allChildrenKey.setInode(parentCategory.getCategoryId() + ALL_CHILDREN_SUFFIX);

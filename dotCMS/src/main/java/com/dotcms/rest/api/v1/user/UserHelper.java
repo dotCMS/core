@@ -43,6 +43,7 @@ public class UserHelper {
         this.roleAPI = roleAPI;
     }
 
+
     /**
      * Adds a new role to the user.
      * @param user {@link User} user to add the role.

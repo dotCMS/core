@@ -930,4 +930,30 @@ public class ContentToolTest extends IntegrationTestBase {
         Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
         Assert.assertTrue(hydratedContentlet.getContentObject().getMap().size() > rawContentlet.getContentObject().getMap().size());
     }
+
+    /**
+     * Method to Test: {@link ContentTool#pullHydrated(String, int, int, String)}
+     * When: Creates a Blog type and generates a few of them, the pull
+     * Should: The hydrated should contain at least the url as an extra
+     *
+     */
+    @Test
+    public void test_pull_hydrated() {
+        final ContentType blogLikeType = TestDataUtils.getBlogLikeContentType();
+
+        for (int i=1;i<10;++i) {
+            new ContentletDataGen(blogLikeType.inode()).host(defaultHost).nextPersisted();
+        }
+
+        final ContentTool contentTool = getContentTool(defaultLanguage.getId());
+        final  PaginatedArrayList<ContentMap> contentMaps = contentTool.pullHydrated("+contentType: " + blogLikeType.variable(),  0, 20, "modDate desc");
+
+        Assert.assertNotNull(contentMaps);
+        Assert.assertFalse(contentMaps.isEmpty());
+        final ContentMap hydratedContentlet = contentMaps.get(0);
+
+        Assert.assertNotNull(hydratedContentlet);
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
+    }
+
 }

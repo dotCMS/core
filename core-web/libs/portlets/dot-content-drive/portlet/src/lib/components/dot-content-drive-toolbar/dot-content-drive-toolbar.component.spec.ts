@@ -28,7 +28,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
                 filters: jest.fn().mockReturnValue({}),
-                setDialog: jest.fn()
+                setDialog: jest.fn(),
+                selectedItems: jest.fn().mockReturnValue([])
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -72,7 +73,11 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(toggler).toBeTruthy();
     });
 
-    it('should render the Add New button', () => {
+    it('should render the Add New button', async () => {
+        // Wait for animation state to settle
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        spectator.detectChanges();
+
         const button = spectator.query('[data-testid="add-new-button"]');
         expect(button).toBeTruthy();
     });
@@ -114,7 +119,7 @@ describe('DotContentDriveToolbarComponent', () => {
             spectator.detectChanges();
             const toggler = spectator.debugElement.query(By.css('[data-testid="tree-toggler"]'));
             expect(toggler).toBeDefined();
-            expect(toggler?.classes.hidden).toBe(true);
+            expect(toggler?.classes['sidebar-expanded']).toBe(true);
         });
     });
 

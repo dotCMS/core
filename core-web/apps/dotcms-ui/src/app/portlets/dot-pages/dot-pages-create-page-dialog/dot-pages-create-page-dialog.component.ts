@@ -16,11 +16,17 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotAutofocusDirective, DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotAutofocusDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-pages-create-page-dialog',
-    imports: [CommonModule, DotAutofocusDirective, DotIconModule, DotMessagePipe, InputTextModule],
+    imports: [
+        CommonModule,
+        DotAutofocusDirective,
+        DotIconComponent,
+        DotMessagePipe,
+        InputTextModule
+    ],
     providers: [
         DotESContentService,
         DotLanguagesService,

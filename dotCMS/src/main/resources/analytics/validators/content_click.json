@@ -1,0 +1,80 @@
+{
+  "page": {
+    "type": "json_object",
+    "required": true,
+    "allowed_attributes": {
+      "url": {
+        "type": "string",
+        "required": true
+      },
+      "title": {
+        "type": "string",
+        "required": false
+      }
+    }
+  },
+  "content": {
+    "type": "json_object",
+    "allowed_attributes": {
+      "identifier": {
+        "type": "string",
+        "required": true
+      },
+      "inode": {
+        "type": "string",
+        "required": true
+      },
+      "title": {
+        "type": "string",
+        "required": true
+      },
+      "content_type": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  "position": {
+    "type": "json_object",
+    "allowed_attributes": {
+      "viewport_offset_pct": {
+        "type": "number",
+        "required": true
+      },
+      "dom_index": {
+        "type": "number",
+        "required": true
+      }
+    }
+  },
+  "element": {
+    "type": "json_object",
+    "allowed_attributes": {
+      "text": {
+        "type": "string",
+        "required": true
+      },
+      "type": {
+        "type": "string",
+        "required": true
+      },
+      "id": {
+        "type": "string",
+        "required": false
+      },
+      "class": {
+        "type": "string",
+        "required": false
+      },
+      "href": {
+        "type": "string",
+        "required": false
+      },
+      "attributes": {
+        "type": "json_array",
+        "array_type": "string",
+        "required": false
+      }
+    }
+  }
+}

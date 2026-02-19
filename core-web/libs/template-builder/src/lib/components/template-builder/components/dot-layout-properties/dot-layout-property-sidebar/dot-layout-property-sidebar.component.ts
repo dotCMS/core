@@ -1,7 +1,8 @@
 import { Component, forwardRef, ViewChild } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotLayoutSideBar } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/dot-layout-properties-item.component';
 
@@ -9,14 +10,14 @@ import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-layout-property-sidebar',
     templateUrl: './dot-layout-property-sidebar.component.html',
+    imports: [DotLayoutPropertiesItemComponent, FormsModule, DotMessagePipe],
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutSidebarComponent)
         }
-    ],
-    standalone: false
+    ]
 })
 export class DotLayoutSidebarComponent implements ControlValueAccessor {
     @ViewChild('propertyItemLeft', { static: true })

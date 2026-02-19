@@ -1,7 +1,15 @@
 import { Chart, ChartDataset, ChartTypeRegistry, TooltipItem } from 'chart.js';
 
-import { Breakpoints, BreakpointObserver } from '@angular/cdk/layout';
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    NgZone
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 import { CardModule } from 'primeng/card';
@@ -12,15 +20,23 @@ import { map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import {
-    PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
-    RequestState,
-    transformDeviceBrowsersData,
-    transformPageViewTimeLineData
-} from '@dotcms/portlets/dot-analytics/data-access';
 
-import { ChartData, ChartOptions, ChartType } from '../../types';
+import {
+    CHART_ANIMATION,
+    CHART_TRANSITIONS,
+    createAnimationState,
+    createLineDrawAnimationPlugin,
+    LINE_DRAW_ANIMATION_DURATION,
+    resetAnimationState,
+    TOOLTIP_STYLE
+} from '../../plugins';
+import {
+    ChartData,
+    ChartOptions,
+    ChartType,
+    ComboChartDataset,
+    getAnalyticsChartColors
+} from '../../types';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
 /**
@@ -28,20 +44,22 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  */
 const CHART_TYPE_HEIGHTS = {
     line: '21.875rem',
-    pie: '23.125rem'
+    pie: '23.125rem',
+    doughnut: '23.125rem'
 } as const;
 
 /**
- * Union type for chart raw data
- */
-type ChartRawData =
-    | RequestState<PageViewTimeLineEntity[]> // For line charts
-    | RequestState<PageViewDeviceBrowsersEntity[]>; // For pie charts
-
-/**
  * Reusable chart component for analytics dashboard.
- * Supports line, pie, doughnut, and bar chart types with loading states.
- * Now receives raw data and transforms it internally based on chart type.
+ * Supports line, pie, doughnut, bar, and combo chart types with loading states.
+ *
+ * Auto-detects combo charts when:
+ * - Datasets have different `type` values (e.g., 'bar' + 'line')
+ * - Any dataset has a `yAxisID` property (dual Y-axes)
+ *
+ * Usage examples:
+ * - Single dataset: Pass 1 dataset → renders as simple chart
+ * - Multiple same-type: Pass 2+ datasets with same type → renders with legend
+ * - Combo chart: Pass 2+ datasets with different types → renders as combo with dual axes
  */
 @Component({
     selector: 'dot-analytics-dashboard-chart',
@@ -51,47 +69,111 @@ type ChartRawData =
     styleUrl: './dot-analytics-dashboard-chart.component.scss'
 })
 export class DotAnalyticsDashboardChartComponent {
-    private readonly messageService = inject(DotMessageService);
-    private readonly breakpointObserver = inject(BreakpointObserver);
+    readonly #messageService = inject(DotMessageService);
+    readonly #breakpointObserver = inject(BreakpointObserver);
+    readonly #ngZone = inject(NgZone);
 
-    private readonly isMobile$ = this.breakpointObserver
+    readonly #isMobile$ = this.#breakpointObserver
         .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Tablet])
         .pipe(map((result) => result.matches));
 
     /** Signal to track if we're on mobile/small screen */
-    protected readonly $isMobile = toSignal(this.isMobile$, { initialValue: false });
+    protected readonly $isMobile = toSignal(this.#isMobile$, { initialValue: false });
+
+    /** Animation state for line drawing effect */
+    #animationState = createAnimationState();
+
+    constructor() {
+        // Reset animation when status changes to trigger animation on data load
+        effect(() => {
+            const status = this.$status();
+            if (status === ComponentStatus.LOADED) {
+                resetAnimationState(this.#animationState);
+            }
+        });
+    }
 
     // Required inputs
-    /** Chart type (line, pie, doughnut, bar, etc.) */
+    /** Chart type (line, pie, doughnut, bar). For combo charts, use 'bar' or 'line' as base. */
     readonly $type = input.required<ChartType>({ alias: 'type' });
 
-    /** Complete chart state from analytics store */
-    readonly $chartState = input.required<ChartRawData>({ alias: 'chartState' });
+    /** Chart data with datasets. Can be 1 dataset (simple) or multiple (combo). */
+    readonly $data = input.required<ChartData>({ alias: 'data' });
 
     /** Chart title displayed in header */
     readonly $title = input.required<string>({ alias: 'title' });
 
+    /** Component status for loading/error states */
+    readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
+
     /** Custom chart options to merge with defaults */
     readonly $options = input<Partial<ChartOptions>>({}, { alias: 'options' });
 
-    /** Transformed chart data ready for display */
-    protected readonly $data = computed((): ChartData => {
-        const type = this.$type();
-        const rawData = this.$chartState().data;
+    /** Whether to animate line charts with drawing effect */
+    readonly $animated = input<boolean>(true, { alias: 'animated' });
 
-        // Transform data based on chart type
-        if (type === 'line') {
-            return transformPageViewTimeLineData(rawData as PageViewTimeLineEntity[] | null);
-        } else if (type === 'pie' || type === 'doughnut') {
-            return transformDeviceBrowsersData(rawData as PageViewDeviceBrowsersEntity[] | null);
-        }
+    /** Custom height for the chart (e.g., '100%', '15rem'). If not provided, uses type-based default. */
+    readonly $customHeight = input<string | undefined>(undefined, { alias: 'height' });
 
-        // Fallback for unsupported types
-        return { labels: [], datasets: [] };
+    /**
+     * Check if chart has line datasets (for reveal animation).
+     * True if chart type is 'line' OR if any dataset in combo chart is type 'line'.
+     * Bar-only charts use Chart.js default animation (grow from bottom).
+     */
+    readonly #hasLineDatasets = computed(() => {
+        const chartType = this.$type();
+        if (chartType === 'line') return true;
+
+        // Check if any dataset in combo chart is type 'line'
+        const datasets = (this.$data()?.datasets as ComboChartDataset[]) || [];
+
+        return datasets.some((ds) => ds.type === 'line');
     });
 
-    /** Chart height determined automatically by chart type */
+    /**
+     * Plugin for line drawing animation.
+     * Uses clip to progressively reveal line charts from left to right.
+     * Runs outside Angular's zone to avoid triggering change detection on each frame.
+     */
+    readonly #lineDrawPlugin = createLineDrawAnimationPlugin(
+        () => ({
+            enabled: this.#hasLineDatasets() && this.$animated(),
+            duration: LINE_DRAW_ANIMATION_DURATION
+        }),
+        this.#animationState,
+        this.#ngZone
+    );
+
+    /**
+     * Plugins array - only includes lineDrawPlugin when chart has line datasets.
+     * Bar-only charts get empty plugins to use native Chart.js animation.
+     */
+    protected readonly $plugins = computed(() => {
+        return this.#hasLineDatasets() ? [this.#lineDrawPlugin] : [];
+    });
+
+    /**
+     * Auto-detect if this is a combo chart based on datasets.
+     * A combo chart has datasets with different types or uses yAxisID.
+     */
+    protected readonly $isComboChart = computed(() => {
+        const datasets = (this.$data()?.datasets as ComboChartDataset[]) || [];
+        if (datasets.length < 2) return false;
+
+        // Has yAxisID OR multiple unique types
+        return (
+            datasets.some((ds) => ds.yAxisID) ||
+            new Set(datasets.map((ds) => ds.type).filter(Boolean)).size > 1
+        );
+    });
+
+    /** Chart height - uses custom height if provided, otherwise falls back to type-based default */
     protected readonly $height = computed(() => {
+        const customHeight = this.$customHeight();
+        if (customHeight) {
+            return customHeight;
+        }
+
         const type = this.$type();
 
         return (
@@ -99,20 +181,48 @@ export class DotAnalyticsDashboardChartComponent {
         );
     });
 
-    // Computed properties
     /** Complete chart configuration merging defaults with custom options */
     protected readonly $chartOptions = computed<ChartOptions>(() => {
         const chartType = this.$type();
         const customOptions = this.$options();
         const isMobile = this.$isMobile();
+        const isCombo = this.$isComboChart();
+        const data = this.$data();
+        const hasMultipleDatasets = (data?.datasets?.length || 0) > 1;
 
         // For mobile pie/doughnut charts, position legend to the right for better space usage
         const shouldUseSideLegend = isMobile && (chartType === 'pie' || chartType === 'doughnut');
         const legendPosition = shouldUseSideLegend ? 'right' : 'bottom';
 
+        // Show legend for combo charts, pie/doughnut, or multiple datasets
+        const showLegend =
+            isCombo || chartType === 'pie' || chartType === 'doughnut' || hasMultipleDatasets;
+
+        // Line charts: disable built-in animation for smooth tooltip transitions
+        // (same behavior as sparkline component)
+        // Bar charts: use explicit animation for grow-from-bottom effect
+        const isLineChart = chartType === 'line';
+        const isBarChart = chartType === 'bar';
+
         const defaultOptions: ChartOptions = {
             responsive: true,
             maintainAspectRatio: false,
+            // Line charts: duration 0 for smooth tooltip (uses custom line draw plugin)
+            // Bar charts: grow from bottom animation
+            // Other charts: use Chart.js default
+            animation: isLineChart ? CHART_ANIMATION : undefined,
+            // Bar charts: animate Y values from bottom (grow up)
+            ...(isBarChart && {
+                animations: {
+                    y: {
+                        from: (ctx: { chart: Chart }) => ctx.chart.scales['y'].getPixelForValue(0),
+                        duration: 1000,
+                        easing: 'easeOutQuart' as const
+                    }
+                }
+            }),
+            // Smooth hover transitions (centralized config)
+            transitions: CHART_TRANSITIONS,
             interaction: {
                 mode: 'index' as const,
                 intersect: false,
@@ -120,7 +230,7 @@ export class DotAnalyticsDashboardChartComponent {
             },
             plugins: {
                 legend: {
-                    display: chartType !== 'line', // Hide legend for line charts
+                    display: showLegend,
                     position: legendPosition,
                     labels: {
                         usePointStyle: true,
@@ -131,57 +241,57 @@ export class DotAnalyticsDashboardChartComponent {
                         font: {
                             size: shouldUseSideLegend ? 11 : 12
                         },
-                        ...this.getChartTypeSpecificLegendOptions(chartType)
+                        ...this.#getChartTypeSpecificLegendOptions(chartType)
                     }
                 },
                 tooltip: {
                     mode: 'index' as const,
                     intersect: false,
+                    // Centralized tooltip styling
+                    ...TOOLTIP_STYLE,
                     callbacks: {
                         label: (context: TooltipItem<keyof ChartTypeRegistry>) =>
-                            this.getTooltipLabel(context),
+                            this.#getTooltipLabel(context),
                         title: (context: TooltipItem<keyof ChartTypeRegistry>[]) =>
-                            this.getTooltipTitle(context)
+                            this.#getTooltipTitle(context)
                     }
                 }
             },
-            scales:
-                chartType === 'line'
-                    ? {
-                          x: {
-                              ticks: {
-                                  maxTicksLimit: isMobile ? 6 : 10,
-                                  autoSkip: true,
-                                  maxRotation: 45,
-                                  minRotation: 0
-                              }
-                          },
-                          y: {
-                              beginAtZero: true
-                          }
-                      }
-                    : undefined
+            scales: this.#getScalesConfig(chartType, isCombo, isMobile)
         };
 
-        // Merge with custom options
         return { ...defaultOptions, ...customOptions };
     });
 
-    /** Combined chart data ready for Chart.js with translated labels */
+    /** Chart data ready for Chart.js with translated labels and default colors */
     protected readonly $chartData = computed(() => {
         const originalData = this.$data();
+        const chartType = this.$type();
 
-        // Clone the data and translate any translation keys in dataset labels AND main labels
+        // Clone the data, apply default colors, and translate labels
         const translatedData: ChartData = {
             ...originalData,
-            // Translate main chart labels (used in pie chart segments and tooltips)
             labels: originalData.labels?.map((label) =>
-                typeof label === 'string' ? this.messageService.get(label) : label
+                typeof label === 'string' ? this.#messageService.get(label) : label
             ),
-            datasets: originalData.datasets.map((dataset) => ({
-                ...dataset,
-                label: dataset.label ? this.messageService.get(dataset.label) : dataset.label
-            }))
+            datasets: originalData.datasets.map((dataset, index) => {
+                // Determine the effective type for this dataset (for combo charts)
+                const datasetType = (dataset as ComboChartDataset).type || chartType;
+                const isBarType = datasetType === 'bar';
+
+                // Get default colors for this dataset index
+                const defaultColors = getAnalyticsChartColors(index, isBarType ? 'bar' : 'line');
+
+                return {
+                    // Apply default colors first (will be overridden if dataset has its own)
+                    borderColor: defaultColors.borderColor,
+                    backgroundColor: defaultColors.backgroundColor,
+                    // Spread the original dataset (overrides defaults if colors are provided)
+                    ...dataset,
+                    // Translate label
+                    label: dataset.label ? this.#messageService.get(dataset.label) : dataset.label
+                };
+            })
         };
 
         return translatedData;
@@ -189,15 +299,13 @@ export class DotAnalyticsDashboardChartComponent {
 
     /** Check if component is in loading state */
     protected readonly $isLoading = computed(() => {
-        const status = this.$chartState().status;
+        const status = this.$status();
 
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
     });
 
     /** Check if component is in error state */
-    protected readonly $isError = computed(
-        () => this.$chartState().status === ComponentStatus.ERROR
-    );
+    protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 
     /** Check if chart data is empty */
     protected readonly $isEmpty = computed(() => {
@@ -207,7 +315,6 @@ export class DotAnalyticsDashboardChartComponent {
             return true;
         }
 
-        // Check if all datasets are empty or have no data
         return (
             data.datasets.length === 0 ||
             data.datasets.every(
@@ -222,15 +329,15 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get chart type specific legend options
      */
-    private getChartTypeSpecificLegendOptions(chartType: ChartType) {
-        if (chartType === 'line') {
+    #getChartTypeSpecificLegendOptions(chartType: ChartType) {
+        if (chartType === 'line' || chartType === 'bar') {
             return {
                 generateLabels: (chart: Chart) => {
                     const datasets = chart.data.datasets;
 
                     return datasets.map((dataset: ChartDataset, i: number) => ({
                         text: dataset.label,
-                        fillStyle: dataset.borderColor, // Use borderColor for solid legend
+                        fillStyle: dataset.borderColor || dataset.backgroundColor,
                         strokeStyle: dataset.borderColor,
                         lineWidth: 0,
                         pointStyle: 'circle',
@@ -248,41 +355,39 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get tooltip label based on chart type
      */
-    private getTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
+    #getTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
         const chartType = this.$type();
 
         if (chartType === 'pie' || chartType === 'doughnut') {
-            return this.getPieTooltipLabel(context);
+            return this.#getPieTooltipLabel(context);
         } else {
-            return this.getLineTooltipLabel(context);
+            return this.#getLineTooltipLabel(context);
         }
     }
 
     /**
      * Get tooltip title based on chart type
      */
-    private getTooltipTitle(context: TooltipItem<keyof ChartTypeRegistry>[]): string {
+    #getTooltipTitle(context: TooltipItem<keyof ChartTypeRegistry>[]): string {
         const chartType = this.$type();
 
         if (chartType === 'pie' || chartType === 'doughnut') {
-            // For pie charts, translate the title if it's a translation key
             const title = context[0]?.label;
 
-            return title ? this.messageService.get(title) : title;
+            return title ? this.#messageService.get(title) : title;
         }
 
-        // For other charts, return the label as is (usually dates/times)
         return context[0]?.label || '';
     }
 
     /**
      * Get tooltip label for pie/doughnut charts
      */
-    private getPieTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
+    #getPieTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
         const dataset = context.dataset;
         const parsedValue = context.parsed;
         const value = parsedValue;
-        const label = context.label ? this.messageService.get(context.label) : '';
+        const label = context.label ? this.#messageService.get(context.label) : '';
         const total = dataset.data
             .filter((val): val is number => typeof val === 'number')
             .reduce((sum, val) => sum + val, 0);
@@ -294,12 +399,71 @@ export class DotAnalyticsDashboardChartComponent {
     /**
      * Get tooltip label for line/bar charts
      */
-    private getLineTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
+    #getLineTooltipLabel(context: TooltipItem<keyof ChartTypeRegistry>): string {
         const dataset = context.dataset;
         const parsedValue = context.parsed;
         const value = parsedValue.y ?? parsedValue;
-        const datasetLabel = dataset.label ? this.messageService.get(dataset.label) : '';
+        const datasetLabel = dataset.label ? this.#messageService.get(dataset.label) : '';
 
         return `${datasetLabel}: ${value}`;
+    }
+
+    /**
+     * Get scales configuration based on chart type.
+     * Returns dual Y-axes for combo charts, single Y-axis for line/bar charts.
+     */
+    #getScalesConfig(
+        chartType: ChartType,
+        isCombo: boolean,
+        isMobile: boolean
+    ): Record<string, unknown> | undefined {
+        // Combo charts need dual Y-axes
+        if (isCombo) {
+            return {
+                x: {
+                    ticks: {
+                        maxTicksLimit: isMobile ? 6 : 10,
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    beginAtZero: true,
+                    title: { display: false }
+                },
+                y1: {
+                    type: 'linear',
+                    display: false,
+                    position: 'right',
+                    beginAtZero: true,
+                    grid: { drawOnChartArea: false },
+                    title: { display: false }
+                }
+            };
+        }
+
+        // Line/bar charts need single Y-axis
+        if (chartType === 'line' || chartType === 'bar') {
+            return {
+                x: {
+                    ticks: {
+                        maxTicksLimit: isMobile ? 6 : 10,
+                        autoSkip: true,
+                        maxRotation: 45,
+                        minRotation: 0
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            };
+        }
+
+        // Pie/doughnut charts don't need scales
+        return undefined;
     }
 }

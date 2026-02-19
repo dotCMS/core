@@ -2,7 +2,7 @@ import { describe, expect, it } from '@jest/globals';
 import { of, throwError } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { getTestBed, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -65,7 +65,6 @@ describe('DotPageStateService', () => {
     let dotRouterService: DotRouterService;
     let dotFavoritePageService: DotFavoritePageService;
     let loginService: LoginService;
-    let injector: TestBed;
     let service: DotPageStateService;
     let dotExperimentsService: DotExperimentsService;
 
@@ -101,23 +100,20 @@ describe('DotPageStateService', () => {
             ]
         });
 
-        injector = getTestBed();
-        service = injector.inject(DotPageStateService);
-        dotContentletLockerService = injector.inject(DotContentletLockerService);
-        dotHttpErrorManagerService = injector.inject(DotHttpErrorManagerService);
-        dotPageRenderService = injector.inject(DotPageRenderService);
-        dotRouterService = injector.inject(DotRouterService);
-        loginService = injector.inject(LoginService);
-        dotFavoritePageService = injector.inject(DotFavoritePageService);
-        dotExperimentsService = injector.inject(DotExperimentsService);
+        service = TestBed.inject(DotPageStateService);
+        dotContentletLockerService = TestBed.inject(DotContentletLockerService);
+        dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
+        dotPageRenderService = TestBed.inject(DotPageRenderService);
+        dotRouterService = TestBed.inject(DotRouterService);
+        loginService = TestBed.inject(LoginService);
+        dotFavoritePageService = TestBed.inject(DotFavoritePageService);
+        dotExperimentsService = TestBed.inject(DotExperimentsService);
 
         dotPageRenderServiceGetSpy = jest
             .spyOn(dotPageRenderService, 'get')
             .mockReturnValue(of(mockDotRenderedPage()));
 
         dotHttpErrorManagerServiceHandle = jest.spyOn(dotHttpErrorManagerService, 'handle');
-
-        service = injector.get(DotPageStateService);
 
         Object.defineProperty(dotRouterService, 'queryParams', {
             value: {

@@ -26,7 +26,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 /**
  * Configuration interface for the generated string field
@@ -61,7 +61,6 @@ interface GeneratedStringField {
     selector: 'dot-apps-configuration-detail-generated-string-field',
     imports: [
         FormsModule,
-        DotIconModule,
         DotMessagePipe,
         ButtonModule,
         InputTextModule,

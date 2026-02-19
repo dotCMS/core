@@ -2785,12 +2785,18 @@
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "var jsonData = pm.response.json();",
+                      "const json = pm.response.json();",
                       "",
-                      "pm.test(\"Check response\", function () {",
-                      "    ",
-                      "    pm.expect(jsonData.entity).to.eql('ok');",
-                      "    ",
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Response is JSON\", function () {",
+                      "    pm.response.to.be.json;",
+                      "});",
+                      "",
+                      "pm.test(\"Entity array exists\", function () {",
+                      "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -3358,7 +3364,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Response body contains\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                      "    pm.response.to.have.status(200);",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -3546,11 +3552,16 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "pm.test(\"Response body contains\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.be.json;",
                   "});",
                   "",
-                  ""
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});"
                 ],
                 "type": "text/javascript",
                 "packages": {}
@@ -3640,10 +3651,7 @@
                   "",
                   "pm.test(\"Response body contains\", function () {",
                   "    pm.expect(pm.response.text()).to.include(\"Page '2c12fe7e6-d338-49d5-973b-2d974d57015b' not found\");",
-                  "});",
-                  "",
-                  "",
-                  ""
+                  "});"
                 ],
                 "type": "text/javascript",
                 "packages": {}
@@ -3788,11 +3796,20 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
-                  "pm.test(\"Response body contains\", function () {",
-                  "    pm.expect(pm.response.text()).to.include(\"ok\");",
+                  "pm.test(\"Response is JSON\", function () {",
+                  "    pm.response.to.be.json;",
                   "});",
                   "",
-                  ""
+                  "// Parse JSON",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test(\"Entity array exists\", function () {",
+                  "    pm.expect(json.entity).to.be.an(\"array\").that.is.not.empty;",
+                  "});",
+                  "",
+                  "pm.test(\"Duplicated contentlets were merged correctly\", function () {",
+                  "    pm.expect(json.entity.length).to.eql(2);",
+                  "});"
                 ],
                 "type": "text/javascript",
                 "packages": {}

@@ -154,9 +154,9 @@
           ]
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}",
+          "raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}/upload",
           "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "jobs", "{{queueName}}"]
+          "path": ["api", "v1", "jobs", "{{queueName}}", "upload"]
         },
         "description": "Creates a new job with a multipart content type in the specified queue."
       },

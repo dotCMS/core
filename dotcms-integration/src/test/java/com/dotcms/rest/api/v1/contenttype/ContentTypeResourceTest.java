@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import org.glassfish.jersey.internal.util.Base64;
+import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -363,7 +363,7 @@ public class ContentTypeResourceTest {
 				).request()
 		);
 
-		request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+		request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
 
 		return request;
 	}
@@ -439,6 +439,44 @@ public class ContentTypeResourceTest {
 		assertEquals(BaseContentType.values().length-1,types.size());
 
 	}
+
+    /**
+     * Integration test for the resource "/basetypes" {@link ContentTypeResource#getRecentBaseTypes(HttpServletRequest)}
+     * <p>
+     * When: A Base Content Type is not found.
+     * <p>
+     * Should: return throw a 500 error.
+     */
+    @Test
+    public void getBaseTypes_shouldReturn500_whenHelperThrowsException() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        final ContentTypeHelper contentTypeHelper = mock(ContentTypeHelper.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject dataObject = mock(InitDataObject.class);
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+
+        when(session.getAttribute(WebKeys.CTX_PATH)).thenReturn("/"); //prevents a NPE
+        when(request.getSession()).thenReturn(session);
+
+        when(dataObject.getUser()).thenReturn(TestUserUtils.getChrisPublisherUser());
+
+        when(webResource.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class), anyBoolean(), nullable(String.class)))
+                .thenReturn(dataObject);
+        when(contentTypeHelper.getTypes(request)).thenThrow(new IllegalArgumentException("Simulated invalid argument exception"));
+
+        final ContentTypeResource resource = new ContentTypeResource(
+                contentTypeHelper,
+                webResource,
+                paginationUtil,
+                WorkflowHelper.getInstance(),
+                permissionAPI
+        );
+        Response response = resource.getRecentBaseTypes(request);
+
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+    }
 
 
 	@DataProvider

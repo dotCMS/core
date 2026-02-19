@@ -1,4 +1,4 @@
-import { DotCMSUVEAction, BlockEditorContent } from '@dotcms/types';
+import { DotCMSUVEAction, BlockEditorNode } from '@dotcms/types';
 import { BlockEditorState, DotCMSContainerBound } from '@dotcms/types/internal';
 
 import { sendMessageToUVE } from './public';
@@ -17,19 +17,22 @@ export function setBounds(bounds: DotCMSContainerBound[]): void {
 }
 
 /**
- * Validates the structure of a Block Editor block.
+ * Validates the structure of a Block Editor node.
  *
- * This function checks that:
- * 1. The blocks parameter is a valid object
- * 2. The block has a 'doc' type
- * 3. The block has a valid content array that is not empty
+ * This function performs validation checks on a BlockEditorNode object to ensure:
+ * - The node exists and is a valid object
+ * - The node has a 'doc' type
+ * - The node has a valid content array containing at least one block
+ * - Each block in the content array:
+ *   - Has a valid string type property
+ *   - Has valid object attributes (if present)
+ *   - Has valid nested content (if present)
  *
- * @param {Block} blocks - The blocks structure to validate
- * @returns {BlockEditorState} Object containing validation state and any error message
- * @property {boolean} BlockEditorState.isValid - Whether the blocks structure is valid
- * @property {string | null} BlockEditorState.error - Error message if invalid, null if valid
+ * @param {BlockEditorNode} blocks - The BlockEditorNode structure to validate
+ * @returns {BlockEditorState} The validation result
+ * @property {string | null} BlockEditorState.error - Error message if validation fails, null if valid
  */
-export const isValidBlocks = (blocks: BlockEditorContent): BlockEditorState => {
+export const isValidBlocks = (blocks: BlockEditorNode): BlockEditorState => {
     if (!blocks) {
         return {
             error: `Error: Blocks object is not defined`

@@ -4,6 +4,6 @@ import { Component } from '@angular/core';
     selector: 'dot-portlet-box',
     templateUrl: './dot-portlet-box.component.html',
     styleUrls: ['./dot-portlet-box.component.scss'],
-    standalone: false
+    imports: []
 })
 export class DotPortletBoxComponent {}
