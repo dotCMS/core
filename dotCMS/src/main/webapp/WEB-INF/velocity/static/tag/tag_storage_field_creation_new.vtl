@@ -25,6 +25,7 @@
         class="custom-select-button tag-storage-custom-select-button placeholder"
         aria-label="Select tag storage host"
         aria-haspopup="listbox"
+        aria-expanded="false"
         #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end
       >Select host</button>
       <div id="tagStorageDropdown" class="tag-storage-custom-dropdown" role="listbox">
@@ -80,10 +81,12 @@
 
       function closeDropdown() {
         dropdown.classList.remove("open");
+        button.setAttribute("aria-expanded", "false");
       }
 
       function openDropdown() {
         dropdown.classList.add("open");
+        button.setAttribute("aria-expanded", "true");
       }
 
       function toggleDropdown() {

@@ -3,6 +3,9 @@
     const field = DotCustomFieldApi.getField("${field.velocityVarName}");
     const vlUriInput = document.getElementById("vlUri");
     const browseButton = document.getElementById("browseButton");
+    if (!vlUriInput || !browseButton) {
+      return;
+    }
 
     // Initialize input with current field value
     const currentValue = field.getValue() || "";

@@ -13,6 +13,10 @@
 		const keyTagWrapper = document.getElementById("keyTagWrapper");
 		const editButton = document.getElementById("keyTagEditButton");
 
+		if (!showKeyTagInput || !keyTagWrapper || !editButton) {
+			return;
+		}
+
 		function keyTagUpdate() {
 			const nameValue = nameField.getValue() || "";
 			const keyTagStr = _camelizeMe(nameValue);

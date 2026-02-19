@@ -134,7 +134,7 @@
             line-height: 1.5;
             color: $color-palette-gray-700;
             background-color: $white;
-            border: 1px solid;
+            border: 1px;
             border-radius: 6px;
             cursor: pointer;
             outline: none;
@@ -245,7 +245,7 @@
             }
 
             &.selected {
-                background-color: #dbeafe;
+                background-color: $color-palette-blue-tint;
             }
         }
 
