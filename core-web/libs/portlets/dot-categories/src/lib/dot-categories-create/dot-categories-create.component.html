@@ -1,4 +1,12 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    @if (parentName) {
+        <p-message
+            severity="info"
+            icon="pi pi-info-circle"
+            data-testid="category-parent-hint">
+            {{ 'categories.form.parent.hint' | dm: [parentName] }}
+        </p-message>
+    }
     <div class="field">
         <label for="categoryName" dotFieldRequired>{{ 'categories.form.name' | dm }}</label>
         <input

@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotCategory } from '@dotcms/dotcms-models';
@@ -34,6 +35,7 @@ function toCamelCaseVarName(value: string): string {
         InputTextModule,
         TextareaModule,
         ButtonModule,
+        MessageModule,
         DotMessagePipe,
         DotFieldRequiredDirective
     ],
@@ -42,7 +44,9 @@ function toCamelCaseVarName(value: string): string {
 })
 export class DotCategoriesCreateComponent implements OnInit {
     readonly ref = inject(DynamicDialogRef);
-    readonly config = inject(DynamicDialogConfig<{ category?: DotCategory }>);
+    readonly config = inject(
+        DynamicDialogConfig<{ category?: DotCategory; parentName?: string | null }>
+    );
 
     private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
@@ -55,8 +59,10 @@ export class DotCategoriesCreateComponent implements OnInit {
     });
 
     isEdit = false;
+    parentName: string | null = null;
 
     ngOnInit(): void {
+        this.parentName = this.config.data?.parentName ?? null;
         const category = this.config.data?.category;
         if (category) {
             this.isEdit = true;

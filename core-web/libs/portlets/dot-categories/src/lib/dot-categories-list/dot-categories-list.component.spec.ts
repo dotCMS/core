@@ -63,6 +63,7 @@ describe('DotCategoriesListComponent', () => {
                 sortOrder: jest.fn().mockReturnValue('ASC'),
                 breadcrumbs: jest.fn().mockReturnValue([]),
                 parentInode: jest.fn().mockReturnValue(null),
+                parentName: jest.fn().mockReturnValue(null),
                 setFilter: jest.fn(),
                 setPagination: jest.fn(),
                 setSort: jest.fn(),
@@ -206,16 +207,16 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('Row Click', () => {
-        it('should call navigateToChildren when row clicked and category has children', () => {
+        it('should call navigateToChildren when row clicked', () => {
             spectator.detectChanges();
             spectator.component.onRowClick(MOCK_CATEGORIES[0]);
             expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
-        it('should not call navigateToChildren when row clicked and category has no children', () => {
+        it('should call navigateToChildren even when category has no children', () => {
             spectator.detectChanges();
             spectator.component.onRowClick(MOCK_CATEGORIES[1]);
-            expect(store.navigateToChildren).not.toHaveBeenCalled();
+            expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[1]);
         });
     });
 
@@ -251,10 +252,30 @@ describe('DotCategoriesListComponent', () => {
                 expect.objectContaining({
                     header: 'categories.add.category',
                     width: '500px',
+                    data: { parentName: null },
                     closable: true,
                     closeOnEscape: true
                 })
             );
+        });
+
+        it('should pass parentName to dialog when navigated into a parent', () => {
+            (store.parentName as jest.Mock).mockReturnValue('Parent Category');
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as DynamicDialogRef);
+
+            spectator.component.openCreateDialog();
+
+            expect(openSpy).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    data: { parentName: 'Parent Category' }
+                })
+            );
+            (store.parentName as jest.Mock).mockReturnValue(null);
         });
 
         it('should open dialog and call store.createCategory on close', () => {

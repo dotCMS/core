@@ -89,15 +89,15 @@ export class DotCategoriesListComponent {
     }
 
     onRowClick(category: DotCategory): void {
-        if (category.childrenCount > 0) {
-            this.store.navigateToChildren(category);
-        }
+        this.store.navigateToChildren(category);
     }
 
     openCreateDialog(): void {
+        const parentName = this.store.parentName();
         const ref = this.dialogService.open(DotCategoriesCreateComponent, {
             header: this.dotMessageService.get('categories.add.category'),
             width: '500px',
+            data: { parentName },
             closable: true,
             closeOnEscape: true
         });
