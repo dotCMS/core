@@ -7,10 +7,10 @@ jobs:
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
-    # Runs ALL tests to catch flaky tests and filter gaps that PR checks might miss
-    # To enable selective testing, change to: change-detection: 'enabled'
+    # Uses path-based filtering to skip integration/postman/karate tests for frontend-only changes
+    # See ADR-0013: https://github.com/dotCMS/platform-adrs/pull/53
     with:
-      change-detection: 'disabled'
+      change-detection: 'enabled'
   build:
     name: Merge Group Build
     needs: [ initialize ]

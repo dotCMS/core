@@ -1,6 +1,5 @@
 name: Defect
 description: Report a bug or issue with existing functionality
-title: ""
 labels: ["OKR : Customer Support"]
 type: bug
 assignees: []
