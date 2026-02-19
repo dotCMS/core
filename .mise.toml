@@ -19,6 +19,12 @@ gh = "latest"
 # Python for cicd-diagnostics skill and automation scripts
 python = "3.11"
 
+# GitHub Actions workflow linter
+actionlint = "latest"
+
+# Shell script linter (used by actionlint for run: blocks)
+shellcheck = "latest"
+
 [env]
 # Python virtual environment location
 _.python.venv = { path = ".venv", create = true }
