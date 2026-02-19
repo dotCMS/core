@@ -1,7 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { BehaviorSubject, of, throwError } from 'rxjs';
-
-import { ActivatedRoute, Router } from '@angular/router';
+import { of, throwError } from 'rxjs';
 
 import { DotCategoriesService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCategory } from '@dotcms/dotcms-models';
@@ -50,8 +48,6 @@ describe('DotCategoriesListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotCategoriesListStore>>;
     let store: InstanceType<typeof DotCategoriesListStore>;
     let categoriesService: jest.Mocked<DotCategoriesService>;
-    let router: jest.Mocked<Router>;
-    let queryParams$: BehaviorSubject<Record<string, string>>;
 
     const createService = createServiceFactory({
         service: DotCategoriesListStore,
@@ -73,18 +69,7 @@ describe('DotCategoriesListStore', () => {
                     .fn()
                     .mockReturnValue(of({ entity: { successCount: 2, fails: [] } }))
             }),
-            mockProvider(DotHttpErrorManagerService),
-            mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true))
-            }),
-            {
-                provide: ActivatedRoute,
-                useFactory: () => {
-                    queryParams$ = new BehaviorSubject<Record<string, string>>({});
-
-                    return { queryParams: queryParams$.asObservable() };
-                }
-            }
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -94,7 +79,6 @@ describe('DotCategoriesListStore', () => {
         categoriesService = spectator.inject(
             DotCategoriesService
         ) as jest.Mocked<DotCategoriesService>;
-        router = spectator.inject(Router) as jest.Mocked<Router>;
         spectator.flushEffects();
     });
 
@@ -104,7 +88,6 @@ describe('DotCategoriesListStore', () => {
             expect(store.selectedCategories()).toEqual([]);
             expect(store.breadcrumbs()).toEqual([]);
             expect(store.parentInode()).toBeNull();
-            expect(store.parentName()).toBeNull();
             expect(store.totalRecords()).toBe(100);
             expect(store.page()).toBe(1);
             expect(store.rows()).toBe(25);
@@ -126,22 +109,11 @@ describe('DotCategoriesListStore', () => {
             });
         });
 
-        it('should call getChildrenPaginated when inode query param is set', () => {
+        it('should call getChildrenPaginated when parentInode is set', () => {
             categoriesService.getCategoriesPaginated.mockClear();
             categoriesService.getChildrenPaginated.mockClear();
 
-            const mockWithParentList = {
-                entity: [
-                    {
-                        ...MOCK_CATEGORIES[0],
-                        parentList: [{ name: 'Category 1', key: 'cat1', inode: 'inode-1' }]
-                    }
-                ],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 10 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
-
-            queryParams$.next({ inode: 'inode-1' });
+            store.navigateToChildren(MOCK_CATEGORIES[0]);
             spectator.flushEffects();
 
             expect(categoriesService.getChildrenPaginated).toHaveBeenCalledWith(
@@ -167,94 +139,6 @@ describe('DotCategoriesListStore', () => {
 
             expect(store.status()).toBe('error');
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
-        });
-
-        it('should rebuild breadcrumbs from parentList when last item matches current parent', () => {
-            // parentList: [Root, Child] and we navigated into Child
-            const mockWithParentList = {
-                entity: [
-                    {
-                        ...MOCK_CATEGORIES[0],
-                        parentList: [
-                            { name: 'Root Cat', key: 'root', inode: 'root-inode' },
-                            { name: 'Child Cat', key: 'child', inode: 'child-inode' }
-                        ]
-                    }
-                ],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 5 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
-
-            queryParams$.next({ inode: 'child-inode', name: 'Child Cat' });
-            spectator.flushEffects();
-
-            expect(store.breadcrumbs()).toEqual([
-                { label: 'Root Cat', id: 'root-inode' },
-                { label: 'Child Cat', id: 'child-inode' }
-            ]);
-        });
-
-        it('should append current parent when parentList does not include it', () => {
-            // parentList: [Root] but we navigated into Grandchild (not in parentList)
-            const mockGrandchildren = {
-                entity: [
-                    {
-                        ...MOCK_CATEGORIES[0],
-                        parentList: [{ name: 'Root Cat', key: 'root', inode: 'root-inode' }]
-                    }
-                ],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 3 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(mockGrandchildren));
-
-            queryParams$.next({ inode: 'grandchild-inode', name: 'Grandchild Cat' });
-            spectator.flushEffects();
-
-            expect(store.breadcrumbs()).toEqual([
-                { label: 'Root Cat', id: 'root-inode' },
-                { label: 'Grandchild Cat', id: 'grandchild-inode' }
-            ]);
-        });
-
-        it('should preserve breadcrumbs when child list is empty', () => {
-            const mockWithParentList = {
-                entity: [
-                    {
-                        ...MOCK_CATEGORIES[0],
-                        parentList: [{ name: 'Parent Cat', key: 'parent', inode: 'parent-inode' }]
-                    }
-                ],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 1 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
-
-            // First navigate into a parent that has children
-            queryParams$.next({ inode: 'parent-inode', name: 'Parent Cat' });
-            spectator.flushEffects();
-
-            expect(store.breadcrumbs()).toEqual([
-                { label: 'Parent Cat', id: 'parent-inode' }
-            ]);
-
-            // Now navigate deeper into a category with no children (empty response)
-            const emptyResponse = {
-                entity: [],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(emptyResponse));
-
-            queryParams$.next({ inode: 'leaf-inode', name: 'Leaf Cat' });
-            spectator.flushEffects();
-
-            // Breadcrumbs should be preserved, not wiped
-            expect(store.breadcrumbs()).toEqual([
-                { label: 'Parent Cat', id: 'parent-inode' }
-            ]);
-            expect(store.parentName()).toBe('Parent Cat');
-        });
-
-        it('should set empty breadcrumbs at root level', () => {
-            expect(store.breadcrumbs()).toEqual([]);
         });
     });
 
@@ -295,86 +179,49 @@ describe('DotCategoriesListStore', () => {
     });
 
     describe('navigateToChildren', () => {
-        it('should update URL with inode and name query params', () => {
+        it('should push breadcrumb and set parentInode', () => {
             store.navigateToChildren(MOCK_CATEGORIES[0]);
 
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                relativeTo: expect.anything(),
-                queryParams: { inode: 'inode-1', name: 'Category 1' },
-                queryParamsHandling: 'merge'
-            });
-        });
-    });
-
-    describe('navigateToBreadcrumb', () => {
-        beforeEach(() => {
-            const mockWithParentList = {
-                entity: [
-                    {
-                        ...MOCK_CATEGORIES[0],
-                        parentList: [
-                            { name: 'Category 1', key: 'cat1', inode: 'inode-1' },
-                            { name: 'Category 2', key: 'cat2', inode: 'inode-2' }
-                        ]
-                    }
-                ],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 10 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
-
-            queryParams$.next({ inode: 'inode-2' });
-            spectator.flushEffects();
-            (router.navigate as jest.Mock).mockClear();
-        });
-
-        it('should navigate to breadcrumb inode at given index', () => {
-            store.navigateToBreadcrumb(0);
-
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                relativeTo: expect.anything(),
-                queryParams: { inode: 'inode-1', name: 'Category 1' },
-                queryParamsHandling: 'merge'
-            });
-        });
-
-        it('should navigate to root when index is -1', () => {
-            store.navigateToBreadcrumb(-1);
-
-            expect(router.navigate).toHaveBeenCalledWith([], {
-                relativeTo: expect.anything(),
-                queryParams: { inode: null, name: null },
-                queryParamsHandling: 'merge'
-            });
-        });
-    });
-
-    describe('Query params sync', () => {
-        it('should set parentInode and parentName when query params change', () => {
-            queryParams$.next({ inode: 'some-inode', name: 'Some Category' });
-
-            expect(store.parentInode()).toBe('some-inode');
-            expect(store.parentName()).toBe('Some Category');
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Category 1', id: 'inode-1' }
+            ]);
+            expect(store.parentInode()).toBe('inode-1');
             expect(store.page()).toBe(1);
             expect(store.filter()).toBe('');
             expect(store.selectedCategories()).toEqual([]);
         });
 
-        it('should set parentInode to null when inode query param is removed', () => {
-            queryParams$.next({ inode: 'some-inode', name: 'Some Category' });
-            queryParams$.next({});
+        it('should append to breadcrumbs on nested navigation', () => {
+            store.navigateToChildren(MOCK_CATEGORIES[0]);
+            store.navigateToChildren(MOCK_CATEGORIES[1]);
 
-            expect(store.parentInode()).toBeNull();
-            expect(store.parentName()).toBeNull();
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Category 1', id: 'inode-1' },
+                { label: 'Category 2', id: 'inode-2' }
+            ]);
+            expect(store.parentInode()).toBe('inode-2');
+        });
+    });
+
+    describe('navigateToBreadcrumb', () => {
+        beforeEach(() => {
+            store.navigateToChildren(MOCK_CATEGORIES[0]);
+            store.navigateToChildren(MOCK_CATEGORIES[1]);
         });
 
-        it('should not patch state if inode has not changed', () => {
-            queryParams$.next({});
+        it('should truncate breadcrumbs to given index', () => {
+            store.navigateToBreadcrumb(0);
 
-            // Emit same empty params again
-            store.setPagination(3, 25);
-            queryParams$.next({});
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Category 1', id: 'inode-1' }
+            ]);
+            expect(store.parentInode()).toBe('inode-1');
+        });
 
-            // page should be reset to 1 because the subscription fires
+        it('should navigate to root when index is -1', () => {
+            store.navigateToBreadcrumb(-1);
+
+            expect(store.breadcrumbs()).toEqual([]);
             expect(store.parentInode()).toBeNull();
         });
     });
@@ -393,18 +240,7 @@ describe('DotCategoriesListStore', () => {
         });
 
         it('should add parent inode when drilling into children', () => {
-            const mockWithParentList = {
-                entity: [
-                    {
-                        ...MOCK_CATEGORIES[0],
-                        parentList: [{ name: 'Category 1', key: 'cat1', inode: 'inode-1' }]
-                    }
-                ],
-                pagination: { currentPage: 1, perPage: 25, totalEntries: 10 }
-            };
-            categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
-
-            queryParams$.next({ inode: 'inode-1' });
+            store.navigateToChildren(MOCK_CATEGORIES[0]);
             spectator.flushEffects();
 
             store.createCategory({ categoryName: 'Child Category' });
@@ -506,9 +342,9 @@ describe('DotCategoriesListStore', () => {
             );
         });
 
-        it('should trigger loadCategories when parentInode changes via query params', () => {
+        it('should trigger loadCategories when parentInode changes', () => {
             categoriesService.getChildrenPaginated.mockClear();
-            queryParams$.next({ inode: 'inode-1' });
+            store.navigateToChildren(MOCK_CATEGORIES[0]);
             spectator.flushEffects();
 
             expect(categoriesService.getChildrenPaginated).toHaveBeenCalled();

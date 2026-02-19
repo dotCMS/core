@@ -2,8 +2,6 @@ import { patchState, signalStore, withHooks, withMethods, withState } from '@ngr
 import { EMPTY, Observable } from 'rxjs';
 
 import { effect, inject, untracked } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
@@ -23,7 +21,6 @@ interface DotCategoriesListState {
     selectedCategories: DotCategory[];
     breadcrumbs: MenuItem[];
     parentInode: string | null;
-    parentName: string | null;
     totalRecords: number;
     page: number;
     rows: number;
@@ -38,7 +35,6 @@ const initialState: DotCategoriesListState = {
     selectedCategories: [],
     breadcrumbs: [],
     parentInode: null,
-    parentName: null,
     totalRecords: 0,
     page: 1,
     rows: 25,
@@ -53,8 +49,6 @@ export const DotCategoriesListStore = signalStore(
     withMethods((store) => {
         const categoriesService = inject(DotCategoriesService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
-        const router = inject(Router);
-        const route = inject(ActivatedRoute);
 
         function loadCategories() {
             patchState(store, { status: 'loading' });
@@ -83,53 +77,8 @@ export const DotCategoriesListStore = signalStore(
                     })
                 )
                 .subscribe((response) => {
-                    const categories = response.entity;
-                    const firstCategory = categories[0];
-                    const parentList = firstCategory?.parentList ?? [];
-
-                    let breadcrumbs: MenuItem[];
-
-                    if (!store.parentInode()) {
-                        // Root level — no breadcrumbs
-                        breadcrumbs = [];
-                    } else if (parentList.length) {
-                        // parentList contains ancestors of the children being listed.
-                        // It includes the current parent we navigated into.
-                        // We need the full trail: all items in parentList that are NOT
-                        // the top-level root, plus the current parent from query params.
-                        // Actually, parentList already represents the path from
-                        // top-level down to the current parent. We just need to use it
-                        // and append the current parent if it's not already the last item.
-                        const fromApi = parentList.map((p) => ({
-                            label: p.name,
-                            id: p.inode
-                        }));
-                        const currentInode = store.parentInode();
-                        const lastInApi = fromApi[fromApi.length - 1];
-
-                        if (lastInApi && lastInApi.id === currentInode) {
-                            // parentList already ends with the current parent
-                            breadcrumbs = fromApi;
-                        } else {
-                            // Append current parent to complete the trail
-                            breadcrumbs = [
-                                ...fromApi,
-                                { label: store.parentName() ?? '', id: currentInode }
-                            ];
-                        }
-                    } else {
-                        // No parentList (empty child list) — keep existing breadcrumbs
-                        breadcrumbs = store.breadcrumbs();
-                    }
-
-                    const parentName = breadcrumbs.length
-                        ? (breadcrumbs[breadcrumbs.length - 1].label as string)
-                        : store.parentName();
-
                     patchState(store, {
-                        categories,
-                        breadcrumbs,
-                        parentName,
+                        categories: response.entity,
                         totalRecords: response.pagination?.totalEntries ?? 0,
                         status: 'loaded'
                     });
@@ -171,26 +120,37 @@ export const DotCategoriesListStore = signalStore(
             },
 
             navigateToChildren(category: DotCategory) {
-                router.navigate([], {
-                    relativeTo: route,
-                    queryParams: { inode: category.inode, name: category.categoryName },
-                    queryParamsHandling: 'merge'
+                const breadcrumbs = [
+                    ...store.breadcrumbs(),
+                    { label: category.categoryName, id: category.inode }
+                ];
+                patchState(store, {
+                    breadcrumbs,
+                    parentInode: category.inode,
+                    page: 1,
+                    filter: '',
+                    selectedCategories: []
                 });
             },
 
             navigateToBreadcrumb(index: number) {
                 if (index < 0) {
-                    router.navigate([], {
-                        relativeTo: route,
-                        queryParams: { inode: null, name: null },
-                        queryParamsHandling: 'merge'
+                    patchState(store, {
+                        breadcrumbs: [],
+                        parentInode: null,
+                        page: 1,
+                        filter: '',
+                        selectedCategories: []
                     });
                 } else {
-                    const breadcrumb = store.breadcrumbs()[index];
-                    router.navigate([], {
-                        relativeTo: route,
-                        queryParams: { inode: breadcrumb?.id, name: breadcrumb?.label },
-                        queryParamsHandling: 'merge'
+                    const breadcrumbs = store.breadcrumbs().slice(0, index + 1);
+                    const parentInode = breadcrumbs[breadcrumbs.length - 1]?.id as string;
+                    patchState(store, {
+                        breadcrumbs,
+                        parentInode,
+                        page: 1,
+                        filter: '',
+                        selectedCategories: []
                     });
                 }
             },
@@ -224,24 +184,6 @@ export const DotCategoriesListStore = signalStore(
     withHooks((store) => {
         return {
             onInit() {
-                const route = inject(ActivatedRoute);
-
-                // Subscribe to query params to sync inode and parent name
-                route.queryParams.pipe(takeUntilDestroyed()).subscribe((params) => {
-                    const inode = params['inode'] || null;
-                    const name = params['name'] || null;
-                    if (inode !== store.parentInode()) {
-                        patchState(store, {
-                            parentInode: inode,
-                            parentName: name,
-                            page: 1,
-                            filter: '',
-                            selectedCategories: []
-                        });
-                    }
-                });
-
-                // Auto-reload when state changes
                 effect(() => {
                     store.filter();
                     store.page();

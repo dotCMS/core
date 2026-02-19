@@ -93,7 +93,10 @@ export class DotCategoriesListComponent {
     }
 
     openCreateDialog(): void {
-        const parentName = this.store.parentName();
+        const breadcrumbs = this.store.breadcrumbs();
+        const parentName = breadcrumbs.length
+            ? (breadcrumbs[breadcrumbs.length - 1].label as string)
+            : null;
         const ref = this.dialogService.open(DotCategoriesCreateComponent, {
             header: this.dotMessageService.get('categories.add.category'),
             width: '500px',
