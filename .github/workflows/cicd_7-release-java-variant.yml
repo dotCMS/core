@@ -28,7 +28,7 @@
 #
 
 name: '-7 Release Java Variant'
-run-name: 'Release Java Variant - ${{ github.event_name == ''workflow_dispatch'' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(" [{0}]", inputs.java_version) || "" }}'
+run-name: "Release Java Variant - ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
 
 on:
   push:

@@ -11,7 +11,7 @@
 # - Final reporting of the workflow status
 
 name: '-3 Trunk Workflow'
-run-name: 'Trunk${{ inputs.java-version && format(" [{0}]", inputs.java-version) || "" }}'
+run-name: "Trunk${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
 
 on:
   push:
