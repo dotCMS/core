@@ -88,14 +88,19 @@
             <td data-testid="category-children">{{ category.childrenCount }}</td>
             <td data-testid="category-sort-order">{{ category.sortOrder }}</td>
             <td (click)="$event.stopPropagation()">
+                <p-menu
+                    #rowMenu
+                    [model]="getRowMenuItems(category)"
+                    [popup]="true"
+                    data-testid="category-row-menu" />
                 <p-button
-                    icon="pi pi-pencil"
+                    icon="pi pi-ellipsis-v"
                     [rounded]="true"
                     [text]="true"
                     severity="secondary"
-                    (onClick)="openEditDialog(category)"
-                    [attr.aria-label]="'categories.edit.category' | dm"
-                    data-testid="category-edit-btn" />
+                    (onClick)="rowMenu.toggle($event)"
+                    [attr.aria-label]="'categories.actions' | dm"
+                    data-testid="category-actions-btn" />
             </td>
         </tr>
     </ng-template>

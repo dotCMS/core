@@ -219,20 +219,80 @@ describe('DotCategoriesListComponent', () => {
         });
     });
 
-    describe('Edit Button', () => {
-        it('should render edit button in each row', () => {
+    describe('Actions Menu', () => {
+        it('should render actions button in each row', () => {
             spectator.detectChanges();
-            const editBtns = spectator.queryAll(byTestId('category-edit-btn'));
-            expect(editBtns.length).toBe(MOCK_CATEGORIES.length);
+            const actionBtns = spectator.queryAll(byTestId('category-actions-btn'));
+            expect(actionBtns.length).toBe(MOCK_CATEGORIES.length);
         });
 
-        it('should call openEditDialog when edit button clicked', () => {
+        it('should return menu items with edit, permissions, and delete', () => {
+            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
+            expect(items).toHaveLength(3);
+            expect(items[0].label).toBe('categories.edit');
+            expect(items[1].label).toBe('categories.permissions');
+            expect(items[2].label).toBe('categories.delete');
+        });
+
+        it('should call openEditDialog from edit menu item', () => {
             const spy = jest.spyOn(spectator.component, 'openEditDialog');
-            spectator.detectChanges();
-            const editBtnHost = spectator.query(byTestId('category-edit-btn'));
-            const button = editBtnHost?.querySelector('button');
-            spectator.click(button!);
+            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
+            items[0].command!({} as never);
+            expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
+        });
+
+        it('should call openPermissionsDialog from permissions menu item', () => {
+            const spy = jest.spyOn(spectator.component, 'openPermissionsDialog');
+            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
+            items[1].command!({} as never);
             expect(spy).toHaveBeenCalled();
+        });
+
+        it('should call confirmDeleteSingle from delete menu item', () => {
+            const spy = jest.spyOn(spectator.component, 'confirmDeleteSingle');
+            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
+            items[2].command!({} as never);
+            expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
+        });
+    });
+
+    describe('confirmDeleteSingle', () => {
+        it('should show confirmation dialog and delete on accept', () => {
+            const confirmationService = spectator.inject(ConfirmationService, true);
+            const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+
+            spectator.component.confirmDeleteSingle(MOCK_CATEGORIES[0]);
+
+            expect(confirmSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    closable: true,
+                    closeOnEscape: true
+                })
+            );
+
+            const acceptFn = confirmSpy.mock.calls[0][0].accept as () => void;
+            acceptFn();
+
+            expect(store.setSelectedCategories).toHaveBeenCalledWith([MOCK_CATEGORIES[0]]);
+            expect(store.deleteCategories).toHaveBeenCalled();
+        });
+    });
+
+    describe('openPermissionsDialog', () => {
+        it('should open an empty dialog with permissions header', () => {
+            const dialogService = spectator.inject(DialogService, true);
+            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
+
+            spectator.component.openPermissionsDialog();
+
+            expect(openSpy).toHaveBeenCalledWith(
+                null,
+                expect.objectContaining({
+                    header: 'categories.permissions',
+                    closable: true,
+                    closeOnEscape: true
+                })
+            );
         });
     });
 

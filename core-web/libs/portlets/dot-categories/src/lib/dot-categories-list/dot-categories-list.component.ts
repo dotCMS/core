@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -12,6 +12,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -37,6 +38,7 @@ import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categ
         InputIconModule,
         ConfirmDialogModule,
         BreadcrumbModule,
+        MenuModule,
         ToolbarModule,
         DotMessagePipe
     ],
@@ -90,6 +92,48 @@ export class DotCategoriesListComponent {
 
     onRowClick(category: DotCategory): void {
         this.store.navigateToChildren(category);
+    }
+
+    getRowMenuItems(category: DotCategory): MenuItem[] {
+        return [
+            {
+                label: this.dotMessageService.get('categories.edit'),
+                command: () => this.openEditDialog(category)
+            },
+            {
+                label: this.dotMessageService.get('categories.permissions'),
+                command: () => this.openPermissionsDialog()
+            },
+            {
+                label: this.dotMessageService.get('categories.delete'),
+                command: () => this.confirmDeleteSingle(category)
+            }
+        ];
+    }
+
+    openPermissionsDialog(): void {
+        this.dialogService.open(null as never, {
+            header: this.dotMessageService.get('categories.permissions'),
+            width: '500px',
+            closable: true,
+            closeOnEscape: true
+        });
+    }
+
+    confirmDeleteSingle(category: DotCategory): void {
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get('categories.confirm.delete.message', '1'),
+            header: this.dotMessageService.get('categories.confirm.delete.header'),
+            acceptButtonStyleClass: 'p-button-outlined',
+            rejectButtonStyleClass: 'p-button-primary',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            accept: () => {
+                this.store.setSelectedCategories([category]);
+                this.store.deleteCategories();
+            }
+        });
     }
 
     openCreateDialog(): void {
