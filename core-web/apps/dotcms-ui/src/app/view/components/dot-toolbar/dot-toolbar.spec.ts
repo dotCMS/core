@@ -11,6 +11,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import {
+    DotCurrentUserService,
     DotEventsService,
     DotPropertiesService,
     DotRouterService,
@@ -28,7 +29,12 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { MockDotRouterService, mockSites, SiteServiceMock } from '@dotcms/utils-testing';
+import {
+    DotCurrentUserServiceMock,
+    MockDotRouterService,
+    mockSites,
+    SiteServiceMock
+} from '@dotcms/utils-testing';
 
 import { DotToolbarAnnouncementsComponent } from './components/dot-toolbar-announcements/dot-toolbar-announcements.component';
 import { DotToolbarNotificationsComponent } from './components/dot-toolbar-notifications/dot-toolbar-notifications.component';
@@ -96,6 +102,7 @@ describe('DotToolbarComponent', () => {
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(DotPropertiesService, {
                 getFeatureFlag: jest.fn().mockImplementation(() => of(true))
             }),

@@ -5,11 +5,13 @@
         [modal]="true"
         [style]="{ width: '500px' }"
         appendTo="body"
-        (visibleChange)="closeDialog()">
+        (visibleChange)="closeDialog()"
+        data-testid="dot-add-persona-dialog">
         <dot-create-persona-form
             (isValid)="handlerFormValidState($event)"
             [personaName]="personaName"
-            #personaForm></dot-create-persona-form>
+            #personaForm
+            data-testid="dot-create-persona-form"></dot-create-persona-form>
         @if (dialogActions) {
             <ng-template pTemplate="footer">
                 @if (dialogActions.cancel) {
@@ -18,14 +20,14 @@
                         [disabled]="dialogActions.cancel.disabled"
                         severity="secondary"
                         (click)="dialogActions.cancel.action()"
-                        data-testId="dotDialogCancelAction"></p-button>
+                        data-testid="dot-add-persona-dialog-cancel"></p-button>
                 }
                 @if (dialogActions.accept) {
                     <p-button
                         [label]="dialogActions.accept.label"
                         [disabled]="dialogActions.accept.disabled"
                         (click)="dialogActions.accept.action()"
-                        data-testId="dotDialogAcceptAction"></p-button>
+                        data-testid="dot-add-persona-dialog-accept"></p-button>
                 }
             </ng-template>
         }
