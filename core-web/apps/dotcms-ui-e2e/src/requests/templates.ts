@@ -2,7 +2,7 @@ import { APIRequestContext, expect } from '@playwright/test';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
 import { Template } from '../models/template.model';
-import { admin1 } from '../tests/auth/credentialsData';
+import { admin1 } from '../utils/credentialsData';
 
 type CreateTemplate = Omit<Template, 'identifier'>;
 

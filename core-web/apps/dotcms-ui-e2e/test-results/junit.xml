@@ -1,18 +1,111 @@
-<testsuites id="" name="" tests="7" failures="0" skipped="0" errors="0" time="6.516632">
-<testsuite name="tests/login/login.spec.ts" timestamp="2025-09-12T21:54:10.348Z" hostname="chromium" tests="7" failures="0" skipped="0" time="28.061" errors="0">
-<testcase name="Verify Login Redirect" classname="tests/login/login.spec.ts" time="3.282">
+<testsuites id="" name="" tests="15" failures="0" skipped="0" errors="0" time="14.669883000000002">
+<testsuite name="tests/auth/login.spec.ts" timestamp="2026-02-19T14:33:48.835Z" hostname="chromium" tests="7" failures="0" skipped="0" time="66.062" errors="0">
+<testcase name="Verify Login Redirect" classname="tests/auth/login.spec.ts" time="6.791">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Verify-Login-Redirect-chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
-<testcase name="Try Login with Admin User using LoginPage" classname="tests/login/login.spec.ts" time="5.884">
+<testcase name="Try Login with Admin User using LoginPage" classname="tests/auth/login.spec.ts" time="12.103">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Try-Login-with-Admin-User-using-LoginPage-chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
-<testcase name="Inspect Login Page" classname="tests/login/login.spec.ts" time="3.633">
+<testcase name="Inspect Login Page" classname="tests/auth/login.spec.ts" time="8.104">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Inspect-Login-Page-chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
-<testcase name="Login with Valid Credentials 1: admin@dotcms.com" classname="tests/login/login.spec.ts" time="3.805">
+<testcase name="Login with Valid Credentials 1: admin@dotcms.com" classname="tests/auth/login.spec.ts" time="10.027">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Login-wit-53602-dentials-1-admin-dotcms-com-chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
-<testcase name="Login with Valid Credentials 2: chris@dotcms.com" classname="tests/login/login.spec.ts" time="3.965">
+<testcase name="Login with Valid Credentials 2: chris@dotcms.com" classname="tests/auth/login.spec.ts" time="9.707">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Login-wit-a001c-dentials-2-chris-dotcms-com-chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
-<testcase name="Login with invalid Credentials: admin@dotcms.com" classname="tests/login/login.spec.ts" time="3.691">
+<testcase name="Login with invalid Credentials: admin@dotcms.com" classname="tests/auth/login.spec.ts" time="9.991">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Login-wit-898f9-redentials-admin-dotcms-com-chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
-<testcase name="Login with invalid Credentials: chris2@dotcms.com" classname="tests/login/login.spec.ts" time="3.801">
+<testcase name="Login with invalid Credentials: chris2@dotcms.com" classname="tests/auth/login.spec.ts" time="9.339">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-login-Login-wit-42dde-edentials-chris2-dotcms-com-chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+</testsuite>
+<testsuite name="tests/auth/translations.spec.ts" timestamp="2026-02-19T14:33:48.835Z" hostname="chromium" tests="8" failures="0" skipped="0" time="22.811" errors="0">
+<testcase name="Validate Translation: español (España)" classname="tests/auth/translations.spec.ts" time="6.777">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Validate-Translation-español-España--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: italiano (Italia)" classname="tests/auth/translations.spec.ts" time="2.393">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Va-a7497-ranslation-italiano-Italia--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: français (France)" classname="tests/auth/translations.spec.ts" time="2.515">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Va-08a71-ranslation-français-France--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: Deutsch (Deutschland)" classname="tests/auth/translations.spec.ts" time="2.554">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Va-34b26-lation-Deutsch-Deutschland--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: 中文 (中国)" classname="tests/auth/translations.spec.ts" time="2.235">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Validate-Translation-中文-中国--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: Nederlands (Nederland)" classname="tests/auth/translations.spec.ts" time="2.177">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Va-4242c-ation-Nederlands-Nederland--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: русский (Россия)" classname="tests/auth/translations.spec.ts" time="1.997">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Validate-Translation-русский-Россия--chromium/trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Validate Translation: suomi (Suomi)" classname="tests/auth/translations.spec.ts" time="2.163">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|tests-auth-translations-Validate-Translation-suomi-Suomi--chromium/trace.zip]]
+]]>
+</system-out>
 </testcase>
 </testsuite>
 </testsuites>

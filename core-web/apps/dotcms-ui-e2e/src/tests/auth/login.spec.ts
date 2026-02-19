@@ -1,7 +1,7 @@
 import { LoginPage } from '@pages';
 import { expect, test } from '@playwright/test';
 
-import { validCredentials, wrong1, wrong2 } from './credentialsData';
+import { validCredentials, wrong1, wrong2 } from '../../utils/credentialsData';
 
 /**
  * Test to verify redirect behavior from /dotAdmin/#/ to /public/login
