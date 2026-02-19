@@ -122,6 +122,7 @@ jobs:
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
       latest: ${{ needs.release-prepare.outputs.is_latest == 'true' }}
+      deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
       publish-npm-sdk-libs: false

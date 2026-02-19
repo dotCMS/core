@@ -80,6 +80,9 @@ on:
       deploy-dev-image:
         default: false
         type: boolean
+      deploy-cli:
+        default: false
+        type: boolean
       publish-npm-cli:
         default: false
         type: boolean
@@ -300,11 +303,11 @@ jobs:
 
       # Deploy CLI artifacts to JFrog Artifactory
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
-      # Skipped for manual environment (feature branch builds should not publish CLI artifacts)
+      # Skipped when deploy-cli is false (e.g., manual builds should not publish CLI artifacts)
       - name: CLI Deploy
         continue-on-error: true
         id: cli_deploy
-        if: steps.get-sdkman-version.outputs.java_suffix == '' && inputs.environment != 'manual'
+        if: inputs.deploy-cli && steps.get-sdkman-version.outputs.java_suffix == ''
         uses: ./.github/actions/core-cicd/deployment/deploy-jfrog
         with:
           artifactory-username: ${{ secrets.EE_REPO_USERNAME }}

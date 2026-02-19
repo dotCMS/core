@@ -130,6 +130,7 @@ jobs:
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      deploy-cli: true
       publish-npm-sdk-libs: ${{ fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
       # tag-identifier intentionally omitted: trunk uses only the environment name as its tag
