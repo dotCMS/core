@@ -1,6 +1,5 @@
 package com.dotcms.analytics.viewtool;
 
-import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -43,23 +42,32 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class GoogleAnalyticsTool implements ViewTool {
 
+    private static final String GOOGLE_ANALYTICS_PROPERTY = "googleAnalytics";
+
     private HttpServletRequest request;
-    private final HostWebAPI hostWebAPI;
+    private HostWebAPI hostWebAPI;
 
     /**
-     * Default constructor - uses WebAPILocator
+     * Default constructor - resolves HostWebAPI lazily via WebAPILocator
      */
     public GoogleAnalyticsTool() {
-        this(WebAPILocator.getHostWebAPI());
+        this(null);
     }
 
     /**
      * Constructor for testing/dependency injection
-     * 
-     * @param hostWebAPI the HostWebAPI to use
+     *
+     * @param hostWebAPI the HostWebAPI to use, or null to resolve lazily
      */
     public GoogleAnalyticsTool(final HostWebAPI hostWebAPI) {
         this.hostWebAPI = hostWebAPI;
+    }
+
+    private HostWebAPI getHostWebAPI() {
+        if (this.hostWebAPI == null) {
+            this.hostWebAPI = WebAPILocator.getHostWebAPI();
+        }
+        return this.hostWebAPI;
     }
 
     @Override
@@ -76,9 +84,9 @@ public class GoogleAnalyticsTool implements ViewTool {
      */
     public String getTrackingId() {
         try {
-            final Host site = hostWebAPI.getCurrentHostNoThrow(request);
+            final Host site = getHostWebAPI().getCurrentHostNoThrow(request);
             if (site != null) {
-                final String trackingId = site.getStringProperty(SiteResource.GOOGLE_ANALYTICS);
+                final String trackingId = site.getStringProperty(GOOGLE_ANALYTICS_PROPERTY);
                 if (UtilMethods.isSet(trackingId)) {
                     return trackingId;
                 }

@@ -1,6 +1,5 @@
 package com.dotcms.analytics.viewtool;
 
-import com.dotcms.rest.api.v1.site.SiteResource;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.HostWebAPI;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -46,7 +45,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingId_whenSet() {
         // Given: Site has GA tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-ABC123XYZ");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-ABC123XYZ");
 
         // When: Getting tracking ID
         String trackingId = tool.getTrackingId();
@@ -62,7 +61,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingId_whenNotSet() {
         // Given: Site has no GA tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn(null);
+        when(site.getStringProperty("googleAnalytics")).thenReturn(null);
 
         // When: Getting tracking ID
         String trackingId = tool.getTrackingId();
@@ -78,7 +77,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingId_whenEmpty() {
         // Given: Site has empty GA tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("");
 
         // When: Getting tracking ID
         String trackingId = tool.getTrackingId();
@@ -109,15 +108,15 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingCode_ga4Format() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-ABC123XYZ");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-ABC123XYZ");
 
         // When: Getting tracking code
         String trackingCode = tool.getTrackingCode();
 
         // Then: Should contain GA4 script elements
         assertNotNull(trackingCode);
-        assertTrue("Should contain gtag.js script tag", 
-                  trackingCode.contains("gtag.js?id=G-ABC123XYZ"));
+        assertTrue("Should contain gtag.js script tag",
+                  trackingCode.contains("gtag/js?id=G-ABC123XYZ"));
         assertTrue("Should contain gtag config", 
                   trackingCode.contains("gtag('config', 'G-ABC123XYZ')"));
         assertTrue("Should contain dataLayer", 
@@ -135,7 +134,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingCode_containsIdTwice() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-TEST123");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-TEST123");
 
         // When: Getting tracking code
         String trackingCode = tool.getTrackingCode();
@@ -155,7 +154,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingCode_whenNoTrackingId() {
         // Given: Site has no GA tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn(null);
+        when(site.getStringProperty("googleAnalytics")).thenReturn(null);
 
         // When: Getting tracking code
         String trackingCode = tool.getTrackingCode();
@@ -186,7 +185,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingCode_validHtml() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-REAL123");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-REAL123");
 
         // When: Getting tracking code
         String trackingCode = tool.getTrackingCode();
@@ -209,7 +208,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingCode_withSpecialCharacters() {
         // Given: Site has tracking ID with hyphens
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-ABC-123-XYZ");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-ABC-123-XYZ");
 
         // When: Getting tracking code
         String trackingCode = tool.getTrackingCode();
@@ -255,7 +254,7 @@ public class GoogleAnalyticsToolTest {
     public void testTrackingCode_noParams_fromSite() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITE123");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-SITE123");
 
         // When: Calling trackingCode()
         String trackingCode = tool.trackingCode();
@@ -263,7 +262,7 @@ public class GoogleAnalyticsToolTest {
         // Then: Should return tracking code with site's ID
         assertNotNull(trackingCode);
         assertTrue("Should contain site tracking ID", trackingCode.contains("G-SITE123"));
-        assertTrue("Should contain gtag.js script", trackingCode.contains("gtag.js?id=G-SITE123"));
+        assertTrue("Should contain gtag.js script", trackingCode.contains("gtag/js?id=G-SITE123"));
     }
 
     /**
@@ -273,7 +272,7 @@ public class GoogleAnalyticsToolTest {
     public void testTrackingCode_noParams_noSiteId() {
         // Given: Site has no GA tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn(null);
+        when(site.getStringProperty("googleAnalytics")).thenReturn(null);
 
         // When: Calling trackingCode()
         String trackingCode = tool.trackingCode();
@@ -289,7 +288,7 @@ public class GoogleAnalyticsToolTest {
     public void testTrackingCode_withCustomId() {
         // Given: Custom tracking ID provided (site ID doesn't matter)
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITE123");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-SITE123");
 
         // When: Calling trackingCode with custom ID
         String trackingCode = tool.trackingCode("G-CUSTOM456");
@@ -307,7 +306,7 @@ public class GoogleAnalyticsToolTest {
     public void testTrackingCode_withNullParam_fallsBackToSite() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITE789");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-SITE789");
 
         // When: Calling trackingCode with null
         String trackingCode = tool.trackingCode(null);
@@ -324,7 +323,7 @@ public class GoogleAnalyticsToolTest {
     public void testTrackingCode_withEmptyParam_fallsBackToSite() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-SITEABC");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-SITEABC");
 
         // When: Calling trackingCode with empty string
         String trackingCode = tool.trackingCode("");
@@ -357,7 +356,7 @@ public class GoogleAnalyticsToolTest {
     public void testGetTrackingCode_backwardCompatibility() {
         // Given: Site has GA4 tracking ID
         when(hostWebAPI.getCurrentHostNoThrow(request)).thenReturn(site);
-        when(site.getStringProperty(SiteResource.GOOGLE_ANALYTICS)).thenReturn("G-LEGACY123");
+        when(site.getStringProperty("googleAnalytics")).thenReturn("G-LEGACY123");
 
         // When: Calling deprecated getTrackingCode()
         @SuppressWarnings("deprecation")
