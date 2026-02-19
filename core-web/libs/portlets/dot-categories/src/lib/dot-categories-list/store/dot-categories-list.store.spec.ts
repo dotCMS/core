@@ -193,6 +193,43 @@ describe('DotCategoriesListStore', () => {
             ]);
         });
 
+        it('should preserve breadcrumbs when child list is empty', () => {
+            const mockWithParentList = {
+                entity: [
+                    {
+                        ...MOCK_CATEGORIES[0],
+                        parentList: [{ name: 'Parent Cat', key: 'parent', inode: 'parent-inode' }]
+                    }
+                ],
+                pagination: { currentPage: 1, perPage: 25, totalEntries: 1 }
+            };
+            categoriesService.getChildrenPaginated.mockReturnValue(of(mockWithParentList));
+
+            // First navigate into a parent that has children
+            queryParams$.next({ inode: 'parent-inode', name: 'Parent Cat' });
+            spectator.flushEffects();
+
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Parent Cat', id: 'parent-inode' }
+            ]);
+
+            // Now navigate deeper into a category with no children (empty response)
+            const emptyResponse = {
+                entity: [],
+                pagination: { currentPage: 1, perPage: 25, totalEntries: 0 }
+            };
+            categoriesService.getChildrenPaginated.mockReturnValue(of(emptyResponse));
+
+            queryParams$.next({ inode: 'leaf-inode', name: 'Leaf Cat' });
+            spectator.flushEffects();
+
+            // Breadcrumbs should be preserved, not wiped
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Parent Cat', id: 'parent-inode' }
+            ]);
+            expect(store.parentName()).toBe('Parent Cat');
+        });
+
         it('should set empty breadcrumbs at root level', () => {
             expect(store.breadcrumbs()).toEqual([]);
         });

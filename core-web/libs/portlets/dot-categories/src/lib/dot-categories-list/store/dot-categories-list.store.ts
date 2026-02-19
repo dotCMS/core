@@ -87,8 +87,12 @@ export const DotCategoriesListStore = signalStore(
                     const firstCategory = categories[0];
                     const parentList = firstCategory?.parentList ?? [];
 
+                    // Rebuild breadcrumbs from API parentList when available,
+                    // otherwise keep existing breadcrumbs (e.g. empty child list)
                     const breadcrumbs: MenuItem[] = store.parentInode()
-                        ? parentList.map((p) => ({ label: p.name, id: p.inode }))
+                        ? parentList.length
+                            ? parentList.map((p) => ({ label: p.name, id: p.inode }))
+                            : store.breadcrumbs()
                         : [];
 
                     const parentName = breadcrumbs.length
