@@ -106,7 +106,7 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
         map.put("folderDefaultFileType", folder.getDefaultFileType());
 
         if (depth >= maxDepth) {
-            Logger.warn(this, "Max folder depth (" + maxDepth
+            Logger.debug(this, () -> "Max folder depth (" + maxDepth
                     + ") reached for folder: " + folder.getPath());
             map.put("children", Collections.emptyList());
             return map;
