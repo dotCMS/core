@@ -32,9 +32,7 @@ const PORTLETS_ANGULAR: Route[] = [
     {
         path: 'categories',
         loadChildren: () =>
-            import('@portlets/dot-categories/dot-categories.routes').then(
-                (m) => m.dotCategoriesRoutes
-            )
+            import('@dotcms/portlets/dot-categories/portlet').then((m) => m.dotCategoriesRoutes)
     },
     {
         path: 'templates',
