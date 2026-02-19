@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
- * Provider for the {@code DotFolder} GraphQL root query field.
+ * Provider for the {@code DotFolderByPath} GraphQL root query field.
  * Returns a single {@link FolderCollectionTypeProvider#DOT_FOLDER_COLLECTION_ITEM}
  * representing a folder at a given path, with recursive children.
  */
@@ -21,14 +21,14 @@ public enum FolderCollectionFieldProvider implements GraphQLFieldsProvider {
 
     INSTANCE;
 
-    public static final String DOT_FOLDER = "DotFolder";
+    public static final String DOT_FOLDER_BY_PATH = "DotFolderByPath";
 
     @Override
     public Collection<GraphQLFieldDefinition> getFields() throws DotDataException {
         final GraphQLOutputType outputType = (GraphQLOutputType) FolderCollectionTypeProvider
                 .INSTANCE.getTypes().iterator().next();
         return Set.of(newFieldDefinition()
-                .name(DOT_FOLDER)
+                .name(DOT_FOLDER_BY_PATH)
                 .argument(GraphQLArgument.newArgument()
                         .name("path")
                         .type(new GraphQLNonNull(GraphQLString))

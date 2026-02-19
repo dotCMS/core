@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 class FolderCollectionDataFetcherTest {
 
     @Test
-    void defaultMaxDepth_isFive() {
-        assertEquals(5, FolderCollectionDataFetcher.DEFAULT_MAX_DEPTH);
+    void defaultMaxDepth_isThree() {
+        assertEquals(3, FolderCollectionDataFetcher.DEFAULT_MAX_DEPTH);
     }
 
     @Test

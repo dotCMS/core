@@ -19,15 +19,19 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * DataFetcher for the {@code DotFolder} GraphQL query.
+ * DataFetcher for the {@code DotFolderByPath} GraphQL query.
  * <p>
  * Returns the single folder at the given path. Sub-folders are available
  * through the recursive {@code children} field.
  * <p>
+ * <b>Performance note:</b> Children are eagerly loaded up to a configurable max depth
+ * ({@code GRAPHQL_FOLDER_COLLECTION_MAX_DEPTH}, default 3). For folder trees with many
+ * children at each level, this can result in a large number of database queries.
+ * <p>
  * Example query:
  * <pre>
  * {
- *   DotFolder(path: "/application/") {
+ *   DotFolderByPath(path: "/application/") {
  *     folderTitle
  *     folderPath
  *     children {
@@ -40,7 +44,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Object>> {
 
-    static final int DEFAULT_MAX_DEPTH = 5;
+    static final int DEFAULT_MAX_DEPTH = 3;
 
     @Override
     public Map<String, Object> get(final DataFetchingEnvironment environment)
@@ -95,6 +99,8 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
         map.put("folderDefaultFileType", folder.getDefaultFileType());
 
         if (depth >= maxDepth) {
+            Logger.warn(this, "Max folder depth (" + maxDepth
+                    + ") reached for folder: " + folder.getPath());
             map.put("children", Collections.emptyList());
             return map;
         }
@@ -109,7 +115,7 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
         } catch (Exception e) {
             Logger.error(this, "Error loading children for folder: "
                     + folder.getPath(), e);
-            map.put("children", Collections.emptyList());
+            map.put("children", null);
         }
 
         return map;
