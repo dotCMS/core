@@ -2,6 +2,8 @@ import { patchState, signalStore, withHooks, withMethods, withState } from '@ngr
 import { EMPTY, Observable } from 'rxjs';
 
 import { effect, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
@@ -49,6 +51,8 @@ export const DotCategoriesListStore = signalStore(
     withMethods((store) => {
         const categoriesService = inject(DotCategoriesService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const router = inject(Router);
+        const route = inject(ActivatedRoute);
 
         function loadCategories() {
             patchState(store, { status: 'loading' });
@@ -77,8 +81,17 @@ export const DotCategoriesListStore = signalStore(
                     })
                 )
                 .subscribe((response) => {
+                    const categories = response.entity;
+                    const firstCategory = categories[0];
+                    const parentList = firstCategory?.parentList ?? [];
+
+                    const breadcrumbs: MenuItem[] = store.parentInode()
+                        ? parentList.map((p) => ({ label: p.name, id: p.inode }))
+                        : [];
+
                     patchState(store, {
-                        categories: response.entity,
+                        categories,
+                        breadcrumbs,
                         totalRecords: response.pagination?.totalEntries ?? 0,
                         status: 'loaded'
                     });
@@ -120,37 +133,26 @@ export const DotCategoriesListStore = signalStore(
             },
 
             navigateToChildren(category: DotCategory) {
-                const breadcrumbs = [
-                    ...store.breadcrumbs(),
-                    { label: category.categoryName, id: category.inode }
-                ];
-                patchState(store, {
-                    breadcrumbs,
-                    parentInode: category.inode,
-                    page: 1,
-                    filter: '',
-                    selectedCategories: []
+                router.navigate([], {
+                    relativeTo: route,
+                    queryParams: { inode: category.inode },
+                    queryParamsHandling: 'merge'
                 });
             },
 
             navigateToBreadcrumb(index: number) {
                 if (index < 0) {
-                    patchState(store, {
-                        breadcrumbs: [],
-                        parentInode: null,
-                        page: 1,
-                        filter: '',
-                        selectedCategories: []
+                    router.navigate([], {
+                        relativeTo: route,
+                        queryParams: { inode: null },
+                        queryParamsHandling: 'merge'
                     });
                 } else {
-                    const breadcrumbs = store.breadcrumbs().slice(0, index + 1);
-                    const parentInode = breadcrumbs[breadcrumbs.length - 1]?.id as string;
-                    patchState(store, {
-                        breadcrumbs,
-                        parentInode,
-                        page: 1,
-                        filter: '',
-                        selectedCategories: []
+                    const breadcrumb = store.breadcrumbs()[index];
+                    router.navigate([], {
+                        relativeTo: route,
+                        queryParams: { inode: breadcrumb?.id },
+                        queryParamsHandling: 'merge'
                     });
                 }
             },
@@ -184,6 +186,22 @@ export const DotCategoriesListStore = signalStore(
     withHooks((store) => {
         return {
             onInit() {
+                const route = inject(ActivatedRoute);
+
+                // Subscribe to query params to sync inode
+                route.queryParams.pipe(takeUntilDestroyed()).subscribe((params) => {
+                    const inode = params['inode'] || null;
+                    if (inode !== store.parentInode()) {
+                        patchState(store, {
+                            parentInode: inode,
+                            page: 1,
+                            filter: '',
+                            selectedCategories: []
+                        });
+                    }
+                });
+
+                // Auto-reload when state changes
                 effect(() => {
                     store.filter();
                     store.page();

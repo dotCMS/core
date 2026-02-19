@@ -88,7 +88,7 @@ export class DotCategoriesListComponent {
         this.store.navigateToBreadcrumb(-1);
     }
 
-    onRowDblClick(category: DotCategory): void {
+    onRowClick(category: DotCategory): void {
         if (category.childrenCount > 0) {
             this.store.navigateToChildren(category);
         }

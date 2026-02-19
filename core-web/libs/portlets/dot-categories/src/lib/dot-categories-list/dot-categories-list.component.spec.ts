@@ -206,26 +206,33 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('Row Click', () => {
-        it('should call openEditDialog when category row clicked', () => {
-            const spy = jest.spyOn(spectator.component, 'openEditDialog');
+        it('should call navigateToChildren when row clicked and category has children', () => {
             spectator.detectChanges();
-            const row = spectator.query(byTestId('category-row'));
-            spectator.click(row!);
-            expect(spy).toHaveBeenCalled();
-        });
-    });
-
-    describe('Row Double Click', () => {
-        it('should call navigateToChildren on double click when category has children', () => {
-            spectator.detectChanges();
-            spectator.component.onRowDblClick(MOCK_CATEGORIES[0]);
+            spectator.component.onRowClick(MOCK_CATEGORIES[0]);
             expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
-        it('should not call navigateToChildren on double click when category has no children', () => {
+        it('should not call navigateToChildren when row clicked and category has no children', () => {
             spectator.detectChanges();
-            spectator.component.onRowDblClick(MOCK_CATEGORIES[1]);
+            spectator.component.onRowClick(MOCK_CATEGORIES[1]);
             expect(store.navigateToChildren).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Edit Button', () => {
+        it('should render edit button in each row', () => {
+            spectator.detectChanges();
+            const editBtns = spectator.queryAll(byTestId('category-edit-btn'));
+            expect(editBtns.length).toBe(MOCK_CATEGORIES.length);
+        });
+
+        it('should call openEditDialog when edit button clicked', () => {
+            const spy = jest.spyOn(spectator.component, 'openEditDialog');
+            spectator.detectChanges();
+            const editBtnHost = spectator.query(byTestId('category-edit-btn'));
+            const button = editBtnHost?.querySelector('button');
+            spectator.click(button!);
+            expect(spy).toHaveBeenCalled();
         });
     });
 

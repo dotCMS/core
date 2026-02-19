@@ -102,7 +102,7 @@ describe('DotCategoriesService', () => {
             });
 
         const req = spectator.expectOne(
-            '/api/v1/categories/children?filter=child&page=1&showChildrenCount=true&inode=parent-inode',
+            '/api/v1/categories/children?filter=child&page=1&showChildrenCount=true&inode=parent-inode&parentList=true',
             HttpMethod.GET
         );
         req.flush(mockResponse);
