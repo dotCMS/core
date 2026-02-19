@@ -64,6 +64,11 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
 
         final Host host = WebAPILocator.getHostWebAPI().getHost(request);
 
+        if (host == null) {
+            Logger.warn(this, "Unable to resolve host for request when fetching folder by path: " + path);
+            return null;
+        }
+
         final Folder folder = APILocator.getFolderAPI()
                 .findFolderByPath(path, host, user, true);
 

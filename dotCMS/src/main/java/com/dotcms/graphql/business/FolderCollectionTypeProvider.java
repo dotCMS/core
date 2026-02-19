@@ -48,7 +48,7 @@ public enum FolderCollectionTypeProvider implements GraphQLTypesProvider {
 
     @Override
     public Collection<? extends GraphQLType> getTypes() {
-        Logger.debug(this, () -> "Creating DotFolderCollectionItem types");
+        Logger.debug(this, ()->"Creating DotFolderCollectionItem types");
         return List.of(folderCollectionType);
     }
 }
