@@ -5,6 +5,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -112,8 +114,16 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
                     .map(child -> buildFolderMap(child, user, depth + 1, maxDepth))
                     .collect(Collectors.toList());
             map.put("children", childMaps);
+        } catch (DotSecurityException e) {
+            Logger.error(this, "Permission denied loading children for folder: "
+                    + folder.getPath(), e);
+            map.put("children", null);
+        } catch (DotDataException e) {
+            Logger.error(this, "Data error loading children for folder: "
+                    + folder.getPath(), e);
+            map.put("children", null);
         } catch (Exception e) {
-            Logger.error(this, "Error loading children for folder: "
+            Logger.error(this, "Unexpected error loading children for folder: "
                     + folder.getPath(), e);
             map.put("children", null);
         }
