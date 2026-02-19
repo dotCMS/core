@@ -11,6 +11,7 @@
 # - Final reporting of the workflow status
 
 name: '-3 Trunk Workflow'
+run-name: 'Trunk${{ inputs.java-version && format(" [{0}]", inputs.java-version) || "" }}'
 
 on:
   push:
@@ -131,6 +132,7 @@ jobs:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       publish-npm-sdk-libs: ${{ fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' && github.event_name != 'workflow_dispatch' }}
       environment: trunk
+      # tag-identifier intentionally omitted: trunk uses only the environment name as its tag
       java-version: ${{ github.event.inputs.java-version || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:

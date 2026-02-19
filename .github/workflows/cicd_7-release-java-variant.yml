@@ -28,6 +28,7 @@
 #
 
 name: '-7 Release Java Variant'
+run-name: 'Release Java Variant - ${{ github.event_name == ''workflow_dispatch'' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(" [{0}]", inputs.java_version) || "" }}'
 
 on:
   push:
@@ -100,7 +101,7 @@ jobs:
     needs: [ extract-version ]
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
-      validation-level: 'none'
+      change-detection: 'disabled'  # Release builds everything - no change detection needed
 
   # Build - standard build phase with Java version override
   build:
@@ -127,7 +128,9 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
-      environment: ${{ needs.extract-version.outputs.version }}
+      environment: 'release'
+      tag-identifier: ${{ needs.extract-version.outputs.version }}
+      omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
       deploy-dev-image: true
       java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
