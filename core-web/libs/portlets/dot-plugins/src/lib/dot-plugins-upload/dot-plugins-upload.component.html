@@ -1,0 +1,29 @@
+<p class="mb-4">{{ 'plugins.upload.instructions' | dm }}</p>
+
+<p-fileupload
+    mode="advanced"
+    [multiple]="true"
+    [accept]="'.jar'"
+    [chooseLabel]="'plugins.upload.choose-files' | dm"
+    chooseIcon="pi pi-upload"
+    (onSelect)="onFileSelect($event)"
+    (onClear)="onFileClear()"
+    [showUploadButton]="false"
+    [showCancelButton]="false"
+    data-testid="plugins-upload-files" />
+
+<div class="flex justify-end gap-2 mt-4">
+    <p-button
+        [label]="'plugins.cancel' | dm"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="close()"
+        data-testid="plugins-upload-cancel-btn" />
+    <p-button
+        [label]="'plugins.upload' | dm"
+        icon="pi pi-upload"
+        [disabled]="selectedFiles().length === 0"
+        [loading]="uploading()"
+        (onClick)="upload()"
+        data-testid="plugins-upload-submit-btn" />
+</div>
