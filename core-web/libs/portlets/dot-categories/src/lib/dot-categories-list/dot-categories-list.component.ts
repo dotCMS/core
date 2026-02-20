@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -12,7 +12,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { MenuModule } from 'primeng/menu';
+import { Menu, MenuModule } from 'primeng/menu';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -57,6 +57,8 @@ export class DotCategoriesListComponent {
     private searchSubject = new Subject<string>();
 
     readonly homeItem = { icon: 'pi pi-home' };
+    readonly rowMenu = viewChild<Menu>('rowMenu');
+    rowMenuItems: MenuItem[] = [];
 
     constructor() {
         this.searchSubject
@@ -94,8 +96,8 @@ export class DotCategoriesListComponent {
         this.store.navigateToChildren(category);
     }
 
-    getRowMenuItems(category: DotCategory): MenuItem[] {
-        return [
+    openRowMenu(event: Event, category: DotCategory): void {
+        this.rowMenuItems = [
             {
                 label: this.dotMessageService.get('categories.edit'),
                 command: () => this.openEditDialog(category)
@@ -109,6 +111,7 @@ export class DotCategoriesListComponent {
                 command: () => this.confirmDeleteSingle(category)
             }
         ];
+        this.rowMenu()?.toggle(event);
     }
 
     openPermissionsDialog(): void {
