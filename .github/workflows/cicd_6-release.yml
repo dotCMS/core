@@ -53,6 +53,16 @@ on:
         type: boolean
         default: true
         required: false
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open). Compiler release auto-defaults to Java major version.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        type: string
+        required: false
+        default: ''
 
 # No concurrency control - releases should complete without interruption
 concurrency:
@@ -64,8 +74,9 @@ jobs:
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    # Release builds everything - no change detection needed
     with:
-      validation-level: 'none'
+      change-detection: 'disabled'
 
   # Release Prepare - validates version, creates release branch, sets version
   release-prepare:
@@ -92,6 +103,8 @@ jobs:
       validate: false
       version: ${{ needs.release-prepare.outputs.release_version }}
       generate-docker: true
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     permissions:
       contents: read
       packages: write
@@ -110,6 +123,8 @@ jobs:
       reuse-previous-build: false
       publish-npm-cli: false
       publish-npm-sdk-libs: false
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -133,6 +148,8 @@ jobs:
       upload_javadocs: ${{ github.event.inputs.upload_javadocs == 'true' }}
       update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
       update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' }}
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     secrets:
       EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
       EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}

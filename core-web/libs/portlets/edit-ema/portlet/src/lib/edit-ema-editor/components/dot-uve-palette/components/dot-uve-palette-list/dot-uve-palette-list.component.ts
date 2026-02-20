@@ -334,6 +334,7 @@ export class DotUvePaletteListComponent implements OnInit {
      */
     #removeFavorite(contentType: DotCMSPaletteContentType) {
         this.#paletteListStore.removeFavorite(contentType.id);
+        this.$shouldHideControls.set(this.$contenttypes().length === 0);
         this.#messageService.add({
             severity: 'success',
             summary: this.#dotMessageService.get('uve.palette.favorite.remove.success.summary'),
@@ -348,6 +349,7 @@ export class DotUvePaletteListComponent implements OnInit {
      */
     #addFavorite(contentType: DotCMSPaletteContentType) {
         this.#paletteListStore.addFavorite(contentType);
+        this.$shouldHideControls.set(false);
         this.#messageService.add({
             severity: 'success',
             summary: this.#dotMessageService.get('uve.palette.favorite.add.success.summary'),

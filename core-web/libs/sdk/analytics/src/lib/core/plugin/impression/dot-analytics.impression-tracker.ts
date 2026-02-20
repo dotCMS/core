@@ -1,5 +1,3 @@
-import { getUVEState } from '@dotcms/uve';
-
 import {
     getViewportMetrics,
     isElementMeetingVisibilityThreshold
@@ -105,12 +103,6 @@ export class DotCMSImpressionTracker {
     public initialize(): void {
         // Early return if SSR
         if (!isBrowser()) {
-            return;
-        }
-
-        // Early return if in editor mode (check for UVE markers)
-        if (getUVEState()) {
-            this.logger.warn('Impression tracking disabled in editor mode');
             return;
         }
 

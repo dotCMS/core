@@ -11529,31 +11529,32 @@ paths:
       summary: List publishing jobs
       tags:
       - Publishing
-  /v1/publishing/retry:
-    post:
-      description: "Re-attempts sending bundles that were previously pushed but failed,\
-        \ partially failed, or succeeded but need re-synchronization. Supports bulk\
-        \ operations with per-bundle results."
-      operationId: retryBundles
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/RetryBundlesForm"
-        description: Retry request containing bundle IDs and options
-        required: true
+  /v1/publishing/purge:
+    delete:
+      description: "Removes all bundles matching the specified status filter. Cannot\
+        \ purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE).\
+        \ If no status specified, uses safe defaults (all terminal + queued statuses)."
+      operationId: purgePublishingJobs
+      parameters:
+      - description: "Comma-separated status values to purge. If omitted, uses safe\
+          \ defaults (all terminal + queued, excludes in-progress). Cannot include:\
+          \ BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE"
+        example: "SUCCESS,FAILED_TO_PUBLISH"
+        in: query
+        name: status
+        schema:
+          type: string
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRetryBundlesView"
-          description: Retry operation completed (check individual results for success/failure)
+                $ref: "#/components/schemas/ResponseEntityPurgeView"
+          description: Purge operation initiated (processes in background)
         "400":
           content:
             application/json: {}
-          description: "Invalid request parameters (e.g., empty bundleIds, invalid\
-            \ deliveryStrategy)"
+          description: Invalid status value or attempted to purge in-progress statuses
         "401":
           content:
             application/json: {}
@@ -11562,7 +11563,7 @@ paths:
           content:
             application/json: {}
           description: Forbidden - insufficient permissions
-      summary: Retry failed or successful bundles
+      summary: Bulk delete publishing jobs by status
       tags:
       - Publishing
   /v1/publishing/{bundleId}:
@@ -18319,8 +18320,9 @@ paths:
       - Tags
     post:
       description: "Creates one or more tags. Single tag = list with one element,\
-        \ multiple tags = list with multiple elements. This operation is idempotent\
-        \ - existing tags are returned without error."
+        \ multiple tags = list with multiple elements. The response separates newly\
+        \ created tags from duplicates (tags that already existed with the same name\
+        \ and site)."
       operationId: createTags
       requestBody:
         content:
@@ -18331,12 +18333,15 @@ paths:
           \ multiple tags = list with multiple elements."
         required: true
       responses:
-        "201":
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagListView"
-          description: Tags created successfully
+                type: object
+                description: Response with 'entity' containing 'created' (list of
+                  newly created RestTag) and 'duplicates' (list of already existing
+                  RestTag)
+          description: Tag creation result with 'created' and 'duplicates' lists
         "400":
           content:
             application/json: {}
@@ -18443,8 +18448,10 @@ paths:
       - Tags
   /v2/tags/import:
     post:
-      description: Imports tags from a CSV file with row-level error reporting. Returns
-        detailed statistics and error information for each failed row.
+      description: "Imports tags from a CSV file with row-level error reporting. Returns\
+        \ detailed statistics including successCount (newly created), duplicateCount\
+        \ (already existed), failureCount (errors), and error information for each\
+        \ failed row."
       operationId: importTags_1
       requestBody:
         content:
@@ -23115,14 +23122,14 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: List of bundle identifiers to retry
+      description: List of status names being purged
       example:
-      - bundle-123
-      - bundle-456
+      - SUCCESS
+      - FAILED_TO_PUBLISH
       items:
         type: string
-        description: List of bundle identifiers to retry
-        example: "[\"bundle-123\",\"bundle-456\"]"
+        description: List of status names being purged
+        example: "[\"SUCCESS\",\"FAILED_TO_PUBLISH\"]"
       properties:
         empty:
           type: boolean
@@ -24770,6 +24777,33 @@ components:
       - limit
       - offset
       - orderBy
+    PurgeResultView:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Confirmation message indicating the purge operation has started
+          example: Purge operation started. Results will be notified when complete.
+        statusesRequested:
+          type: array
+          description: List of status names being purged
+          example:
+          - SUCCESS
+          - FAILED_TO_PUBLISH
+          items:
+            type: string
+            description: List of status names being purged
+            example: "[\"SUCCESS\",\"FAILED_TO_PUBLISH\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - message
+      - statusesRequested
     PushPublishBean:
       type: object
       properties:
@@ -26066,6 +26100,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityPurgeView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/PurgeResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityResetPermissionsView:
       type: object
       properties:
@@ -26089,61 +26146,11 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityRestTagListView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/RestTag"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityRestTagView:
       type: object
       properties:
         entity:
           $ref: "#/components/schemas/RestTag"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityRetryBundlesView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/RetryBundleResultView"
         errors:
           type: array
           items:
@@ -27476,78 +27483,6 @@ components:
         uniqueBySession:
           type: integer
           format: int64
-    RetryBundleResultView:
-      type: object
-      properties:
-        assetCount:
-          type: integer
-          format: int32
-          description: Number of assets in the bundle
-          example: 47
-        bundleId:
-          type: string
-          description: Bundle identifier that was processed
-          example: 01HQXYZ123456789ABCDEFGHIJ
-        deliveryStrategy:
-          type: string
-          description: "Delivery strategy used: ALL_ENDPOINTS or FAILED_ENDPOINTS"
-          example: FAILED_ENDPOINTS
-        forcePush:
-          type: boolean
-          description: Whether force push was applied to this bundle
-          example: true
-        message:
-          type: string
-          description: Human-readable message describing the result
-          example: Bundle successfully re-queued for publishing
-        operation:
-          type: string
-          description: Publishing operation type
-          example: PUBLISH
-        success:
-          type: boolean
-          description: Whether the retry operation was successful
-          example: true
-      required:
-      - bundleId
-      - deliveryStrategy
-      - message
-      - success
-    RetryBundlesForm:
-      type: object
-      properties:
-        bundleIds:
-          type: array
-          description: List of bundle identifiers to retry
-          example:
-          - bundle-123
-          - bundle-456
-          items:
-            type: string
-            description: List of bundle identifiers to retry
-            example: "[\"bundle-123\",\"bundle-456\"]"
-          properties:
-            empty:
-              type: boolean
-            first:
-              type: string
-            last:
-              type: string
-        deliveryStrategy:
-          type: string
-          description: "Which endpoints to retry: ALL_ENDPOINTS sends to all, FAILED_ENDPOINTS\
-            \ sends only to previously failed endpoints"
-          enum:
-          - ALL_ENDPOINTS
-          - FAILED_ENDPOINTS
-          example: FAILED_ENDPOINTS
-        forcePush:
-          type: boolean
-          description: Force push to override existing content at endpoints. Automatically
-            true for SUCCESS/SUCCESS_WITH_WARNINGS bundles.
-          example: false
-      required:
-      - bundleIds
     Role:
       type: object
       properties:

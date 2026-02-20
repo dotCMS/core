@@ -32,11 +32,80 @@ frontend: &frontend
 
 cli: &cli
   - 'tools/dotcms-cli/**'
-  - *full_build_test
-  - *backend
 
 sdk_libs:
-  - 'core-web/libs/sdk/**'  
+  - 'core-web/libs/sdk/**'
+
+# PR area labeling filters
+# These are separate from test-triggering filters to avoid false positives
+# (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
+area_backend:
+  - 'dotCMS/**'
+  - 'dotcms-integration/**'
+  - 'dotcms-postman/**'
+  - 'test-karate/**'
+  - 'bom/**'
+  - 'build-parent/**'
+  - 'parent/**'
+  - 'osgi-base/**'
+  - 'plugins-core/**'
+  - 'maven-plugins/**'
+  - 'independent-projects/**'
+  - 'reports/**'
+  - 'pom.xml'
+
+area_frontend:
+  - 'core-web/**'
+  - 'dotCMS/src/main/webapp/html/**/*.{css,js}'
+
+area_cli:
+  - 'tools/dotcms-cli/**'
+
+area_sdk:
+  - 'core-web/libs/sdk/**'
+
+area_documentation:
+  - 'docs/**'
+  - '*.md'
+  - 'CLAUDE.md'
+  - '.github/**/*.md'
+  - 'core-web/*.md'
+  - 'dotCMS/*.md'
+  - 'tools/**/*.md'
+
+# IMPORTANT: Negation patterns (like '!pattern') do NOT work correctly with dorny/paths-filter
+#
+# Due to OR logic in dorny/paths-filter, separate negation patterns match ANY file not
+# matching the negation (e.g., '!.github/**/*.md' matches all files in core-web/, dotCMS/).
+# This is a known bug: https://github.com/dorny/paths-filter/issues/97
+#
+# Solution Options:
+# 1. Use explicit positive patterns (simple, clear) - PREFERRED for most cases
+#    Example: list each file/directory explicitly
+# 2. Use picomatch inline negation !(pattern) - ONLY when explicit listing is impractical
+#    Example (already used in backend filter): dotCMS/src/main/webapp/html/**/!(*.{css,js})
+#    This matches all files in the path EXCEPT .css and .js files
+#
+# For area_cicd, we use option 1: wildcards for directories with many files (workflows/,
+# actions/) and explicit paths for individual config files.
+#
+# This filter matches CI/CD code and configuration that affects build/test/deploy:
+# - GitHub Actions workflows (all files in workflows/)
+# - Custom GitHub Actions (all files in actions/)
+# - CI/CD configuration files (filters, labels, test matrix)
+#
+# Does NOT match (intentionally excluded by not listing):
+# - ISSUE_TEMPLATE/ and PULL_REQUEST_TEMPLATE/ (non-code metadata)
+# - data/ directory (reference data like slack-mappings.json)
+# - instructions/ directory (documentation)
+# - *.md files (documentation)
+# - copilot-instructions.md (AI tool configuration)
+area_cicd:
+  - '.github/workflows/**'
+  - '.github/actions/**'
+  - '.github/filters.yaml'
+  - '.github/area-labels.yml'
+  - '.github/test-matrix.yml'
 
 jvm_unit_test:
   - *backend
