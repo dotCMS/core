@@ -48,7 +48,7 @@ import java.util.Set;
 @IndexLibraryIndependent
 @IndexMetadata(
     access = IndexAccess.READ_ONLY,
-    engine = { IndexEngine.ELASTICSEARCH, IndexEngine.OPENSEARCH }
+    currentlySupports = { IndexEngine.ELASTICSEARCH }
 )
 public interface ContentletFactory {
 

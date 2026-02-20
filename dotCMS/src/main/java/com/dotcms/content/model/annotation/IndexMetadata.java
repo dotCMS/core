@@ -31,7 +31,7 @@ public @interface IndexMetadata {
      * Specifies which search engine(s) this class/method works with.
      * @return the supported index engine (default: ELASTICSEARCH)
      */
-    IndexEngine [] engine() default IndexEngine.ELASTICSEARCH;
+    IndexEngine [] currentlySupports() default IndexEngine.ELASTICSEARCH;
 
     /**
      * Optional notes about index usage, migration blockers, or special considerations.
