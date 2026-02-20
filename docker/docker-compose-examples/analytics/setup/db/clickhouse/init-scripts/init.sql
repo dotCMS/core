@@ -10,7 +10,7 @@
 --   Purpose: Raw analytics event stream (pageviews, content events,
 --            conversions, etc.). Grain: one row per event.
 -- - Table: content_events_counter
---   Purpose: Daily rollup of events per user/content/page for faster
+--   Purpose: Daily roll-up of events per user/content/page for faster
 --            querying. Grain: per day, per user, per identifier/title/type.
 --   Populated by: content_events_counter_mv.
 -- - Table: conversion_time
@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     --      Jitsu and Backend Data Collectors Properties
     -- ######################################################
     url String,
-    utc_time DateTime,
+    utc_time DateTime64(3,'UTC'),
     request_id String,
     sessionid String,
     sessionnew UInt8,
@@ -389,7 +389,10 @@ ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name,
 -- Inserts rows summarizing content presence before the conversion.
 -- =====================================================================
 CREATE MATERIALIZED VIEW clickhouse_test_db.content_presents_in_conversion_mv
-    REFRESH EVERY 15 MINUTE APPEND TO clickhouse_test_db.content_presents_in_conversion AS
+    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
+    -- REFRESH EVERY 10 SECOND
+    REFRESH EVERY 15 MINUTE
+    APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
     SELECT context_user_id,
            utc_time AS conversion_time,
@@ -469,10 +472,10 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
      session_states (incremental, mergeable session aggregates)
         ↓ (refreshable MV - finalize only recent sessions)
      session_facts (one row per session, dashboard-friendly)
-        ↓ (refreshable MVs - daily rollups)
-     engagement_daily + sessions_by_*_daily (small rollups for dashboards)
+        ↓ (refreshable MVs - daily roll-ups)
+     engagement_daily + sessions_by_*_daily (small roll-ups for dashboards)
         ↓
-     CubeJS reads from rollup tables and exposes metrics via API
+     CubeJS reads from roll-up tables and exposes metrics via API
 
     ┌───────────────────────────────────────────────┐
     │               Browser / Site                  │
@@ -523,7 +526,7 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
                  ▼                        ▼
     ┌─────────────────────────┐   ┌────────────────────────────┐
     │  engagement_daily       │   │ sessions_by_*_daily        │
-    │  (daily rollup)         │   │ (device / browser / lang)  │
+    │  (daily roll-up)        │   │ (device / browser / lang)  │
     │                         │   │                            │
     │ - total_sessions        │   │ - total_sessions           │
     │ - engaged_sessions      │   │ - engaged_sessions         │
@@ -551,14 +554,14 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
     │                                               │
     └───────────────────────────────────────────────┘
 
-   Data rollup = To take many detailed rows and aggregate them into fewer, higher-level rows.
+   Data roll-up = To take many detailed rows and aggregate them into fewer, higher-level rows.
 
    Key tenant scope:
      All data is scoped by BOTH:
        - customer_id  (tenant/customer)
        - cluster_id   (environment/cluster: prod/stage/etc.)
      Session identity is:
-       (customer_id, cluster_id, sessionid)
+       (customer_id, cluster_id, sessionid, context_site_id)
 
    Why this matters:
      - data isolation between customers
@@ -576,7 +579,7 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
      We assume some events can arrive late (ingestion delays, client retries, network issues). Therefore:
        - session_states is updated incrementally in real-time
        - session_facts is re-finalized for sessions active in a rolling time window (e.g., last 72h)
-       - daily rollups are recomputed for last N days (e.g., 90 days)
+       - daily roll-ups are recomputed for last N days (e.g., 90 days)
 
    • IMPORTANT:
      The heuristics for device and browser bucketing should be validated against your UA parser output.
@@ -873,7 +876,7 @@ INSERT INTO clickhouse_test_db.browser_family_fallback_rules VALUES
    Target: clickhouse_test_db.session_states
 
    Purpose:
-     - Runs on every insert to events table.
+     - Runs on every insert to the events table.
      - It takes only the NEWLY INSERTED BATCH and turns it into mergeable aggregate-state rows that get
        appended into session_states.
      - Writes those states into session_states where they will be merged with prior states.
@@ -932,11 +935,11 @@ SELECT
     e.sessionid,
 
     /* Session time window states */
-    minState(e._timestamp) AS min_ts_state,
-    maxState(e._timestamp) AS max_ts_state,
+    minState(e.utc_time) AS min_ts_state,
+    maxState(e.utc_time) AS max_ts_state,
 
     /* Session-scoped ownership */
-    argMaxState(e.context_site_id, e._timestamp) AS context_site_id_state,
+    argMaxState(e.context_site_id, e.utc_time) AS context_site_id_state,
 
     /* Event counters states */
     countState() AS total_events_state,
@@ -944,12 +947,12 @@ SELECT
     countIfState(e.event_type = 'conversion') AS conversions_state,
 
     /* Session UA stored as state (needed for fallback later) */
-    argMaxState(e.user_agent, e._timestamp) AS user_agent_state,
+    argMaxState(e.user_agent, e.utc_time) AS user_agent_state,
 
     /* "last seen" dimension states (tables-only values) */
-    argMaxState(device_category, e._timestamp) AS device_category_state,
-    argMaxState(browser_family, e._timestamp)  AS browser_family_state,
-    argMaxState(coalesce(language_id, '0'), e._timestamp) AS language_id_state
+    argMaxState(device_category, e.utc_time) AS device_category_state,
+    argMaxState(browser_family, e.utc_time)  AS browser_family_state,
+    argMaxState(coalesce(language_id, '0'), e.utc_time) AS language_id_state
 FROM clickhouse_test_db.events AS e
      /* Device mapping via table */
      LEFT JOIN clickhouse_test_db.device_category_map AS d_dev
@@ -981,12 +984,12 @@ GROUP BY (
    Role in pipeline: “finalized session snapshot” — one row per session, query-friendly
 
    Purpose:
-     - This is the first table in the pipeline that is meant to be read directly by downstream rollups and
+     - This is the first table in the pipeline that is meant to be read directly by downstream roll-ups and
        dashboards.Stores one finalized row per session with plain scalar values (per session aggregates).
      - This table represents “what happened in a session”, including duration, event counts, and the engaged
        flag. This gives you a stable, query-friendly “session dimension” with everything you need for engagement
        metrics.
-     - This is the "source of truth" for session-level analytics and is the input for daily rollups.
+     - This is the "source of truth" for session-level analytics and is the input for daily roll-ups.
 
    Why using ReplacingMergeTree?
      - Because we periodically "re-finalize" the same sessions as late events arrive.
@@ -1085,6 +1088,8 @@ CREATE TABLE clickhouse_test_db.session_facts
 
 ===================================================================================================== */
 CREATE MATERIALIZED VIEW clickhouse_test_db.session_facts_rmv
+    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
+    -- REFRESH EVERY 10 SECOND
     REFRESH EVERY 15 MINUTE
     TO clickhouse_test_db.session_facts
 AS
@@ -1209,7 +1214,7 @@ FROM
 
 
 /* =====================================================================================================
-   3) DAILY ENGAGEMENT ROLLUP (DASHBOARD READY)
+   3) DAILY ENGAGEMENT ROLL-UP (DASHBOARD READY)
    =====================================================================================================
 
    Object: Table
@@ -1266,7 +1271,7 @@ CREATE TABLE clickhouse_test_db.engagement_daily
 
     updated_at DateTime('UTC')
 )
-    /* Why replicate rollups?
+    /* Why replicate roll-ups?
         -> Refreshable MVs rewrite rows
         -> Each replica must agree on the final row version
         -> Otherwise, engagement rates can differ between replicas */
@@ -1291,8 +1296,8 @@ CREATE TABLE clickhouse_test_db.engagement_daily
    Target: clickhouse_test_db.engagement_daily
 
    Purpose:
-     - Periodically recompute daily rollups for recent days from the finalized session snapshot table
-       (session_facts) and writes the results into the dashboard-ready rollup table (engagement_daily).
+     - Periodically recompute daily roll-ups for recent days from the finalized session snapshot table
+       (session_facts) and writes the results into the dashboard-ready roll-up table (engagement_daily).
      - Here we typically roll up a wider window (e.g., last 90 days) because session_facts is already
        small and cheap to scan, we can afford to recompute aggregates for many days back — like 90 days —
        every time the MV refreshes (much smaller than raw events).
@@ -1301,10 +1306,12 @@ CREATE TABLE clickhouse_test_db.engagement_daily
    Start window (start_day):
      - Recompute last 90 days by default.
      - Tune based on retention needs + cost tolerance.
-     - This makes daily rollups correct even if session_facts rows are updated by late events.
+     - This makes daily roll-ups correct even if session_facts rows are updated by late events.
 
 ===================================================================================================== */
 CREATE MATERIALIZED VIEW clickhouse_test_db.engagement_daily_rmv
+    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
+    -- REFRESH EVERY 10 SECOND
     REFRESH EVERY 15 MINUTE
     TO clickhouse_test_db.engagement_daily
 AS
@@ -1336,10 +1343,10 @@ GROUP BY (
 
 
 /* =====================================================================================================
-   4) DIMENSION ROLLUPS (DEVICE / BROWSER / LANGUAGE)
+   4) DIMENSION ROLL-UPS (DEVICE / BROWSER / LANGUAGE)
    =====================================================================================================
 
-   These rollups power the "distribution" widgets:
+   These roll-ups power the "distribution" widgets:
      - Sessions by device
      - Sessions by browser
      - Sessions by language
@@ -1349,7 +1356,7 @@ GROUP BY (
      - show engaged% within bucket = engaged_sessions / total_sessions
      - show avg engaged time = total_duration_engaged / engaged_sessions
 
-   Therefore, each rollup stores BOTH:
+   Therefore, each roll-up stores BOTH:
      - total_sessions (all sessions in bucket)
      - engaged_sessions (subset)
      - total_duration_engaged_seconds (duration sum for engaged subset)
@@ -1369,7 +1376,7 @@ GROUP BY (
    Name: clickhouse_test_db.sessions_by_device_daily
    Engine: ReplacingMergeTree(updated_at)
    Written by: sessions_by_device_daily_rmv
-   Role: daily rollup for the “Sessions by Device” distribution widget
+   Role: daily roll-up for the “Sessions by Device” distribution widget
 
    Mental model:
    Think of this table as a daily per-site scoreboard by device category.
@@ -1412,6 +1419,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_device_daily
    Recomputes a bounded window (this script uses last 90 days via start_day)
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_device_daily_rmv
+    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
+    -- REFRESH EVERY 10 SECOND
     REFRESH EVERY 15 MINUTE
     TO clickhouse_test_db.sessions_by_device_daily
 AS
@@ -1447,7 +1456,7 @@ GROUP BY (
    Name: clickhouse_test_db.sessions_by_browser_daily
    Engine: ReplacingMergeTree(updated_at)
    Written by: sessions_by_browser_daily_rmv
-   Role: daily rollup for the “Sessions by Browser” distribution widget
+   Role: daily roll-up for the “Sessions by Browser” distribution widget
 
    Mental model:
    Think of this table as a daily per-site scoreboard by browser.
@@ -1488,6 +1497,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_browser_daily
    Same pattern as device: bounded window (e.g., last 90 days)
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_browser_daily_rmv
+    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
+    -- REFRESH EVERY 10 SECOND
     REFRESH EVERY 15 MINUTE
     TO clickhouse_test_db.sessions_by_browser_daily
 AS
@@ -1523,7 +1534,7 @@ GROUP BY (
    Name: clickhouse_test_db.sessions_by_language_daily
    Engine: ReplacingMergeTree(updated_at)
    Written by: sessions_by_language_daily_rmv
-   Role: daily rollup for “Sessions by Language” distribution widget
+   Role: daily roll-up for “Sessions by Language” distribution widget
 
    Mental model:
    Think of this table as a daily per-site scoreboard by language.
@@ -1564,6 +1575,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
    Same recompute model: scan session_facts for last N days (90)
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_language_daily_rmv
+    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
+    -- REFRESH EVERY 10 SECOND
     REFRESH EVERY 15 MINUTE
     TO clickhouse_test_db.sessions_by_language_daily
 AS
