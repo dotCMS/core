@@ -26,12 +26,10 @@ import com.google.common.collect.ImmutableMap;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.nio.file.Files;
@@ -47,15 +45,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.util.Strings;
 import org.apache.tools.zip.ZipEntry;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
@@ -78,14 +72,11 @@ import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.alias.get.GetAliasesRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheRequest;
 import org.elasticsearch.action.admin.indices.cache.clear.ClearIndicesCacheResponse;
-import org.elasticsearch.client.indices.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeRequest;
 import org.elasticsearch.action.admin.indices.forcemerge.ForceMergeResponse;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
@@ -96,6 +87,7 @@ import org.elasticsearch.client.Request;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.indices.CloseIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -575,7 +567,7 @@ public class ESIndexAPI {
 
     /**
      * Creates a new index.  If settings is null, the getDefaultIndexSettings() will be applied,
-     * if shards <1, then the default # of shards will be set
+	 * the shard property is ignored and instead we rely on a config/evn variable
      * @param indexName
      * @param settings
      * @param shards
@@ -589,12 +581,16 @@ public class ESIndexAPI {
 		AdminLogger.log(this.getClass(), "createIndex",
 			"Trying to create index: " + indexName + " with shards: " + shards);
 
-		shards = shards > 0 ? shards : Config.getIntProperty("es.index.number_of_shards", 1);
+		shards = Config.getIntProperty("es.index.number_of_shards", 1);
 
 		Map<String,Object> map  = (settings ==null) ? new HashMap<>() : new ObjectMapper().readValue(settings, LinkedHashMap.class);
 
+		// default to 0-1 replicas
+		String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
+
 		map.put("number_of_shards", shards);
-		map.put("index.auto_expand_replicas", "0-all");
+		map.put("index.auto_expand_replicas", autoExpandReplicas);
 		map.putIfAbsent("index.mapping.total_fields.limit", 10000);
 		map.putIfAbsent("index.mapping.nested_fields.limit", 10000);
 		map.putIfAbsent("index.query.default_field", Config.getStringProperty("ES_INDEX_QUERY_DEFAULT_FIELD", "catchall"));

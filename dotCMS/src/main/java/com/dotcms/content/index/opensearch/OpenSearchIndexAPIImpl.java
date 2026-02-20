@@ -93,11 +93,15 @@ public class OpenSearchIndexAPIImpl implements OpenSearchIndexAPI {
 
         shards = shards > 0 ? shards : Config.getIntProperty("opensearch.index.number_of_shards", 1);
 
+        // default to 0-1 replicas
+        String autoExpandReplicas = Config.getStringProperty("ES_INDEX_AUTO_EXPAND_REPLICAS", "0-1");
+
+
         Map<String, Object> settingsMap = (settings == null) ? new HashMap<>() :
         objectMapper.readValue(settings, LinkedHashMap.class);
 
         settingsMap.put("index.number_of_shards", shards);
-        settingsMap.put("index.auto_expand_replicas", "0-all");
+        settingsMap.put("index.auto_expand_replicas", autoExpandReplicas);
         settingsMap.putIfAbsent("index.mapping.total_fields.limit", 10000);
         settingsMap.putIfAbsent("index.mapping.nested_fields.limit", 10000);
         settingsMap.putIfAbsent("index.query.default_field",
