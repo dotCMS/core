@@ -7,6 +7,6 @@ import { DotCategoriesListComponent } from '../dot-categories-list/dot-categorie
     standalone: true,
     imports: [DotCategoriesListComponent],
     template: '<dot-categories-list />',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DotCategoriesShellComponent {}
