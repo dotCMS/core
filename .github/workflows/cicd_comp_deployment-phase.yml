@@ -38,6 +38,16 @@ on:
       publish-npm-sdk-libs:
         default: false
         type: boolean
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        required: false
+        type: string
+        default: ''
+      artifact-suffix:
+        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        required: false
+        type: string
+        default: ''
     outputs:
       docker_tags:
         description: 'Docker image tags that were built'
@@ -87,14 +97,64 @@ jobs:
         id: get-sdkman-version
         shell: bash
         run: |
-          if [ -f .sdkmanrc ]; then
+          # Naming Convention for Java Variants:
+          # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
+          # - Maven artifacts: use dash separator (e.g., "-java25")
+          # - Docker tags: use underscore separator (e.g., "_java25")
+          #
+          # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
+          # Docker typically uses dash or no separator, but we use underscore to distinguish from
+          # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+          # This convention may be revisited in future.
+
+          # Use provided java-version if set, otherwise read from .sdkmanrc
+          if [ -n "${{ inputs.java-version }}" ]; then
+            SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
+            echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+
+            # Compute Java suffix for artifact isolation
+            # Priority: explicit artifact-suffix > derived from java-version major
+            if [ -n "${{ inputs.artifact-suffix }}" ]; then
+              RAW_SUFFIX="${{ inputs.artifact-suffix }}"
+              echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
+            else
+              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+              RAW_SUFFIX="java${JAVA_MAJOR}"
+              echo "Using derived artifact suffix: ${RAW_SUFFIX}"
+            fi
+
+            # Normalize: strip any leading separators, then add appropriate separator
+            while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
+              RAW_SUFFIX="${RAW_SUFFIX:1}"
+            done
+
+            # For Maven artifacts: use dash separator
+            MAVEN_SUFFIX="-${RAW_SUFFIX}"
+            # For Docker tags: use underscore separator
+            DOCKER_SUFFIX="_${RAW_SUFFIX}"
+
+            echo "Raw suffix: '${RAW_SUFFIX}'"
+            echo "Maven suffix: '${MAVEN_SUFFIX}'"
+            echo "Docker suffix: '${DOCKER_SUFFIX}'"
+          elif [ -f .sdkmanrc ]; then
             SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
-            echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
-            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
+            echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            RAW_SUFFIX=""
+            MAVEN_SUFFIX=""
+            DOCKER_SUFFIX=""
           else
             echo "No .sdkmanrc file found"
             exit 1
           fi
+
+          {
+            echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}"
+            echo "raw_suffix=${RAW_SUFFIX}"
+            echo "maven_suffix=${MAVEN_SUFFIX}"
+            echo "docker_suffix=${DOCKER_SUFFIX}"
+            # Legacy output for backwards compatibility
+            echo "java_suffix=${MAVEN_SUFFIX}"
+          } >> "$GITHUB_OUTPUT"
 
       # Clean up the runner to ensure a fresh environment
       - uses: ./.github/actions/core-cicd/cleanup-runner
@@ -109,14 +169,17 @@ jobs:
           build_run_id: ${{ inputs.artifact-run-id }}
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
-          latest: ${{ inputs.latest }}
+          docker-use-ref: false
+          version: ${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.docker_suffix }}
+          latest: ${{ inputs.latest && steps.get-sdkman-version.outputs.docker_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pull: true
+          artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           build_args: |
-            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.docker_suffix }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
       # Format tags for Slack notifications
@@ -124,6 +187,8 @@ jobs:
         id: format-tags
         run: |
           tags=''
+          # shellcheck disable=SC2206
+          # Reason: Intentional word splitting to create array from space-separated Docker tags
           tags_arr=( ${{ steps.docker_build.outputs.tags }} )
 
           for tag in "${tags_arr[@]}"
@@ -132,7 +197,7 @@ jobs:
             tags="${tags}\`${tag}\`"
           done
 
-          echo "formatted_tags=${tags}" >> $GITHUB_OUTPUT
+          echo "formatted_tags=${tags}" >> "$GITHUB_OUTPUT"
 
       # Build and push the dev Docker image (if required)
       - name: Build/Push Docker Dev Image
@@ -145,20 +210,24 @@ jobs:
           docker_context: dev-env
           commit_id: ${{ github.sha }}
           ref: ${{ inputs.environment }}
-          latest: true
+          docker-use-ref: false
+          version: ${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.docker_suffix }}
+          latest: ${{ steps.get-sdkman-version.outputs.docker_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           build_args: |
-            DOTCMS_DOCKER_TAG=${{ inputs.environment }}
+            DOTCMS_DOCKER_TAG=${{ inputs.environment }}${{ steps.get-sdkman-version.outputs.docker_suffix }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
 
       # Deploy CLI artifacts to JFrog Artifactory
+      # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       - name: CLI Deploy
         continue-on-error: true
         id: cli_deploy
+        if: steps.get-sdkman-version.outputs.java_suffix == ''
         uses: ./.github/actions/core-cicd/deployment/deploy-jfrog
         with:
           artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
@@ -166,9 +235,10 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # Publish CLI to NPM (if required)
+      # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       - name: CLI Publish
         id: cli_publish
-        if: inputs.publish-npm-cli
+        if: inputs.publish-npm-cli && steps.get-sdkman-version.outputs.java_suffix == ''
         uses: ./.github/actions/core-cicd/deployment/deploy-cli-npm
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

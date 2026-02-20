@@ -47,7 +47,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
 
     // Computed values for display
     readonly hasData = computed(() => this.summary() !== null);
-    readonly lastUpdated = signal<Date | null>(null);
 
     ngOnInit(): void {
         this.loadData();
@@ -73,7 +72,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
             next: (summary) => {
                 this.summary.set(summary);
                 this.loading.set(false);
-                this.lastUpdated.set(new Date());
             },
             error: (error) => {
                 const errorMessage = this.usageService.getErrorMessage(error);
@@ -83,10 +81,6 @@ export class DotUsageShellComponent implements OnInit, OnDestroy {
                 console.error('Failed to load usage data:', error);
             }
         });
-    }
-
-    onRefresh(): void {
-        this.loadData();
     }
 
     onRetry(): void {

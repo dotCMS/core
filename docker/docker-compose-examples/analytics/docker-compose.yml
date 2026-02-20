@@ -227,7 +227,7 @@ services:
 
   cube:
     container_name: cube
-    image: cubejs/cube:v0.35.12
+    image: cubejs/cube:v1.6.11
     ports:
       - ${CUBE_HOST_PORT:-4001}:4000
     environment:
@@ -260,7 +260,7 @@ services:
 
   ch_server:
     container_name: ch_server
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:25.8
     ports:
       - "${CH_HOST_PORT:-8124}:8123"
     ulimits:
