@@ -241,7 +241,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ./.github/actions/legacy-release/sbom-generator
+      - uses: ./.github/actions/release/sbom-generator
         id: sbom-generator
         with:
           dotcms_version: ${{ inputs.release_version }}
