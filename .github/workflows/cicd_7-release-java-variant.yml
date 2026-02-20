@@ -41,10 +41,9 @@ on:
         required: true
         type: string
       java_version:
-        description: 'Java version to build (SDKMAN format, e.g., 25.0.1-open)'
+        description: 'Java version to build (SDKMAN format, e.g., 25.0.2-ms). For push-triggered builds this comes from the RELEASE_JAVA_VARIANT_VERSION repository variable.'
         required: true
         type: string
-        default: '25.0.1-open'
       artifact_suffix:
         description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
         required: false
