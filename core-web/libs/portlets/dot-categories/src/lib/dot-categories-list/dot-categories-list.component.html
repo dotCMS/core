@@ -88,17 +88,12 @@
             <td data-testid="category-children">{{ category.childrenCount }}</td>
             <td data-testid="category-sort-order">{{ category.sortOrder }}</td>
             <td (click)="$event.stopPropagation()">
-                <p-menu
-                    #rowMenu
-                    [model]="getRowMenuItems(category)"
-                    [popup]="true"
-                    data-testid="category-row-menu" />
                 <p-button
                     icon="pi pi-ellipsis-v"
                     [rounded]="true"
                     [text]="true"
                     severity="secondary"
-                    (onClick)="rowMenu.toggle($event)"
+                    (onClick)="openRowMenu($event, category)"
                     [attr.aria-label]="'categories.actions' | dm"
                     data-testid="category-actions-btn" />
             </td>
@@ -111,5 +106,12 @@
         </tr>
     </ng-template>
 </p-table>
+
+<p-menu
+    #rowMenu
+    [model]="rowMenuItems"
+    [popup]="true"
+    appendTo="body"
+    data-testid="category-row-menu" />
 
 <p-confirmDialog />

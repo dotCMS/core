@@ -226,8 +226,10 @@ describe('DotCategoriesListComponent', () => {
             expect(actionBtns.length).toBe(MOCK_CATEGORIES.length);
         });
 
-        it('should return menu items with edit, permissions, and delete', () => {
-            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
+        it('should set menu items and toggle menu on openRowMenu', () => {
+            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+
+            const items = spectator.component.rowMenuItems;
             expect(items).toHaveLength(3);
             expect(items[0].label).toBe('categories.edit');
             expect(items[1].label).toBe('categories.permissions');
@@ -236,22 +238,22 @@ describe('DotCategoriesListComponent', () => {
 
         it('should call openEditDialog from edit menu item', () => {
             const spy = jest.spyOn(spectator.component, 'openEditDialog');
-            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
-            items[0].command!({} as never);
+            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.rowMenuItems[0].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
         it('should call openPermissionsDialog from permissions menu item', () => {
             const spy = jest.spyOn(spectator.component, 'openPermissionsDialog');
-            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
-            items[1].command!({} as never);
+            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.rowMenuItems[1].command!({} as never);
             expect(spy).toHaveBeenCalled();
         });
 
         it('should call confirmDeleteSingle from delete menu item', () => {
             const spy = jest.spyOn(spectator.component, 'confirmDeleteSingle');
-            const items = spectator.component.getRowMenuItems(MOCK_CATEGORIES[0]);
-            items[2].command!({} as never);
+            spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
+            spectator.component.rowMenuItems[2].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
     });
