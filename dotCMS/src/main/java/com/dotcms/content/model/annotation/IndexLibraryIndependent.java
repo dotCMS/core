@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface NoExternalDependencies {
+public @interface IndexLibraryIndependent {
 
     /**
      * Describes the purpose or responsibility of this pure contract.

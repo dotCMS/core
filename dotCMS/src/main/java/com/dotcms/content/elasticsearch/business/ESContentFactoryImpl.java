@@ -15,14 +15,14 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.elasticsearch.ESQueryCache;
-import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
@@ -112,11 +112,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.ElasticsearchException;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.index.IndexNotFoundException;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Implementation class for the {@link ContentletFactory} interface. This class
@@ -127,6 +122,7 @@ import org.jetbrains.annotations.Nullable;
  * @since Mar 22, 2012
  *
  */
+@IndexLibraryIndependent
 public class ESContentFactoryImpl implements ContentletFactory {
 
     private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
@@ -765,7 +761,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     @Override
-    public Contentlet find(final String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    public Contentlet find(final String inode) throws DotStateException, DotDataException, DotSecurityException {
         return find(inode, false);
     }
 
@@ -777,12 +773,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @param ignoreStoryBlock if it is true, then if the {@link Contentlet} is loaded from cache then the StoryBlock are not refresh
      *                         if the {@link Contentlet} is loaded from Database then the SToryBlocks are not hydrated
      * @return
-     * @throws ElasticsearchException
      * @throws DotStateException
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public Contentlet find(final String inode, final boolean ignoreStoryBlock) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    public Contentlet find(final String inode, final boolean ignoreStoryBlock) throws DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
@@ -806,7 +801,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     }
     @Override
-    public Contentlet find(final String inode, String variant) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
+    public Contentlet find(final String inode, String variant) throws DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
         if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
@@ -1312,7 +1307,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
             final List<String> inodes = indexOperationsES.search("+conhost:" + hostId, limit, offset);
             return findContentlets(inodes);
 		} catch (Exception e) {
-			throw new ElasticsearchException(e.getMessage(), e);
+			throw new RuntimeException(e.getMessage(), e);
 		}
 	}
 
@@ -1567,42 +1562,6 @@ public class ESContentFactoryImpl implements ContentletFactory {
         return indexOperationsES.indexCount(qq);
     }
 
-    /**
-     * Determines the appropriate versioned index to use based on the provided query string.
-     * This method inspects the query to decide whether to return the live or working index.
-     * If no matching index is found, null is returned.
-     *
-     * @param query the search query used to determine the appropriate versioned index
-     * @return the name of the versioned index to use, or null if no suitable index is found
-     * @throws DotRuntimeException if the default versioned indices cannot be loaded
-     */
-    private @Nullable String inferVersionedIndex(String query) {
-        String indexNameToHit = null;
-        final Optional<VersionedIndices> optional = Try.of(()->APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices()).get();
-        if (optional.isEmpty()){
-            throw new DotRuntimeException("Unable to load default versioned indices, falling back to default index");
-        } else {
-            final VersionedIndices versionedIndices = optional.get();
-            final Optional<String> live = versionedIndices.live();
-            final Optional<String> working = versionedIndices.working();
-            if(query.contains("+live:true") && !query.contains("+deleted:true")) {
-                if(live.isPresent()){
-                    indexNameToHit = live.get();
-                } else {
-                    Logger.warn(this, "No live index found when inferring index for query: " + query);
-                }
-            } else {
-               if(working.isPresent()){
-                   indexNameToHit = working.get();
-               } else {
-                   Logger.warn(this, "No working index found when inferring index for query: " + query);
-               }
-            }
-            return indexNameToHit;
-        }
-    }
-
-
     @Override
     public SearchHits indexSearch(final String query, final int limit, final int offset, String sortBy) {
 
@@ -1627,47 +1586,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return PaginatedArrayList containing all search results
      */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-        PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
-
-        // Use the ESContentletScrollImpl inner class to handle all scroll logic
-        // Using configurable batch size instead of MAX_LIMIT for better memory management
-        try (ESContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
-                false, SCROLL_BATCH_SIZE.get(), sortBy)) {
-
-            contentletSearchList.setTotalResults(contentletScroll.getTotalHits());
-
-            // Fetch all batches (first batch is returned on first nextBatch() call)
-            List<ContentletSearch> batch;
-            while ((batch = contentletScroll.nextBatch()) != null && !batch.isEmpty()) {
-                contentletSearchList.addAll(batch);
-            }
-
-            Logger.debug(this.getClass(),
-                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
-                            contentletSearchList.getTotalResults(), query));
-
-        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
-            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
-            Logger.warn(this.getClass(), "----------------------------------------------");
-            Logger.warn(this.getClass(), String.format("Elasticsearch error for query: %s", query));
-            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
-            Logger.warn(this.getClass(), "----------------------------------------------");
-            return new PaginatedArrayList<>();
-        } catch (final IllegalStateException e) {
-            ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
-            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
-            throw new DotRuntimeException(e);
-        } catch (final Exception e) {
-            if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
-                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
-            }
-            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
-                    query, e.getMessage());
-            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
-            throw new DotRuntimeException(errorMsg, e);
-        }
-
-        return contentletSearchList;
+       return indexOperationsES.indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
     }
 
     /**
@@ -1702,7 +1621,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
-        return new ESContentletScrollImpl(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+       return indexOperationsES.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
     }
 
     /**
@@ -1721,7 +1640,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     @Override
-	public void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	public void removeUserReferences(String userId) throws DotDataException, DotStateException, DotSecurityException {
 	   User systemUser =  APILocator.getUserAPI().getSystemUser();
        User userToReplace = APILocator.getUserAPI().loadUserById(userId);
 	   updateUserReferences(userToReplace,systemUser.getUserId(), systemUser );
@@ -1736,7 +1655,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
          * @exception DotDataException There is a data inconsistency
          * @throws DotSecurityException
          */
-	public void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	public void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, DotSecurityException {
         final DotConnect dc = new DotConnect();
         try {
             dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ?");
@@ -2173,7 +2092,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	}
 
 	@Override
-	public void removeFolderReferences(final Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
+	public void removeFolderReferences(final Folder folder) throws DotDataException, DotStateException, DotSecurityException {
 	    Identifier folderId = null;
         try{
             folderId = APILocator.getIdentifierAPI().find(folder.getIdentifier());

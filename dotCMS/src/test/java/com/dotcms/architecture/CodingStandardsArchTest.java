@@ -1,6 +1,6 @@
 package com.dotcms.architecture;
 
-import com.dotcms.content.model.annotation.NoExternalDependencies;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -70,34 +70,18 @@ public class CodingStandardsArchTest {
     }
 
     @Test
-    public void contentFactoryIndexOperationsShouldNotDependOnExternalLibraries(){
+    public void indexLibraryIndependent(){
         ArchRule rule = noClasses()
-                .that().haveSimpleName("ContentFactoryIndexOperations")
+                .that().areAnnotatedWith(IndexLibraryIndependent.class)
                 .should()
                 .dependOnClassesThat()
-                .resideOutsideOfPackages(
-                        "java..",
-                        "com.dotcms..",
-                        "com.dotmarketing.."
+                .resideInAnyPackage(
+                        "org.elasticsearch..",
+                        "org.opensearch..",
+                        "co.elastic.clients.."
                 )
-                .because("ContentFactoryIndexOperations interface should only depend on dotCMS and Java classes, "
-                        + "never on external libraries like OpenSearch or Elasticsearch to maintain abstraction");
-        rule.check(getProductionClasses());
-    }
-
-    @Test
-    public void selfContainedShouldNotDependOnExternalLibraries(){
-        ArchRule rule = noClasses()
-                .that().areAnnotatedWith(NoExternalDependencies.class)
-                .should()
-                .dependOnClassesThat()
-                .resideOutsideOfPackages(
-                        "java..",
-                        "com.dotcms..",
-                        "com.dotmarketing.."
-                )
-                .because("Classes annotated with @PureContract must only depend on Java standard libraries " +
-                        "and dotCMS domain classes to maintain abstraction and portability");
+                .because("Classes annotated with @IndexLibraryIndependent must not depend on specific " +
+                        "search engine libraries (Elasticsearch, OpenSearch) to maintain abstraction and portability");
         rule.check(getProductionClasses());
     }
 }

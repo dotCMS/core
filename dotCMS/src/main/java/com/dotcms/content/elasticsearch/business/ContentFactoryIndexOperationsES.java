@@ -4,19 +4,23 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -193,6 +197,10 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public com.dotcms.content.index.domain.SearchHits searchHits(String query, int limit,
             int offset, String sortBy) {
 
@@ -238,31 +246,10 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         if(offset >0) {
             searchSourceBuilder.from(offset);
         }
+
+        // Handle sorting
         if(UtilMethods.isSet(sortBy)) {
-            sortBy = sortBy.toLowerCase();
-
-
-            if(sortBy.startsWith("score")){
-                String[] sortByCriteria = sortBy.split("[,|\\s+]");
-                String defaultSecondarySort = "moddate";
-                SortOrder defaultSecondardOrder = SortOrder.DESC;
-
-                if(sortByCriteria.length>2){
-                    if(sortByCriteria[2].equalsIgnoreCase("desc")) {
-                        defaultSecondardOrder = SortOrder.DESC;
-                    } else {
-                        defaultSecondardOrder = SortOrder.ASC;
-                    }
-                }
-                if(sortByCriteria.length>1){
-                    defaultSecondarySort= sortByCriteria[1];
-                }
-
-                searchSourceBuilder.sort("_score", SortOrder.DESC);
-                searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
-            } else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")  && !sortBy.equals(SortOrder.ASC.toString())  && !sortBy.equals(SortOrder.DESC.toString())) {
-                addBuilderSort(sortBy, searchSourceBuilder);
-            }
+            addSorting(sortBy, searchSourceBuilder);
         }else{
             searchSourceBuilder.sort("moddate", SortOrder.DESC);
         }
@@ -270,16 +257,38 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         return cachedIndexSearch(searchRequest);
     }
 
+    private static void addSorting(String sortBy, SearchSourceBuilder searchSourceBuilder) {
+        sortBy = sortBy.toLowerCase();
+
+        if (sortBy.startsWith("score")) {
+            String[] sortByCriteria = sortBy.split("[,|\\s+]");
+            String defaultSecondarySort = "moddate";
+            SortOrder defaultSecondardOrder = SortOrder.DESC;
+
+            if (sortByCriteria.length > 2) {
+                if (sortByCriteria[2].equalsIgnoreCase("desc")) {
+                    defaultSecondardOrder = SortOrder.DESC;
+                } else {
+                    defaultSecondardOrder = SortOrder.ASC;
+                }
+            }
+            if (sortByCriteria.length > 1) {
+                defaultSecondarySort = sortByCriteria[1];
+            }
+
+            searchSourceBuilder.sort("_score", SortOrder.DESC);
+            searchSourceBuilder.sort(defaultSecondarySort, defaultSecondardOrder);
+        } else if (!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")
+                && !sortBy.equals("random") && !sortBy.equals(SortOrder.ASC.toString())
+                && !sortBy.equals(SortOrder.DESC.toString())) {
+            addBuilderSort(sortBy, searchSourceBuilder);
+        }
+    }
+
     /**
-     * Executes a search query on an Elasticsearch index and retrieves a list of string values
-     * extracted from the search results. The results are paginated based on the provided limit and offset.
-     *
-     * @param query The search query string used to filter and match documents.
-     * @param limit The maximum number of results to return. A value of 0 means no limit.
-     * @param offset The starting position of the results to fetch. A value of 0 means the results start from the beginning.
-     * @return A list of strings extracted from the "inode" field of each document in the search results.
-     * @throws ElasticsearchException If an error occurs while executing the query or processing the results.
+     * {@inheritDoc}
      */
+    @Override
     public List<String> search(String query, int limit, int offset) {
         try {
             final SearchRequest searchRequest = new SearchRequest();
@@ -357,6 +366,9 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String inferIndexToHit(String query) {
         final IndiciesInfo info;
@@ -375,6 +387,9 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         return indexToHit;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public long indexCount(final String query){
          CountRequest countRequest = getCountRequest(query);
@@ -389,5 +404,73 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         countRequest.source(sourceBuilder);
         return countRequest;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy, int scrollBatchSize) {
+        PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
+
+        // Use the ESContentletScrollImpl inner class to handle all scroll logic
+        // Using configurable batch size instead of MAX_LIMIT for better memory management
+        try (ESContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
+                false, scrollBatchSize, sortBy)) {
+
+            contentletSearchList.setTotalResults(contentletScroll.getTotalHits());
+
+            // Fetch all batches (first batch is returned on first nextBatch() call)
+            List<ContentletSearch> batch;
+            while ((batch = contentletScroll.nextBatch()) != null && !batch.isEmpty()) {
+                contentletSearchList.addAll(batch);
+            }
+
+            Logger.debug(this.getClass(),
+                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                            contentletSearchList.getTotalResults(), query));
+
+        } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
+            final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            Logger.warn(this.getClass(), String.format("Elasticsearch error for query: %s", query));
+            Logger.warn(this.getClass(), String.format("Class %s: %s", e.getClass().getName(), exceptionMsg));
+            Logger.warn(this.getClass(), "----------------------------------------------");
+            return new PaginatedArrayList<>();
+        } catch (final IllegalStateException e) {
+            ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
+            Logger.warnAndDebug(ESContentFactoryImpl.class, e);
+            throw new DotRuntimeException(e);
+        } catch (final Exception e) {
+            if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
+                ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
+            }
+            final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
+                    query, e.getMessage());
+            Logger.warnAndDebug(ESContentFactoryImpl.class, errorMsg, e);
+            throw new DotRuntimeException(errorMsg, e);
+        }
+
+        return contentletSearchList;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles, final int batchSize,
+            final String sortBy) {
+        return new ESContentletScrollImpl(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles, final int batchSize) {
+        return createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, "title asc");
+    }
+
 
 }

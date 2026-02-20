@@ -8,10 +8,37 @@ import org.immutables.value.Value;
 import java.util.Map;
 
 /**
- * Immutable wrapper for Elasticsearch SearchHit and OpenSearch Hit functionality.
- * This interface provides access to search result hit data without direct dependency on Elasticsearch or OpenSearch.
+ * Immutable domain representation of a single search result hit from any search engine.
+ *
+ * <p>This interface provides a unified abstraction layer for individual search results,
+ * allowing the application to work with search hits without depending on specific
+ * search engine libraries (Elasticsearch, OpenSearch, etc.).</p>
+ *
+ * <p><strong>Key Benefits:</strong></p>
+ * <ul>
+ *   <li>Search engine agnostic - switch between Elasticsearch and OpenSearch transparently</li>
+ *   <li>Type-safe immutable objects using Immutables library</li>
+ *   <li>JSON serialization support for REST APIs and caching</li>
+ *   <li>Factory methods for easy conversion from underlying search engine types</li>
+ * </ul>
+ *
+ * <p><strong>Usage Examples:</strong></p>
+ * <pre>
+ * // Create from Elasticsearch hit
+ * SearchHit hit = SearchHit.from(elasticsearchHit);
+ *
+ * // Create from OpenSearch hit
+ * SearchHit hit = SearchHit.from(openSearchHit);
+ *
+ * // Access unified data
+ * String docId = hit.id();
+ * Map&lt;String, Object&gt; content = hit.sourceAsMap();
+ * float relevanceScore = hit.score();
+ * </pre>
  *
  * @author Fabrizio Araya
+ * @see SearchHits
+ * @see com.dotcms.content.index.ContentFactoryIndexOperations
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableSearchHit.class)
@@ -26,8 +53,9 @@ public interface SearchHit {
     String id();
 
     /**
-     * Returns the index name of this search hit.
-     * @return
+     * Returns the index name where this search hit was found.
+     *
+     * @return the index name, or null if not available
      */
     String index();
 
@@ -46,8 +74,11 @@ public interface SearchHit {
     float score();
 
     /**
-     * Returns the fields of this hit.
-     * @return the fields
+     * Returns the document fields retrieved by the search query.
+     * These are additional fields beyond the source document that were explicitly
+     * requested in the search query using field selectors.
+     *
+     * @return a map of field names to field values, empty if no fields were requested
      */
     Map<String, Object> fields();
 

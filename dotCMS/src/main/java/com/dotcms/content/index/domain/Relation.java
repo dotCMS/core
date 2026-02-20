@@ -38,4 +38,25 @@ public enum Relation {
                 return EQUAL_TO; // Fallback for unknown values
         }
     }
+
+    /**
+     * Converts from OpenSearch TotalHitsRelation to our domain Relation.
+     *
+     * @param osRelation the OpenSearch relation
+     * @return the corresponding domain relation
+     */
+    public static Relation from(org.opensearch.client.opensearch.core.search.TotalHitsRelation osRelation) {
+        if (osRelation == null) {
+            return EQUAL_TO; // Default fallback
+        }
+
+        switch (osRelation) {
+            case Eq:
+                return EQUAL_TO;
+            case Gte:
+                return GREATER_THAN_OR_EQUAL_TO;
+            default:
+                return EQUAL_TO; // Fallback for unknown values
+        }
+    }
 }

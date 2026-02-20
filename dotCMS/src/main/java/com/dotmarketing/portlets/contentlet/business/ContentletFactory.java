@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexMetadata;
 import com.dotcms.content.model.annotation.IndexMetadata.IndexAccess;
 import com.dotcms.content.model.annotation.IndexMetadata.IndexEngine;
@@ -45,9 +46,10 @@ import org.elasticsearch.ElasticsearchException;
  * @since Mar 22, 2012
  *
  */
+@IndexLibraryIndependent
 @IndexMetadata(
     access = IndexAccess.READ_ONLY,
-    indexEngine = IndexEngine.ELASTICSEARCH
+    engine = { IndexEngine.ELASTICSEARCH, IndexEngine.OPENSEARCH }
 )
 public interface ContentletFactory {
 
