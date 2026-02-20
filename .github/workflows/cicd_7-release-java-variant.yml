@@ -28,6 +28,7 @@
 #
 
 name: '-7 Release Java Variant'
+run-name: "Release Java Variant - ${{ github.event_name == 'workflow_dispatch' && inputs.release_branch || github.ref_name }}${{ inputs.java_version && format(' [{0}]', inputs.java_version) || '' }}"
 
 on:
   push:
@@ -40,10 +41,10 @@ on:
         required: true
         type: string
       java_version:
-        description: 'Java version to build (SDKMAN format, e.g., 25.0.1-open)'
-        required: true
+        description: 'Java version to build (SDKMAN format, e.g., 25.0.2-ms). Leave empty to use the RELEASE_JAVA_VARIANT_VERSION repository variable (same as push-triggered builds).'
+        required: false
         type: string
-        default: '25.0.1-open'
+        default: ''
       artifact_suffix:
         description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
         required: false
@@ -100,7 +101,7 @@ jobs:
     needs: [ extract-version ]
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     with:
-      validation-level: 'none'
+      change-detection: 'disabled'  # Release builds everything - no change detection needed
 
   # Build - standard build phase with Java version override
   build:
@@ -127,7 +128,9 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
-      environment: ${{ needs.extract-version.outputs.version }}
+      environment: 'release'
+      tag-identifier: ${{ needs.extract-version.outputs.version }}
+      omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
       deploy-dev-image: true
       java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}

@@ -20,6 +20,7 @@
 
 
 name: '-1 PR Check'
+run-name: 'PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }} (@${{ github.event.pull_request.user.login }})'
 
 on:
   pull_request:

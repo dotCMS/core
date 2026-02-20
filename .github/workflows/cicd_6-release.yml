@@ -18,6 +18,7 @@
 #
 
 name: '-6 Release Process'
+run-name: "Release ${{ inputs.release_version }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
 
 on:
   workflow_dispatch:
@@ -116,11 +117,13 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
-      environment: ${{ needs.release-prepare.outputs.release_version }}
+      environment: 'release'
+      tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
+      omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
       latest: ${{ needs.release-prepare.outputs.is_latest == 'true' }}
+      deploy-cli: true
       deploy-dev-image: true
-      reuse-previous-build: false
       publish-npm-cli: false
       publish-npm-sdk-libs: false
       java-version: ${{ github.event.inputs.java-version }}

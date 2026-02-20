@@ -1,4 +1,5 @@
 name: '-2 Merge Group Check'
+run-name: 'MQ: ${{ github.event.merge_group.head_commit.message }}'
 on:
   merge_group:
     types: [ checks_requested ]
