@@ -29,7 +29,7 @@
     <div class="analytics-dashboard__filters-row">
         <div
             class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
-            <dot-analytics-dashboard-filters
+            <dot-analytics-filters
                 class="analytics-dashboard__filters"
                 [timeRange]="store.timeRange()"
                 (changeFilters)="onTimeRangeChange($event)"
@@ -54,13 +54,13 @@
                     <ng-template pTemplate="content">
                         @switch (tab.id) {
                             @case ('pageview') {
-                                <dot-analytics-dashboard-pageview-report />
+                                <dot-analytics-pageview-report />
                             }
                             @case ('conversions') {
-                                <dot-analytics-dashboard-conversions-report />
+                                <dot-analytics-conversions-report />
                             }
                             @case ('engagement') {
-                                <dot-analytics-dashboard-engagement-report />
+                                <dot-analytics-engagement-report />
                             }
                         }
                     </ng-template>
