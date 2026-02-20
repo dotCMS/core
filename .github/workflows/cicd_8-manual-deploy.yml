@@ -73,12 +73,12 @@ on:
     inputs:
       # ── Common inputs (needed by most developers) ──────────────────────────
       ref:
-        description: 'Branch, tag, or commit SHA to build. Leave empty to build from the "Use workflow from" branch — same behavior as the legacy workflow. Set explicitly when you want to run the latest workflow code from main while building a different branch (e.g., workflow from main, code from issue-33882-feature).'
+        description: 'Branch, tag, or commit SHA to build. Leave empty to build from the "Use workflow from" branch. Set explicitly when you want to run the latest workflow code from main while building a different branch (e.g., workflow from main, code from issue-33882-feature).'
         required: false
         type: string
         default: ''
       custom_tag:
-        description: 'Extra Docker tag applied after the build — replaces "Custom Docker Image Tag" from the legacy workflow. Creates dotcms/dotcms:{your-tag} as an alias pointing to the same image. Leave empty to rely only on the automatic tags (e.g., manual, manual_issue-33882-primeng-update).'
+        description: 'Optional human-readable alias tag applied after the build (e.g., modernization, java25-testing). Creates dotcms/dotcms:{your-tag} pointing to the same image as the automatic tags. Leave empty to rely only on the automatic tags (e.g., manual, manual_issue-33882-primeng-update).'
         required: false
         type: string
       java_version:
