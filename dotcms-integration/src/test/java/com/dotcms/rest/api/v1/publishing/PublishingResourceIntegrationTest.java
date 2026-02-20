@@ -1,8 +1,11 @@
 package com.dotcms.rest.api.v1.publishing;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -33,9 +36,18 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 
 import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.publisher.business.PublisherTestUtil;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -796,6 +808,94 @@ public class PublishingResourceIntegrationTest {
         return request;
     }
 
+    /**
+     * Creates a fully published bundle (with tar.gz + manifest on disk), sets its
+     * audit status to the given targetStatus, and retries it with forcePush=false.
+     * Follows the established pattern from PublisherAPITest.test_publish_fail_retry().
+     */
+    private RetryBundleResultView createPublishedBundleAndRetry(
+            final String bundleName,
+            final Status targetStatus) throws Exception {
+
+        Environment environment = null;
+        PublishingEndPoint endpoint = null;
+        Bundle bundle = null;
+
+        try {
+            LicenseTestUtil.getLicense();
+
+            // Setup environment and endpoint
+            environment = PublisherTestUtil.createEnvironment(adminUser);
+            endpoint = PublisherTestUtil.createEndpoint(environment);
+
+            // Create bundle linked to environment
+            bundle = PublisherTestUtil.createBundle(bundleName, adminUser, environment);
+            final String bundleId = bundle.getId();
+            createdBundleIds.add(bundleId);
+
+            // Create folder asset (folders are simpler to bundle than contentlets)
+            final var site = new SiteDataGen().nextPersisted();
+            final var folder = new FolderDataGen().site(site).nextPersisted();
+
+            // Setup audit history (required before publish)
+            final PublishAuditHistory historyPojo = new PublishAuditHistory();
+            final Map<String, String> assetsAsMap = new HashMap<>();
+            assetsAsMap.put(folder.getInode(), PusheableAsset.FOLDER.getType());
+            historyPojo.setAssets(assetsAsMap);
+            final PublishAuditStatus auditStatus = new PublishAuditStatus(bundleId);
+            auditStatus.setStatusPojo(historyPojo);
+            publishAuditAPI.insertPublishAuditStatus(auditStatus);
+
+            // Setup queue element and publisher config
+            final PublishQueueElement queueElement = new PublishQueueElement();
+            queueElement.setId(1);
+            queueElement.setOperation(1);
+            queueElement.setAsset(folder.getInode());
+            queueElement.setEnteredDate(new Date());
+            queueElement.setPublishDate(new Date());
+            queueElement.setBundleId(bundleId);
+            queueElement.setType(PusheableAsset.FOLDER.getType());
+
+            final PushPublisherConfig publisherConfig = new PushPublisherConfig();
+            publisherConfig.setId(bundleId);
+            publisherConfig.setOperation(Operation.PUBLISH);
+            publisherConfig.setLanguage(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            publisherConfig.setAssets(Lists.newArrayList(queueElement));
+            publisherConfig.setLuceneQueries(Lists.newArrayList());
+            publisherConfig.setUser(APILocator.getUserAPI().getSystemUser());
+            publisherConfig.setStartDate(new Date());
+            publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
+
+            // Publish - creates tar.gz with manifest on disk
+            APILocator.getPublisherAPI().publish(publisherConfig);
+
+            // Clear queue so retry doesn't reject as "already in queue"
+            PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundleId);
+
+            // Set audit status to target status
+            publishAuditAPI.updatePublishAuditStatus(
+                    bundleId, targetStatus, new PublishAuditHistory());
+
+            // Retry with forcePush=false
+            final RetryBundlesForm form = RetryBundlesForm.builder()
+                    .bundleIds(List.of(bundleId))
+                    .forcePush(false)
+                    .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                    .build();
+
+            final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
+                    mockAuthenticatedRequest(), response, form);
+
+            assertNotNull(result);
+            assertEquals(1, result.getEntity().size());
+
+            return result.getEntity().get(0);
+
+        } finally {
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+        }
+    }
+
     // =========================================================================
     // DELETE ENDPOINT TESTS
     // =========================================================================
@@ -1098,57 +1198,35 @@ public class PublishingResourceIntegrationTest {
     }
 
     /**
-     * Given: Bundle with SUCCESS status
+     * Given: Bundle with SUCCESS status and full bundle files on disk
      * When: Retry request with forcePush=false
      * Then: Result shows forcePush=true (auto-enabled for successful bundles)
      */
     @Test
     public void test_retryBundles_successfulBundle_autoEnablesForcePush() throws Exception {
-        final String bundleId = createBundleWithStatus("retry-force-push", Status.SUCCESS);
+        final RetryBundleResultView bundleResult =
+                createPublishedBundleAndRetry("retry-force-push", Status.SUCCESS);
 
-        final RetryBundlesForm form = RetryBundlesForm.builder()
-                .bundleIds(List.of(bundleId))
-                .forcePush(false) // User specified false
-                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
-                .build();
-
-        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
-                mockAuthenticatedRequest(), response, form);
-
-        // Note: The result may fail due to missing bundle files in test environment,
-        // but we're checking the logic flow
-        // For a proper test, we'd need to set up the full bundle structure
-        assertNotNull(result);
-        assertEquals(1, result.getEntity().size());
+        assertTrue("Retry should succeed but got: " + bundleResult.message(),
+                bundleResult.success());
+        assertTrue("forcePush should be auto-enabled for SUCCESS bundles",
+                bundleResult.forcePush());
     }
 
     /**
-     * Given: Bundle with SUCCESS_WITH_WARNINGS status
-     * When: Retry request made
-     * Then: Returns result (SUCCESS_WITH_WARNINGS is retryable)
+     * Given: Bundle with SUCCESS_WITH_WARNINGS status and full bundle files on disk
+     * When: Retry request with forcePush=false
+     * Then: Retry succeeds and forcePush is auto-enabled
      */
     @Test
-    public void test_retryBundles_successWithWarnings_isRetryable() throws Exception {
-        final String bundleId = createBundleWithStatus("retry-warnings", Status.SUCCESS_WITH_WARNINGS);
+    public void test_retryBundles_successWithWarnings_isRetryableAndAutoEnablesForcePush() throws Exception {
+        final RetryBundleResultView bundleResult =
+                createPublishedBundleAndRetry("retry-warnings", Status.SUCCESS_WITH_WARNINGS);
 
-        final RetryBundlesForm form = RetryBundlesForm.builder()
-                .bundleIds(List.of(bundleId))
-                .forcePush(true)
-                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
-                .build();
-
-        final ResponseEntityRetryBundlesView result = publishingResource.retryBundles(
-                mockAuthenticatedRequest(), response, form);
-
-        assertNotNull(result);
-        assertEquals(1, result.getEntity().size());
-        // SUCCESS_WITH_WARNINGS is a retryable status, so should not get "Cannot retry" message
-        final RetryBundleResultView bundleResult = result.getEntity().get(0);
-        // It may fail for other reasons (like missing bundle file) but not due to status
-        if (!bundleResult.success()) {
-            assertFalse("Should not fail due to status restriction",
-                    bundleResult.message().toLowerCase().contains("cannot retry bundles with status"));
-        }
+        assertTrue("Retry should succeed for SUCCESS_WITH_WARNINGS but got: " + bundleResult.message(),
+                bundleResult.success());
+        assertTrue("forcePush should be auto-enabled for SUCCESS_WITH_WARNINGS bundles",
+                bundleResult.forcePush());
     }
 
     /**

@@ -190,6 +190,7 @@ public class PublishingRetryHelper {
         final List<Environment> environments = environmentAPI.findEnvironmentsByBundleId(bundleId);
 
         // Process each environment
+        boolean anyEndpointProcessed = false;
         for (final Environment environment : environments) {
             final List<PublishingEndPoint> endPoints =
                     publishingEndPointAPI.findSendingEndPointsByEnvironment(environment.getId());
@@ -198,6 +199,7 @@ public class PublishingRetryHelper {
                 continue;
             }
 
+            anyEndpointProcessed = true;
             final PublishingEndPoint targetEndpoint = endPoints.get(0);
             final Publisher staticPublisher;
 
@@ -211,6 +213,11 @@ public class PublishingRetryHelper {
             // Initialize and process
             staticPublisher.init(configStatic);
             staticPublisher.process(null);
+        }
+
+        if (!anyEndpointProcessed) {
+            throw new DotPublisherException(
+                    "No sending endpoints configured for bundle environments: " + bundleId);
         }
 
         Logger.info(this, "Successfully retried static bundle: " + bundleId);
