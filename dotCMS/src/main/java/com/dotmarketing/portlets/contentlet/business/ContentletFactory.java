@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.elasticsearch.ElasticsearchException;
 
 /**
  * Provides utility methods to interact with {@link Contentlet} objects in
@@ -614,7 +613,7 @@ public interface ContentletFactory {
 	 * @exception DotDataException There is a data inconsistency
 	 * @throws DotSecurityException 
 	 */	
-	void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException;
+	void updateUserReferences(User userToReplace, String replacementUserId, User user) throws DotDataException, DotStateException, DotSecurityException;
 
 	void deleteVersion(Contentlet contentlet)throws DotDataException;
 	
