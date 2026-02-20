@@ -44,10 +44,12 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
@@ -1011,6 +1013,13 @@ public class PublishingResourceIntegrationTest {
             publisherConfig.setUser(APILocator.getUserAPI().getSystemUser());
             publisherConfig.setStartDate(new Date());
             publisherConfig.setPublishers(Lists.newArrayList(PushPublisher.class));
+
+            // Ensure a default filter descriptor exists (required by DependencyBundler)
+            final String filterKey = bundleName + "-filter.yml";
+            APILocator.getPublisherAPI().addFilterDescriptor(
+                    new FilterDescriptor(filterKey, bundleName + " Filter",
+                            ImmutableMap.of("dependencies", true, "relationships", true),
+                            true, "DOTCMS_BACK_END_USER"));
 
             // Publish - creates tar.gz with manifest on disk
             APILocator.getPublisherAPI().publish(publisherConfig);
