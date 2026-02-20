@@ -1,0 +1,129 @@
+#set($isCopyingHost = false)
+#set($tagStorageFromURL = "")
+#set($currentUrl = $request.getAttribute("CURRENT_URL"))
+
+#if($currentUrl && $currentUrl.contains("copy_tag_storage"))
+	#set($isCopyingHost = true)
+	#set($tempURL = $currentUrl)
+	#set($beginning = $math.add($tempURL.indexOf("copy_tag_storage"), 19))
+	#set($tagStorageFromURL = $tempURL.substring($beginning,$math.add($beginning, 36)))
+#end
+
+## Safe host list for dropdown (guard against missing $dotcontent in some contexts)
+#if($dotcontent)
+	#set($tagStorageHostList = $dotcontent.pull('+structureName:Host +deleted:false', 0, 'host.hostName asc'))
+#else
+	#set($tagStorageHostList = [])
+#end
+
+<div class="custom-field-wrapper">
+  <div class="select-wrapper">
+    <div id="tagStorageHolder">
+      <button
+        type="button"
+        id="tagStorageSelectButton"
+        class="custom-select-button placeholder"
+        aria-label="Select tag storage host"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled="disabled" #end
+      >Select host</button>
+      <div id="tagStorageDropdown" class="custom-dropdown" role="listbox">
+        #foreach($c in $tagStorageHostList)
+          #if($c.isSystemHost)
+            #set($optionLabel = "")
+            #if($text)#set($optionLabel = $text.get("tag-system-host"))#end
+            #if(!$UtilMethods.isSet($optionLabel))#set($optionLabel = "System Host")#end
+          #else
+            #set($optionLabel = $c.hostName)
+          #end
+          #set($isSelected = ($UtilMethods.isSet($tagStorage) && $c.identifier.equals($tagStorage)) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier)))
+          <div
+            class="custom-option #if($isSelected) selected #end"
+            data-identifier="$esc.html($c.identifier)"
+            data-label="$esc.html($optionLabel)"
+            role="option"
+            #if($isSelected) aria-selected="true" #end
+          >
+            <div class="option-title">$esc.html($optionLabel)</div>
+          </div>
+        #end
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="application/javascript">
+  (function() {
+    function initTagStorageField() {
+      var field;
+      try {
+        field = DotCustomFieldApi.getField("tagStorage");
+      } catch (e) {
+        return;
+      }
+      var holder = document.getElementById("tagStorageHolder");
+      var button = document.getElementById("tagStorageSelectButton");
+      var dropdown = document.getElementById("tagStorageDropdown");
+      if (!holder || !button || !dropdown) return;
+
+      var options = dropdown.querySelectorAll(".custom-option");
+      var selectedOption = dropdown.querySelector(".custom-option.selected");
+      if (selectedOption && selectedOption.dataset.label) {
+        button.textContent = selectedOption.dataset.label;
+        button.classList.remove("placeholder");
+      }
+      if (field && selectedOption && selectedOption.dataset.identifier) {
+        field.setValue(selectedOption.dataset.identifier);
+      } else if (field) {
+        field.setValue("");
+      }
+
+      function closeDropdown() {
+        dropdown.classList.remove("open");
+        button.setAttribute("aria-expanded", "false");
+      }
+
+      function openDropdown() {
+        dropdown.classList.add("open");
+        button.setAttribute("aria-expanded", "true");
+      }
+
+      function toggleDropdown() {
+        if (button.disabled) return;
+        if (dropdown.classList.contains("open")) {
+          closeDropdown();
+        } else {
+          openDropdown();
+        }
+      }
+
+      button.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleDropdown();
+      });
+
+      options.forEach(function(opt) {
+        opt.addEventListener("click", function () {
+          var identifier = this.dataset.identifier;
+          var label = this.dataset.label;
+          if (field) field.setValue(identifier || "");
+          button.textContent = label || "Select host";
+          button.classList.remove("placeholder");
+          options.forEach(function(o) { o.classList.remove("selected"); });
+          this.classList.add("selected");
+          this.setAttribute("aria-selected", "true");
+          closeDropdown();
+        });
+      });
+
+      document.addEventListener("click", function (e) {
+        if (holder && !holder.contains(e.target)) {
+          closeDropdown();
+        }
+      });
+    }
+
+    DotCustomFieldApi.ready(initTagStorageField);
+  })();
+</script>
