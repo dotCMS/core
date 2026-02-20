@@ -77,7 +77,7 @@
     <ng-template pTemplate="body" let-category>
         <tr
             data-testid="category-row"
-            class="cursor-pointer"
+            class="group cursor-pointer"
             (click)="onRowClick(category)">
             <td (click)="$event.stopPropagation()">
                 <p-tableCheckbox [value]="category" />
@@ -89,6 +89,7 @@
             <td data-testid="category-sort-order">{{ category.sortOrder }}</td>
             <td (click)="$event.stopPropagation()">
                 <p-button
+                    class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                     icon="pi pi-ellipsis-v"
                     [rounded]="true"
                     [text]="true"
