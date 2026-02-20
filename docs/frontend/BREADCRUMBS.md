@@ -38,7 +38,7 @@ export class MyComponent {
 |--------|--------|
 | `setBreadcrumbs(items)` | Replace the trail (after "Home"). **Home is always prepended automatically.** |
 | `appendCrumb(item)` | Add one item at the end. No duplicate checks. |
-| `addNewBreadcrumb(item)` | Append or replace last; **avoids duplicates** by `url` or `id`. Prefer this for user-driven navigation. |
+| `addNewBreadcrumb(item)` | Append a new crumb or replace the **last** one when its normalized `url` or `id` matches. Optimized for user-driven navigation (including content-edit URLs). |
 | `setLastBreadcrumb(item)` | Replace the last item (e.g. same route, different content). |
 | `truncateBreadcrumbs(index)` | Keep breadcrumbs from 0 to `index` (0-based). Used internally when navigating back to an existing URL. |
 | `loadBreadcrumbs()` | Restore trail from `sessionStorage` (used on init). |
