@@ -65,7 +65,7 @@
             "options": {
                 "commands": [
                     "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
-                    "cd .. && docker compose -f docker/docker-compose.e2e.yml up -d",
+                    "cd .. && ./mvnw docker:stop docker:start -pl :dotcms-ui-e2e -De2e.test.skip=false",
                     "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
                     "CURRENT_ENV=dev HEADLESS=false nx e2e dotcms-ui-e2e --configuration=dev --ui"
                 ],
@@ -78,10 +78,10 @@
             "options": {
                 "commands": [
                     "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
-                    "cd .. && docker compose -f docker/docker-compose.e2e.yml up -d",
+                    "cd .. && ./mvnw docker:stop docker:start -pl :dotcms-ui-e2e -De2e.test.skip=false",
                     "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
                     "CURRENT_ENV=ci HEADLESS=true nx e2e dotcms-ui-e2e --configuration=ci",
-                    "cd .. && docker compose -f docker/docker-compose.e2e.yml down -v"
+                    "cd .. && ./mvnw docker:stop -pl :dotcms-ui-e2e -De2e.test.skip=false"
                 ],
                 "parallel": false,
                 "cwd": "{workspaceRoot}"
