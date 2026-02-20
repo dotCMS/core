@@ -111,7 +111,7 @@ this.#globalStore.setBreadcrumbs([
 ]);
 ```
 
-### ❌ Do not add label-only crumbs without `id` for tabs
+### ❌ Do not add label-only crumbs without `id` and `url` for tabs, at least one of them is used to validate and avoid duplication
 
 ```typescript
 // BAD: On reload, last crumb has no url/id, so addNewBreadcrumb appends again → duplicates
