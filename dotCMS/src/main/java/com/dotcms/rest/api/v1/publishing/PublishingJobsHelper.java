@@ -515,7 +515,7 @@ public class PublishingJobsHelper {
      */
     public Date parseISO8601Date(final String dateStr) {
         if (!UtilMethods.isSet(dateStr)) {
-            return null;
+            throw new BadRequestException("Date is required and cannot be null or empty");
         }
         try {
             final OffsetDateTime odt = OffsetDateTime.parse(dateStr, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
