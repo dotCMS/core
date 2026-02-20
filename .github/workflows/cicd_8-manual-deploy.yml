@@ -14,6 +14,10 @@
 #   manual[_{suffix}]_{ref}    ← mutable alias, ref-derived (when ref is not protected)
 #   {custom_tag}               ← optional exact alias chosen by the developer
 #
+# Note: 'latest' tagging is intentionally not available in this workflow.
+# Manual builds are feature/hotfix builds and should never overwrite the official
+# 'latest' tag. Use the release workflow (cicd_6) for that.
+#
 # effective_artifact_suffix priority: explicit artifact_suffix → java_version major → empty
 #
 # ref-derived alias format: manual[_{suffix}]_{sanitized-ref}
@@ -67,13 +71,14 @@ run-name: "Manual [${{ inputs.ref || github.ref_name }}]${{ inputs.java_version 
 on:
   workflow_dispatch:
     inputs:
+      # ── Common inputs (needed by most developers) ──────────────────────────
       ref:
-        description: 'Branch, tag, or commit SHA to build (e.g., main, issue-123-feature, release-25.01.01). Leave empty to build from the same branch as "Use workflow from" — matching legacy behavior. Set explicitly to separate workflow source from build source (e.g., run latest workflow from main while building from a feature branch).'
+        description: 'Branch, tag, or commit SHA to build. Leave empty to build from the "Use workflow from" branch — same behavior as the legacy workflow. Set explicitly when you want to run the latest workflow code from main while building a different branch (e.g., workflow from main, code from issue-33882-feature).'
         required: false
         type: string
         default: ''
       custom_tag:
-        description: 'Human-readable Docker tag to apply after build (e.g., modernization, java25-testing, qa-env-1). This is the tag most developers use to identify their build.'
+        description: 'Extra Docker tag applied after the build — replaces "Custom Docker Image Tag" from the legacy workflow. Creates dotcms/dotcms:{your-tag} as an alias pointing to the same image. Leave empty to rely only on the automatic tags (e.g., manual, manual_issue-33882-primeng-update).'
         required: false
         type: string
       java_version:
@@ -81,24 +86,21 @@ on:
         required: false
         type: string
         default: ''
+      deploy_dev_image:
+        description: 'Also push a dev image (dotcms/dotcms-dev) alongside the standard image.'
+        type: boolean
+        default: false
+      # ── Advanced inputs (leave at defaults for normal feature-branch builds) ─
       version:
-        description: 'Maven artifact version identifier. Optional – auto-derived from ref when empty. Does NOT affect Docker tags. Only set if you need a specific artifact version (e.g., hotfix-25.01.01).'
+        description: 'Advanced: Maven artifact version. Auto-derived from ref when empty. Does NOT affect Docker tags — only controls how Maven names the built JARs. Set only when you need artifact isolation for a specific hotfix (e.g., hotfix-25.01.01).'
         required: false
         type: string
         default: ''
       artifact_suffix:
-        description: 'Advanced: explicit artifact suffix override (e.g., java25-ms). When empty, auto-derives from java_version (e.g., java25). Only needed for fine-grained control independent of java_version (e.g., java25-ms vs java25).'
+        description: 'Advanced: renames the Docker base-tag namespace AND Maven artifact namespace (e.g., java25-ms makes the base tag manual_java25-ms instead of manual_java25). Auto-derived from java_version when empty. This is unrelated to custom_tag — it does not add an extra alias tag, it changes the base tag itself. Leave empty unless you need a suffix distinct from what java_version derives.'
         required: false
         type: string
         default: ''
-      deploy_dev_image:
-        description: 'Also deploy dev image (dotcms/dotcms-dev)'
-        type: boolean
-        default: false
-      latest:
-        description: 'Tag as latest (use cautiously - typically only for main branch deployments)'
-        type: boolean
-        default: false
       allow_release_override:
         description: '⚠️ DANGER: Allow overriding actual release artifacts in Maven/Artifactory. Only enable if you know what you are doing!'
         type: boolean
@@ -280,7 +282,6 @@ jobs:
       custom-tag: ${{ inputs.custom_tag }}
       artifact-run-id: ${{ github.run_id }}
       deploy-dev-image: ${{ inputs.deploy_dev_image }}
-      latest: ${{ inputs.latest }}
       java-version: ${{ inputs.java_version }}
       artifact-suffix: ${{ needs.safety-check.outputs.effective_artifact_suffix }}
     secrets:
