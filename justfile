@@ -27,6 +27,10 @@ default:
 build:
     ./mvnw -DskipTests clean install
 
+# Builds the project without tests and disables Maven build cache
+build-no-cache:
+    ./mvnw -DskipTests clean install -Dmaven.build.cache.enabled=false
+
 # Builds the project without running tests, skip using docker or creating image
 build-no-docker:
     ./mvnw -DskipTests clean install -Ddocker.skip
