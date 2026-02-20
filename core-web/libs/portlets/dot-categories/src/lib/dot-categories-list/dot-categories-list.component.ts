@@ -25,6 +25,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotCategoriesListStore } from './store/dot-categories-list.store';
 
 import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categories-create.component';
+import { DotCategoriesPermissionsComponent } from '../dot-categories-permissions/dot-categories-permissions.component';
 
 @Component({
     selector: 'dot-categories-list',
@@ -116,7 +117,7 @@ export class DotCategoriesListComponent {
     }
 
     openPermissionsDialog(): void {
-        this.dialogService.open(null as never, {
+        this.dialogService.open(DotCategoriesPermissionsComponent, {
             header: this.dotMessageService.get('categories.permissions'),
             width: '500px',
             closable: true,
