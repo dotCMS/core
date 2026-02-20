@@ -31,6 +31,8 @@
         "affected:lint": "nx affected:lint",
         "affected:dep-graph": "nx affected:dep-graph",
         "affected": "nx affected",
+        "e2e:dev": "nx run dotcms-ui-e2e:e2e:dev:full",
+        "e2e:ci": "nx run dotcms-ui-e2e:e2e:ci:full",
         "format": "nx format:write",
         "format:write": "nx format:write",
         "format:check": "nx format:check",
@@ -39,7 +41,7 @@
         "test:dotcms-ui": "nx run dotcms-ui:test",
         "test:dotcms": "nx affected -t test --exclude='tag:skip:test'",
         "lint:dotcms": "nx run-many -t lint --exclude='tag:skip:lint' --fix",
-        "test:dotcms:ci": "../mvnw -pl :dotcms-core-web test",
+        "test:dotcms:ci": "../mvnw -pl :dotcms-ui-e2e test",
         "update": "nx migrate latest",
         "workspace-generator": "nx workspace-generator",
         "help": "nx help"
