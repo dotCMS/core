@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -105,7 +106,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                     "            \"query\": \"%s\"\n" +
                     "        }\n" +
                     "    }\n" +
-            "}";
+                    "}";
 
 
     /**
@@ -134,37 +135,37 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     @CloseDBIfOpened
     ContentUnderParent getContentUnderParentFromDB(final BrowserQuery browserQuery, final int startRow, final int maxRows) {
-
         final SelectAndCountQueries sqlQuery = this.selectAndCountQueries(browserQuery);
         final DotConnect dcCount = new DotConnect().setSQL(sqlQuery.countQuery);
         sqlQuery.params.forEach(dcCount::addParam);
         final AtomicInteger count = new AtomicInteger(dcCount.getInt("count"));
         final boolean useElasticSearchForTextFiltering = isUseElasticSearchForTextFiltering(browserQuery);
+
         try {
-            final Set<String> collectedInodes = new LinkedHashSet<>();
-            if(useElasticSearchForTextFiltering){
-               //If set to "ON" we use ES to filter when text is passed
-                collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows, sqlQuery));
-            } else {
-                final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
-                sqlQuery.params.forEach(dcSelect::addParam);
-
-                //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
-                if(startRow >= 0 && maxRows > 0) {
-                    dcSelect.setStartRow(startRow)
-                            .setMaxRows(maxRows);
+                final Set<String> collectedInodes = new LinkedHashSet<>();
+                if(useElasticSearchForTextFiltering){
+                    //If set to "ON" we use ES to filter when text is passed
+                    collectedInodes.addAll(doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows, sqlQuery));
+                } else {
+                    if (startRow >= 0 && maxRows > 0) {
+                        // Use the new exhaustive page collection when pagination parameters are valid
+                        final PageCollectionResult pageResult = collectCompletePage(browserQuery, startRow, maxRows, sqlQuery);
+                        // Use the actual database row position where we stopped searching instead of a count-based calculation
+                        // This ensures we check for the next page from the correct position in the database
+                        final int nextPageStartRow = pageResult.lastDbRowPosition;
+                        //We're passing maxRows value in 1 as that's all we need to know there's ahead to assume there's another page
+                        final boolean hasNextPage = hasNextPage(browserQuery, nextPageStartRow,1,sqlQuery);
+                        return new ContentUnderParent(pageResult.contentlets, count.get(), hasNextPage);
+                    } else {
+                        // Fall back to simple inode collecting for non-paginated requests
+                        collectedInodes.addAll(collectInodesFromDB(startRow, maxRows, sqlQuery));
+                    }
                 }
-                @SuppressWarnings("unchecked")
-                final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-                inodesMapList.forEach(inode -> collectedInodes.add(inode.get("inode")));
-            }
+                final List<Contentlet> page = buildPage(browserQuery, collectedInodes);
+                final int nextPageStartRow = startRow + maxRows;
+                final boolean hasNextPage = hasNextPage(browserQuery, nextPageStartRow, maxRows, sqlQuery);
+                return new ContentUnderParent(page, count.get(), hasNextPage);
 
-            //Now this should load the good contentlets using parallel processing
-            final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
-
-            final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
-                    PERMISSION_READ, true, browserQuery.user);
-            return new ContentUnderParent(filtered, count.get());
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
             final String siteName = UtilMethods.isSet(browserQuery.site) ? browserQuery.site.getHostname() : "N/A";
@@ -172,6 +173,202 @@ public class BrowserAPIImpl implements BrowserAPI {
                     folderPath, siteName, e.getMessage());
             Logger.warnAndDebug(this.getClass(), errorMsg, e);
             throw new DotRuntimeException(errorMsg, e);
+        }
+    }
+
+    List<Contentlet> buildPage(BrowserQuery browserQuery, Set<String> collectedInodes)
+            throws DotDataException, DotSecurityException {
+        //Now this should load the good contentlets using parallel processing
+        final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
+        return permissionAPI.filterCollection(contentlets,
+                PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+    }
+
+    Set<String> collectInodesFromDB(int startRow, int maxRows, SelectAndCountQueries sqlQuery) throws DotDataException {
+        final Set<String> collectedInodes = new LinkedHashSet<>();
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+
+        //Set Pagination params only if they make sense, this also allows me to keep the original behavior available
+        if(startRow >= 0 && maxRows > 0) {
+            dcSelect.setStartRow(startRow)
+                    .setMaxRows(maxRows);
+        }
+        //Here we only get to slice we want to hydrate
+        @SuppressWarnings("unchecked") final List<Map<String, String>> loadResults = dcSelect.loadResults();
+        loadResults.forEach(result -> {
+            final String inode = result.get("inode");
+            collectedInodes.add(inode);
+        });
+        return collectedInodes;
+    }
+
+    /**
+     * Collects inodes from the database along with their actual database row positions.
+     * This is used to track the exact position in the database of each inode for accurate pagination.
+     *
+     * @param startRow The starting row for the database query
+     * @param maxRows The maximum number of rows to fetch
+     * @param sqlQuery The SQL query configuration
+     * @return A map where the key is the inode and the value is its database row position
+     * @throws DotDataException if there's an error accessing the database
+     */
+    Map<String, Integer> collectInodesFromDBWithPositions(int startRow, int maxRows, SelectAndCountQueries sqlQuery) throws DotDataException {
+        final Map<String, Integer> inodesWithPositions = new LinkedHashMap<>();
+        final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
+        sqlQuery.params.forEach(dcSelect::addParam);
+
+        //Set Pagination params only if they make sense
+        if(startRow >= 0 && maxRows > 0) {
+            dcSelect.setStartRow(startRow)
+                    .setMaxRows(maxRows);
+        }
+
+        @SuppressWarnings("unchecked") final List<Map<String, String>> loadResults = dcSelect.loadResults();
+
+        // Track the actual database position for each inode
+        int currentPosition = startRow;
+        for (Map<String, String> result : loadResults) {
+            final String inode = result.get("inode");
+            inodesWithPositions.put(inode, currentPosition);
+            currentPosition++;
+        }
+
+        return inodesWithPositions;
+    }
+
+    /**
+     * Collects contentlets iteratively to complete the requested page size, handling cases where
+     * permission filtering reduces the number of available contentlets below the requested amount.
+     * This method will keep fetching additional candidate inodes until the page is complete or
+     * no more candidates are available.
+     *
+     * @param browserQuery The browser query containing filtering criteria
+     * @param startRow The starting row for the page
+     * @param maxRows The desired page size
+     * @param sqlQuery The SQL query object for selecting inodes
+     * @return PageCollectionResult containing the collected contentlets and metadata
+     * @throws DotDataException if there's an error accessing the database
+     * @throws DotSecurityException if there's a security-related error during filtering
+     */
+    private PageCollectionResult collectCompletePage(BrowserQuery browserQuery, int startRow, int maxRows,
+            SelectAndCountQueries sqlQuery)
+            throws DotDataException, DotSecurityException {
+
+        final List<Contentlet> collectedContentlets = new ArrayList<>();
+        final Set<String> allProcessedInodes = new LinkedHashSet<>();
+        int currentStartRow = startRow;
+        int remainingNeeded = maxRows;
+        int lastViableContentletDbPosition = startRow - 1; // Track the DB position of the last viable contentlet
+
+        // Maximum iterations to prevent infinite loops
+        final int maxIterations = Math.max(10, maxRows * 2);
+        int iterations = 0;
+
+        Logger.debug(this, String.format("Starting page collection: startRow=%d, maxRows=%d", startRow, maxRows));
+
+        while (remainingNeeded > 0 && iterations < maxIterations) {
+            iterations++;
+
+            // Calculate fetch size - fetch more than needed to account for permission filtering
+            final int fetchSize = Math.max(remainingNeeded, Math.min(remainingNeeded * 3, 100));
+
+            Logger.debug(this, String.format("Iteration %d: collecting %d candidates starting from row %d (need %d more)",
+                    iterations, fetchSize, currentStartRow, remainingNeeded));
+
+            // Collect candidate inodes from the database WITH their positions
+            // We need positions to tack the last visited row accurate pagination continuity
+            final Map<String, Integer> candidateInodesWithPositions = collectInodesFromDBWithPositions(currentStartRow, fetchSize, sqlQuery);
+
+            // If no more candidates available, stop the loop
+            if (candidateInodesWithPositions.isEmpty()) {
+                Logger.debug(this, "No more candidate inodes found - stopping collection");
+                break;
+            }
+
+            // Get just the inode set for duplicate checking
+            final Set<String> candidateInodes = candidateInodesWithPositions.keySet();
+
+            // Remove already processed inodes to avoid duplicates
+            candidateInodes.removeAll(allProcessedInodes);
+            if (candidateInodes.isEmpty()) {
+                // All candidates were already processed, move forward
+                currentStartRow += fetchSize;
+                continue;
+            }
+
+            // Load contentlets and apply permission filters
+            final List<Contentlet> candidateContentlets = findContentletsInParallel(candidateInodes);
+            final List<Contentlet> filteredContentlets = permissionAPI.filterCollection(candidateContentlets,
+                    PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
+
+            Logger.debug(this, String.format("Iteration %d: %d candidates → %d after permission filtering",
+                    iterations, candidateInodes.size(), filteredContentlets.size()));
+
+            // Add the filtered contentlets to our collection and track the position of the last one added
+            for (final Contentlet contentlet : filteredContentlets) {
+                if (collectedContentlets.size() < maxRows) {
+                    collectedContentlets.add(contentlet);
+                    remainingNeeded--;
+
+                    // Update the position of the last viable contentlet
+                    final Integer position = candidateInodesWithPositions.get(contentlet.getInode());
+                    if (position != null) {
+                        lastViableContentletDbPosition = position;
+                    }
+                }
+            }
+
+            // Track processed inodes
+            allProcessedInodes.addAll(candidateInodes);
+
+            // Move to the next batch if we still need more contentlets
+            currentStartRow += fetchSize;
+
+            // If we got fewer contentlets than candidates, we might need more candidates
+            if (filteredContentlets.size() < candidateInodes.size() && collectedContentlets.size() < maxRows) {
+                Logger.debug(this, String.format("Permission filtering reduced candidates: %d→%d, continuing search",
+                        candidateInodes.size(), filteredContentlets.size()));
+            }
+        }
+
+        Logger.debug(this, String.format("Page collection completed: collected %d contentlets, lastViableDbPosition=%d, iterations=%d",
+                collectedContentlets.size(), lastViableContentletDbPosition, iterations));
+
+        // The next page should start after the last viable contentlet position
+        final int nextPageStartRow = lastViableContentletDbPosition + 1;
+
+        return new PageCollectionResult(collectedContentlets, allProcessedInodes.size(), nextPageStartRow);
+    }
+
+    /**
+     * Tests if there is a next page available by collecting candidate inodes from the database
+     * and applying permission filters, similar to buildPage but targeting the next window of results.
+     *
+     * @param browserQuery The browser query containing filtering criteria
+     * @param startRow The starting row of the current page (will be adjusted to check next page)
+     * @param maxRows The size of the window/page to test
+     * @param sqlQuery The SQL query object for selecting inodes
+     * @return true if there are more pages available, false otherwise
+     * @throws DotDataException if there's an error accessing the database
+     * @throws DotSecurityException if there's a security-related error during filtering
+     */
+    boolean hasNextPage(BrowserQuery browserQuery, int startRow, int maxRows, SelectAndCountQueries sqlQuery)
+            throws DotDataException, DotSecurityException {
+        return !collectCompletePage(browserQuery, startRow, maxRows, sqlQuery).contentlets.isEmpty();
+    }
+
+    /**
+     * Result of the page collection process containing contentlets and metadata.
+     */
+    static class PageCollectionResult {
+        final List<Contentlet> contentlets;
+        final int totalProcessedInodes;
+        final int lastDbRowPosition;
+        PageCollectionResult(List<Contentlet> contentlets, int totalProcessedInodes, int lastDbRowPosition) {
+            this.contentlets = contentlets;
+            this.totalProcessedInodes = totalProcessedInodes;
+            this.lastDbRowPosition = lastDbRowPosition;
         }
     }
 
@@ -199,7 +396,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @throws DotDataException if an error occurs during the query execution
      */
     private Set<String> doElasticSearchTextFiltering(final BrowserQuery browserQuery, final AtomicInteger count, final int startRow, final int maxRows,
-                                                     final SelectAndCountQueries sqlQuery) throws DotDataException {
+            final SelectAndCountQueries sqlQuery) throws DotDataException {
 
         // Get the heuristic strategy from a lazy configuration
         final SearchHeuristicType heuristicType = HEURISTIC_TYPE.get();
@@ -245,7 +442,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * then processes them in optimally-sized ES chunks based on total count percentage.
      */
     Set<String> doHybridSingleChunkedQueryES(final BrowserQuery browserQuery, final AtomicInteger count, final int startRow, final int maxRows,
-                                             final SelectAndCountQueries sqlQuery) throws DotDataException {
+            final SelectAndCountQueries sqlQuery) throws DotDataException {
         final Set<String> collectedInodes = new LinkedHashSet<>();
 
         Logger.debug(this, "::::: Using Single Query Chunked for text filtering ::::");
@@ -295,7 +492,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return Set of filtered inodes that match the search criteria
      */
     private Set<String> parallelChunksInES(BrowserQuery browserQuery, List<String> allCandidateInodes,
-                                               int totalCandidates, int esChunkSize) {
+            int totalCandidates, int esChunkSize) {
         final Set<String> collectedInodes = Collections.synchronizedSet(new LinkedHashSet<>());
         final long startTime = System.currentTimeMillis();
 
@@ -313,18 +510,18 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> chunk = chunks.get(i);
             final int chunkIndex = i + 1;
             futures[i] = CompletableFuture
-                .supplyAsync(() -> {
-                    // Process chunk directly without internal partitioning
-                    final Set<String> chunkMatches = processESDirectly(browserQuery, new LinkedHashSet<>(chunk));
-                    Logger.debug(BrowserAPIImpl.this, String.format("Processed chunk %d/%d: %d inodes, found %d matches.",
-                            chunkIndex, actualChunks, chunk.size(), chunkMatches.size()));
-                    return chunkMatches;
-                }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("Chunk %d failed: %s", chunkIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
+                    .supplyAsync(() -> {
+                        // Process chunk directly without internal partitioning
+                        final Set<String> chunkMatches = processESDirectly(browserQuery, new LinkedHashSet<>(chunk));
+                        Logger.debug(BrowserAPIImpl.this, String.format("Processed chunk %d/%d: %d inodes, found %d matches.",
+                                chunkIndex, actualChunks, chunk.size(), chunkMatches.size()));
+                        return chunkMatches;
+                    }, submitter)
+                    .orTimeout(60, TimeUnit.SECONDS)
+                    .exceptionally(throwable -> {
+                        Logger.error(BrowserAPIImpl.this, String.format("Chunk %d failed: %s", chunkIndex, throwable.getMessage()), throwable);
+                        return new LinkedHashSet<>();
+                    });
         }
 
         // Wait for all chunks to complete and collect results
@@ -343,8 +540,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final long totalDuration = System.currentTimeMillis() - startTime;
             Logger.debug(this, String.format(
-                "Single Query Chunked parallel processing completed: %d candidates in %d chunks → %d total matches in %d ms",
-                totalCandidates, actualChunks, collectedInodes.size(), totalDuration));
+                    "Single Query Chunked parallel processing completed: %d candidates in %d chunks → %d total matches in %d ms",
+                    totalCandidates, actualChunks, collectedInodes.size(), totalDuration));
 
         } catch (InterruptedException e) {
             Logger.error(this, "Parallel chunk processing interrupted: " + e.getMessage(), e);
@@ -380,12 +577,12 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             // Execute the search using ContentletAPI with proper parameters
             final List<Contentlet> contentlets = contentletAPI.search(
-                esQuery,
-                browserQuery.maxResults > 0 ? browserQuery.maxResults : maxRows,
-                browserQuery.offset >= 0 ? browserQuery.offset : startRow,
-                browserQuery.sortBy,
-                browserQuery.user,
-                false // respectFrontendRoles - use false for backend searches
+                    esQuery,
+                    browserQuery.maxResults > 0 ? browserQuery.maxResults : maxRows,
+                    browserQuery.offset >= 0 ? browserQuery.offset : startRow,
+                    browserQuery.sortBy,
+                    browserQuery.user,
+                    false // respectFrontendRoles - use false for backend searches
             );
 
             //Update the count
@@ -395,7 +592,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             contentlets.forEach(contentlet -> collectedInodes.add(contentlet.getInode()));
 
             Logger.debug(this, String.format("Pure ES completed: found %d contentlets, collected %d inodes",
-                contentlets.size(), collectedInodes.size()));
+                    contentlets.size(), collectedInodes.size()));
 
         } catch (final Exception e) {
             Logger.error(this, "Error in Pure ES search: " + e.getMessage(), e);
@@ -434,8 +631,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         // Host/folder filter - always include system host option
         String hostId = browserQuery.folder.isSystemFolder()
-            ? browserQuery.site.getIdentifier()
-            : browserQuery.folder.getHostId();
+                ? browserQuery.site.getIdentifier()
+                : browserQuery.folder.getHostId();
 
         if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
@@ -446,8 +643,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Content type filters - include specific types if provided
         if (UtilMethods.isSet(browserQuery.contentTypeIds) && !browserQuery.contentTypeIds.isEmpty()) {
             query.append("+contentType:(")
-                 .append(String.join(" OR ", browserQuery.contentTypeIds))
-                 .append(") ");
+                    .append(String.join(" OR ", browserQuery.contentTypeIds))
+                    .append(") ");
         }
 
         // Excluded content types
@@ -460,18 +657,18 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Language filter
         if (UtilMethods.isSet(browserQuery.languageIds) && !browserQuery.languageIds.isEmpty()) {
             query.append("+languageId:(")
-                 .append(browserQuery.languageIds.stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(" OR ")))
-                 .append(") ");
+                    .append(browserQuery.languageIds.stream()
+                            .map(String::valueOf)
+                            .collect(Collectors.joining(" OR ")))
+                    .append(") ");
         }
 
         // Text search filter (the main search criteria)
         if (UtilMethods.isSet(browserQuery.filter)) {
             query.append("+(title:'*").append(browserQuery.filter)
-                 .append("*'^5 OR catchall:*").append(browserQuery.filter)
-                 .append("*^3 OR fileName:*").append(browserQuery.filter)
-                 .append("*^2) ");
+                    .append("*'^5 OR catchall:*").append(browserQuery.filter)
+                    .append("*^3 OR fileName:*").append(browserQuery.filter)
+                    .append("*^2) ");
         }
 
         // Base type filters
@@ -494,8 +691,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         // MIME type filter for file assets
         if (UtilMethods.isSet(browserQuery.mimeTypes) && !browserQuery.mimeTypes.isEmpty()) {
             query.append("+mimeType:(")
-                 .append(String.join(" OR ", browserQuery.mimeTypes))
-                 .append(") ");
+                    .append(String.join(" OR ", browserQuery.mimeTypes))
+                    .append(") ");
         }
 
         String finalQuery = query.toString().trim();
@@ -555,7 +752,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int estimatedChunks = (int) Math.ceil((double) totalCount / calculatedSize);
 
         Logger.debug(this, String.format("ES chunk size calculation: total=%d, percentage=%.1f%%, calculated=%d, final=%d, estimated ES chunks=%d",
-            totalCount, SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get(), (int) Math.ceil(totalCount * percentage), calculatedSize, estimatedChunks));
+                totalCount, SINGLE_QUERY_ES_CHUNK_PERCENTAGE.get(), (int) Math.ceil(totalCount * percentage), calculatedSize, estimatedChunks));
 
         return calculatedSize;
     }
@@ -565,12 +762,15 @@ public class BrowserAPIImpl implements BrowserAPI {
      * This class is immutable and holds a list of content items and their total results count.
      */
     static class ContentUnderParent {
+
         final List<Contentlet> contentlets;
         final int totalResults;
+        final boolean hasMore;
 
-        ContentUnderParent(List<Contentlet> contentlets, int totalResults) {
+        ContentUnderParent(List<Contentlet> contentlets, int totalResults, boolean hasMore) {
             this.contentlets = contentlets;
             this.totalResults = totalResults;
+            this.hasMore = hasMore;
         }
     }
 
@@ -597,7 +797,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int maxInodesPerESQuery = calculateMaxInodesPerESQuery(browserQuery);
 
         Logger.debug(this, String.format("Direct ES processing: %d inodes, max per query: %d",
-            totalInodes, maxInodesPerESQuery));
+                totalInodes, maxInodesPerESQuery));
 
         // If we're under the limit, process directly
         if (totalInodes <= maxInodesPerESQuery) {
@@ -635,7 +835,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         maxInodes = Math.max(100, maxInodes);
 
         Logger.debug(this, String.format("ES clause calculation: base clauses≈%d, reserved=%d, max inodes=%d",
-            baseQueryClauses, reservedClauses, maxInodes));
+                baseQueryClauses, reservedClauses, maxInodes));
 
         return maxInodes;
     }
@@ -701,7 +901,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final long duration = System.currentTimeMillis() - startTime;
             Logger.debug(this, String.format("Single ES query completed: %d inodes → %d matches in %d ms",
-                inodes.size(), collectedInodes.size(), duration));
+                    inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
             Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
@@ -715,7 +915,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Uses parallel processing for better performance.
      */
     private Set<String> processMultipleESQueries(BrowserQuery browserQuery, Set<String> inodes,
-                                                 int maxInodesPerQuery, long startTime) {
+            int maxInodesPerQuery, long startTime) {
         final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
         final List<String> inodesList = new ArrayList<>(inodes);
         final int totalInodes = inodesList.size();
@@ -729,7 +929,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final int batchCount = subBatches.size();
         Logger.info(this, String.format("ES clause limit handling: splitting %d inodes into %d sub-queries (max %d inodes per query)",
-            totalInodes, batchCount, maxInodesPerQuery));
+                totalInodes, batchCount, maxInodesPerQuery));
 
         // Process sub-batches in parallel
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
@@ -740,17 +940,17 @@ public class BrowserAPIImpl implements BrowserAPI {
             final int batchIndex = i + 1;
 
             futures[i] = CompletableFuture
-                .supplyAsync(() -> {
-                    Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
-                        batchIndex, batchCount, batch.size()));
-                    return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
-                }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
-                        batchIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
+                    .supplyAsync(() -> {
+                        Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
+                                batchIndex, batchCount, batch.size()));
+                        return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    }, submitter)
+                    .orTimeout(60, TimeUnit.SECONDS)
+                    .exceptionally(throwable -> {
+                        Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
+                                batchIndex, throwable.getMessage()), throwable);
+                        return new LinkedHashSet<>();
+                    });
         }
 
         // Collect results from all sub-queries
@@ -770,7 +970,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final long totalDuration = System.currentTimeMillis() - startTime;
             Logger.info(this, String.format("Multiple ES queries completed: %d inodes in %d sub-queries → %d matches in %d ms",
-                totalInodes, batchCount, allResults.size(), totalDuration));
+                    totalInodes, batchCount, allResults.size(), totalDuration));
 
         } catch (InterruptedException e) {
             Logger.error(this, "Multiple ES queries interrupted: " + e.getMessage(), e);
@@ -804,7 +1004,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int chunkSize = calculateContentletChunkSize(totalInodes);
 
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes, chunk size: %d",
-            totalInodes, chunkSize));
+                totalInodes, chunkSize));
 
         // If small enough, process directly
         if (totalInodes <= chunkSize) {
@@ -831,7 +1031,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         calculatedSize = Math.min(calculatedSize, maxSize);
 
         Logger.debug(this, String.format("Contentlet chunk calculation: %d inodes → %d per chunk (%.1f%% of total)",
-            totalInodes, calculatedSize, percentage * 100));
+                totalInodes, calculatedSize, percentage * 100));
 
         return calculatedSize;
     }
@@ -844,7 +1044,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Contentlet> contentlets = APILocator.getContentletAPI().findContentlets(inodes);
             final long duration = System.currentTimeMillis() - startTime;
             Logger.debug(this, String.format("Single contentlet load: %d inodes → %d contentlets in %d ms",
-                inodes.size(), contentlets.size(), duration));
+                    inodes.size(), contentlets.size(), duration));
             return contentlets;
         } catch (Exception e) {
             Logger.error(this, String.format("Failed to load %d contentlets: %s", inodes.size(), e.getMessage()), e);
@@ -863,7 +1063,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         final List<List<String>> chunks = createChunks(inodesList, chunkSize);
         final int chunkCount = chunks.size();
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes in %d chunks (chunk size: %d)",
-            totalInodes, chunkCount, chunkSize));
+                totalInodes, chunkCount, chunkSize));
 
         // Process chunks in parallel using CompletableFuture
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
@@ -874,30 +1074,30 @@ public class BrowserAPIImpl implements BrowserAPI {
             final int chunkIndex = i + 1;
 
             futures[i] = CompletableFuture
-                .supplyAsync(() -> {
-                    final long chunkStartTime = System.currentTimeMillis();
-                    Logger.debug(BrowserAPIImpl.this, String.format("Loading contentlet chunk %d/%d: %d inodes",
-                        chunkIndex, chunkCount, chunk.size()));
+                    .supplyAsync(() -> {
+                        final long chunkStartTime = System.currentTimeMillis();
+                        Logger.debug(BrowserAPIImpl.this, String.format("Loading contentlet chunk %d/%d: %d inodes",
+                                chunkIndex, chunkCount, chunk.size()));
 
-                    try {
-                        final List<Contentlet> chunkContentlets = contentletAPI.findContentlets(chunk);
-                        final long chunkDuration = System.currentTimeMillis() - chunkStartTime;
-                        Logger.debug(BrowserAPIImpl.this, String.format(
-                            "Contentlet chunk %d/%d completed: %d inodes → %d contentlets in %d ms",
-                            chunkIndex, chunkCount, chunk.size(), chunkContentlets.size(), chunkDuration));
-                        return chunkContentlets;
-                    } catch (Exception e) {
-                        Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d failed: %s",
-                            chunkIndex, e.getMessage()), e);
-                        return new ArrayList<Contentlet>();
-                    }
-                }, submitter)
-                .orTimeout(90, TimeUnit.SECONDS) // Longer timeout for DB operations
-                .exceptionally(throwable -> {
-                    Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d timed out or failed: %s",
-                        chunkIndex, throwable.getMessage()), throwable);
-                    return new ArrayList<>();
-                });
+                        try {
+                            final List<Contentlet> chunkContentlets = contentletAPI.findContentlets(chunk);
+                            final long chunkDuration = System.currentTimeMillis() - chunkStartTime;
+                            Logger.debug(BrowserAPIImpl.this, String.format(
+                                    "Contentlet chunk %d/%d completed: %d inodes → %d contentlets in %d ms",
+                                    chunkIndex, chunkCount, chunk.size(), chunkContentlets.size(), chunkDuration));
+                            return chunkContentlets;
+                        } catch (Exception e) {
+                            Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d failed: %s",
+                                    chunkIndex, e.getMessage()), e);
+                            return new ArrayList<Contentlet>();
+                        }
+                    }, submitter)
+                    .orTimeout(90, TimeUnit.SECONDS) // Longer timeout for DB operations
+                    .exceptionally(throwable -> {
+                        Logger.error(BrowserAPIImpl.this, String.format("Contentlet chunk %d timed out or failed: %s",
+                                chunkIndex, throwable.getMessage()), throwable);
+                        return new ArrayList<>();
+                    });
         }
 
         // Collect results from all chunks
@@ -918,8 +1118,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             final long totalDuration = System.currentTimeMillis() - startTime;
             Logger.debug(this, String.format(
-                "Parallel contentlet loading completed: %d inodes in %d chunks → %d contentlets in %d ms",
-                totalInodes, chunkCount, allContentlets.size(), totalDuration));
+                    "Parallel contentlet loading completed: %d inodes in %d chunks → %d contentlets in %d ms",
+                    totalInodes, chunkCount, allContentlets.size(), totalDuration));
 
         } catch (InterruptedException e) {
             Logger.error(this, "Parallel contentlet loading interrupted: " + e.getMessage(), e);
@@ -941,28 +1141,28 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param roles User roles for permission checking
      */
     private List<Map<String, Object>> hydrateContentletsInParallel(final List<Contentlet> contentlets,
-                                              final BrowserQuery browserQuery,
-                                              final Role[] roles) {
+            final BrowserQuery browserQuery,
+            final Role[] roles) {
         final List<Map<String, Object>> resultList = new ArrayList<>();
         final int totalContentlets = contentlets.size();
         final int chunkSize = Math.max(1, Math.min(10, totalContentlets / 4));
         final List<List<Contentlet>> chunks = createChunks(contentlets, chunkSize);
 
         final List<CompletableFuture<List<Map<String, Object>>>> futures = chunks.stream()
-            .map(chunk -> CompletableFuture.supplyAsync(() -> {
-                final List<Map<String, Object>> chunkResults = new ArrayList<>(chunk.size());
-                for (final Contentlet contentlet : chunk) {
-                    try {
-                        final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
-                        chunkResults.add(contentMap);
-                    } catch (DotDataException | DotSecurityException e) {
-                        Logger.error(this, "Error hydrating contentlet " + contentlet.getInode() + ": " + e.getMessage(), e);
-                        throw new DotRuntimeException("Failed to hydrate contentlet: " + contentlet.getInode(), e);
+                .map(chunk -> CompletableFuture.supplyAsync(() -> {
+                    final List<Map<String, Object>> chunkResults = new ArrayList<>(chunk.size());
+                    for (final Contentlet contentlet : chunk) {
+                        try {
+                            final Map<String, Object> contentMap = hydrate(browserQuery, contentlet, roles);
+                            chunkResults.add(contentMap);
+                        } catch (DotDataException | DotSecurityException e) {
+                            Logger.error(this, "Error hydrating contentlet " + contentlet.getInode() + ": " + e.getMessage(), e);
+                            throw new DotRuntimeException("Failed to hydrate contentlet: " + contentlet.getInode(), e);
+                        }
                     }
-                }
-                return chunkResults;
-            }, DotConcurrentFactory.getInstance().getSubmitter()))
-            .collect(Collectors.toList());
+                    return chunkResults;
+                }, DotConcurrentFactory.getInstance().getSubmitter()))
+                .collect(Collectors.toList());
 
         // Collect results maintaining order
         for (final CompletableFuture<List<Map<String, Object>>> future : futures) {
@@ -1066,7 +1266,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     @Override
     public List<Treeable> getFolderContentList(final BrowserQuery browserQuery) throws DotSecurityException, DotDataException {
-      return getFolderContentList(browserQuery, true);
+        return getFolderContentList(browserQuery, true);
     }
 
     /**
@@ -1280,12 +1480,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Log slow hydrations for performance analysis
             if (totalMillis > 100) {
                 Logger.warn(this, String.format(
-                    "SLOW HYDRATION: contentlet=%s, type=%s, total=%dms [mapping=%dms, shorties=%dms, permissions=%dms, workflow=%dms]",
-                    contentletId, contentTypeVar, totalMillis,
-                    TimeUnit.NANOSECONDS.toMillis(mappingDuration),
-                    TimeUnit.NANOSECONDS.toMillis(shortiesDuration),
-                    TimeUnit.NANOSECONDS.toMillis(permissionsDuration),
-                    TimeUnit.NANOSECONDS.toMillis(workflowDuration)
+                        "SLOW HYDRATION: contentlet=%s, type=%s, total=%dms [mapping=%dms, shorties=%dms, permissions=%dms, workflow=%dms]",
+                        contentletId, contentTypeVar, totalMillis,
+                        TimeUnit.NANOSECONDS.toMillis(mappingDuration),
+                        TimeUnit.NANOSECONDS.toMillis(shortiesDuration),
+                        TimeUnit.NANOSECONDS.toMillis(permissionsDuration),
+                        TimeUnit.NANOSECONDS.toMillis(workflowDuration)
                 ));
             }
 
@@ -1295,16 +1495,16 @@ public class BrowserAPIImpl implements BrowserAPI {
             final long totalDuration = System.nanoTime() - hydrationStartTime;
             final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
             Logger.error(this, String.format(
-                "HYDRATION ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
-                contentletId, contentTypeVar, totalMillis, e.getMessage()
+                    "HYDRATION ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
+                    contentletId, contentTypeVar, totalMillis, e.getMessage()
             ), e);
             throw e;
         } catch (Exception e) {
             final long totalDuration = System.nanoTime() - hydrationStartTime;
             final long totalMillis = TimeUnit.NANOSECONDS.toMillis(totalDuration);
             Logger.error(this, String.format(
-                "HYDRATION UNEXPECTED ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
-                contentletId, contentTypeVar, totalMillis, e.getMessage()
+                    "HYDRATION UNEXPECTED ERROR: contentlet=%s, type=%s, duration=%dms, error=%s",
+                    contentletId, contentTypeVar, totalMillis, e.getMessage()
             ), e);
             throw new DotRuntimeException("Failed to hydrate contentlet: " + contentletId, e);
         }
@@ -1575,7 +1775,7 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     private void appendSystemHostQuery(StringBuilder sqlQuery) {
-            sqlQuery.append(" and (id.host_inode = 'SYSTEM_HOST') ");
+        sqlQuery.append(" and (id.host_inode = 'SYSTEM_HOST') ");
     }
     /**
      * Appends the query to filter by a specific folder path to the given SQL query and adds the
