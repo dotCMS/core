@@ -9,8 +9,7 @@
 # - environment: Used for GitHub deployment UI grouping (categorical: manual, feature-test, hotfix, release-java25)
 # - version: Used for Docker tags and artifact naming (unique: feature-test-123, manual-20240216)
 #
-# This workflow replaces legacy-release_publish-dotcms-docker-image.yml
-# with a modern, modular approach that's consistent with the CI/CD pipeline.
+# This workflow provides a modern, modular approach consistent with the CI/CD pipeline.
 #
 
 name: '-8 Manual Deploy'

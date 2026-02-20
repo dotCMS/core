@@ -13,8 +13,7 @@
 # - GitHub label management
 # - Release notifications
 #
-# This workflow follows the modular phase pattern established in the CICD architecture
-# and replaces the legacy-release_maven-release-process.yml workflow
+# This workflow follows the modular phase pattern established in the CICD architecture.
 #
 
 name: '-6 Release Process'
