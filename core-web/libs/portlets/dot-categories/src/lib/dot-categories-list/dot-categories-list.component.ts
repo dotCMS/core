@@ -44,7 +44,8 @@ import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categ
     ],
     templateUrl: './dot-categories-list.component.html',
     providers: [DotCategoriesListStore, DialogService, ConfirmationService],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'w-full h-full min-h-0 grid grid-cols-1 grid-rows-[min-content_min-content_1fr]' }
 })
 export class DotCategoriesListComponent {
     readonly store = inject(DotCategoriesListStore);

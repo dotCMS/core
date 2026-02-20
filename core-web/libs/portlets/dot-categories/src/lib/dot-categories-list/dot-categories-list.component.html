@@ -41,9 +41,13 @@
 
 <!-- Table -->
 <p-table
+    class="w-full h-full min-h-0 block"
     [value]="store.categories()"
     [lazy]="true"
+    [scrollable]="true"
     (onLazyLoad)="onLazyLoad($event)"
+    [tableStyle]="{ width: '100%', maxHeight: '100%' }"
+    scrollHeight="flex"
     [paginator]="true"
     [rows]="store.rows()"
     [totalRecords]="store.totalRecords()"
