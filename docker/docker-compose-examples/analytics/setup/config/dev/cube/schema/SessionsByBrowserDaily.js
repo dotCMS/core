@@ -84,7 +84,7 @@ cube(`SessionsByBrowserDaily`, {
             description: `Environment/cluster identifier (prod/stage/etc.). Filter when needed.`,
         },
 
-        contextSiteId: {
+        siteId: {
             sql: `context_site_id`,
             type: `string`,
             title: `Site Id`,
