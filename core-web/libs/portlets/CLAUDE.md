@@ -82,6 +82,5 @@ yarn nx generate @nx/angular:library --name=portlet \
 ## Other Reference Portlets
 
 - **`dot-locales`** — Simple list/edit (uses legacy ComponentStore)
-- **`dot-experiments`** — Full CRUD with guards, resolvers, shell, routed create/edit
 - **`dot-analytics`** — Enterprise license checking, lazy loading
 - **`dot-content-drive`** — Complex nested routing, reference for test config
