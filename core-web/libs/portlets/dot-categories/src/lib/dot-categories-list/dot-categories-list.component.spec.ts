@@ -281,14 +281,14 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('openPermissionsDialog', () => {
-        it('should open an empty dialog with permissions header', () => {
+        it('should open dialog with permissions header', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
 
             spectator.component.openPermissionsDialog();
 
             expect(openSpy).toHaveBeenCalledWith(
-                null,
+                expect.anything(),
                 expect.objectContaining({
                     header: 'categories.permissions',
                     closable: true,
