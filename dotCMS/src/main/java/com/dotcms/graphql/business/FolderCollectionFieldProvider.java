@@ -33,6 +33,10 @@ public enum FolderCollectionFieldProvider implements GraphQLFieldsProvider {
                         .name("path")
                         .type(new GraphQLNonNull(GraphQLString))
                         .build())
+                .argument(GraphQLArgument.newArgument()
+                        .name("site")
+                        .type(GraphQLString)
+                        .build())
                 .type(outputType)
                 .dataFetcher(new FolderCollectionDataFetcher())
                 .build());

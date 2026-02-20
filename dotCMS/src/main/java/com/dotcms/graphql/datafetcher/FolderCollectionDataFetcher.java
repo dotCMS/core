@@ -1,11 +1,15 @@
 package com.dotcms.graphql.datafetcher;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.exception.CustomGraphQLException;
+import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
+import com.dotcms.graphql.exception.ResourceNotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -59,21 +63,26 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
         final String path = environment.getArgument("path");
 
         if (!UtilMethods.isSet(path)) {
-            return null;
+            throw new CustomGraphQLException("The 'path' argument is required");
+        }
+
+        final String site = environment.getArgument("site");
+        if (UtilMethods.isSet(site)) {
+            request.setAttribute(Host.HOST_VELOCITY_VAR_NAME, site);
         }
 
         final Host host = WebAPILocator.getHostWebAPI().getHost(request);
 
         if (host == null) {
-            Logger.warn(this, "Unable to resolve host for request when fetching folder by path: " + path);
-            return null;
+            throw new ResourceNotFoundException("Host",
+                    UtilMethods.isSet(site) ? site : "default");
         }
 
         final Folder folder = APILocator.getFolderAPI()
                 .findFolderByPath(path, host, user, true);
 
         if (folder == null || !UtilMethods.isSet(folder.getInode())) {
-            return null;
+            throw new ResourceNotFoundException("Folder", path);
         }
 
         final int maxDepth = Config.getIntProperty(
@@ -92,6 +101,8 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
      * @param depth    the current recursion depth
      * @param maxDepth the maximum allowed recursion depth
      * @return a map representing the folder with its children
+     * @throws PermissionDeniedGraphQLException if the user lacks permission to access children
+     * @throws DotRuntimeException if a data error occurs while loading children
      */
     Map<String, Object> buildFolderMap(final Folder folder, final User user,
             final int depth, final int maxDepth) {
@@ -122,15 +133,13 @@ public class FolderCollectionDataFetcher implements DataFetcher<Map<String, Obje
         } catch (DotSecurityException e) {
             Logger.error(this, "Permission denied loading children for folder: "
                     + folder.getPath(), e);
-            map.put("children", null);
+            throw new PermissionDeniedGraphQLException(
+                    "Permission denied accessing children of folder: " + folder.getPath());
         } catch (DotDataException e) {
             Logger.error(this, "Data error loading children for folder: "
                     + folder.getPath(), e);
-            map.put("children", null);
-        } catch (Exception e) {
-            Logger.error(this, "Unexpected error loading children for folder: "
-                    + folder.getPath(), e);
-            map.put("children", null);
+            throw new DotRuntimeException(
+                    "Error loading children for folder: " + folder.getPath(), e);
         }
 
         return map;
