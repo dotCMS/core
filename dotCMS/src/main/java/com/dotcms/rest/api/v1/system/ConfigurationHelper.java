@@ -8,11 +8,14 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.InvalidTimeZoneException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -339,6 +342,32 @@ public class ConfigurationHelper implements Serializable {
 				.getOrElse(fallbackText);
 		final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
 		systemMessageEventUtil.pushSimpleTextEvent(message);
+	}
+
+	/**
+	 * Saves company locale information (language and timezone) for the default company user.
+	 * This validates the timezone, updates the default user's locale in the database,
+	 * sets the JVM-wide default timezone, and flushes the user cache.
+	 *
+	 * @param languageId the Java locale string (e.g. "en_US")
+	 * @param timeZoneId the Java TimeZone ID (e.g. "America/New_York")
+	 * @param user       the admin user performing the operation
+	 * @throws InvalidTimeZoneException if the timezone is invalid or incompatible with the database
+	 */
+	public void saveCompanyLocaleInfo(final String languageId, final String timeZoneId,
+			final User user) throws InvalidTimeZoneException {
+
+		try {
+			PrincipalThreadLocal.setName(user.getUserId());
+			CompanyManagerUtil.updateUsers(languageId, timeZoneId, null, false, false, null);
+		} catch (InvalidTimeZoneException e) {
+			throw e;
+		} catch (Exception e) {
+			Logger.error(this, "Error saving locale information for current company: " + e.getMessage(), e);
+			throw new RuntimeException("Error saving locale information", e);
+		} finally {
+			PrincipalThreadLocal.setName(null);
+		}
 	}
 
 	//This regex should be able to capture anything like this: dotCMS Website <website@dotcms.com>
