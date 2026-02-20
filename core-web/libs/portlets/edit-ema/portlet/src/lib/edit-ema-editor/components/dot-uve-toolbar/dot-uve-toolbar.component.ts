@@ -1,5 +1,6 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -255,13 +256,17 @@ export class DotUveToolbarComponent {
                         this.#store.loadPageAsset({ [PERSONA_KEY]: persona.identifier });
                         this.$personaSelector().fetchPersonas();
                     },
-                    error: () => {
+                    error: (err: unknown) => {
+                        const detail =
+                            (err instanceof HttpErrorResponse
+                                ? this.#getPersonalizeErrorDetail(err)
+                                : null) ??
+                            this.#dotMessageService.get('uve.personalize.empty.page.error');
                         this.#messageService.add({
                             severity: 'error',
                             summary: this.#dotMessageService.get('error'),
-                            detail: this.#dotMessageService.get('uve.personalize.empty.page.error')
+                            detail
                         });
-
                         this.$personaSelector().resetValue();
                     }
                 });
@@ -352,5 +357,26 @@ export class DotUveToolbarComponent {
         currentDate.setHours(0, 0, 0, 0);
 
         return currentDate;
+    }
+
+    /**
+     * Extracts a user- and support-friendly error detail from the personalization API error.
+     * Uses backend message when available (header or body); returns null for generic i18n fallback.
+     */
+    #getPersonalizeErrorDetail(err: HttpErrorResponse): string | null {
+        const headerMessage = err.headers?.get('error-message')?.trim();
+        if (headerMessage) {
+            return headerMessage;
+        }
+        const bodyError = err.error?.error;
+        if (typeof bodyError === 'string') {
+            const afterColon = bodyError.indexOf(': ');
+            const trimmed =
+                afterColon >= 0 ? bodyError.slice(afterColon + 2).trim() : bodyError.trim();
+            if (trimmed) {
+                return trimmed;
+            }
+        }
+        return null;
     }
 }
