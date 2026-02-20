@@ -338,15 +338,13 @@ describe('DotContentCompareBlockEditorComponent', () => {
     });
 
     describe('Checking if we are passing HTML to the compare field', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             component.showDiff = true;
             component.showAsCompare = true;
             fixture.detectChanges();
+            await fixture.whenStable();
         });
         it('Should contain same HTML for compare than the Block Editor', async () => {
-            await fixture.whenStable();
-            fixture.detectChanges();
-
             // Wait for ViewChild to be initialized and editor to be ready
             await new Promise((resolve) => setTimeout(resolve, 200));
             fixture.detectChanges();
@@ -374,15 +372,13 @@ describe('DotContentCompareBlockEditorComponent', () => {
     });
 
     describe('Checking if we are comparing the plain HTML to the compare field', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             component.showDiff = false;
             component.showAsCompare = true;
             fixture.detectChanges();
+            await fixture.whenStable();
         });
         it('Should contain same plain HTML for compare than the Block Editor', async () => {
-            await fixture.whenStable();
-            fixture.detectChanges();
-
             // Wait for ViewChild to be initialized and editor to be ready
             await new Promise((resolve) => setTimeout(resolve, 200));
             fixture.detectChanges();
