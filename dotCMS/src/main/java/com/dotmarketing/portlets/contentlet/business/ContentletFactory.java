@@ -4,9 +4,6 @@ import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
-import com.dotcms.content.model.annotation.IndexMetadata;
-import com.dotcms.content.model.annotation.IndexMetadata.IndexAccess;
-import com.dotcms.content.model.annotation.IndexMetadata.IndexEngine;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
@@ -46,10 +43,6 @@ import java.util.Set;
  *
  */
 @IndexLibraryIndependent
-@IndexMetadata(
-    access = IndexAccess.READ_ONLY,
-    currentlySupports = { IndexEngine.ELASTICSEARCH }
-)
 public interface ContentletFactory {
 
 	/**

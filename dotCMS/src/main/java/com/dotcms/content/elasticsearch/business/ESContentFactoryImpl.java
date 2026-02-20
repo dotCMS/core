@@ -19,6 +19,9 @@ import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
+import com.dotcms.content.model.annotation.IndexMetadata;
+import com.dotcms.content.model.annotation.IndexMetadata.IndexAccess;
+import com.dotcms.content.model.annotation.IndexMetadata.IndexEngine;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -123,6 +126,10 @@ import org.apache.commons.lang.StringUtils;
  *
  */
 @IndexLibraryIndependent
+@IndexMetadata(
+        access = IndexAccess.READ_ONLY,
+        currentlySupports = { IndexEngine.ELASTICSEARCH }
+)
 public class ESContentFactoryImpl implements ContentletFactory {
 
     private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
