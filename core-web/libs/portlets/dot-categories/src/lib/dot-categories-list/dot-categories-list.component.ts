@@ -25,7 +25,15 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotCategoriesListStore } from './store/dot-categories-list.store';
 
 import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categories-create.component';
-import { DotCategoriesPermissionsComponent } from '../dot-categories-permissions/dot-categories-permissions.component';
+
+@Component({
+    selector: 'dot-categories-permissions-placeholder',
+    standalone: true,
+    imports: [DotMessagePipe],
+    template: `<p class="p-4 text-center">{{ 'categories.permissions.placeholder' | dm }}</p>`,
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+class DotCategoriesPermissionsPlaceholderComponent {}
 
 @Component({
     selector: 'dot-categories-list',
@@ -117,7 +125,7 @@ export class DotCategoriesListComponent {
     }
 
     openPermissionsDialog(): void {
-        this.dialogService.open(DotCategoriesPermissionsComponent, {
+        this.dialogService.open(DotCategoriesPermissionsPlaceholderComponent, {
             header: this.dotMessageService.get('categories.permissions'),
             width: '500px',
             closable: true,
