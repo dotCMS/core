@@ -81,6 +81,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             spectator = createComponent();
             spectator.detectChanges();
             expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith({
+                id: 'engagement',
                 label: 'Engagement'
             });
         });
