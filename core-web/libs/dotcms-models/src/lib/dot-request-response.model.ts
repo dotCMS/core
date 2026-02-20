@@ -10,3 +10,11 @@ export interface DotCMSResponse<T = unknown> {
     pagination: unknown;
     permissions: string[];
 }
+
+/**
+ * Generic response structure for dotCMS API endpoints that return bodyJsonObject
+ * @template T - The type of the bodyJsonObject data
+ */
+export interface DotCMSResponseJsonObject<T = unknown> {
+    bodyJsonObject: T;
+}

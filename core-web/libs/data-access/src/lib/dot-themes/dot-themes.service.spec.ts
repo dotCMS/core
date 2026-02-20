@@ -1,36 +1,41 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotTheme } from '@dotcms/dotcms-models';
-import { mockDotThemes, CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotThemesService } from './dot-themes.service';
 
 describe('DotThemesService', () => {
-    let dotThemesService: DotThemesService;
+    let service: DotThemesService;
     let httpMock: HttpTestingController;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, DotThemesService]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotThemesService]
         });
-        dotThemesService = TestBed.inject(DotThemesService);
+        service = TestBed.inject(DotThemesService);
         httpMock = TestBed.inject(HttpTestingController);
-    });
-
-    it('should get Themes', () => {
-        dotThemesService.get('inode').subscribe((themes: DotTheme) => {
-            expect(themes).toEqual(mockDotThemes[0]);
-        });
-
-        const req = httpMock.expectOne(`v1/themes/id/inode`);
-        expect(req.request.method).toBe('GET');
-        req.flush({ entity: mockDotThemes[0] });
     });
 
     afterEach(() => {
         httpMock.verify();
+    });
+
+    it('should get theme by inode', () => {
+        const mockTheme: DotTheme = {
+            inode: 'test-inode',
+            name: 'Test Theme',
+            identifier: 'test-id',
+            hostId: 'test-host'
+        };
+
+        service.get('test-inode').subscribe((theme: DotTheme) => {
+            expect(theme).toEqual(mockTheme);
+        });
+
+        const req = httpMock.expectOne('/api/v1/themes/id/test-inode');
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: mockTheme });
     });
 });
