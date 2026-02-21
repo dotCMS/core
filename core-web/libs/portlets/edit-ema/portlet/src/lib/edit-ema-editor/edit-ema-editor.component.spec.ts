@@ -754,7 +754,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                        const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
 
                         spectator.triggerEventHandler(
                             DotUveContentletToolsComponent,
@@ -764,9 +764,8 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectComponentChanges();
 
-                        confirmDialog
-                            .querySelector('.p-confirm-dialog-accept')
-                            .dispatchEvent(new Event('click'));
+                        const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
+                        confirmCall.accept();
 
                         expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
                     });
@@ -834,7 +833,7 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectChanges();
 
-                        const confirmDialog = spectator.query(byTestId('confirm-dialog'));
+                        const confirmDialogOpen = jest.spyOn(confirmationService, 'confirm');
 
                         spectator.triggerEventHandler(
                             DotUveContentletToolsComponent,
@@ -844,9 +843,8 @@ describe('EditEmaEditorComponent', () => {
 
                         spectator.detectComponentChanges();
 
-                        confirmDialog
-                            .querySelector('.p-confirm-dialog-accept')
-                            .dispatchEvent(new Event('click'));
+                        const confirmCall = confirmDialogOpen.mock.calls[0][0] as Confirmation;
+                        confirmCall.accept();
 
                         expect(resetActiveContentletSpy).not.toHaveBeenCalled();
                     });

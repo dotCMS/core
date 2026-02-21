@@ -1,10 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 import {
-    Spectator,
-    SpyObject,
     byTestId,
     createComponentFactory,
-    mockProvider
+    mockProvider,
+    Spectator,
+    SpyObject
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
@@ -93,7 +93,8 @@ describe('DotEmaDialogComponent', () => {
                 useValue: {
                     pageParams: signal({
                         variantName: 'DEFAULT' // Is the only thing we need to test the component
-                    })
+                    }),
+                    $variantId: signal('DEFAULT')
                 }
             },
             {
@@ -591,7 +592,9 @@ describe('DotEmaDialogComponent', () => {
 
             renderCompareDialog();
 
-            spectator.triggerEventHandler(DotContentCompareComponent, 'letMeBringBack', {
+            const compareComponent = spectator.query(DotContentCompareComponent);
+            expect(compareComponent).toBeDefined();
+            compareComponent.letMeBringBack.emit({
                 name: 'getVersionBack',
                 args: ['123']
             });

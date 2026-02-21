@@ -191,6 +191,37 @@ describe('DotFavoriteSelectorComponent', () => {
     });
 
     describe('Selection', () => {
+        it('should emit hideControls(true) when selection becomes empty', () => {
+            mockFavoriteContentTypeService.set.mockReturnValue([]);
+
+            const emittedValues: boolean[] = [];
+            spectator.component.hideControls.subscribe((value) => emittedValues.push(value));
+
+            const listboxInstance = spectator.component.$listbox();
+            listboxInstance.onChange.emit({
+                originalEvent: new Event('change'),
+                value: []
+            });
+
+            expect(emittedValues).toEqual([true]);
+        });
+
+        it('should emit hideControls(false) when selection has items', () => {
+            const selectedTypes = [MOCK_CONTENT_TYPES[0]];
+            mockFavoriteContentTypeService.set.mockReturnValue(selectedTypes);
+
+            const emittedValues: boolean[] = [];
+            spectator.component.hideControls.subscribe((value) => emittedValues.push(value));
+
+            const listboxInstance = spectator.component.$listbox();
+            listboxInstance.onChange.emit({
+                originalEvent: new Event('change'),
+                value: selectedTypes
+            });
+
+            expect(emittedValues).toEqual([false]);
+        });
+
         it('should call setContentTypesFromFavorite when listbox emits onChange event', () => {
             const listboxInstance = spectator.component.$listbox();
 

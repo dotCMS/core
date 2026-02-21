@@ -1,8 +1,6 @@
 import { usePathname, useSearchParams, type ReadonlyURLSearchParams } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-import { getUVEState } from '@dotcms/uve';
-
 import { DotCMSAnalytics } from '../../core/shared/models';
 
 // TODO: Make this work no tightly coupled to Next.js App Router https://github.com/dotCMS/core/issues/33100
@@ -16,7 +14,7 @@ const computeNextKey = (
 /**
  * Tracks page views on route changes using Next.js App Router signals.
  * - Fires a single pageView per unique path+search.
- * - Disabled inside UVE editor.
+ * - Automatically disabled inside UVE editor (analytics instance is null).
  * - Requires Next.js App Router; no SPA fallback.
  *
  * @param analytics Analytics singleton instance; if null, does nothing
@@ -32,7 +30,6 @@ export function useRouterTracker(analytics: DotCMSAnalytics | null, debug = fals
         if (!analytics) return;
 
         const fireIfChanged = (key: string) => {
-            if (getUVEState()) return;
             if (key === lastKeyRef.current) return;
             lastKeyRef.current = key;
             analytics.pageView();

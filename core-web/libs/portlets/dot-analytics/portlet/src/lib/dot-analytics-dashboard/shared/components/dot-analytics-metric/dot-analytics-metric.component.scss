@@ -1,0 +1,121 @@
+@use "variables" as *;
+
+:host {
+    display: block;
+    width: 100%;
+}
+
+// Title rendered above the card
+.chart-title {
+    font-size: $font-size-lmd;
+    font-weight: $font-weight-bold;
+    color: $black;
+    line-height: $line-height-relative;
+    margin: 0;
+    display: flex;
+    align-items: center;
+
+    .pi-info-circle {
+        font-size: $font-size-md;
+        cursor: pointer;
+        transition: color 0.2s;
+
+        &:hover {
+            color: $color-palette-primary-500;
+        }
+    }
+}
+
+.metric-card {
+    ::ng-deep .p-card {
+        border: $field-border-size solid $color-palette-gray-400;
+        border-radius: $border-radius-xl;
+    }
+
+    ::ng-deep .p-card-body {
+        padding: $spacing-3;
+    }
+
+    &--loading {
+        min-height: 6rem;
+    }
+}
+
+.metric-value {
+    font-size: $font-size-xxxl;
+    font-weight: $font-weight-bold;
+    color: $color-palette-gray-900;
+    margin: 0;
+    line-height: 1.1;
+
+    &--fraction {
+        display: flex;
+        align-items: baseline;
+        gap: $spacing-0;
+    }
+
+    &__numerator {
+        font-size: $font-size-xxxl;
+        font-weight: $font-weight-bold;
+        color: $color-palette-gray-900;
+    }
+
+    &__separator {
+        font-size: $font-size-xxxl;
+        font-weight: $font-weight-bold;
+        color: $color-palette-gray-900;
+    }
+
+    &__denominator {
+        font-size: $font-size-xxl;
+        font-weight: $font-weight-bold;
+        color: $color-palette-gray-600;
+    }
+}
+
+.metric-subtitle {
+    font-size: $font-size-md;
+    color: $color-palette-gray-600;
+    margin: 0;
+}
+
+.metric-icon {
+    flex-shrink: 0;
+}
+
+.metric-trend {
+    &--positive,
+    &--negative {
+        display: inline-flex;
+        align-items: center;
+        gap: $spacing-1;
+        font-size: $font-size-md;
+
+        i {
+            font-size: $font-size-sm;
+            // Override the global .pi width (20px box) that pushes layout
+            width: 16px;
+        }
+    }
+
+    &--positive {
+        color: $color-palette-green;
+    }
+
+    &--negative {
+        color: $color-palette-red;
+    }
+}
+
+.metric-projected-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    margin-top: $spacing-2;
+
+    &:empty,
+    &--hidden {
+        display: none;
+    }
+}
