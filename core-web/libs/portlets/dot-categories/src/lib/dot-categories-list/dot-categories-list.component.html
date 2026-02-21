@@ -24,10 +24,17 @@
                     data-testid="category-delete-btn" />
             }
             <p-button
+                [label]="'categories.export' | dm"
+                icon="pi pi-download"
+                [outlined]="true"
+                (onClick)="exportCategories()"
+                data-testid="category-export-btn" />
+            <p-splitButton
                 [label]="'categories.add.category' | dm"
                 icon="pi pi-plus"
                 (onClick)="openCreateDialog()"
-                data-testid="category-add-btn" />
+                [model]="addCategoryMenuItems"
+                data-testid="category-add-split-btn" />
         </div>
     </div>
 </p-toolbar>
@@ -35,7 +42,9 @@
 <p-breadcrumb
     [model]="store.breadcrumbs()"
     [home]="homeItem"
-    (onItemClick)="onBreadcrumbClick($any($event).item ? store.breadcrumbs().indexOf($any($event).item) : -1)"
+    (onItemClick)="
+        onBreadcrumbClick($any($event).item ? store.breadcrumbs().indexOf($any($event).item) : -1)
+    "
     (homeClick)="onHomeClick()"
     data-testid="category-breadcrumb" />
 
@@ -79,10 +88,7 @@
     </ng-template>
 
     <ng-template pTemplate="body" let-category>
-        <tr
-            data-testid="category-row"
-            class="group cursor-pointer"
-            (click)="onRowClick(category)">
+        <tr data-testid="category-row" class="group cursor-pointer" (click)="onRowClick(category)">
             <td (click)="$event.stopPropagation()">
                 <p-tableCheckbox [value]="category" />
             </td>

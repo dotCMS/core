@@ -1,6 +1,12 @@
+jest.mock('@dotcms/utils', () => ({
+    ...jest.requireActual('@dotcms/utils'),
+    getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
+}));
+
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
 import { DotCMSAPIResponse, DotCategory } from '@dotcms/dotcms-models';
+import { getDownloadLink } from '@dotcms/utils';
 
 import { DotCategoriesService } from './dot-categories.service';
 
@@ -177,5 +183,100 @@ describe('DotCategoriesService', () => {
         const req = spectator.expectOne('/api/v1/categories', HttpMethod.DELETE);
         expect(req.request.body).toEqual(['inode-1', 'inode-2']);
         req.flush(mockResponse);
+    });
+
+    describe('exportCategories', () => {
+        beforeEach(() => {
+            (getDownloadLink as jest.Mock).mockClear();
+        });
+
+        it('should call GET /api/v1/categories/_export and trigger download', () => {
+            spectator.service.exportCategories().subscribe();
+
+            const req = spectator.expectOne('/api/v1/categories/_export', HttpMethod.GET);
+            expect(req.request.responseType).toBe('blob');
+
+            const blob = new Blob(['csv-data'], { type: 'text/csv' });
+            req.flush(blob, {
+                headers: { 'Content-Disposition': 'attachment; filename="exported-categories.csv"' }
+            });
+
+            expect(getDownloadLink).toHaveBeenCalledWith(
+                expect.any(Blob),
+                'exported-categories.csv'
+            );
+        });
+
+        it('should append contextInode query param when provided', () => {
+            spectator.service.exportCategories('parent-inode').subscribe();
+
+            const req = spectator.expectOne(
+                '/api/v1/categories/_export?contextInode=parent-inode',
+                HttpMethod.GET
+            );
+
+            const blob = new Blob(['csv-data'], { type: 'text/csv' });
+            req.flush(blob, {
+                headers: { 'Content-Disposition': 'attachment; filename="categories.csv"' }
+            });
+
+            expect(getDownloadLink).toHaveBeenCalled();
+        });
+
+        it('should use default filename when Content-Disposition header is missing', () => {
+            spectator.service.exportCategories().subscribe();
+
+            const req = spectator.expectOne('/api/v1/categories/_export', HttpMethod.GET);
+
+            const blob = new Blob(['csv-data'], { type: 'text/csv' });
+            req.flush(blob);
+
+            expect(getDownloadLink).toHaveBeenCalledWith(expect.any(Blob), 'categories.csv');
+        });
+    });
+
+    describe('importCategories', () => {
+        it('should POST FormData to /api/v1/categories/_import', () => {
+            const file = new File(['csv-data'], 'categories.csv', { type: 'text/csv' });
+            const mockResponse: DotCMSAPIResponse<unknown> = {
+                entity: { success: true },
+                errors: [],
+                messages: [],
+                permissions: [],
+                i18nMessagesMap: {}
+            };
+
+            spectator.service.importCategories(file, 'merge').subscribe((res) => {
+                expect(res).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne('/api/v1/categories/_import', HttpMethod.POST);
+            expect(req.request.body instanceof FormData).toBe(true);
+            expect(req.request.body.get('file')).toBeTruthy();
+            expect(req.request.body.get('exportType')).toBe('merge');
+            expect(req.request.body.has('contextInode')).toBe(false);
+            req.flush(mockResponse);
+        });
+
+        it('should include contextInode in FormData when provided', () => {
+            const file = new File(['csv-data'], 'categories.csv', { type: 'text/csv' });
+            const mockResponse: DotCMSAPIResponse<unknown> = {
+                entity: { success: true },
+                errors: [],
+                messages: [],
+                permissions: [],
+                i18nMessagesMap: {}
+            };
+
+            spectator.service.importCategories(file, 'replace', 'parent-inode').subscribe((res) => {
+                expect(res).toEqual(mockResponse);
+            });
+
+            const req = spectator.expectOne('/api/v1/categories/_import', HttpMethod.POST);
+            expect(req.request.body instanceof FormData).toBe(true);
+            expect(req.request.body.get('exportType')).toBe('replace');
+            expect(req.request.body.get('contextInode')).toBe('parent-inode');
+            req.flush(mockResponse);
+        });
     });
 });

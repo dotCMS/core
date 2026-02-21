@@ -53,21 +53,15 @@ describe('DotCategoriesListStore', () => {
         service: DotCategoriesListStore,
         providers: [
             mockProvider(DotCategoriesService, {
-                getCategoriesPaginated: jest
-                    .fn()
-                    .mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                getChildrenPaginated: jest
-                    .fn()
-                    .mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
-                createCategory: jest
-                    .fn()
-                    .mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
-                updateCategory: jest
-                    .fn()
-                    .mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
+                getCategoriesPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
+                getChildrenPaginated: jest.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
+                createCategory: jest.fn().mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
+                updateCategory: jest.fn().mockReturnValue(of({ entity: MOCK_CATEGORIES[0] })),
                 deleteCategories: jest
                     .fn()
-                    .mockReturnValue(of({ entity: { successCount: 2, fails: [] } }))
+                    .mockReturnValue(of({ entity: { successCount: 2, fails: [] } })),
+                exportCategories: jest.fn().mockReturnValue(of(undefined)),
+                importCategories: jest.fn().mockReturnValue(of({ entity: {} }))
             }),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -182,9 +176,7 @@ describe('DotCategoriesListStore', () => {
         it('should push breadcrumb and set parentInode', () => {
             store.navigateToChildren(MOCK_CATEGORIES[0]);
 
-            expect(store.breadcrumbs()).toEqual([
-                { label: 'Category 1', id: 'inode-1' }
-            ]);
+            expect(store.breadcrumbs()).toEqual([{ label: 'Category 1', id: 'inode-1' }]);
             expect(store.parentInode()).toBe('inode-1');
             expect(store.page()).toBe(1);
             expect(store.filter()).toBe('');
@@ -212,9 +204,7 @@ describe('DotCategoriesListStore', () => {
         it('should truncate breadcrumbs to given index', () => {
             store.navigateToBreadcrumb(0);
 
-            expect(store.breadcrumbs()).toEqual([
-                { label: 'Category 1', id: 'inode-1' }
-            ]);
+            expect(store.breadcrumbs()).toEqual([{ label: 'Category 1', id: 'inode-1' }]);
             expect(store.parentInode()).toBe('inode-1');
         });
 
@@ -300,10 +290,7 @@ describe('DotCategoriesListStore', () => {
 
             store.deleteCategories();
 
-            expect(categoriesService.deleteCategories).toHaveBeenCalledWith([
-                'inode-1',
-                'inode-2'
-            ]);
+            expect(categoriesService.deleteCategories).toHaveBeenCalledWith(['inode-1', 'inode-2']);
             expect(store.selectedCategories()).toEqual([]);
             expect(categoriesService.getCategoriesPaginated).toHaveBeenCalled();
         });
@@ -315,6 +302,59 @@ describe('DotCategoriesListStore', () => {
             store.setSelectedCategories(MOCK_CATEGORIES);
 
             store.deleteCategories();
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('exportCategories', () => {
+        it('should call categoriesService.exportCategories with parentInode', () => {
+            store.exportCategories();
+
+            expect(categoriesService.exportCategories).toHaveBeenCalledWith(null);
+        });
+
+        it('should call exportCategories with parentInode when navigated', () => {
+            store.navigateToChildren(MOCK_CATEGORIES[0]);
+            spectator.flushEffects();
+            categoriesService.exportCategories.mockClear();
+
+            store.exportCategories();
+
+            expect(categoriesService.exportCategories).toHaveBeenCalledWith('inode-1');
+        });
+
+        it('should handle export error', () => {
+            categoriesService.exportCategories.mockReturnValue(
+                throwError(() => new Error('export fail'))
+            );
+
+            store.exportCategories();
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('importCategories', () => {
+        it('should call categoriesService.importCategories and reload categories on success', () => {
+            categoriesService.getCategoriesPaginated.mockClear();
+            const file = new File(['data'], 'test.csv', { type: 'text/csv' });
+
+            store.importCategories(file, 'merge');
+
+            expect(categoriesService.importCategories).toHaveBeenCalledWith(file, 'merge', null);
+            expect(categoriesService.getCategoriesPaginated).toHaveBeenCalled();
+        });
+
+        it('should handle import error', () => {
+            categoriesService.importCategories.mockReturnValue(
+                throwError(() => new Error('import fail'))
+            );
+            const file = new File(['data'], 'test.csv', { type: 'text/csv' });
+
+            store.importCategories(file, 'replace');
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
             expect(store.status()).toBe('loaded');

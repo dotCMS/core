@@ -48,6 +48,23 @@ describe('DotCategoriesListComponent', () => {
     let spectator: Spectator<DotCategoriesListComponent>;
     let store: InstanceType<typeof DotCategoriesListStore>;
 
+    // Mock window.matchMedia for PrimeNG SplitButton
+    beforeAll(() => {
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: jest.fn().mockImplementation((query) => ({
+                matches: false,
+                media: query,
+                onchange: null,
+                addListener: jest.fn(),
+                removeListener: jest.fn(),
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                dispatchEvent: jest.fn()
+            }))
+        });
+    });
+
     const createComponent = createComponentFactory({
         component: DotCategoriesListComponent,
         componentProviders: [
@@ -70,6 +87,8 @@ describe('DotCategoriesListComponent', () => {
                 createCategory: jest.fn(),
                 updateCategory: jest.fn(),
                 deleteCategories: jest.fn(),
+                exportCategories: jest.fn(),
+                importCategories: jest.fn(),
                 loadCategories: jest.fn(),
                 navigateToChildren: jest.fn(),
                 navigateToBreadcrumb: jest.fn()
@@ -152,21 +171,32 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('Button Interactions', () => {
-        describe('Add Button', () => {
-            it('should render Add Category button', () => {
+        describe('Add Split Button', () => {
+            it('should render Add Category split button', () => {
                 spectator.detectChanges();
-                const btnHost = spectator.query(byTestId('category-add-btn'));
+                const btnHost = spectator.query(byTestId('category-add-split-btn'));
                 expect(btnHost).toBeTruthy();
                 const button = btnHost?.querySelector('button');
                 expect(button).toBeTruthy();
                 expect(button?.textContent).toContain('categories.add.category');
             });
 
-            it('should call openCreateDialog when Add button clicked', () => {
+            it('should call openCreateDialog when main button clicked', () => {
                 const spy = jest.spyOn(spectator.component, 'openCreateDialog');
-                const btnHost = spectator.query(byTestId('category-add-btn'));
+                const btnHost = spectator.query(byTestId('category-add-split-btn'));
                 const button = btnHost?.querySelector('button');
                 spectator.click(button!);
+                expect(spy).toHaveBeenCalled();
+            });
+
+            it('should have Import menu item that calls openImportDialog', () => {
+                const spy = jest.spyOn(spectator.component, 'openImportDialog');
+                const menuItems = spectator.component.addCategoryMenuItems;
+                expect(menuItems).toHaveLength(1);
+                expect(menuItems[0].label).toBe('categories.import');
+                expect(menuItems[0].icon).toBe('pi pi-upload');
+
+                menuItems[0].command!({} as never);
                 expect(spy).toHaveBeenCalled();
             });
         });
@@ -428,6 +458,81 @@ describe('DotCategoriesListComponent', () => {
             onClose.complete();
 
             expect(store.updateCategory).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Export Button', () => {
+        it('should render Export button', () => {
+            spectator.detectChanges();
+            const btnHost = spectator.query(byTestId('category-export-btn'));
+            expect(btnHost).toBeTruthy();
+            const button = btnHost?.querySelector('button');
+            expect(button).toBeTruthy();
+            expect(button?.textContent).toContain('categories.export');
+        });
+
+        it('should call exportCategories when Export button clicked', () => {
+            const spy = jest.spyOn(spectator.component, 'exportCategories');
+            spectator.detectChanges();
+            const btnHost = spectator.query(byTestId('category-export-btn'));
+            const button = btnHost?.querySelector('button');
+            spectator.click(button!);
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should call store.exportCategories', () => {
+            spectator.component.exportCategories();
+            expect(store.exportCategories).toHaveBeenCalled();
+        });
+    });
+
+    describe('openImportDialog', () => {
+        it('should open dialog with correct config', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as DynamicDialogRef);
+
+            spectator.component.openImportDialog();
+
+            expect(openSpy).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    width: '500px',
+                    data: { parentInode: null },
+                    closable: true,
+                    closeOnEscape: true
+                })
+            );
+        });
+
+        it('should call store.loadCategories when dialog closes with true', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as DynamicDialogRef);
+
+            spectator.component.openImportDialog();
+            onClose.next(true);
+            onClose.complete();
+
+            expect(store.loadCategories).toHaveBeenCalled();
+        });
+
+        it('should not call store.loadCategories when dialog closes with false', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as DynamicDialogRef);
+
+            spectator.component.openImportDialog();
+            onClose.next(false);
+            onClose.complete();
+
+            expect(store.loadCategories).not.toHaveBeenCalled();
         });
     });
 
