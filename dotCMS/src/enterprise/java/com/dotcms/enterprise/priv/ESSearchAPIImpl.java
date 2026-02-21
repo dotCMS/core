@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotcms.content.elasticsearch.business.ContentFactoryIndexOperationsES.addBuilderSort;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 /**
@@ -339,7 +340,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 				searchSourceBuilder.from(offset);
 
 			if(UtilMethods.isSet(sortBy) ) {
-				ESContentFactoryImpl.addBuilderSort(sortBy, searchSourceBuilder);
+                addBuilderSort(sortBy, searchSourceBuilder);
 			}
 
             request.source(searchSourceBuilder);
