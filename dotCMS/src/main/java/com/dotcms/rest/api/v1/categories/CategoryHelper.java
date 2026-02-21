@@ -87,18 +87,22 @@ public class CategoryHelper {
                 .build();
     }
 
-    public void addOrUpdateCategory(final User user, final String contextInode,
+    public long addOrUpdateCategory(final User user, final String contextInode,
             final BufferedReader bufferedReader, final Boolean merge)
             throws IOException, Exception {
 
+        long successCount = 0;
         for (final CategoryDTO categoryDTO : CategoryImporter.from(bufferedReader)) {
-            addOrUpdateCategory(user, true, contextInode, categoryDTO.getCategoryName(),
+            if (addOrUpdateCategory(user, true, contextInode, categoryDTO.getCategoryName(),
                     categoryDTO.getCategoryVelocityVarName(), categoryDTO.getKey(), null, categoryDTO.getSortOrder(),
-                    merge);
+                    merge)) {
+                successCount++;
+            }
         }
+        return successCount;
     }
 
-    private void addOrUpdateCategory(final User user, final Boolean isSave, final String inode,
+    private boolean addOrUpdateCategory(final User user, final Boolean isSave, final String inode,
             final String name, final String var, final String key, final String keywords,
             final String sort, final boolean isMerge)
             throws Exception {
@@ -155,9 +159,11 @@ public class CategoryHelper {
 
         try {
             categoryAPI.save(parent, category, user, false);
+            return true;
         } catch (DotSecurityException e) {
             Logger.error(this,
                     "Error trying to save/update the category " + category.getInode(), e);
+            return false;
         }
     }
 

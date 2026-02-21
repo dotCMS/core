@@ -793,6 +793,7 @@ public class CategoriesResource {
     @Path("/_import")
     @JSONP
     @NoCache
+    @WrapInTransaction
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes({MediaType.MULTIPART_FORM_DATA})
     public Response importCategories(@Context final HttpServletRequest httpRequest,
@@ -821,7 +822,6 @@ public class CategoriesResource {
         return content;
     }
 
-    @WrapInTransaction
     private Response processImport(final HttpServletRequest httpRequest,
             final HttpServletResponse httpResponse,
             final File uploadedFile,
@@ -833,6 +833,7 @@ public class CategoriesResource {
 
         List<Category> unableToDeleteCats = null;
         final List<FailedResultView> failedToDelete = new ArrayList<>();
+        long successCount = 0;
 
         StringReader stringReader = null;
         BufferedReader bufferedReader = null;
@@ -875,20 +876,24 @@ public class CategoriesResource {
                     Logger.debug(this, () -> "Deleted all the categories");
                 }
 
-                this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, false);
+                successCount = this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, false);
             } else if (exportType.equals("merge")) {
                 Logger.debug(this, () -> "Merging categories");
-                this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
+                successCount = this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
             }
 
         } catch (Exception e) {
             Logger.error(this, "Error importing categories", e);
+            if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
+                throw new ForbiddenException(e);
+            }
+            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         } finally {
             CloseUtils.closeQuietly(stringReader, bufferedReader);
         }
 
         return Response.ok(new ResponseEntityView(
-                        new BulkResultView(Long.valueOf(UtilMethods.isSet(unableToDeleteCats) ? 1 : 0), 0L,
+                        new BulkResultView(successCount, 0L,
                                 failedToDelete)))
                 .build();
     }
