@@ -1,4 +1,4 @@
-import { expect, it, describe } from '@jest/globals';
+import { describe, expect, it } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
@@ -18,6 +18,12 @@ import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
 
+/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's $variantId) */
+const mockUveStore = {
+    pageParams: signal({ variantName: TEST_VARIANT }),
+    $variantId: signal(TEST_VARIANT)
+};
+
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
 
@@ -27,11 +33,7 @@ describe('DotEmaDialogStoreService', () => {
         providers: [
             {
                 provide: UVEStore,
-                useValue: {
-                    pageParams: signal({
-                        variantName: TEST_VARIANT // Is the only thing we need to test the component
-                    })
-                }
+                useValue: mockUveStore
             },
 
             {

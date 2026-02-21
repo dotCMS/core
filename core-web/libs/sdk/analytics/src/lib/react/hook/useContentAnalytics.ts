@@ -5,6 +5,19 @@ import { getUVEState } from '@dotcms/uve';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig, JsonObject } from '../../core/shared/models';
 import { initializeAnalytics } from '../internal';
 
+/** No-op analytics instance returned when analytics cannot be initialized (e.g., inside UVE) */
+const NOOP_ANALYTICS: DotCMSAnalytics = {
+    track: () => {
+        //
+    },
+    pageView: () => {
+        //
+    },
+    conversion: () => {
+        //
+    }
+};
+
 /**
  * React hook for tracking user interactions and page views in your DotCMS application.
  *
@@ -57,63 +70,54 @@ import { initializeAnalytics } from '../internal';
  * @param config.server - The URL of your DotCMS Analytics server
  * @param config.siteKey - Your unique site key for authentication
  * @param config.debug - Optional. Set to true to see analytics events in the console
- * @returns Object with `track()` and `pageView()` methods for analytics tracking
- * @throws {Error} If the configuration is invalid (missing server or siteKey)
+ * @returns Object with `track()`, `pageView()`, and `conversion()` methods for analytics tracking
  */
 export const useContentAnalytics = (config: DotCMSAnalyticsConfig): DotCMSAnalytics => {
     // Memoize instance based on server and siteAuth (the critical config values)
-    // Only re-initialize if these change
-    const instance = useMemo(() => initializeAnalytics(config), [config.server, config.siteAuth]);
+    // Only re-initialize if these change. Log once when initialization fails.
+    const instance = useMemo(() => {
+        const result = initializeAnalytics(config);
 
-    // Memoize UVE state check to avoid repeated calls
-    // UVE state is determined by URL params and window context, so it's stable during component lifecycle
-    const isInUVE = useMemo(() => {
-        return Boolean(getUVEState());
-    }, []);
+        if (!result) {
+            if (getUVEState()) {
+                console.warn(
+                    'DotCMS Analytics [React]: Analytics is not initialized because the site is inside the UVE editor. All tracking calls will be ignored.'
+                );
+            } else {
+                console.error(
+                    'DotCMS Analytics [React]: Failed to initialize. Please verify the required configuration (server and siteAuth).'
+                );
+            }
+        }
 
+        return result;
+    }, [config.server, config.siteAuth]);
+
+    // When inside UVE or config is invalid, return no-op functions
+    // so consumers don't need to handle null checks.
     if (!instance) {
-        throw new Error(
-            'DotCMS Analytics: Failed to initialize. Please verify the required configuration (server and siteAuth).'
-        );
+        return NOOP_ANALYTICS;
     }
 
     const track = useCallback(
         (eventName: string, payload: JsonObject = {}) => {
-            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
-            // with editor interactions and preview activities
-            if (isInUVE) {
-                return;
-            }
-
             instance.track(eventName, payload);
         },
-        [instance, isInUVE]
+        [instance]
     );
 
     const pageView = useCallback(
         (payload: JsonObject = {}) => {
-            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
-            // with editor interactions and preview activities
-            if (isInUVE) {
-                return;
-            }
-
             instance.pageView(payload);
         },
-        [instance, isInUVE]
+        [instance]
     );
 
     const conversion = useCallback(
         (name: string, options: JsonObject = {}) => {
-            // Skip analytics tracking when inside UVE editor to avoid polluting analytics data
-            // with editor interactions and preview activities
-            if (isInUVE) {
-                return;
-            }
-
             instance.conversion(name, options);
         },
-        [instance, isInUVE]
+        [instance]
     );
 
     return {

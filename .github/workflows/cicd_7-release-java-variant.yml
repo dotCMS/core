@@ -1,0 +1,174 @@
+#
+# Release Java Variant Workflow
+#
+# This workflow builds alternate Java versions for a release, running in parallel
+# with the primary release workflow. It triggers automatically when the primary
+# release workflow creates a release branch.
+#
+# Architecture:
+# When the primary release workflow (cicd_6-release.yml) creates a release branch,
+# this workflow automatically triggers and runs in parallel. Both workflows build
+# from the SAME release branch and commit, ensuring identical source code.
+#
+# This variant workflow:
+# - Uses alternate Java version for compilation (e.g., Java 25 vs Java 21)
+# - Overrides -Dchangelist at runtime to create different Maven version
+#   (e.g., 25.02.16-01-java25 vs 25.02.16-01)
+# - Adds artifact suffix to distinguish build artifacts and Docker tags
+# - Skips operations already performed by primary (javadocs, plugins, labels)
+#
+# Concurrency:
+# Different Java versions run in parallel, but duplicate builds of the same
+# Java version for the same release are prevented via concurrency groups.
+#
+# Configuration:
+# Set repository variables for automatic parallel builds:
+#   RELEASE_JAVA_VARIANT_VERSION: Java version in SDKMAN format (e.g., 25.0.2-ms)
+#   RELEASE_JAVA_VARIANT_SUFFIX: Artifact suffix without separator (e.g., java25-ms)
+#
+
+name: '-7 Release Java Variant'
+
+on:
+  push:
+    branches:
+      - 'release-*'
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Release branch name (e.g., release-25.02.16-01)'
+        required: true
+        type: string
+      java_version:
+        description: 'Java version to build (SDKMAN format, e.g., 25.0.1-open)'
+        required: true
+        type: string
+        default: '25.0.1-open'
+      artifact_suffix:
+        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        required: false
+        type: string
+        default: ''
+
+# Prevent duplicate runs for the same release branch AND Java version
+# Different Java versions can run in parallel, but duplicate builds of the same version are prevented
+concurrency:
+  group: release-java-variant-${{ github.ref_name }}-${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
+  cancel-in-progress: true
+
+jobs:
+  # Extract version from branch name
+  extract-version:
+    name: Extract Version
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      tag: ${{ steps.parse.outputs.tag }}
+      branch: ${{ steps.parse.outputs.branch }}
+    steps:
+      - name: Parse Version from Branch
+        id: parse
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            branch="${{ inputs.release_branch }}"
+          else
+            branch="${{ github.ref_name }}"
+          fi
+
+          # Extract version from release-{version} branch name
+          if [[ ! ${branch} =~ ^release- ]]; then
+            echo "Error: Branch name must start with 'release-'"
+            exit 1
+          fi
+
+          version=${branch#release-}
+          tag="v${version}"
+
+          {
+            echo "version=${version}"
+            echo "tag=${tag}"
+            echo "branch=${branch}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Extracted version: ${version}"
+          echo "Release tag: ${tag}"
+          echo "Release branch: ${branch}"
+
+  # Initialize - standard initialization phase
+  initialize:
+    name: Initialize
+    needs: [ extract-version ]
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      validation-level: 'none'
+
+  # Build - standard build phase with Java version override
+  build:
+    name: Build
+    needs: [ extract-version, initialize ]
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ needs.extract-version.outputs.tag }}
+      validate: false
+      version: ${{ needs.extract-version.outputs.version }}
+      generate-docker: true
+      java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
+      artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
+    permissions:
+      contents: read
+      packages: write
+
+  # Deployment - standard deployment phase for Docker images
+  deployment:
+    name: Deployment
+    needs: [ extract-version, initialize, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: ${{ needs.extract-version.outputs.version }}
+      artifact-run-id: ${{ github.run_id }}
+      deploy-dev-image: true
+      java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
+      artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Release - release-specific operations (Artifactory only, skip one-time operations)
+  release:
+    name: Release
+    needs: [ extract-version, initialize, build, deployment ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_release-phase.yml
+    with:
+      release_version: ${{ needs.extract-version.outputs.version }}
+      release_tag: ${{ needs.extract-version.outputs.tag }}
+      artifact_run_id: ${{ github.run_id }}
+      deploy_artifact: true
+      upload_javadocs: false      # Skip - already done by primary release
+      update_plugins: false        # Skip - already done by primary release
+      update_github_labels: false  # Skip - already done by primary release
+      java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
+      artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
+    secrets:
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Finalize - standard finalization phase
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, deployment, release ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ github.run_id }}
+      needsData: ${{ toJson(needs) }}

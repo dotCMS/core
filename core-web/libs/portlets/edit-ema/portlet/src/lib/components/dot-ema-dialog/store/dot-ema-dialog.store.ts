@@ -10,7 +10,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
 
 import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
-import { LAYOUT_URL, CONTENTLET_SELECTOR_URL } from '../../../shared/consts';
+import { CONTENTLET_SELECTOR_URL, LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -102,7 +102,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             const completeURL = new URL(url, window.location.origin);
 
-            completeURL.searchParams.set('variantName', this.uveStore.pageParams().variantName);
+            completeURL.searchParams.set('variantName', this.uveStore.$variantId());
 
             return {
                 ...state,
@@ -320,7 +320,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             _content_cmd: 'edit',
             inode: inode,
             angularCurrentPortlet: angularCurrentPortlet,
-            variantName: this.uveStore.pageParams().variantName
+            variantName: this.uveStore.$variantId()
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
@@ -348,7 +348,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             container_id: containerId,
             add: acceptTypes,
             language_id,
-            variantName: this.uveStore.pageParams().variantName
+            variantName: this.uveStore.$variantId()
         });
 
         return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
@@ -371,7 +371,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             lang: newLanguage.toString(),
             populateaccept: 'true',
             reuseLastLang: 'true',
-            variantName: this.uveStore.pageParams().variantName
+            variantName: this.uveStore.$variantId()
         });
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
