@@ -178,6 +178,19 @@ export const DotCategoriesListStore = signalStore(
                     patchState(store, { selectedCategories: [] });
                     loadCategories();
                 });
+            },
+
+            exportCategories() {
+                handleCategoryAction(categoriesService.exportCategories(store.parentInode()), () =>
+                    patchState(store, { status: 'loaded' })
+                );
+            },
+
+            importCategories(file: File, exportType: 'replace' | 'merge') {
+                handleCategoryAction(
+                    categoriesService.importCategories(file, exportType, store.parentInode()),
+                    () => loadCategories()
+                );
             }
         };
     }),

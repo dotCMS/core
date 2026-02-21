@@ -1,0 +1,73 @@
+<!-- File Upload -->
+<p-fileupload
+    [customUpload]="true"
+    accept=".csv"
+    [showUploadButton]="false"
+    [showCancelButton]="false"
+    (onSelect)="onFileSelect($event)"
+    (onClear)="onFileClear()"
+    data-testid="category-import-file">
+    <ng-template #empty>
+        <div class="flex flex-col items-center justify-center py-6">
+            <i class="pi pi-file text-4xl text-color-secondary mb-3"></i>
+            <p class="mb-1">{{ 'categories.import.drag-drop' | dm }}</p>
+            <p class="text-sm text-color-secondary">{{ 'categories.import.csv-only' | dm }}</p>
+        </div>
+    </ng-template>
+    <ng-template #content let-files>
+        @if (selectedFile(); as file) {
+            <div class="flex items-center gap-2 py-3 px-2">
+                <i class="pi pi-file text-2xl text-color-secondary"></i>
+                <span class="flex-1 truncate">{{ file.name }}</span>
+                <p-button
+                    icon="pi pi-times"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
+                    (onClick)="onFileClear()"
+                    [attr.aria-label]="'categories.import.remove-file' | dm"
+                    data-testid="category-import-remove-file" />
+            </div>
+        }
+    </ng-template>
+</p-fileupload>
+
+<!-- Import Type -->
+<div class="flex flex-col gap-3 mt-4">
+    <span class="font-semibold">{{ 'categories.import.type' | dm }}</span>
+    <div class="flex items-center gap-2">
+        <p-radioButton
+            name="importType"
+            value="merge"
+            [(ngModel)]="importType"
+            inputId="import-type-merge"
+            data-testid="category-import-type-merge" />
+        <label for="import-type-merge">{{ 'categories.import.type.merge' | dm }}</label>
+    </div>
+    <div class="flex items-center gap-2">
+        <p-radioButton
+            name="importType"
+            value="replace"
+            [(ngModel)]="importType"
+            inputId="import-type-replace"
+            data-testid="category-import-type-replace" />
+        <label for="import-type-replace">{{ 'categories.import.type.replace' | dm }}</label>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="flex justify-end gap-2 mt-4">
+    <p-button
+        [label]="'categories.cancel' | dm"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="close()"
+        data-testid="category-import-cancel-btn" />
+    <p-button
+        [label]="'categories.import' | dm"
+        icon="pi pi-upload"
+        [disabled]="!selectedFile()"
+        [loading]="importing()"
+        (onClick)="importFile()"
+        data-testid="category-import-submit-btn" />
+</div>

@@ -3,7 +3,10 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
+import { map } from 'rxjs/operators';
+
 import { DotCMSAPIResponse, DotCategory } from '@dotcms/dotcms-models';
+import { getDownloadLink } from '@dotcms/utils';
 
 export interface DotCategoriesPaginationParams {
     filter?: string;
@@ -93,6 +96,50 @@ export class DotCategoriesService {
             '/api/v1/categories',
             { body: inodes }
         );
+    }
+
+    /**
+     * Exports categories as a CSV file download.
+     * @param contextInode - Optional parent inode to scope the export.
+     * @returns Observable that triggers the file download.
+     */
+    exportCategories(contextInode?: string | null): Observable<void> {
+        let url = '/api/v1/categories/_export';
+        if (contextInode) {
+            url += `?contextInode=${contextInode}`;
+        }
+
+        return this.#http.get(url, { responseType: 'blob', observe: 'response' }).pipe(
+            map((response) => {
+                const blob = response.body!;
+                const contentDisposition = response.headers.get('Content-Disposition') || '';
+                const match = contentDisposition.match(/filename="?([^";\s]+)"?/);
+                const fileName = match?.[1] || 'categories.csv';
+                getDownloadLink(blob, fileName).click();
+            })
+        );
+    }
+
+    /**
+     * Imports categories from a CSV file.
+     * @param file - The CSV file to import.
+     * @param exportType - Whether to replace or merge categories.
+     * @param contextInode - Optional parent inode to scope the import.
+     * @returns Observable with the import result.
+     */
+    importCategories(
+        file: File,
+        exportType: 'replace' | 'merge',
+        contextInode?: string | null
+    ): Observable<DotCMSAPIResponse<unknown>> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('exportType', exportType);
+        if (contextInode) {
+            formData.append('contextInode', contextInode);
+        }
+
+        return this.#http.post<DotCMSAPIResponse<unknown>>('/api/v1/categories/_import', formData);
     }
 
     #buildParams(params: DotCategoriesPaginationParams): HttpParams {

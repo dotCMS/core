@@ -13,6 +13,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -25,12 +26,15 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotCategoriesListStore } from './store/dot-categories-list.store';
 
 import { DotCategoriesCreateComponent } from '../dot-categories-create/dot-categories-create.component';
+import { DotCategoriesImportComponent } from '../dot-categories-import/dot-categories-import.component';
 
 @Component({
     selector: 'dot-categories-permissions-placeholder',
     standalone: true,
     imports: [DotMessagePipe],
-    template: `<p class="p-4 text-center">{{ 'categories.permissions.placeholder' | dm }}</p>`,
+    template: `
+        <p class="p-4 text-center">{{ 'categories.permissions.placeholder' | dm }}</p>
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 class DotCategoriesPermissionsPlaceholderComponent {}
@@ -48,13 +52,16 @@ class DotCategoriesPermissionsPlaceholderComponent {}
         ConfirmDialogModule,
         BreadcrumbModule,
         MenuModule,
+        SplitButtonModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-categories-list.component.html',
     providers: [DotCategoriesListStore, DialogService, ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'w-full h-full min-h-0 grid grid-cols-1 grid-rows-[min-content_min-content_1fr]' }
+    host: {
+        class: 'w-full h-full min-h-0 grid grid-cols-1 grid-rows-[min-content_min-content_1fr]'
+    }
 })
 export class DotCategoriesListComponent {
     readonly store = inject(DotCategoriesListStore);
@@ -69,6 +76,14 @@ export class DotCategoriesListComponent {
     readonly homeItem = { icon: 'pi pi-home' };
     readonly rowMenu = viewChild<Menu>('rowMenu');
     rowMenuItems: MenuItem[] = [];
+
+    readonly addCategoryMenuItems: MenuItem[] = [
+        {
+            label: this.dotMessageService.get('categories.import'),
+            icon: 'pi pi-upload',
+            command: () => this.openImportDialog()
+        }
+    ];
 
     constructor() {
         this.searchSubject
@@ -181,6 +196,26 @@ export class DotCategoriesListComponent {
         ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryForm) => {
             if (result) {
                 this.store.updateCategory({ ...result, inode: category.inode });
+            }
+        });
+    }
+
+    exportCategories(): void {
+        this.store.exportCategories();
+    }
+
+    openImportDialog(): void {
+        const ref = this.dialogService.open(DotCategoriesImportComponent, {
+            header: this.dotMessageService.get('categories.import'),
+            width: '500px',
+            data: { parentInode: this.store.parentInode() },
+            closable: true,
+            closeOnEscape: true
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((imported: boolean) => {
+            if (imported) {
+                this.store.loadCategories();
             }
         });
     }
