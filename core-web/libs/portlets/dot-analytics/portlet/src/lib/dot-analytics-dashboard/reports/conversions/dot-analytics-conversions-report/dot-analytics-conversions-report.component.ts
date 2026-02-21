@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@a
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ContentConversionRow,
-    ConversionsOverviewEntity,
     DotAnalyticsDashboardStore,
     MetricData,
     transformContentConversionsData,
@@ -14,12 +13,12 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
-import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
-import { TIME_PERIOD_OPTIONS } from '../../../shared/constants';
-import { ChartData } from '../../../shared/types';
+import { TIME_PERIOD_OPTIONS } from '../../constants';
+import { ChartData } from '../../types';
 import DotAnalyticsContentConversionsTableComponent from '../dot-analytics-content-conversions-table/dot-analytics-content-conversions-table.component';
 import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conversions-overview-table/dot-analytics-conversions-overview-table.component';
+import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
+import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
 
 /**
  * Conversions Report Component
@@ -32,24 +31,20 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
  * This limitation is specific to the conversions section due to data volume constraints.
  */
 @Component({
-    selector: 'dot-analytics-conversions-report',
+    selector: 'dot-analytics-dashboard-conversions-report',
     imports: [
         CommonModule,
-        DotAnalyticsMetricComponent,
-        DotAnalyticsChartComponent,
+        DotAnalyticsDashboardMetricsComponent,
+        DotAnalyticsDashboardChartComponent,
         DotAnalyticsContentConversionsTableComponent,
         DotAnalyticsConversionsOverviewTableComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-analytics-conversions-report.component.html',
-    styleUrl: './dot-analytics-conversions-report.component.scss',
+    templateUrl: './dot-analytics-dashboard-conversions-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: {
-        class: 'flex flex-column gap-4 w-full'
-    }
+    host: { class: 'gap-4 flex flex-col' }
 })
-export default class DotAnalyticsConversionsReportComponent implements OnInit {
-    /** Analytics dashboard store providing conversions data and actions */
+export default class DotAnalyticsDashboardConversionsReportComponent implements OnInit {
     readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
@@ -60,7 +55,7 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
         });
     }
 
-    /** Dynamic chart title including the active time range label */
+    // Dynamic chart title with time range from filter
     protected readonly $trafficVsConversionsTitle = computed(() => {
         const timeRange = this.store.timeRange();
         const baseTitle = this.#messageService.get('analytics.charts.traffic-vs-conversions.title');
@@ -79,30 +74,27 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
         return timeRangeLabel ? `${baseTitle} (${timeRangeLabel})` : baseTitle;
     });
 
-    /** Transformed rows for the content conversions table (from ContentAttribution cube) */
+    // Content conversions table data from ContentAttribution cube
     protected readonly $contentConversionsData = computed<ContentConversionRow[]>(() => {
         const contentConversions = this.store.contentConversions();
 
         return transformContentConversionsData(contentConversions.data);
     });
-    /** Loading/error status for the content conversions table */
     protected readonly $contentConversionsStatus = computed(
         () => this.store.contentConversions().status
     );
 
-    /** Data rows for the conversions overview table (from Conversion cube) */
-    protected readonly $conversionsOverviewData = computed<ConversionsOverviewEntity[]>(() => {
+    // Conversions overview table data from Conversion cube
+    protected readonly $conversionsOverviewData = computed(() => {
         const conversionsOverview = this.store.conversionsOverview();
 
-        return conversionsOverview.data ?? [];
+        return conversionsOverview.data || [];
     });
-
-    /** Loading/error status for the conversions overview table */
     protected readonly $conversionsOverviewStatus = computed(
         () => this.store.conversionsOverview().status
     );
 
-    /** Aggregated metric cards data (total conversions, converting visitors, conversion rate) */
+    // Computed signals for conversions metrics
     protected readonly $metricsData = computed((): MetricData[] => {
         const totalConversions = this.store.totalConversions();
         const convertingVisitors = this.store.convertingVisitors();
@@ -153,22 +145,21 @@ export default class DotAnalyticsConversionsReportComponent implements OnInit {
         ];
     });
 
-    /** Transformed chart data for the conversion trend line chart */
+    // Chart 1: Conversion Trend - simple line chart (1 dataset)
     protected readonly $conversionTrendData = computed<ChartData>(() => {
         const conversionTrend = this.store.conversionTrend();
 
         return transformConversionTrendData(conversionTrend.data);
     });
-    /** Loading/error status for the conversion trend chart */
     protected readonly $conversionTrendStatus = computed(() => this.store.conversionTrend().status);
 
-    /** Transformed combo chart data for traffic vs conversions (bar: visitors, line: rate) */
+    // Chart 2: Traffic vs Conversions - combo chart (2 datasets: bar + line)
+    // Bars: uniqueVisitors per day, Line: conversion rate % per day
     protected readonly $trafficVsConversionsData = computed<ChartData>(() => {
         const trafficVsConversions = this.store.trafficVsConversions();
 
         return transformTrafficVsConversionsData(trafficVsConversions.data);
     });
-    /** Loading/error status for the traffic vs conversions chart */
     protected readonly $trafficVsConversionsStatus = computed(
         () => this.store.trafficVsConversions().status
     );

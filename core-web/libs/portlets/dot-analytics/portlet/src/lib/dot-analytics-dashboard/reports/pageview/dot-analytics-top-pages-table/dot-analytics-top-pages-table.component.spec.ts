@@ -1,5 +1,4 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
-import { MockModule } from 'ng-mocks';
 
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -12,10 +11,10 @@ import {
     TopPerformanceTableEntity
 } from '@dotcms/portlets/dot-analytics/data-access';
 
-import { DotAnalyticsTopPagesTableComponent } from './dot-analytics-top-pages-table.component';
+import { DotAnalyticsDashboardTableComponent } from './dot-analytics-dashboard-table.component';
 
-describe('DotAnalyticsTopPagesTableComponent', () => {
-    let spectator: Spectator<DotAnalyticsTopPagesTableComponent>;
+describe('DotAnalyticsDashboardTableComponent', () => {
+    let spectator: Spectator<DotAnalyticsDashboardTableComponent>;
 
     const mockTableData: TopPerformanceTableEntity[] = [
         {
@@ -45,22 +44,8 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
     });
 
     const createComponent = createComponentFactory({
-        component: DotAnalyticsTopPagesTableComponent,
-        overrideComponents: [
-            [
-                DotAnalyticsTopPagesTableComponent,
-                {
-                    remove: { imports: [CardModule, SkeletonModule, TableModule] },
-                    add: {
-                        imports: [
-                            MockModule(CardModule),
-                            MockModule(SkeletonModule),
-                            MockModule(TableModule)
-                        ]
-                    }
-                }
-            ]
-        ],
+        component: DotAnalyticsDashboardTableComponent,
+        imports: [CardModule, SkeletonModule, TableModule],
         providers: [
             {
                 provide: DotMessageService,
@@ -295,7 +280,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const errorState = spectator.query('.table-error-state');
+            const errorState = spectator.query('dot-analytics-state-message');
             expect(errorState).toExist();
         });
 
@@ -306,7 +291,7 @@ describe('DotAnalyticsTopPagesTableComponent', () => {
                 } as unknown
             });
 
-            const errorState = spectator.query('.table-error-state');
+            const errorState = spectator.query('dot-analytics-state-message');
             expect(errorState).not.toExist();
         });
 

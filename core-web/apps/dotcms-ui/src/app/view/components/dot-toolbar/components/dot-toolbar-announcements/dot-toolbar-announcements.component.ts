@@ -5,14 +5,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { TypesIcons, AnnouncementsStore, AnnouncementLink } from './store/dot-announcements.store';
+import { AnnouncementLink, AnnouncementsStore, TypesIcons } from './store/dot-announcements.store';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 
 @Component({
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
-    styleUrls: ['./dot-toolbar-announcements.component.scss'],
     imports: [DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
     providers: [AnnouncementsStore]
 })

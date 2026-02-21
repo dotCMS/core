@@ -6,7 +6,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { SelectItem } from 'primeng/api';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { Select, SelectModule } from 'primeng/select';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -34,7 +34,7 @@ describe('DotContentTypeSelectorComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [DotContentTypeSelectorComponent, BrowserAnimationsModule, DropdownModule],
+            imports: [DotContentTypeSelectorComponent, BrowserAnimationsModule, SelectModule],
             providers: [
                 {
                     provide: DotMessageService,
@@ -74,7 +74,7 @@ describe('DotContentTypeSelectorComponent', () => {
 
     it('should set attributes to dropdown', () => {
         fixture.detectChanges();
-        const pDropDown: Dropdown = de.query(By.css('p-dropdown')).componentInstance;
+        const pDropDown: Select = de.query(By.css('p-dropdown')).componentInstance;
         expect(pDropDown.filter).toBeDefined();
         expect(pDropDown.filterBy).toBeDefined();
         expect(pDropDown.showClear).toBeDefined();

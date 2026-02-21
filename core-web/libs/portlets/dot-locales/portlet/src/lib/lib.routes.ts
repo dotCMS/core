@@ -5,7 +5,7 @@ import { DotEnterpriseLicenseResolver, DotPushPublishEnvironmentsResolver } from
 import { DotLocalesListComponent } from './dot-locales-list/dot-locales-list.component';
 import { DotLocalesShellComponent } from './dot-locales-shell/dot-locales-shell.component';
 
-export const DotLocalesRoutes: Route[] = [
+export const dotLocalesRoutes: Route[] = [
     {
         path: '',
         component: DotLocalesShellComponent,

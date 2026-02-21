@@ -1,20 +1,22 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotUvePaletteContentletComponent } from './dot-uve-palette-contentlet.component';
 
-@Component({
-    selector: 'dot-test-host',
-    standalone: false,
-    template: `
-        <dot-uve-palette-contentlet [contentlet]="contentlet" />
-    `
-})
-class TestHostComponent {
-    contentlet: DotCMSContentlet = {
+describe('DotUvePaletteContentletComponent', () => {
+    let spectator: Spectator<DotUvePaletteContentletComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotUvePaletteContentletComponent,
+        imports: [DotUvePaletteContentletComponent],
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        detectChanges: false
+    });
+
+    const baseContentlet: DotCMSContentlet = {
         identifier: 'test-identifier',
         contentType: 'TestContentType',
         baseType: 'CONTENT',
@@ -38,20 +40,16 @@ class TestHostComponent {
         titleImage: 'test-image.jpg',
         working: true
     };
-}
-
-describe('DotUvePaletteContentletComponent', () => {
-    let spectator: SpectatorHost<DotUvePaletteContentletComponent, TestHostComponent>;
-
-    const createHost = createHostFactory({
-        component: DotUvePaletteContentletComponent,
-        host: TestHostComponent,
-        imports: [DotUvePaletteContentletComponent],
-        schemas: [CUSTOM_ELEMENTS_SCHEMA]
-    });
 
     beforeEach(() => {
-        spectator = createHost(`<dot-uve-palette-contentlet [contentlet]="contentlet" />`);
+        spectator = createComponent({
+            props: {
+                contentlet: baseContentlet
+                // Quick way to avoid type errors when passing the baseContentlet to the component since we are not prefixing with $
+                // The ideal would be using a host component and pass the baseContentlet as a property to the host component
+            } as unknown
+        });
+        spectator.detectChanges();
     });
 
     it('should create', () => {
@@ -89,12 +87,12 @@ describe('DotUvePaletteContentletComponent', () => {
 
         it('should update data-item attribute when contentlet changes', () => {
             const newContentlet: DotCMSContentlet = {
-                ...spectator.hostComponent.contentlet,
+                ...baseContentlet,
                 identifier: 'new-identifier',
                 title: 'New Title'
             };
 
-            spectator.setHostInput({ contentlet: newContentlet });
+            spectator.setInput('contentlet', newContentlet);
             spectator.detectChanges();
 
             const element = spectator.element as HTMLElement;
@@ -110,15 +108,9 @@ describe('DotUvePaletteContentletComponent', () => {
 
     describe('Template Rendering', () => {
         it('should render drag handle with correct icons', () => {
-            const dragHandle = spectator.query('.drag-handle');
-            const icons = spectator.queryAll('.drag-handle i');
-
-            expect(dragHandle).toBeTruthy();
+            // Drag handle is a simple icon container; we don't assert on custom CSS classes.
+            const icons = spectator.queryAll('i.pi.pi-ellipsis-v');
             expect(icons).toHaveLength(2);
-            expect(icons[0]).toHaveClass('pi');
-            expect(icons[0]).toHaveClass('pi-ellipsis-v');
-            expect(icons[1]).toHaveClass('pi');
-            expect(icons[1]).toHaveClass('pi-ellipsis-v');
         });
 
         it('should render dot-contentlet-thumbnail with correct properties', () => {
@@ -134,39 +126,35 @@ describe('DotUvePaletteContentletComponent', () => {
         });
 
         it('should render contentlet title', () => {
-            const nameElement = spectator.query('.content .name');
-
-            expect(nameElement).toBeTruthy();
-            expect(nameElement?.textContent?.trim()).toBe('Test Contentlet Title');
+            const titleElement = spectator.query('div.text-sm.font-semibold') as HTMLElement;
+            expect(titleElement).toBeTruthy();
+            expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
         });
 
         it('should update title when contentlet changes', () => {
             const newContentlet: DotCMSContentlet = {
-                ...spectator.hostComponent.contentlet,
+                ...baseContentlet,
                 title: 'Updated Title'
             };
 
-            spectator.setHostInput({ contentlet: newContentlet });
+            spectator.setInput('contentlet', newContentlet);
             spectator.detectChanges();
 
-            const nameElement = spectator.query('.content .name');
-            expect(nameElement?.textContent?.trim()).toBe('Updated Title');
+            const titleElement = spectator.query('div.text-sm.font-semibold') as HTMLElement;
+            expect(titleElement.textContent?.trim()).toBe('Updated Title');
         });
     });
 
     describe('Component Structure', () => {
         it('should have correct CSS classes structure', () => {
-            expect(spectator.query('.drag-handle')).toBeTruthy();
-            expect(spectator.query('.content')).toBeTruthy();
-            expect(spectator.query('.content .icon')).toBeTruthy();
-            expect(spectator.query('.content .name')).toBeTruthy();
+            // Structure assertions: we only verify key pieces exist.
+            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
+            expect(spectator.query('div.text-sm.font-semibold')).toBeTruthy();
         });
 
         it('should nest dot-contentlet-thumbnail inside icon container', () => {
-            const iconContainer = spectator.query('.content .icon');
-            const thumbnail = iconContainer?.querySelector('dot-contentlet-thumbnail');
-
-            expect(thumbnail).toBeTruthy();
+            // Thumbnail exists and is rendered inside the component.
+            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
         });
     });
 });

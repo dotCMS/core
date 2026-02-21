@@ -3,6 +3,8 @@
 <!-- Auto Generated Below -->
 
 
+> **[DEPRECATED]** Use dot-contentlet-status-chip instead
+
 ## Properties
 
 | Property | Attribute | Description | Type                                                                        | Default                                                                                                                      |

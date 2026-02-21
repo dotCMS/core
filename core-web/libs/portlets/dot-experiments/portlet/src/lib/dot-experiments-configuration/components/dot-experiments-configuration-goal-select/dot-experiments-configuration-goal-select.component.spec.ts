@@ -13,8 +13,8 @@ import { ActivatedRoute } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { DropdownModule } from 'primeng/dropdown';
-import { Sidebar } from 'primeng/sidebar';
+import { Drawer } from 'primeng/drawer';
+import { SelectModule } from 'primeng/select';
 
 import {
     DotExperimentsService,
@@ -59,7 +59,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     let dotExperimentsService: SpyObject<DotExperimentsService>;
 
     const createComponent = createComponentFactory({
-        imports: [ButtonModule, CardModule, DropdownModule, DotMessagePipe, DotDropdownDirective],
+        imports: [ButtonModule, CardModule, SelectModule, DotMessagePipe, DotDropdownDirective],
         component: DotExperimentsConfigurationGoalSelectComponent,
         providers: [
             DotExperimentsConfigurationStore,
@@ -386,13 +386,13 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             byTestId('dot-options-item-content_REACH_PAGE')
         );
 
-        expect(reachPageOptionContent).toHaveClass('expanded');
+        expect(reachPageOptionContent).toHaveClass('dot-option-content--expanded');
     });
 
     it('should emit closedSidebar when the sidebar its closed', () => {
         spectator.detectChanges();
 
-        const sidebar = spectator.query(Sidebar);
+        const sidebar = spectator.query(Drawer);
         jest.spyOn(spectator.component, 'closeSidebar');
 
         store.setSidebarStatus({

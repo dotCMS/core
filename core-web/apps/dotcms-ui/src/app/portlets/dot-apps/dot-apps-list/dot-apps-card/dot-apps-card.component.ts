@@ -1,7 +1,7 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -9,7 +9,7 @@ import { CardModule } from 'primeng/card';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotApp } from '@dotcms/dotcms-models';
-import { DotAvatarDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotAvatarDirective, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-apps-card',
@@ -20,7 +20,7 @@ import { DotAvatarDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui
         CardModule,
         AvatarModule,
         BadgeModule,
-        DotIconComponent,
+
         MarkdownComponent,
         TooltipModule,
         DotAvatarDirective,
@@ -28,6 +28,6 @@ import { DotAvatarDirective, DotIconComponent, DotMessagePipe } from '@dotcms/ui
     ]
 })
 export class DotAppsCardComponent {
-    @Input() app: DotApp;
-    @Output() actionFired = new EventEmitter<string>();
+    $app = input.required<DotApp>({ alias: 'app' });
+    actionFired = output<string>();
 }

@@ -1,42 +1,28 @@
-<div class="analytics-dashboard flex flex-column" data-testid="analytics-dashboard">
+<div class="w-full h-full overflow-auto" data-testid="analytics-dashboard">
     <!-- Development Status Banner -->
     @if ($showMessage()) {
-        <p-messages severity="info" data-testid="analytics-message">
-            <ng-template pTemplate="content">
-                <div class="flex align-items-center justify-content-between gap-2 w-full">
-                    <div class="flex align-items-center gap-2">
-                        <i class="pi pi-info-circle"></i>
-                        <span data-testid="message-content">
-                            {{ 'analytics.feature.state' | dm }}
-                            <b>{{ 'development' | dm }}</b>
-                        </span>
-                    </div>
-                    <div class="flex align-items-center gap-2">
-                        <button
-                            pButton
-                            class="p-button-text p-button-rounded p-button-sm p-button-icon-only"
-                            type="button"
-                            icon="pi pi-times"
-                            data-testid="close-message"
-                            (click)="onCloseMessage()"></button>
-                    </div>
-                </div>
-            </ng-template>
-        </p-messages>
+        <p-message
+            severity="info"
+            icon="pi pi-info-circle"
+            [closable]="true"
+            (onClose)="onCloseMessage()"
+            data-testid="analytics-message">
+            <span data-testid="message-content" class="text-gray-600 text-base font-normal">
+                {{ 'analytics.feature.state' | dm }}
+                <b>{{ 'development' | dm }}</b>
+            </span>
+        </p-message>
     }
 
     <!-- Filters Row -->
-    <div class="analytics-dashboard__filters-row">
-        <div
-            class="analytics-dashboard__filters-container flex justify-content-between align-items-center">
-            <dot-analytics-filters
-                class="analytics-dashboard__filters"
+    <div class="w-full bg-gray-100 border-b border-gray-300 py-3 px-4">
+        <div class="max-w-full flex justify-between items-center">
+            <dot-analytics-dashboard-filters
                 [timeRange]="store.timeRange()"
                 (changeFilters)="onTimeRangeChange($event)"
                 data-testid="analytics-filters" />
 
             <p-button
-                class="analytics-dashboard__refresh-button"
                 [label]="'analytics.dashboard.refresh.button' | dm"
                 [rounded]="false"
                 severity="primary"
@@ -47,25 +33,33 @@
     </div>
 
     <!-- Dashboard Content - Tabs -->
-    <div class="analytics-dashboard__dashboard-row">
-        <p-tabView [activeIndex]="$activeTabIndex()" (onChange)="onTabChange($event)">
-            @for (tab of $tabs(); track tab.id) {
-                <p-tabPanel [header]="tab.label | dm">
-                    <ng-template pTemplate="content">
+    <div class="bg-white px-4">
+        <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
+            <p-tablist>
+                @for (tab of $tabs(); track tab.id) {
+                    <p-tab [value]="tab.id">
+                        {{ tab.label | dm }}
+                    </p-tab>
+                }
+            </p-tablist>
+
+            <p-tabpanels>
+                @for (tab of $tabs(); track tab.id) {
+                    <p-tabpanel [value]="tab.id">
                         @switch (tab.id) {
                             @case ('pageview') {
-                                <dot-analytics-pageview-report />
+                                <dot-analytics-dashboard-pageview-report />
                             }
                             @case ('conversions') {
-                                <dot-analytics-conversions-report />
+                                <dot-analytics-dashboard-conversions-report />
                             }
                             @case ('engagement') {
-                                <dot-analytics-engagement-report />
+                                <dot-analytics-dashboard-engagement-report />
                             }
                         }
-                    </ng-template>
-                </p-tabPanel>
-            }
-        </p-tabView>
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
+        </p-tabs>
     </div>
 </div>

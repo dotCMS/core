@@ -19,8 +19,29 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
     selector: 'dot-content-drive-dropzone',
     imports: [DotMessagePipe],
     templateUrl: './dot-content-drive-dropzone.component.html',
-    styleUrl: './dot-content-drive-dropzone.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'relative h-full w-full max-h-full min-h-0' },
+    styles: `
+        :host.active::after,
+        :host.active .message {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        :host::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1000;
+            border: 1px dashed var(--color-palette-primary-500);
+            border-radius: 1rem;
+            background-color: rgba(246, 249, 252, 0.8);
+            opacity: 0;
+            visibility: visible;
+            transition: all 0.3s ease-in-out;
+            pointer-events: none;
+        }
+    `
 })
 export class DotContentDriveDropzoneComponent {
     readonly uploadFiles = output<DotContentDriveUploadFiles>();

@@ -82,22 +82,20 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         expect(component.$monacoOptions()).toEqual(expectedOptions);
     });
 
-    it('should use forcedLanguage when provided', () => {
-        expect(component.$language()).toBe(DEFAULT_MONACO_LANGUAGE);
-        spectator.detectChanges();
-        // Now set forced language
-        spectator.setHostInput('forceLanguage', AvailableLanguageMonaco.Velocity);
+    it('should use forcedLanguage Velocity when provided', () => {
+        // Set forceLanguage before first detectChanges to avoid ExpressionChangedAfterItHasBeenCheckedError
+        spectator.hostComponent.forceLanguage = AvailableLanguageMonaco.Velocity;
         spectator.detectChanges();
 
-        // Verify that the monaco options uses the forced language
         const options = component.$monacoOptions();
         expect(options.language).toBe(AvailableLanguageMonaco.Velocity);
     });
 
-    it('should use forcedLanguage when provided', () => {
+    it('should use forcedLanguage Javascript when provided', () => {
+        // Set forceLanguage before first detectChanges to avoid ExpressionChangedAfterItHasBeenCheckedError
+        spectator.hostComponent.forceLanguage = AvailableLanguageMonaco.Javascript;
         spectator.detectChanges();
-        spectator.setHostInput('forceLanguage', AvailableLanguageMonaco.Javascript);
-        spectator.detectChanges();
+
         const options = component.$monacoOptions();
         expect(options.language).toBe(AvailableLanguageMonaco.Javascript);
     });

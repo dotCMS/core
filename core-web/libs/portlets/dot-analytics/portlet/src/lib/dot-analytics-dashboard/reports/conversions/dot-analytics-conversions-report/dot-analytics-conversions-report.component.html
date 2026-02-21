@@ -1,25 +1,23 @@
 <!-- Metrics Section -->
-<div class="analytics-dashboard-conversions__metrics flex gap-3 flex-wrap">
+<div class="flex gap-3 flex-wrap max-lg:flex-col">
     @for (metric of $metricsData(); track metric.name) {
-        <div class="analytics-dashboard-conversions__metric-wrapper">
-            <dot-analytics-metric
-                class="analytics-dashboard-conversions__metric-card"
-                [title]="metric.name"
-                [value]="metric.value || 0"
-                [subtitle]="metric.subtitle || ''"
-                [icon]="metric.icon || ''"
-                [status]="metric.status"
-                data-testid="analytics-metric-card" />
-        </div>
+        <dot-analytics-dashboard-metrics
+            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full"
+            [name]="metric.name"
+            [value]="metric.value || 0"
+            [subtitle]="metric.subtitle || ''"
+            [icon]="metric.icon || ''"
+            [status]="metric.status"
+            data-testid="analytics-metric-card" />
     }
 </div>
 
 <!-- Charts Section - Two charts side by side -->
-<div class="analytics-dashboard-conversions__charts flex gap-3">
+<div class="flex gap-3 max-lg:flex-col">
     <!-- Conversion Trend - Line Chart (1 dataset) -->
-    <div class="analytics-dashboard-conversions__chart-half">
-        <dot-analytics-chart
-            [title]="'analytics.charts.conversion-trend.title'"
+    <div class="flex-1 min-w-0 max-lg:w-full">
+        <dot-analytics-dashboard-chart
+            [title]="'analytics.charts.conversion-trend.title' | dm"
             type="line"
             [data]="$conversionTrendData()"
             [status]="$conversionTrendStatus()"
@@ -27,8 +25,8 @@
     </div>
 
     <!-- Traffic vs Conversions - Combo Chart (2 datasets: bar + line) -->
-    <div class="analytics-dashboard-conversions__chart-half">
-        <dot-analytics-chart
+    <div class="flex-1 min-w-0 max-lg:w-full">
+        <dot-analytics-dashboard-chart
             [title]="$trafficVsConversionsTitle()"
             type="bar"
             [data]="$trafficVsConversionsData()"
@@ -38,8 +36,7 @@
 </div>
 
 <!-- Content Conversions Table -->
-<div class="analytics-dashboard-conversions__content-table">
-    <h3 class="chart-title mb-2">{{ 'analytics.table.content-conversions.title' | dm }}</h3>
+<div class="w-full">
     @defer (on viewport) {
         <dot-analytics-content-conversions-table
             [data]="$contentConversionsData()"
@@ -50,8 +47,7 @@
 </div>
 
 <!-- Conversions Overview Table -->
-<div class="analytics-dashboard-conversions__overview-table">
-    <h3 class="chart-title mb-2">{{ 'analytics.table.conversions-overview.title' | dm }}</h3>
+<div class="w-full">
     @defer (on viewport) {
         <dot-analytics-conversions-overview-table
             [data]="$conversionsOverviewData()"

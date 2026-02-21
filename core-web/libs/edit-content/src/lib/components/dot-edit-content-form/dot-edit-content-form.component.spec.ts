@@ -17,8 +17,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
-import { InputSwitch, InputSwitchChangeEvent } from 'primeng/inputswitch';
-import { TabPanel, TabView } from 'primeng/tabview';
+import { Tab, Tabs } from 'primeng/tabs';
+import { ToggleSwitch, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
 
 import {
     DotContentletService,
@@ -46,7 +46,8 @@ import { DotWorkflowActionsComponent } from '@dotcms/ui';
 import {
     DotFormatDateServiceMock,
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
-    MOCK_SINGLE_WORKFLOW_ACTIONS
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    mockMatchMedia
 } from '@dotcms/utils-testing';
 
 import { DotEditContentFormComponent } from './dot-edit-content-form.component';
@@ -161,6 +162,7 @@ describe('DotFormComponent', () => {
     });
 
     beforeEach(() => {
+        mockMatchMedia();
         spectator = createComponent({ detectChanges: false });
         component = spectator.component;
         store = spectator.inject(DotEditContentStore);
@@ -320,18 +322,24 @@ describe('DotFormComponent', () => {
                 inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
                 depth: DotContentletDepths.ONE
             }); // called with the inode of the contentlet
+            spectator.flushEffects(); // Wait for async store effects to complete
+            // Close sidebar so the sidebar toggle button is rendered (it only shows when !showSidebar)
+            store.toggleSidebar();
             spectator.detectChanges();
         });
 
         describe('UI', () => {
             it('should render two tabs', () => {
-                const tabView = spectator.query(TabView);
+                const tabView = spectator.query(Tabs);
                 expect(tabView).toBeTruthy();
 
-                const tabPanels = spectator.queryAll(TabPanel);
+                const tabPanels = spectator.queryAll(Tab);
                 expect(tabPanels.length).toBe(2);
-                expect(tabPanels[0]._header).toBe('Content');
-                expect(tabPanels[1]._header).toBe('New Tab');
+                // PrimeNG v21 uses .p-tab for tab headers
+                const tabHeaders = spectator.queryAll('.p-tab');
+                expect(tabHeaders.length).toBe(2);
+                expect(tabHeaders[0]?.textContent?.trim()).toBe('Content');
+                expect(tabHeaders[1]?.textContent?.trim()).toBe('New Tab');
             });
 
             it('should have append area', () => {
@@ -340,15 +348,29 @@ describe('DotFormComponent', () => {
             });
 
             it('should render workflow actions and sidebar toggle in append area', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
+                const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton =
+                    spectator.query(byTestId('sidebar-toggle-button')) ??
+                    sidebarToggle?.querySelector('button');
                 const workflowActions = spectator.query(DotWorkflowActionsComponent);
 
                 expect(workflowActions).toBeTruthy();
+                expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                const sidebarButton = spectator.query(byTestId('sidebar-toggle-button'));
+                // Ensure sidebar is closed (button only renders when !showSidebar)
+                if (store.isSidebarOpen()) {
+                    store.toggleSidebar();
+                    spectator.detectChanges();
+                }
+
+                const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
+                const sidebarButton =
+                    spectator.query(byTestId('sidebar-toggle-button')) ??
+                    sidebarToggle?.querySelector('button');
+                expect(sidebarToggle).toBeTruthy();
                 expect(sidebarButton).toBeTruthy();
 
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
@@ -628,17 +650,17 @@ describe('DotFormComponent', () => {
             });
 
             it('should call lockContent when switch is turned on', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
 
-                lockSwitch.onChange.emit({ checked: true } as InputSwitchChangeEvent);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.lockContent).toHaveBeenCalled();
             });
 
             it('should call unlockContent when switch is turned off', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
 
-                lockSwitch.onChange.emit({ checked: false } as InputSwitchChangeEvent);
+                lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.unlockContent).toHaveBeenCalled();
             });
@@ -659,7 +681,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should hide the lock switch when user can not lock', () => {
-                const lockSwitch = spectator.query(InputSwitch);
+                const lockSwitch = spectator.query(ToggleSwitch);
                 expect(lockSwitch).toBe(null);
             });
         });
@@ -901,7 +923,7 @@ describe('DotFormComponent', () => {
         describe('Historical Version UI Elements', () => {
             it('should hide lock controls when viewing historical version', () => {
                 // Initially lock controls should be visible
-                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const lockControls = spectator.query(byTestId('content-lock-controls'));
                 expect(lockControls).toBeTruthy();
 
                 // Simulate loading a historical version using the store's public method
@@ -909,7 +931,7 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
 
                 // Lock controls should be hidden
-                const lockControlsAfter = spectator.query('.dot-edit-content-actions__lock');
+                const lockControlsAfter = spectator.query(byTestId('content-lock-controls'));
                 expect(lockControlsAfter).toBeFalsy();
             });
 
@@ -990,7 +1012,7 @@ describe('DotFormComponent', () => {
                 expect(store.isViewingHistoricalVersion()).toBe(false);
                 //TODO: enable this when all fields have disable state expect(component.form.enabled).toBe(true);
 
-                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const lockControls = spectator.query(byTestId('content-lock-controls'));
                 const workflowActions = spectator.query(byTestId('workflow-actions'));
                 const restoreButton = spectator.query(
                     byTestId('restore-historical-version-button')
@@ -1007,7 +1029,7 @@ describe('DotFormComponent', () => {
                 // Check historical view state
                 //TODO: enable this when all fields have disable state expect(component.form.disabled).toBe(true);
 
-                const lockControlsAfter = spectator.query('.dot-edit-content-actions__lock');
+                const lockControlsAfter = spectator.query(byTestId('content-lock-controls'));
                 const workflowActionsAfter = spectator.query(byTestId('workflow-actions'));
                 const restoreButtonAfter = spectator.query(
                     byTestId('restore-historical-version-button')
@@ -1033,7 +1055,7 @@ describe('DotFormComponent', () => {
                 // Check normal view state
                 expect(component.form.enabled).toBe(true);
 
-                const lockControls = spectator.query('.dot-edit-content-actions__lock');
+                const lockControls = spectator.query(byTestId('content-lock-controls'));
                 const workflowActions = spectator.query(byTestId('workflow-actions'));
                 const restoreButton = spectator.query(
                     byTestId('restore-historical-version-button')

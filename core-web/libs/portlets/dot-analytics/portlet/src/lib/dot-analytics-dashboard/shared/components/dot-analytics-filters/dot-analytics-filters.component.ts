@@ -13,8 +13,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { CalendarModule } from 'primeng/calendar';
-import { DropdownChangeEvent, DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
+import { SelectChangeEvent } from 'primeng/types/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -33,16 +34,14 @@ import { isValidCustomDateRange } from '../../utils/dot-analytics.utils';
  *
  */
 @Component({
-    selector: 'dot-analytics-filters',
-    imports: [CalendarModule, DropdownModule, FormsModule, DotMessagePipe],
-    templateUrl: './dot-analytics-filters.component.html',
-    styleUrls: ['./dot-analytics-filters.component.scss'],
+    selector: 'dot-analytics-dashboard-filters',
+    imports: [DatePickerModule, SelectModule, FormsModule, DotMessagePipe],
+    templateUrl: './dot-analytics-dashboard-filters.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAnalyticsFiltersComponent {
+export class DotAnalyticsDashboardFiltersComponent {
     private readonly dotMessageService = inject(DotMessageService);
 
-    /** Currently active time range value passed from the parent */
     $timeRange = input.required<TimeRangeInput>({ alias: 'timeRange' });
 
     /** Currently selected time period value */
@@ -65,7 +64,6 @@ export class DotAnalyticsFiltersComponent {
         }));
     });
 
-    /** Emits the new time range when the user changes the filter selection */
     changeFilters = output<TimeRangeInput>();
 
     constructor() {
@@ -73,7 +71,7 @@ export class DotAnalyticsFiltersComponent {
     }
 
     /** Handle change time range */
-    onChangeTimeRange(event: DropdownChangeEvent): void {
+    onChangeTimeRange(event: SelectChangeEvent): void {
         if (event.value === TIME_RANGE_OPTIONS.custom) {
             return;
         }

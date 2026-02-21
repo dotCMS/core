@@ -37,7 +37,7 @@ const tippyOptions: Partial<Props> = {
     popperOptions: {
         modifiers: [
             {
-                name: 'flip',
+                name: 'animate-flip',
                 options: { fallbackPlacements: ['top-start'] }
             }
         ]

@@ -1,0 +1,87 @@
+<p-toolbar class="gap-1 px-3 justify-start border-none!">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'tags.search.placeholder' | dm"
+                [attr.aria-label]="'tags.search.placeholder' | dm"
+                data-testid="tag-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <div class="flex gap-2 ml-auto">
+            @if (store.selectedTags().length > 0) {
+                <p-button
+                    [label]="'tags.export' | dm"
+                    icon="pi pi-download"
+                    [outlined]="true"
+                    (onClick)="store.exportSelectedTags()"
+                    data-testid="tag-export-btn" />
+                <p-button
+                    [label]="'tags.delete' | dm"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [outlined]="true"
+                    (onClick)="confirmDelete()"
+                    data-testid="tag-delete-btn" />
+            }
+            <p-splitButton
+                [label]="'tags.add.tag' | dm"
+                icon="pi pi-plus"
+                (onClick)="openCreateDialog()"
+                [model]="addTagMenuItems"
+                data-testid="tag-add-split-btn" />
+        </div>
+    </div>
+</p-toolbar>
+
+<!-- Table -->
+<p-table
+    [value]="store.tags()"
+    [lazy]="true"
+    (onLazyLoad)="onLazyLoad($event)"
+    [paginator]="true"
+    [rows]="store.rows()"
+    [totalRecords]="store.totalRecords()"
+    [first]="(store.page() - 1) * store.rows()"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    [loading]="store.status() === 'loading'"
+    [selection]="store.selectedTags()"
+    (selectionChange)="store.setSelectedTags($event)"
+    dataKey="id"
+    data-testid="tags-table">
+    <ng-template pTemplate="header">
+        <tr>
+            <th style="width: 4rem">
+                <p-tableHeaderCheckbox />
+            </th>
+            <th pSortableColumn="tagname">
+                {{ 'tags.table.header.name' | dm }}
+                <p-sortIcon field="tagname" />
+            </th>
+            <th>{{ 'tags.table.header.site' | dm }}</th>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-tag>
+        <tr data-testid="tag-row" class="cursor-pointer" (click)="openEditDialog(tag)">
+            <td (click)="$event.stopPropagation()">
+                <p-tableCheckbox [value]="tag" />
+            </td>
+            <td data-testid="tag-name">{{ tag.label }}</td>
+            <td data-testid="tag-site">{{ tag.siteName }}</td>
+        </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+        <tr>
+            <td colspan="3" class="text-center p-4">{{ 'tags.empty' | dm }}</td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<p-confirmDialog />

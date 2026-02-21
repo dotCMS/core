@@ -15,60 +15,46 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
-import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
-import { ChartData } from '../../../shared/types';
-import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
+import { ChartData } from '../../types';
+import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
+import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
+import { DotAnalyticsDashboardTableComponent } from '../dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 
 @Component({
-    selector: 'dot-analytics-pageview-report',
+    selector: 'dot-analytics-dashboard-pageview-report',
     imports: [
         CommonModule,
-        DotAnalyticsMetricComponent,
-        DotAnalyticsChartComponent,
-        DotAnalyticsTopPagesTableComponent,
+        DotAnalyticsDashboardMetricsComponent,
+        DotAnalyticsDashboardChartComponent,
+        DotAnalyticsDashboardTableComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-analytics-pageview-report.component.html',
-    styleUrl: './dot-analytics-pageview-report.component.scss',
+    templateUrl: './dot-analytics-dashboard-pageview-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: {
-        class: 'flex flex-column gap-4 w-full'
-    }
+    host: { class: 'flex flex-col gap-3 w-full' }
 })
-/**
- * Pageview report component displaying page traffic metrics, timeline chart,
- * device/browser breakdown, and top performing pages table.
- */
-export default class DotAnalyticsPageviewReportComponent {
-    /** Analytics dashboard store providing pageview data and actions */
+export default class DotAnalyticsDashboardPageviewReportComponent {
     readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
 
-    /** Total page views metric data from store */
+    // Metrics signals from store
     protected readonly $totalPageViews = this.store.totalPageViews;
-    /** Unique visitors metric data from store */
     protected readonly $uniqueVisitors = this.store.uniqueVisitors;
-    /** Top page performance metric data from store */
     protected readonly $topPagePerformance = this.store.topPagePerformance;
-    /** Top pages table data from store */
     protected readonly $topPagesTable = this.store.topPagesTable;
 
-    /** Transformed chart data for the pageview timeline line chart */
+    // Chart signals - transformed data
     protected readonly $pageViewTimeLineData = computed<ChartData>(() =>
         transformPageViewTimeLineData(this.store.pageViewTimeLine().data)
     );
-    /** Loading/error status for the pageview timeline chart */
     protected readonly $pageViewTimeLineStatus = computed(
         () => this.store.pageViewTimeLine().status
     );
 
-    /** Transformed chart data for the device & browser breakdown chart */
     protected readonly $pageViewDeviceBrowsersData = computed<ChartData>(() =>
         transformDeviceBrowsersData(this.store.pageViewDeviceBrowsers().data)
     );
-    /** Loading/error status for the device & browser chart */
     protected readonly $pageViewDeviceBrowsersStatus = computed(
         () => this.store.pageViewDeviceBrowsers().status
     );
@@ -83,7 +69,7 @@ export default class DotAnalyticsPageviewReportComponent {
         });
     }
 
-    /** Aggregated metric cards data combining store slices with display metadata */
+    // Computed signals for data transformations
     protected readonly $metricsData = computed((): MetricData[] => [
         {
             name: 'analytics.metrics.total-pageviews',

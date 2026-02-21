@@ -9,7 +9,7 @@ import { of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Dropdown } from 'primeng/select';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
@@ -50,14 +50,14 @@ describe('DotLanguageSelectorComponent', () => {
         expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledTimes(1);
         expect(spectator.component.languagesList().length).toBe(mockLanguageArray.length);
 
-        const pDropdown: Dropdown = spectator.query(Dropdown);
+        const pDropdown: Select = spectator.query(Dropdown);
         expect(pDropdown.options).toEqual(mockLanguageArray);
     });
 
     it('should have right attributes on dropdown', () => {
         const valueKey = 'id';
         const labelKey = 'language';
-        const pDropdown: Dropdown = spectator.query(Dropdown);
+        const pDropdown: Select = spectator.query(Dropdown);
 
         expect(pDropdown.dataKey).toBe(valueKey);
         expect(pDropdown.optionLabel).toBe(labelKey);
