@@ -274,6 +274,37 @@ public class CategoryHelperTest {
         assertEquals("Laptops", result.get(0).getCategoryName());
     }
 
+    /**
+     * An empty file (no content at all) must throw IOException — not silently return an empty
+     * list.  This corresponds to Bug #5: garbage/empty files must not return 200 successCount=0.
+     */
+    @Test
+    public void testImporter_emptyContent_throwsIOException() {
+        final BufferedReader reader = new BufferedReader(new StringReader(""));
+        try {
+            CategoryImporter.from(reader);
+            fail("Expected IOException for empty content");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
+    /**
+     * A single-line garbage string (no newlines, not CSV structure) must throw IOException.
+     * This covers the case where a user uploads a non-CSV file (e.g. a binary dump or log file).
+     */
+    @Test
+    public void testImporter_garbageContent_throwsIOException() {
+        final BufferedReader reader = new BufferedReader(
+                new StringReader("??random??binary??garbage??content??no??csv??here"));
+        try {
+            CategoryImporter.from(reader);
+            fail("Expected IOException for garbage content");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
     // -----------------------------------------------------------------------
     // CategoryHelper - DotDataException handling (Issue #1)
     // -----------------------------------------------------------------------
