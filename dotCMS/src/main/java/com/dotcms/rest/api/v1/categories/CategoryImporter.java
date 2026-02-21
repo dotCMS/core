@@ -51,7 +51,7 @@ public class CategoryImporter {
         return result;
     }
 
-    private static boolean hasRequiredHeaders(final CsvReader csvreader) {
+    private static boolean hasRequiredHeaders(final CsvReader csvreader) throws IOException {
         final String[] headers = csvreader.getHeaders();
         if (headers == null || headers.length < REQUIRED_HEADERS.length) {
             return false;
