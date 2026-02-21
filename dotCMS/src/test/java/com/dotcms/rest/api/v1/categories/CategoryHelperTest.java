@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.categories;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -13,16 +14,20 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.liferay.portal.model.User;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.StringReader;
+import java.util.List;
 import org.junit.Test;
 
 /**
- * Unit tests for {@link CategoryHelper#addOrUpdateCategory(User, String, BufferedReader, Boolean)}.
+ * Unit tests for the categories import flow: {@link CategoryHelper#addOrUpdateCategory(User, String, BufferedReader, Boolean)}
+ * and {@link CategoryImporter#from(BufferedReader)}.
  */
 public class CategoryHelperTest {
 
@@ -210,5 +215,97 @@ public class CategoryHelperTest {
 
         assertEquals(0, count);
         verify(categoryAPI, never()).save(any(), any(), any(), anyBoolean());
+    }
+
+    // -----------------------------------------------------------------------
+    // CategoryImporter - header validation and name trimming (Issue #3 and #4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * A CSV with correct headers (name, key, variable, sort) must parse without error.
+     */
+    @Test
+    public void testImporter_validHeaders_parsesRows() throws IOException {
+        final BufferedReader reader = csvReader("\"Boys\",\"boys\",\"boys\",0");
+        final List<CategoryDTO> result = CategoryImporter.from(reader);
+        assertEquals(1, result.size());
+        assertEquals("Boys", result.get(0).getCategoryName());
+    }
+
+    /**
+     * A CSV with wrong column headers must throw IOException so the caller can return 400.
+     */
+    @Test
+    public void testImporter_invalidHeaders_throwsIOException() {
+        final BufferedReader reader = new BufferedReader(new StringReader(
+                "\"invalid1\",\"invalid2\",\"invalid3\",\"invalid4\"\r\n"
+                        + "\"Boys\",\"boys\",\"boys\",0\r\n"));
+        try {
+            CategoryImporter.from(reader);
+            fail("Expected IOException for invalid CSV headers");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
+    /**
+     * A CSV with fewer than 4 columns in the header must throw IOException.
+     */
+    @Test
+    public void testImporter_tooFewHeaders_throwsIOException() {
+        final BufferedReader reader = new BufferedReader(
+                new StringReader("\"name\",\"key\"\r\n\"Boys\",\"boys\"\r\n"));
+        try {
+            CategoryImporter.from(reader);
+            fail("Expected IOException for too-few CSV headers");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Category names with leading/trailing spaces must be trimmed when parsed.
+     */
+    @Test
+    public void testImporter_leadingSpacesInName_trimmed() throws IOException {
+        final BufferedReader reader = csvReader("\"  Laptops  \",\"laptops\",\"laptops\",0");
+        final List<CategoryDTO> result = CategoryImporter.from(reader);
+        assertEquals(1, result.size());
+        assertEquals("Laptops", result.get(0).getCategoryName());
+    }
+
+    // -----------------------------------------------------------------------
+    // CategoryHelper - DotDataException handling (Issue #1)
+    // -----------------------------------------------------------------------
+
+    /**
+     * When a DotDataException is thrown during save, the failing row should not be counted as a
+     * success. The method must continue processing remaining rows (no abort).
+     */
+    @Test
+    public void testMerge_dataExceptionOnSave_countedAsFailure()
+            throws Exception {
+
+        final CategoryAPI categoryAPI = mock(CategoryAPI.class);
+        final User user = mock(User.class);
+
+        when(categoryAPI.findByKey(anyString(), eq(user), anyBoolean())).thenReturn(null);
+        when(categoryAPI.suggestVelocityVarName(anyString())).thenAnswer(
+                inv -> inv.getArgument(0));
+
+        // First save throws DotDataException, second succeeds
+        doThrow(new DotDataException("DB error"))
+                .doNothing()
+                .when(categoryAPI).save(isNull(), any(Category.class), eq(user), eq(false));
+
+        final CategoryHelper helper = new CategoryHelper(categoryAPI);
+        final BufferedReader reader = csvReader(
+                "\"Boys\",\"boys\",\"boys\",0",
+                "\"Girls\",\"girls\",\"girls\",0");
+
+        final long count = helper.addOrUpdateCategory(user, null, reader, true);
+
+        // Only the second row succeeded
+        assertEquals(1, count);
     }
 }

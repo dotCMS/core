@@ -164,6 +164,10 @@ public class CategoryHelper {
             Logger.error(this,
                     "Error trying to save/update the category " + category.getInode(), e);
             return false;
+        } catch (DotDataException e) {
+            Logger.error(this,
+                    "Error trying to save/update the category " + category.getInode(), e);
+            return false;
         }
     }
 

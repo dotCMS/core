@@ -831,6 +831,10 @@ public class CategoriesResource {
             final String exportType,
             final String contextInode) throws IOException {
 
+        if (uploadedFile == null) {
+            return ExceptionMapperUtil.createResponse("File is required", Response.Status.BAD_REQUEST);
+        }
+
         List<Category> unableToDeleteCats = null;
         final List<FailedResultView> failedToDelete = new ArrayList<>();
         long successCount = 0;
@@ -882,6 +886,9 @@ public class CategoriesResource {
                 successCount = this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
             }
 
+        } catch (IOException e) {
+            Logger.error(this, "Error importing categories: " + e.getMessage(), e);
+            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
         } catch (Exception e) {
             Logger.error(this, "Error importing categories", e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
