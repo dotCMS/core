@@ -154,30 +154,16 @@ describe('DotLocaleCreateEditComponent', () => {
         });
 
         it('should load the add custom Locale form correctly', () => {
-            const localeTypeDropdown = spectator.debugElement.query(
-                By.css('[data-testId="localeType"]')
-            );
-
-            localeTypeDropdown.componentInstance.value = 2;
-            spectator.triggerEventHandler(localeTypeSelect, 'onChange', {
-                event: new Event('change'),
-                value: 2
-            });
+            spectator.component.form.get('localeType')?.setValue(2);
+            spectator.detectChanges();
 
             expect(spectator.query(byTestId('language'))).not.toBeNull();
             expect(spectator.query(byTestId('languageCode'))).not.toBeNull();
         });
 
         it('should save the custom Locale form correctly', () => {
-            const localeTypeDropdown = spectator.debugElement.query(
-                By.css('[data-testId="localeType"]')
-            );
-
-            localeTypeDropdown.componentInstance.value = 2;
-            spectator.triggerEventHandler(localeTypeSelect, 'onChange', {
-                event: new Event('change'),
-                value: 2
-            });
+            spectator.component.form.get('localeType')?.setValue(2);
+            spectator.detectChanges();
 
             spectator.typeInElement('Spanish', spectator.query(byTestId('language')));
             spectator.typeInElement('es', spectator.query(byTestId('languageCode')));
@@ -187,27 +173,21 @@ describe('DotLocaleCreateEditComponent', () => {
             expect(ref.close).toHaveBeenCalledWith({
                 language: 'Spanish',
                 languageCode: 'es',
-                country: undefined,
-                countryCode: undefined,
+                country: null,
+                countryCode: null,
                 id: undefined
             });
         });
 
         it('should show the error when the locale already exists', () => {
-            const localeTypeDropdown = spectator.debugElement.query(
-                By.css('[data-testId="localeType"]')
-            );
-
-            localeTypeDropdown.componentInstance.value = 2;
-            spectator.triggerEventHandler(localeTypeSelect, 'onChange', {
-                event: new Event('change'),
-                value: 2
-            });
+            spectator.component.form.get('localeType')?.setValue(2);
+            spectator.detectChanges();
 
             spectator.typeInElement('English', spectator.query(byTestId('language')));
             spectator.typeInElement('en-US', spectator.query(byTestId('languageCode')));
 
             spectator.click(spectator.query(byTestId('submit-button')));
+            spectator.detectChanges();
 
             expect(spectator.query(byTestId('error-message'))).not.toBeNull();
         });

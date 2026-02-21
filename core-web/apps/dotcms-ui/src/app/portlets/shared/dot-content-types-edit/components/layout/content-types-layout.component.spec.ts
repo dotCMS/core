@@ -68,7 +68,6 @@ import { IframeComponent } from '../../../../../view/components/_common/iframe/i
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
-import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { FieldDragDropService, FieldService } from '../fields/service';
 
@@ -178,7 +177,6 @@ describe('ContentTypesLayoutComponent', () => {
                 ContentTypesLayoutComponent,
                 TabsModule,
                 DotIconComponent,
-                DotSecondaryToolbarComponent,
                 RouterTestingModule,
                 DotApiLinkComponent,
                 DotCopyLinkComponent,
@@ -337,8 +335,9 @@ describe('ContentTypesLayoutComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have dot-secondary-toolbar', () => {
-            expect(de.query(By.css('dot-secondary-toolbar'))).toBeDefined();
+        it('should have edit toolbar with add-to-menu and form edit button', () => {
+            expect(de.query(By.css('#add-to-menu-button'))).toBeDefined();
+            expect(de.query(By.css('#form-edit-button'))).toBeDefined();
         });
 
         it('should have elements in the correct place', () => {

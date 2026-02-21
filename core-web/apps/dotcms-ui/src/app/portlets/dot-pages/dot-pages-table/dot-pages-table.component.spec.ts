@@ -1,5 +1,6 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 import { MockProvider } from 'ng-mocks';
+import { of } from 'rxjs';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
@@ -25,6 +26,8 @@ import { DotcmsEventsServiceMock } from '@dotcms/utils-testing';
 
 import { DotPagesTableComponent } from './dot-pages-table.component';
 
+import { DotPageActionsService } from '../services/dot-page-actions.service';
+
 type LazyLoadArg = Parameters<DotPagesTableComponent['loadPagesLazy']>[0];
 type RowSelectArg = Parameters<DotPagesTableComponent['onRowSelect']>[0];
 type OpenMenuArg = Parameters<DotPagesTableComponent['openMenu']['emit']>[0];
@@ -34,6 +37,21 @@ const mockContentlet = (partial: Partial<DotCMSContentlet>): DotCMSContentlet =>
 };
 
 const rowSelectEvent = (data: DotCMSContentlet): RowSelectArg => ({ data }) as RowSelectArg;
+
+// Mock window.matchMedia for PrimeNG ContextMenu (JSDOM does not provide it)
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
 
 describe('DotPagesTableComponent', () => {
     let spectator: SpectatorHost<DotPagesTableComponent>;
@@ -142,6 +160,9 @@ describe('DotPagesTableComponent', () => {
         schemas: [NO_ERRORS_SCHEMA],
         providers: [
             MockProvider(DotFormatDateService),
+            MockProvider(DotPageActionsService, {
+                getItems: jest.fn().mockReturnValue(of([]))
+            }),
             {
                 provide: DotcmsEventsService,
                 useClass: DotcmsEventsServiceMock

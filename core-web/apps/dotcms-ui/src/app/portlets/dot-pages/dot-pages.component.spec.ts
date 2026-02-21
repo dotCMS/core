@@ -28,11 +28,11 @@ import { DotCMSPagesStore } from './store/store';
 
 /* eslint-disable @angular-eslint/component-selector */
 @Component({
-    selector: 'p-menu',
+    selector: 'p-tieredmenu',
     standalone: true,
     template: ''
 })
-class MenuStubComponent {
+class TieredMenuStubComponent {
     @Input() model: MenuItem[] = [];
     @Input() popup = true;
     @Input() appendTo: unknown;
@@ -49,7 +49,6 @@ class MenuStubComponent {
         this.onHide.emit();
     }
 
-    // PrimeNG's Menu.show expects a MouseEvent-like object for positioning; we don't care in unit tests.
     show(_event: unknown): void {
         this.visible = true;
     }
@@ -110,12 +109,13 @@ describe('DotPagesComponent', () => {
             contextMenu: signal(undefined)
         }));
 
-        // Replace heavy child components with mocks/stubs.
+        // Replace heavy child components with mocks/stubs. Use TieredMenuStubComponent because
+        // the template uses p-tieredmenu #menu; the stub must have hide() for closeMenu().
         TestBed.overrideComponent(DotPagesComponent, {
             set: {
                 imports: [
                     CommonModule,
-                    MenuStubComponent,
+                    TieredMenuStubComponent,
                     MockComponent(DotPageFavoritesPanelComponent),
                     MockComponent(DotPagesTableComponent),
                     MockComponent(DotCreatePageDialogComponent),
@@ -223,12 +223,12 @@ describe('DotPagesComponent', () => {
     });
 
     describe('menu behavior', () => {
-        it('should close menu and clear menuItems when p-menu emits onHide', () => {
+        it('should close menu and clear menuItems when p-tieredmenu emits onHide', () => {
             const menu = spectator.component.menu() as unknown as MenuStubComponent;
             menu.visible = true;
 
             spectator.component.menuItems.set([{ label: 'x' }]);
-            spectator.triggerEventHandler('p-menu', 'onHide', null);
+            spectator.triggerEventHandler('p-tieredmenu', 'onHide', null);
 
             expect(spectator.component.menuItems()).toEqual([]);
             expect(menu.visible).toBe(false);

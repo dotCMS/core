@@ -62,6 +62,7 @@ const MOCK_CONTENT_CONTENTLET: DotCMSContentlet = {
     identifier: 'content-456',
     inode: 'inode-456',
     title: 'Blog Post',
+    url: '/blog/my-post',
     baseType: DotCMSBaseTypesContentTypes.CONTENT,
     contentType: 'blog',
     languageId: 1,
@@ -339,11 +340,16 @@ describe('DotPageActionsService', () => {
         });
 
         it('should include add to bundle action (disabled)', (done) => {
-            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                const bundleAction = items.find((item) => item.label?.includes('add_to_bundle'));
-                expect(bundleAction).toBeTruthy();
-                expect(bundleAction?.disabled).toBe(true);
-                done();
+            spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe({
+                next: (items) => {
+                    const bundleAction = items.find((item) =>
+                        item.label?.includes('add_to_bundle')
+                    );
+                    expect(bundleAction).toBeTruthy();
+                    expect(bundleAction?.disabled).toBe(true);
+                    done();
+                },
+                error: (err) => done(err)
             });
         });
 
@@ -671,15 +677,19 @@ describe('DotPageActionsService', () => {
 
                 expect(mockDialogService.open).toHaveBeenCalled();
 
-                // Step 3: Verify dialog configuration
+                // Step 3: Verify dialog configuration (add flow: no existing favorite, favoritePageUrl set)
                 const dialogConfig = mockDialogService.open.mock.calls[0]?.[1] as unknown as {
                     data?: {
-                        page?: { favoritePage?: DotCMSContentlet };
+                        page?: {
+                            favoritePage?: DotCMSContentlet;
+                            favoritePageUrl?: string;
+                        };
                         onSave?: () => void;
                         onDelete?: () => void;
                     };
                 };
-                expect(dialogConfig.data?.page?.favoritePage).toBe(MOCK_HTMLPAGE_CONTENTLET);
+                expect(dialogConfig.data?.page?.favoritePage).toBeUndefined();
+                expect(dialogConfig.data?.page?.favoritePageUrl).toBeDefined();
                 expect(dialogConfig.data?.onSave).toBeDefined();
                 expect(dialogConfig.data?.onDelete).toBeDefined();
 

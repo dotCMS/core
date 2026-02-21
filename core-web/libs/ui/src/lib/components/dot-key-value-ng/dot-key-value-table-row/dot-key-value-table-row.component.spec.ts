@@ -6,7 +6,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { Table, TableModule, TableService } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
@@ -23,6 +23,65 @@ const mockVariable: DotKeyValue = {
     hidden: false,
     value: 'John'
 };
+
+/**
+ * Test template without pReorderableRow / pReorderableRowHandle so we don't need PrimeNG Table in the test injector.
+ * Same structure and behavior, only the drag directives are omitted.
+ */
+const TEST_TEMPLATE = `
+@let variable = $variable();
+@let showHiddenField = $showHiddenField();
+@let isHiddenField = $isHiddenField();
+<tr class="dot-key-value-table-row">
+    @if ($dragAndDrop()) {
+        <td class="p-2 align-middle">
+            <span class="pi pi-bars text-gray-500"></span>
+        </td>
+    }
+    <td class="p-2 align-middle" data-testId="dot-key-value-key">
+        <span>{{ variable.key }}</span>
+    </td>
+    @if (isHiddenField) {
+        <td class="p-2 align-middle" data-testId="dot-key-value-label">
+            <span>
+                <i class="pi pi-lock inline-block mr-1"></i>
+                {{ 'keyValue.value_hidden' | dm }}
+            </span>
+        </td>
+    } @else {
+        <td class="p-2 align-middle" data-testId="dot-key-value-editable-column">
+            <input
+                (keydown.enter)="onPressEnter($event)"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                [type]="inputType"
+                [formControl]="valueControl"
+                class="w-full"
+                autocomplete="false"
+                data-testId="dot-key-value-input"
+                pInputText
+                pSize="small" />
+        </td>
+    }
+    @if (showHiddenField) {
+        <td class="p-2 align-middle">
+            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
+                <p-toggleSwitch
+                    [formControl]="hiddenControl"
+                    data-testId="dot-key-value-hidden-switch" />
+            }
+        </td>
+    }
+    <td class="p-2 align-middle">
+        <p-button
+            (click)="delete.emit()"
+            data-testId="dot-key-value-delete-button"
+            icon="pi pi-times"
+            severity="secondary"
+            size="small"
+            [text]="true" />
+    </td>
+</tr>
+`;
 
 describe('DotKeyValueTableRowComponent', () => {
     let spectator: Spectator<DotKeyValueTableRowComponent>;
@@ -47,10 +106,9 @@ describe('DotKeyValueTableRowComponent', () => {
                     'keyValue.value_input.placeholder': 'Enter Value',
                     'keyValue.value_hidden': 'Value hidden'
                 })
-            },
-            Table,
-            TableService
-        ]
+            }
+        ],
+        overrideComponents: [[DotKeyValueTableRowComponent, { set: { template: TEST_TEMPLATE } }]]
     });
 
     beforeEach(() => {
