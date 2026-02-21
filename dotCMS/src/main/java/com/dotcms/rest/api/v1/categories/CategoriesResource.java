@@ -10,6 +10,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.CloseUtils;
@@ -25,7 +26,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -803,7 +804,7 @@ public class CategoriesResource {
             @FormDataParam("file") FormDataContentDisposition fileDetail,
             @FormDataParam("filter") String filter,
             @FormDataParam("exportType") String exportType,
-            @FormDataParam("contextInode") String contextInode) throws IOException {
+            @FormDataParam("contextInode") String contextInode) {
 
         return processImport(httpRequest, httpResponse, uploadedFile, multiPart, fileDetail, filter,
                 exportType, contextInode);
@@ -829,10 +830,10 @@ public class CategoriesResource {
             final FormDataContentDisposition fileDetail,
             final String filter,
             final String exportType,
-            final String contextInode) throws IOException {
+            final String contextInode) {
 
         if (uploadedFile == null) {
-            return ExceptionMapperUtil.createResponse("File is required", Response.Status.BAD_REQUEST);
+            throw new BadRequestException(null, "File is required");
         }
 
         List<Category> unableToDeleteCats = null;
@@ -859,7 +860,7 @@ public class CategoriesResource {
             stringReader = new StringReader(content);
             bufferedReader = new BufferedReader(stringReader);
 
-            if (exportType.equals("replace")) {
+            if ("replace".equals(exportType)) {
                 Logger.debug(this, () -> "Replacing categories");
                 if (UtilMethods.isSet(contextInode)) {
                     Category contextCat = this.categoryAPI.find(contextInode, user, false);
@@ -881,20 +882,25 @@ public class CategoriesResource {
                 }
 
                 successCount = this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, false);
-            } else if (exportType.equals("merge")) {
+            } else if ("merge".equals(exportType)) {
                 Logger.debug(this, () -> "Merging categories");
                 successCount = this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
+            } else {
+                throw new BadRequestException(null,
+                        "Invalid exportType: " + exportType + ". Must be 'replace' or 'merge'");
             }
 
+        } catch (BadRequestException | ForbiddenException e) {
+            throw e;
         } catch (IOException e) {
             Logger.error(this, "Error importing categories: " + e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+            throw new BadRequestException(e, e.getMessage());
         } catch (Exception e) {
             Logger.error(this, "Error importing categories", e);
             if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
                 throw new ForbiddenException(e);
             }
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            throw new DotRuntimeException(e);
         } finally {
             CloseUtils.closeQuietly(stringReader, bufferedReader);
         }

@@ -31,8 +31,8 @@ public class CategoryImporter {
             while (csvreader.readRecord()) {
                 csvLine = csvreader.getValues();
                 try {
-                    result.add(new CategoryDTO(csvLine[0].trim(), csvLine[2],
-                            csvLine[1], null, csvLine[3]));
+                    result.add(new CategoryDTO(csvLine[0].trim(), csvLine[2].trim(),
+                            csvLine[1].trim(), null, csvLine[3].trim()));
 
                 } catch (Exception e) {
                     Logger.error(CategoryImporter.class,

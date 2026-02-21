@@ -1,7 +1,6 @@
 package com.dotcms.rest.api.v1.categories;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -235,32 +234,22 @@ public class CategoryHelperTest {
     /**
      * A CSV with wrong column headers must throw IOException so the caller can return 400.
      */
-    @Test
-    public void testImporter_invalidHeaders_throwsIOException() {
+    @Test(expected = IOException.class)
+    public void testImporter_invalidHeaders_throwsIOException() throws IOException {
         final BufferedReader reader = new BufferedReader(new StringReader(
                 "\"invalid1\",\"invalid2\",\"invalid3\",\"invalid4\"\r\n"
                         + "\"Boys\",\"boys\",\"boys\",0\r\n"));
-        try {
-            CategoryImporter.from(reader);
-            fail("Expected IOException for invalid CSV headers");
-        } catch (IOException e) {
-            // expected
-        }
+        CategoryImporter.from(reader);
     }
 
     /**
      * A CSV with fewer than 4 columns in the header must throw IOException.
      */
-    @Test
-    public void testImporter_tooFewHeaders_throwsIOException() {
+    @Test(expected = IOException.class)
+    public void testImporter_tooFewHeaders_throwsIOException() throws IOException {
         final BufferedReader reader = new BufferedReader(
                 new StringReader("\"name\",\"key\"\r\n\"Boys\",\"boys\"\r\n"));
-        try {
-            CategoryImporter.from(reader);
-            fail("Expected IOException for too-few CSV headers");
-        } catch (IOException e) {
-            // expected
-        }
+        CategoryImporter.from(reader);
     }
 
     /**
@@ -276,33 +265,23 @@ public class CategoryHelperTest {
 
     /**
      * An empty file (no content at all) must throw IOException — not silently return an empty
-     * list.  This corresponds to Bug #5: garbage/empty files must not return 200 successCount=0.
+     * list.
      */
-    @Test
-    public void testImporter_emptyContent_throwsIOException() {
+    @Test(expected = IOException.class)
+    public void testImporter_emptyContent_throwsIOException() throws IOException {
         final BufferedReader reader = new BufferedReader(new StringReader(""));
-        try {
-            CategoryImporter.from(reader);
-            fail("Expected IOException for empty content");
-        } catch (IOException e) {
-            // expected
-        }
+        CategoryImporter.from(reader);
     }
 
     /**
      * A single-line garbage string (no newlines, not CSV structure) must throw IOException.
      * This covers the case where a user uploads a non-CSV file (e.g. a binary dump or log file).
      */
-    @Test
-    public void testImporter_garbageContent_throwsIOException() {
+    @Test(expected = IOException.class)
+    public void testImporter_garbageContent_throwsIOException() throws IOException {
         final BufferedReader reader = new BufferedReader(
                 new StringReader("??random??binary??garbage??content??no??csv??here"));
-        try {
-            CategoryImporter.from(reader);
-            fail("Expected IOException for garbage content");
-        } catch (IOException e) {
-            // expected
-        }
+        CategoryImporter.from(reader);
     }
 
     // -----------------------------------------------------------------------

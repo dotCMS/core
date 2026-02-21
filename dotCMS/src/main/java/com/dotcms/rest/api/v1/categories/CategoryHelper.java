@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.categories;
 
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.api.BulkResultView;
-import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -19,7 +16,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
-import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.function.Supplier;
@@ -89,7 +85,7 @@ public class CategoryHelper {
 
     public long addOrUpdateCategory(final User user, final String contextInode,
             final BufferedReader bufferedReader, final Boolean merge)
-            throws IOException, Exception {
+            throws IOException {
 
         long successCount = 0;
         for (final CategoryDTO categoryDTO : CategoryImporter.from(bufferedReader)) {
@@ -160,11 +156,7 @@ public class CategoryHelper {
         try {
             categoryAPI.save(parent, category, user, false);
             return true;
-        } catch (DotSecurityException e) {
-            Logger.error(this,
-                    "Error trying to save/update the category " + category.getInode(), e);
-            return false;
-        } catch (DotDataException e) {
+        } catch (DotSecurityException | DotDataException e) {
             Logger.error(this,
                     "Error trying to save/update the category " + category.getInode(), e);
             return false;
