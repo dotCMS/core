@@ -5799,6 +5799,45 @@ paths:
       summary: Lock a given contentlet by the current user
       tags:
       - Content
+  /v1/content/_refresh/{identifierOrInode}:
+    put:
+      description: Reindexes and clears cache for the contentlet specified by its
+        identifier or inode. This operation forces the content to be refreshed in
+        both the search index and application cache.
+      operationId: refreshContent
+      parameters:
+      - description: Contentlet identifier or inode
+        in: path
+        name: identifierOrInode
+        required: true
+        schema:
+          type: string
+      - description: Language ID for content localization
+        in: query
+        name: language
+        schema:
+          type: string
+          default: "-1"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Successfully refreshed contentlet
+        "400":
+          description: Bad request - Invalid identifier format
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks write permissions
+        "404":
+          description: Content not found
+        "500":
+          description: Internal Server Error
+      summary: Refresh a contentlet
+      tags:
+      - Content
   /v1/content/_unlock/{inodeOrIdentifier}:
     put:
       description: "If the user is allowed to unlock the contentlet specified by its\
