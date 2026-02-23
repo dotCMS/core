@@ -41,14 +41,17 @@
 			keyTagField.setValue(keyTagStr);
 		}
 
-		// When name field value changes: if keyTag is empty, derive from name (replaces old onblur on name input)
-		nameField.onChange(() => {
-			const currentKeyTag = keyTagField.getValue() || "";
-			if (currentKeyTag.trim().length > 0) {
-				return;
-			}
-			keyTagUpdate();
-		});
+		// When name field loses focus: if keyTag is empty, derive from name (same as title_custom_field_new / old onblur)
+		const nameInput = document.getElementById("name") || (window.parent && window.parent.document && window.parent.document.getElementById("name")) || null;
+		if (nameInput) {
+			nameInput.addEventListener("blur", () => {
+				const currentKeyTag = keyTagField.getValue() || "";
+				if (currentKeyTag.trim().length > 0) {
+					return;
+				}
+				keyTagUpdate();
+			});
+		}
 
 		// Initialize visible input with current field value
 		const initialValue = keyTagField.getValue() || "";
