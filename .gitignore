@@ -141,6 +141,9 @@ dist-docs/
 **/test-reports/
 /core-web/apps/dotcms-ui-e2e/playwright-report
 /core-web/apps/dotcms-ui-e2e/test-results
+/core-web/apps/dotcms-ui-e2e/test-results/junit.xml
+/core-web/apps/dotcms-ui-e2e/target
+/core-web/apps/dotcms-ui-e2e/target
 
 #env
 /core-web/**/.env

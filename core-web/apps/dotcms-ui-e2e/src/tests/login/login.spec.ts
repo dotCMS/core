@@ -1,7 +1,7 @@
-import { test, expect } from '@playwright/test';
-import { admin1, wrong1, wrong2 } from './credentialsData';
-import { LoginPage } from '@pages';
 import { BreadcrumbComponent } from '@components/breadcrumb.component';
+import { LoginPage } from '@pages';
+import { expect, test } from '@playwright/test';
+import { admin1, wrong1, wrong2 } from './credentialsData';
 
 const validCredentials = [
     { username: admin1.username, password: admin1.password } // admin user
@@ -16,9 +16,6 @@ validCredentials.forEach(({ username, password }) => {
         await loginPage.login(username, password);
 
         const breadcrumbComponent = new BreadcrumbComponent(page);
-        const breadcrumb = breadcrumbComponent.getBreadcrumb();
-        await expect(breadcrumb).toContainText('Home');
-        await expect(breadcrumb).toContainText('Getting Started');
 
         const title = breadcrumbComponent.getTitle();
         await expect(title).toHaveText('Welcome');

@@ -20,7 +20,7 @@
         <skip.npm.install>false</skip.npm.install>
         <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
         <playwright.install.cmd>run playwright-install</playwright.install.cmd>
-        <e2e.test.skip>true</e2e.test.skip>
+        <e2e.test.skip>false</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>./frontend</e2e.frontend.dir>
         <e2e.test.debug></e2e.test.debug>

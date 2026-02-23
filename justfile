@@ -175,8 +175,7 @@ test-karate-ide:
 # Executes Playwright E2E tests
 # Removes any leftover container from compose or a previous run so Maven can create it
 test-e2e:
-    docker rm -f dotbuild_dotcms-ui-e2e_default_dotcms 2>/dev/null || true
-    ./mvnw -pl :dotcms-ui-e2e verify -De2e.test.skip=false -De2e.test.env=ci
+    ./mvnw -pl :dotcms-ui-e2e verify -De2e.test.skip=false -De2e.test.env=ci -Dmaven.build.cache.skipCache=true
 
 # Docker Commands
 # Runs a published dotCMS Docker image on a dynamic port
