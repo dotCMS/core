@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.temp;
 import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,8 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
@@ -108,5 +111,60 @@ public class TempFileAPITest {
         return request;
     }
 
+    /**
+     * Method to test: {@link TempFileAPI#BROWSER_HEADERS}
+     * Test scenario: Verify that all required browser-like header keys are present
+     * Expected: The map contains all 8 required header keys
+     */
+    @Test
+    public void testBrowserHeaders_containsAllRequiredKeys() {
+        final List<String> requiredHeaders = Arrays.asList(
+                "User-Agent",
+                "Accept",
+                "Accept-Language",
+                "Accept-Encoding",
+                "Connection",
+                "Sec-Fetch-Dest",
+                "Sec-Fetch-Mode",
+                "Sec-Fetch-Site"
+        );
+
+        assertNotNull("BROWSER_HEADERS must not be null", TempFileAPI.BROWSER_HEADERS);
+        for (final String header : requiredHeaders) {
+            assertTrue(
+                    "BROWSER_HEADERS must contain header: " + header,
+                    TempFileAPI.BROWSER_HEADERS.containsKey(header));
+            assertNotNull(
+                    "Value for header '" + header + "' must not be null",
+                    TempFileAPI.BROWSER_HEADERS.get(header));
+            assertFalse(
+                    "Value for header '" + header + "' must not be empty",
+                    TempFileAPI.BROWSER_HEADERS.get(header).isEmpty());
+        }
+    }
+
+    /**
+     * Method to test: {@link TempFileAPI#BROWSER_HEADERS}
+     * Test scenario: Verify the default values of the browser-like headers
+     * Expected: Static/non-configurable headers have their expected default values;
+     *           configurable headers have valid non-empty values
+     */
+    @Test
+    public void testBrowserHeaders_defaultValues() {
+        assertEquals("keep-alive", TempFileAPI.BROWSER_HEADERS.get("Connection"));
+        assertEquals("image",      TempFileAPI.BROWSER_HEADERS.get("Sec-Fetch-Dest"));
+        assertEquals("no-cors",    TempFileAPI.BROWSER_HEADERS.get("Sec-Fetch-Mode"));
+        assertEquals("cross-site", TempFileAPI.BROWSER_HEADERS.get("Sec-Fetch-Site"));
+
+        // Configurable headers must be present and non-empty (may be overridden via Config)
+        assertTrue("User-Agent must not be empty",
+                !TempFileAPI.BROWSER_HEADERS.get("User-Agent").isEmpty());
+        assertTrue("Accept must not be empty",
+                !TempFileAPI.BROWSER_HEADERS.get("Accept").isEmpty());
+        assertTrue("Accept-Language must not be empty",
+                !TempFileAPI.BROWSER_HEADERS.get("Accept-Language").isEmpty());
+        assertTrue("Accept-Encoding must not be empty",
+                !TempFileAPI.BROWSER_HEADERS.get("Accept-Encoding").isEmpty());
+    }
 
 }
