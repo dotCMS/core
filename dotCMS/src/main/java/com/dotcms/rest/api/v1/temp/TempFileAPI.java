@@ -23,6 +23,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
@@ -43,6 +44,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -72,6 +74,26 @@ public class TempFileAPI {
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
   private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+
+  /**
+   * Browser-like HTTP request headers used when downloading remote files via URL.
+   * Many image servers (CDNs, Unsplash, Pexels, Cloudflare-protected sites) reject
+   * requests that lack standard browser headers, returning 403 or 406 responses.
+   */
+  static final Map<String, String> BROWSER_HEADERS = ImmutableMap.<String, String>builder()
+          .put("User-Agent", Config.getStringProperty("TEMP_FILE_URL_USER_AGENT",
+                  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"))
+          .put("Accept", Config.getStringProperty("TEMP_FILE_URL_ACCEPT",
+                  "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"))
+          .put("Accept-Language", Config.getStringProperty("TEMP_FILE_URL_ACCEPT_LANGUAGE",
+                  "en-US,en;q=0.9"))
+          .put("Accept-Encoding", Config.getStringProperty("TEMP_FILE_URL_ACCEPT_ENCODING",
+                  "gzip, deflate, br"))
+          .put("Connection", "keep-alive")
+          .put("Sec-Fetch-Dest", "image")
+          .put("Sec-Fetch-Mode", "no-cors")
+          .put("Sec-Fetch-Site", "cross-site")
+          .build();
   
 
   /**
@@ -242,6 +264,7 @@ public class TempFileAPI {
                       Files.newOutputStream(tempFile.toPath()))){
         final CircuitBreakerUrl urlGetter =
                 CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(finalUrl)
+                        .setHeaders(BROWSER_HEADERS)
                         .setTimeout(timeoutSeconds * 1000L).build();
         urlGetter.doOut(out);
       }
@@ -270,7 +293,8 @@ public class TempFileAPI {
       String done;
       try {
       final CircuitBreakerUrl urlGetter =
-              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url)
+                      .setHeaders(BROWSER_HEADERS).build();
        done = urlGetter.doString();
     } catch (IOException | BadRequestException e) {//If response is not 200, CircuitBreakerUrl throws BadRequestException
       return false;
