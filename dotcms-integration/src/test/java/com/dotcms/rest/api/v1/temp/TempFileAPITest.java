@@ -119,8 +119,8 @@ public class TempFileAPITest {
 
     /**
      * Method to test: {@link TempFileAPI#getBrowserHeaders()}
-     * Test scenario: Verify that all required browser-like header keys are present
-     * Expected: The map contains all 8 required header keys
+     * Test scenario: Verify that all required browser-compatible header keys are present
+     * Expected: The map contains the 5 required header keys (no Sec-Fetch-* headers)
      */
     @Test
     public void testBrowserHeaders_containsAllRequiredKeys() {
@@ -129,10 +129,7 @@ public class TempFileAPITest {
                 "Accept",
                 "Accept-Language",
                 "Accept-Encoding",
-                "Connection",
-                "Sec-Fetch-Dest",
-                "Sec-Fetch-Mode",
-                "Sec-Fetch-Site"
+                "Connection"
         );
 
         final Map<String, String> headers = TempFileAPI.getBrowserHeaders();
@@ -152,24 +149,26 @@ public class TempFileAPITest {
 
     /**
      * Method to test: {@link TempFileAPI#getBrowserHeaders()}
-     * Test scenario: Verify the default values of the browser-like headers
-     * Expected: Static/non-configurable headers have their expected default values;
-     *           configurable headers have valid non-empty values;
-     *           Accept-Encoding does not advertise Brotli (br) since Apache HttpClient lacks a Brotli decoder
+     * Test scenario: Verify the default values of the browser-compatible headers
+     * Expected:
+     * - Accept defaults to {@code *}{@code /*} (generic, not image-specific)
+     * - Connection defaults to {@code keep-alive} and is configurable
+     * - Accept-Encoding does not advertise Brotli (br) — Apache HttpClient has no brotli decoder
+     * - No Sec-Fetch-* headers are present (they are browser-generated metadata, not for server use)
      */
     @Test
     public void testBrowserHeaders_defaultValues() {
         final Map<String, String> headers = TempFileAPI.getBrowserHeaders();
+
+        // Connection defaults to keep-alive (configurable via TEMP_FILE_URL_CONNECTION)
         assertEquals("keep-alive", headers.get("Connection"));
-        assertEquals("image",      headers.get("Sec-Fetch-Dest"));
-        assertEquals("no-cors",    headers.get("Sec-Fetch-Mode"));
-        assertEquals("cross-site", headers.get("Sec-Fetch-Site"));
+
+        // Accept must default to */* — the endpoint downloads any file type, not just images
+        assertEquals("*/*", headers.get("Accept"));
 
         // Configurable headers must be present and non-empty (may be overridden via Config)
         assertTrue("User-Agent must not be empty",
                 !headers.get("User-Agent").isEmpty());
-        assertTrue("Accept must not be empty",
-                !headers.get("Accept").isEmpty());
         assertTrue("Accept-Language must not be empty",
                 !headers.get("Accept-Language").isEmpty());
 
@@ -177,6 +176,13 @@ public class TempFileAPITest {
         final String acceptEncoding = headers.get("Accept-Encoding");
         assertTrue("Accept-Encoding must not be empty", !acceptEncoding.isEmpty());
         assertFalse("Accept-Encoding must not advertise brotli (br)", acceptEncoding.contains("br"));
+
+        // Sec-Fetch-* headers must NOT be present — they are browser-generated Fetch Metadata
+        // headers whose purpose is to let servers verify a request came from a real browser context.
+        // Sending them from a server-side HTTP client is misleading and may cause rejections.
+        assertFalse("Sec-Fetch-Dest must not be present", headers.containsKey("Sec-Fetch-Dest"));
+        assertFalse("Sec-Fetch-Mode must not be present", headers.containsKey("Sec-Fetch-Mode"));
+        assertFalse("Sec-Fetch-Site must not be present", headers.containsKey("Sec-Fetch-Site"));
     }
 
     /**

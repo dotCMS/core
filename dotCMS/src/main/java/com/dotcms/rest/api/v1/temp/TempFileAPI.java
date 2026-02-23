@@ -43,6 +43,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,27 +77,45 @@ public class TempFileAPI {
   private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
 
   /**
-   * Builds a map of browser-like HTTP request headers for remote URL downloads.
-   * Many image servers (CDNs, Unsplash, Pexels, Cloudflare-protected sites) reject
-   * requests that lack standard browser headers, returning 403 or 406 responses.
-   * The four content-negotiation headers are re-read from {@link Config} on every call
-   * so that runtime changes (system table updates / hot-reload) take effect without a restart.
+   * Builds a map of browser-compatible HTTP request headers for remote URL downloads.
+   * Many servers (CDNs, Cloudflare-protected sites, etc.) reject requests that lack
+   * standard browser headers, returning 403 or 406 responses.
+   *
+   * <p>All headers are read from {@link Config} on every call so that runtime changes
+   * (system table updates / hot-reload) take effect without a restart.
+   * Setting a config key to a blank value disables that header entirely, giving operators
+   * full control over which headers are sent.</p>
+   *
+   * <p>Config keys and their defaults:
+   * <ul>
+   *   <li>{@code TEMP_FILE_URL_USER_AGENT}   – Chrome-compatible User-Agent string</li>
+   *   <li>{@code TEMP_FILE_URL_ACCEPT}        – {@code *}{@code /*} (accepts any content type)</li>
+   *   <li>{@code TEMP_FILE_URL_ACCEPT_LANGUAGE} – {@code en-US,en;q=0.9}</li>
+   *   <li>{@code TEMP_FILE_URL_ACCEPT_ENCODING} – {@code gzip, deflate}</li>
+   *   <li>{@code TEMP_FILE_URL_CONNECTION}    – {@code keep-alive}</li>
+   * </ul>
+   * </p>
    */
   static Map<String, String> getBrowserHeaders() {
-      return ImmutableMap.<String, String>builder()
-              .put("User-Agent", Config.getStringProperty("TEMP_FILE_URL_USER_AGENT",
-                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"))
-              .put("Accept", Config.getStringProperty("TEMP_FILE_URL_ACCEPT",
-                      "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8"))
-              .put("Accept-Language", Config.getStringProperty("TEMP_FILE_URL_ACCEPT_LANGUAGE",
-                      "en-US,en;q=0.9"))
-              .put("Accept-Encoding", Config.getStringProperty("TEMP_FILE_URL_ACCEPT_ENCODING",
-                      "gzip, deflate"))
-              .put("Connection", "keep-alive")
-              .put("Sec-Fetch-Dest", "image")
-              .put("Sec-Fetch-Mode", "no-cors")
-              .put("Sec-Fetch-Site", "cross-site")
-              .build();
+      final Map<String, String> headers = new LinkedHashMap<>();
+      final String[][] defs = {
+              {"User-Agent",      Config.getStringProperty("TEMP_FILE_URL_USER_AGENT",
+                      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")},
+              {"Accept",          Config.getStringProperty("TEMP_FILE_URL_ACCEPT",
+                      "*/*")},
+              {"Accept-Language", Config.getStringProperty("TEMP_FILE_URL_ACCEPT_LANGUAGE",
+                      "en-US,en;q=0.9")},
+              {"Accept-Encoding", Config.getStringProperty("TEMP_FILE_URL_ACCEPT_ENCODING",
+                      "gzip, deflate")},
+              {"Connection",      Config.getStringProperty("TEMP_FILE_URL_CONNECTION",
+                      "keep-alive")},
+      };
+      for (final String[] entry : defs) {
+          if (UtilMethods.isSet(entry[1])) {
+              headers.put(entry[0], entry[1]);
+          }
+      }
+      return ImmutableMap.copyOf(headers);
   }
   
 
