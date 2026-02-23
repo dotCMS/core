@@ -3047,6 +3047,64 @@
             }
           },
           "response": []
+        },
+        {
+          "name": "RefreshContent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "let id = pm.collectionVariables.get('contentletIdentifier');",
+                  "const responseJson = pm.response.json();",
+                  "",
+                  "pm.test(\"Valid response - Content refreshed successfully\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(responseJson.entity).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"Response structure is correct\", function () {",
+                  "    pm.expect(responseJson).to.have.property('entity');",
+                  "    pm.expect(responseJson).to.have.property('errors');",
+                  "    pm.expect(responseJson).to.have.property('messages');",
+                  "});",
+                  "",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_refresh/{{contentletIdentifier}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_refresh",
+                "{{contentletIdentifier}}"
+              ]
+            },
+            "description": "Refreshes a contentlet by reindexing it and clearing it from cache. This operation forces the content to be refreshed in both the search index and application cache. Returns a boolean value indicating success."
+          },
+          "response": []
         }
       ],
       "event": [
