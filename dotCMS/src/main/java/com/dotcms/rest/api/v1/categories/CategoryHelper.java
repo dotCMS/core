@@ -85,7 +85,7 @@ public class CategoryHelper {
 
     public long addOrUpdateCategory(final User user, final String contextInode,
             final BufferedReader bufferedReader, final Boolean merge)
-            throws IOException {
+            throws IOException, DotDataException, DotSecurityException {
 
         long successCount = 0;
         for (final CategoryDTO categoryDTO : CategoryImporter.from(bufferedReader)) {
@@ -101,7 +101,7 @@ public class CategoryHelper {
     private boolean addOrUpdateCategory(final User user, final Boolean isSave, final String inode,
             final String name, final String var, final String key, final String keywords,
             final String sort, final boolean isMerge)
-            throws Exception {
+            throws DotDataException, DotSecurityException {
 
         Category parent = null;
         Category category = new Category();

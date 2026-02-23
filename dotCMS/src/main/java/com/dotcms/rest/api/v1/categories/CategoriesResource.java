@@ -26,6 +26,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -833,7 +834,7 @@ public class CategoriesResource {
             final String contextInode) {
 
         if (uploadedFile == null) {
-            throw new BadRequestException(null, "File is required");
+            throw new BadRequestException("File is required");
         }
 
         List<Category> unableToDeleteCats = null;
@@ -886,7 +887,7 @@ public class CategoriesResource {
                 Logger.debug(this, () -> "Merging categories");
                 successCount = this.categoryHelper.addOrUpdateCategory(user, contextInode, bufferedReader, true);
             } else {
-                throw new BadRequestException(null,
+                throw new BadRequestException(
                         "Invalid exportType: " + exportType + ". Must be 'replace' or 'merge'");
             }
 
