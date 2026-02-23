@@ -66,6 +66,7 @@
       const button = document.getElementById("tagStorageSelectButton");
       const dropdown = document.getElementById("tagStorageDropdown");
       if (!holder || !button || !dropdown) return;
+      const defaultLabel = (button.textContent || "").trim();
 
       const options = Array.from(dropdown.querySelectorAll(".custom-option"));
       let selectedOption = dropdown.querySelector(".custom-option.selected");
@@ -78,7 +79,7 @@
         if (match) {
           match.classList.add("selected");
           match.setAttribute("aria-selected", "true");
-          button.textContent = match.dataset.label || "Select host";
+          button.textContent = match.dataset.label || defaultLabel;
           button.classList.remove("placeholder");
           selectedOption = match;
         }
@@ -120,7 +121,7 @@
           const identifier = this.dataset.identifier;
           const label = this.dataset.label;
           if (field) field.setValue(identifier || "");
-          button.textContent = label || "Select host";
+          button.textContent = label || defaultLabel;
           button.classList.remove("placeholder");
           options.forEach(function(o) { o.classList.remove("selected"); });
           this.classList.add("selected");
