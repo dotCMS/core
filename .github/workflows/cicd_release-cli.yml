@@ -54,6 +54,8 @@ jobs:
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    with:
+      change-detection: 'disabled'
 
   # Perform pre-release checks and setup
   precheck:
