@@ -1,6 +1,15 @@
 import { Subject } from 'rxjs';
 
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
+import {
+    afterNextRender,
+    Component,
+    ElementRef,
+    inject,
+    Injector,
+    OnDestroy,
+    OnInit,
+    ViewChild
+} from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -19,12 +28,13 @@ import { DotAlertConfirmService } from '@dotcms/data-access';
 export class DotAlertConfirmComponent implements OnInit, OnDestroy {
     dotAlertConfirmService = inject(DotAlertConfirmService);
     private confirmationService = inject(ConfirmationService);
+    private injector = inject(Injector);
 
     @ViewChild('cd') cd: ConfirmDialog;
     @ViewChild('confirmBtn') confirmBtn: ElementRef;
     @ViewChild('acceptBtn') acceptBtn: ElementRef;
 
-    private destroy$: Subject<boolean> = new Subject<boolean>();
+    private destroy$ = new Subject<boolean>();
 
     ngOnInit(): void {
         this.dotAlertConfirmService.confirmDialogOpened$
@@ -32,7 +42,7 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
             .subscribe(() => {
                 const btn = this.confirmBtn || this.acceptBtn;
                 if (btn?.nativeElement) {
-                    btn.nativeElement.focus();
+                    afterNextRender(() => btn.nativeElement.focus(), { injector: this.injector });
                 }
             });
     }
@@ -50,13 +60,11 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
      */
     onClickConfirm(action: string): void {
         if (action === 'accept') {
-            // Call the accept callback if it exists
             if (this.dotAlertConfirmService.confirmModel?.accept) {
                 this.dotAlertConfirmService.confirmModel.accept();
             }
             this.confirmationService.onAccept();
         } else {
-            // Call the reject callback if it exists
             if (this.dotAlertConfirmService.confirmModel?.reject) {
                 this.dotAlertConfirmService.confirmModel.reject();
             }

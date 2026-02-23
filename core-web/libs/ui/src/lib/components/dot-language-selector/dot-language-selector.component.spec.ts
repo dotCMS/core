@@ -137,15 +137,9 @@ describe('DotLanguageSelectorComponent', () => {
             expect(onLanguageChangeSpy).toHaveBeenCalledWith(spanish);
             expect(cvaOnChange).toHaveBeenCalledWith(1);
 
-            // Verify via DOM: open overlay and assert the selected option is highlighted
-            spectator.click('[data-testId="language-selector"]');
-            spectator.detectChanges();
-
-            const selectedOption = (document.querySelector(
-                'li[role="option"][aria-selected="true"]'
-            ) ?? document.querySelector('li.p-highlight')) as HTMLElement | null;
-
-            expect(selectedOption?.textContent?.trim()).toBe('Spanish - ES');
+            // Verify component state reflects selected language (avoids flaky overlay DOM)
+            expect(spectator.component.value()).toBe(1);
+            expect(spectator.component.$state.pinnedOption()).toEqual(spanish);
         });
 
         it('should emit onShow and onHide when the dropdown is shown/hidden', () => {

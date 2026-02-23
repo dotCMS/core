@@ -1,7 +1,6 @@
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of as observableOf } from 'rxjs';
 
-import { DebugElement, Injectable } from '@angular/core';
-import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -12,9 +11,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotBaseTypeSelectorComponent } from './dot-base-type-selector.component';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
+const allContentTypesItem: SelectItem = { label: 'Any Content Type', value: '' };
 
-@Injectable()
 class MockDotContentTypeService {
     getAllContentTypes = jest.fn().mockReturnValue(
         observableOf([
@@ -25,59 +23,52 @@ class MockDotContentTypeService {
 }
 
 describe('DotBaseTypeSelectorComponent', () => {
-    let component: DotBaseTypeSelectorComponent;
-    let fixture: ComponentFixture<DotBaseTypeSelectorComponent>;
-    let de: DebugElement;
-    const allContentTypesItem: SelectItem = { label: 'Any Content Type', value: '' };
+    let spectator: Spectator<DotBaseTypeSelectorComponent>;
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.selector.any.content.type': 'Any Content Type'
     });
 
-    beforeEach(() => {
-        DOTTestBed.configureTestingModule({
-            imports: [DotBaseTypeSelectorComponent, BrowserAnimationsModule],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: DotContentTypeService,
-                    useClass: MockDotContentTypeService
-                }
-            ]
-        });
+    const createComponent = createComponentFactory({
+        component: DotBaseTypeSelectorComponent,
+        imports: [BrowserAnimationsModule],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: DotContentTypeService, useClass: MockDotContentTypeService }
+        ]
+    });
 
-        fixture = DOTTestBed.createComponent(DotBaseTypeSelectorComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
+    beforeEach(() => {
+        spectator = createComponent();
     });
 
     it('should emit the selected content type', () => {
-        fixture.detectChanges();
-        const pSelect: DebugElement = de.query(By.css('p-select'));
-        jest.spyOn(component.selected, 'emit');
-        jest.spyOn(component, 'change');
+        spectator.detectChanges();
+        const pSelect = spectator.debugElement.query(By.css('p-select'));
+        jest.spyOn(spectator.component.selected, 'emit');
+        jest.spyOn(spectator.component, 'change');
         const selectChangeEvent = { value: allContentTypesItem.value };
         pSelect.triggerEventHandler('onChange', selectChangeEvent);
 
-        expect(component.change).toHaveBeenCalledWith(selectChangeEvent);
-        expect(component.change).toHaveBeenCalledTimes(1);
-        expect(component.selected.emit).toHaveBeenCalledWith(allContentTypesItem.value);
-        expect(component.selected.emit).toHaveBeenCalledTimes(1);
+        expect(spectator.component.change).toHaveBeenCalledWith(selectChangeEvent);
+        expect(spectator.component.change).toHaveBeenCalledTimes(1);
+        expect(spectator.component.selected.emit).toHaveBeenCalledWith(allContentTypesItem.value);
+        expect(spectator.component.selected.emit).toHaveBeenCalledTimes(1);
     });
 
-    it('should add All Content Types option as first position', () => {
-        fixture.detectChanges();
+    it('should add All Content Types option as first position', (done) => {
+        spectator.detectChanges();
 
-        component.options.subscribe((options) => {
+        spectator.component.options.subscribe((options) => {
             expect(options[0]).toEqual(allContentTypesItem);
+            done();
         });
     });
 
     it('should set fixed width to dropdown', () => {
-        fixture.detectChanges();
-        const pSelectElement = de.query(By.css('p-select')).nativeElement;
-        expect(pSelectElement.style.width).toBe('155px');
+        spectator.detectChanges();
+        const pSelectElement = spectator.query('p-select') as HTMLElement;
+        expect(pSelectElement).toBeTruthy();
+        // Template uses class="w-38.75" for width; in JSDOM we assert the class is present
+        expect(pSelectElement?.classList?.contains('w-38.75')).toBe(true);
     });
 });

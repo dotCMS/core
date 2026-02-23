@@ -40,7 +40,7 @@ describe('DotBrowsingService', () => {
                 createFakeSite({ identifier: 'site-2', hostname: 'test.com' })
             ];
 
-            dotSiteService.getSites.mockReturnValue(of(mockSites));
+            dotSiteService.getSites.mockReturnValue(of({ sites: mockSites }));
 
             spectator.service.getSitesTreePath({ filter: 'test' }).subscribe((result) => {
                 expect(result).toHaveLength(2);
@@ -70,25 +70,33 @@ describe('DotBrowsingService', () => {
                     collapsedIcon: 'pi pi-folder',
                     leaf: false
                 });
-                expect(dotSiteService.getSites).toHaveBeenCalledWith('test', undefined, undefined);
+                expect(dotSiteService.getSites).toHaveBeenCalledWith({
+                    filter: 'test',
+                    per_page: undefined,
+                    page: undefined
+                });
                 done();
             });
         });
 
         it('should pass perPage and page parameters to getSites', (done) => {
             const mockSites: SiteEntity[] = [createFakeSite()];
-            dotSiteService.getSites.mockReturnValue(of(mockSites));
+            dotSiteService.getSites.mockReturnValue(of({ sites: mockSites }));
 
             spectator.service
                 .getSitesTreePath({ filter: 'test', perPage: 10, page: 2 })
                 .subscribe(() => {
-                    expect(dotSiteService.getSites).toHaveBeenCalledWith('test', 10, 2);
+                    expect(dotSiteService.getSites).toHaveBeenCalledWith({
+                        filter: 'test',
+                        per_page: 10,
+                        page: 2
+                    });
                     done();
                 });
         });
 
         it('should return empty array when no sites are found', (done) => {
-            dotSiteService.getSites.mockReturnValue(of([]));
+            dotSiteService.getSites.mockReturnValue(of({ sites: [] }));
 
             spectator.service.getSitesTreePath({ filter: 'test' }).subscribe((result) => {
                 expect(result).toEqual([]);

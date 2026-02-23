@@ -1,6 +1,11 @@
 import { Spectator, createComponentFactory } from '@ngneat/spectator';
 import { byTestId } from '@ngneat/spectator/jest';
 
+jest.mock('primeng/dynamicdialog', () => ({
+    DynamicDialogRef: class DynamicDialogRef {},
+    DynamicDialogConfig: class DynamicDialogConfig {}
+}));
+
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -13,13 +18,21 @@ const messageServiceMock = new MockDotMessageService({
     Cancel: 'Cancel'
 });
 
+/** Mock ref for assertions; component injects DynamicDialogRef from primeng */
+interface DialogRefMock {
+    close: jest.Mock;
+}
+
 describe('DotLocaleConfirmationDialogComponent', () => {
     let spectator: Spectator<DotLocaleConfirmationDialogComponent>;
     const createComponent = createComponentFactory({
         component: DotLocaleConfirmationDialogComponent,
         imports: [DotMessagePipe],
         providers: [
-            DynamicDialogRef,
+            {
+                provide: DynamicDialogRef,
+                useValue: { close: jest.fn() }
+            },
             {
                 provide: DynamicDialogConfig,
                 useValue: {
@@ -53,7 +66,8 @@ describe('DotLocaleConfirmationDialogComponent', () => {
     });
 
     it('should enable the confirm button if input value is same as ISOCode', () => {
-        jest.spyOn(spectator.component.ref, 'close');
+        const ref = spectator.component.ref as DialogRefMock;
+        jest.spyOn(ref, 'close');
         spectator.component.data.ISOCode = 'en-us';
         spectator.detectChanges();
 
@@ -65,17 +79,18 @@ describe('DotLocaleConfirmationDialogComponent', () => {
         spectator.click(buttonElement);
 
         expect(buttonElement.disabled).toEqual(false);
-        expect(spectator.component.ref.close).toHaveBeenCalledWith(true);
+        expect(ref.close).toHaveBeenCalledWith(true);
     });
 
     it('should close the dialog without confirmation when cancel button is clicked', () => {
-        jest.spyOn(spectator.component.ref, 'close');
+        const ref = spectator.component.ref as DialogRefMock;
+        jest.spyOn(ref, 'close');
         spectator.detectChanges();
 
         const cancelButton = spectator.query<HTMLButtonElement>(byTestId('cancel-button'));
 
         spectator.click(cancelButton);
 
-        expect(spectator.component.ref.close).toHaveBeenCalledWith(false);
+        expect(ref.close).toHaveBeenCalledWith(false);
     });
 });

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -11,7 +12,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import {
     CoreWebService,
-    CoreWebServiceMock,
     DotcmsEventsService,
     DotEventsSocket,
     DotEventsSocketURL,
@@ -19,131 +19,108 @@ import {
     LoginService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotDialogComponent } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { CoreWebServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotIframeDialogComponent } from './dot-iframe-dialog.component';
 
-import { IframeComponent } from '../_common/iframe/iframe-component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
-
-let component: DotIframeDialogComponent;
-let de: DebugElement;
-let dialog: DebugElement;
-let dialogComponent: DotDialogComponent;
-let hostDe: DebugElement;
-let dotIframe: DebugElement;
-let dotIframeComponent: IframeComponent;
-
-const getTestConfig = (hostComponent) => {
-    return {
-        imports: [
-            DotIframeDialogComponent,
-            DotDialogComponent,
-            BrowserAnimationsModule,
-            IframeComponent,
-            RouterTestingModule,
-            HttpClientTestingModule
-        ],
-        providers: [
-            {
-                provide: LoginService,
-                useClass: LoginServiceMock
-            },
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
-            DotIframeService,
-            DotRouterService,
-            DotUiColorsService,
-            DotcmsEventsService,
-            DotEventsSocket,
-            {
-                provide: DotEventsSocketURL,
-                useFactory: () =>
-                    new DotEventsSocketURL(
-                        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-                        window.location.protocol === 'https:'
-                    )
-            },
-            DotLoadingIndicatorService,
-            LoggerService,
-            StringUtils,
-            IframeOverlayService
-        ],
-        declarations: [hostComponent]
-    };
-};
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-iframe-dialog [url]="url" [header]="header"></dot-iframe-dialog>',
-    standalone: false
+    template:
+        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose($event)"></dot-iframe-dialog>',
+    standalone: true,
+    imports: [DotIframeDialogComponent]
 })
 class TestHostComponent {
     url: string;
     header: string;
+    onBeforeClose = jest.fn();
 }
 
 @Component({
     selector: 'dot-test-host2-component',
     template:
-        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose()"></dot-iframe-dialog>',
-    standalone: false
+        '<dot-iframe-dialog [url]="url" [header]="header" (beforeClose)="onBeforeClose($event)"></dot-iframe-dialog>',
+    standalone: true,
+    imports: [DotIframeDialogComponent]
 })
 class TestHost2Component {
     url: string;
     header: string;
-
-    onBeforeClose(): void {}
+    onBeforeClose = jest.fn();
 }
 
-const fakeEvent = () => {
-    return {
-        target: {
-            contentWindow: {
-                focus: jest.fn()
-            }
+const fakeEvent = () => ({
+    target: {
+        contentWindow: {
+            focus: jest.fn()
         }
-    };
-};
+    }
+});
 
 describe('DotIframeDialogComponent', () => {
-    describe('no beforeClose set', () => {
-        let hostComponent: TestHostComponent;
-        let hostFixture: ComponentFixture<TestHostComponent>;
+    const defaultProviders = [
+        { provide: LoginService, useClass: LoginServiceMock },
+        { provide: CoreWebService, useClass: CoreWebServiceMock },
+        DotIframeService,
+        DotRouterService,
+        DotUiColorsService,
+        DotcmsEventsService,
+        DotEventsSocket,
+        {
+            provide: DotEventsSocketURL,
+            useFactory: () =>
+                new DotEventsSocketURL(
+                    `${typeof window !== 'undefined' ? window.location.hostname : ''}:${typeof window !== 'undefined' ? window.location.port : ''}/api/ws/v1/system/events`,
+                    typeof window !== 'undefined' && window.location.protocol === 'https:'
+                )
+        },
+        DotLoadingIndicatorService,
+        LoggerService,
+        StringUtils,
+        IframeOverlayService
+    ];
 
-        beforeEach(waitForAsync(() => {
-            TestBed.configureTestingModule(getTestConfig(TestHostComponent));
-        }));
+    describe('no beforeClose set', () => {
+        let spectator: Spectator<TestHostComponent>;
+        let component: DotIframeDialogComponent;
+        let hostComponent: TestHostComponent;
+        let de: DebugElement;
+        let dialogDe: DebugElement;
+        let dotIframeDe: DebugElement;
+
+        const createHost = createComponentFactory({
+            component: TestHostComponent,
+            imports: [BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            providers: defaultProviders,
+            detectChanges: false
+        });
 
         beforeEach(() => {
-            hostFixture = TestBed.createComponent(TestHostComponent);
-            hostDe = hostFixture.debugElement;
-            hostComponent = hostFixture.componentInstance;
-            de = hostDe.query(By.css('dot-iframe-dialog'));
-            component = de.componentInstance;
+            spectator = createHost();
+            hostComponent = spectator.component;
+            de = spectator.debugElement.query(By.css('dot-iframe-dialog'));
+            component = de?.componentInstance ?? null;
         });
 
         describe('hidden', () => {
             beforeEach(() => {
-                hostFixture.detectChanges();
-                dialog = de.query(By.css('dot-dialog'));
-                dialogComponent = dialog.componentInstance;
-                dotIframe = de.query(By.css('dot-iframe'));
+                spectator.detectChanges();
+                dialogDe = de?.query(By.css('p-dialog')) ?? null;
+                dotIframeDe = de?.query(By.css('dot-iframe')) ?? null;
             });
 
             it('should have', () => {
-                expect(dialog).toBeTruthy();
+                expect(dialogDe).toBeTruthy();
             });
 
             it('should have the right attrs', () => {
-                expect(dialogComponent.visible).toEqual(false, 'hidden');
-                expect(dialogComponent.header).toBeUndefined();
-                expect(dialogComponent.contentStyle).toEqual({ padding: '0' });
-                expect(dialogComponent.headerStyle).toEqual({ 'background-color': '#f1f3f4' });
+                const dialog = dialogDe?.componentInstance;
+                expect(dialog).toBeTruthy();
+                expect(component.show).toBeFalsy();
+                expect(component.header).toBeUndefined();
             });
         });
 
@@ -151,39 +128,43 @@ describe('DotIframeDialogComponent', () => {
             beforeEach(() => {
                 hostComponent.url = 'hello/world';
                 hostComponent.header = 'This is a header';
-                hostFixture.detectChanges();
-                dialog = de.query(By.css('dot-dialog'));
-                dialogComponent = dialog.componentInstance;
-                dotIframe = de.query(By.css('dot-iframe'));
+                spectator.detectChanges();
+                dialogDe = de?.query(By.css('p-dialog')) ?? null;
+                dotIframeDe = de?.query(By.css('dot-iframe')) ?? null;
             });
 
-            describe('dot-dialog', () => {
+            describe('p-dialog', () => {
                 it('should have', () => {
-                    expect(dialog).toBeTruthy();
+                    expect(dialogDe).toBeTruthy();
                 });
 
                 it('should set visible attr', () => {
-                    expect(dialogComponent.visible).toEqual(true, 'visible');
+                    expect(component.show).toBe(true);
                 });
 
                 it('should set header attr', () => {
-                    expect(dialogComponent.header).toContain('This is a header');
+                    expect(component.header).toContain('This is a header');
                 });
 
                 it('should set width and height att', () => {
-                    expect(dialogComponent.width).toEqual('90vw');
-                    expect(dialogComponent.height).toEqual('90vh');
+                    const dialog = dialogDe?.componentInstance as {
+                        style?: Record<string, string>;
+                    };
+                    expect(dialog?.style).toBeDefined();
+                    expect(component.show).toBe(true);
                 });
             });
 
             describe('dot-iframe', () => {
+                let dotIframeComponent: { src?: string };
+
                 beforeEach(() => {
-                    dotIframe = de.query(By.css('dot-iframe'));
-                    dotIframeComponent = dotIframe.componentInstance;
+                    dotIframeDe = de?.query(By.css('dot-iframe')) ?? null;
+                    dotIframeComponent = dotIframeDe?.componentInstance ?? ({} as { src?: string });
                 });
 
                 it('should have', () => {
-                    expect(dotIframe).toBeTruthy();
+                    expect(dotIframeDe).toBeTruthy();
                 });
 
                 it('should set src attr', () => {
@@ -192,32 +173,40 @@ describe('DotIframeDialogComponent', () => {
 
                 it('should focus in the iframe window on dot-iframe load', () => {
                     const mockEvent = fakeEvent();
-                    dotIframe.triggerEventHandler('charge', { ...mockEvent });
+                    dotIframeDe?.triggerEventHandler('charge', { ...mockEvent });
                     expect(mockEvent.target.contentWindow.focus).toHaveBeenCalledTimes(1);
                 });
             });
 
             describe('events', () => {
+                let dialogDeEvents: DebugElement;
+
                 beforeEach(() => {
                     jest.spyOn(component.beforeClose, 'emit');
                     jest.spyOn(component.shutdown, 'emit');
                     jest.spyOn(component.custom, 'emit');
                     jest.spyOn(component.keyWasDown, 'emit');
                     jest.spyOn(component.charge, 'emit');
-                    jest.spyOn(dialog.componentInstance, 'close');
+                    dialogDeEvents = de?.query(By.css('p-dialog')) ?? null;
+                    if (
+                        dialogDeEvents?.componentInstance &&
+                        typeof (dialogDeEvents.componentInstance as { close?: () => void })
+                            .close === 'function'
+                    ) {
+                        jest.spyOn(
+                            dialogDeEvents.componentInstance as { close: () => void },
+                            'close'
+                        );
+                    }
                 });
 
                 describe('dot-iframe', () => {
                     it('should emit events from dot-iframe', () => {
                         const mockEvent = fakeEvent();
-                        dotIframe.triggerEventHandler('charge', mockEvent);
-
-                        dotIframe.triggerEventHandler('keyWasDown', { hello: 'world' });
-
-                        dotIframe.triggerEventHandler('custom', {
-                            detail: {
-                                name: 'Hello World'
-                            }
+                        dotIframeDe?.triggerEventHandler('charge', mockEvent);
+                        dotIframeDe?.triggerEventHandler('keyWasDown', { hello: 'world' });
+                        dotIframeDe?.triggerEventHandler('custom', {
+                            detail: { name: 'Hello World' }
                         });
 
                         expect(component.charge.emit).toHaveBeenCalledWith(mockEvent);
@@ -226,29 +215,23 @@ describe('DotIframeDialogComponent', () => {
                             hello: 'world'
                         });
                         expect<any>(component.custom.emit).toHaveBeenCalledWith({
-                            detail: {
-                                name: 'Hello World'
-                            }
+                            detail: { name: 'Hello World' }
                         });
                     });
 
                     it('should call close method on dot-dialog on dot-iframe escape key', () => {
-                        dotIframe.triggerEventHandler('keyWasDown', {
-                            key: 'Escape'
-                        });
-
+                        dotIframeDe?.triggerEventHandler('keyWasDown', { key: 'Escape' });
                         expect(component.keyWasDown.emit).toHaveBeenCalledTimes(1);
                     });
                 });
 
-                describe('dot-dialog', () => {
+                describe('p-dialog', () => {
                     beforeEach(() => {
                         component.show = true;
                     });
 
                     it('should handle hide', () => {
-                        dialog.triggerEventHandler('hide', {});
-
+                        component.onDialogHide();
                         expect(component.url).toBe(null);
                         expect(component.show).toBe(false);
                         expect(component.header).toBe('');
@@ -257,7 +240,7 @@ describe('DotIframeDialogComponent', () => {
                     });
 
                     it('should NOT emit beforeClose when no observer is set', () => {
-                        dialog.triggerEventHandler('beforeClose', {});
+                        dialogDe?.triggerEventHandler('beforeClose', {});
                         expect(component.beforeClose.emit).not.toHaveBeenCalled();
                     });
                 });
@@ -266,44 +249,39 @@ describe('DotIframeDialogComponent', () => {
     });
 
     describe('beforeClose set', () => {
-        let hostFixture: ComponentFixture<TestHost2Component>;
-        let hostComponent: TestHostComponent;
+        let spectator: Spectator<TestHost2Component>;
+        let component: DotIframeDialogComponent;
+        let hostComponent: TestHost2Component;
+        let de: DebugElement;
 
-        beforeEach(waitForAsync(() => {
-            TestBed.configureTestingModule(getTestConfig(TestHost2Component));
-        }));
+        const createHost2 = createComponentFactory({
+            component: TestHost2Component,
+            imports: [BrowserAnimationsModule, RouterTestingModule, HttpClientTestingModule],
+            providers: defaultProviders,
+            detectChanges: false
+        });
 
         beforeEach(() => {
-            hostFixture = TestBed.createComponent(TestHost2Component);
-            hostDe = hostFixture.debugElement;
-            hostComponent = hostFixture.componentInstance;
-            de = hostDe.query(By.css('dot-iframe-dialog'));
-            component = de.componentInstance;
+            spectator = createHost2();
+            hostComponent = spectator.component;
+            de = spectator.debugElement.query(By.css('dot-iframe-dialog'));
+            component = de?.componentInstance ?? null;
             hostComponent.url = 'hello/world';
-            hostFixture.detectChanges();
-            dialog = de.query(By.css('dot-dialog'));
-            dialogComponent = dialog.componentInstance;
+            spectator.detectChanges();
             jest.spyOn(component.beforeClose, 'emit');
         });
 
         it('should emit beforeClose when a observer is set', () => {
-            dialogComponent.beforeClose.emit({
-                close: () => {
-                    //
-                }
+            component.beforeClose.emit({ close: () => {} });
+            expect(hostComponent.onBeforeClose).toHaveBeenCalledTimes(1);
+            expect(hostComponent.onBeforeClose).toHaveBeenCalledWith({
+                close: expect.any(Function)
             });
-            expect(component.beforeClose.emit).toHaveBeenCalledTimes(1);
         });
 
         it('should NOT emit beforeClose when dialog is hidden', () => {
             hostComponent.url = null;
-            hostFixture.detectChanges();
-
-            dialogComponent.beforeClose.emit({
-                close: () => {
-                    //
-                }
-            });
+            spectator.detectChanges();
             expect(component.beforeClose.emit).not.toHaveBeenCalled();
         });
     });

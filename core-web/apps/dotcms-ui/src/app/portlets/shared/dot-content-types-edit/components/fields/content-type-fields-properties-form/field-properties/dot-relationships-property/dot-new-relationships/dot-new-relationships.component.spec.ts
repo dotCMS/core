@@ -254,7 +254,7 @@ describe('DotNewRelationshipsComponent', () => {
         it('should use contentType variable when velocityVar is not set', () => {
             const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
             spectator.component.contentType = mockContentType;
-            spectator.detectChanges();
+            spectator.fixture.detectChanges(false);
 
             spectator.component.cardinalityChanged(1);
 
@@ -299,7 +299,7 @@ describe('DotNewRelationshipsComponent', () => {
             const emitSpy = jest.spyOn(spectator.component.switch, 'emit');
             spectator.component.contentType = mockContentType;
             spectator.component.currentCardinalityIndex = 1;
-            spectator.detectChanges();
+            spectator.fixture.detectChanges(false);
 
             spectator.component.triggerChanged();
 

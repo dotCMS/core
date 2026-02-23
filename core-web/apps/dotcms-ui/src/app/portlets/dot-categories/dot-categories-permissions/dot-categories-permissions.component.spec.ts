@@ -1,61 +1,69 @@
-import { Component, DebugElement, ElementRef, Input, SimpleChange, ViewChild } from '@angular/core';
-import { ComponentFixture, ComponentFixtureAutoDetect, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { RouterTestingModule } from '@angular/router/testing';
+
+import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
+import { DotcmsEventsService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotcmsEventsServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotCategoriesPermissionsComponent } from './dot-categories-permissions.component';
 
-import { IframeComponent } from '../../../view/components/_common/iframe/iframe-component/iframe.component';
-import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
-
-@Component({
-    selector: 'dot-iframe',
-    template: ''
-})
-export class IframeMockComponent {
-    @Input() src: string;
-    @ViewChild('iframeElement') iframeElement: ElementRef;
-}
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 
 describe('CategoriesPermissionsComponent', () => {
-    let component: DotCategoriesPermissionsComponent;
-    let fixture: ComponentFixture<DotCategoriesPermissionsComponent>;
-    let de: DebugElement;
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            imports: [DotCategoriesPermissionsComponent, DotPortletBaseComponent],
-            providers: [{ provide: ComponentFixtureAutoDetect, useValue: true }]
-        })
-            .overrideComponent(DotCategoriesPermissionsComponent, {
-                remove: { imports: [IframeComponent] },
-                add: { imports: [IframeMockComponent] }
-            })
-            .compileComponents();
+    let spectator: Spectator<DotCategoriesPermissionsComponent>;
 
-        fixture = TestBed.createComponent(DotCategoriesPermissionsComponent);
-        component = fixture.componentInstance;
-        de = fixture.debugElement;
-        component.categoryId = '123';
-        fixture.detectChanges();
+    const createComponent = createComponentFactory({
+        component: DotCategoriesPermissionsComponent,
+        imports: [RouterTestingModule],
+        providers: [
+            DotIframeService,
+            DotLoadingIndicatorService,
+            IframeOverlayService,
+            { provide: DotRouterService, useClass: MockDotRouterService },
+            { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+            { provide: DotcmsEventsService, useValue: new DotcmsEventsServiceMock() },
+            LoggerService,
+            StringUtils
+        ]
     });
 
     it('should create', () => {
-        expect(component).toBeTruthy();
+        spectator = createComponent({ props: { categoryId: '' } });
+        expect(spectator.component).toBeTruthy();
     });
 
     describe('permissions', () => {
         beforeEach(() => {
-            component.categoryId = '123';
-            component.ngOnChanges({
-                categoryId: new SimpleChange(null, component.categoryId, true)
+            spectator = createComponent({
+                props: { categoryId: '123' },
+                detectChanges: true
             });
-            fixture.detectChanges();
-            de = fixture.debugElement;
         });
 
         it('should set iframe permissions url', () => {
-            const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
-            expect(permissions.componentInstance.src).toBe(
+            const iframe = spectator.query(byTestId('permissionsIframe'));
+            expect(iframe).toBeTruthy();
+            expect(spectator.component.permissionsUrl).toBe(
                 '/html/categories/permissions.jsp?categoryId=123'
+            );
+        });
+    });
+
+    describe('ngOnChanges', () => {
+        it('should build permissionsUrl when categoryId is empty', () => {
+            spectator = createComponent({ props: { categoryId: '' }, detectChanges: true });
+            expect(spectator.component.permissionsUrl).toBe(
+                '/html/categories/permissions.jsp?categoryId='
+            );
+        });
+
+        it('should update permissionsUrl when categoryId changes', () => {
+            spectator = createComponent({ props: { categoryId: '456' }, detectChanges: true });
+            expect(spectator.component.permissionsUrl).toBe(
+                '/html/categories/permissions.jsp?categoryId=456'
             );
         });
     });

@@ -149,7 +149,11 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
             const lastCell = firstRow.querySelectorAll('td')[3]; // Top Attributed Content column
             const contentItems = lastCell.querySelectorAll('.attributed-content-item');
 
-            expect(contentItems.length).toBe(mockData[0]['Conversion.topAttributedContent'].length);
+            // Template shows one .attributed-content-item per row (first item only); "+N" for the rest
+            expect(contentItems.length).toBe(1);
+            const firstItem = mockData[0]['Conversion.topAttributedContent'][0];
+            expect(lastCell.textContent).toContain(firstItem.title);
+            expect(lastCell.querySelector('.more-indicator')?.textContent?.trim()).toBe('+1');
         });
 
         it('should display header columns', () => {

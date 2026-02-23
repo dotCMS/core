@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -20,24 +18,9 @@ import {
 
 import { DotDeviceSelectorComponent } from './dot-device-selector.component';
 
-@Component({
-    selector: 'dot-test-host-component',
-    template: `
-        <dot-device-selector [value]="value"></dot-device-selector>
-    `,
-    standalone: false
-})
-class TestHostComponent {
-    value: DotDevice = mockDotDevices[0];
-}
-
 describe('DotDeviceSelectorComponent', () => {
-    let fixtureHost: ComponentFixture<TestHostComponent>;
-    let componentHost: TestHostComponent;
-    let deHost: DebugElement;
-    let dotDeviceService;
-    let component: DotDeviceSelectorComponent;
-    let de: DebugElement;
+    let spectator: Spectator<DotDeviceSelectorComponent>;
+    let dotDeviceService: DotDevicesService;
 
     const defaultDevice: DotDevice = {
         identifier: '',
@@ -46,105 +29,82 @@ describe('DotDeviceSelectorComponent', () => {
         cssWidth: '',
         inode: '0'
     };
+
     const messageServiceMock = new MockDotMessageService({
         'editpage.viewas.default.device': 'Desktop',
         'editpage.viewas.label.device': 'Device'
     });
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [TestHostComponent],
-            imports: [
-                DotDeviceSelectorComponent,
-                BrowserAnimationsModule,
-                DotIconComponent,
-                DotMessagePipe
-            ],
-            providers: [
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                }
-            ],
-            schemas: [CUSTOM_ELEMENTS_SCHEMA]
-        })
-            .overrideComponent(DotDeviceSelectorComponent, {
-                set: {
-                    providers: [
-                        {
-                            provide: DotDevicesService,
-                            useClass: DotDevicesServiceMock
-                        }
-                    ]
-                }
-            })
-            .compileComponents();
+    const createComponent = createComponentFactory({
+        component: DotDeviceSelectorComponent,
+        imports: [NoopAnimationsModule, DotIconComponent, DotMessagePipe],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        componentProviders: [{ provide: DotDevicesService, useClass: DotDevicesServiceMock }]
     });
+
     beforeEach(() => {
-        fixtureHost = TestBed.createComponent(TestHostComponent);
-        deHost = fixtureHost.debugElement;
-        componentHost = fixtureHost.componentInstance;
-        de = deHost.query(By.css('dot-device-selector'));
-        component = de.componentInstance;
-        dotDeviceService = de.injector.get(DotDevicesService);
+        spectator = createComponent({ props: { value: mockDotDevices[0] } });
+        dotDeviceService = spectator.debugElement.injector.get(DotDevicesService);
     });
 
     it('should have icon', () => {
-        fixtureHost.detectChanges();
-        const icon = de.query(By.css('dot-icon'));
-        expect(icon.attributes.name).toBe('devices');
-        expect(icon.attributes.big).toBeDefined();
+        const icon = spectator.debugElement.query(By.css('dot-icon'));
+        expect(icon?.attributes['name']).toBe('devices');
+        expect(icon?.attributes['big']).toBeDefined();
     });
 
-    it('should emmit the selected Device', () => {
-        const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
+    it('should emit the selected Device', () => {
+        const pSelect = spectator.debugElement.query(By.css('p-select'));
+        jest.spyOn(spectator.component.selected, 'emit');
+        jest.spyOn(spectator.component, 'change');
 
-        jest.spyOn(component.selected, 'emit');
-        jest.spyOn(component, 'change');
+        pSelect.triggerEventHandler('onChange', { value: mockDotDevices });
 
-        pDropDown.triggerEventHandler('onChange', { value: mockDotDevices });
-
-        expect<any>(component.change).toHaveBeenCalledWith(mockDotDevices);
-        expect<any>(component.selected.emit).toHaveBeenCalledWith(mockDotDevices);
+        expect(spectator.component.change).toHaveBeenCalledWith(mockDotDevices);
+        expect(spectator.component.selected.emit).toHaveBeenCalledWith(mockDotDevices);
     });
 
     it('should add Default Device as first position', () => {
-        fixtureHost.detectChanges();
-        expect(component.options[0]).toEqual(defaultDevice);
+        expect(spectator.component.options[0]).toEqual(defaultDevice);
     });
 
     it('should set devices that have Width & Height bigger than 0', () => {
-        fixtureHost.detectChanges();
         const devicesMock = mockDotDevices.filter(
             (device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0
         );
-        expect(component.options.length).toEqual(2);
-        expect(component.options[0]).toEqual(defaultDevice);
-        expect(component.options[1]).toEqual(devicesMock[0]);
+        expect(spectator.component.options.length).toEqual(2);
+        expect(spectator.component.options[0]).toEqual(defaultDevice);
+        expect(spectator.component.options[1]).toEqual(devicesMock[0]);
     });
 
     it('should reload options when value change', () => {
         jest.spyOn(dotDeviceService, 'get');
-
-        componentHost.value = {
-            ...mockDotDevices[1]
-        };
-        fixtureHost.detectChanges();
+        spectator.setInput('value', { ...mockDotDevices[1] });
+        spectator.detectChanges();
         expect(dotDeviceService.get).toHaveBeenCalledTimes(1);
     });
 
     describe('disabled', () => {
-        beforeEach(() => {
-            jest.spyOn(dotDeviceService, 'get').mockReturnValue(of([]));
-            fixtureHost.detectChanges();
-        });
+        let disabledSpectator: Spectator<DotDeviceSelectorComponent>;
+
+        beforeEach(fakeAsync(() => {
+            disabledSpectator = createComponent({ props: { value: mockDotDevices[0] } });
+            const service = disabledSpectator.debugElement.injector.get(DotDevicesService);
+            jest.spyOn(service, 'get').mockReturnValue(of([]));
+            disabledSpectator.setInput('value', { ...mockDotDevices[1], inode: 'other' });
+            tick();
+            disabledSpectator.detectChanges();
+        }));
+
         it('should disabled dropdown when just have just one device', () => {
-            const pDropDown: DebugElement = de.query(By.css('p-dropdown'));
-            expect(pDropDown.componentInstance.disabled).toBe(true);
+            const pSelect = disabledSpectator.debugElement.query(By.css('p-select'));
+            const disabled = pSelect?.componentInstance?.disabled;
+            expect(typeof disabled === 'function' ? disabled() : disabled).toBe(true);
         });
 
         it('should add class to the host when disabled', () => {
-            expect(de.nativeElement.classList.contains('disabled')).toBe(true);
+            expect(disabledSpectator.component.disabled).toBe(true);
+            expect(disabledSpectator.element.classList.contains('disabled')).toBe(true);
         });
     });
 });

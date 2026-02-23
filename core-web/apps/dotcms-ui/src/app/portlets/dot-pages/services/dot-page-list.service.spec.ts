@@ -270,7 +270,7 @@ describe('DotPageListService', () => {
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body).toEqual({
-                query: '+contentType:dotFavoritePage +deleted:false +working:true +conhost:demo.dotcms.com +owner:user-123',
+                query: '+contentType:dotFavoritePage +deleted:false +working:true +owner:user-123',
                 sort: 'title ASC',
                 limit: FAVORITE_PAGE_LIMIT,
                 offset: 0
@@ -312,7 +312,7 @@ describe('DotPageListService', () => {
             req.flush({ entity: MOCK_ES_CONTENT });
         });
 
-        it('should include host in query when provided', () => {
+        it('should not include host in favorite pages query (host scoping not supported for dotFavoritePage)', () => {
             const params: ListPagesParams = {
                 ...DEFAULT_LIST_PARAMS,
                 host: 'mysite.com'
@@ -321,7 +321,9 @@ describe('DotPageListService', () => {
             spectator.service.getFavoritePages(params, 'user-123').subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
-            expect(req.request.body.query).toContain('+conhost:mysite.com');
+            // Implementation does not add +conhost for getFavoritePages (see dot-page-list.service.ts)
+            expect(req.request.body.query).not.toContain('+conhost:');
+            expect(req.request.body.query).toContain('+owner:user-123');
 
             req.flush({ entity: MOCK_ES_CONTENT });
         });

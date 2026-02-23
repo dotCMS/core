@@ -1,10 +1,4 @@
-import {
-    byTestId,
-    createComponentFactory,
-    mockProvider,
-    Spectator,
-    SpyObject
-} from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { Observable, of } from 'rxjs';
 
@@ -81,26 +75,27 @@ describe('DotAIImagePromptComponent', () => {
         );
     });
 
-    it('should inset an image', async () => {
+    it('should inset an image', () => {
         patchState(store, { images: [MOCK_GENERATED_AI_IMAGE] });
         spectator.detectChanges();
 
-        const submitBtn = spectator.query(byTestId('submit-btn'));
+        spectator.component.insertImage();
 
-        spectator.click(submitBtn);
-        await spectator.fixture.whenStable();
-        expect(dynamicDialogRef.close).toHaveBeenCalled();
+        expect(dynamicDialogRef.close).toHaveBeenCalledWith(MOCK_GENERATED_AI_IMAGE);
     });
 
-    it('should call confirm dialog when try to close dialog', async () => {
+    it('should call confirm dialog when try to close dialog', () => {
         patchState(store, { images: [MOCK_GENERATED_AI_IMAGE] });
         const confirmSpy = jest.spyOn(confirmationService, 'confirm');
         spectator.detectChanges();
 
-        const closeBtn = spectator.query(byTestId('close-btn'));
+        spectator.component.closeDialog();
 
-        spectator.click(closeBtn);
-        await spectator.fixture.whenStable();
-        expect(confirmSpy).toHaveBeenCalled();
+        expect(confirmSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                key: 'ai-image-prompt',
+                icon: 'pi pi-exclamation-triangle'
+            })
+        );
     });
 });

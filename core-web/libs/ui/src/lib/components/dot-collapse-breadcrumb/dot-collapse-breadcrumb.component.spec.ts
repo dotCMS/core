@@ -2,11 +2,15 @@ import { byTestId, createRoutingFactory, Spectator } from '@ngneat/spectator/jes
 
 import { ActivatedRoute } from '@angular/router';
 
+import { BreadcrumbModule } from 'primeng/breadcrumb';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 
 import { DotCollapseBreadcrumbComponent } from './dot-collapse-breadcrumb.component';
 import { MAX_ITEMS } from './dot-collapse-breadcrumb.costants';
+
+/** PrimeNG 21 breadcrumb uses .p-breadcrumb-item-link for item links */
+const BREADCRUMB_LINK_SELECTOR = '.p-breadcrumb-item-link';
 
 describe('DotCollapseBreadcrumbComponent', () => {
     let spectator: Spectator<DotCollapseBreadcrumbComponent>;
@@ -14,7 +18,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
     const createComponent = createRoutingFactory({
         component: DotCollapseBreadcrumbComponent,
         providers: [ActivatedRoute],
-        imports: [MenuModule, ButtonModule]
+        imports: [BreadcrumbModule, MenuModule, ButtonModule]
     });
 
     beforeEach(() => {
@@ -43,7 +47,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
             ]);
             spectator.detectChanges();
             expect(spectator.query(byTestId('btn-collapse'))).toBeNull();
-            expect(spectator.queryAll('.p-menuitem-link').length).toBe(5);
+            expect(spectator.queryAll(BREADCRUMB_LINK_SELECTOR).length).toBe(5);
         });
 
         it('should show maxItems options with btn collapse', () => {
@@ -57,7 +61,7 @@ describe('DotCollapseBreadcrumbComponent', () => {
             ]);
             spectator.detectChanges();
             expect(spectator.query(byTestId('btn-collapse'))).toBeTruthy();
-            expect(spectator.queryAll('.p-menuitem-link').length).toBe(4);
+            expect(spectator.queryAll(BREADCRUMB_LINK_SELECTOR).length).toBe(4);
         });
     });
 
@@ -73,8 +77,9 @@ describe('DotCollapseBreadcrumbComponent', () => {
         spectator.detectChanges();
 
         const itemClickSpy = jest.spyOn(spectator.component.onItemClick, 'emit');
-        const firstEl = spectator.query('.p-menuitem-link');
-        spectator.click(firstEl);
+        const firstLink = spectator.query(BREADCRUMB_LINK_SELECTOR);
+        expect(firstLink).toBeTruthy();
+        spectator.click(firstLink as HTMLElement);
         spectator.detectChanges();
 
         expect(itemClickSpy).toHaveBeenCalled();
@@ -92,8 +97,9 @@ describe('DotCollapseBreadcrumbComponent', () => {
         spectator.detectChanges();
 
         const itemClickSpy = jest.spyOn(spectator.component.onItemClick, 'emit');
-        const firstEl = spectator.query('.p-menuitem-link');
-        spectator.click(firstEl);
+        const firstLink = spectator.query(BREADCRUMB_LINK_SELECTOR);
+        expect(firstLink).toBeTruthy();
+        spectator.click(firstLink as HTMLElement);
         spectator.detectChanges();
 
         expect(itemClickSpy).toHaveBeenCalled();
