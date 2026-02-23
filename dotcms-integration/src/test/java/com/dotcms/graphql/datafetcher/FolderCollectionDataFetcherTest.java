@@ -1,16 +1,22 @@
 package com.dotcms.graphql.datafetcher;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
+import graphql.GraphQLError;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.AfterClass;
@@ -81,8 +87,9 @@ public class FolderCollectionDataFetcherTest {
     public void buildFolderMap_mapsPropertiesCorrectly() {
         final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
 
+        final List<GraphQLError> errors = new ArrayList<>();
         final Map<String, Object> map = fetcher.buildFolderMap(
-                parentFolder, user, 1, 5);
+                parentFolder, user, 1, 5, errors);
 
         assertEquals(parentFolder.getInode(), map.get("folderId"));
         assertEquals(parentFolder.getName(), map.get("folderName"));
@@ -91,6 +98,7 @@ public class FolderCollectionDataFetcherTest {
         assertEquals(parentFolder.getFilesMasks(), map.get("folderFileMask"));
         assertEquals(parentFolder.getSortOrder(), map.get("folderSortOrder"));
         assertEquals(parentFolder.getDefaultFileType(), map.get("folderDefaultFileType"));
+        assertTrue("No permission errors expected for system user", errors.isEmpty());
     }
 
     /**
@@ -103,8 +111,9 @@ public class FolderCollectionDataFetcherTest {
     public void buildFolderMap_loadsChildren() {
         final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
 
+        final List<GraphQLError> errors = new ArrayList<>();
         final Map<String, Object> map = fetcher.buildFolderMap(
-                parentFolder, user, 1, 5);
+                parentFolder, user, 1, 5, errors);
 
         final List<Map<String, Object>> children =
                 (List<Map<String, Object>>) map.get("children");
@@ -115,6 +124,7 @@ public class FolderCollectionDataFetcherTest {
                 .anyMatch(c -> childFolder1.getName().equals(c.get("folderName"))));
         assertTrue(children.stream()
                 .anyMatch(c -> childFolder2.getName().equals(c.get("folderName"))));
+        assertTrue(errors.isEmpty());
     }
 
     /**
@@ -127,8 +137,9 @@ public class FolderCollectionDataFetcherTest {
     public void buildFolderMap_loadsGrandchildrenRecursively() {
         final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
 
+        final List<GraphQLError> errors = new ArrayList<>();
         final Map<String, Object> map = fetcher.buildFolderMap(
-                parentFolder, user, 1, 5);
+                parentFolder, user, 1, 5, errors);
 
         final List<Map<String, Object>> children =
                 (List<Map<String, Object>>) map.get("children");
@@ -145,6 +156,7 @@ public class FolderCollectionDataFetcherTest {
         assertEquals(1, grandchildren.size());
         assertEquals(grandchildFolder.getName(),
                 grandchildren.get(0).get("folderName"));
+        assertTrue(errors.isEmpty());
     }
 
     /**
@@ -157,14 +169,16 @@ public class FolderCollectionDataFetcherTest {
     public void buildFolderMap_stopsAtMaxDepth() {
         final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
 
+        final List<GraphQLError> errors = new ArrayList<>();
         // depth == maxDepth, so children should NOT be loaded
         final Map<String, Object> map = fetcher.buildFolderMap(
-                parentFolder, user, 3, 3);
+                parentFolder, user, 3, 3, errors);
 
         final List<Map<String, Object>> children =
                 (List<Map<String, Object>>) map.get("children");
         assertNotNull(children);
         assertTrue("Children should be empty at max depth", children.isEmpty());
+        assertTrue(errors.isEmpty());
     }
 
     /**
@@ -177,9 +191,10 @@ public class FolderCollectionDataFetcherTest {
     public void buildFolderMap_respectsMaxDepthForGrandchildren() {
         final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
 
+        final List<GraphQLError> errors = new ArrayList<>();
         // maxDepth=2: parent(depth=1) -> children loaded(depth=2) -> grandchildren NOT loaded
         final Map<String, Object> map = fetcher.buildFolderMap(
-                parentFolder, user, 1, 2);
+                parentFolder, user, 1, 2, errors);
 
         final List<Map<String, Object>> children =
                 (List<Map<String, Object>>) map.get("children");
@@ -198,6 +213,7 @@ public class FolderCollectionDataFetcherTest {
         assertNotNull(grandchildren);
         assertTrue("Grandchildren should be empty at maxDepth=2",
                 grandchildren.isEmpty());
+        assertTrue(errors.isEmpty());
     }
 
     /**
@@ -210,12 +226,69 @@ public class FolderCollectionDataFetcherTest {
     public void buildFolderMap_returnsEmptyChildrenForLeafFolder() {
         final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
 
+        final List<GraphQLError> errors = new ArrayList<>();
         final Map<String, Object> map = fetcher.buildFolderMap(
-                grandchildFolder, user, 1, 5);
+                grandchildFolder, user, 1, 5, errors);
 
         final List<Map<String, Object>> children =
                 (List<Map<String, Object>>) map.get("children");
         assertNotNull(children);
         assertTrue("Leaf folder should have empty children", children.isEmpty());
+        assertTrue(errors.isEmpty());
+    }
+
+    /**
+     * Given a folder with a child that a limited user cannot access
+     * When buildFolderMap is called with that limited user
+     * Then the restricted child is excluded from children
+     * And a permission error is collected in the errors list
+     * And the permitted sibling is still returned
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void buildFolderMap_surfacesPermissionErrorsForRestrictedChildren() throws Exception {
+        final FolderCollectionDataFetcher fetcher = new FolderCollectionDataFetcher();
+
+        // Create a limited user with a custom role
+        final com.dotmarketing.business.Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+
+        // Grant READ on parent folder to the limited user
+        APILocator.getPermissionAPI().save(
+                new Permission(parentFolder.getPermissionId(),
+                        limitedRole.getId(),
+                        PermissionAPI.PERMISSION_READ),
+                parentFolder, user, false);
+
+        // Grant READ on child1 only (child2 remains restricted)
+        APILocator.getPermissionAPI().save(
+                new Permission(childFolder1.getPermissionId(),
+                        limitedRole.getId(),
+                        PermissionAPI.PERMISSION_READ),
+                childFolder1, user, false);
+
+        // Do NOT grant permission on childFolder2
+
+        final List<GraphQLError> errors = new ArrayList<>();
+        final Map<String, Object> map = fetcher.buildFolderMap(
+                parentFolder, limitedUser, 1, 5, errors);
+
+        // child1 should be present, child2 should be excluded
+        final List<Map<String, Object>> children =
+                (List<Map<String, Object>>) map.get("children");
+        assertNotNull(children);
+
+        assertTrue("child1 should be accessible",
+                children.stream().anyMatch(
+                        c -> childFolder1.getName().equals(c.get("folderName"))));
+        assertFalse("child2 should NOT be accessible",
+                children.stream().anyMatch(
+                        c -> childFolder2.getName().equals(c.get("folderName"))));
+
+        // Permission error should be collected (generic, no folder path for security)
+        assertFalse("Should have permission errors", errors.isEmpty());
+        assertTrue("Error should mention denied subfolder count",
+                errors.stream().anyMatch(
+                        e -> e.getMessage().contains("do not have permission")));
     }
 }
