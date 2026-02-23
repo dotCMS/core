@@ -53,6 +53,9 @@
             "@dotcms/portlets/dot-analytics/portlet": [
                 "libs/portlets/dot-analytics/portlet/src/index.ts"
             ],
+            "@dotcms/portlets/dot-categories/portlet": [
+                "libs/portlets/dot-categories/src/index.ts"
+            ],
             "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"],
             "@dotcms/portlets/dot-ema/ui": ["libs/portlets/edit-ema/ui/src/index.ts"],
             "@dotcms/portlets/dot-experiments/data-access": [
@@ -90,9 +93,6 @@
             "@services/*": ["apps/dotcms-ui/src/app/api/services/*"],
             "@shared/*": ["apps/dotcms-ui/src/app/shared/*"],
             "@tests/*": ["apps/dotcms-ui/src/app/test/*"],
-            "@dotcms/portlets/dot-categories/portlet": [
-                "libs/portlets/dot-categories/src/index.ts"
-            ],
             "sdk-create-app": ["libs/sdk/create-app/src/index.ts"]
         }
     },
