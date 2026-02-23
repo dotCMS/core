@@ -19,11 +19,11 @@ import {
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotAnalyticsDashboardChartComponent } from './components/dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
-import { DotAnalyticsDashboardFiltersComponent } from './components/dot-analytics-dashboard-filters/dot-analytics-dashboard-filters.component';
-import { DotAnalyticsDashboardMetricsComponent } from './components/dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
-import { DotAnalyticsDashboardTableComponent } from './components/dot-analytics-dashboard-table/dot-analytics-dashboard-table.component';
 import DotAnalyticsDashboardComponent from './dot-analytics-dashboard.component';
+import { DotAnalyticsTopPagesTableComponent } from './reports/pageview/dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
+import { DotAnalyticsChartComponent } from './shared/components/dot-analytics-chart/dot-analytics-chart.component';
+import { DotAnalyticsFiltersComponent } from './shared/components/dot-analytics-filters/dot-analytics-filters.component';
+import { DotAnalyticsMetricComponent } from './shared/components/dot-analytics-metric/dot-analytics-metric.component';
 
 const messageServiceMock = new MockDotMessageService({
     'analytics.metrics.total-pageviews': 'Total Pageviews',
@@ -46,10 +46,10 @@ describe('DotAnalyticsDashboardComponent', () => {
         component: DotAnalyticsDashboardComponent,
         imports: [MessageModule, DotMessagePipe],
         declarations: [
-            MockComponent(DotAnalyticsDashboardChartComponent),
-            MockComponent(DotAnalyticsDashboardFiltersComponent),
-            MockComponent(DotAnalyticsDashboardMetricsComponent),
-            MockComponent(DotAnalyticsDashboardTableComponent)
+            MockComponent(DotAnalyticsChartComponent),
+            MockComponent(DotAnalyticsFiltersComponent),
+            MockComponent(DotAnalyticsMetricComponent),
+            MockComponent(DotAnalyticsTopPagesTableComponent)
         ],
         providers: [
             DotAnalyticsDashboardStore,
@@ -96,7 +96,7 @@ describe('DotAnalyticsDashboardComponent', () => {
         });
 
         it('should render pageview report when pageview tab is active', () => {
-            const pageviewReport = spectator.query('dot-analytics-dashboard-pageview-report');
+            const pageviewReport = spectator.query('dot-analytics-pageview-report');
             expect(pageviewReport).toExist();
         });
 

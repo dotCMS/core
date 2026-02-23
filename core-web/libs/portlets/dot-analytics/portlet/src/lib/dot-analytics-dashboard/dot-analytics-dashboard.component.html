@@ -1,65 +1,60 @@
-<div class="w-full h-full overflow-auto" data-testid="analytics-dashboard">
-    <!-- Development Status Banner -->
-    @if ($showMessage()) {
-        <p-message
-            severity="info"
-            icon="pi pi-info-circle"
-            [closable]="true"
-            (onClose)="onCloseMessage()"
-            data-testid="analytics-message">
-            <span data-testid="message-content" class="text-gray-600 text-base font-normal">
-                {{ 'analytics.feature.state' | dm }}
-                <b>{{ 'development' | dm }}</b>
-            </span>
-        </p-message>
-    }
-
-    <!-- Filters Row -->
-    <div class="w-full bg-gray-100 border-b border-gray-300 py-3 px-4">
-        <div class="max-w-full flex justify-between items-center">
-            <dot-analytics-dashboard-filters
+<div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
+    <div class="header-container p-4 py-6">
+        @if ($showMessage()) {
+            <p-message
+                severity="info"
+                [closable]="true"
+                (onClose)="onCloseMessage()"
+                data-testid="analytics-message">
+                <div class="flex items-center gap-2">
+                    <i class="pi pi-info-circle"></i>
+                    <span data-testid="message-content">
+                        {{ 'analytics.feature.state' | dm }}
+                        <b>{{ 'development' | dm }}</b>
+                    </span>
+                </div>
+            </p-message>
+        }
+    
+        <div class="flex justify-between items-center">
+            <dot-analytics-filters
                 [timeRange]="store.timeRange()"
                 (changeFilters)="onTimeRangeChange($event)"
                 data-testid="analytics-filters" />
-
             <p-button
                 [label]="'analytics.dashboard.refresh.button' | dm"
-                [rounded]="false"
                 severity="primary"
                 size="small"
                 (onClick)="onRefresh()"
                 data-testid="refresh-button" />
         </div>
     </div>
-
-    <!-- Dashboard Content - Tabs -->
-    <div class="bg-white px-4">
-        <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
-            <p-tablist>
-                @for (tab of $tabs(); track tab.id) {
-                    <p-tab [value]="tab.id">
-                        {{ tab.label | dm }}
-                    </p-tab>
-                }
-            </p-tablist>
-
-            <p-tabpanels>
-                @for (tab of $tabs(); track tab.id) {
-                    <p-tabpanel [value]="tab.id">
-                        @switch (tab.id) {
-                            @case ('pageview') {
-                                <dot-analytics-dashboard-pageview-report />
-                            }
-                            @case ('conversions') {
-                                <dot-analytics-dashboard-conversions-report />
-                            }
-                            @case ('engagement') {
-                                <dot-analytics-dashboard-engagement-report />
-                            }
+    
+    <div class="content-container px-4">
+    <!-- Tabs -->
+    <p-tabs [value]="store.currentTab()" (valueChange)="onTabChange($event)">
+        <p-tablist>
+            @for (tab of $tabs(); track tab.id) {
+                <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
+            }
+        </p-tablist>
+        <p-tabpanels>
+            @for (tab of $tabs(); track tab.id) {
+                <p-tabpanel [value]="tab.id">
+                    @switch (tab.id) {
+                        @case ('pageview') {
+                            <dot-analytics-pageview-report />
                         }
-                    </p-tabpanel>
-                }
-            </p-tabpanels>
-        </p-tabs>
+                        @case ('conversions') {
+                            <dot-analytics-conversions-report />
+                        }
+                        @case ('engagement') {
+                            <dot-analytics-engagement-report />
+                        }
+                    }
+                </p-tabpanel>
+            }
+        </p-tabpanels>
+    </p-tabs>
     </div>
 </div>

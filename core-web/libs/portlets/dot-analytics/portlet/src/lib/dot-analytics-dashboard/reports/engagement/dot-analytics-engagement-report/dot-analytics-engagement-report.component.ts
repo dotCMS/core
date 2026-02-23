@@ -17,36 +17,41 @@ import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsDashboardChartComponent } from '../dot-analytics-dashboard-chart/dot-analytics-dashboard-chart.component';
-import { DotAnalyticsDashboardMetricsComponent } from '../dot-analytics-dashboard-metrics/dot-analytics-dashboard-metrics.component';
+import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
+import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
-import { DotAnalyticsSparklineComponent } from '../dot-analytics-sparkline/dot-analytics-sparkline.component';
 
 /**
- * DotAnalyticsDashboardEngagementReportComponent displays the engagement dashboard.
+ * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
  * It includes the engagement rate, trend chart, and platforms table.
  */
 @Component({
-    selector: 'dot-analytics-dashboard-engagement-report',
+    selector: 'dot-analytics-engagement-report',
     imports: [
         CommonModule,
         ButtonModule,
         DialogModule,
         DotMessagePipe,
-        DotAnalyticsDashboardChartComponent,
-        DotAnalyticsDashboardMetricsComponent,
+        DotAnalyticsChartComponent,
+        DotAnalyticsMetricComponent,
         DotAnalyticsPlatformsTableComponent,
         DotAnalyticsSparklineComponent
     ],
-    templateUrl: './dot-analytics-dashboard-engagement-report.component.html',
+    templateUrl: './dot-analytics-engagement-report.component.html',
+    styleUrl: './dot-analytics-engagement-report.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col gap-3 w-full' }
+    host: {
+        class: 'flex flex-col gap-6 w-full'
+    }
 })
-export default class DotAnalyticsDashboardEngagementReportComponent implements OnInit {
+export default class DotAnalyticsEngagementReportComponent implements OnInit {
+    /** Analytics dashboard store providing engagement data and actions */
     readonly store = inject(DotAnalyticsDashboardStore);
     readonly #globalStore = inject(GlobalStore);
     readonly #messageService = inject(DotMessageService);
 
+    /** Raw engagement data slice from the store */
     readonly engagementData = this.store.engagementData;
 
     /** Controls visibility of the "How it's calculated" dialog */
@@ -58,10 +63,24 @@ export default class DotAnalyticsDashboardEngagementReportComponent implements O
         });
     }
 
+    /** Key performance indicators (engagement rate, avg session time, etc.) */
     readonly $kpis = computed(() => this.engagementData().data?.kpis);
+    /** Engagement trend data for the sparkline/trend chart */
     readonly $trend = computed(() => this.engagementData().data?.trend);
+    /** Engagement breakdown data for the doughnut chart */
     readonly $breakdown = computed(() => this.engagementData().data?.breakdown);
+    /** Platform analytics data (device, browser, language) */
     readonly $platforms = computed(() => this.engagementData().data?.platforms);
+    /** Current component status derived from store data */
     readonly $status = computed(() => this.engagementData().status ?? ComponentStatus.INIT);
+    /** Whether data has finished loading successfully */
     readonly $isLoaded = computed(() => this.$status() === ComponentStatus.LOADED);
+
+    /** Calculate total sessions from platforms data */
+    readonly $totalSessions = computed(() => {
+        const platforms = this.$platforms();
+        if (!platforms?.device) return 0;
+
+        return platforms.device.reduce((sum, item) => sum + item.views, 0);
+    });
 }

@@ -16,7 +16,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
  *
  */
 @Component({
-    selector: 'dot-analytics-dashboard-metrics',
+    selector: 'dot-analytics-metric',
     imports: [
         CommonModule,
         CardModule,
@@ -26,14 +26,14 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         DotAnalyticsStateMessageComponent
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    templateUrl: './dot-analytics-dashboard-metrics.component.html',
-    animations: [fadeInContent],
-    host: { class: 'block w-full' }
+    templateUrl: './dot-analytics-metric.component.html',
+    styleUrl: './dot-analytics-metric.component.scss',
+    animations: [fadeInContent]
 })
-export class DotAnalyticsDashboardMetricsComponent {
+export class DotAnalyticsMetricComponent {
     // Inputs
-    /** Metric display name (shown in uppercase) */
-    readonly $name = input.required<string>({ alias: 'name' });
+    /** Optional title displayed above the card */
+    readonly $title = input<string>('', { alias: 'title' });
 
     /** Metric value (number will be formatted with separators, or string for special formats like "2/3") */
     readonly $value = input.required<number | string>({ alias: 'value' });
@@ -69,9 +69,7 @@ export class DotAnalyticsDashboardMetricsComponent {
             value: trend,
             isPositive,
             prefix: isPositive ? '+' : '',
-            class: isPositive
-                ? 'inline-flex items-center gap-1 text-base text-green-600'
-                : 'inline-flex items-center gap-1 text-base text-red-600'
+            class: isPositive ? 'metric-trend--positive' : 'metric-trend--negative'
         };
     });
 

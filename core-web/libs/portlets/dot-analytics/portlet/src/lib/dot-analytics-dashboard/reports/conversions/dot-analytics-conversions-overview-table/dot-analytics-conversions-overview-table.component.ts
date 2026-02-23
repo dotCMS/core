@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
@@ -20,14 +19,13 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
     selector: 'dot-analytics-conversions-overview-table',
     imports: [
         CommonModule,
-        CardModule,
         TableModule,
         TagModule,
         DotAnalyticsStateMessageComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-conversions-overview-table.component.html',
-    // styleUrl: './dot-analytics-conversions-overview-table.component.scss',
+    styleUrl: './dot-analytics-conversions-overview-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export default class DotAnalyticsConversionsOverviewTableComponent {

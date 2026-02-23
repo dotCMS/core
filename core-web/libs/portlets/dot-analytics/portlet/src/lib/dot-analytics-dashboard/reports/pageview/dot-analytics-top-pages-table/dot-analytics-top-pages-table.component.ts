@@ -4,7 +4,6 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { CardModule } from 'primeng/card';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
-import { CardPassThrough } from 'primeng/types/card';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
@@ -14,9 +13,9 @@ import {
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../constants';
-import { TableColumn } from '../../types';
-import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
+import { DotAnalyticsStateMessageComponent } from '../../../shared/components/dot-analytics-state-message/dot-analytics-state-message.component';
+import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../../shared/constants';
+import { TableColumn } from '../../../shared/types';
 
 /**
  * Skeleton width mapping for different column types
@@ -32,7 +31,7 @@ const SKELETON_WIDTH_MAP = {
  * Displays top performing pages with pageviews, sorting and pagination.
  */
 @Component({
-    selector: 'dot-analytics-dashboard-table',
+    selector: 'dot-analytics-top-pages-table',
     imports: [
         CommonModule,
         CardModule,
@@ -41,10 +40,11 @@ const SKELETON_WIDTH_MAP = {
         DotMessagePipe,
         DotAnalyticsStateMessageComponent
     ],
-    templateUrl: './dot-analytics-dashboard-table.component.html',
+    templateUrl: './dot-analytics-top-pages-table.component.html',
+    styleUrls: ['./dot-analytics-top-pages-table.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotAnalyticsDashboardTableComponent {
+export class DotAnalyticsTopPagesTableComponent {
     /** Complete table state from analytics store */
     readonly $tableState = input.required<RequestState<TopPerformanceTableEntity[]>>({
         alias: 'tableState'
@@ -80,13 +80,6 @@ export class DotAnalyticsDashboardTableComponent {
 
     /** Skeleton rows for loading state */
     protected readonly skeletonRows = Array.from({ length: 3 }, (_, i) => i);
-
-    /** PassThrough config for state cards  */
-    protected readonly stateCardPt: CardPassThrough = {
-        root: 'h-full',
-        body: 'h-full flex flex-col',
-        content: 'flex-1 flex flex-col'
-    };
 
     /** Pre-computed column configurations with CSS classes and skeleton widths */
     protected readonly $columnConfigs = computed(() => {

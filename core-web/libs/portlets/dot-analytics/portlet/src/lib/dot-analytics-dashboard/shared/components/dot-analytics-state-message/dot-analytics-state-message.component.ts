@@ -11,15 +11,13 @@ import { DotMessagePipe, fadeInContent } from '@dotcms/ui';
     imports: [DotMessagePipe],
     template: `
         <div
-            class="flex flex-col justify-center items-center h-full text-center gap-4"
+            class="flex flex-column justify-content-center align-items-center h-full text-center gap-3"
             [@fadeInContent]>
             <i [class]="$iconClasses()"></i>
-            <div class="text-sm text-gray-600 text-center m-0">
-                {{ message() | dm }}
-            </div>
+            <div class="state-message">{{ message() | dm }}</div>
         </div>
     `,
-    host: { class: 'flex-1' },
+    styleUrl: './dot-analytics-state-message.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [fadeInContent]
 })
@@ -37,7 +35,7 @@ export class DotAnalyticsStateMessageComponent {
     /**
      * Icon size class (default: 'text-2xl')
      */
-    iconSize = input<string>('text-4xl!');
+    iconSize = input<string>('text-4xl');
 
     /**
      * Icon color class (default: 'text-gray-400')

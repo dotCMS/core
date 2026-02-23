@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { CardModule } from 'primeng/card';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -23,7 +22,6 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
     imports: [
         CommonModule,
         FormsModule,
-        CardModule,
         MultiSelectModule,
         TableModule,
         TagModule,
@@ -31,6 +29,7 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
         DotMessagePipe
     ],
     templateUrl: './dot-analytics-content-conversions-table.component.html',
+    styleUrl: './dot-analytics-content-conversions-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export default class DotAnalyticsContentConversionsTableComponent {
@@ -68,17 +67,4 @@ export default class DotAnalyticsContentConversionsTableComponent {
 
         return status === ComponentStatus.LOADED && (!data || data.length === 0);
     });
-
-    /**
-     * Get the PrimeNG tag severity based on event type
-     */
-    protected getTagSeverity(eventType: string): 'success' | 'info' | 'warn' | 'secondary' {
-        const severityMap: Record<string, 'success' | 'info' | 'warn' | 'secondary'> = {
-            conversion: 'success',
-            content_click: 'info',
-            content_impression: 'warn'
-        };
-
-        return severityMap[eventType] || 'secondary';
-    }
 }

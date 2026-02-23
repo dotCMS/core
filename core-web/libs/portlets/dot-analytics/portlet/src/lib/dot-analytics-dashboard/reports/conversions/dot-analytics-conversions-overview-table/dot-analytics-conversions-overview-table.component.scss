@@ -30,27 +30,20 @@
     }
 }
 
-// Top Attributed Content styling - compact
-.attributed-content-list {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-1;
-}
-
+// Top Attributed Content - single row, compact
 .attributed-content-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: $spacing-3;
     font-size: $font-size-sm;
-    line-height: 1.4;
 
     .content-info {
         display: flex;
         align-items: center;
         gap: $spacing-2;
         flex: 1;
-        min-width: 0; // Allow text truncation
+        min-width: 0;
     }
 
     .content-title {
@@ -59,14 +52,28 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+}
 
-    .content-percentage {
-        font-weight: $font-weight-semi-bold;
-        color: $color-palette-primary;
-        min-width: 50px;
-        text-align: right;
-        white-space: nowrap;
-    }
+.attributed-content-right {
+    display: flex;
+    align-items: center;
+    gap: $spacing-2;
+    white-space: nowrap;
+}
+
+.content-percentage {
+    font-weight: $font-weight-semi-bold;
+    color: $color-palette-primary;
+    min-width: 50px;
+    text-align: right;
+}
+
+.more-indicator {
+    font-size: $font-size-xs;
+    color: $color-palette-gray-500;
+    background: $color-palette-gray-100;
+    border-radius: $border-radius-sm;
+    padding: 0 $spacing-1;
 }
 
 // Event type badge styling (same as Content Conversions Table)

@@ -1,4 +1,5 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { MockModule } from 'ng-mocks';
 
 import { ChartModule, UIChart } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -6,12 +7,12 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotAnalyticsDashboardChartComponent } from './dot-analytics-dashboard-chart.component';
+import { DotAnalyticsChartComponent } from './dot-analytics-chart.component';
 
 import { ChartData, ChartType } from '../../types';
 
-describe('DotAnalyticsDashboardChartComponent', () => {
-    let spectator: Spectator<DotAnalyticsDashboardChartComponent>;
+describe('DotAnalyticsChartComponent', () => {
+    let spectator: Spectator<DotAnalyticsChartComponent>;
 
     const createMockChartData = (): ChartData => ({
         labels: ['2024-01-01', '2024-01-02', '2024-01-03'],
@@ -29,8 +30,16 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     const createComponent = createComponentFactory({
-        component: DotAnalyticsDashboardChartComponent,
-        imports: [ChartModule, SkeletonModule],
+        component: DotAnalyticsChartComponent,
+        overrideComponents: [
+            [
+                DotAnalyticsChartComponent,
+                {
+                    remove: { imports: [ChartModule, SkeletonModule] },
+                    add: { imports: [MockModule(ChartModule), MockModule(SkeletonModule)] }
+                }
+            ]
+        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -46,7 +55,6 @@ describe('DotAnalyticsDashboardChartComponent', () => {
             props: {
                 type: 'line' as ChartType,
                 data: createMockChartData(),
-                title: 'Test Chart',
                 status: ComponentStatus.LOADED,
                 options: {}
             } as unknown
@@ -79,8 +87,8 @@ describe('DotAnalyticsDashboardChartComponent', () => {
     });
 
     describe('Default Values', () => {
-        it('should initialize with provided title and default options', () => {
-            expect(spectator.component.$title()).toBe('Test Chart');
+        it('should initialize with empty title by default and empty options', () => {
+            expect(spectator.component.$title()).toBe('');
             expect(spectator.component.$options()).toEqual({});
         });
 
@@ -90,28 +98,34 @@ describe('DotAnalyticsDashboardChartComponent', () => {
         });
     });
 
-    describe('Chart Title Display', () => {
-        it('should show header with the provided title', () => {
-            const header = spectator.query('h3');
-            expect(header).toExist();
-            expect(header).toHaveText('Test Chart');
+    describe('Chart Title Input', () => {
+        it('should display title above the card when provided', () => {
+            spectator.setInput('title', 'analytics.chart.title');
+            spectator.detectChanges();
+
+            const title = spectator.query('[data-testid="chart-title"]');
+            expect(title).toExist();
+            expect(title.tagName).toBe('H3');
         });
 
-        it('should update header when title changes', () => {
-            // Update the title
-            spectator = createComponent({
-                props: {
-                    type: 'line' as ChartType,
-                    data: createMockChartData(),
-                    title: 'Updated Chart Title',
-                    status: ComponentStatus.LOADED,
-                    options: {}
-                } as unknown
-            });
+        it('should not display title when not provided', () => {
+            spectator.setInput('title', '');
+            spectator.detectChanges();
 
-            const header = spectator.query('h3');
-            expect(header).toExist();
-            expect(header).toHaveText('Updated Chart Title');
+            const title = spectator.query('[data-testid="chart-title"]');
+            expect(title).not.toExist();
+        });
+
+        it('should render title outside the p-card element', () => {
+            spectator.setInput('title', 'analytics.chart.title');
+            spectator.detectChanges();
+
+            const title = spectator.query('[data-testid="chart-title"]');
+            const card = spectator.query('[data-testid="analytics-chart"]');
+
+            expect(title).toExist();
+            expect(card).toExist();
+            expect(card.contains(title)).toBe(false);
         });
     });
 
@@ -121,13 +135,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING,
                     options: {}
                 } as unknown
             });
 
-            const skeleton = spectator.query('p-skeleton');
+            const skeleton = spectator.query('.chart-skeleton');
             expect(skeleton).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -137,13 +151,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.INIT,
                     options: {}
                 } as unknown
             });
 
-            const skeleton = spectator.query('p-skeleton');
+            const skeleton = spectator.query('.chart-skeleton');
             expect(skeleton).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -153,14 +167,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING,
                     options: {}
                 } as unknown
             });
 
-            // Line chart skeleton has grid with specific structure (y-axis labels, chart area, x-axis labels)
-            const lineSkeleton = spectator.query('.grid.grid-rows-\\[1fr_1\\.875rem\\]');
+            const lineSkeleton = spectator.query('.chart-skeleton--line');
             expect(lineSkeleton).toExist();
         });
 
@@ -169,13 +182,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'pie' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING,
                     options: {}
                 } as unknown
             });
 
-            const pieSkeleton = spectator.query('p-skeleton[shape="circle"]');
+            const pieSkeleton = spectator.query('.chart-skeleton--pie');
             expect(pieSkeleton).toExist();
         });
 
@@ -184,13 +197,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'doughnut' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING,
                     options: {}
                 } as unknown
             });
 
-            const pieSkeleton = spectator.query('p-skeleton[shape="circle"]');
+            const pieSkeleton = spectator.query('.chart-skeleton--pie');
             expect(pieSkeleton).toExist();
         });
 
@@ -199,13 +212,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'bar' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING,
                     options: {}
                 } as unknown
             });
 
-            const defaultSkeleton = spectator.query('p-skeleton:not([shape="circle"])');
+            const defaultSkeleton = spectator.query('.chart-skeleton--default');
             expect(defaultSkeleton).toExist();
         });
 
@@ -214,7 +227,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING,
                     options: {}
                 } as unknown
@@ -230,13 +243,13 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.ERROR,
                     options: {}
                 } as unknown
             });
 
-            const errorElement = spectator.query('dot-analytics-state-message');
+            const errorElement = spectator.query('.chart-error');
             expect(errorElement).toExist();
             expect(spectator.query('dot-analytics-state-message')).toExist();
             expect(spectator.query(UIChart)).not.toExist();
@@ -247,7 +260,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.ERROR,
                     options: {}
                 } as unknown
@@ -265,7 +278,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.INIT
                 } as unknown
             });
@@ -276,7 +289,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADING
                 } as unknown
             });
@@ -287,7 +300,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -300,7 +313,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.ERROR
                 } as unknown
             });
@@ -311,7 +324,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -324,7 +337,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: { labels: [], datasets: [] },
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -335,7 +348,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -378,7 +391,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -391,7 +404,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'pie' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -407,12 +420,12 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: { labels: [], datasets: [] },
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
 
-            const emptyState = spectator.query('dot-analytics-state-message');
+            const emptyState = spectator.query('.chart-empty');
             expect(emptyState).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -422,7 +435,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: { labels: [], datasets: [] },
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
@@ -436,7 +449,7 @@ describe('DotAnalyticsDashboardChartComponent', () => {
                 props: {
                     type: 'line' as ChartType,
                     data: createMockChartData(),
-                    title: 'Test Chart',
+
                     status: ComponentStatus.LOADED
                 } as unknown
             });
