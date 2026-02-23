@@ -1,7 +1,6 @@
 import { APIRequestContext, expect } from '@playwright/test';
+import { admin1 } from '../tests/login/credentialsData';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
-
-import { admin1 } from '../utils/credentialsData';
 
 export async function updateFeatureFlag(request: APIRequestContext, data: Record<string, unknown>) {
     const endpoint = `/api/v1/system-table/`;

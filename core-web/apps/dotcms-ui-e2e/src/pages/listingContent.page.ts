@@ -1,9 +1,12 @@
 import { expect, Page } from '@playwright/test';
 
 export class ListingContentPage {
-    private addBtn = this.page.getByTestId('add-content-button');
-    private addNewContent = this.page.getByTestId('add-new-content-option');
-    private resultsTable = this.page.getByTestId('content-results-table');
+    private addBtn = this.page.locator("span[widgetid='dijit_form_DropDownButton_0']");
+    private addNewContent = this.page.locator(".dijitPopup tr[aria-label='Add New Content']");
+    private resultsTable = this.page
+        .locator('iframe[name="detailFrame"]')
+        .contentFrame()
+        .locator('#results_table');
 
     constructor(private page: Page) {}
 
@@ -27,6 +30,6 @@ export class ListingContentPage {
     async clickFirstContentRow() {
         await expect(this.resultsTable).toBeVisible();
 
-        await this.resultsTable.getByTestId('content-row').first().getByRole('link').click();
+        await this.resultsTable.locator('tr').nth(1).getByRole('link').click();
     }
 }

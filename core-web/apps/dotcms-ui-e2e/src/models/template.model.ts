@@ -1,8 +1,8 @@
 export interface Template {
-    identifier: string;
-    title: string;
     friendlyName: string;
+    identifier: string;
     image: string;
     theme: string;
+    title: string;
     layout?: Record<string, unknown>;
 }

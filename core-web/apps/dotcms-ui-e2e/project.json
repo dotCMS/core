@@ -34,7 +34,13 @@
         },
         "lint": {
             "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
+            "outputs": ["{options.outputFile}"],
+            "options": {
+                "lintFilePatterns": [
+                    "apps/dotcms-ui-e2e/src/**/*.ts",
+                    "apps/dotcms-ui-e2e/playwright.config.ts"
+                ]
+            }
         },
         "e2e:ci": {
             "executor": "@nx/playwright:playwright",

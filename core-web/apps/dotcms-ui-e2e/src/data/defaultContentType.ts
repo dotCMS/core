@@ -1,4 +1,4 @@
-import { FieldsTypes } from '../models/newContentType.model';
+import { FieldsTypes } from '@models/newContentType.model';
 
 export function createDefaultContentType() {
     const defaultTypes: FieldsTypes[] = [

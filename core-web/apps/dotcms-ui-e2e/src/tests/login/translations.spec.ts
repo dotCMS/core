@@ -1,6 +1,6 @@
-import { LoginPage } from '@pages';
 import { expect, test } from '@playwright/test';
 import { waitForVisibleAndCallback } from '@utils/utils';
+import { assert } from 'console';
 
 const languages = [
     { language: 'español (España)', translation: '¡Bienvenido!' },
@@ -19,11 +19,8 @@ const languages = [
 languages.forEach((list) => {
     test(`Validate Translation: ${list.language}`, async ({ page }) => {
         const { language, translation } = list;
-        const loginPage = new LoginPage(page);
 
-        // Navigate using Page Object (following POM rules)
-        await loginPage.navigateToAdmin();
-
+        await page.goto('/dotAdmin');
         const dropdownTriggerLocator = page.getByLabel('dropdown trigger');
         await waitForVisibleAndCallback(dropdownTriggerLocator, () =>
             dropdownTriggerLocator.click()
@@ -32,7 +29,7 @@ languages.forEach((list) => {
         const pageByTextLocator = page.getByText(language);
         await waitForVisibleAndCallback(pageByTextLocator, () => pageByTextLocator.click());
 
-        // Proper assertion using expect() - this will show in reports correctly
-        await expect(page.getByTestId('header')).toContainText(translation);
+        // Assertion of the translation
+        assert(await expect(page.getByTestId('header')).toContainText(translation));
     });
 });

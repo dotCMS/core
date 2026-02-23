@@ -1,6 +1,5 @@
 import { APIRequestContext, expect } from '@playwright/test';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
-
 import { admin1 } from '../tests/login/credentialsData';
 
 export interface Page {
@@ -34,7 +33,7 @@ export async function createPage(request: APIRequestContext, data: CreatePage) {
     const results = responseData.entity.results as Page[];
     expect(results.length).toBe(1);
     const key = Object.keys(results[0])[0];
-    return results[0][key];
+    return results[0][key as keyof Page];
 }
 
 export async function executeAction(request: APIRequestContext, actionId: string, inode: string) {
