@@ -7,6 +7,7 @@ Index for Angular/TypeScript frontend standards in `core-web`. **Cursor** uses `
 | Doc | When to load |
 |-----|----------------|
 | [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) | Components, templates, signals, OnPush, PrimeNG, testing stack |
+| [BREADCRUMBS.md](./BREADCRUMBS.md) | GlobalStore breadcrumbs: addNewBreadcrumb, setBreadcrumbs, id/url for tabs, duplicate prevention |
 | [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) | Component structure, file layout, data flow, parent-child |
 | [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) | NgRx Signal Store, rxMethod, patchState — **prefer over manual state** |
 | [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) | PrimeFlex, PrimeNG, BEM, SCSS variables |
@@ -17,5 +18,6 @@ Index for Angular/TypeScript frontend standards in `core-web`. **Cursor** uses `
 
 - **Signals**: `$` prefix (e.g. `$loading`) — ANGULAR_STANDARDS, COMPONENT_ARCHITECTURE, TESTING_FRONTEND.
 - **State**: Use NgRx Signal Store for feature state; avoid manual signal soup — STATE_MANAGEMENT, COMPONENT_ARCHITECTURE.
+- **Breadcrumbs**: GlobalStore only; use `addNewBreadcrumb` with `id` or `url` for tabs/sub-routes to avoid duplicates — BREADCRUMBS.
 - **Testing**: Spectator, `byTestId`, `setInput`, `detectChanges`, `click` — TESTING_FRONTEND, ANGULAR_STANDARDS.
 - **TypeScript**: Strict, no `any`, `as const`, `#` private — TYPESCRIPT_STANDARDS, referenced from others.

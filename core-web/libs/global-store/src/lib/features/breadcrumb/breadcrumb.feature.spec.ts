@@ -103,24 +103,6 @@ describe('withBreadcrumbs Feature', () => {
             );
         });
 
-        it('should save to sessionStorage when truncateBreadcrumbs is called', () => {
-            store.setBreadcrumbs(mockBreadcrumbs);
-            TestBed.flushEffects();
-            sessionStorageSetItemSpy.mockClear();
-
-            // truncateBreadcrumbs(1) means keep up to index 1 (0-based), so Home (0) + first item (1)
-            store.truncateBreadcrumbs(1);
-
-            // Wait for effect to run
-            TestBed.flushEffects();
-
-            const expectedBreadcrumbs = [{ label: 'Home', disabled: true }, mockBreadcrumbs[0]];
-            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
-                'breadcrumbs',
-                JSON.stringify(expectedBreadcrumbs)
-            );
-        });
-
         it('should save to sessionStorage when setLastBreadcrumb is called', () => {
             store.setBreadcrumbs(mockBreadcrumbs);
             TestBed.flushEffects();
@@ -189,12 +171,6 @@ describe('withBreadcrumbs Feature', () => {
 
             // Append
             store.appendCrumb(mockBreadcrumbs[1]);
-            TestBed.flushEffects();
-            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
-            sessionStorageSetItemSpy.mockClear();
-
-            // Truncate
-            store.truncateBreadcrumbs(0);
             TestBed.flushEffects();
             expect(sessionStorageSetItemSpy).toHaveBeenCalled();
             sessionStorageSetItemSpy.mockClear();
@@ -962,6 +938,33 @@ describe('withBreadcrumbs Feature', () => {
             const truncatedBreadcrumbs = storeWithRouter.breadcrumbs();
             expect(truncatedBreadcrumbs.length).toBe(3);
             expect(truncatedBreadcrumbs[0].label).toBe('Home');
+        });
+
+        it('should truncate via navigation (public path) and persist to sessionStorage', () => {
+            // When user navigates to a URL already in the trail, internal truncation runs and state persists.
+            sessionStorageSetItemSpy.mockClear();
+
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+            expect(storeWithRouter.breadcrumbs().length).toBe(3);
+
+            routerMock.triggerNavigationEnd('/pages');
+            TestBed.flushEffects();
+            expect(storeWithRouter.breadcrumbs().length).toBe(3);
+
+            // Navigate back to /c/content → triggers internal truncate; breadcrumbs become [Home, Content, Content]
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const truncated = storeWithRouter.breadcrumbs();
+            expect(truncated.length).toBe(3);
+            expect(truncated[2].url).toBe('/dotAdmin/#/c/content');
+
+            // Truncated state must be persisted to sessionStorage (effect runs on breadcrumb changes)
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(truncated)
+            );
         });
 
         it('should not add breadcrumb if URL is not in menu items', () => {
