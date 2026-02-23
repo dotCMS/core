@@ -10,8 +10,11 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
+import com.dotcms.http.server.mock.MockHttpServer;
+import com.dotcms.http.server.mock.MockHttpServerContext;
 import com.dotcms.mock.request.MockSession;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.FileUtil;
@@ -19,9 +22,12 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
 import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
@@ -112,7 +118,7 @@ public class TempFileAPITest {
     }
 
     /**
-     * Method to test: {@link TempFileAPI#BROWSER_HEADERS}
+     * Method to test: {@link TempFileAPI#getBrowserHeaders()}
      * Test scenario: Verify that all required browser-like header keys are present
      * Expected: The map contains all 8 required header keys
      */
@@ -129,42 +135,103 @@ public class TempFileAPITest {
                 "Sec-Fetch-Site"
         );
 
-        assertNotNull("BROWSER_HEADERS must not be null", TempFileAPI.BROWSER_HEADERS);
+        final Map<String, String> headers = TempFileAPI.getBrowserHeaders();
+        assertNotNull("getBrowserHeaders() must not return null", headers);
         for (final String header : requiredHeaders) {
             assertTrue(
-                    "BROWSER_HEADERS must contain header: " + header,
-                    TempFileAPI.BROWSER_HEADERS.containsKey(header));
+                    "getBrowserHeaders() must contain header: " + header,
+                    headers.containsKey(header));
             assertNotNull(
                     "Value for header '" + header + "' must not be null",
-                    TempFileAPI.BROWSER_HEADERS.get(header));
+                    headers.get(header));
             assertFalse(
                     "Value for header '" + header + "' must not be empty",
-                    TempFileAPI.BROWSER_HEADERS.get(header).isEmpty());
+                    headers.get(header).isEmpty());
         }
     }
 
     /**
-     * Method to test: {@link TempFileAPI#BROWSER_HEADERS}
+     * Method to test: {@link TempFileAPI#getBrowserHeaders()}
      * Test scenario: Verify the default values of the browser-like headers
      * Expected: Static/non-configurable headers have their expected default values;
-     *           configurable headers have valid non-empty values
+     *           configurable headers have valid non-empty values;
+     *           Accept-Encoding does not advertise Brotli (br) since Apache HttpClient lacks a Brotli decoder
      */
     @Test
     public void testBrowserHeaders_defaultValues() {
-        assertEquals("keep-alive", TempFileAPI.BROWSER_HEADERS.get("Connection"));
-        assertEquals("image",      TempFileAPI.BROWSER_HEADERS.get("Sec-Fetch-Dest"));
-        assertEquals("no-cors",    TempFileAPI.BROWSER_HEADERS.get("Sec-Fetch-Mode"));
-        assertEquals("cross-site", TempFileAPI.BROWSER_HEADERS.get("Sec-Fetch-Site"));
+        final Map<String, String> headers = TempFileAPI.getBrowserHeaders();
+        assertEquals("keep-alive", headers.get("Connection"));
+        assertEquals("image",      headers.get("Sec-Fetch-Dest"));
+        assertEquals("no-cors",    headers.get("Sec-Fetch-Mode"));
+        assertEquals("cross-site", headers.get("Sec-Fetch-Site"));
 
         // Configurable headers must be present and non-empty (may be overridden via Config)
         assertTrue("User-Agent must not be empty",
-                !TempFileAPI.BROWSER_HEADERS.get("User-Agent").isEmpty());
+                !headers.get("User-Agent").isEmpty());
         assertTrue("Accept must not be empty",
-                !TempFileAPI.BROWSER_HEADERS.get("Accept").isEmpty());
+                !headers.get("Accept").isEmpty());
         assertTrue("Accept-Language must not be empty",
-                !TempFileAPI.BROWSER_HEADERS.get("Accept-Language").isEmpty());
-        assertTrue("Accept-Encoding must not be empty",
-                !TempFileAPI.BROWSER_HEADERS.get("Accept-Encoding").isEmpty());
+                !headers.get("Accept-Language").isEmpty());
+
+        // Accept-Encoding must not advertise brotli; Apache HttpClient has no brotli decoder
+        final String acceptEncoding = headers.get("Accept-Encoding");
+        assertTrue("Accept-Encoding must not be empty", !acceptEncoding.isEmpty());
+        assertFalse("Accept-Encoding must not advertise brotli (br)", acceptEncoding.contains("br"));
+    }
+
+    /**
+     * Method to test: {@link TempFileAPI#validUrl(String)}
+     * Test scenario: Verify that browser-like headers are actually sent in the outbound HTTP request
+     * Expected: All headers returned by getBrowserHeaders() arrive at the mock server
+     */
+    @Test
+    public void testValidUrl_sendsBrowserHeaders() {
+        final String mockIp = "127.0.0.1";
+        final int mockPort = 50881;
+        final String path = "/image.png";
+
+        // Capture the incoming request headers via an AtomicReference
+        final AtomicReference<com.sun.net.httpserver.Headers> capturedHeaders =
+                new AtomicReference<>();
+
+        final MockHttpServerContext context = new MockHttpServerContext.Builder()
+                .uri(path)
+                .responseStatus(HttpURLConnection.HTTP_OK)
+                .responseBody("OK")
+                .requestCondition(
+                        "Capture request headers",
+                        requestCtx -> {
+                            capturedHeaders.set(requestCtx.getHeaders());
+                            return true;
+                        })
+                .mustBeCalled()
+                .build();
+
+        final MockHttpServer mockHttpServer = new MockHttpServer(mockIp, mockPort);
+        mockHttpServer.addContext(context);
+        mockHttpServer.start();
+        IPUtils.disabledIpPrivateSubnet(true);
+
+        try {
+            final boolean valid = APILocator.getTempFileAPI()
+                    .validUrl("http://" + mockIp + ":" + mockPort + path);
+
+            assertTrue("validUrl should return true for a 200 response", valid);
+            mockHttpServer.validate();
+
+            final com.sun.net.httpserver.Headers received = capturedHeaders.get();
+            assertNotNull("Request headers must have been captured", received);
+
+            // Every header in getBrowserHeaders() must have been sent to the server
+            for (final String expectedHeader : TempFileAPI.getBrowserHeaders().keySet()) {
+                assertTrue(
+                        "Outbound request must include header: " + expectedHeader,
+                        received.containsKey(expectedHeader));
+            }
+        } finally {
+            mockHttpServer.stop();
+            IPUtils.disabledIpPrivateSubnet(false);
+        }
     }
 
 }
