@@ -1,9 +1,6 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
     @if (parentName) {
-        <p-message
-            severity="info"
-            icon="pi pi-info-circle"
-            data-testid="category-parent-hint">
+        <p-message severity="info" icon="pi pi-info-circle" data-testid="category-parent-hint">
             {{ 'categories.form.parent.hint' | dm: [parentName] }}
         </p-message>
     }
