@@ -21,6 +21,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletPublishEvent;
 import com.dotcms.content.elasticsearch.business.field.FieldHandlerStrategyFactory;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.PaginationUtil;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -1026,7 +1027,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public ESContentletScroll createScrollQuery(final String luceneQuery, final User user,
+    public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
             final boolean respectFrontendRoles, final int batchSize, final String sortBy)
             throws DotSecurityException, DotDataException {
 

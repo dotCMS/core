@@ -4,6 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ContentFactoryIndexOpera
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -34,7 +35,7 @@ import org.elasticsearch.search.sort.SortOrder;
  * Private implementation of ESContentletScroll that encapsulates all ElasticSearch
  * Scroll API logic in one place.
  */
-class ESContentletScrollImpl implements ESContentletScroll {
+class ESContentletScrollImpl implements IndexContentletScroll {
 
     private static final Lazy<Integer> SCROLL_KEEP_ALIVE_MINUTES = Lazy.of(() ->
             Config.getIntProperty("ES_SCROLL_KEEP_ALIVE_MINUTES", 5));

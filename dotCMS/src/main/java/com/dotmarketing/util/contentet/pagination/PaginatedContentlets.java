@@ -1,6 +1,6 @@
 package com.dotmarketing.util.contentet.pagination;
 
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -65,7 +65,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
 
     // Scroll API state
     private boolean useScrollApi = false;
-    private ESContentletScroll esContentletScroll = null;
+    private IndexContentletScroll esContentletScroll = null;
 
     /**
      * Create a PaginatedContentlet

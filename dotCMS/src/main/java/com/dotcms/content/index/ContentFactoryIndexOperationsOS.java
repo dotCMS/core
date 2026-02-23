@@ -1,14 +1,12 @@
 package com.dotcms.content.index;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.ESContentletScroll;
 import com.dotcms.content.index.domain.SearchHits;
+import com.dotcms.content.index.opensearch.OSContentletScrollImpl;
 import com.dotcms.content.index.opensearch.OSQueryCache;
 import com.dotcms.content.index.opensearch.OpenSearchDefaultClientProvider;
-import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
-import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -17,7 +15,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -75,7 +72,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     private boolean shouldQueryCache() {
         if (!useQueryCache) {
             useQueryCache =
-                    LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty(
+                     Config.getBooleanProperty(
                             "OS_CACHE_SEARCH_QUERIES", true);
         }
         return useQueryCache;
@@ -144,7 +141,6 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
      * if set to true, it'll track as many items as there are. If set to false, no tracking will be performed at all.
      * So it's better if it isn't set to false ever.
      */
-    @VisibleForTesting
     @CanIgnoreReturnValue
     public SearchRequest.Builder setTrackHits(final SearchRequest.Builder searchRequestBuilder){
         final int trackTotalHits = Config.getIntProperty(OS_TRACK_TOTAL_HITS, OS_TRACK_TOTAL_HITS_DEFAULT);
@@ -458,19 +454,16 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
      * {@inheritDoc}
      */
     @Override
-    public ESContentletScroll createScrollQuery(String luceneQuery, User user,
+    public IndexContentletScroll createScrollQuery(String luceneQuery, User user,
             boolean respectFrontendRoles, int batchSize, String sortBy) {
-        // TODO: Implement proper OpenSearch scroll functionality
-        // For now, throw UnsupportedOperationException to indicate this needs implementation
-        throw new UnsupportedOperationException("OpenSearch scroll queries not yet implemented. " +
-                "Use indexSearchScroll() method for batch processing.");
+        return new OSContentletScrollImpl(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ESContentletScroll createScrollQuery(String luceneQuery, User user,
+    public IndexContentletScroll createScrollQuery(String luceneQuery, User user,
             boolean respectFrontendRoles, int batchSize) {
         return createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, "title asc");
     }
