@@ -42,7 +42,15 @@
 		}
 
 		// When name field loses focus: if keyTag is empty, derive from name (same as title_custom_field_new / old onblur)
-		const nameInput = document.getElementById("name") || (window.parent && window.parent.document && window.parent.document.getElementById("name")) || null;
+		let parentNameInput = null;
+		try {
+			if (window.parent && window.parent !== window && window.parent.document) {
+				parentNameInput = window.parent.document.getElementById("name");
+			}
+		} catch (e) {
+			parentNameInput = null;
+		}
+		const nameInput = document.getElementById("name") || parentNameInput || null;
 		if (nameInput) {
 			nameInput.addEventListener("blur", () => {
 				const currentKeyTag = keyTagField.getValue() || "";

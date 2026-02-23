@@ -56,25 +56,25 @@
 <script type="application/javascript">
   (function() {
     function initTagStorageField() {
-      var field;
+      let field;
       try {
         field = DotCustomFieldApi.getField("tagStorage");
       } catch (e) {
         return;
       }
-      var holder = document.getElementById("tagStorageHolder");
-      var button = document.getElementById("tagStorageSelectButton");
-      var dropdown = document.getElementById("tagStorageDropdown");
+      const holder = document.getElementById("tagStorageHolder");
+      const button = document.getElementById("tagStorageSelectButton");
+      const dropdown = document.getElementById("tagStorageDropdown");
       if (!holder || !button || !dropdown) return;
 
-      var options = dropdown.querySelectorAll(".custom-option");
-      var selectedOption = dropdown.querySelector(".custom-option.selected");
-      var currentValue = field ? (field.getValue() || "") : "";
+      const options = Array.from(dropdown.querySelectorAll(".custom-option"));
+      let selectedOption = dropdown.querySelector(".custom-option.selected");
+      const currentValue = field ? (field.getValue() || "") : "";
       if (selectedOption && selectedOption.dataset.label) {
         button.textContent = selectedOption.dataset.label;
         button.classList.remove("placeholder");
       } else if (currentValue && options.length) {
-        var match = Array.prototype.find.call(options, function(o) { return o.dataset.identifier === currentValue; });
+        const match = options.find(function(o) { return o.dataset.identifier === currentValue; });
         if (match) {
           match.classList.add("selected");
           match.setAttribute("aria-selected", "true");
@@ -117,8 +117,8 @@
 
       options.forEach(function(opt) {
         opt.addEventListener("click", function () {
-          var identifier = this.dataset.identifier;
-          var label = this.dataset.label;
+          const identifier = this.dataset.identifier;
+          const label = this.dataset.label;
           if (field) field.setValue(identifier || "");
           button.textContent = label || "Select host";
           button.classList.remove("placeholder");
