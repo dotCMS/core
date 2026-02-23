@@ -10,6 +10,7 @@ import {
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
 import { editContentlet, reorderMenu, updateNavigation } from '../lib/editor/public';
+import { registerStyleEditorSchemas } from '../lib/style-editor/public';
 
 declare global {
     interface Window {
@@ -21,7 +22,8 @@ const dotUVE = {
     createSubscription: createUVESubscription,
     editContentlet,
     reorderMenu,
-    updateNavigation
+    updateNavigation,
+    registerStyleEditorSchemas
 };
 
 window.dotUVE = dotUVE;
