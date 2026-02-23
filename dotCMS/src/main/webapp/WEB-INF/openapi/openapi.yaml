@@ -5799,6 +5799,45 @@ paths:
       summary: Lock a given contentlet by the current user
       tags:
       - Content
+  /v1/content/_refresh/{identifierOrInode}:
+    put:
+      description: Reindexes and clears cache for the contentlet specified by its
+        identifier or inode. This operation forces the content to be refreshed in
+        both the search index and application cache.
+      operationId: refreshContent
+      parameters:
+      - description: Contentlet identifier or inode
+        in: path
+        name: identifierOrInode
+        required: true
+        schema:
+          type: string
+      - description: Language ID for content localization
+        in: query
+        name: language
+        schema:
+          type: string
+          default: "-1"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBooleanView"
+          description: Successfully refreshed contentlet
+        "400":
+          description: Bad request - Invalid identifier format
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks write permissions
+        "404":
+          description: Content not found
+        "500":
+          description: Internal Server Error
+      summary: Refresh a contentlet
+      tags:
+      - Content
   /v1/content/_unlock/{inodeOrIdentifier}:
     put:
       description: "If the user is allowed to unlock the contentlet specified by its\
@@ -11527,6 +11566,43 @@ paths:
             application/json: {}
           description: Forbidden - insufficient permissions
       summary: List publishing jobs
+      tags:
+      - Publishing
+  /v1/publishing/purge:
+    delete:
+      description: "Removes all bundles matching the specified status filter. Cannot\
+        \ purge in-progress bundles (BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE).\
+        \ If no status specified, uses safe defaults (all terminal + queued statuses)."
+      operationId: purgePublishingJobs
+      parameters:
+      - description: "Comma-separated status values to purge. If omitted, uses safe\
+          \ defaults (all terminal + queued, excludes in-progress). Cannot include:\
+          \ BUNDLING, SENDING_TO_ENDPOINTS, PUBLISHING_BUNDLE"
+        example: "SUCCESS,FAILED_TO_PUBLISH"
+        in: query
+        name: status
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPurgeView"
+          description: Purge operation initiated (processes in background)
+        "400":
+          content:
+            application/json: {}
+          description: Invalid status value or attempted to purge in-progress statuses
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+      summary: Bulk delete publishing jobs by status
       tags:
       - Publishing
   /v1/publishing/{bundleId}:
@@ -18283,8 +18359,9 @@ paths:
       - Tags
     post:
       description: "Creates one or more tags. Single tag = list with one element,\
-        \ multiple tags = list with multiple elements. This operation is idempotent\
-        \ - existing tags are returned without error."
+        \ multiple tags = list with multiple elements. The response separates newly\
+        \ created tags from duplicates (tags that already existed with the same name\
+        \ and site)."
       operationId: createTags
       requestBody:
         content:
@@ -18295,12 +18372,15 @@ paths:
           \ multiple tags = list with multiple elements."
         required: true
       responses:
-        "201":
+        "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityRestTagListView"
-          description: Tags created successfully
+                type: object
+                description: Response with 'entity' containing 'created' (list of
+                  newly created RestTag) and 'duplicates' (list of already existing
+                  RestTag)
+          description: Tag creation result with 'created' and 'duplicates' lists
         "400":
           content:
             application/json: {}
@@ -18407,8 +18487,10 @@ paths:
       - Tags
   /v2/tags/import:
     post:
-      description: Imports tags from a CSV file with row-level error reporting. Returns
-        detailed statistics and error information for each failed row.
+      description: "Imports tags from a CSV file with row-level error reporting. Returns\
+        \ detailed statistics including successCount (newly created), duplicateCount\
+        \ (already existed), failureCount (errors), and error information for each\
+        \ failed row."
       operationId: importTags_1
       requestBody:
         content:
@@ -23079,17 +23161,14 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: "List of file patterns that are allowed in this folder (e.g., *.jpg,\
-        \ *.pdf)"
+      description: List of status names being purged
       example:
-      - '*.jpg'
-      - '*.png'
-      - '*.pdf'
+      - SUCCESS
+      - FAILED_TO_PUBLISH
       items:
         type: string
-        description: "List of file patterns that are allowed in this folder (e.g.,\
-          \ *.jpg, *.pdf)"
-        example: "[\"*.jpg\",\"*.png\",\"*.pdf\"]"
+        description: List of status names being purged
+        example: "[\"SUCCESS\",\"FAILED_TO_PUBLISH\"]"
       properties:
         empty:
           type: boolean
@@ -24737,6 +24816,33 @@ components:
       - limit
       - offset
       - orderBy
+    PurgeResultView:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Confirmation message indicating the purge operation has started
+          example: Purge operation started. Results will be notified when complete.
+        statusesRequested:
+          type: array
+          description: List of status names being purged
+          example:
+          - SUCCESS
+          - FAILED_TO_PUBLISH
+          items:
+            type: string
+            description: List of status names being purged
+            example: "[\"SUCCESS\",\"FAILED_TO_PUBLISH\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - message
+      - statusesRequested
     PushPublishBean:
       type: object
       properties:
@@ -26033,11 +26139,11 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityResetPermissionsView:
+    ResponseEntityPurgeView:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/ResetAssetPermissionsView"
+          $ref: "#/components/schemas/PurgeResultView"
         errors:
           type: array
           items:
@@ -26056,13 +26162,11 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityRestTagListView:
+    ResponseEntityResetPermissionsView:
       type: object
       properties:
         entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/RestTag"
+          $ref: "#/components/schemas/ResetAssetPermissionsView"
         errors:
           type: array
           items:
