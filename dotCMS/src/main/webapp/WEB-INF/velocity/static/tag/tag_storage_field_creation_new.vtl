@@ -69,12 +69,24 @@
 
       var options = dropdown.querySelectorAll(".custom-option");
       var selectedOption = dropdown.querySelector(".custom-option.selected");
+      var currentValue = field ? (field.getValue() || "") : "";
       if (selectedOption && selectedOption.dataset.label) {
         button.textContent = selectedOption.dataset.label;
         button.classList.remove("placeholder");
+      } else if (currentValue && options.length) {
+        var match = Array.prototype.find.call(options, function(o) { return o.dataset.identifier === currentValue; });
+        if (match) {
+          match.classList.add("selected");
+          match.setAttribute("aria-selected", "true");
+          button.textContent = match.dataset.label || "Select host";
+          button.classList.remove("placeholder");
+          selectedOption = match;
+        }
       }
       if (field && selectedOption && selectedOption.dataset.identifier) {
         field.setValue(selectedOption.dataset.identifier);
+      } else if (field && currentValue) {
+        field.setValue(currentValue);
       } else if (field) {
         field.setValue("");
       }
