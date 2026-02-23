@@ -2,8 +2,13 @@
 @let deviceData = $deviceData();
 @let browserData = $browserData();
 @let languageData = $languageData();
+@let totalSessions = $totalSessions();
 
-<p-card class="platforms-card h-full border border-gray-400 rounded-xl">
+<h3 class="text-lg font-bold mb-2">
+    {{ 'analytics.engagement.platforms.title' | dm }}
+</h3>
+
+<p-card class="platforms-card h-full">
     <p-tabs value="device">
         <p-tablist>
             <p-tab value="device">{{ 'analytics.engagement.platforms.device' | dm }}</p-tab>
@@ -17,7 +22,7 @@
                 @if (isLoading) {
                     <ng-container [ngTemplateOutlet]="skeletonTable" />
                 } @else {
-                    <p-table [value]="deviceData" styleClass="platforms-table">
+                    <p-table [value]="deviceData" styleClass="p-datatable-sm platforms-table">
                         <ng-template pTemplate="header">
                             <tr>
                                 <th>{{ 'analytics.engagement.table.headers.device' | dm }}</th>
@@ -42,7 +47,7 @@
                                             </span>
                                         </div>
                                         <span class="views-count text-color-secondary">
-                                            {{ device.views | number }}
+                                            {{ device.views | number }}/{{ totalSessions | number }}
                                             {{ 'analytics.engagement.table.sessions-suffix' | dm }}
                                         </span>
                                     </div>
@@ -59,7 +64,7 @@
                 @if (isLoading) {
                     <ng-container [ngTemplateOutlet]="skeletonTable" />
                 } @else {
-                    <p-table [value]="browserData" styleClass="platforms-table">
+                    <p-table [value]="browserData" styleClass="p-datatable-sm platforms-table">
                         <ng-template pTemplate="header">
                             <tr>
                                 <th>{{ 'analytics.engagement.table.headers.browser' | dm }}</th>
@@ -84,7 +89,7 @@
                                             </span>
                                         </div>
                                         <span class="views-count text-color-secondary">
-                                            {{ browser.views | number }}
+                                            {{ browser.views | number }}/{{ totalSessions | number }}
                                             {{ 'analytics.engagement.table.sessions-suffix' | dm }}
                                         </span>
                                     </div>
@@ -101,7 +106,7 @@
                 @if (isLoading) {
                     <ng-container [ngTemplateOutlet]="skeletonTable" />
                 } @else {
-                    <p-table [value]="languageData" styleClass="platforms-table">
+                    <p-table [value]="languageData" styleClass="p-datatable-sm platforms-table">
                         <ng-template pTemplate="header">
                             <tr>
                                 <th>{{ 'analytics.engagement.table.headers.language' | dm }}</th>
@@ -121,12 +126,10 @@
                                                 [value]="lang.percentage"
                                                 [showValue]="false"
                                                 styleClass="views-progress" />
-                                            <span class="views-percentage">
-                                                {{ lang.percentage }}%
-                                            </span>
+                                            <span class="views-percentage">{{ lang.percentage }}%</span>
                                         </div>
                                         <span class="views-count text-color-secondary">
-                                            {{ lang.views | number }}
+                                            {{ lang.views | number }}/{{ totalSessions | number }}
                                             {{ 'analytics.engagement.table.sessions-suffix' | dm }}
                                         </span>
                                     </div>

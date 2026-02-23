@@ -12,23 +12,23 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotAnalyticsDashboardMetricsComponent } from './dot-analytics-dashboard-metrics.component';
+import { DotAnalyticsMetricComponent } from './dot-analytics-metric.component';
 
-describe('DotAnalyticsDashboardMetricsComponent', () => {
-    let spectator: Spectator<DotAnalyticsDashboardMetricsComponent>;
+describe('DotAnalyticsMetricComponent', () => {
+    let spectator: Spectator<DotAnalyticsMetricComponent>;
 
     const createComponent = createComponentFactory({
-        component: DotAnalyticsDashboardMetricsComponent,
+        component: DotAnalyticsMetricComponent,
+        imports: [NoopAnimationsModule],
         mocks: [DotMessageService]
     });
 
     beforeEach(() => {
         spectator = createComponent({
             props: {
-                name: 'test.metric',
                 value: 100,
                 status: ComponentStatus.LOADED,
-                animated: false // Disable count-up animation for tests
+                animated: false
             } as unknown,
             detectChanges: false
         });
@@ -39,9 +39,8 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
     });
 
     describe('Component Inputs', () => {
-        it('should display metric name, value and subtitle', () => {
+        it('should display metric value and subtitle', () => {
             // Arrange
-            spectator.setInput('name', 'analytics.metrics.total-pageviews');
             spectator.setInput('value', 12345);
             spectator.setInput('subtitle', 'analytics.metrics.subtitle');
             spectator.setInput('status', ComponentStatus.LOADED);
@@ -49,18 +48,15 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.detectChanges();
 
             // Act & Assert
-            const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
             const subtitle = spectator.query(byTestId('metric-subtitle'));
 
-            expect(title).toBeTruthy();
             expect(value).toHaveText('12,345');
             expect(subtitle).toBeTruthy();
         });
 
         it('should format large numbers with locale separators', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 1234567);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.setInput('animated', false);
@@ -73,7 +69,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should display icon when provided', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('icon', 'pi-eye');
             spectator.setInput('status', ComponentStatus.LOADED);
@@ -87,7 +83,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should not display icon when not provided', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
@@ -99,7 +95,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should not display subtitle when not provided', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
@@ -113,7 +109,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
     describe('Component States', () => {
         it('should show loading state with skeletons when status is INIT', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
@@ -130,7 +126,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should show loading state with skeletons when status is LOADING', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
@@ -147,37 +143,33 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should show error state when status is ERROR', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
             // Act & Assert
             const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
-            const errorMessage = spectator.query('dot-analytics-state-message');
-            const title = spectator.query(byTestId('metric-title'));
+            const errorMessage = spectator.query('.state-message');
             const value = spectator.query(byTestId('metric-value'));
 
             expect(errorIcon).toBeTruthy();
             expect(errorMessage).toBeTruthy();
-            expect(title).toBeTruthy(); // Title is shown in error state
             expect(value).toBeFalsy();
         });
 
         it('should show normal content when status is LOADED', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
             // Act & Assert
-            const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
             const skeletons = spectator.queryAll('p-skeleton');
             const errorIcon = spectator.query('.pi-exclamation-triangle');
 
-            expect(title).toBeTruthy();
             expect(value).toBeTruthy();
             expect(skeletons.length).toBe(0);
             expect(errorIcon).toBeFalsy();
@@ -187,7 +179,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
     describe('Computed Properties', () => {
         it('should detect loading state correctly for INIT and LOADING', () => {
             // INIT
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.INIT);
             spectator.detectChanges();
@@ -206,7 +198,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should detect error state correctly', () => {
             // ERROR
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
@@ -220,7 +212,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should detect empty state correctly', () => {
             // Not empty when value is 0 (zero is a valid metric)
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
@@ -254,7 +246,6 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
         });
 
         it('should generate correct icon classes', () => {
-            spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 100);
             spectator.setInput('icon', 'pi-eye');
             spectator.setInput('status', ComponentStatus.LOADED);
@@ -267,37 +258,32 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
     describe('Empty State', () => {
         it('should NOT show empty state when value is 0 (0 is a valid metric value)', () => {
-            spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 0);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
             const emptyIcon = spectator.query('.pi.pi-info-circle');
-            const title = spectator.query(byTestId('metric-title'));
             const value = spectator.query(byTestId('metric-value'));
 
             expect(emptyIcon).not.toExist();
-            expect(title).toExist();
             expect(value).toExist();
             expect(value).toHaveText('0'); // 0 should be displayed as a valid value
         });
 
         it('should show empty state icon and message when value is null', () => {
-            spectator.setInput('name', 'test.metric');
             spectator.setInput('value', null);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
             const emptyIcon = spectator.query('.pi.pi-info-circle');
-            const emptyMessage = spectator.query('dot-analytics-state-message');
+            const emptyMessage = spectator.query('.state-message');
 
             expect(emptyIcon).toExist();
             expect(emptyMessage).toExist();
         });
 
         it('should not show empty state when value is valid', () => {
-            spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
@@ -309,13 +295,12 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
     describe('Error State Updates', () => {
         it('should show updated error state with correct icon and message', () => {
-            spectator.setInput('name', 'test.metric');
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.ERROR);
             spectator.detectChanges();
 
             const errorIcon = spectator.query('.pi.pi-exclamation-triangle');
-            const errorMessage = spectator.query('dot-analytics-state-message');
+            const errorMessage = spectator.query('.state-message');
 
             expect(errorIcon).toExist();
             expect(errorIcon).toHaveClass('text-gray-400');
@@ -323,10 +308,46 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
         });
     });
 
+    describe('Title Input', () => {
+        it('should display title above the card when provided', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('title', 'analytics.metric.title');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            const title = spectator.query(byTestId('metric-title'));
+            expect(title).toBeTruthy();
+            expect(title.tagName).toBe('H3');
+        });
+
+        it('should not display title when not provided', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            const title = spectator.query(byTestId('metric-title'));
+            expect(title).toBeFalsy();
+        });
+
+        it('should render title outside the p-card element', () => {
+            spectator.setInput('value', 100);
+            spectator.setInput('title', 'analytics.metric.title');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            const title = spectator.query(byTestId('metric-title'));
+            const card = spectator.query(byTestId('metric-card'));
+
+            expect(title).toBeTruthy();
+            expect(card).toBeTruthy();
+            expect(card.contains(title)).toBe(false);
+        });
+    });
+
     describe('Accessibility', () => {
         it('should have proper test ids for testing', () => {
             // Arrange
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('subtitle', 'test.subtitle');
             spectator.setInput('icon', 'pi-eye');
@@ -335,7 +356,6 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
             // Act & Assert
             expect(spectator.query(byTestId('metric-card'))).toBeTruthy();
-            expect(spectator.query(byTestId('metric-title'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-subtitle'))).toBeTruthy();
             expect(spectator.query(byTestId('metric-icon'))).toBeTruthy();
@@ -345,7 +365,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
     describe('Animations', () => {
         it('should have animation triggers configured', () => {
             // Arrange & Act
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
@@ -358,7 +378,7 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
 
         it('should render correctly during state transitions with animations', () => {
             // Arrange - Start with loading state
-            spectator.setInput('name', 'test.metric');
+
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADING);
             spectator.detectChanges();
@@ -370,9 +390,12 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            // Assert loaded state
-            expect(spectator.query(byTestId('metric-value'))).toBeTruthy();
-            expect(spectator.queryAll('p-skeleton').length).toBe(0);
+            // Assert loaded state - verify the actual content is showing
+            const metricValue = spectator.query(byTestId('metric-value'));
+            expect(metricValue).toBeTruthy();
+            expect(metricValue).toHaveText('100');
+            // Verify we're showing actual content, not skeletons
+            expect(metricValue).toBeVisible();
         });
     });
 });
@@ -381,22 +404,22 @@ describe('DotAnalyticsDashboardMetricsComponent', () => {
     selector: 'dot-test-host',
     standalone: false,
     template: `
-        <dot-analytics-dashboard-metrics [name]="'test.metric'" [value]="100" [status]="status">
+        <dot-analytics-metric [value]="100" [status]="status">
             <div data-testid="projected-content">Projected Chart</div>
-        </dot-analytics-dashboard-metrics>
+        </dot-analytics-metric>
     `
 })
 class TestHostComponent {
     status = ComponentStatus.LOADED;
 }
 
-describe('DotAnalyticsDashboardMetricsComponent - Content Projection', () => {
-    let spectator: SpectatorHost<DotAnalyticsDashboardMetricsComponent, TestHostComponent>;
+describe('DotAnalyticsMetricComponent - Content Projection', () => {
+    let spectator: SpectatorHost<DotAnalyticsMetricComponent, TestHostComponent>;
 
     const createHost = createHostFactory({
-        component: DotAnalyticsDashboardMetricsComponent,
+        component: DotAnalyticsMetricComponent,
         host: TestHostComponent,
-        imports: [NoopAnimationsModule, DotAnalyticsDashboardMetricsComponent],
+        imports: [NoopAnimationsModule, DotAnalyticsMetricComponent],
         mocks: [DotMessageService]
     });
 
@@ -415,12 +438,12 @@ describe('DotAnalyticsDashboardMetricsComponent - Content Projection', () => {
         expect(projectedContent).toHaveText('Projected Chart');
     });
 
-    it('should not show projected content in loading state', () => {
+    it('should show projected content in loading state (allows children to handle their own skeleton)', () => {
         spectator.hostComponent.status = ComponentStatus.LOADING;
         spectator.detectChanges();
 
         const projectedContent = spectator.query(byTestId('projected-content'));
-        expect(projectedContent).not.toExist();
+        expect(projectedContent).toExist();
     });
 
     it('should not show projected content in error state', () => {

@@ -20,6 +20,7 @@ import { map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CHART_ANIMATION,
@@ -62,13 +63,19 @@ const CHART_TYPE_HEIGHTS = {
  * - Combo chart: Pass 2+ datasets with different types → renders as combo with dual axes
  */
 @Component({
-    selector: 'dot-analytics-dashboard-chart',
-    imports: [CardModule, ChartModule, SkeletonModule, DotAnalyticsStateMessageComponent],
+    selector: 'dot-analytics-chart',
+    imports: [
+        CardModule,
+        ChartModule,
+        SkeletonModule,
+        DotMessagePipe,
+        DotAnalyticsStateMessageComponent
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    templateUrl: './dot-analytics-dashboard-chart.component.html',
-    host: { class: 'block w-full h-full' }
+    templateUrl: './dot-analytics-chart.component.html',
+    styleUrl: './dot-analytics-chart.component.scss'
 })
-export class DotAnalyticsDashboardChartComponent {
+export class DotAnalyticsChartComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #breakpointObserver = inject(BreakpointObserver);
     readonly #ngZone = inject(NgZone);
@@ -100,8 +107,8 @@ export class DotAnalyticsDashboardChartComponent {
     /** Chart data with datasets. Can be 1 dataset (simple) or multiple (combo). */
     readonly $data = input.required<ChartData>({ alias: 'data' });
 
-    /** Chart title displayed in header */
-    readonly $title = input.required<string>({ alias: 'title' });
+    /** Optional title displayed above the card */
+    readonly $title = input<string>('', { alias: 'title' });
 
     /** Component status for loading/error states */
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });

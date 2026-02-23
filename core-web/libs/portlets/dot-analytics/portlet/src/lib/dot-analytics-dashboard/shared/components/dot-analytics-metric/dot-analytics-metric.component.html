@@ -12,7 +12,7 @@
 @let trendData = $trendData();
 
 @if (hasTitle) {
-    <h3 class="chart-title mb-2" data-testid="metric-title">
+    <h3 class="text-lg font-bold mb-2" data-testid="metric-title">
         {{ metricTitle | dm }}
         <ng-content select="[titleAction]" />
     </h3>
@@ -27,7 +27,7 @@
     @if (isErrorState) {
         <!-- Error state -->
         <div
-            class="flex flex-column justify-content-center align-items-center h-full"
+            class="flex flex-col justify-center items-center h-full"
             [@fadeInContent]>
             <dot-analytics-state-message
                 message="analytics.metrics.error.reload"
@@ -36,7 +36,7 @@
     } @else if (isEmptyState) {
         <!-- Empty state -->
         <div
-            class="flex flex-column justify-content-center align-items-center h-full"
+            class="flex flex-col justify-center items-center h-full"
             [@fadeInContent]>
             <dot-analytics-state-message
                 message="analytics.metrics.empty.insufficient-data"
@@ -44,12 +44,12 @@
         </div>
     } @else if (isLoadingState) {
         <!-- Loading state with skeleton (mirrors loaded structure) -->
-        <div class="flex flex-column justify-content-between h-full w-full gap-2">
+        <div class="flex flex-col justify-between h-full w-full gap-2">
             <!-- Row: value + icon (same layout as loaded state) -->
-            <div class="flex justify-content-between align-items-start w-full gap-1">
+            <div class="flex justify-between items-start w-full gap-1">
                 <p-skeleton width="5rem" height="2.2rem" />
                 @if (hasIcon) {
-                    <span class="flex-shrink-0">
+                    <span class="shrink-0">
                         <p-skeleton width="1.5rem" height="1.5rem" shape="circle" />
                     </span>
                 }
@@ -59,11 +59,11 @@
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
-        <div class="flex flex-column justify-content-between h-full gap-2">
+        <div class="flex flex-col justify-between h-full gap-2">
             @let animated = $animated();
             @let duration = $animationDuration();
-            <div class="flex justify-content-between align-items-start gap-1" [@fadeInContent]>
-                <div class="flex flex-column gap-1">
+            <div class="flex justify-between items-start gap-1" [@fadeInContent]>
+                <div class="flex flex-col gap-1">
                     @if ($isFraction()) {
                         @let fractionParts = $fractionParts();
                         <div class="metric-value metric-value--fraction" data-testid="metric-value">

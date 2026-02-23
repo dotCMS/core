@@ -1,41 +1,13 @@
 @use "variables" as *;
 
 :host {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-1;
     width: 100%;
 }
 
-// Title rendered above the card
-.chart-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
-    display: flex;
-    align-items: center;
-
-    .pi-info-circle {
-        font-size: $font-size-md;
-        cursor: pointer;
-        transition: color 0.2s;
-
-        &:hover {
-            color: $color-palette-primary-500;
-        }
-    }
-}
-
 .metric-card {
-    ::ng-deep .p-card {
-        border: $field-border-size solid $color-palette-gray-400;
-        border-radius: $border-radius-xl;
-    }
-
-    ::ng-deep .p-card-body {
-        padding: $spacing-3;
-    }
-
     &--loading {
         min-height: 6rem;
     }

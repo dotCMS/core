@@ -1,50 +1,42 @@
-<!-- Metrics Section -->
-<div class="flex gap-3 flex-wrap max-lg:flex-col">
+<!-- Metrics -->
+<div class="flex flex-wrap gap-3">
     @for (metric of $metricsData(); track metric.name) {
-        <dot-analytics-dashboard-metrics
-            class="flex-1 min-w-[280px] max-lg:min-w-0 max-lg:w-full"
-            [name]="metric.name"
-            [value]="metric.value || 0"
-            [subtitle]="metric.subtitle || ''"
-            [icon]="metric.icon || ''"
-            [status]="metric.status"
-            data-testid="analytics-metric-card" />
+        <div class="flex-1">
+            <dot-analytics-metric
+                [title]="metric.name"
+                [value]="metric.value || 0"
+                [subtitle]="metric.subtitle || ''"
+                [icon]="metric.icon || ''"
+                [status]="metric.status"
+                data-testid="analytics-metric-card" />
+        </div>
     }
 </div>
 
-<!-- Charts Section -->
-<div class="flex gap-3">
-    <!-- Line Chart -->
+<!-- Timeline Chart -->
+<dot-analytics-chart
+    [title]="'analytics.charts.pageviews-timeline.title'"
+    type="line"
+    [data]="$pageViewTimeLineData()"
+    [status]="$pageViewTimeLineStatus()"
+    data-testid="analytics-timeline-chart" />
+
+<!-- Device Chart + Top Pages Table -->
+<div class="flex flex-col lg:flex-row gap-3 items-stretch">
+    <div class="lg:w-5/12 shrink-0">
+        <dot-analytics-chart
+            [title]="'analytics.charts.device-breakdown.title'"
+            type="pie"
+            [data]="$pageViewDeviceBrowsersData()"
+            [status]="$pageViewDeviceBrowsersStatus()"
+            data-testid="analytics-device-chart" />
+    </div>
     <div class="flex-1 min-w-0">
-        <dot-analytics-dashboard-chart
-            [title]="'analytics.charts.pageviews-timeline.title' | dm"
-            type="line"
-            [data]="$pageViewTimeLineData()"
-            [status]="$pageViewTimeLineStatus()"
-            data-testid="analytics-timeline-chart" />
+        <h3 class="text-lg font-bold mb-2">
+            {{ 'analytics.dashboard.table.top-pages.title' | dm }}
+        </h3>
+        <dot-analytics-top-pages-table
+            [tableState]="$topPagesTable()"
+            data-testid="analytics-table" />
     </div>
 </div>
-
-<!-- Table and Pie Chart Section -->
-@defer (on viewport) {
-    <div class="analytics-dashboard-pages__bottom-section flex gap-3 items-stretch max-lg:flex-col">
-        <!-- Pie Chart -->
-        <div class="analytics-dashboard-pages__device-chart shrink-0 max-lg:w-full">
-            <dot-analytics-dashboard-chart
-                [title]="'analytics.charts.device-breakdown.title' | dm"
-                type="pie"
-                [data]="$pageViewDeviceBrowsersData()"
-                [status]="$pageViewDeviceBrowsersStatus()"
-                data-testid="analytics-device-chart" />
-        </div>
-
-        <!-- Table -->
-        <div class="analytics-dashboard-pages__table flex-1 min-w-0 max-lg:w-full max-lg:min-w-0">
-            <dot-analytics-dashboard-table
-                [tableState]="$topPagesTable()"
-                data-testid="analytics-table" />
-        </div>
-    </div>
-} @placeholder {
-    <div style="min-height: 24rem"></div>
-}

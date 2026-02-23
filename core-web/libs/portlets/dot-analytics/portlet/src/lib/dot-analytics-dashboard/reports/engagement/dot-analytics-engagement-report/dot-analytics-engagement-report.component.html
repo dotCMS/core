@@ -1,74 +1,62 @@
-<div class="engagement-dashboard flex flex-column gap-4">
-    @let kpis = $kpis();
-    @let status = $status();
+@let kpis = $kpis();
+@let status = $status();
 
-    <div class="engagement-dashboard__top-row">
-        <dot-analytics-metric
-            class="h-full"
-            [title]="'analytics.engagement.metrics.engagement-rate'"
-            [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
-            [trend]="kpis?.engagementRate?.trend ?? 0"
-            [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
-            [status]="status">
-            <i
-                titleAction
-                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
-                (click)="$showCalculationDialog.set(true)"></i>
-            <dot-analytics-sparkline
-                [data]="kpis?.engagementRate?.sparklineData ?? []"
-                [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
-                valueSuffix="%"
-                [status]="status" />
-        </dot-analytics-metric>
+<!-- Engagement Rate (full width) -->
+<dot-analytics-metric
+    [title]="'analytics.engagement.metrics.engagement-rate'"
+    [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
+    [trend]="kpis?.engagementRate?.trend ?? 0"
+    [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
+    [status]="status">
+    <i
+        titleAction
+        class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
+        (click)="$showCalculationDialog.set(true)"></i>
+    <dot-analytics-sparkline
+        [data]="kpis?.engagementRate?.sparklineData ?? []"
+        [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
+        valueSuffix="%"
+        [status]="status" />
+</dot-analytics-metric>
+
+<!-- KPI Metrics Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+    <dot-analytics-metric
+        [title]="'analytics.engagement.metrics.avg-interactions'"
+        [value]="kpis?.avgInteractions?.value ?? ''"
+        [trend]="kpis?.avgInteractions?.trend ?? 0"
+        icon="pi-bullseye"
+        [status]="status" />
+    <dot-analytics-metric
+        [title]="'analytics.engagement.metrics.avg-session-time'"
+        [value]="kpis?.avgSessionTime?.value ?? ''"
+        [trend]="kpis?.avgSessionTime?.trend ?? 0"
+        icon="pi-clock"
+        [status]="status" />
+    <dot-analytics-metric
+        [title]="'analytics.engagement.metrics.total-sessions'"
+        [value]="kpis?.conversionRate?.value ?? ''"
+        [trend]="kpis?.conversionRate?.trend ?? 0"
+        icon="pi-bullseye"
+        [status]="status" />
+</div>
+
+<!-- Breakdown Chart + Platforms Table -->
+<div class="flex flex-col lg:flex-row gap-3 items-stretch">
+    <div class="flex flex-col lg:w-5/12 shrink-0">
+        <dot-analytics-chart
+            [title]="'analytics.engagement.charts.breakdown.title'"
+            [type]="'doughnut'"
+            [data]="$breakdown()!"
+            [status]="status" />
     </div>
-
-    <div class="engagement-dashboard__metrics-row grid">
-        <div class="col-12 md:col-4">
-            <dot-analytics-metric
-                [title]="'analytics.engagement.metrics.avg-interactions'"
-                [value]="kpis?.avgInteractions?.value ?? ''"
-                [trend]="kpis?.avgInteractions?.trend ?? 0"
-                icon="pi-bullseye"
-                [status]="status" />
-        </div>
-        <div class="col-12 md:col-4">
-            <dot-analytics-metric
-                [title]="'analytics.engagement.metrics.avg-session-time'"
-                [value]="kpis?.avgSessionTime?.value ?? ''"
-                [trend]="kpis?.avgSessionTime?.trend ?? 0"
-                icon="pi-clock"
-                [status]="status" />
-        </div>
-        <div class="col-12 md:col-4">
-            <dot-analytics-metric
-                [title]="'analytics.engagement.metrics.total-sessions'"
-                [value]="kpis?.conversionRate?.value ?? ''"
-                [trend]="kpis?.conversionRate?.trend ?? 0"
-                icon="pi-bullseye"
-                [status]="status" />
-        </div>
+    <div class="flex flex-col flex-1 min-w-0">
+        <dot-analytics-platforms-table
+            class="flex-1"
+            [platforms]="$platforms()"
+            [status]="status"
+            [totalSessions]="$totalSessions()" />
     </div>
-
-    @defer (on viewport) {
-        <div class="engagement-dashboard__bottom-row grid">
-            <div class="col-12 lg:col-5 flex flex-column">
-                <dot-analytics-chart
-                    [title]="'analytics.engagement.charts.breakdown.title'"
-                    [type]="'doughnut'"
-                    [data]="$breakdown()!"
-                    [status]="status" />
-            </div>
-            <div class="col-12 lg:col-7 flex flex-column">
-                <dot-analytics-platforms-table
-                    class="flex-1"
-                    [platforms]="$platforms()"
-                    [status]="status"
-                    [totalSessions]="$totalSessions()" />
-            </div>
-        </div>
-    } @placeholder {
-        <div data-testid="deferred-placeholder" style="min-height: 24rem"></div>
-    }
 </div>
 
 <p-dialog
@@ -81,12 +69,10 @@
     <p class="text-color-secondary mt-0">
         {{ 'analytics.engagement.dialog.how-calculated.intro' | dm }}
     </p>
-
     <p class="font-semibold mb-2">
         {{ 'analytics.engagement.dialog.how-calculated.criteria-title' | dm }}
     </p>
-
-    <ul class="engagement-criteria-list pl-4 m-0">
+    <ul class="pl-4 m-0">
         <li class="mb-2">{{ 'analytics.engagement.dialog.how-calculated.criteria-time' | dm }}</li>
         <li class="mb-2">
             {{ 'analytics.engagement.dialog.how-calculated.criteria-pageviews' | dm }}
@@ -95,7 +81,6 @@
             {{ 'analytics.engagement.dialog.how-calculated.criteria-conversion' | dm }}
         </li>
     </ul>
-
     <p class="text-color-secondary mt-3 mb-0">
         {{ 'analytics.engagement.dialog.how-calculated.conclusion' | dm }}
     </p>
