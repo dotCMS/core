@@ -1,5 +1,6 @@
-import { Component, DebugElement, forwardRef, Input } from '@angular/core';
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { Component, forwardRef, Input } from '@angular/core';
 import {
     ControlValueAccessor,
     NG_VALUE_ACCESSOR,
@@ -32,24 +33,24 @@ class TestFieldValidationMessageComponent {
 @Component({
     selector: 'dot-textarea-content',
     template: '',
+    standalone: false,
     providers: [
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ],
-    standalone: false
+    ]
 })
-export class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input() show;
-    @Input() height;
+class DotTextareaContentMockComponent implements ControlValueAccessor {
+    @Input() show: string[];
+    @Input() height: string;
 
     propagateChange = (_: unknown) => {
         //
     };
 
-    registerOnChange(fn): void {
+    registerOnChange(fn: () => void): void {
         this.propagateChange = fn;
     }
 
@@ -63,89 +64,93 @@ export class DotTextareaContentMockComponent implements ControlValueAccessor {
 }
 
 describe('ValuesPropertyComponent', () => {
-    let comp: ValuesPropertyComponent;
-    let fixture: ComponentFixture<ValuesPropertyComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<ValuesPropertyComponent>;
+
     const messageServiceMock = new MockDotMessageService({
         'Validation-RegEx': 'Validation-RegEx'
     });
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [
-                TestFieldValidationMessageComponent,
-                ValuesPropertyComponent,
-                DotTextareaContentMockComponent
-            ],
-            imports: [
-                DotFieldHelperComponent,
-                ReactiveFormsModule,
-                DotSafeHtmlPipe,
-                DotMessagePipe
-            ],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        }).compileComponents();
+    const defaultGroup = new UntypedFormGroup({
+        values: new UntypedFormControl('')
+    });
 
-        fixture = TestBed.createComponent(ValuesPropertyComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
+    const defaultProperty = {
+        name: 'values',
+        value: 'value',
+        field: { ...dotcmsContentTypeFieldBasicMock }
+    };
 
-        comp.group = new UntypedFormGroup({
-            values: new UntypedFormControl('')
-        });
-        comp.property = {
-            name: 'values',
-            value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
-        };
-        comp.helpText = 'Helper Text';
-    }));
+    const createComponent = createComponentFactory({
+        component: ValuesPropertyComponent,
+        declarations: [TestFieldValidationMessageComponent, DotTextareaContentMockComponent],
+        imports: [ReactiveFormsModule, DotFieldHelperComponent, DotSafeHtmlPipe, DotMessagePipe],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+        spectator.component.group = defaultGroup;
+        spectator.component.property = defaultProperty;
+        spectator.component.helpText = 'Helper Text';
+        spectator.detectChanges();
+    });
 
     it('should have a form', () => {
-        const group = new UntypedFormGroup({});
-        comp.group = group;
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
-
-        expect(divForm).not.toBeNull();
-        expect(group).toEqual(divForm.componentInstance.group);
+        const group = new UntypedFormGroup({
+            values: new UntypedFormControl('')
+        });
+        spectator.component.group = group;
+        spectator.detectChanges();
+        const divForm = spectator.query('div.flex.flex-col');
+        expect(divForm).toBeTruthy();
+        expect(spectator.component.group).toEqual(group);
     });
 
     it('should have a field-message', () => {
-        fixture.detectChanges();
-
-        const fieldValidationmessage: DebugElement = fixture.debugElement.query(
+        const fieldValidationMessage = spectator.debugElement.query(
             By.css('dot-field-validation-message')
         );
-
-        expect(fieldValidationmessage).not.toBeNull();
-        expect(comp.group.controls['values']).toBe(fieldValidationmessage.componentInstance.field);
+        expect(fieldValidationMessage).toBeTruthy();
+        expect(fieldValidationMessage.componentInstance.field).toBe(
+            spectator.component.group.controls['values']
+        );
     });
 
     it('should have value field', () => {
-        const valueField = de.query(By.css('dot-textarea-content'));
+        const valueField = spectator.query('dot-textarea-content');
         expect(valueField).toBeTruthy();
     });
 
     it('should have value component with the right options', () => {
-        fixture.detectChanges();
-        expect(comp.value.show).toEqual(['code']);
-        expect(comp.value.height).toBe('15.7rem');
+        expect(spectator.component.value?.show).toEqual(['code']);
+        expect(spectator.component.value?.height).toBe('15.7rem');
     });
 
     it('should show dot-helper for required clazz', () => {
-        comp.property.field.clazz = 'com.dotcms.contenttype.model.field.ImmutableRadioField';
-        fixture.detectChanges();
-        const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
-        expect(fieldHelper).not.toBeNull();
+        const helperSpectator = createComponent({ detectChanges: false });
+        helperSpectator.component.group = defaultGroup;
+        helperSpectator.component.property = {
+            ...defaultProperty,
+            field: {
+                ...defaultProperty.field,
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableRadioField'
+            }
+        };
+        helperSpectator.component.helpText = 'Helper Text';
+        helperSpectator.detectChanges();
+
+        const fieldHelper = helperSpectator.query('dot-field-helper');
+        expect(fieldHelper).toBeTruthy();
     });
 
     it('should hide dot-helper except for required', () => {
-        comp.property.field.clazz = DotCMSClazzes.TEXT;
-        fixture.detectChanges();
-        const fieldHelper: DebugElement = fixture.debugElement.query(By.css('dot-field-helper'));
+        spectator.component.property = {
+            ...defaultProperty,
+            field: { ...defaultProperty.field, clazz: DotCMSClazzes.TEXT }
+        };
+        spectator.fixture.detectChanges(false);
 
+        const fieldHelper = spectator.query('dot-field-helper');
         expect(fieldHelper).toBeNull();
     });
 });

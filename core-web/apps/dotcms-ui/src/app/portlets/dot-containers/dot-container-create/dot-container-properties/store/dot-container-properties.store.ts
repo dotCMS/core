@@ -161,7 +161,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         (state: DotContainerPropertiesState, originalForm: DotContainerPayload) => {
             return {
                 ...state,
-                originalForm: originalForm
+                originalForm: originalForm,
+                invalidForm: true // form matches original, no unsaved changes
             };
         }
     );

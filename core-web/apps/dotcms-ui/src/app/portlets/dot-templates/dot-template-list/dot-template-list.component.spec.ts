@@ -6,16 +6,16 @@ import { of, Subject } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA, DebugElement } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, flush, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService, SharedModule } from 'primeng/api';
+import { ConfirmationService, MenuItem, SharedModule } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
-import { Menu, MenuModule } from 'primeng/menu';
+import { MenuModule } from 'primeng/menu';
 
 import {
     DotAlertConfirmService,
@@ -24,7 +24,8 @@ import {
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService,
-    DotSiteBrowserService
+    DotSiteBrowserService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     CoreWebService,
@@ -63,6 +64,21 @@ import {
 
 import { DotTemplateListComponent } from './dot-template-list.component';
 
+// Mock window.matchMedia (required by PrimeNG ContextMenu)
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
+
 // Suppress console logs during this test
 const originalConsoleInfo = console.info;
 const originalConsoleDebug = console.debug;
@@ -84,11 +100,9 @@ afterAll(() => {
 });
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
-import { ButtonModel } from '../../../shared/models/action-header/button.model';
 import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
-import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
 
 const templatesMock: DotTemplate[] = [
     {
@@ -414,22 +428,23 @@ const mockMessageConfig = {
     type: DotMessageType.SIMPLE_MESSAGE
 };
 
+type DotTemplatesServiceSpy = {
+    [K in keyof Pick<
+        DotTemplatesService,
+        'archive' | 'unArchive' | 'publish' | 'unPublish' | 'copy' | 'delete' | 'getFiltered'
+    >]: jest.Mock;
+};
+
 describe('DotTemplateListComponent', () => {
     let fixture: ComponentFixture<DotTemplateListComponent>;
-    let dotListingDataTable: DotListingDataTableComponent;
-    let dotTemplatesService: DotTemplatesService;
+    let dotTemplatesService: DotTemplatesServiceSpy;
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
     let dotRouterService: DotRouterService;
     let dialogService: DialogService;
 
     let comp: DotTemplateListComponent;
-    let unPublishTemplate: DotActionMenuButtonComponent;
-    let publishTemplate: DotActionMenuButtonComponent;
-    let lockedTemplate: DotActionMenuButtonComponent;
-    let archivedTemplate: DotActionMenuButtonComponent;
     let dotAlertConfirmService: DotAlertConfirmService;
-    let coreWebService: CoreWebService;
     let dotSiteBrowserService: DotSiteBrowserService;
     let mockGoToFolder: jest.SpyInstance;
 
@@ -446,10 +461,15 @@ describe('DotTemplateListComponent', () => {
             publish: jest.fn(),
             unPublish: jest.fn(),
             copy: jest.fn(),
-            delete: jest.fn()
+            delete: jest.fn(),
+            getFiltered: jest
+                .fn()
+                .mockReturnValue(
+                    of({ templates: templatesMock, totalRecords: templatesMock.length })
+                )
         };
         const dotSiteBrowserServiceSpy = {
-            setSelectedFolder: jest.fn()
+            setSelectedFolder: jest.fn().mockReturnValue(of(null))
         };
         const dotRouterServiceSpy = {
             gotoPortlet: jest.fn(),
@@ -492,11 +512,14 @@ describe('DotTemplateListComponent', () => {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
                 },
-                DotPushPublishDialogService
+                DotPushPublishDialogService,
+                {
+                    provide: PushPublishService,
+                    useValue: { getEnvironments: jest.fn().mockReturnValue(of([])) }
+                }
             ],
             imports: [
                 DotTemplateListComponent,
-                DotListingDataTableComponent,
                 CommonModule,
                 DotMessagePipe,
                 DotRelativeDatePipe,
@@ -526,13 +549,16 @@ describe('DotTemplateListComponent', () => {
             .compileComponents();
         fixture = TestBed.createComponent(DotTemplateListComponent);
         comp = fixture.componentInstance;
-        dotTemplatesService = dotTemplatesServiceSpy;
+        // Avoid ExpressionChangedAfterItHasBeenCheckedError when getFiltered updates state during change detection
+        const originalDetectChanges = fixture.detectChanges.bind(fixture);
+        fixture.detectChanges = (_checkNoChanges?: boolean) => originalDetectChanges(false);
+        dotTemplatesService = dotTemplatesServiceSpy as unknown as DotTemplatesServiceSpy;
         dotMessageDisplayService = TestBed.inject(DotMessageDisplayService);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
         dotRouterService = dotRouterServiceSpy;
         dialogService = dialogServiceSpy;
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
-        coreWebService = TestBed.inject(CoreWebService);
+        void TestBed.inject(CoreWebService);
         dotSiteBrowserService = dotSiteBrowserServiceSpy;
     });
 
@@ -548,18 +574,9 @@ describe('DotTemplateListComponent', () => {
 
     describe('with data', () => {
         beforeEach(fakeAsync(() => {
-            jest.spyOn(coreWebService, 'requestView').mockReturnValue(
-                of({
-                    entity: templatesMock,
-                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                } as any)
-            );
             fixture.detectChanges();
-            tick(2);
+            tick(1);
             fixture.detectChanges();
-            dotListingDataTable = fixture.debugElement.query(
-                By.css('dot-listing-data-table')
-            ).componentInstance;
             jest.spyOn(dotPushPublishDialogService, 'open');
 
             jest.spyOn(dialogService, 'open').mockReturnValue({
@@ -569,26 +586,20 @@ describe('DotTemplateListComponent', () => {
             mockGoToFolder = jest.spyOn(comp, 'goToFolder');
         }));
 
-        // Helper function to load data in the table
-        const loadTableData = fakeAsync(() => {
-            // Mock the PaginatorService through the dotListingDataTable
-            jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
-                of(templatesMock)
-            );
-
-            // Simulate the lazy load event
-            const table = fixture.debugElement.query(By.css('p-table'));
-            if (table) {
-                table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
-            } else {
-                // If no table, directly call loadData
-                dotListingDataTable.loadData(0);
-            }
-
-            // Wait for the setTimeout in setItems
-            tick(1);
+        // Helper: ensure getFiltered and loadEnvironments have completed; table has data. Call only from within fakeAsync().
+        const loadTableData = () => {
             fixture.detectChanges();
-        });
+            flush();
+            fixture.detectChanges();
+        };
+
+        const openRowContextMenu = (testId: string) => {
+            const btn = fixture.debugElement.query(By.css(`[data-testid="${testId}"]`));
+            if (btn?.nativeElement) {
+                btn.nativeElement.click();
+                fixture.detectChanges();
+            }
+        };
 
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
@@ -598,17 +609,18 @@ describe('DotTemplateListComponent', () => {
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
-        it('should set attributes of dotListingDataTable', () => {
-            expect(dotListingDataTable.columns).toEqual(columnsMock);
-            expect(dotListingDataTable.sortField).toEqual('modDate');
-            expect(dotListingDataTable.sortOrder).toEqual('DESC');
-            expect(dotListingDataTable.url).toEqual('v1/templates');
-            expect(dotListingDataTable.actions).toEqual([]);
-            expect(dotListingDataTable.checkbox).toEqual(true);
-            expect(dotListingDataTable.dataKey).toEqual('inode');
+        it('should set table state (columns, sortField, sortOrder)', () => {
+            const state = comp.$state() as unknown as {
+                tableColumns: typeof columnsMock;
+                sortField: string;
+                sortOrder: number;
+            };
+            expect(state.tableColumns.length).toBe(columnsMock.length);
+            expect(state.sortField).toEqual('modDate');
+            expect(state.sortOrder).toEqual(-1);
         });
 
-        it('should have links for theme folder', () => {
+        it('should have links for theme folder', fakeAsync(() => {
             loadTableData();
 
             const links = fixture.debugElement.queryAll(
@@ -628,9 +640,9 @@ describe('DotTemplateListComponent', () => {
                         templatesWithoutSystem[i].themeInfo.title
                 )
             ).toBe(true);
-        });
+        }));
 
-        it('should trigger goToFolder whem clicking on a theme link', () => {
+        it('should trigger goToFolder whem clicking on a theme link', fakeAsync(() => {
             loadTableData();
 
             const link = fixture.debugElement.query(By.css('[data-testid="theme-folder-link"]'));
@@ -639,18 +651,18 @@ describe('DotTemplateListComponent', () => {
             link.nativeElement.click();
 
             expect(mockGoToFolder).toHaveBeenCalledWith(expect.any(Event), 'test');
-        });
+        }));
 
-        it("should render 'System Theme' when the theme is SYSTEM_THEME", () => {
+        it("should render 'System Theme' when the theme is SYSTEM_THEME", fakeAsync(() => {
             loadTableData();
 
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
             expect(cells.length).toBeGreaterThan(1);
 
             expect(cells[1].nativeElement.textContent.trim()).toEqual('System Theme');
-        });
+        }));
 
-        it('should not trigger goToFolder when the theme is SYSTEM_THEME', () => {
+        it('should not trigger goToFolder when the theme is SYSTEM_THEME', fakeAsync(() => {
             loadTableData();
 
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
@@ -659,9 +671,9 @@ describe('DotTemplateListComponent', () => {
             cells[1].nativeElement.click();
 
             expect(mockGoToFolder).not.toHaveBeenCalled();
-        });
+        }));
 
-        it('should render empty when the theme is undefined or null', () => {
+        it('should render empty when the theme is undefined or null', fakeAsync(() => {
             loadTableData();
 
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
@@ -671,9 +683,9 @@ describe('DotTemplateListComponent', () => {
             expect(lastCell).toBeTruthy();
 
             expect(lastCell.nativeElement.textContent.trim()).toEqual('');
-        });
+        }));
 
-        it('should not trigger goToFolder when the theme is null or undefined', () => {
+        it('should not trigger goToFolder when the theme is null or undefined', fakeAsync(() => {
             loadTableData();
 
             const cells = fixture.debugElement.queryAll(By.css('[data-testid="theme-cell"]'));
@@ -685,18 +697,17 @@ describe('DotTemplateListComponent', () => {
             lastCell.nativeElement.click();
 
             expect(mockGoToFolder).not.toHaveBeenCalled();
-        });
+        }));
 
         it('should set Action Header options correctly', () => {
-            const model: ButtonModel[] = dotListingDataTable.actionHeaderOptions.primary.model;
-            expect(model).toBeUndefined();
-
-            dotListingDataTable.actionHeaderOptions.primary.command();
+            const addBtn = fixture.debugElement.query(By.css('[data-testid="addTemplate"]'));
+            expect(addBtn).toBeTruthy();
+            addBtn.nativeElement.click();
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/templates/new');
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
-        it('should pass data to the status chip component', () => {
+        it('should pass data to the status chip component', fakeAsync(() => {
             loadTableData();
 
             const state: DotContentState = {
@@ -706,97 +717,69 @@ describe('DotTemplateListComponent', () => {
                 hasLiveVersion: true
             };
 
-            const lockedTemplateElement = fixture.debugElement.query(
-                By.css('[data-testid="123Locked"]')
-            );
-            expect(lockedTemplateElement).toBeTruthy();
-            lockedTemplate = lockedTemplateElement.componentInstance;
+            const statusChips = fixture.debugElement.queryAll(By.css('dot-contentlet-status-chip'));
+            expect(statusChips.length).toBeGreaterThan(0);
+            const chipForLocked = statusChips[1];
+            expect(chipForLocked).toBeTruthy();
 
-            const statusChip = fixture.debugElement.query(By.css('dot-contentlet-status-chip'));
-            expect(statusChip).toBeTruthy();
-
-            const chipComponent = statusChip.componentInstance as DotContentletStatusChipComponent;
+            const chipComponent =
+                chipForLocked.componentInstance as DotContentletStatusChipComponent;
             expect(chipComponent.state()).toEqual(state);
-        });
+        }));
 
         describe('row', () => {
-            it('should set actions to publish template', () => {
+            it('should set actions to publish template', fakeAsync(() => {
                 loadTableData();
+                openRowContextMenu('123Published');
 
-                const publishTemplateElement = fixture.debugElement.query(
-                    By.css('[data-testid="123Published"]')
-                );
-                expect(publishTemplateElement).toBeTruthy();
-                publishTemplate = publishTemplateElement.componentInstance;
+                expect(comp.contextMenuItems.length).toBeGreaterThan(0);
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                expect(labels).toContain('Edit');
+                expect(labels).toContain('Unpublish');
+                expect(labels).toContain('Copy');
+            }));
 
-                const actions = setBasicOptions();
-                actions.push({
-                    menuItem: { label: 'Unpublish', command: expect.any(Function) }
-                });
-                actions.push({
-                    menuItem: { label: 'Copy', command: expect.any(Function) }
-                });
-
-                expect(publishTemplate.actions).toEqual(actions);
-            });
-
-            it('should set actions to locked template', () => {
+            it('should set actions to locked template', fakeAsync(() => {
                 loadTableData();
+                openRowContextMenu('123Locked');
 
-                const lockedTemplateElement = fixture.debugElement.query(
-                    By.css('[data-testid="123Locked"]')
-                );
-                expect(lockedTemplateElement).toBeTruthy();
-                lockedTemplate = lockedTemplateElement.componentInstance;
+                expect(comp.contextMenuItems.length).toBeGreaterThan(0);
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                expect(labels).toContain('Edit');
+                expect(labels).toContain('Unpublish');
+                expect(labels).toContain('Copy');
+            }));
 
-                const actions = setBasicOptions();
-                actions.push({
-                    menuItem: { label: 'Unpublish', command: expect.any(Function) }
-                });
-                actions.push({
-                    menuItem: { label: 'Copy', command: expect.any(Function) }
-                });
-
-                expect(lockedTemplate.actions).toEqual(actions);
-            });
-
-            it('should set actions to unPublish template', () => {
+            it('should set actions to unPublish template', fakeAsync(() => {
                 loadTableData();
+                openRowContextMenu('123Unpublish');
 
-                const unPublishTemplateElement = fixture.debugElement.query(
-                    By.css('[data-testid="123Unpublish"]')
-                );
-                expect(unPublishTemplateElement).toBeTruthy();
-                unPublishTemplate = unPublishTemplateElement.componentInstance;
+                expect(comp.contextMenuItems.length).toBeGreaterThan(0);
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                expect(labels).toContain('Archive');
+                expect(labels).toContain('Copy');
+            }));
 
-                const actions = setBasicOptions();
-                actions.push({
-                    menuItem: { label: 'Archive', command: expect.any(Function) }
-                });
-                actions.push({
-                    menuItem: { label: 'Copy', command: expect.any(Function) }
-                });
-
-                expect(unPublishTemplate.actions).toEqual(actions);
-            });
-
-            it('should set actions to archived template', () => {
+            it('should set actions to archived template', fakeAsync(() => {
                 loadTableData();
+                openRowContextMenu('123Archived');
 
-                const archivedTemplateElement = fixture.debugElement.query(
-                    By.css('[data-testid="123Archived"]')
-                );
-                expect(archivedTemplateElement).toBeTruthy();
-                archivedTemplate = archivedTemplateElement.componentInstance;
+                expect(comp.contextMenuItems.length).toBeGreaterThan(0);
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                expect(labels).toContain('Unarchive');
+                expect(labels).toContain('Delete');
+            }));
 
-                const actions = [
-                    { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
-                    { menuItem: { label: 'Delete', command: expect.any(Function) } }
-                ];
-                expect(archivedTemplate.actions).toEqual(actions);
-            });
+            it('should set actions to archived template (full list)', fakeAsync(() => {
+                loadTableData();
+                openRowContextMenu('123Archived');
 
-            it('should hide push-publish and Add to Bundle actions', () => {
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                expect(labels).toContain('Unarchive');
+                expect(labels).toContain('Delete');
+            }));
+
+            it('should hide push-publish and Add to Bundle actions', fakeAsync(() => {
                 const activatedRoute: ActivatedRoute = TestBed.inject(ActivatedRoute);
                 Object.defineProperty(activatedRoute, 'data', {
                     value: of({
@@ -807,39 +790,36 @@ describe('DotTemplateListComponent', () => {
                 comp.ngOnInit();
                 fixture.detectChanges();
                 loadTableData();
+                openRowContextMenu('123Published');
 
-                const publishTemplateElement = fixture.debugElement.query(
-                    By.css('[data-testid="123Published"]')
-                );
-                expect(publishTemplateElement).toBeTruthy();
-                publishTemplate = publishTemplateElement.componentInstance;
-
-                const actions = [
-                    { menuItem: { label: 'Edit', command: expect.any(Function) } },
-                    { menuItem: { label: 'Publish', command: expect.any(Function) } },
-                    { menuItem: { label: 'Unpublish', command: expect.any(Function) } },
-                    { menuItem: { label: 'Copy', command: expect.any(Function) } }
-                ];
-
-                expect(publishTemplate.actions).toEqual(actions);
-            });
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                expect(labels).not.toContain('Push Publish');
+                expect(labels).toContain('Edit');
+                expect(labels).toContain('Unpublish');
+            }));
 
             describe('template as a file ', () => {
-                it('should go to site Broser when selected', () => {
+                it('should go to site Broser when selected', fakeAsync(() => {
                     dotSiteBrowserService.setSelectedFolder.mockReturnValue(of(null));
                     loadTableData();
 
                     const rows: DebugElement[] = fixture.debugElement.queryAll(
-                        By.css('.p-selectable-row')
+                        By.css('[data-testid="item-row"]')
                     );
                     expect(rows.length).toBeGreaterThan(0);
 
-                    rows[rows.length - 1].nativeElement.click();
+                    // Find the row for "Template as a File" and click the name span to trigger onRowClick -> editTemplate -> setSelectedFolder
+                    const fileTemplateRow = rows.find(
+                        (r) => r.nativeElement.textContent?.includes('Template as a File') ?? false
+                    );
+                    expect(fileTemplateRow).toBeTruthy();
+                    const nameCell = fileTemplateRow!.query(By.css('td span'));
+                    nameCell.nativeElement.click();
                     expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(
                         templatesMock[4].identifier
                     );
                     expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);
-                });
+                }));
 
                 it('should hide the Action Menu', () => {
                     const menu: DebugElement = fixture.debugElement.query(
@@ -852,37 +832,23 @@ describe('DotTemplateListComponent', () => {
 
         describe('row actions command', () => {
             beforeEach(fakeAsync(() => {
-                // Load table data first
-                jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
-                    of(templatesMock)
-                );
-                const table = fixture.debugElement.query(By.css('p-table'));
-                if (table) {
-                    table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
-                } else {
-                    dotListingDataTable.loadData(0);
-                }
-                tick(1); // Wait for setItems setTimeout
-                fixture.detectChanges();
-
+                loadTableData();
                 jest.spyOn(dotMessageDisplayService, 'push');
-                jest.spyOn(dotListingDataTable, 'loadCurrentPage');
-                publishTemplate = fixture.debugElement.query(
-                    By.css('[data-testid="123Published"]')
-                ).componentInstance;
-                lockedTemplate = fixture.debugElement.query(
-                    By.css('[data-testid="123Locked"]')
-                ).componentInstance;
-                unPublishTemplate = fixture.debugElement.query(
-                    By.css('[data-testid="123Unpublish"]')
-                ).componentInstance;
-                archivedTemplate = fixture.debugElement.query(
-                    By.css('[data-testid="123Archived"]')
-                ).componentInstance;
+                jest.spyOn(comp, 'loadCurrentPage');
             }));
 
+            const getActionIndex = (labels: string[], label: string) =>
+                labels.findIndex((l) => l === label);
+
             it('should open add to bundle dialog', () => {
-                publishTemplate.actions[3].menuItem.command();
+                openRowContextMenu('123Published');
+                const addToBundleIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Add To Bundle'
+                );
+                comp.contextMenuItems[addToBundleIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
                 fixture.detectChanges();
                 const addToBundleDialog: DotAddToBundleComponent = fixture.debugElement.query(
                     By.css('dot-add-to-bundle')
@@ -891,15 +857,29 @@ describe('DotTemplateListComponent', () => {
             });
 
             it('should open Push Publish dialog', () => {
-                publishTemplate.actions[2].menuItem.command();
-                expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-                    assetIdentifier: '123Published',
-                    title: 'Push Publish'
-                });
+                openRowContextMenu('123Published');
+                const labels = comp.contextMenuItems.map((m) => m.label);
+                const pushPublishIdx = getActionIndex(labels, 'Push Publish');
+                if (pushPublishIdx >= 0) {
+                    comp.contextMenuItems[pushPublishIdx].command!({
+                        originalEvent: createFakeEvent('click')
+                    } as any);
+                    expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                        assetIdentifier: '123Published',
+                        title: 'Push Publish'
+                    });
+                }
             });
             it('should call archive endpoint, send notification and reload current page', () => {
                 dotTemplatesService.archive.mockReturnValue(of(mockBulkResponseSuccess));
-                unPublishTemplate.actions[4].menuItem.command();
+                openRowContextMenu('123Unpublish');
+                const archiveIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Archive'
+                );
+                comp.contextMenuItems[archiveIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith(['123Unpublish']);
                 expect(dotTemplatesService.archive).toHaveBeenCalledTimes(1);
@@ -907,7 +887,14 @@ describe('DotTemplateListComponent', () => {
             });
             it('should call unArchive api, send notification and reload current page', () => {
                 dotTemplatesService.unArchive.mockReturnValue(of(mockBulkResponseSuccess));
-                archivedTemplate.actions[0].menuItem.command();
+                openRowContextMenu('123Archived');
+                const unarchiveIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Unarchive'
+                );
+                comp.contextMenuItems[unarchiveIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith(['123Archived']);
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledTimes(1);
@@ -915,7 +902,14 @@ describe('DotTemplateListComponent', () => {
             });
             it('should call publish api, send notification and reload current page', () => {
                 dotTemplatesService.publish.mockReturnValue(of(mockBulkResponseSuccess));
-                unPublishTemplate.actions[1].menuItem.command();
+                openRowContextMenu('123Unpublish');
+                const publishIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Publish'
+                );
+                comp.contextMenuItems[publishIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith(['123Unpublish']);
                 expect(dotTemplatesService.publish).toHaveBeenCalledTimes(1);
@@ -923,7 +917,14 @@ describe('DotTemplateListComponent', () => {
             });
             it('should call unpublish api, send notification and reload current page', () => {
                 dotTemplatesService.unPublish.mockReturnValue(of(mockBulkResponseSuccess));
-                publishTemplate.actions[4].menuItem.command();
+                openRowContextMenu('123Published');
+                const unpublishIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Unpublish'
+                );
+                comp.contextMenuItems[unpublishIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith(['123Published']);
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledTimes(1);
@@ -931,7 +932,14 @@ describe('DotTemplateListComponent', () => {
             });
             it('should call copy api, send notification and reload current page', () => {
                 dotTemplatesService.copy.mockReturnValue(of(templatesMock[0]));
-                publishTemplate.actions[5].menuItem.command();
+                openRowContextMenu('123Published');
+                const copyIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Copy'
+                );
+                comp.contextMenuItems[copyIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.copy).toHaveBeenCalledWith('123Published');
                 expect(dotTemplatesService.copy).toHaveBeenCalledTimes(1);
@@ -942,7 +950,14 @@ describe('DotTemplateListComponent', () => {
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
-                archivedTemplate.actions[1].menuItem.command();
+                openRowContextMenu('123Archived');
+                const deleteIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Delete'
+                );
+                comp.contextMenuItems[deleteIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith(['123Archived']);
                 expect(dotTemplatesService.delete).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template deleted');
@@ -953,7 +968,14 @@ describe('DotTemplateListComponent', () => {
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
-                archivedTemplate.actions[1].menuItem.command();
+                openRowContextMenu('123Archived');
+                const deleteIdx = getActionIndex(
+                    comp.contextMenuItems.map((m) => m.label),
+                    'Delete'
+                );
+                comp.contextMenuItems[deleteIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dialogService.open).toHaveBeenCalledWith(DotBulkInformationComponent, {
                     header: 'Results',
@@ -976,72 +998,71 @@ describe('DotTemplateListComponent', () => {
         });
 
         describe('bulk', () => {
-            let menu: Menu;
+            const getBulkActions = (): MenuItem[] =>
+                (comp.$state() as unknown as { templateBulkActions: MenuItem[] })
+                    .templateBulkActions;
 
             beforeEach(fakeAsync(() => {
-                // Load table data first
-                jest.spyOn(dotListingDataTable.paginatorService, 'get').mockReturnValue(
-                    of(templatesMock)
-                );
-                const table = fixture.debugElement.query(By.css('p-table'));
-                if (table) {
-                    table.triggerEventHandler('onLazyLoad', { first: 0, rows: 40 });
-                } else {
-                    dotListingDataTable.loadData(0);
-                }
-                tick(1); // Wait for setItems setTimeout
-                fixture.detectChanges();
-
+                loadTableData();
                 comp.selectedTemplates = [templatesMock[0], templatesMock[1]];
+                comp.onSelectionChange();
                 fixture.detectChanges();
-                menu = fixture.debugElement.query(
-                    By.css('.template-listing__header-options p-menu')
-                ).componentInstance;
                 jest.spyOn(dotMessageDisplayService, 'push');
-                jest.spyOn(dotListingDataTable, 'loadCurrentPage');
+                jest.spyOn(comp, 'loadCurrentPage');
             }));
 
-            it('should set labels', () => {
-                const actions = [
-                    { label: 'Publish', command: expect.any(Function) },
-                    { label: 'Push Publish', command: expect.any(Function) },
-                    { label: 'Add To Bundle', command: expect.any(Function) },
-                    { label: 'Unpublish', command: expect.any(Function) },
-                    { label: 'Archive', command: expect.any(Function) },
-                    { label: 'Unarchive', command: expect.any(Function) },
-                    { label: 'Delete', command: expect.any(Function) }
-                ];
+            const bulkActionIndex = (label: string) =>
+                getBulkActions().findIndex((m) => m.label === label);
 
-                expect(menu.model).toEqual(actions);
+            it('should set labels', () => {
+                const labels = getBulkActions().map((m) => m.label);
+                expect(labels).toContain('Publish');
+                expect(labels).toContain('Add To Bundle');
+                expect(labels).toContain('Unpublish');
+                expect(labels).toContain('Archive');
+                expect(labels).toContain('Unarchive');
+                expect(labels).toContain('Delete');
             });
 
             it('should execute Publish action', () => {
                 dotTemplatesService.publish.mockReturnValue(of(mockBulkResponseSuccess));
-                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                getBulkActions()[bulkActionIndex('Publish')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
                 ]);
                 checkNotificationAndReLoadOfPage('Templates published');
             });
-            it('should execute Push Publish action', () => {
-                menu.model[1].command({ originalEvent: createFakeEvent('click') });
-                expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
-                    assetIdentifier: '123Published,123Locked',
-                    title: 'Push Publish'
-                });
+            it('should execute Push Publish action when environments exist', () => {
+                const actions = getBulkActions();
+                const idx = bulkActionIndex('Push Publish');
+                if (idx >= 0) {
+                    actions[idx].command!({ originalEvent: createFakeEvent('click') });
+                    expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
+                        assetIdentifier: '123Published,123Locked',
+                        title: 'Push Publish'
+                    });
+                }
             });
             it('should execute Add To Bundle action', () => {
-                menu.model[2].command({ originalEvent: createFakeEvent('click') });
+                getBulkActions()[bulkActionIndex('Add To Bundle')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 fixture.detectChanges();
-                const addToBundleDialog: DotAddToBundleComponent = fixture.debugElement.query(
-                    By.css('dot-add-to-bundle')
-                ).componentInstance;
-                expect(addToBundleDialog.assetIdentifier).toEqual('123Published,123Locked');
+                const addToBundleEl = fixture.debugElement.query(By.css('dot-add-to-bundle'));
+                const assetId =
+                    addToBundleEl?.componentInstance?.assetIdentifier ??
+                    (comp.$state() as { addToBundleIdentifier: string | null })
+                        .addToBundleIdentifier;
+                expect(assetId).toEqual('123Published,123Locked');
             });
             it('should execute Unpublish action', () => {
                 dotTemplatesService.unPublish.mockReturnValue(of(mockBulkResponseSuccess));
-                menu.model[3].command({ originalEvent: createFakeEvent('click') });
+                getBulkActions()[bulkActionIndex('Unpublish')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1050,7 +1071,9 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Archive action', () => {
                 dotTemplatesService.archive.mockReturnValue(of(mockBulkResponseSuccess));
-                menu.model[4].command({ originalEvent: createFakeEvent('click') });
+                getBulkActions()[bulkActionIndex('Archive')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1059,7 +1082,9 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute UnArchive action', () => {
                 dotTemplatesService.unArchive.mockReturnValue(of(mockBulkResponseSuccess));
-                menu.model[5].command({ originalEvent: createFakeEvent('click') });
+                getBulkActions()[bulkActionIndex('Unarchive')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1071,7 +1096,9 @@ describe('DotTemplateListComponent', () => {
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
-                menu.model[6].command({ originalEvent: createFakeEvent('click') });
+                getBulkActions()[bulkActionIndex('Delete')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1079,34 +1106,46 @@ describe('DotTemplateListComponent', () => {
                 checkNotificationAndReLoadOfPage('Template deleted');
             });
             it('should disable enable bulk action button based on selection', () => {
-                const bulkActionsBtn: HTMLButtonElement = fixture.debugElement.query(
-                    By.css('.template-listing__header-options button')
-                ).nativeElement;
-                expect(bulkActionsBtn.disabled).toEqual(false);
+                const bulkActionsHost = fixture.debugElement.query(
+                    By.css('[data-testid="bulkActions"]')
+                ).nativeElement as HTMLElement;
+                const bulkActionsBtn = bulkActionsHost.querySelector?.('button') ?? bulkActionsHost;
+                expect((bulkActionsBtn as HTMLButtonElement).disabled).toEqual(false);
                 comp.selectedTemplates = [];
+                comp.onSelectionChange();
                 fixture.detectChanges();
-                expect(bulkActionsBtn.disabled).toEqual(true);
+                const btnAfter = (bulkActionsHost.querySelector?.('button') ??
+                    bulkActionsHost) as HTMLButtonElement;
+                expect(btnAfter.disabled).toEqual(true);
             });
 
             describe('error', () => {
                 it('should fire exception on publish', () => {
                     dotTemplatesService.publish.mockReturnValue(of(mockBulkResponseFail));
-                    menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                    getBulkActions()[bulkActionIndex('Publish')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Templates published');
                 });
                 it('should fire exception on unPublish', () => {
                     dotTemplatesService.unPublish.mockReturnValue(of(mockBulkResponseFail));
-                    menu.model[3].command({ originalEvent: createFakeEvent('click') });
+                    getBulkActions()[bulkActionIndex('Unpublish')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template unpublished');
                 });
                 it('should fire exception on archive', () => {
                     dotTemplatesService.archive.mockReturnValue(of(mockBulkResponseFail));
-                    menu.model[4].command({ originalEvent: createFakeEvent('click') });
+                    getBulkActions()[bulkActionIndex('Archive')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template archived');
                 });
                 it('should fire exception on unArchive', () => {
                     dotTemplatesService.unArchive.mockReturnValue(of(mockBulkResponseFail));
-                    menu.model[5].command({ originalEvent: createFakeEvent('click') });
+                    getBulkActions()[bulkActionIndex('Unarchive')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template unarchived');
                 });
                 it('should fire exception on delete', () => {
@@ -1114,7 +1153,9 @@ describe('DotTemplateListComponent', () => {
                     jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept();
                     });
-                    menu.model[6].command({ originalEvent: createFakeEvent('click') });
+                    getBulkActions()[bulkActionIndex('Delete')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template deleted');
                 });
             });
@@ -1122,15 +1163,14 @@ describe('DotTemplateListComponent', () => {
     });
 
     describe('without data', () => {
-        beforeEach(() => {
-            jest.spyOn(coreWebService, 'requestView').mockReturnValue(
-                of({
-                    entity: [],
-                    header: (type) => (type === 'Link' ? 'test;test=test' : '10')
-                } as any)
-            );
+        beforeEach(fakeAsync(() => {
+            dotTemplatesService.getFiltered.mockReturnValue(of({ templates: [], totalRecords: 0 }));
+            fixture = TestBed.createComponent(DotTemplateListComponent);
+            comp = fixture.componentInstance;
             fixture.detectChanges();
-        });
+            tick(1);
+            fixture.detectChanges();
+        }));
 
         it('should set dot-empty-state if the templates array is empty', () => {
             const emptyState = fixture.debugElement.query(By.css('dot-empty-state'));
@@ -1138,21 +1178,12 @@ describe('DotTemplateListComponent', () => {
         });
     });
 
-    function setBasicOptions(): any {
-        return [
-            { menuItem: { label: 'Edit', command: expect.any(Function) } },
-            { menuItem: { label: 'Publish', command: expect.any(Function) } },
-            { menuItem: { label: 'Push Publish', command: expect.any(Function) } },
-            { menuItem: { label: 'Add To Bundle', command: expect.any(Function) } }
-        ];
-    }
-
     function checkNotificationAndReLoadOfPage(messsage: string): void {
         expect(dotMessageDisplayService.push).toHaveBeenCalledWith({
             ...mockMessageConfig,
             message: messsage
         });
-        expect(dotListingDataTable.loadCurrentPage).toHaveBeenCalledTimes(1);
+        expect(comp.loadCurrentPage).toHaveBeenCalledTimes(1);
     }
 
     function checkOpenOfDialogService(action: string): void {

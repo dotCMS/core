@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -76,10 +77,11 @@ describe('DotLocalesListComponent', () => {
     }));
 
     it('should filter locale when using the filer input', () => {
-        const table = spectator.query(Table);
-        jest.spyOn(table, 'filterGlobal');
-
         spectator.detectChanges();
+
+        const tableDe = spectator.debugElement.query(By.directive(Table));
+        const table = tableDe?.componentInstance as Table;
+        jest.spyOn(table, 'filterGlobal');
 
         spectator.typeInElement('Spanish', byTestId('input-search'));
 

@@ -10,6 +10,7 @@ import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import {
+    DotCurrentUserService,
     DotEventsService,
     DotIframeService,
     DotRouterService,
@@ -18,7 +19,7 @@ import {
 import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavigationService } from './dot-navigation.service';
 
@@ -262,6 +263,7 @@ describe('DotNavigationService', () => {
                         getRegisteredRoutes: jest.fn().mockReturnValue([])
                     }
                 },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 GlobalStore,
                 provideHttpClient(),
                 provideHttpClientTesting()

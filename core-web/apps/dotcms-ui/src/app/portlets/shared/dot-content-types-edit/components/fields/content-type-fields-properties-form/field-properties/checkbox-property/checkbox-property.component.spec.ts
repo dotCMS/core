@@ -1,65 +1,72 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, waitForAsync } from '@angular/core/testing';
-import { UntypedFormControl, UntypedFormGroup } from '@angular/forms';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+
+import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+
+import { CheckboxModule } from 'primeng/checkbox';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
-import { CheckboxPropertyComponent } from '.';
+import { CheckboxPropertyComponent } from './checkbox-property.component';
 
-import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
+import { FieldProperty } from '../field-properties.model';
+
+const messageServiceMock = new MockDotMessageService({
+    'contenttypes.field.properties.required.label': 'required',
+    'contenttypes.field.properties.user_searchable.label': 'user searchable.',
+    'contenttypes.field.properties.system_indexed.label': 'system indexed',
+    'contenttypes.field.properties.listed.label': 'listed',
+    'contenttypes.field.properties.unique.label': 'unique'
+});
 
 describe('CheckboxPropertyComponent', () => {
-    let comp: CheckboxPropertyComponent;
-    let fixture: ComponentFixture<CheckboxPropertyComponent>;
-    const messageServiceMock = new MockDotMessageService({
-        'contenttypes.field.properties.required.label': 'required',
-        'contenttypes.field.properties.user_searchable.label': 'user searchable.',
-        'contenttypes.field.properties.system_indexed.label': 'system indexed',
-        'contenttypes.field.properties.listed.label': 'listed',
-        'contenttypes.field.properties.unique.label': 'unique'
+    let spectator: Spectator<CheckboxPropertyComponent>;
+
+    const createComponent = createComponentFactory({
+        component: CheckboxPropertyComponent,
+        imports: [ReactiveFormsModule, CheckboxModule, DotMessagePipe],
+        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
     });
 
-    beforeEach(waitForAsync(() => {
-        DOTTestBed.configureTestingModule({
-            declarations: [CheckboxPropertyComponent],
-            imports: [DotMessagePipe],
-            providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
-        });
-
-        fixture = DOTTestBed.createComponent(CheckboxPropertyComponent);
-        comp = fixture.componentInstance;
-    }));
+    beforeEach(() => {
+        spectator = createComponent({ detectChanges: false });
+    });
 
     it('should have a form', () => {
-        const group = new UntypedFormGroup({});
-        comp.group = group;
-        const divForm: DebugElement = fixture.debugElement.query(By.css('div'));
+        const group = new UntypedFormGroup({ indexed: new UntypedFormControl(null) });
+        const property: FieldProperty = {
+            name: 'indexed',
+            value: null,
+            field: { ...dotcmsContentTypeFieldBasicMock }
+        };
+        spectator.component.group = group;
+        spectator.component.property = property;
+        spectator.detectChanges();
 
-        expect(divForm).not.toBeNull();
-        expect(group).toEqual(divForm.componentInstance.group);
+        const divForm = spectator.query('div');
+        expect(divForm).toBeTruthy();
+        expect(spectator.component.group).toEqual(group);
     });
 
     it('should have a p-checkbox', () => {
-        comp.group = new UntypedFormGroup({
-            indexed: new UntypedFormControl('')
+        const group = new UntypedFormGroup({
+            indexed: new UntypedFormControl('value')
         });
-        comp.property = {
+        const property: FieldProperty = {
             name: 'indexed',
             value: 'value',
-            field: {
-                ...dotcmsContentTypeFieldBasicMock
-            }
+            field: { ...dotcmsContentTypeFieldBasicMock }
         };
 
-        fixture.detectChanges();
+        spectator.component.group = group;
+        spectator.component.property = property;
+        spectator.detectChanges();
 
-        const pCheckbox: DebugElement = fixture.debugElement.query(By.css('p-checkbox'));
-
-        expect(pCheckbox).not.toBeNull();
-        expect('system indexed').toBe(pCheckbox.componentInstance.label);
-        expect('value').toBe(pCheckbox.componentInstance.value);
+        const pCheckboxDe = spectator.debugElement.query(By.css('p-checkbox'));
+        expect(pCheckboxDe).toBeTruthy();
+        expect(spectator.query('label')?.textContent?.trim()).toBe('system indexed');
+        expect(spectator.component.group.get('indexed')?.value).toBe('value');
     });
 });

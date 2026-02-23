@@ -40,12 +40,13 @@ describe('DotAssetCardComponent', () => {
     });
 
     it('should display the contentlet file name and language', () => {
+        spectator.detectChanges();
         const title = spectator.query('[data-testId="dot-card-title"]');
         const language = spectator.query('[data-testId="dot-card-language"]');
 
-        expect(title.innerHTML.trim()).toBe(contentlet.fileName);
+        expect(title?.textContent?.trim()).toBe(contentlet.fileName);
         const languageContent = contentlet.language as string;
-        expect(language.innerHTML.trim()).toBe(languageContent);
+        expect(language?.textContent?.trim()).toBe(languageContent);
     });
 
     it('should display the contentlet title when the fileName property is empty', () => {
@@ -57,6 +58,6 @@ describe('DotAssetCardComponent', () => {
         spectator.detectChanges();
 
         const title = spectator.query('[data-testId="dot-card-title"]');
-        expect(title.innerHTML.trim()).toBe(contentlet.title);
+        expect(title?.textContent?.trim()).toBe(contentlet.title);
     });
 });
