@@ -94,10 +94,7 @@
             [sortMode]="tableConfig.SORT_MODE">
             <ng-template pTemplate="header" let-columns>
                 <tr>
-                    @for (
-                        columnConfig of columnsConfig;
-                        track trackByField($index, columnConfig)
-                    ) {
+                    @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
                         <th
                             [class]="columnConfig.cssClass"
                             [pSortableColumn]="
@@ -115,10 +112,7 @@
 
             <ng-template pTemplate="body" let-row let-rowIndex="rowIndex" let-columns="columns">
                 <tr [style.height.px]="tableConfig.VIRTUAL_SCROLL_ITEM_SIZE">
-                    @for (
-                        columnConfig of columnsConfig;
-                        track trackByField($index, columnConfig)
-                    ) {
+                    @for (columnConfig of columnsConfig; track trackByField($index, columnConfig)) {
                         <td [class]="columnConfig.cssClass">
                             @switch (columnConfig.type) {
                                 @case ('link') {

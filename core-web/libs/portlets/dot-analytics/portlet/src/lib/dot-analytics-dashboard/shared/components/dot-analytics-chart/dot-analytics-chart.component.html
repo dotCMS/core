@@ -24,18 +24,14 @@
     data-testid="analytics-chart">
     @if ($isError()) {
         <!-- Error state -->
-        <div
-            class="chart-error flex items-center justify-center"
-            [style.height]="height">
+        <div class="chart-error flex items-center justify-center" [style.height]="height">
             <dot-analytics-state-message
                 message="analytics.charts.error.loading"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isLoading) {
         <!-- Loading state with skeletons -->
-        <div
-            class="chart-loading flex items-center justify-center w-full"
-            [style.height]="height">
+        <div class="chart-loading flex items-center justify-center w-full" [style.height]="height">
             @if (type === 'line') {
                 <!-- Line chart skeleton -->
                 <div class="chart-skeleton chart-skeleton--line">
