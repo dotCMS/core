@@ -1,3 +1,6 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -17,16 +20,16 @@
     max-height: 80px;
     box-sizing: border-box;
     display: flex;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
     padding: 0.5 * $dot-editor-size;
-    background-color: $white;
+    background-color: colors.$white;
     cursor: pointer;
 }
 
 .image {
     min-width: 64px;
     min-height: 64px;
-    background: $black;
+    background: colors.$black;
 }
 
 .body {
@@ -49,7 +52,7 @@
             white-space: nowrap;
             text-overflow: ellipsis;
             margin-bottom: 0.25 * $dot-editor-size;
-            background-color: $black;
+            background-color: colors.$black;
             height: 0.75 * $dot-editor-size;
             border-radius: 0.3125 * $dot-editor-size;
             margin-bottom: 0.625 * $dot-editor-size;
@@ -61,7 +64,7 @@
         }
 
         .state {
-            margin-top: $spacing-1;
+            margin-top: spacing.$spacing-1;
             display: flex;
             align-items: center;
 
@@ -70,7 +73,7 @@
                 height: $dot-editor-size;
                 background: #000;
                 border-radius: 100%;
-                margin-right: $spacing-1;
+                margin-right: spacing.$spacing-1;
             }
 
             .meta {

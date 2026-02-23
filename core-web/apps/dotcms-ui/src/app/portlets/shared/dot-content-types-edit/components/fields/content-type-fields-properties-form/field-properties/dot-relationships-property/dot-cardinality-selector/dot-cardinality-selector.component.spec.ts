@@ -5,7 +5,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -68,7 +68,7 @@ describe('DotCardinalitySelectorComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [HostTestComponent],
-            imports: [DropdownModule, FormsModule, DotCardinalitySelectorComponent],
+            imports: [SelectModule, FormsModule, DotCardinalitySelectorComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotRelationshipService, useClass: MockRelationshipService }

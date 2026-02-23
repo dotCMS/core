@@ -8,8 +8,8 @@ import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotTextareaContentComponent } from './dot-textarea-content.component';
 
@@ -49,7 +49,7 @@ describe('DotTextareaContentComponent', () => {
             imports: [
                 DotTextareaContentComponent,
                 SelectButtonModule,
-                InputTextareaModule,
+                TextareaModule,
                 FormsModule,
                 MonacoEditorMockComponent
             ]

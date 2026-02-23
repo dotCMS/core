@@ -1,7 +1,7 @@
-import { Observable } from 'rxjs';
+import { Observable, Subject, fromEvent } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, inject } from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -10,23 +10,25 @@ import {
     Validators
 } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { FocusTrapModule } from 'primeng/focustrap';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { TextareaModule } from 'primeng/textarea';
 
-import { map, startWith } from 'rxjs/operators';
+import { map, startWith, takeUntil } from 'rxjs/operators';
 
 import { DotTempFileUploadService } from '@dotcms/data-access';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotFormDialogComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotThemeComponent
 } from '@dotcms/ui';
 
 import { DotTemplateThumbnailFieldComponent } from './dot-template-thumbnail-field/dot-template-thumbnail-field.component';
 
-import { DotThemeSelectorDropdownComponent } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
+import { DotTemplateItem } from '../store/dot-template.store';
 
 @Component({
     selector: 'dot-template-props',
@@ -36,21 +38,26 @@ import { DotThemeSelectorDropdownComponent } from '../../../../view/components/d
     imports: [
         CommonModule,
         DotFieldValidationMessageComponent,
-        DotFormDialogComponent,
+        ButtonModule,
+        FocusTrapModule,
         FormsModule,
         InputTextModule,
-        InputTextareaModule,
+        TextareaModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotTemplateThumbnailFieldComponent,
-        DotThemeSelectorDropdownComponent,
+        DotThemeComponent,
         DotFieldRequiredDirective
     ]
 })
-export class DotTemplatePropsComponent implements OnInit {
+export class DotTemplatePropsComponent implements OnInit, OnDestroy {
     private ref = inject(DynamicDialogRef);
     private config = inject(DynamicDialogConfig);
     private fb = inject(UntypedFormBuilder);
+    private el = inject(ElementRef);
+
+    private destroy$ = new Subject<void>();
+    private originalTemplate: DotTemplateItem;
 
     form: UntypedFormGroup;
 
@@ -58,6 +65,7 @@ export class DotTemplatePropsComponent implements OnInit {
 
     ngOnInit(): void {
         const { template } = this.config.data;
+        this.originalTemplate = template;
 
         const formGroupAttrs =
             template.theme !== undefined
@@ -81,6 +89,30 @@ export class DotTemplatePropsComponent implements OnInit {
             }),
             startWith(false)
         );
+
+        // Handle keyboard shortcuts (Cmd/Ctrl+Enter to save)
+        fromEvent(this.el.nativeElement, 'keydown')
+            .pipe(takeUntil(this.destroy$))
+            .subscribe((keyboardEvent: KeyboardEvent) => {
+                const nodeName = (keyboardEvent.target as Element).nodeName;
+                const hasFormChanged =
+                    JSON.stringify(this.form.value) !== JSON.stringify(this.originalTemplate);
+                const isFormValid = this.form.valid && hasFormChanged;
+                if (
+                    isFormValid &&
+                    nodeName !== 'TEXTAREA' &&
+                    keyboardEvent.key === 'Enter' &&
+                    (keyboardEvent.metaKey || keyboardEvent.altKey)
+                ) {
+                    keyboardEvent.preventDefault();
+                    this.onSave();
+                }
+            });
+    }
+
+    ngOnDestroy(): void {
+        this.destroy$.next();
+        this.destroy$.complete();
     }
 
     /**

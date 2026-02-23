@@ -75,18 +75,19 @@ describe('DotUveLockOverlayComponent', () => {
         });
 
         it('should display the lock-open icon', () => {
-            const icon = spectator.query('.lock-overlay__icon i.pi-lock-open');
-            expect(icon).toBeTruthy();
+            const iconWrapper = spectator.query(byTestId('lock-overlay-icon'));
+            expect(iconWrapper).toBeTruthy();
+            expect(iconWrapper?.querySelector('i.pi-lock-open')).toBeTruthy();
         });
 
         it('should display the unlocked page title', () => {
-            const title = spectator.query('.lock-overlay__title');
+            const title = spectator.query(byTestId('lock-overlay-title'));
             expect(title).toBeTruthy();
             expect(title?.textContent?.trim()).toBe('Unlock Title');
         });
 
         it('should display the unlocked page message', () => {
-            const message = spectator.query('.lock-overlay__message');
+            const message = spectator.query(byTestId('lock-overlay-message'));
             expect(message).toBeTruthy();
             expect(message?.textContent?.trim()).toBe('Unlock Description');
         });
@@ -112,18 +113,19 @@ describe('DotUveLockOverlayComponent', () => {
         });
 
         it('should display the lock icon', () => {
-            const icon = spectator.query('.lock-overlay__icon i.pi-lock');
-            expect(icon).toBeTruthy();
+            const iconWrapper = spectator.query(byTestId('lock-overlay-icon'));
+            expect(iconWrapper).toBeTruthy();
+            expect(iconWrapper?.querySelector('i.pi-lock')).toBeTruthy();
         });
 
         it('should display the locked page title', () => {
-            const title = spectator.query('.lock-overlay__title');
+            const title = spectator.query(byTestId('lock-overlay-title'));
             expect(title).toBeTruthy();
             expect(title?.textContent?.trim()).toBe('Lock Title');
         });
 
         it('should display the locked page message', () => {
-            const message = spectator.query('.lock-overlay__message');
+            const message = spectator.query(byTestId('lock-overlay-message'));
             expect(message).toBeTruthy();
             expect(message?.textContent?.trim()).toBe('Lock Description');
         });
@@ -144,7 +146,7 @@ describe('DotUveLockOverlayComponent', () => {
 
             const messages = spectator.component.$overlayMessages();
             expect(messages).toEqual({
-                icon: 'pi pi-lock-open',
+                icon: 'pi pi-lock-open text-[1.75rem]!',
                 title: 'uve.editor.overlay.lock.unlocked.page.title',
                 message: 'uve.editor.overlay.lock.unlocked.page.description'
             });
@@ -164,7 +166,7 @@ describe('DotUveLockOverlayComponent', () => {
 
             const messages = spectator.component.$overlayMessages();
             expect(messages).toEqual({
-                icon: 'pi pi-lock',
+                icon: 'pi pi-lock text-[1.75rem]',
                 title: 'uve.editor.overlay.lock.locked.page.title',
                 message: 'uve.editor.overlay.lock.locked.page.description'
             });

@@ -13,8 +13,8 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 
 import {
     DotHttpErrorManagerService,
@@ -114,8 +114,8 @@ describe('DotWizardComponent', () => {
                 HttpClientTestingModule,
                 FormsModule,
                 ReactiveFormsModule,
-                InputTextareaModule,
-                DropdownModule,
+                TextareaModule,
+                SelectModule,
                 BrowserAnimationsModule,
                 DialogModule,
                 ButtonModule,

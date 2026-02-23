@@ -29,8 +29,7 @@ const meta: Meta<Args> = {
             imports: [BrowserAnimationsModule, ToastModule]
         }),
         componentWrapperDecorator(
-            (story) =>
-                `<div class="card flex justify-content-center w-50rem h-10rem relative">${story}</div>`
+            (story) => `<div class="card flex justify-center w-50rem h-40 relative">${story}</div>`
         )
     ],
     parameters: {

@@ -10,9 +10,9 @@ import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
-import { DropdownModule } from 'primeng/dropdown';
-import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { PanelModule } from 'primeng/panel';
+import { PopoverModule } from 'primeng/popover';
+import { SelectModule } from 'primeng/select';
 
 import { DotCurrentUserService, DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
@@ -45,11 +45,11 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
         moduleMetadata({
             imports: [
                 CommonModule,
-                DropdownModule,
+                SelectModule,
                 FormsModule,
                 DotIconModule,
                 ButtonModule,
-                OverlayPanelModule,
+                PopoverModule,
                 PanelModule,
                 DividerModule,
                 DotMessagePipe,
@@ -91,7 +91,7 @@ const meta: Meta<DotDeviceSelectorSeoComponent> = {
                 selected: action('selected')
             },
             template: `
-                <p-button label="Open Selector" styleClass="p-button-outlined" (click)="op.openMenu($event)"></p-button>
+                <p-button label="Open Selector" class="p-button-outlined" (click)="op.openMenu($event)"></p-button>
                 <dot-device-selector-seo #op ${argsToTemplate(args)} />
             `
         };

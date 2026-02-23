@@ -3,8 +3,8 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -28,7 +28,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         imports: [
             FormsModule,
             ReactiveFormsModule,
-            InputSwitchModule,
+            ToggleSwitchModule,
             InputTextModule,
             ButtonModule
         ],
@@ -210,7 +210,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should load the component with switch button', () => {
             spectator.detectChanges();
-            const switchInput = spectator.query(InputSwitch);
+            const switchInput = spectator.query(ToggleSwitch);
             expect(switchInput).toBeTruthy();
         });
 

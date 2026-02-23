@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -33,12 +33,9 @@ import { DotPushPublishHistoryItem } from '../../../../../../models/dot-edit-con
     ],
     providers: [DatePipe],
     templateUrl: './dot-pushpublish-timeline-item.component.html',
-    styleUrls: ['./dot-pushpublish-timeline-item.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPushpublishTimelineItemComponent {
-    private readonly datePipe = inject(DatePipe);
-
     /**
      * The push publish history item to display
      * @readonly

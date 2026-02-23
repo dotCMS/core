@@ -31,10 +31,10 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     assetIdentifier: string;
     @Input()
     showList = false;
-    pushEnvironments: DotEnvironment[];
-    selectedEnvironments: DotEnvironment[];
+    pushEnvironments: DotEnvironment[] = [];
+    selectedEnvironments: DotEnvironment[] = [];
     selectedEnvironmentIds: string[] = [];
-    value: string[];
+    value: string[] = [];
 
     ngOnInit() {
         this.pushPublishService
@@ -87,7 +87,8 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
             this.selectedEnvironmentIds = value;
         }
 
-        this.selectedEnvironments = [];
+        // Clear selection but keep the same array reference for template bindings.
+        this.selectedEnvironments.length = 0;
     }
 
     /**

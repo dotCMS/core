@@ -1,7 +1,9 @@
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dialog-prompt__wrapper {
-    gap: $spacing-5;
+    gap: spacing.$spacing-5;
     display: grid;
     grid-template-columns: minmax(0, max-content) minmax(50%, 1fr);
 
@@ -17,11 +19,11 @@
 }
 
 dot-ai-image-prompt-gallery {
-    margin-bottom: $spacing-3;
+    margin-bottom: spacing.$spacing-3;
 }
 
 .dot-ai-image__buttons {
     display: flex;
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
     justify-content: flex-end;
 }

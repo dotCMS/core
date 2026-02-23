@@ -11,8 +11,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
-import { MessagesModule } from 'primeng/messages';
-import { TabViewModule } from 'primeng/tabview';
+import { MessageModule } from 'primeng/message';
+import { TabsModule } from 'primeng/tabs';
 
 import { map } from 'rxjs/operators';
 
@@ -20,7 +20,9 @@ import { DotLocalstorageService } from '@dotcms/data-access';
 import {
     DASHBOARD_TAB_LIST,
     DASHBOARD_TABS,
+    DashboardTab,
     DotAnalyticsDashboardStore,
+    isValidTab,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -37,8 +39,8 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
     imports: [
         CommonModule,
         ButtonModule,
-        MessagesModule,
-        TabViewModule,
+        MessageModule,
+        TabsModule,
         DotAnalyticsFiltersComponent,
         DotAnalyticsPageviewReportComponent,
         DotAnalyticsConversionsReportComponent,
@@ -47,7 +49,7 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
     ],
     templateUrl: './dot-analytics-dashboard.component.html',
     styleUrl: './dot-analytics-dashboard.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
 })
 /**
  * Root analytics dashboard component. Manages tab navigation, time range filters,
@@ -80,13 +82,6 @@ export default class DotAnalyticsDashboardComponent {
         return DASHBOARD_TAB_LIST.filter((tab) => tab.id !== DASHBOARD_TABS.engagement || enabled);
     });
 
-    /** Index of the currently active tab within the visible tabs list */
-    readonly $activeTabIndex = computed(() => {
-        const currentTab = this.store.currentTab();
-
-        return this.$tabs().findIndex((tab) => tab.id === currentTab);
-    });
-
     constructor() {
         // TODO: Remove this effect when the feature flag is removed
         effect(() => {
@@ -108,13 +103,12 @@ export default class DotAnalyticsDashboardComponent {
     }
 
     /**
-     * Handles tab change event from p-tabView.
+     * Handles tab change event from p-tabs.
      * Updates the store and URL query param.
      */
-    onTabChange(event: { index: number }): void {
-        const tab = this.$tabs()[event.index];
-        if (tab) {
-            this.store.setCurrentTabAndNavigate(tab.id);
+    onTabChange(tabId: string | number | undefined): void {
+        if (tabId !== undefined && isValidTab(String(tabId))) {
+            this.store.setCurrentTabAndNavigate(tabId as DashboardTab);
         }
     }
 

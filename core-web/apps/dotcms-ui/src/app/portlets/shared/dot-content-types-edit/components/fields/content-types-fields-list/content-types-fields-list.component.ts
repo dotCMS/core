@@ -5,7 +5,6 @@ import { Component, inject, Input, OnInit, signal } from '@angular/core';
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotCMSClazz, DotCMSClazzes } from '@dotcms/dotcms-models';
-import { DotIconComponent } from '@dotcms/ui';
 import { FieldUtil } from '@dotcms/utils';
 
 import { FIELD_ICONS } from './content-types-fields-icon-map';
@@ -20,9 +19,8 @@ import { FieldService } from '../service';
  */
 @Component({
     selector: 'dot-content-types-fields-list',
-    styleUrls: ['./content-types-fields-list.component.scss'],
     templateUrl: './content-types-fields-list.component.html',
-    imports: [DragulaModule, DotIconComponent]
+    imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
     @Input() baseType: string;

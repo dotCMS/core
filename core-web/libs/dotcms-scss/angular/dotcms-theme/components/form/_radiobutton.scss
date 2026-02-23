@@ -1,13 +1,17 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/fonts";
+@use "../../../../shared/spacing";
 
 p-tableradiobutton.p-element,
 p-radiobutton.p-element {
-    gap: $spacing-1;
+    gap: spacing.$spacing-1;
 
     &.ng-dirty.ng-invalid {
         .p-radiobutton:not(.p-radiobutton-disabled) {
-            border-color: $color-alert-red;
+            border-color: colors.$color-alert-red;
         }
     }
 
@@ -15,7 +19,7 @@ p-radiobutton.p-element {
         height: 1.5rem;
         aspect-ratio: 1/1;
         border-radius: 50%;
-        border: $select-border-size solid $color-palette-gray-400;
+        border: common.$select-border-size solid colors.$color-palette-gray-400;
 
         .p-radiobutton-box {
             height: 1.25rem;
@@ -30,32 +34,32 @@ p-radiobutton.p-element {
         }
 
         &.p-radiobutton-checked {
-            border-color: $color-palette-primary-500;
+            border-color: colors.$color-palette-primary-500;
 
             .p-radiobutton-box.p-highlight {
                 .p-radiobutton-icon {
-                    background-color: $color-palette-primary-500;
+                    background-color: colors.$color-palette-primary-500;
                 }
             }
         }
 
         &.p-radiobutton-disabled {
-            border-color: $color-palette-gray-400;
-            background-color: $color-palette-gray-200;
+            border-color: colors.$color-palette-gray-400;
+            background-color: colors.$color-palette-gray-200;
 
             .p-radiobutton-box.p-highlight {
                 .p-radiobutton-icon {
-                    background-color: $color-palette-gray-400;
+                    background-color: colors.$color-palette-gray-400;
                 }
             }
         }
     }
 
     .p-radiobutton-label {
-        font-size: $font-size-md;
+        font-size: fonts.$font-size-md;
 
         &.p-disabled {
-            color: $color-palette-gray-500;
+            color: colors.$color-palette-gray-500;
         }
     }
 
@@ -63,7 +67,7 @@ p-radiobutton.p-element {
         cursor: pointer;
 
         .p-radiobutton {
-            border-color: $color-palette-primary-400;
+            border-color: colors.$color-palette-primary-400;
         }
 
         .p-radiobutton-label:hover {
@@ -72,6 +76,6 @@ p-radiobutton.p-element {
     }
 
     .p-radiobutton-focused {
-        outline: $field-border-size solid $color-palette-primary-op-20;
+        outline: common2.$field-border-size solid colors.$color-palette-primary-op-20;
     }
 }

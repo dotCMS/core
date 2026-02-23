@@ -2,7 +2,7 @@ import {
     DotContentDriveFolder,
     DotContentDriveItem,
     DotFolder,
-    SiteEntity
+    DotSite
 } from '@dotcms/dotcms-models';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
@@ -60,7 +60,7 @@ export interface DotContentDriveSort {
  * @interface DotContentDriveInit
  */
 export interface DotContentDriveInit {
-    currentSite: SiteEntity;
+    currentSite: DotSite;
     path: string;
     filters: DotContentDriveFilters;
     isTreeExpanded: boolean;

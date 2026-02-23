@@ -55,5 +55,5 @@ export class DotBinaryFieldWrapperComponent extends BaseWrapperField {
      * An output signal that emits when the value is updated.
      * It is used to display the value in the binary field wrapper component.
      */
-    valueUpdated = output<{ value: string; fileName: string }>();
+    $valueUpdated = output<{ value: string; fileName: string }>();
 }

@@ -96,6 +96,19 @@ console.debug = (...args: unknown[]) => {
     originalConsoleDebug(...args);
 };
 
+// Suppress feature flag warnings from DotShowHideFeatureDirective in tests
+const originalConsoleWarn = console.warn;
+console.warn = (...args: unknown[]) => {
+    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+
+    // Skip feature flag warnings from DotShowHideFeatureDirective
+    if (firstArg.includes("doesn't exist or is disabled and no alternate template was provided")) {
+        return;
+    }
+
+    originalConsoleWarn(...args);
+};
+
 // Mock sessionStorage for JSDOM
 const mockSessionStorage = {
     getItem: jest.fn().mockReturnValue(null),

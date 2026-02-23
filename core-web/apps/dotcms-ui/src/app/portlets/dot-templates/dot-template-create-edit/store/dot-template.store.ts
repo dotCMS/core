@@ -196,6 +196,10 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
 
     readonly saveTemplate = this.effect((origin$: Observable<DotTemplateItem>) => {
         return origin$.pipe(
+            tap((template: DotTemplateItem) => {
+                // Update working template immediately so UI reflects changes
+                this.updateWorkingTemplate(template);
+            }),
             switchMap((template: DotTemplateItem) => {
                 this.dotGlobalMessageService.loading(
                     this.dotMessageService.get('dot.common.message.saving')
@@ -379,7 +383,7 @@ export class DotTemplateStore extends ComponentStore<DotTemplateState> {
                 title,
                 friendlyName,
                 layout: template.layout || EMPTY_TEMPLATE_DESIGN.layout,
-                theme: template.theme,
+                theme: template.theme ?? template.themeId ?? null,
                 containers: template.containers,
                 drawed: true,
                 live: template.live,

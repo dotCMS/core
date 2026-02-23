@@ -1,11 +1,14 @@
+@use "../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .dot-layout-properties__overlayPanel {
     .p-overlaypanel-content {
-        padding: $spacing-1 0;
+        padding: spacing.$spacing-1 0;
     }
 }
 
 .p-button-icon.material-icons {
-    font-size: $font-size-lmd;
+    font-size: fonts.$font-size-lmd;
 }

@@ -2,7 +2,7 @@ import { provideComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ComponentRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -52,16 +52,18 @@ import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-he
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-experiments-list.component.html',
-    styleUrls: ['./dot-experiments-list.component.scss'],
     providers: [provideComponentStore(DotExperimentsListStore)],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'h-full w-full flex flex-col pb-12'
+    }
 })
 export class DotExperimentsListComponent {
     private readonly dotExperimentsListStore = inject(DotExperimentsListStore);
     private readonly router = inject(Router);
     private readonly dotMessageService = inject(DotMessageService);
 
-    @ViewChild(DotDynamicDirective, { static: true }) sidebarHost!: DotDynamicDirective;
+    sidebarHost = viewChild.required(DotDynamicDirective);
     vm$: Observable<VmListExperiments> = this.dotExperimentsListStore.vm$.pipe(
         tap(({ sidebar }) => this.handleSidebar(sidebar))
     );
@@ -147,16 +149,22 @@ export class DotExperimentsListComponent {
     }
 
     private loadSidebarComponent(): void {
-        this.sidebarHost.viewContainerRef.clear();
-        this.componentRef =
-            this.sidebarHost.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
-                DotExperimentsCreateComponent
-            );
+        const sidebarHostRef = this.sidebarHost();
+        if (sidebarHostRef) {
+            sidebarHostRef.viewContainerRef.clear();
+            this.componentRef =
+                sidebarHostRef.viewContainerRef.createComponent<DotExperimentsCreateComponent>(
+                    DotExperimentsCreateComponent
+                );
+        }
     }
 
     private removeSidebarComponent(): void {
         if (this.componentRef) {
-            this.sidebarHost.viewContainerRef.clear();
+            const sidebarHostRef = this.sidebarHost();
+            if (sidebarHostRef) {
+                sidebarHostRef.viewContainerRef.clear();
+            }
         }
     }
 }

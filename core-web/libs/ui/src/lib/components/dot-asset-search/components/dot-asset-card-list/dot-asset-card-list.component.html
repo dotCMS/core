@@ -4,7 +4,8 @@
         [itemSize]="110"
         [items]="rows"
         [lazy]="true"
-        scrollHeight="20rem">
+        scrollHeight="20rem"
+        orientation="vertical">
         <ng-template pTemplate="item" let-contentlet>
             <div class="card-list-row">
                 @if (contentlet[0]) {

@@ -117,6 +117,9 @@ node_modules/
 !/core-web/.yarn/sdks
 !/core-web/.yarn/versions
 
+# Stencil-generated types (regenerated on every build; causes CI "changes during build" failure if tracked)
+/core-web/libs/dotcms-webcomponents/src/components.d.ts
+
 # misc
 /core-web/.nx
 /core-web/.angular/cache
@@ -189,6 +192,9 @@ dotCMS/dependencies.gradle
 examples/nextjs/package-lock.json
 examples/angular/package-lock.json
 examples/astro/package-lock.json
+
+# core-web uses yarn, ignore npm lock file
+/core-web/package-lock.json
 
 local/
 

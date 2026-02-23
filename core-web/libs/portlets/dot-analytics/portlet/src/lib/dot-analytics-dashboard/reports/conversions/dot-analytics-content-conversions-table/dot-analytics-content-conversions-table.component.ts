@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { CardModule } from 'primeng/card';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -23,7 +22,6 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
     imports: [
         CommonModule,
         FormsModule,
-        CardModule,
         MultiSelectModule,
         TableModule,
         TagModule,

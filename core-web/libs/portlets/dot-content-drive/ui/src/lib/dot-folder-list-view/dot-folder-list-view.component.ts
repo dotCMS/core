@@ -23,7 +23,7 @@ import { Table, TableModule } from 'primeng/table';
 import { DotLanguagesService } from '@dotcms/data-access';
 import { ContextMenuData, DotContentDriveItem, DotLanguage } from '@dotcms/dotcms-models';
 import {
-    DotContentletStatusPipe,
+    DotContentletStatusChipComponent,
     DotLocaleTagPipe,
     DotMessagePipe,
     DotRelativeDatePipe
@@ -36,7 +36,7 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     imports: [
         ButtonModule,
         ChipModule,
-        DotContentletStatusPipe,
+        DotContentletStatusChipComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
         SkeletonModule,
@@ -45,8 +45,9 @@ import { DOT_DRAG_ITEM, HEADER_COLUMNS } from '../shared/constants';
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-folder-list-view.component.html',
-    styleUrl: './dot-folder-list-view.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./dot-folder-list-view.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'w-full h-full min-h-0 block' }
 })
 export class DotFolderListViewComponent implements OnInit {
     private readonly renderer = inject(Renderer2);
@@ -175,14 +176,16 @@ export class DotFolderListViewComponent implements OnInit {
     );
 
     /**
-     * Computed style class for the table.
-     *
-     * @type {ComputedSignal<string>}
-     * @alias styleClass
+     * Computed pass-through configuration for empty table.
      */
-    protected readonly $styleClass = computed(() =>
-        this.$items().length === 0 ? 'dotTable empty-table' : 'dotTable'
-    );
+    protected readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed',
+                ...(this.$items().length === 0 && { height: '100%', width: '100%' })
+            }
+        }
+    }));
 
     /**
      * State of the component.
@@ -245,7 +248,7 @@ export class DotFolderListViewComponent implements OnInit {
      * @returns The table body element
      */
     private getTableBody(): HTMLElement | null {
-        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-wrapper');
+        return this.dataTable()?.el.nativeElement.querySelector('.p-datatable-table-container');
     }
 
     /**
@@ -407,8 +410,8 @@ export class DotFolderListViewComponent implements OnInit {
             this.renderer.addClass(wrapper, 'drag-image-item');
             this.renderer.addClass(wrapper, `drag-image-item-${idx}`);
 
-            // Check if first child is an img - if so, copy its HTML
-            const firstChild = thumbnail.firstElementChild;
+            // Check if the thumbnail is an icon or an image - if so, copy its HTML
+            const firstChild = thumbnail.tagName === 'I' ? thumbnail : thumbnail.firstElementChild;
 
             if (!firstChild) {
                 return;

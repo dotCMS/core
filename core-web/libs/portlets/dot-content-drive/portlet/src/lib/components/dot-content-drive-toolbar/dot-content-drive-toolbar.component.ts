@@ -61,8 +61,11 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowActionsComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
-    styleUrl: './dot-content-drive-toolbar.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block transition-all duration-300 ease-in-out',
+        '[style.height]': '"7.125rem"'
+    },
     animations: [
         trigger('slideAnimation', [
             transition(':enter', [

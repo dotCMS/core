@@ -43,7 +43,6 @@ export interface DotFavoritePageFormData {
 @Component({
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
-    styleUrls: ['./dot-favorite-page.component.scss'],
     imports: [
         CommonModule,
         ButtonModule,

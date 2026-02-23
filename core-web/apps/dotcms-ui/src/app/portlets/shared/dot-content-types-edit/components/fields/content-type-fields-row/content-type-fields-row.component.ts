@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { Component, OnInit, inject, input, output } from '@angular/core';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentTypeLayoutRow } from '@dotcms/dotcms-models';
@@ -12,33 +12,30 @@ import { FieldUtil } from '@dotcms/utils';
  */
 @Component({
     selector: 'dot-content-type-fields-row',
-    styleUrls: ['./content-type-fields-row.component.scss'],
     templateUrl: './content-type-fields-row.component.html',
-    standalone: false
+    standalone: false,
+    host: {
+        class: 'block relative mb-2 last:mb-0 transition-shadow duration-200'
+    }
 })
 export class ContentTypeFieldsRowComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private dotDialogService = inject(DotAlertConfirmService);
 
-    @Input()
+    readonly $fieldRow = input.required<DotCMSContentTypeLayoutRow>({ alias: 'fieldRow' });
+
+    readonly editField = output<DotCMSContentTypeField>();
+    readonly removeField = output<DotCMSContentTypeField>();
+    readonly removeRow = output<DotCMSContentTypeLayoutRow>();
+
+    /** Local copy of fieldRow for mutations */
     fieldRow: DotCMSContentTypeLayoutRow;
 
-    @Output()
-    editField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-
-    @Output()
-    removeField: EventEmitter<DotCMSContentTypeField> = new EventEmitter();
-
-    @Output()
-    removeRow: EventEmitter<DotCMSContentTypeLayoutRow> = new EventEmitter();
+    emptyMessage = '';
 
     ngOnInit() {
-        document
-            .querySelector('html')
-            .style.setProperty(
-                '--empty-message',
-                `"${this.dotMessageService.get('contenttypes.dropzone.rows.empty.message')}"`
-            );
+        this.fieldRow = this.$fieldRow();
+        this.emptyMessage = this.dotMessageService.get('contenttypes.dropzone.rows.empty.message');
     }
 
     /**

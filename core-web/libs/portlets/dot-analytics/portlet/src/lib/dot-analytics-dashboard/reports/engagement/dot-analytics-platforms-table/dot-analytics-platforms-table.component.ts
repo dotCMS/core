@@ -5,7 +5,7 @@ import { CardModule } from 'primeng/card';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -34,7 +34,7 @@ export interface PlatformsData {
     imports: [
         CommonModule,
         CardModule,
-        TabViewModule,
+        TabsModule,
         TableModule,
         ProgressBarModule,
         SkeletonModule,

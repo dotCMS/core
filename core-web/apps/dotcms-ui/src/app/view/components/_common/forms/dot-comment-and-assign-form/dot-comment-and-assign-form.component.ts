@@ -10,8 +10,8 @@ import {
 } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DropdownModule } from 'primeng/dropdown';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { SelectModule } from 'primeng/select';
+import { TextareaModule } from 'primeng/textarea';
 
 import { take, takeUntil } from 'rxjs/operators';
 
@@ -48,8 +48,8 @@ interface DotCommentAndAssignValue {
     imports: [
         FormsModule,
         ReactiveFormsModule,
-        InputTextareaModule,
-        DropdownModule,
+        TextareaModule,
+        SelectModule,
         DotPageSelectorComponent,
         DotFieldRequiredDirective,
         DotMessagePipe

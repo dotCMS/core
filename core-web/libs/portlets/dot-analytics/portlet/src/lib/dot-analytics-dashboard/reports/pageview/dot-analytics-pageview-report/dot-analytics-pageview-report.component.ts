@@ -33,7 +33,7 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
     styleUrl: './dot-analytics-pageview-report.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex flex-column gap-4 w-full'
+        class: 'flex flex-col gap-6 w-full pt-0 pb-4 px-4'
     }
 })
 /**

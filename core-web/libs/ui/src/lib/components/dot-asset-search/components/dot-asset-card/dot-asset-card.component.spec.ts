@@ -7,6 +7,8 @@ import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotAssetCardComponent } from './dot-asset-card.component';
 
+import { DotContentletStatusChipComponent } from '../../../dot-contentlet-status-chip/dot-contentlet-status-chip.component';
+
 const contentlet: DotCMSContentlet = {
     ...EMPTY_CONTENTLET,
     title: 'test title',
@@ -19,7 +21,7 @@ describe('DotAssetCardComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAssetCardComponent,
-        imports: [CardModule]
+        imports: [CardModule, DotContentletStatusChipComponent]
     });
 
     beforeEach(() => {

@@ -7,6 +7,7 @@ import {
     ContentTypeListParamsSchema,
     ContentTypeCreateParamsSchema
 } from '../../services/contentType';
+import { asMcpSchema } from '../../utils/schema-helpers';
 
 /**
  * Registers content type tools with the MCP server
@@ -22,7 +23,7 @@ export function registerContentTypeTools(server: McpServer) {
                 title: 'List Content Types',
                 readOnlyHint: true
             },
-            inputSchema: ContentTypeListParamsSchema.shape
+            inputSchema: asMcpSchema(ContentTypeListParamsSchema)
         },
         contentTypeListHandler
     );
@@ -39,9 +40,11 @@ export function registerContentTypeTools(server: McpServer) {
                 idempotentHint: false,
                 openWorldHint: true
             },
-            inputSchema: z.object({
-                contentType: ContentTypeCreateParamsSchema
-            }).shape
+            inputSchema: asMcpSchema(
+                z.object({
+                    contentType: ContentTypeCreateParamsSchema
+                })
+            )
         },
         contentTypeCreateHandler
     );

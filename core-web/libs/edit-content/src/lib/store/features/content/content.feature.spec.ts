@@ -75,7 +75,7 @@ describe('ContentFeature', () => {
             }),
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService),
-            GlobalStore,
+            mockProvider(GlobalStore, { addNewBreadcrumb: jest.fn() }),
             provideHttpClient(),
             provideHttpClientTesting()
         ]

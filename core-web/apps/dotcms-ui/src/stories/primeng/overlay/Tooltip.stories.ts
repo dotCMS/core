@@ -5,7 +5,10 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
-const TooltipTemplate = `<button pButton label="Submit" icon="pi pi-check" pTooltip="Edit" tooltipPosition="bottom"></button>`;
+const TooltipTemplate = `<button pButton pTooltip="Edit" tooltipPosition="bottom">
+    <i class="pi pi-check" pButtonIcon></i>
+    <span pButtonLabel>Submit</span>
+</button>`;
 
 const meta: Meta = {
     title: 'PrimeNG/Overlay/Tooltip',

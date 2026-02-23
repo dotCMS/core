@@ -40,7 +40,7 @@ type DialogProps = {
         MonacoEditorModule
     ],
     templateUrl: './dot-form-file-editor.component.html',
-    styleUrls: ['./dot-form-file-editor.component.scss'],
+    styleUrl: './dot-form-file-editor.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [FormFileEditorStore]
 })

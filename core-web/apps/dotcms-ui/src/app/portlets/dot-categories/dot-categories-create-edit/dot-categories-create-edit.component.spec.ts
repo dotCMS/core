@@ -3,7 +3,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Pipe, PipeTransform } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -37,7 +37,7 @@ describe('CategoriesCreateEditComponent', () => {
                 CommonModule,
                 HttpClientTestingModule,
                 DotMessagePipe,
-                TabViewModule,
+                TabsModule,
                 DotCategoriesListComponent,
                 DotPortletBaseComponent,
                 DotCategoriesPermissionsComponent,

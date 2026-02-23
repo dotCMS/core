@@ -216,7 +216,7 @@ describe('DotPersonaSelectorComponent', () => {
     });
 
     it('should call toggle when selected dot-persona-selected-item', async () => {
-        jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
+        jest.spyOn(component.searchableSelect, 'toggleOverlayPanel');
         await spectator.fixture.whenStable();
 
         const selectedItem = spectator.query('dot-persona-selected-item');
@@ -308,7 +308,7 @@ describe('DotPersonaSelectorComponent', () => {
             openOverlay();
             const addPersonaIcon = spectator.query('p-button');
 
-            jest.spyOn(component.searchableDropdown, 'toggleOverlayPanel');
+            jest.spyOn(component.searchableSelect, 'toggleOverlayPanel');
 
             spectator.triggerEventHandler('dot-searchable-dropdown', 'filterChange', 'Bill');
             spectator.click(addPersonaIcon);
@@ -323,7 +323,7 @@ describe('DotPersonaSelectorComponent', () => {
         it('should emit persona and refresh the list on Add new persona', () => {
             jest.spyOn(component.selected, 'emit');
             jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([mockDotPersona]));
-            jest.spyOn(component.searchableDropdown, 'resetPanelMinHeight');
+            jest.spyOn(component.searchableSelect, 'resetPanelMinHeight');
 
             spectator.triggerEventHandler(
                 'dot-add-persona-dialog',

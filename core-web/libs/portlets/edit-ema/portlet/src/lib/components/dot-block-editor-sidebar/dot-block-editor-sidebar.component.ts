@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { SidebarModule } from 'primeng/sidebar';
+import { DrawerModule } from 'primeng/drawer';
 
 import { map, take } from 'rxjs/operators';
 
@@ -40,7 +40,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     imports: [
         FormsModule,
         BlockEditorModule,
-        SidebarModule,
+        DrawerModule,
         DotMessagePipe,
         ButtonModule,
         ConfirmDialogModule

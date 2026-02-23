@@ -1,25 +1,27 @@
+@use "../../../shared/colors";
+
 @use "variables" as *;
 
 .p-error,
 .p-invalid {
-    color: $color-alert-red;
+    color: colors.$color-alert-red;
 }
 
 p-inputmask.ng-dirty.ng-invalid > .p-inputtext {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-inputnumber.ng-dirty.ng-invalid > .p-inputnumber > .p-inputtext {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-inputswitch.p-error,
 .p-inputswitch.p-invalid {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-inputswitch.ng-dirty.ng-invalid > .p-inputswitch {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-inputtext.p-error,
@@ -28,56 +30,56 @@ p-inputswitch.ng-dirty.ng-invalid > .p-inputswitch {
     &:hover,
     &:active,
     &:focus {
-        border-color: $color-alert-red;
+        border-color: colors.$color-alert-red;
     }
 
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-listbox.ng-dirty.ng-invalid > .p-listbox {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-listbox.p-error,
 .p-listbox.p-invalid {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-multiselect.ng-dirty.ng-invalid > .p-multiselect {
     &:hover,
     &:active,
     &:focus {
-        border-color: $color-alert-red;
+        border-color: colors.$color-alert-red;
     }
 
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-radiobutton.p-error > .p-radiobutton-box,
 .p-radiobutton.p-invalid > .p-radiobutton-box {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-radiobutton.ng-dirty.ng-invalid > .p-radiobutton > .p-radiobutton-box {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-selectbutton.p-error > .p-button,
 .p-selectbutton.p-invalid > .p-button {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-selectbutton.ng-dirty.ng-invalid > .p-selectbutton > .p-button {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-togglebutton.p-button.p-error,
 .p-togglebutton.p-button.p-invalid {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 p-togglebutton.ng-dirty.ng-invalid > .p-togglebutton.p-button {
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-multiselect.p-error,
@@ -85,26 +87,26 @@ p-togglebutton.ng-dirty.ng-invalid > .p-togglebutton.p-button {
     &:hover,
     &:active,
     &:focus {
-        border-color: $color-alert-red;
+        border-color: colors.$color-alert-red;
     }
 
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }
 
 .p-rating .p-rating-icon.p-rating-cancel {
-    color: $color-alert-red;
+    color: colors.$color-alert-red;
 }
 
 .p-rating:not(.p-disabled):not(.p-readonly) .p-rating-icon.p-rating-cancel:hover {
-    color: $color-alert-red;
+    color: colors.$color-alert-red;
 }
 
 .p-inputtextarea.ng-invalid:not(.ng-pristine) {
     &:hover,
     &:active,
     &:focus {
-        border-color: $color-alert-red;
+        border-color: colors.$color-alert-red;
     }
 
-    border-color: $color-alert-red;
+    border-color: colors.$color-alert-red;
 }

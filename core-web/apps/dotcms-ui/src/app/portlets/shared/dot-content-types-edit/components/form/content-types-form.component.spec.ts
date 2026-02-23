@@ -5,72 +5,39 @@ import { Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, forwardRef, Injectable, Input } from '@angular/core';
-import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { Injectable } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
-
 import {
-    DotAlertConfirmService,
-    DotContentTypesInfoService,
-    DotEventsService,
     DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageDisplayService,
     DotMessageService,
-    DotSystemConfigService,
-    DotWorkflowService,
+    DotSiteService,
     DotWorkflowsActionsService,
-    PaginatorService
+    DotWorkflowService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { CoreWebService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotSiteComponent } from '@dotcms/ui';
 import {
     CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
-    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
-    LoginServiceMock,
     MockDotMessageService,
     mockWorkflows,
-    mockWorkflowsActions,
-    SiteServiceMock
+    mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
 
-import { MockDotSystemConfigService } from '../../../../../test/dot-test-bed';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
-
-@Component({
-    selector: 'dot-site-selector-field',
-    template: '',
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotSiteSelectorComponent)
-        }
-    ],
-    standalone: false
-})
-class DotSiteSelectorComponent implements ControlValueAccessor {
-    @Input() system;
-
-    writeValue() {}
-
-    registerOnChange() {}
-
-    registerOnTouched() {}
-}
 
 @Injectable()
 class MockDotLicenseService {
@@ -162,27 +129,42 @@ describe('ContentTypesFormComponent', () => {
 
     const createComponent = createComponentFactory({
         component: ContentTypesFormComponent,
-        componentProviders: [DotSiteSelectorComponent],
+        componentProviders: [DotSiteComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            provideAnimations(),
-            { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-            { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: SiteService, useClass: SiteServiceMock },
+            {
+                provide: DotSiteService,
+                useValue: {
+                    getSites: jest.fn().mockReturnValue(
+                        of({
+                            sites: [
+                                {
+                                    hostname: 'demo.dotcms.com',
+                                    identifier: '123-xyz-567-xxl',
+                                    archived: false,
+                                    aliases: null
+                                }
+                            ],
+                            pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                        })
+                    ),
+                    getSiteById: jest.fn().mockReturnValue(
+                        of({
+                            hostname: 'demo.dotcms.com',
+                            identifier: '123-xyz-567-xxl',
+                            archived: false,
+                            aliases: null
+                        })
+                    )
+                }
+            },
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
             { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
-            DotcmsConfigService,
-            DotContentTypesInfoService,
-            DotEventsService,
-            PaginatorService,
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotAlertConfirmService),
-            mockProvider(ConfirmationService),
             mockProvider(DotWorkflowsActionsService),
             {
                 provide: DotWorkflowsActionsSelectorFieldService,
@@ -471,8 +453,8 @@ describe('ContentTypesFormComponent', () => {
         };
 
         // Need to create a new spectator with enterprise license before initialization
-        const enterpriseSpectator = createComponent();
-        enterpriseSpectator.setInput('contentType', {
+        // Use fixture.componentRef.setInput before detectChanges for Angular 21 required signal inputs
+        spectator.fixture.componentRef.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             ...base,
             baseType: 'CONTENT',
@@ -480,14 +462,14 @@ describe('ContentTypesFormComponent', () => {
             publishDateVar: 'publishDateVar',
             layout: layout
         });
-        enterpriseSpectator.detectChanges();
-        await enterpriseSpectator.fixture.whenStable();
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
 
         // Manually call setDateVarFieldsState since ngOnChanges doesn't exist
-        enterpriseSpectator.component['setDateVarFieldsState']();
-        enterpriseSpectator.detectChanges();
+        spectator.component['setDateVarFieldsState']();
+        spectator.detectChanges();
 
-        expect(enterpriseSpectator.component.form.value).toEqual({
+        expect(spectator.component.form.value).toEqual({
             ...base,
             expireDateVar: 'expireDateVar',
             publishDateVar: 'publishDateVar',
@@ -619,16 +601,16 @@ describe('ContentTypesFormComponent', () => {
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = false;
 
-        // Create a new component instance with the updated flag
-        const newSpectator = createComponent();
-        newSpectator.setInput('contentType', {
+        // Use main spectator but update the input value directly
+        // Set input using fixture's componentRef before any detectChanges
+        spectator.fixture.componentRef.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123'
         });
-        newSpectator.detectChanges();
+        spectator.detectChanges();
 
-        const newContentBanner = newSpectator.query(
+        const newContentBanner = spectator.query(
             '[data-test-id="content-type__new-content-banner"]'
         );
         expect(newContentBanner).toBeNull();
@@ -689,7 +671,7 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         jest.spyOn(spectator.component, 'submitForm');
 
-        spectator.component.send.subscribe((res) => (data = res));
+        spectator.component.$send.subscribe((res) => (data = res));
         spectator.component.submitForm();
 
         expect(data).toBeNull();
@@ -704,11 +686,11 @@ describe('ContentTypesFormComponent', () => {
         });
         spectator.detectChanges();
         jest.spyOn(spectator.component, 'submitForm');
-        jest.spyOn(spectator.component.send, 'emit');
+        jest.spyOn(spectator.component.$send, 'emit');
 
         spectator.component.submitForm();
 
-        expect(spectator.component.send.emit).not.toHaveBeenCalled();
+        expect(spectator.component.$send.emit).not.toHaveBeenCalled();
     });
 
     it('should have dot-page-selector component and right attrs', () => {
@@ -735,8 +717,10 @@ describe('ContentTypesFormComponent', () => {
             spectator.detectChanges();
             data = null;
             jest.spyOn(spectator.component, 'submitForm');
-            spectator.component.send.subscribe((res) => (data = res));
+            spectator.component.$send.subscribe((res) => (data = res));
             spectator.component.form.controls.name.setValue('A content type name');
+            // Set host to match SiteServiceMock currentSite identifier
+            spectator.component.form.controls.host.setValue('123-xyz-567-xxl');
             spectator.detectChanges();
         });
 

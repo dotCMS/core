@@ -13,7 +13,7 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { MessagesModule } from 'primeng/messages';
+import { MessageModule } from 'primeng/message';
 import { SkeletonModule } from 'primeng/skeleton';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -26,13 +26,12 @@ import { DotMessagePipe } from '@dotcms/ui';
         CommonModule,
         ButtonModule,
         CardModule,
-        MessagesModule,
+        MessageModule,
         SkeletonModule,
         DotMessagePipe,
         ToolbarModule
     ],
     templateUrl: './dot-usage-shell.component.html',
-    styleUrl: './dot-usage-shell.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUsageShellComponent implements OnInit, OnDestroy {

@@ -19,7 +19,6 @@ import { TooltipModule } from 'primeng/tooltip';
 @Component({
     selector: 'dot-card-field-label',
     imports: [TooltipModule],
-    styleUrl: './dot-card-field-label.component.scss',
     templateUrl: './dot-card-field-label.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

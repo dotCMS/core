@@ -1,4 +1,4 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { signal } from '@angular/core';
@@ -95,12 +95,11 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(metrics.length).toBe(4);
         });
 
-        it('should not display trend bar chart (removed)', () => {
+        it('should display 1 chart (breakdown doughnut)', () => {
             spectator = createComponent();
             spectator.detectChanges();
             const charts = spectator.queryAll(DotAnalyticsChartComponent);
-            // No charts visible initially, breakdown doughnut is deferred
-            expect(charts.length).toBe(0);
+            expect(charts.length).toBe(1);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
@@ -110,11 +109,11 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(sparklines.length).toBe(1);
         });
 
-        it('should have deferred bottom row with placeholder', () => {
+        it('should display platforms table in breakdown section', () => {
             spectator = createComponent();
             spectator.detectChanges();
-            const placeholder = spectator.query(byTestId('deferred-placeholder'));
-            expect(placeholder).toBeTruthy();
+            const platformsTable = spectator.query(DotAnalyticsPlatformsTableComponent);
+            expect(platformsTable).toBeTruthy();
         });
     });
 

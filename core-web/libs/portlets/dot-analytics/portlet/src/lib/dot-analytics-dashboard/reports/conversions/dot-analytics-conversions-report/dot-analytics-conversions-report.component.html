@@ -1,9 +1,8 @@
-<!-- Metrics Section -->
-<div class="analytics-dashboard-conversions__metrics flex gap-3 flex-wrap">
+<!-- Metrics -->
+<div class="flex flex-wrap gap-3">
     @for (metric of $metricsData(); track metric.name) {
-        <div class="analytics-dashboard-conversions__metric-wrapper">
+        <div class="flex-1">
             <dot-analytics-metric
-                class="analytics-dashboard-conversions__metric-card"
                 [title]="metric.name"
                 [value]="metric.value || 0"
                 [subtitle]="metric.subtitle || ''"
@@ -14,10 +13,9 @@
     }
 </div>
 
-<!-- Charts Section - Two charts side by side -->
-<div class="analytics-dashboard-conversions__charts flex gap-3">
-    <!-- Conversion Trend - Line Chart (1 dataset) -->
-    <div class="analytics-dashboard-conversions__chart-half">
+<!-- Charts: Conversion Trend + Traffic vs Conversions -->
+<div class="flex flex-col lg:flex-row gap-3">
+    <div class="flex-1 min-w-0">
         <dot-analytics-chart
             [title]="'analytics.charts.conversion-trend.title'"
             type="line"
@@ -25,9 +23,7 @@
             [status]="$conversionTrendStatus()"
             data-testid="analytics-conversion-trend-chart" />
     </div>
-
-    <!-- Traffic vs Conversions - Combo Chart (2 datasets: bar + line) -->
-    <div class="analytics-dashboard-conversions__chart-half">
+    <div class="flex-1 min-w-0">
         <dot-analytics-chart
             [title]="$trafficVsConversionsTitle()"
             type="bar"
@@ -38,25 +34,17 @@
 </div>
 
 <!-- Content Conversions Table -->
-<div class="analytics-dashboard-conversions__content-table">
-    <h3 class="chart-title mb-2">{{ 'analytics.table.content-conversions.title' | dm }}</h3>
-    @defer (on viewport) {
-        <dot-analytics-content-conversions-table
-            [data]="$contentConversionsData()"
-            [status]="$contentConversionsStatus()" />
-    } @placeholder {
-        <div style="min-height: 400px"></div>
-    }
+<div>
+    <h3 class="text-lg font-bold mb-2">{{ 'analytics.table.content-conversions.title' | dm }}</h3>
+    <dot-analytics-content-conversions-table
+        [data]="$contentConversionsData()"
+        [status]="$contentConversionsStatus()" />
 </div>
 
 <!-- Conversions Overview Table -->
-<div class="analytics-dashboard-conversions__overview-table">
-    <h3 class="chart-title mb-2">{{ 'analytics.table.conversions-overview.title' | dm }}</h3>
-    @defer (on viewport) {
-        <dot-analytics-conversions-overview-table
-            [data]="$conversionsOverviewData()"
-            [status]="$conversionsOverviewStatus()" />
-    } @placeholder {
-        <div style="min-height: 400px"></div>
-    }
+<div>
+    <h3 class="text-lg font-bold mb-2">{{ 'analytics.table.conversions-overview.title' | dm }}</h3>
+    <dot-analytics-conversions-overview-table
+        [data]="$conversionsOverviewData()"
+        [status]="$conversionsOverviewStatus()" />
 </div>

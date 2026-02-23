@@ -1,5 +1,5 @@
 /**
- * Represents the selectable data types (Dropdown, Radio button) for a DotCMS content field.
+ * Represents the selectable data types (Select, Radio button) for a DotCMS content field.
  */
 export enum DotEditContentFieldSingleSelectableDataType {
     BOOL = 'BOOL',

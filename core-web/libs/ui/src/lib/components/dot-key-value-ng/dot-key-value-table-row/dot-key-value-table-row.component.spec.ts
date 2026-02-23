@@ -5,10 +5,10 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { Table, TableModule, TableService } from 'primeng/table';
+import { TextareaModule } from 'primeng/textarea';
+import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -31,10 +31,10 @@ describe('DotKeyValueTableRowComponent', () => {
         imports: [
             FormsModule,
             ReactiveFormsModule,
-            InputSwitchModule,
+            ToggleSwitchModule,
             InputTextModule,
             ButtonModule,
-            InputTextareaModule,
+            TextareaModule,
             TableModule,
             DotMessagePipe,
             NoopAnimationsModule
@@ -156,7 +156,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
                 expect(spectator.component.form).toBeTruthy();
 
-                const inputSwitch = spectator.query(byTestId('dot-key-value-hidden-switch'));
+                const inputSwitch = spectator.query(ToggleSwitch);
 
                 expect(inputSwitch).toBeFalsy();
                 expect(spectator.component.$isHiddenField()).toBe(true);

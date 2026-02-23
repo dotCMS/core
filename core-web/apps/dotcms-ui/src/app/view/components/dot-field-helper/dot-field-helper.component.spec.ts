@@ -4,7 +4,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { DotFieldHelperComponent } from './dot-field-helper.component';
 
@@ -15,12 +15,7 @@ describe('DotFieldHelperComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [
-                DotFieldHelperComponent,
-                BrowserAnimationsModule,
-                ButtonModule,
-                OverlayPanelModule
-            ]
+            imports: [DotFieldHelperComponent, BrowserAnimationsModule, ButtonModule, PopoverModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotFieldHelperComponent);
@@ -50,7 +45,7 @@ describe('DotFieldHelperComponent', () => {
     });
 
     it('should have correct attributes on Overlay Panel', () => {
-        const overlayPanel: OverlayPanel = de.query(By.directive(OverlayPanel)).componentInstance;
+        const overlayPanel: Popover = de.query(By.directive(OverlayPanel)).componentInstance;
 
         expect(overlayPanel.style).toEqual({ width: '350px' });
         expect(overlayPanel.appendTo).toEqual('body');

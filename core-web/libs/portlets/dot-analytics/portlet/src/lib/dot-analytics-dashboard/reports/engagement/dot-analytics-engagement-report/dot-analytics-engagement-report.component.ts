@@ -40,7 +40,10 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
     ],
     templateUrl: './dot-analytics-engagement-report.component.html',
     styleUrl: './dot-analytics-engagement-report.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col gap-6 w-full'
+    }
 })
 export default class DotAnalyticsEngagementReportComponent implements OnInit {
     /** Analytics dashboard store providing engagement data and actions */

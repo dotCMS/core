@@ -45,7 +45,7 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
     styleUrl: './dot-analytics-conversions-report.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex flex-column gap-4 w-full'
+        class: 'flex flex-col gap-6 w-full'
     }
 })
 export default class DotAnalyticsConversionsReportComponent implements OnInit {

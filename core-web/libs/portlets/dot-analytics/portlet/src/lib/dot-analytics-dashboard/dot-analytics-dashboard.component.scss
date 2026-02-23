@@ -1,42 +1,7 @@
 @use "variables" as *;
 
-// Block: analytics-dashboard
-.analytics-dashboard {
-    width: 100%;
-    height: 100%;
-    overflow: auto;
 
-    // Element: filters-row (gray background)
-    &__filters-row {
-        width: 100%;
-        background: $color-palette-gray-100;
-        border-bottom: $field-border-size solid $color-palette-gray-300;
-        padding: $spacing-3 $spacing-4;
-    }
-
-    // Element: filters-container
-    &__filters-container {
-        max-width: 100%;
-    }
-
-    // Element: dashboard-row (white background)
-    &__dashboard-row {
-        padding: 0 $spacing-4;
-    }
-
-    // p-tabView: override global flex: 1 that stretches tabs
-    ::ng-deep .p-tabview {
-        .p-tabview-nav li {
-            flex: initial;
-
-            .p-tabview-nav-link {
-                padding: 1.5rem 1.5rem;
-            }
-        }
-        .p-tabview-panels {
-            max-width: 1500px;
-            margin: 0 auto;
-            padding: $spacing-4 0;
-        }
-    }
+.header-container{
+    background: $color-palette-gray-100;
+    border-bottom: 1.5px solid $color-palette-gray-300;
 }

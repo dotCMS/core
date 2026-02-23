@@ -8,7 +8,6 @@ export type UserProfile = 'developer' | 'marketer';
 @Component({
     selector: 'dot-starter',
     templateUrl: './dot-starter.component.html',
-    styleUrls: ['./dot-starter.component.scss'],
     imports: [DotOnboardingDevComponent, DotOnboardingAuthorComponent]
 })
 export class DotStarterComponent implements OnInit {
