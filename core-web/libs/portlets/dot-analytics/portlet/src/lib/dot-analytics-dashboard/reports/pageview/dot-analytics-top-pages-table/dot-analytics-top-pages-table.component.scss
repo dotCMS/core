@@ -1,13 +1,5 @@
 @use "variables" as *;
 
-.table-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
-}
-
 // Table wrapper to ensure full height
 .table-wrapper {
     display: block;

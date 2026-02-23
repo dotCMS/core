@@ -9,7 +9,7 @@
     (type === 'pie' || type === 'doughnut') && !isLoading && !isEmpty && !isError;
 
 @if (hasTitle) {
-    <h3 class="chart-title mb-2" data-testid="chart-title">
+    <h3 class="text-lg font-bold mb-2" data-testid="chart-title">
         {{ chartTitle | dm }}
     </h3>
 }

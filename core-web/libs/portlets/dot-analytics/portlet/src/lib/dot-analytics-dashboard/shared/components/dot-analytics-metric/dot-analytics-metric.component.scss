@@ -7,27 +7,6 @@
     width: 100%;
 }
 
-// Title rendered above the card
-.chart-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
-    display: flex;
-    align-items: center;
-
-    .pi-info-circle {
-        font-size: $font-size-md;
-        cursor: pointer;
-        transition: color 0.2s;
-
-        &:hover {
-            color: $color-palette-primary-500;
-        }
-    }
-}
-
 .metric-card {
     &--loading {
         min-height: 6rem;

@@ -76,7 +76,18 @@
             data-testid="conversions-overview-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>{{ 'analytics.table.conversions-overview.conversion-name' | dm }}</th>
+                    <th>
+                        <div class="flex items-center">
+                            {{ 'analytics.table.conversions-overview.conversion-name' | dm }}
+                            <p-columnFilter
+                                type="text"
+                                field="Conversion.conversionName"
+                                display="menu"
+                                [showMatchModes]="false"
+                                [showOperator]="false"
+                                [showAddButton]="false" />
+                        </div>
+                    </th>
                     <th class="text-right" pSortableColumn="Conversion.totalConversion">
                         {{ 'analytics.table.conversions-overview.total' | dm }}
                         <p-sortIcon field="Conversion.totalConversion" />
