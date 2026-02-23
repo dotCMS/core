@@ -492,28 +492,27 @@ public class PageResourceHelper implements Serializable {
                                       final PageMode pageMode, final Language language)
             throws DotDataException, DotSecurityException {
 
-        final Tuple2<Contentlet, Contentlet> tuple2 = this.copyContent(copyContentletForm, user, pageMode, language.getId());
-
-        final Contentlet copiedContentlet   = tuple2._1();
-        final Contentlet originalContentlet = tuple2._2();
         final String htmlPage   = copyContentletForm.getPageId();
         final String container  = castToOriginalContainerId(copyContentletForm.getContainerId(), user, pageMode.respectAnonPerms);
         final String contentId  = copyContentletForm.getContentId();
         final String instanceId = copyContentletForm.getRelationType();
-        final String variant    = copyContentletForm.getVariantId();
+        final String variant    = UtilMethods.isSet(copyContentletForm.getVariantId()) ? copyContentletForm.getVariantId() : VariantAPI.DEFAULT_VARIANT.name();
         final int treeOrder     = copyContentletForm.getTreeOrder();
         final String personalization = copyContentletForm.getPersonalization();
         final Map<String, Object> styleProperties = copyContentletForm.getStyleProperties();
 
-        Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
         final MultiTree currentMultitree = getMultiTree(htmlPage, container, contentId, instanceId, personalization, variant);
 
         if (null == currentMultitree) {
-
             throw new DoesNotExistException(
                     "Can not copied the contentlet in the page, because the record is not part of the page, multitree: " + copyContentletForm);
         }
 
+        final Tuple2<Contentlet, Contentlet> tuple2 = this.copyContent(copyContentletForm, user, pageMode, language.getId());
+        final Contentlet copiedContentlet   = tuple2._1();
+        final Contentlet originalContentlet = tuple2._2();
+
+        Logger.debug(this, ()-> "Deleting current contentlet multi tree: " + copyContentletForm);
         APILocator.getMultiTreeAPI().deleteMultiTree(currentMultitree);
 
         final MultiTree newMultitree = new MultiTree(htmlPage, container,
