@@ -390,9 +390,8 @@ ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name,
 -- Inserts rows summarizing content presence before the conversion.
 -- =====================================================================
 CREATE MATERIALIZED VIEW clickhouse_test_db.content_presents_in_conversion_mv
-    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 30 SECOND
-    REFRESH EVERY 15 MINUTE
+    -- Refreshing every 30 seconds FOR LOCAL DEVELOPMENT ONLY! For DEV, use at least REFRESH EVERY 15 MINUTE
+    REFRESH EVERY 30 SECOND
     APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
     SELECT context_user_id,
@@ -1086,9 +1085,8 @@ CREATE TABLE clickhouse_test_db.session_facts
 
 ===================================================================================================== */
 CREATE MATERIALIZED VIEW clickhouse_test_db.session_facts_rmv
-    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 30 SECOND
-    REFRESH EVERY 15 MINUTE
+    -- Refreshing every 30 seconds FOR LOCAL DEVELOPMENT ONLY! For DEV, use at least REFRESH EVERY 15 MINUTE
+    REFRESH EVERY 30 SECOND
     TO clickhouse_test_db.session_facts
 AS
 WITH
@@ -1307,9 +1305,8 @@ CREATE TABLE clickhouse_test_db.engagement_daily
 
 ===================================================================================================== */
 CREATE MATERIALIZED VIEW clickhouse_test_db.engagement_daily_rmv
-    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
-    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
+    -- Refreshing every 30 seconds FOR LOCAL DEVELOPMENT ONLY! For DEV, use at least REFRESH EVERY 15 MINUTE
+    REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.engagement_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1416,9 +1413,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_device_daily
    Recomputes a bounded window (this script uses last 90 days via start_day)
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_device_daily_rmv
-    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
-    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
+    -- Refreshing every 30 seconds FOR LOCAL DEVELOPMENT ONLY! For DEV, use at least REFRESH EVERY 15 MINUTE
+    REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.sessions_by_device_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1494,9 +1490,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_browser_daily
    Same pattern as device: bounded window (e.g., last 90 days)
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_browser_daily_rmv
-    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
-    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
+    -- Refreshing every 30 seconds FOR LOCAL DEVELOPMENT ONLY! For DEV, use at least REFRESH EVERY 15 MINUTE
+    REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.sessions_by_browser_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1572,9 +1567,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
    Same recompute model: scan session_facts for last N days (90)
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_language_daily_rmv
-    -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
-    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
+    -- Refreshing every 30 seconds FOR LOCAL DEVELOPMENT ONLY! For DEV, use at least REFRESH EVERY 15 MINUTE
+    REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.sessions_by_language_daily
 AS
 WITH (today() - 90) AS start_day
