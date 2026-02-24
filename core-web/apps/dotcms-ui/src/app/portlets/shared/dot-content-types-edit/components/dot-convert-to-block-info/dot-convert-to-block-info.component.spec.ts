@@ -1,10 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotConvertToBlockInfoComponent } from './dot-convert-to-block-info.component';
@@ -18,8 +15,7 @@ const messageServiceMock = new MockDotMessageService({
 describe('DotConvertToBlockInfoComponent', () => {
     beforeEach(async () => {
         TestBed.configureTestingModule({
-            declarations: [DotConvertToBlockInfoComponent],
-            imports: [DotMessagePipe, ButtonModule],
+            imports: [DotConvertToBlockInfoComponent],
             providers: [
                 {
                     provide: DotMessageService,

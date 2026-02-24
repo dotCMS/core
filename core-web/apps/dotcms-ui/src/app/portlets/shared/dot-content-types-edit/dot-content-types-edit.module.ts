@@ -95,8 +95,6 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
 
 @NgModule({
     declarations: [
-        DotConvertToBlockInfoComponent,
-        DotConvertWysiwygToBlockComponent,
         CategoriesPropertyComponent,
         CheckboxPropertyComponent,
         ContentTypesFieldDragabbleItemComponent,
@@ -117,6 +115,8 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
     ],
     exports: [DotContentTypesEditComponent],
     imports: [
+        DotConvertToBlockInfoComponent,
+        DotConvertWysiwygToBlockComponent,
         ContentTypesLayoutComponent,
         ContentTypesFormComponent,
         ButtonModule,
