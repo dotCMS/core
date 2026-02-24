@@ -108,12 +108,12 @@ public class TranslatedQuery implements Serializable {
             try {
                 inode = query.substring(index, query.indexOf(" ", index));
             } catch (StringIndexOutOfBoundsException e) {
-                Logger.debug(ESContentFactoryImpl.class, e.toString());
+                Logger.debug(TranslatedQuery.class, e.toString());
                 inode = query.substring(index);
             }
             st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
             if (!InodeUtils.isSet(st.getInode()) || !UtilMethods.isSet(st.getVelocityVarName())) {
-                Logger.error(ESContentFactoryImpl.class,
+                Logger.error(TranslatedQuery.class,
                         "Unable to find Structure or Structure Velocity Variable Name from passed in structureInode Query : "
                                 + query);
 
@@ -132,7 +132,7 @@ public class TranslatedQuery implements Serializable {
             try {
                 fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
             } catch (Exception e) {
-                Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+                Logger.error(TranslatedQuery.class, e.getMessage(), e);
                 result.setQuery(query);
                 result.setSortBy(sortBy);
                 return result;
@@ -160,7 +160,7 @@ public class TranslatedQuery implements Serializable {
                                 + APILocator.getCategoryAPI().find(catInode,
                                 APILocator.getUserAPI().getSystemUser(), true).getCategoryVelocityVarName());
                     } catch (Exception e) {
-                        Logger.error(ESContentFactoryImpl.class, e.getMessage() + " : Error loading category", e);
+                        Logger.error(TranslatedQuery.class, e.getMessage() + " : Error loading category", e);
                         result.setQuery(query);
                         result.setSortBy(sortBy);
                         return result;
@@ -272,7 +272,7 @@ public class TranslatedQuery implements Serializable {
         try {
             fieldsMap = UtilMethods.convertListToHashMap(fields, "getFieldContentlet", String.class);
         } catch (Exception e) {
-            Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+            Logger.error(TranslatedQuery.class, e.getMessage(), e);
             return sortBy;
         }
 

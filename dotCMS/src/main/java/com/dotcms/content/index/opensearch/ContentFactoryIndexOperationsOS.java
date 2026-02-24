@@ -1,11 +1,12 @@
-package com.dotcms.content.index;
+package com.dotcms.content.index.opensearch;
+
+import static com.dotcms.content.index.opensearch.OpenSearchIndexAPI.INDEX_OPERATIONS_TIMEOUT;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESContentletScroll;
-import com.dotcms.content.index.domain.SearchHits;
-import com.dotcms.content.index.opensearch.OSQueryCache;
-import com.dotcms.content.index.opensearch.OpenSearchDefaultClientProvider;
+import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -236,8 +237,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         searchRequestBuilder.query(searchQuery);
 
         // Set timeout
-        //Time.of(t -> t.time(String.valueOf(INDEX_OPERATIONS_TIMEOUT_IN_MS) + "ms"))
-        searchRequestBuilder.timeout("");
+        searchRequestBuilder.timeout(INDEX_OPERATIONS_TIMEOUT);
 
         // Set source fields
         searchRequestBuilder.source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
@@ -361,7 +361,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @Override
     public String inferIndexToHit(String query) {
         String indexNameToHit = null;
-        final Optional<VersionedIndices> optional = Try.of(()->APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices()).get();
+        final Optional<VersionedIndices> optional = Try.of(()->APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices()).getOrElse(Optional.empty());
         if (optional.isEmpty()){
             throw new DotRuntimeException("Unable to load default versioned indices, falling back to default index");
         } else {
@@ -409,49 +409,9 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @Override
     public PaginatedArrayList<ContentletSearch> indexSearchScroll(String query, String sortBy,
             int scrollBatchSize) {
-        // For now, implement a basic version without true scroll functionality
-        // This could be enhanced later with OpenSearch scroll API
-        PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
-
-        try {
-            // Get index to query
-            final String indexToHit = inferIndexToHit(query);
-            if (indexToHit == null) {
-                return contentletSearchList;
-            }
-
-            // Use a large limit to simulate scroll behavior
-            final int maxResults = 10000; // Consider making this configurable
-            final HitsMetadata<Object> hits = internalSearchHits(query, maxResults, 0, sortBy, indexToHit);
-
-            // Convert hits to ContentletSearch objects
-            for (var hit : hits.hits()) {
-                if (hit.source() instanceof java.util.Map) {
-                    @SuppressWarnings("unchecked")
-                    java.util.Map<String, Object> sourceMap = (java.util.Map<String, Object>) hit.source();
-                    String inode = sourceMap.get("inode") != null ? sourceMap.get("inode").toString() : "";
-                    String identifier = sourceMap.get("identifier") != null ? sourceMap.get("identifier").toString() : "";
-
-                    if (UtilMethods.isSet(inode)) {
-                        ContentletSearch contentletSearch = new ContentletSearch();
-                        contentletSearch.setInode(inode);
-                        contentletSearch.setIdentifier(identifier);
-                        contentletSearchList.add(contentletSearch);
-                    }
-                }
-            }
-
-            // Set total results from hits metadata
-            if (hits.total() != null) {
-                contentletSearchList.setTotalResults(hits.total().value());
-            }
-
-        } catch (Exception e) {
-            Logger.error(this, "Error executing scroll search query: " + query, e);
-            throw new DotRuntimeException("Error executing scroll search", e);
-        }
-
-        return contentletSearchList;
+        // TODO: Implement proper OpenSearch scroll functionality
+        // For now, throw UnsupportedOperationException to indicate this needs implementation
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     /**
