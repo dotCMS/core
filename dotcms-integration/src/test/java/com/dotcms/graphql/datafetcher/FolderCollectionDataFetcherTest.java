@@ -253,6 +253,13 @@ public class FolderCollectionDataFetcherTest {
         final com.dotmarketing.business.Role limitedRole = new RoleDataGen().nextPersisted();
         final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
 
+        // Break permission inheritance on child2 FIRST (before granting parent permissions).
+        // permissionIndividually copies the parent's current permissions to the child and then
+        // breaks inheritance; doing this before granting limitedRole READ on parent ensures
+        // child2 does NOT get a copy of that permission.
+        APILocator.getPermissionAPI().permissionIndividually(
+                parentFolder, childFolder2, user);
+
         // Grant READ on parent folder to the limited user
         APILocator.getPermissionAPI().save(
                 new Permission(parentFolder.getPermissionId(),
@@ -260,17 +267,12 @@ public class FolderCollectionDataFetcherTest {
                         PermissionAPI.PERMISSION_READ),
                 parentFolder, user, false);
 
-        // Grant READ on child1 only (child2 remains restricted)
+        // Grant READ on child1 (child2 already has broken inheritance with no limitedRole access)
         APILocator.getPermissionAPI().save(
                 new Permission(childFolder1.getPermissionId(),
                         limitedRole.getId(),
                         PermissionAPI.PERMISSION_READ),
                 childFolder1, user, false);
-
-        // Break permission inheritance on child2 so it does NOT inherit
-        // the parent folder's READ permission granted to limitedRole
-        APILocator.getPermissionAPI().permissionIndividually(
-                parentFolder, childFolder2, user);
 
         final List<GraphQLError> errors = new ArrayList<>();
         final Map<String, Object> map = fetcher.buildFolderMap(
