@@ -45,6 +45,7 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import javax.swing.text.AbstractDocument.Content;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -152,7 +153,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
                 final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                         PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
-                return new ContentUnderParent(filtered, count.get(), false, 0, 0);
+                return new ContentUnderParent(filtered, count.get(), false, 0);
             }
 
             // When pagination is not requested (public overload passes -1/-1), fetch everything at once.
@@ -165,7 +166,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 final List<Contentlet> contentlets = findContentletsInParallel(allInodes);
                 final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                         PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
-                return new ContentUnderParent(filtered, filtered.size(), false, 0, 0);
+                return new ContentUnderParent(filtered, filtered.size(), false, 0);
             }
 
             // Chunked scanning: fetch DB rows in configurable chunks, apply permission filtering
@@ -178,10 +179,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Contentlet> accumulated = new ArrayList<>();
             boolean hasMore = false;
             int nextDbCursor;
-            int nextFilteredSkip;
 
             while (true) {
-                final int chunkStartOffset = dbOffset;
+                final int currentRow = dbOffset;
                 final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
                 sqlQuery.params.forEach(dcSelect::addParam);
                 dcSelect.setStartRow(dbOffset).setMaxRows(chunkSize);
@@ -191,11 +191,9 @@ public class BrowserAPIImpl implements BrowserAPI {
                 if (inodesMapList.isEmpty()) {
                     // DB exhausted — no more rows to scan.
                     nextDbCursor = dbOffset;
-                    nextFilteredSkip = 0;
                     break;
                 }
 
-                // make the chunk a combination of mode date and identifier.
                 final Set<String> chunkInodes = new LinkedHashSet<>();
                 inodesMapList.forEach(m -> chunkInodes.add(m.get("inode")));
 
@@ -217,12 +215,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                         // Rewind cursor to the start of this chunk so the next request re-scans
                         // it and the leftover items are not lost. nextFilteredSkip tells the
                         // next request how many items from that chunk position to skip over.
-                        nextDbCursor = chunkStartOffset;
-                        nextFilteredSkip = needed - accumulatedBeforeChunk;
+                        nextDbCursor = chunkContentlets.indexOf(accumulated.get(needed - 1));
                     } else {
                         // Exactly the right number — no leftovers, advance past this chunk.
                         nextDbCursor = dbOffset;
-                        nextFilteredSkip = 0;
                     }
                     break;
                 }
@@ -230,7 +226,6 @@ public class BrowserAPIImpl implements BrowserAPI {
                 if (inodesMapList.size() < chunkSize) {
                     // Partial chunk — DB is exhausted.
                     nextDbCursor = dbOffset;
-                    nextFilteredSkip = 0;
                     break;
                 }
             }
@@ -245,7 +240,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 hasMore = true;
             }
 
-            return new ContentUnderParent(page, accumulatedSize, hasMore, nextDbCursor, nextFilteredSkip);
+            return new ContentUnderParent(page, accumulatedSize, hasMore, nextDbCursor);
 
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
@@ -665,19 +660,13 @@ public class BrowserAPIImpl implements BrowserAPI {
          * Points to the start of the last scanned chunk so leftover filtered items are not lost.
          */
         final int nextDbCursor;
-        /**
-         * Number of filtered items to skip from {@code nextDbCursor} on the next request.
-         * Pass as {@code offset} / {@code startRow} so items already returned are not repeated.
-         */
-        final int nextFilteredSkip;
 
-        ContentUnderParent(List<Contentlet> contentlets, int totalResults,
-                boolean hasMore, int nextDbCursor, int nextFilteredSkip) {
+        ContentUnderParent(List<Contentlet> contentlets, int totalResults, boolean hasMore,
+                int nextDbCursor) {
             this.contentlets = contentlets;
             this.totalResults = totalResults;
             this.hasMore = hasMore;
             this.nextDbCursor = nextDbCursor;
-            this.nextFilteredSkip = nextFilteredSkip;
         }
     }
 
@@ -1281,7 +1270,6 @@ public class BrowserAPIImpl implements BrowserAPI {
         int contentCount = 0;
         boolean hasMore = false;
         int nextDbCursor = browserQuery.dbCursor;
-        int nextFilteredSkip = 0;
 
         // 1. Folders
         if (browserQuery.showFolders) {
@@ -1306,7 +1294,6 @@ public class BrowserAPIImpl implements BrowserAPI {
             contentTotalCount = fromDB.totalResults;
             hasMore = fromDB.hasMore;
             nextDbCursor = fromDB.nextDbCursor;
-            nextFilteredSkip = fromDB.nextFilteredSkip;
 
             // Parallelize hydration with chunks
             final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
@@ -1319,7 +1306,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Final sorting (optional: maybe you only need to sort within each block before slicing)
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount, hasMore, nextDbCursor, nextFilteredSkip);
+        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount, hasMore, nextDbCursor);
     }
 
     /**
@@ -1338,24 +1325,16 @@ public class BrowserAPIImpl implements BrowserAPI {
          * leftover filtered items from that chunk are not skipped on the next page.
          */
         public final int nextDbCursor;
-        /**
-         * Number of filtered items to skip from {@code nextDbCursor} on the next request.
-         * Pass as {@code offset} so items already returned in this page are not repeated.
-         *
-         * <p>Example next-page request: {@code dbCursor=nextDbCursor, offset=nextFilteredSkip, maxResults=N}</p>
-         */
-        public final int nextFilteredSkip;
 
         public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
                 final int contentTotalCount, final int contentCount, final boolean hasMore,
-                final int nextDbCursor, final int nextFilteredSkip) {
+                final int nextDbCursor) {
             this.list = list;
             this.folderCount = folderCount;
             this.contentTotalCount = contentTotalCount;
             this.contentCount = contentCount;
             this.hasMore = hasMore;
             this.nextDbCursor = nextDbCursor;
-            this.nextFilteredSkip = nextFilteredSkip;
         }
     }
 
