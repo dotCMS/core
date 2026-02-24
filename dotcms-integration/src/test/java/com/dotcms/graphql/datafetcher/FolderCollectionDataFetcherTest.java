@@ -267,7 +267,10 @@ public class FolderCollectionDataFetcherTest {
                         PermissionAPI.PERMISSION_READ),
                 childFolder1, user, false);
 
-        // Do NOT grant permission on childFolder2
+        // Break permission inheritance on child2 so it does NOT inherit
+        // the parent folder's READ permission granted to limitedRole
+        APILocator.getPermissionAPI().permissionIndividually(
+                parentFolder, childFolder2, user);
 
         final List<GraphQLError> errors = new ArrayList<>();
         final Map<String, Object> map = fetcher.buildFolderMap(
