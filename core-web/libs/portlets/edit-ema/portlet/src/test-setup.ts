@@ -27,3 +27,14 @@ console.error = (...params) => {
 console.warn = () => {
     // do nothing so it doesn't print warnings that are not relevant to the tests
 };
+
+// JSDOM does not implement navigation (location.reload throws "Not implemented: navigation").
+// Patch Location.prototype so all location objects (including iframe contentWindow.location) use a no-op in tests.
+if (typeof window !== 'undefined' && window.location?.constructor?.prototype) {
+    Object.defineProperty(window.location.constructor.prototype, 'reload', {
+        value: jest.fn(),
+        configurable: true,
+        writable: true,
+        enumerable: true
+    });
+}
