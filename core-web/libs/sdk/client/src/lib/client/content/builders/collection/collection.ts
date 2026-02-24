@@ -277,7 +277,7 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
         // Add site ID constraint if needed
         let finalQuery: string;
         if (shouldAddSiteId) {
-            finalQuery = `${builtQuery} +conhost:${this.siteId}`;
+            finalQuery = `${builtQuery} +(conhost:${this.siteId} conhost:SYSTEM_HOST)`;
         } else {
             finalQuery = builtQuery;
         }
