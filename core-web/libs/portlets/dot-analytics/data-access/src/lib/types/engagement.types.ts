@@ -12,8 +12,6 @@ export interface EngagementKPI {
     label: string;
     /** Optional subtitle text */
     subtitle?: string;
-    /** Optional sparkline data points for trend visualization */
-    sparklineData?: SparklineDataPoint[];
 }
 
 export interface EngagementKPIs {

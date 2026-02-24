@@ -1,5 +1,5 @@
 ---
-name: angular-reviewer
+name: dotcms-angular-reviewer
 description: Angular patterns specialist. Use proactively after writing or modifying Angular components, services, or templates to ensure modern syntax and best practices. Focuses on Angular framework patterns without checking TypeScript types or tests.
 model: sonnet
 color: purple
@@ -68,7 +68,7 @@ Analyze these Angular files from the PR diff:
 - `.html` template files
 - `.scss` style files
 
-**Exclude**: `.spec.ts` files (handled by test-reviewer)
+**Exclude**: `.spec.ts` files (handled by dotcms-test-reviewer)
 
 ## Core Review Areas
 
@@ -457,8 +457,8 @@ ngOnInit() {
 ## What NOT to Flag
 
 **Pre-existing legacy code** - Only flag new code using legacy patterns
-**Type safety issues** - `any`, generics, null checks (typescript-reviewer handles this)
-**Test patterns** - Spectator usage, test structure (test-reviewer handles this)
+**Type safety issues** - `any`, generics, null checks (dotcms-typescript-reviewer handles this)
+**Test patterns** - Spectator usage, test structure (dotcms-test-reviewer handles this)
 **Non-Angular files** - Pure TypeScript utilities, models
 **Intentional legacy usage** - Code updating existing legacy components (not new code)
 
@@ -474,7 +474,7 @@ ngOnInit() {
 ## Integration with Main Review
 
 You are invoked by the main `review` skill when Angular files are changed. You work alongside:
-- `typescript-reviewer` - Handles type safety and TypeScript quality
-- `test-reviewer` - Handles test patterns and coverage
+- `dotcms-typescript-reviewer` - Handles type safety and TypeScript quality
+- `dotcms-test-reviewer` - Handles test patterns and coverage
 
 Your output is merged into the final review under "Angular Patterns" section.

@@ -228,6 +228,11 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.detectChanges();
             expect(spectator.component['$isEmpty']()).toBe(true);
 
+            // Empty when value is empty string
+            spectator.setInput('value', '');
+            spectator.detectChanges();
+            expect(spectator.component['$isEmpty']()).toBe(true);
+
             // Not empty when value is valid
             spectator.setInput('value', 100);
             spectator.detectChanges();
@@ -263,33 +268,50 @@ describe('DotAnalyticsMetricComponent', () => {
             spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi.pi-info-circle');
             const value = spectator.query(byTestId('metric-value'));
 
-            expect(emptyIcon).not.toExist();
             expect(value).toExist();
-            expect(value).toHaveText('0'); // 0 should be displayed as a valid value
+            expect(value).toHaveText('0');
         });
 
-        it('should show empty state icon and message when value is null', () => {
+        it('should show dash and subtitle when value is null', () => {
             spectator.setInput('value', null);
             spectator.setInput('status', ComponentStatus.LOADED);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi.pi-info-circle');
-            const emptyMessage = spectator.query('.state-message');
+            const value = spectator.query(byTestId('metric-value'));
+            const subtitle = spectator.query(byTestId('metric-subtitle'));
 
-            expect(emptyIcon).toExist();
-            expect(emptyMessage).toExist();
+            expect(value).toExist();
+            expect(value).toHaveText('—');
+            expect(value).toHaveClass('metric-value--empty');
+            expect(subtitle).toExist();
+        });
+
+        it('should show dash and subtitle when value is empty string', () => {
+            spectator.setInput('value', '');
+            spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.detectChanges();
+
+            const value = spectator.query(byTestId('metric-value'));
+            const subtitle = spectator.query(byTestId('metric-subtitle'));
+
+            expect(value).toExist();
+            expect(value).toHaveText('—');
+            expect(value).toHaveClass('metric-value--empty');
+            expect(subtitle).toExist();
         });
 
         it('should not show empty state when value is valid', () => {
             spectator.setInput('value', 100);
             spectator.setInput('status', ComponentStatus.LOADED);
+            spectator.setInput('animated', false);
             spectator.detectChanges();
 
-            const emptyIcon = spectator.query('.pi.pi-info-circle');
-            expect(emptyIcon).not.toExist();
+            const value = spectator.query(byTestId('metric-value'));
+
+            expect(value).toExist();
+            expect(value).not.toHaveClass('metric-value--empty');
         });
     });
 
@@ -446,11 +468,11 @@ describe('DotAnalyticsMetricComponent - Content Projection', () => {
         expect(projectedContent).toExist();
     });
 
-    it('should not show projected content in error state', () => {
+    it('should hide projected content visually in error state', () => {
         spectator.hostComponent.status = ComponentStatus.ERROR;
         spectator.detectChanges();
 
-        const projectedContent = spectator.query(byTestId('projected-content'));
-        expect(projectedContent).not.toExist();
+        const container = spectator.query(byTestId('metric-projected-content'));
+        expect(container).toHaveClass('metric-projected-content--hidden');
     });
 });

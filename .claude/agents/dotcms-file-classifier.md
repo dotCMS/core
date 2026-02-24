@@ -1,5 +1,5 @@
 ---
-name: file-classifier
+name: dotcms-file-classifier
 description: PR file classifier. Fetches a PR diff, classifies changed files by domain (Angular, TypeScript, tests, styles), and returns a structured mapping of which reviewers should analyze which files. Use as the first step before launching review agents.
 model: sonnet
 color: orange
@@ -42,11 +42,11 @@ Assign each file to **one or more** reviewer buckets based on its path and exten
 
 | Bucket | File Patterns | Reviewer Agent |
 |--------|--------------|----------------|
-| **angular** | `*.component.ts`, `*.component.html`, `*.component.scss`, `*.directive.ts`, `*.pipe.ts`, `*.service.ts` (in Angular libs/apps) | `angular-reviewer` |
-| **typescript** | `*.ts` (excluding `*.spec.ts`, excluding Angular-specific files above) | `typescript-reviewer` |
-| **test** | `*.spec.ts` | `test-reviewer` |
-| **style** | `*.scss`, `*.css` (standalone, not `.component.scss`) | `angular-reviewer` (SCSS section) |
-| **template** | `*.html` (standalone, not `.component.html`) | `angular-reviewer` (template section) |
+| **angular** | `*.component.ts`, `*.component.html`, `*.component.scss`, `*.directive.ts`, `*.pipe.ts`, `*.service.ts` (in Angular libs/apps) | `dotcms-angular-reviewer` |
+| **typescript** | `*.ts` (excluding `*.spec.ts`, excluding Angular-specific files above) | `dotcms-typescript-reviewer` |
+| **test** | `*.spec.ts` | `dotcms-test-reviewer` |
+| **style** | `*.scss`, `*.css` (standalone, not `.component.scss`) | `dotcms-angular-reviewer` (SCSS section) |
+| **template** | `*.html` (standalone, not `.component.html`) | `dotcms-angular-reviewer` (template section) |
 | **out-of-scope** | `*.java`, `*.xml`, `*.json`, `*.md`, `*.yml`, `*.yaml`, `*.sh`, `Dockerfile`, `*.properties`, `*.vtl`, images, etc. | None (skip) |
 
 #### Classification Rules
@@ -98,7 +98,7 @@ Even when skipping, still return the full classification so the orchestrator can
 
 ## File Map
 
-### angular-reviewer
+### dotcms-angular-reviewer
 Files for Angular pattern review:
 
 | File | Lines Changed | Type |
@@ -107,7 +107,7 @@ Files for Angular pattern review:
 | `path/to/file.component.html` | +15 -5 | template |
 | `path/to/file.service.ts` | +20 -0 | service |
 
-### typescript-reviewer
+### dotcms-typescript-reviewer
 Files for TypeScript type safety review:
 
 | File | Lines Changed | Type |
@@ -116,7 +116,7 @@ Files for TypeScript type safety review:
 | `path/to/utils.ts` | +50 -20 | utility |
 | `path/to/model.ts` | +10 -0 | model |
 
-### test-reviewer
+### dotcms-test-reviewer
 Files for test quality review:
 
 | File | Lines Changed | Type |
@@ -133,9 +133,9 @@ Files excluded from frontend review:
 | `package.json` | +2 -1 | Config file |
 
 ## Summary
-- **angular-reviewer**: <count> files (<total lines changed>)
-- **typescript-reviewer**: <count> files (<total lines changed>)
-- **test-reviewer**: <count> files (<total lines changed>)
+- **dotcms-angular-reviewer**: <count> files (<total lines changed>)
+- **dotcms-typescript-reviewer**: <count> files (<total lines changed>)
+- **dotcms-test-reviewer**: <count> files (<total lines changed>)
 - **out-of-scope**: <count> files
 ```
 
@@ -166,15 +166,15 @@ Still classify all files. The orchestrator decides what to do:
 - **Decision**: REVIEW
 - **Reason**: All changes are test files
 
-### test-reviewer
+### dotcms-test-reviewer
 | File | Lines Changed | Type |
 |------|--------------|------|
 | ... | ... | unit test |
 
-### angular-reviewer
+### dotcms-angular-reviewer
 _No files to review._
 
-### typescript-reviewer
+### dotcms-typescript-reviewer
 _No files to review._
 ```
 

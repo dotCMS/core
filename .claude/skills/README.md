@@ -8,9 +8,9 @@ This directory contains **repository-specific skills** for Claude Code that enha
 .claude/
 ├── agents/                           # Reusable agents (independent workers)
 │   ├── README.md                     # Agent documentation
-│   ├── typescript-reviewer.md        # TypeScript type safety specialist
-│   ├── angular-reviewer.md           # Angular patterns specialist
-│   └── test-reviewer.md              # Test quality specialist
+│   ├── dotcms-typescript-reviewer.md  # TypeScript type safety specialist
+│   ├── dotcms-angular-reviewer.md    # Angular patterns specialist
+│   └── dotcms-test-reviewer.md       # Test quality specialist
 │
 └── skills/
     └── review/                       # Autonomous PR Review System

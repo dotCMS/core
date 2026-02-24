@@ -1,16 +1,15 @@
 @use "variables" as *;
 
-// Table wrapper to ensure full height
-.table-wrapper {
-    display: block;
-    width: 100%;
-    height: 100%;
+:host {
+    display: flex;
+    flex-direction: column;
 }
 
 // Full height for loading, empty and error states
 .table-loading-state,
 .table-empty-state,
 .table-error-state {
+    flex: 1;
     height: 100%;
 
     ::ng-deep .p-card {
@@ -31,7 +30,7 @@
 }
 
 // Virtual scroll specific styles
-::ng-deep .p-datatable {
+:host ::ng-deep .p-datatable {
     &.p-datatable-scrollable {
         .p-datatable-scrollable-wrapper {
             border-radius: $border-radius-md;
@@ -42,7 +41,7 @@
         }
     }
 
-    // Ensure consistent row height for virtual scroll
+    // Must match VIRTUAL_SCROLL_ITEM_SIZE in component config
     .p-datatable-tbody > tr {
         height: 46px;
         box-sizing: border-box;

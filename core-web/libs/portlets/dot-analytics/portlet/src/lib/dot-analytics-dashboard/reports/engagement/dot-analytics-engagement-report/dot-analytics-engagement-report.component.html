@@ -1,62 +1,68 @@
-@let kpis = $kpis();
-@let status = $status();
+<div class="engagement-dashboard flex flex-col gap-4">
+    @let kpis = $kpis();
+    @let kpisStatus = $kpisStatus();
 
-<!-- Engagement Rate (full width) -->
-<dot-analytics-metric
-    [title]="'analytics.engagement.metrics.engagement-rate'"
-    [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
-    [trend]="kpis?.engagementRate?.trend ?? 0"
-    [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
-    [status]="status">
-    <i
-        titleAction
-        class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
-        (click)="$showCalculationDialog.set(true)"></i>
-    <dot-analytics-sparkline
-        [data]="kpis?.engagementRate?.sparklineData ?? []"
-        [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
-        valueSuffix="%"
-        [status]="status" />
-</dot-analytics-metric>
-
-<!-- KPI Metrics Row -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-    <dot-analytics-metric
-        [title]="'analytics.engagement.metrics.avg-interactions'"
-        [value]="kpis?.avgInteractions?.value ?? ''"
-        [trend]="kpis?.avgInteractions?.trend ?? 0"
-        icon="pi-bullseye"
-        [status]="status" />
-    <dot-analytics-metric
-        [title]="'analytics.engagement.metrics.avg-session-time'"
-        [value]="kpis?.avgSessionTime?.value ?? ''"
-        [trend]="kpis?.avgSessionTime?.trend ?? 0"
-        icon="pi-clock"
-        [status]="status" />
-    <dot-analytics-metric
-        [title]="'analytics.engagement.metrics.total-sessions'"
-        [value]="kpis?.conversionRate?.value ?? ''"
-        [trend]="kpis?.conversionRate?.trend ?? 0"
-        icon="pi-bullseye"
-        [status]="status" />
-</div>
-
-<!-- Breakdown Chart + Platforms Table -->
-<div class="flex flex-col lg:flex-row gap-3 items-stretch">
-    <div class="flex flex-col lg:w-5/12 shrink-0">
-        <dot-analytics-chart
-            [title]="'analytics.engagement.charts.breakdown.title'"
-            [type]="'doughnut'"
-            [data]="$breakdown()!"
-            [status]="status" />
+    <div class="engagement-dashboard__top-row">
+        <dot-analytics-metric
+            class="h-full"
+            [title]="'analytics.engagement.metrics.engagement-rate'"
+            [value]="(kpis?.engagementRate?.value ?? '') + (kpis?.engagementRate?.value ? '%' : '')"
+            [trend]="kpis?.engagementRate?.trend ?? 0"
+            [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
+            [status]="kpisStatus">
+            <i
+                titleAction
+                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
+                (click)="$showCalculationDialog.set(true)"></i>
+            <dot-analytics-sparkline
+                [data]="$sparklineData()"
+                [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
+                valueSuffix="%"
+                [status]="$sparklineStatus()" />
+        </dot-analytics-metric>
     </div>
-    <div class="flex flex-col flex-1 min-w-0">
-        <dot-analytics-platforms-table
-            class="flex-1"
-            [platforms]="$platforms()"
-            [status]="status"
-            [totalSessions]="$totalSessions()" />
+
+    <div class="engagement-dashboard__metrics-row grid grid-cols-1 md:grid-cols-3 gap-3">
+        <dot-analytics-metric
+            [title]="'analytics.engagement.metrics.avg-interactions'"
+            [value]="kpis?.avgInteractions?.value ?? ''"
+            [trend]="kpis?.avgInteractions?.trend ?? 0"
+            icon="pi-bullseye"
+            [status]="kpisStatus" />
+        <dot-analytics-metric
+            [title]="'analytics.engagement.metrics.avg-session-time'"
+            [value]="kpis?.avgSessionTime?.value ?? ''"
+            [trend]="kpis?.avgSessionTime?.trend ?? 0"
+            icon="pi-clock"
+            [status]="kpisStatus" />
+        <dot-analytics-metric
+            [title]="'analytics.engagement.metrics.total-sessions'"
+            [value]="kpis?.conversionRate?.value ?? ''"
+            [trend]="kpis?.conversionRate?.trend ?? 0"
+            icon="pi-bullseye"
+            [status]="kpisStatus" />
     </div>
+
+    @defer (on viewport) {
+        <div class="engagement-dashboard__bottom-row flex flex-col lg:flex-row gap-3 items-stretch">
+            <div class="flex flex-col lg:w-5/12 shrink-0">
+                <dot-analytics-chart
+                    [title]="'analytics.engagement.charts.breakdown.title'"
+                    [type]="'doughnut'"
+                    [data]="$breakdown() ?? { labels: [], datasets: [] }"
+                    [status]="$breakdownStatus()" />
+            </div>
+            <div class="flex flex-col flex-1 min-w-0">
+                <dot-analytics-platforms-table
+                    class="flex-1"
+                    [platforms]="$platforms() ?? { device: [], browser: [], language: [] }"
+                    [status]="$platformsStatus()"
+                    [totalSessions]="$totalSessions()" />
+            </div>
+        </div>
+    } @placeholder {
+        <div data-testid="deferred-placeholder" style="min-height: 24rem"></div>
+    }
 </div>
 
 <p-dialog

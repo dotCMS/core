@@ -14,6 +14,7 @@ import {
     extractTopPageValue,
     fillMissingDates,
     getDateRange,
+    getPreviousPeriod,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData,
     transformTopPagesTableData
@@ -71,16 +72,16 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(1250);
             });
 
-            it('should return 0 when data is null', () => {
+            it('should return null when data is null', () => {
                 const result = extractPageViews(null);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
-            it('should return 0 when totalRequest is missing', () => {
+            it('should return null when totalRequest is missing', () => {
                 const mockData: Partial<TotalPageViewsEntity> = {};
 
                 const result = extractPageViews(mockData as TotalPageViewsEntity);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
             it('should handle string numbers correctly', () => {
@@ -103,9 +104,9 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(342);
             });
 
-            it('should return 0 when data is null', () => {
+            it('should return null when data is null', () => {
                 const result = extractSessions(null);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
             it('should return NaN when totalUsers is missing', () => {
@@ -128,9 +129,9 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBe(890);
             });
 
-            it('should return 0 when data is null', () => {
+            it('should return null when data is null', () => {
                 const result = extractTopPageValue(null);
-                expect(result).toBe(0);
+                expect(result).toBeNull();
             });
 
             it('should return NaN when totalRequest is missing', () => {
@@ -952,6 +953,28 @@ describe('Analytics Data Utils', () => {
                 expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 00:00:00');
                 expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-31 23:59:59');
             });
+        });
+    });
+
+    describe('getPreviousPeriod', () => {
+        it('should return previous period of same length for custom date range', () => {
+            const result = getPreviousPeriod(['2026-02-01', '2026-02-06']);
+            expect(result).toEqual(['2026-01-26', '2026-01-31']);
+        });
+
+        it('should return previous period for single-day custom range', () => {
+            const result = getPreviousPeriod(['2026-02-01', '2026-02-01']);
+            expect(result).toEqual(['2026-01-31', '2026-01-31']);
+        });
+
+        it('should return previous period for predefined last7days', () => {
+            jest.useFakeTimers();
+            jest.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+            const result = getPreviousPeriod('last7days');
+            jest.useRealTimers();
+            // last7days: Jan 9 - Jan 15 (7 days). Previous: Jan 2 - Jan 8
+            expect(result[0]).toBe('2024-01-02');
+            expect(result[1]).toBe('2024-01-08');
         });
     });
 

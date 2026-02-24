@@ -425,7 +425,7 @@ describe('DotAnalyticsChartComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('.chart-empty');
+            const emptyState = spectator.query('dot-analytics-empty-state');
             expect(emptyState).toExist();
             expect(spectator.query(UIChart)).not.toExist();
         });
@@ -440,8 +440,8 @@ describe('DotAnalyticsChartComponent', () => {
                 } as unknown
             });
 
-            const stateMessage = spectator.query('dot-analytics-state-message');
-            expect(stateMessage).toExist();
+            const emptyState = spectator.query('dot-analytics-empty-state');
+            expect(emptyState).toExist();
         });
 
         it('should not show empty state when data is available', () => {
@@ -454,7 +454,7 @@ describe('DotAnalyticsChartComponent', () => {
                 } as unknown
             });
 
-            const emptyState = spectator.query('.chart-empty');
+            const emptyState = spectator.query('dot-analytics-empty-state');
             expect(emptyState).not.toExist();
             expect(spectator.query(UIChart)).toExist();
         });

@@ -1,19 +1,21 @@
 <div class="flex flex-col portlet-wrapper" data-testid="analytics-dashboard">
     <div class="header-container p-4 py-6">
         @if ($showMessage()) {
-            <p-message
-                severity="info"
-                [closable]="true"
-                (onClose)="onCloseMessage()"
-                data-testid="analytics-message">
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-info-circle"></i>
-                    <span data-testid="message-content">
-                        {{ 'analytics.feature.state' | dm }}
-                        <b>{{ 'development' | dm }}</b>
-                    </span>
-                </div>
-            </p-message>
+            <div class="pb-3">
+                <p-message
+                    severity="info"
+                    [closable]="true"
+                    (onClose)="onCloseMessage()"
+                    data-testid="analytics-message">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-info-circle"></i>
+                        <span data-testid="message-content">
+                            {{ 'analytics.feature.state' | dm }}
+                            <b>{{ 'development' | dm }}</b>
+                        </span>
+                    </div>
+                </p-message>
+            </div>
         }
 
         <div class="flex justify-between items-center">

@@ -9,7 +9,7 @@ This directory contains **reusable specialized agents** for code review. These a
 ## Available Agents
 
 ### 🟠 File Classifier
-**File**: `file-classifier.md`
+**File**: `dotcms-file-classifier.md`
 **Model**: Sonnet
 **Focus**: PR file triage and classification
 
@@ -23,7 +23,7 @@ This directory contains **reusable specialized agents** for code review. These a
 **Used as**: First step in the review pipeline, before launching specialized reviewers.
 
 ### 🔷 TypeScript Type Reviewer
-**File**: `typescript-reviewer.md`
+**File**: `dotcms-typescript-reviewer.md`
 **Model**: Sonnet
 **Focus**: TypeScript type system, generics, null safety
 
@@ -35,10 +35,10 @@ This directory contains **reusable specialized agents** for code review. These a
 - Function signatures and return types
 
 **Confidence threshold**: ≥ 75
-**Excludes**: `.spec.ts` files (handled by test-reviewer)
+**Excludes**: `.spec.ts` files (handled by dotcms-test-reviewer)
 
 ### 🟣 Angular Pattern Reviewer
-**File**: `angular-reviewer.md`
+**File**: `dotcms-angular-reviewer.md`
 **Model**: Sonnet
 **Focus**: Angular framework patterns, modern syntax, architecture
 
@@ -52,10 +52,10 @@ This directory contains **reusable specialized agents** for code review. These a
 - SCSS standards (variables, BEM)
 
 **Confidence threshold**: ≥ 75
-**Excludes**: `.spec.ts` files (handled by test-reviewer)
+**Excludes**: `.spec.ts` files (handled by dotcms-test-reviewer)
 
 ### 🟢 Test Quality Reviewer
-**File**: `test-reviewer.md`
+**File**: `dotcms-test-reviewer.md`
 **Model**: Sonnet
 **Focus**: Test patterns, Spectator usage, coverage
 
@@ -79,7 +79,7 @@ The review skill follows a two-phase pipeline:
 ```typescript
 // Phase 1: File classification (single agent)
 const fileMap = await Task(
-    subagent_type="file-classifier",
+    subagent_type="dotcms-file-classifier",
     prompt="Classify PR #34553 files by domain",
     description="Classify PR files"
 );
@@ -88,17 +88,17 @@ const fileMap = await Task(
 if (fileMap.decision === "REVIEW") {
     const [typeResults, angularResults, testResults] = await Promise.all([
         Task(
-            subagent_type="typescript-reviewer",
+            subagent_type="dotcms-typescript-reviewer",
             prompt="Review TypeScript types for PR #34553. Files: <list>",
             description="TypeScript review"
         ),
         Task(
-            subagent_type="angular-reviewer",
+            subagent_type="dotcms-angular-reviewer",
             prompt="Review Angular patterns for PR #34553. Files: <list>",
             description="Angular review"
         ),
         Task(
-            subagent_type="test-reviewer",
+            subagent_type="dotcms-test-reviewer",
             prompt="Review test quality for PR #34553. Files: <list>",
             description="Test review"
         )
@@ -142,7 +142,7 @@ All agents use the same confidence scoring system:
 Each agent has **pre-approved permissions** via `allowed-tools` in their frontmatter:
 
 ```yaml
-# Example: angular-reviewer.md
+# Example: dotcms-angular-reviewer.md
 allowed-tools:
   - Bash(gh pr diff:*)
   - Bash(gh pr view:*)
@@ -174,7 +174,7 @@ While the main `review` skill orchestrates these agents automatically, you can a
 ### TypeScript-Only Review
 ```bash
 Task(
-    subagent_type="typescript-reviewer",
+    subagent_type="dotcms-typescript-reviewer",
     prompt="Review TypeScript types for PR #34553",
     description="TypeScript type review"
 )
@@ -183,7 +183,7 @@ Task(
 ### Angular-Only Review
 ```bash
 Task(
-    subagent_type="angular-reviewer",
+    subagent_type="dotcms-angular-reviewer",
     prompt="Review Angular patterns for PR #34553",
     description="Angular pattern review"
 )
@@ -192,7 +192,7 @@ Task(
 ### Test-Only Review
 ```bash
 Task(
-    subagent_type="test-reviewer",
+    subagent_type="dotcms-test-reviewer",
     prompt="Review test quality for PR #34553",
     description="Test quality review"
 )
@@ -250,7 +250,7 @@ The main review skill consolidates agent outputs:
 
 To add a new specialized agent:
 
-1. Create `agents/your-agent-reviewer.md` with:
+1. Create `agents/dotcms-your-agent-reviewer.md` with:
    - Clear mission and scope
    - Non-overlapping domain
    - Issue confidence scoring
@@ -273,9 +273,9 @@ Files changed:
 - 4 .spec.ts files
 
 Agents launched:
-✅ typescript-reviewer → Reviews .component.ts for types
-✅ angular-reviewer → Reviews .component.ts + .html for patterns
-✅ test-reviewer → Reviews .spec.ts for test quality
+✅ dotcms-typescript-reviewer → Reviews .component.ts for types
+✅ dotcms-angular-reviewer → Reviews .component.ts + .html for patterns
+✅ dotcms-test-reviewer → Reviews .spec.ts for test quality
 
 Result: Comprehensive review with 3 specialized sections
 ```
@@ -286,7 +286,7 @@ Files changed:
 - 2 .util.ts files (no Angular, no tests)
 
 Agents launched:
-✅ typescript-reviewer → Reviews type safety only
+✅ dotcms-typescript-reviewer → Reviews type safety only
 
 Result: Focused type safety review, no Angular/test sections
 ```
@@ -297,7 +297,7 @@ Files changed:
 - 5 .spec.ts files (test updates only)
 
 Agents launched:
-✅ test-reviewer → Reviews test quality only
+✅ dotcms-test-reviewer → Reviews test quality only
 
 Result: Focused test quality review, no type/pattern sections
 ```

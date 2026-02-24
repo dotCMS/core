@@ -72,7 +72,7 @@ describe('DotAnalyticsStateMessageComponent', () => {
     });
 
     it('should have correct component structure', () => {
-        const container = spectator.query('.flex.flex-column.justify-content-center');
+        const container = spectator.query('.flex.flex-col.justify-center');
         const iconElement = spectator.query('i');
         const messageElement = spectator.query('.state-message');
 

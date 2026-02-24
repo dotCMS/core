@@ -49,6 +49,10 @@ export interface SparklineDataPoint {
             <div class="sparkline-skeleton">
                 <p-skeleton width="100%" height="100%" />
             </div>
+        } @else if ($isEmpty()) {
+            <div class="sparkline-empty">
+                <div class="sparkline-empty__line"></div>
+            </div>
         } @else {
             <p-chart
                 type="line"
@@ -72,6 +76,18 @@ export interface SparklineDataPoint {
             ::ng-deep .p-skeleton {
                 border-radius: 0.5rem;
             }
+        }
+
+        .sparkline-empty {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .sparkline-empty__line {
+            width: 100%;
+            border-top: 2px dashed var(--p-gray-300, #d1d5db);
         }
     `
 })
@@ -115,6 +131,12 @@ export class DotAnalyticsSparklineComponent {
     protected readonly $isLoading = computed(() => {
         const status = this.$status();
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Whether there is no data to display */
+    protected readonly $isEmpty = computed(() => {
+        if (this.$isLoading()) return false;
+        return this.$data().length === 0;
     });
 
     constructor() {

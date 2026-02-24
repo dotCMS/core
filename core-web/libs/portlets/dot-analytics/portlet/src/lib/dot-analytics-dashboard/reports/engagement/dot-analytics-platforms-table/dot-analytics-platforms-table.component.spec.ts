@@ -64,10 +64,10 @@ describe('DotAnalyticsPlatformsTableComponent', () => {
             expect(spectator.query('p-card')).toExist();
         });
 
-        it('should display p-tabs with 3 tabs', () => {
+        it('should display p-tabs with 3 tab panels', () => {
             spectator.detectChanges();
             expect(spectator.query('p-tabs')).toExist();
-            expect(spectator.queryAll('p-tab').length).toBe(3);
+            expect(spectator.queryAll('p-tabpanel').length).toBe(3);
         });
     });
 

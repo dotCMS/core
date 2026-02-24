@@ -13,6 +13,7 @@ import {
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../../../shared/components/dot-analytics-state-message/dot-analytics-state-message.component';
 import { TABLE_CONFIG, TOP_PAGES_TABLE_COLUMNS } from '../../../shared/constants';
 import { TableColumn } from '../../../shared/types';
@@ -38,6 +39,7 @@ const SKELETON_WIDTH_MAP = {
         SkeletonModule,
         TableModule,
         DotMessagePipe,
+        DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent
     ],
     templateUrl: './dot-analytics-top-pages-table.component.html',

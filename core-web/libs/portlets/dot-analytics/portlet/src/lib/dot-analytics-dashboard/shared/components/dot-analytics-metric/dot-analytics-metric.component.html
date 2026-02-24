@@ -18,25 +18,27 @@
     </h3>
 }
 
-<p-card
-    class="h-full metric-card"
-    [class.metric-card--loading]="isLoadingState"
-    [class.metric-card--empty]="isEmptyState"
-    [class.metric-card--error]="isErrorState"
-    data-testid="metric-card">
+<p-card class="h-full" data-testid="metric-card">
     @if (isErrorState) {
-        <!-- Error state -->
-        <div class="flex flex-col justify-center items-center h-full" [@fadeInContent]>
+        <div class="metric-fade-in flex flex-col justify-center items-center h-full">
             <dot-analytics-state-message
                 message="analytics.metrics.error.reload"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isEmptyState) {
-        <!-- Empty state -->
-        <div class="flex flex-col justify-center items-center h-full" [@fadeInContent]>
-            <dot-analytics-state-message
-                message="analytics.metrics.empty.insufficient-data"
-                icon="pi-info-circle" />
+        <!-- Empty state: dash preserves card layout -->
+        <div class="metric-fade-in flex flex-col justify-between h-full gap-2">
+            <div class="flex justify-between items-start gap-1">
+                <div class="metric-value metric-value--empty" data-testid="metric-value">
+                    &mdash;
+                </div>
+                @if (hasIcon) {
+                    <i [class]="iconClasses" class="metric-icon pi" data-testid="metric-icon"></i>
+                }
+            </div>
+            <div class="metric-subtitle" data-testid="metric-subtitle">
+                {{ 'analytics.metrics.empty.no-activity' | dm }}
+            </div>
         </div>
     } @else if (isLoadingState) {
         <!-- Loading state with skeleton (mirrors loaded structure) -->
@@ -51,14 +53,14 @@
                 }
             </div>
             <!-- Subtitle skeleton (separate row, same as loaded state) -->
-            <p-skeleton width="4rem" height="1.06rem" />
+            <p-skeleton width="4rem" height="1.03rem" />
         </div>
     } @else {
         <!-- Normal content - only shown when LOADED -->
         <div class="flex flex-col justify-between h-full gap-2">
             @let animated = $animated();
             @let duration = $animationDuration();
-            <div class="flex justify-between items-start gap-1" [@fadeInContent]>
+            <div class="metric-fade-in flex justify-between items-start gap-1">
                 <div class="flex flex-col gap-1">
                     @if ($isFraction()) {
                         @let fractionParts = $fractionParts();
@@ -99,16 +101,13 @@
                     }
                 </div>
                 @if (hasIcon) {
-                    <i
-                        [class]="iconClasses"
-                        class="metric-icon pi icon-md"
-                        data-testid="metric-icon"></i>
+                    <i [class]="iconClasses" class="metric-icon pi" data-testid="metric-icon"></i>
                 }
             </div>
 
             <!-- Subtítulo -->
             @if (hasSubtitle || trendData) {
-                <div class="metric-subtitle" data-testid="metric-subtitle" [@fadeInContent]>
+                <div class="metric-fade-in metric-subtitle" data-testid="metric-subtitle">
                     @if (trendData) {
                         <span [class]="trendData.class">
                             {{ trendData.prefix }}{{ trendData.value }}%
@@ -124,10 +123,10 @@
         </div>
     }
 
-    <!-- Projected content - visible during loading and loaded (sparkline handles its own skeleton) -->
-    @if (!isErrorState && !isEmptyState) {
-        <div class="metric-projected-content" data-testid="metric-projected-content">
-            <ng-content />
-        </div>
-    }
+    <div
+        class="metric-projected-content"
+        [class.metric-projected-content--hidden]="isErrorState"
+        data-testid="metric-projected-content">
+        <ng-content />
+    </div>
 </p-card>

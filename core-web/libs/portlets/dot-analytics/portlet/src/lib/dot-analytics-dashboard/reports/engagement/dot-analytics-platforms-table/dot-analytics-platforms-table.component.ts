@@ -10,6 +10,8 @@ import { TabsModule } from 'primeng/tabs';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
+
 /** Platform data item structure */
 export interface PlatformDataItem {
     name: string;
@@ -38,7 +40,8 @@ export interface PlatformsData {
         TableModule,
         ProgressBarModule,
         SkeletonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotAnalyticsEmptyStateComponent
     ],
     templateUrl: './dot-analytics-platforms-table.component.html',
     styleUrl: './dot-analytics-platforms-table.component.scss',
@@ -67,5 +70,16 @@ export class DotAnalyticsPlatformsTableComponent {
     readonly $isLoading = computed(() => {
         const status = this.$status();
         return status === ComponentStatus.INIT || status === ComponentStatus.LOADING;
+    });
+
+    /** Whether all platform data is empty (hide tabs, show single empty state) */
+    readonly $isAllEmpty = computed(() => {
+        if (this.$isLoading()) return false;
+
+        return (
+            this.$deviceData().length === 0 &&
+            this.$browserData().length === 0 &&
+            this.$languageData().length === 0
+        );
     });
 }

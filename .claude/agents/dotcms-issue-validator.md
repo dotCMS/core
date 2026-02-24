@@ -1,5 +1,5 @@
 ---
-name: issue-validator
+name: dotcms-issue-validator
 description: Validates GitHub issue completeness for triage. Checks if an issue has enough information to act on. Returns a structured report with a completeness score, status (SUFFICIENT or NEEDS_INFO), and a list of what is missing.
 model: haiku
 color: yellow

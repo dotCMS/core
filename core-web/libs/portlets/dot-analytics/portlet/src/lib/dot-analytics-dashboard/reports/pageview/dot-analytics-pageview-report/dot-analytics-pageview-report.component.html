@@ -4,9 +4,9 @@
         <div class="flex-1">
             <dot-analytics-metric
                 [title]="metric.name"
-                [value]="metric.value || 0"
-                [subtitle]="metric.subtitle || ''"
-                [icon]="metric.icon || ''"
+                [value]="metric.value"
+                [subtitle]="metric.subtitle"
+                [icon]="metric.icon"
                 [status]="metric.status"
                 data-testid="analytics-metric-card" />
         </div>
@@ -23,7 +23,7 @@
 
 <!-- Device Chart + Top Pages Table -->
 <div class="flex flex-col lg:flex-row gap-3 items-stretch">
-    <div class="lg:w-5/12 shrink-0">
+    <div class="lg:w-5/12 shrink-0 flex flex-col">
         <dot-analytics-chart
             [title]="'analytics.charts.device-breakdown.title'"
             type="pie"
@@ -31,11 +31,12 @@
             [status]="$pageViewDeviceBrowsersStatus()"
             data-testid="analytics-device-chart" />
     </div>
-    <div class="flex-1 min-w-0">
+    <div class="flex-1 min-w-0 flex flex-col">
         <h3 class="text-lg font-bold mb-2">
             {{ 'analytics.dashboard.table.top-pages.title' | dm }}
         </h3>
         <dot-analytics-top-pages-table
+            class="flex-1"
             [tableState]="$topPagesTable()"
             data-testid="analytics-table" />
     </div>

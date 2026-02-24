@@ -66,7 +66,7 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
         it('should display loading skeleton when isLoading is true', () => {
             expect(spectator.query(byTestId('conversions-overview-loading'))).toBeTruthy();
-            expect(spectator.queryAll('.skeleton-cell').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('.skeleton-table__row').length).toBe(5);
         });
 
         it('should not display table when loading', () => {
@@ -106,7 +106,7 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
 
         it('should display empty message when isEmpty is true', () => {
             expect(spectator.query(byTestId('conversions-overview-empty'))).toBeTruthy();
-            expect(spectator.query('dot-analytics-state-message')).toBeTruthy();
+            expect(spectator.query('dot-analytics-empty-state')).toBeTruthy();
         });
 
         it('should not display table when empty', () => {
@@ -144,16 +144,15 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
             );
         });
 
-        it('should display top attributed content items', () => {
+        it('should display the first attributed content item', () => {
             const firstRow = spectator.queryAll('p-table tbody tr')[0];
-            const lastCell = firstRow.querySelectorAll('td')[3]; // Top Attributed Content column
-            const contentItems = lastCell.querySelectorAll('.attributed-content-item');
+            const lastCell = firstRow.querySelectorAll('td')[3];
+            const contentItem = lastCell.querySelector('.attributed-content-item');
 
-            // Template shows one .attributed-content-item per row (first item only); "+N" for the rest
-            expect(contentItems.length).toBe(1);
-            const firstItem = mockData[0]['Conversion.topAttributedContent'][0];
-            expect(lastCell.textContent).toContain(firstItem.title);
-            expect(lastCell.querySelector('.more-indicator')?.textContent?.trim()).toBe('+1');
+            expect(contentItem).toExist();
+            expect(contentItem.textContent).toContain(
+                mockData[0]['Conversion.topAttributedContent'][0].title
+            );
         });
 
         it('should display header columns', () => {

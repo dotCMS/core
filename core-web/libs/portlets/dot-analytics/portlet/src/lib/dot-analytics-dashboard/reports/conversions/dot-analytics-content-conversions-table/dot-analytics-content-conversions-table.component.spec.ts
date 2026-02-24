@@ -47,7 +47,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
         it('should display loading skeleton when isLoading is true', () => {
             expect(spectator.query(byTestId('content-conversions-loading'))).toBeTruthy();
-            expect(spectator.queryAll('.skeleton-cell').length).toBeGreaterThan(0);
+            expect(spectator.queryAll('.skeleton-table__row').length).toBe(5);
         });
 
         it('should not display table when loading', () => {
@@ -87,7 +87,7 @@ describe('DotAnalyticsContentConversionsTableComponent', () => {
 
         it('should display empty message when isEmpty is true', () => {
             expect(spectator.query(byTestId('content-conversions-empty'))).toBeTruthy();
-            expect(spectator.query('dot-analytics-state-message')).toBeTruthy();
+            expect(spectator.query('dot-analytics-empty-state')).toBeTruthy();
         });
 
         it('should not display table when empty', () => {

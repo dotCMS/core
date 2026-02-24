@@ -1,17 +1,41 @@
 @use "variables" as *;
 
-.table-title {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-bold;
-    color: $black;
-    line-height: $line-height-relative;
-    margin: 0;
+$table-min-height: 20rem;
+
+.table-state {
     display: flex;
     align-items: center;
+    justify-content: center;
+    min-height: $table-min-height;
+}
+
+.skeleton-table {
+    display: flex;
+    flex-direction: column;
+
+    &__header {
+        display: flex;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--surface-200);
+    }
+
+    &__row {
+        display: flex;
+        gap: $spacing-3;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--surface-100);
+    }
+
+    &__pagination {
+        display: flex;
+        justify-content: center;
+        padding: $spacing-3 $spacing-4;
+    }
 }
 
 // // Custom conversion name badges
-::ng-deep {
+:host ::ng-deep {
     .p-tag.conversion-name-badge {
         background-color: $color-palette-blue-tint;
         border: 1px solid $color-palette-blue-op-20;
@@ -60,16 +84,16 @@
     text-align: right;
 }
 
-// .more-indicator {
-//     font-size: $font-size-xs;
-//     color: $color-palette-gray-500;
-//     background: $color-palette-gray-100;
-//     border-radius: $border-radius-sm;
-//     padding: 0 $spacing-1;
-// }
+.more-indicator {
+    font-size: $font-size-xs;
+    color: $color-palette-gray-500;
+    background: $color-palette-gray-100;
+    border-radius: $border-radius-sm;
+    padding: 0 $spacing-1;
+}
 
 // // Event type badge styling
-::ng-deep {
+:host ::ng-deep {
     .p-tag.event-type-badge {
         border-radius: $border-radius-sm;
         font-size: $font-size-xs;

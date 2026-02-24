@@ -36,9 +36,9 @@ This skill **automates all of that** with a single command.
 
 ### 🤖 Specialized Review Agents (NEW!)
 For frontend code, launches **3 parallel expert agents** using registered agent types:
-- **TypeScript Reviewer** (`typescript-reviewer`): Type safety, generics, null handling
-- **Angular Reviewer** (`angular-reviewer`): Modern syntax, component patterns, architecture
-- **Test Reviewer** (`test-reviewer`): Spectator patterns, coverage, test quality
+- **TypeScript Reviewer** (`dotcms-typescript-reviewer`): Type safety, generics, null handling
+- **Angular Reviewer** (`dotcms-angular-reviewer`): Modern syntax, component patterns, architecture
+- **Test Reviewer** (`dotcms-test-reviewer`): Spectator patterns, coverage, test quality
 
 Each agent is a domain expert with:
 - Non-overlapping focus areas (no duplicate findings)
@@ -72,9 +72,9 @@ Three specialized agents work in parallel to review:
 .claude/
 ├── agents/                           # ⭐ Specialized review agents (reusable)
 │   ├── README.md                     # Agent documentation
-│   ├── typescript-reviewer.md        # TypeScript type safety specialist
-│   ├── angular-reviewer.md           # Angular patterns specialist
-│   └── test-reviewer.md              # Test quality specialist
+│   ├── dotcms-typescript-reviewer.md  # TypeScript type safety specialist
+│   ├── dotcms-angular-reviewer.md    # Angular patterns specialist
+│   └── dotcms-test-reviewer.md       # Test quality specialist
 └── skills/review/
     ├── SKILL.md                      # Main skill logic (orchestrates agents)
     └── README.md                     # This file
@@ -97,7 +97,7 @@ $ /review 34553
 
 Files changed: 3 TypeScript components, 2 HTML templates, 3 spec files
 Review Lens: Frontend-Only
-Agents Launched: typescript-reviewer, angular-reviewer, test-reviewer
+Agents Launched: dotcms-typescript-reviewer, dotcms-angular-reviewer, dotcms-test-reviewer
 Output: Comprehensive frontend review with findings from all 3 agents
 ```
 

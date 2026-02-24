@@ -70,12 +70,7 @@
 } @else if (isEmptyState) {
     <div class="table-empty-state h-full" data-testid="empty-table-state">
         <p-card class="h-full">
-            <!-- Empty State -->
-            <div class="flex flex-col gap-3 h-full">
-                <dot-analytics-state-message
-                    message="analytics.table.empty.description"
-                    icon="pi-info-circle" />
-            </div>
+            <dot-analytics-empty-state />
         </p-card>
     </div>
 } @else if (showRealTable) {
@@ -126,7 +121,7 @@
                                     </span>
                                 }
                                 @case ('percentage') {
-                                    <span class="text-600 font-medium">
+                                    <span class="text-zinc-600 font-medium">
                                         {{ row[columnConfig.field] }}%
                                     </span>
                                 }

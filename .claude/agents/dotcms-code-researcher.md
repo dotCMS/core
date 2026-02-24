@@ -1,5 +1,5 @@
 ---
-name: code-researcher
+name: dotcms-code-researcher
 description: Researches the dotCMS codebase to produce a technical briefing for a GitHub issue. Identifies entry points, call chains, likely bug locations, relevant files, test gaps, and suspicious git commits. Output is used by both human triagers and downstream AI code agents.
 model: sonnet
 color: blue
