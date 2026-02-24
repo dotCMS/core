@@ -1307,6 +1307,89 @@ public class ContentUtilsTest {
 
     /**
      * Method to test:
+     * {@link ContentUtils#pullRelatedField(Relationship, String, String, int, int, String, User,
+     * String, boolean, long, Boolean)} Given Scenario: Pulling related content on the last "page"
+     * of results when offset + limit exceeds the total number of related items.
+     * ExpectedResult: Should return the remaining items instead of throwing an exception.
+     * <p>
+     * In this test 4 items are related, and we're passing offset = 3 and limit = 3, so 1 item
+     * should be returned (the last page).
+     *
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    @Test
+    public void testPullRelatedField_lastPageReturnsRemainingItems()
+            throws DotDataException, DotSecurityException {
+
+        final long languageId = languageAPI.getDefaultLanguage().getId();
+        final ContentType news = getNewsLikeContentType("News");
+        final ContentType comments = getCommentsLikeContentType("Comments");
+        relateContentTypes(news, comments);
+
+        final ContentType newsContentType = contentTypeAPI.find("News");
+        final ContentType commentsContentType = contentTypeAPI.find("Comments");
+
+        Contentlet newsContentlet = null;
+        Contentlet commentsContentlet;
+        final List<Contentlet> relatedComments = new ArrayList<>();
+
+        try {
+            //creates parent contentlet
+            ContentletDataGen dataGen = new ContentletDataGen(newsContentType.id());
+
+            //English version
+            newsContentlet = dataGen.languageId(languageId)
+                    .setProperty("title", "News Test")
+                    .setProperty("urlTitle", "news-test").setProperty("byline", "news-test")
+                    .setProperty("sysPublishDate", new Date()).setProperty("story", "news-test")
+                    .next();
+
+            //creates 4 child contentlets
+            dataGen = new ContentletDataGen(commentsContentType.id());
+
+            for (int i = 1; i <= 4; i++) {
+                commentsContentlet = dataGen
+                        .languageId(languageId)
+                        .setProperty("title", "Comment for News " + i)
+                        .setProperty("email", "testing@dotcms.com")
+                        .setProperty("comment", "Comment for News " + i)
+                        .setPolicy(IndexPolicy.FORCE).nextPersisted();
+                relatedComments.add(commentsContentlet);
+            }
+
+            //Saving relationship
+            final Relationship relationship = relationshipAPI.byTypeValue("News-Comments");
+
+            newsContentlet.setIndexPolicy(IndexPolicy.FORCE);
+
+            newsContentlet = contentletAPI.checkin(newsContentlet,
+                    Map.of(relationship, relatedComments),
+                    null, user, false);
+
+            // Pull last page: offset=3, limit=3 with 4 total items -> should return 1 item
+            List<Contentlet> result = ContentUtils.
+                    pullRelatedField(relationship, newsContentlet.getIdentifier(), "+languageId:1",
+                            3, 3, "", user, null, false, languageId, false);
+
+            assertNotNull(result);
+            assertEquals("Last page should return the 1 remaining item", 1, result.size());
+            assertEquals(relatedComments.get(3).getIdentifier(), result.get(0).getIdentifier());
+
+        } finally {
+            if (null != newsContentlet && UtilMethods.isSet(newsContentlet.getInode())) {
+                ContentletDataGen.remove(newsContentlet);
+            }
+
+            for (final Contentlet contentlet : relatedComments) {
+                ContentletDataGen.remove(contentlet);
+            }
+        }
+    }
+
+
+    /**
+     * Method to test:
      * {@link ContentUtils#addRelationships(Contentlet, User, PageMode, long, int,
      * HttpServletRequest, HttpServletResponse)} Given Scenario: Creates a content parent with a
      * children many to many relationship, create a few instances of the child type and related to
