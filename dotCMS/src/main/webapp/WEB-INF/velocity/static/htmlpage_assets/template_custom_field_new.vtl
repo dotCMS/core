@@ -466,6 +466,18 @@
   }
 
   /**
+   * Sets the select button label (span only, keeps PrimeNG chevron icon)
+   */
+  function setSelectButtonLabel(text) {
+    const labelSpan = getElement("templateSelectButtonLabel");
+    if (labelSpan) labelSpan.textContent = text;
+    else {
+      const button = getElement("customSelectButton");
+      if (button) button.textContent = text;
+    }
+  }
+
+  /**
    * Updates the button text with selected template
    */
   function updateSelectButton(template) {
@@ -475,10 +487,10 @@
     }
 
     if (template && template.identifier !== ALL_SITES_IDENTIFIER) {
-      button.textContent = getCleanTitle(template);
+      setSelectButtonLabel(getCleanTitle(template));
       button.classList.remove("placeholder");
     } else {
-      button.textContent = ALL_SITES_TITLE;
+      setSelectButtonLabel(ALL_SITES_TITLE);
       button.classList.add("placeholder");
     }
   }
@@ -588,16 +600,23 @@
       return;
     }
 
-    // Create custom select button
+    // Use existing button (from HTML with span + PrimeNG icon) or create fallback with same structure
     let selectButton = getElement("customSelectButton");
     if (!selectButton) {
       selectButton = document.createElement("button");
       selectButton.id = "customSelectButton";
       selectButton.className = "custom-select-button placeholder";
       selectButton.type = "button";
-      selectButton.textContent = ALL_SITES_TITLE;
       selectButton.setAttribute("aria-label", "Select template");
       selectButton.setAttribute("aria-haspopup", "listbox");
+      const labelSpan = document.createElement("span");
+      labelSpan.id = "templateSelectButtonLabel";
+      labelSpan.textContent = ALL_SITES_TITLE;
+      const icon = document.createElement("i");
+      icon.className = "pi pi-chevron-down";
+      icon.setAttribute("aria-hidden", "true");
+      selectButton.appendChild(labelSpan);
+      selectButton.appendChild(icon);
       templateHolder.appendChild(selectButton);
     }
 
@@ -809,7 +828,15 @@
 
 <div class="custom-field-wrapper">
   <div class="select-wrapper">
-    <div id="templateHolder"></div>
+    <div id="templateHolder">
+      <button
+        type="button"
+        id="customSelectButton"
+        class="custom-select-button placeholder"
+        aria-label="Select template"
+        aria-haspopup="listbox"
+      ><span id="templateSelectButtonLabel">All Sites</span><i class="pi pi-chevron-down"></i></button>
+    </div>
   </div>
 
   <input
