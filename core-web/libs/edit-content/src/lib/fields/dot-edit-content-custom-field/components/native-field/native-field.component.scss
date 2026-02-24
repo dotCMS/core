@@ -156,17 +156,17 @@
                 justify-content: center;
                 background-color: $color-palette-gray-200;
                 color: $color-palette-primary;
-                border-left: 0.0625rem solid $color-palette-gray-300;
-                border-top-right-radius: calc($border-radius-md - 0.0625rem);
-                border-bottom-right-radius: calc($border-radius-md - 0.0625rem);
+                border-left: $field-border-size solid $color-palette-gray-300;
+                border-top-right-radius: $border-radius-md;
+                border-bottom-right-radius: $border-radius-md;
                 pointer-events: none;
-                font-size: 0.75rem;
+                font-size: $font-size-sm;
                 box-sizing: border-box;
             }
 
             &:focus {
                 border-color: $color-palette-primary-400;
-                box-shadow: 0 0 0 0.125rem
+                box-shadow: 0 0 0 $spacing-xxs
                     color-mix(in srgb, $color-palette-primary-500 10%, transparent);
             }
 
@@ -267,7 +267,7 @@
             cursor: pointer;
             color: $color-palette-gray-700;
             font-size: $font-size-md;
-            border-top: 0.0625rem solid $color-palette-gray-200;
+            border-top: $field-border-size solid $color-palette-gray-200;
             background-color: $white;
             transition: background-color $basic-speed;
 
