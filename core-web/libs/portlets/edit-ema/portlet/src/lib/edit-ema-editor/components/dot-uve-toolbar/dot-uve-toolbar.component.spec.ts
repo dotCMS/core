@@ -61,8 +61,7 @@ import {
     getFullPageURL,
     createFavoritePagesURL,
     sanitizeURL,
-    convertLocalTimeToUTC,
-    createFullURL
+    convertLocalTimeToUTC
 } from '../../../utils';
 
 /**
@@ -516,13 +515,12 @@ describe('DotUveToolbarComponent', () => {
 
         describe('$pageURLS computed signal', () => {
             it('should call createFullURL to generate version URL', () => {
-                const mockCreateFullURL = createFullURL as jest.Mock;
-                mockCreateFullURL.mockClear();
-
+                const clientHost = 'https://example.com';
+                const path = '/my-page';
                 baseUVEState.pageParams.set({
                     ...params,
-                    url: '/my-page',
-                    clientHost: 'https://example.com'
+                    url: path,
+                    clientHost
                 });
                 spectator.detectChanges();
 
@@ -531,11 +529,12 @@ describe('DotUveToolbarComponent', () => {
                     (u) => u.label === 'uve.toolbar.page.current.view.url'
                 );
 
-                expect(mockCreateFullURL).toHaveBeenCalledWith(
-                    expect.any(Object),
-                    expect.any(String)
-                );
                 expect(versionUrl).toBeTruthy();
+                expect(versionUrl?.value).toBeTruthy();
+                expect(typeof versionUrl?.value).toBe('string');
+                // createFullURL builds URL from clientHost + url + query string from params
+                expect(versionUrl?.value.startsWith(`${clientHost}${path}`)).toBe(true);
+                expect(versionUrl?.value).toContain('?');
             });
 
             it('should construct URL with clientHost and url from pageParams', () => {
