@@ -341,4 +341,18 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("showFolders")
     @Value.Default
     default boolean showFolders(){return true; }
+
+    /**
+     * DB row offset where the previous page's scanning stopped.
+     * <p>
+     * Pass the {@code nextDbCursor} value returned by the previous page response to resume
+     * chunked scanning from exactly where it left off, avoiding a full re-scan from row 0.
+     * Defaults to 0 (start from the beginning).
+     * </p>
+     *
+     * @return DB row offset to start scanning from, defaults to 0
+     */
+    @JsonProperty("dbCursor")
+    @Value.Default
+    default int dbCursor() { return 0; }
 }
