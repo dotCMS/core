@@ -118,7 +118,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
 
             it('should pass level attribute', () => {
                 const heading = spectator.query(DotHeadingBlock);
-                expect(heading?.level).toBe('2');
+                expect(heading?.level()).toBe('2');
             });
 
             it('should render heading component with level 6 even if the level is not a string', () => {
@@ -133,7 +133,7 @@ describe('DotCMSBlockEditorRendererBlockComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.query(DotHeadingBlock)).toBeTruthy();
-                expect(spectator.query(DotHeadingBlock)?.level).toBe(6);
+                expect(spectator.query(DotHeadingBlock)?.level()).toBe(6);
             });
 
             it('should render heading content when node has content array with text', () => {
