@@ -21,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.List;
 import java.util.Optional;
@@ -71,14 +72,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         this.clientProvider = clientProvider;
     }
 
-    private boolean useQueryCache = false;
+    private final boolean useQueryCache = Lazy.of(()->Config.getBooleanProperty(
+            "OS_CACHE_SEARCH_QUERIES", true)).get();
 
     private boolean shouldQueryCache() {
-        if (!useQueryCache) {
-            useQueryCache =
-                    LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty(
-                            "OS_CACHE_SEARCH_QUERIES", true);
-        }
         return useQueryCache;
     }
 

@@ -21,8 +21,10 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.lucene.search.TotalHits;
@@ -64,14 +66,10 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         this.queryCache = queryCache;
     }
 
-    private boolean useQueryCache = false;
+    private final boolean useQueryCache = Config.getBooleanProperty(
+            "ES_CACHE_SEARCH_QUERIES", true);
 
     private boolean shouldQueryCache() {
-        if (!useQueryCache) {
-            useQueryCache =
-                    LicenseManager.getInstance().isEnterprise() && Config.getBooleanProperty(
-                            "ES_CACHE_SEARCH_QUERIES", true);
-        }
         return useQueryCache;
     }
 
