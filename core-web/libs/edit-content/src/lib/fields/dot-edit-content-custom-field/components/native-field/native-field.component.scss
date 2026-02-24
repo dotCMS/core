@@ -131,7 +131,8 @@
             line-height: $line-height;
             color: $color-palette-gray-700;
             background-color: $white;
-            border: $field-border-size solid color-mix(in srgb, $color-palette-primary-500 20%, transparent);
+            border: $field-border-size solid
+                color-mix(in srgb, $color-palette-primary-500 20%, transparent);
             border-radius: $border-radius-md;
             cursor: pointer;
             outline: none;
