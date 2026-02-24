@@ -5,7 +5,7 @@ import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, signal } from '@angular/core';
+import { Component, DebugElement, EventEmitter, model, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -29,6 +29,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotLanguage } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
@@ -67,6 +68,8 @@ import {
 /**
  * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
  * which uses Angular's signal-based `viewChild()` and can crash when mocked.
+ * Uses model() for value to match the real component's API so [value] binds correctly.
+ * Keeps EventEmitter for onChange so triggerEventHandler('onChange', id) works in tests.
  */
 @Component({
     selector: 'dot-language-selector',
@@ -74,7 +77,7 @@ import {
     standalone: true
 })
 class StubDotLanguageSelectorComponent {
-    value: unknown;
+    value = model<number | DotLanguage | null>(null);
     onChange = new EventEmitter<number>();
 }
 
