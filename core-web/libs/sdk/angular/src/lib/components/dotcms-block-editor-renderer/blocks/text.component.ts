@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, Input } from '@angular/core';
 
 import { BlockEditorMark } from '@dotcms/types';
 
@@ -19,7 +19,7 @@ export class DotParagraphBlock {}
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [NgTemplateOutlet],
     template: `
-        @switch (normalizedLevel) {
+        @switch ($normalizedLevel()) {
             @case ('1') {
                 <h1>
                     <ng-container *ngTemplateOutlet="content" />
@@ -63,14 +63,13 @@ export class DotParagraphBlock {}
     `
 })
 export class DotHeadingBlock {
-    @Input() level!: number | string;
-    @Input() style: Record<string, unknown> | string | undefined;
+    level = input.required<number | string>();
 
-    get normalizedLevel(): string {
-        return this.level != null && typeof this.level === 'number'
-            ? String(this.level)
-            : (this.level ?? '1');
-    }
+    $normalizedLevel = computed(() => {
+        return this.level() != null && typeof this.level() === 'number'
+            ? String(this.level())
+            : (this.level() ?? '1');
+    });
 }
 
 interface TextBlockProps {
