@@ -278,7 +278,7 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
         let finalQuery: string;
         if (shouldAddSiteId) {
             // NOTE: The SYSTEM_HOST is a shared host that is used to serve common contentlets to all sites.
-            finalQuery = `${builtQuery} +(conhost:${this.siteId} conhost:SYSTEM_HOST)`;
+            finalQuery = `${builtQuery} +(conhost:${this.siteId} OR conhost:SYSTEM_HOST)`;
         } else {
             finalQuery = builtQuery;
         }
