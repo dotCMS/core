@@ -7,6 +7,7 @@ import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 
 type DotTagsListStatus = 'init' | 'loading' | 'loaded' | 'error';
@@ -155,12 +156,16 @@ export const DotTagsListStore = signalStore(
     withHooks((store) => {
         return {
             onInit() {
+                const globalStore = inject(GlobalStore);
+
                 effect(() => {
                     store.filter();
                     store.page();
                     store.rows();
                     store.sortField();
                     store.sortOrder();
+                    // React to site change: tags are per-site, so reload when current site changes
+                    globalStore.currentSiteId();
 
                     untracked(() => store.loadTags());
                 });

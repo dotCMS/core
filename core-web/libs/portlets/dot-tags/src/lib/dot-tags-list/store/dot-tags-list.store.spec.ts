@@ -8,6 +8,7 @@ jest.mock('@dotcms/utils', () => ({
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
 import { DotTag } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotTagsListStore } from './dot-tags-list.store';
@@ -38,7 +39,10 @@ describe('DotTagsListStore', () => {
                     .fn()
                     .mockReturnValue(of({ entity: { successCount: 2, fails: [] } }))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(GlobalStore, {
+                currentSiteId: jest.fn().mockReturnValue('site-1')
+            })
         ]
     });
 
