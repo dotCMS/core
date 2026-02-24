@@ -25,7 +25,7 @@
 -- - Materialized Views:
 --   * content_events_counter_mv: maintains daily counts in content_events_counter.
 --   * content_presents_in_conversion_mv: incremental windowed joins to maintain
---     content_presents_in_conversion; runs every minute.
+--   * content_presents_in_conversion; runs every 15 minutes.
 --   * conversion_time_mv: maintains last processed timestamps in conversion_time.
 -- =====================================================================
 
@@ -159,25 +159,25 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
 
 
     -- ######################################################
-    --              Used in UVE_MODE_CHANGE event
+    --              Used in UVE_MODE_CHANGE events
     -- ######################################################
     frommode String,
     tomode String,
 
 
     -- ######################################################
-    --              Used in content_impression event
+    --              Used in content_impression events
     -- ######################################################
     content_identifier String,
     content_inode String,
     content_title String,
     content_content_type String,
-
     position_viewport_offset_pct Int16,
     position_dom_index Int8,
 
+
     -- ######################################################
-    --              Used in content_click event
+    --              Used in content_click events
     -- ######################################################
     element_text String,
     element_type String,
@@ -185,8 +185,9 @@ CREATE TABLE IF NOT EXISTS clickhouse_test_db.events
     element_class String,
     element_attributes String,
 
+
     -- ######################################################
-    --              Used in conversion event
+    --              Used in conversion events
     -- ######################################################
     conversion_name String
 ) Engine = MergeTree()
@@ -390,7 +391,7 @@ ORDER BY (customer_id, cluster_id, context_user_id, event_type, conversion_name,
 -- =====================================================================
 CREATE MATERIALIZED VIEW clickhouse_test_db.content_presents_in_conversion_mv
     -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 10 SECOND
+    -- REFRESH EVERY 30 SECOND
     REFRESH EVERY 15 MINUTE
     APPEND TO clickhouse_test_db.content_presents_in_conversion AS
 WITH conversion AS (
@@ -467,15 +468,15 @@ GROUP BY customer_id, cluster_id, context_user_id, context_site_id;
    This script defines the complete analytics pipeline used to compute GA4-style engagement metrics
    while remaining dotCMS-specific, scalable, and explainable. The pipeline is layered:
 
-     events (raw immutable events)
+     events (raw immutable events).
         ↓ (real-time materialized view)
-     session_states (incremental, mergeable session aggregates)
+     session_states (incremental, mergeable session aggregates).
         ↓ (refreshable MV - finalize only recent sessions)
-     session_facts (one row per session, dashboard-friendly)
+     session_facts (one row per session, dashboard-friendly).
         ↓ (refreshable MVs - daily roll-ups)
-     engagement_daily + sessions_by_*_daily (small roll-ups for dashboards)
+     engagement_daily + sessions_by_*_daily (small roll-ups for dashboards).
         ↓
-     CubeJS reads from roll-up tables and exposes metrics via API
+     CubeJS reads from roll-up tables and exposes metrics via the API
 
     ┌───────────────────────────────────────────────┐
     │               Browser / Site                  │
@@ -647,18 +648,17 @@ CREATE TABLE clickhouse_test_db.session_states
     /* We use argMax for context_site_id because session_states is mergeable, and ClickHouse needs an explicit rule
        to deterministically resolve the value when partial session data is merged. */
     context_site_id_state AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
-    context_site_id String,
     /* Session boundary */
-    sessionid   String,        -- unique session identifier; all events with same sessionid belong together
+    sessionid   String,        -- unique session identifier. All events with the same sessionid belong together
 
     /* Session time window (mergeable aggregate states) */
     min_ts_state AggregateFunction(min, DateTime64(3, 'UTC')), -- earliest event timestamp seen in session
-    max_ts_state AggregateFunction(max, DateTime64(3, 'UTC')), -- latest  event timestamp seen in session
+    max_ts_state AggregateFunction(max, DateTime64(3, 'UTC')), -- latest event timestamp seen in session
 
     /* Event counters (mergeable) */
     total_events_state AggregateFunction(count),               -- total events in session
-    pageviews_state    AggregateFunction(countIf, UInt8),      -- number of pageview events in session
-    conversions_state  AggregateFunction(countIf, UInt8),      -- number of conversion events in session
+    pageviews_state    AggregateFunction(countIf, UInt8),      -- number of pageview events in the session
+    conversions_state  AggregateFunction(countIf, UInt8),      -- number of conversion events in the session
 
     user_agent_state AggregateFunction(argMax, String, DateTime64(3, 'UTC')),
 
@@ -686,14 +686,13 @@ CREATE TABLE clickhouse_test_db.session_states
        We partition by a hash of (customer, cluster) to spread writes and merges.
        This avoids a single giant partition for big tenants and keeps merges parallelizable. */
     PARTITION BY sipHash64(customer_id, cluster_id) % 64
-    /* Note for Sort key:
+    /* Note for the sort key:
        ORDER BY includes tenant + session to keep session states physically clustered for merges/finalization.
        This also ensures stable grouping keys for session_facts refresh queries. */
     ORDER BY (
               customer_id,
               cluster_id,
-              sessionid,
-              context_site_id);
+              sessionid);
 
 
 /* =====================================================================================================
@@ -876,7 +875,7 @@ INSERT INTO clickhouse_test_db.browser_family_fallback_rules VALUES
    Target: clickhouse_test_db.session_states
 
    Purpose:
-     - Runs on every insert to the events table.
+     - Runs on every insert to the `events` table.
      - It takes only the NEWLY INSERTED BATCH and turns it into mergeable aggregate-state rows that get
        appended into session_states.
      - Writes those states into session_states where they will be merged with prior states.
@@ -931,7 +930,6 @@ WITH
 SELECT
     e.customer_id,
     e.cluster_id,
-    e.context_site_id,
     e.sessionid,
 
     /* Session time window states */
@@ -965,11 +963,11 @@ FROM clickhouse_test_db.events AS e
 WHERE e.sessionid != ''
   AND e.customer_id != ''
   AND e.cluster_id != ''
-  AND e.context_site_id != ''
+  /* ✅ ensure utc_time exists for session logic */
+  AND e.utc_time > toDateTime64(0, 3, 'UTC')
 GROUP BY (
     e.customer_id,
     e.cluster_id,
-    e.context_site_id,
     e.sessionid);
 
 
@@ -981,7 +979,7 @@ GROUP BY (
    Name: clickhouse_test_db.session_facts
    Engine: ReplacingMergeTree(updated_at)
    Written by: session_facts_rmv (refreshable MV that finalizes session_states)
-   Role in pipeline: “finalized session snapshot” — one row per session, query-friendly
+   Role in pipe-line: “finalized session snapshot” — one row per session, query-friendly
 
    Purpose:
      - This is the first table in the pipeline that is meant to be read directly by downstream roll-ups and
@@ -1073,10 +1071,10 @@ CREATE TABLE clickhouse_test_db.session_facts
      - Recompute “recent sessions” every 15 minutes.
      - Important design choice: do not recompute “all history” every 15 minutes. Instead, recompute a
        sliding window that covers late-arriving events + sessions that are still “open”. A very typical
-       window is 48 hours (tune as needed). We're setting 72 hours back for now.
+       window is 2 days (tune as needed). We're setting 5 days back for now.
 
    Rolling window (start_cutoff):
-     - We only finalize sessions whose session_end is in the last 72 hours, which can be increased as long as
+     - We only finalize sessions whose session_end is in the last 5 days, which can be increased as long as
        the REFRESH EVERY value is increased as well.
      - This bounds cost and still corrects for late arriving events.
      - For older late events, a nightly "re-finalize last 30 days" job can be added in the future.
@@ -1089,12 +1087,12 @@ CREATE TABLE clickhouse_test_db.session_facts
 ===================================================================================================== */
 CREATE MATERIALIZED VIEW clickhouse_test_db.session_facts_rmv
     -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 10 SECOND
+    -- REFRESH EVERY 30 SECOND
     REFRESH EVERY 15 MINUTE
     TO clickhouse_test_db.session_facts
 AS
 WITH
-    (now() - INTERVAL 72 HOUR) AS start_cutoff,
+    (now64(3, 'UTC') - INTERVAL 5 DAY) AS start_cutoff,
 
     /* Load fallback rules for device and browser once (small arrays, evaluated per session row) */
     (
@@ -1139,7 +1137,7 @@ SELECT
                         ),
                         ''
                 ), device_category_base),
-        -- else
+    -- else
         device_category_base
     ) AS device_category,
 
@@ -1160,20 +1158,20 @@ SELECT
                         ),
                         ''
                 ), browser_family_base),
-        -- else
+    -- else
         browser_family_base
     ) AS browser_family,
 
     language_id,
 
-    now() AS updated_at
+    now64(3, 'UTC') AS updated_at
 FROM
     (
         /* Aggregate session_states into finalized scalar columns */
         SELECT
             customer_id,
             cluster_id,
-            context_site_id,
+            argMaxMerge(context_site_id_state) AS context_site_id,
             sessionid,
 
             minMerge(min_ts_state) AS session_start,
@@ -1185,13 +1183,13 @@ FROM
             toUInt32(countIfMerge(pageviews_state))  AS pageviews,
             toUInt32(countIfMerge(conversions_state)) AS conversions,
 
-            /* Business rules that determines whether a session is flagged as 'engaged' or not */
+            /* Business rules that determine whether a session is flagged as 'engaged' or not */
             toUInt8(
-                    -- Sessions that last at least 10 seconds
+                    -- 1. Sessions that last more than 10 seconds
                     (dateDiff('second', session_start, session_end) > 10)
-                    -- Sessions that trigger at least 2 events of type 'pageview'
+                    -- 2. Or, sessions that trigger at least 2 events of type 'pageview'
                     OR (countIfMerge(pageviews_state) >= 2)
-                    -- Sessions that trigger at least 1 event of type 'conversion'
+                    -- 3. Or, sessions that trigger at least 1 event of type 'conversion'
                     OR (countIfMerge(conversions_state) >= 1)
             ) AS engaged,
 
@@ -1207,7 +1205,6 @@ FROM
         GROUP BY (
                   customer_id,
                   cluster_id,
-                  context_site_id,
                   sessionid)
         HAVING session_end >= start_cutoff
     ) s;
@@ -1299,20 +1296,20 @@ CREATE TABLE clickhouse_test_db.engagement_daily
      - Periodically recompute daily roll-ups for recent days from the finalized session snapshot table
        (session_facts) and writes the results into the dashboard-ready roll-up table (engagement_daily).
      - Here we typically roll up a wider window (e.g., last 90 days) because session_facts is already
-       small and cheap to scan, we can afford to recompute aggregates for many days back — like 90 days —
-       every time the MV refreshes (much smaller than raw events).
+       small and cheap to scan. We can afford to recompute aggregates for many days back — like 90 days —
+       every time the MV refreshes (much smaller than the raw `events` table).
      - Cheap because session_facts is far smaller than events.
 
    Start window (start_day):
      - Recompute last 90 days by default.
      - Tune based on retention needs + cost tolerance.
-     - This makes daily roll-ups correct even if session_facts rows are updated by late events.
+     - This makes daily roll-ups correct even if `session_facts` rows are updated by late events.
 
 ===================================================================================================== */
 CREATE MATERIALIZED VIEW clickhouse_test_db.engagement_daily_rmv
     -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 10 SECOND
-    REFRESH EVERY 15 MINUTE
+    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
+    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.engagement_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1320,7 +1317,7 @@ SELECT
     customer_id,
     cluster_id,
     context_site_id,
-    toDate(session_start) AS day,
+    toDate(session_start, 'UTC') AS day,
 
     count() AS total_sessions,
     countIf(engaged = 1) AS engaged_sessions,
@@ -1332,9 +1329,9 @@ SELECT
     sumIf(total_events, engaged = 1) AS total_events_engaged,
     sumIf(duration_seconds, engaged = 1) AS total_duration_engaged,
 
-    now() AS updated_at
+    now64(3, 'UTC') AS updated_at
 FROM clickhouse_test_db.session_facts
-WHERE toDate(session_start) >= start_day
+WHERE toDate(session_start, 'UTC') >= start_day
 GROUP BY (
           customer_id,
           cluster_id,
@@ -1420,8 +1417,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_device_daily
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_device_daily_rmv
     -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 10 SECOND
-    REFRESH EVERY 15 MINUTE
+    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
+    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.sessions_by_device_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1429,16 +1426,16 @@ SELECT
     customer_id,
     cluster_id,
     context_site_id,
-    toDate(session_start) AS day,
+    toDate(session_start, 'UTC') AS day,
     device_category,
 
     count() AS total_sessions,
     countIf(engaged = 1) AS engaged_sessions,
     sumIf(duration_seconds, engaged = 1) AS total_duration_engaged_seconds,
 
-    now() AS updated_at
+    now64(3, 'UTC') AS updated_at
 FROM clickhouse_test_db.session_facts
-WHERE toDate(session_start) >= start_day
+WHERE toDate(session_start, 'UTC') >= start_day
 GROUP BY (
           customer_id,
           cluster_id,
@@ -1498,8 +1495,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_browser_daily
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_browser_daily_rmv
     -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 10 SECOND
-    REFRESH EVERY 15 MINUTE
+    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
+    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.sessions_by_browser_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1507,16 +1504,16 @@ SELECT
     customer_id,
     cluster_id,
     context_site_id,
-    toDate(session_start) AS day,
+    toDate(session_start, 'UTC') AS day,
     browser_family,
 
     count() AS total_sessions,
     countIf(engaged = 1) AS engaged_sessions,
     sumIf(duration_seconds, engaged = 1) AS total_duration_engaged_seconds,
 
-    now() AS updated_at
+    now64(3, 'UTC') AS updated_at
 FROM clickhouse_test_db.session_facts
-WHERE toDate(session_start) >= start_day
+WHERE toDate(session_start, 'UTC') >= start_day
 GROUP BY (
           customer_id,
           cluster_id,
@@ -1576,8 +1573,8 @@ CREATE TABLE clickhouse_test_db.sessions_by_language_daily
  */
 CREATE MATERIALIZED VIEW clickhouse_test_db.sessions_by_language_daily_rmv
     -- Uncomment this line and comment out the one below, FOR LOCAL DEVELOPMENT ONLY!
-    -- REFRESH EVERY 10 SECOND
-    REFRESH EVERY 15 MINUTE
+    -- REFRESH EVERY 30 SECOND DEPENDS ON clickhouse_test_db.session_facts_rmv
+    REFRESH EVERY 15 MINUTE DEPENDS ON clickhouse_test_db.session_facts_rmv
     TO clickhouse_test_db.sessions_by_language_daily
 AS
 WITH (today() - 90) AS start_day
@@ -1585,16 +1582,16 @@ SELECT
     customer_id,
     cluster_id,
     context_site_id,
-    toDate(session_start) AS day,
+    toDate(session_start, 'UTC') AS day,
     language_id,
 
     count() AS total_sessions,
     countIf(engaged = 1) AS engaged_sessions,
     sumIf(duration_seconds, engaged = 1) AS total_duration_engaged_seconds,
 
-    now() AS updated_at
+    now64(3, 'UTC') AS updated_at
 FROM clickhouse_test_db.session_facts
-WHERE toDate(session_start) >= start_day
+WHERE toDate(session_start, 'UTC') >= start_day
 GROUP BY (
           customer_id,
           cluster_id,
