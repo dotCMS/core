@@ -131,18 +131,17 @@
             line-height: $line-height;
             color: $color-palette-gray-700;
             background-color: $white;
-            border: 0.0625rem solid
-                color-mix(in srgb, $color-palette-primary-500 20%, transparent);
+            border: 0.0625rem solid color-mix(in srgb, $color-palette-primary-500 20%, transparent);
             border-radius: $border-radius-md;
             cursor: pointer;
             outline: none;
-            transition: border-color $basic-speed, box-shadow $basic-speed;
+            transition:
+                border-color $basic-speed,
+                box-shadow $basic-speed;
             text-align: left;
             position: relative;
             min-height: $field-height-md;
             overflow: hidden;
-
-
 
             .pi {
                 position: absolute;
@@ -185,7 +184,7 @@
             }
         }
 
-        /* Panel desplegable: un solo bloque como native select de PrimeNG */
+        /* Dropdown panel: single block matching PrimeNG native select behavior */
         .custom-dropdown {
             position: absolute;
             top: 100%;
@@ -226,7 +225,7 @@
             }
         }
 
-        /* Opciones como filas de lista (native select), sin cajas individuales */
+        /* Options as list rows matching native select, no individual card styling */
         .custom-option {
             padding: $spacing-2 $spacing-2;
             cursor: pointer;
