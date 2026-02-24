@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
 import { BlockEditorMark } from '@dotcms/types';
@@ -16,48 +17,60 @@ export class DotParagraphBlock {}
 @Component({
     selector: 'dotcms-block-editor-renderer-heading',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [NgTemplateOutlet],
     template: `
-        @switch (level) {
+        @switch (normalizedLevel) {
             @case ('1') {
                 <h1>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h1>
             }
             @case ('2') {
                 <h2>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h2>
             }
             @case ('3') {
                 <h3>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h3>
             }
             @case ('4') {
                 <h4>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h4>
             }
             @case ('5') {
                 <h5>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h5>
             }
             @case ('6') {
                 <h6>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h6>
             }
             @default {
                 <h1>
-                    <ng-content />
+                    <ng-container *ngTemplateOutlet="content" />
                 </h1>
             }
         }
+
+        <ng-template #content>
+            <ng-content />
+        </ng-template>
     `
 })
 export class DotHeadingBlock {
-    @Input() level!: string;
+    @Input() level!: number | string;
+    @Input() style: Record<string, unknown> | string | undefined;
+
+    get normalizedLevel(): string {
+        return this.level != null && typeof this.level === 'number'
+            ? String(this.level)
+            : (this.level ?? '1');
+    }
 }
 
 interface TextBlockProps {
