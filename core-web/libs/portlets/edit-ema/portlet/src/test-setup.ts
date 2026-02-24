@@ -10,6 +10,9 @@ setupZoneTestEnv({
 // Setup global mocks
 setupResizeObserverMock();
 
+// Polyfill structuredClone for Jest/Node environment (not available in Node < 17)
+globalThis.structuredClone ??= <T>(obj: T): T => JSON.parse(JSON.stringify(obj)) as T;
+
 // Workaround for the following issue:
 // https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
 const originalConsoleError = console.error;
