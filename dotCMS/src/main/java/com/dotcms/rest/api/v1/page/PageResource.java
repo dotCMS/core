@@ -50,6 +50,8 @@ import com.dotcms.ema.resolver.EMAConfigStrategy;
 import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityMapView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -134,9 +136,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 
 @Path("/v1/page")
-@Tag(name = "Page", 
-        description = "Endpoints that operate on pages",
-        externalDocs = @ExternalDocumentation(description = "Additional Page API information", 
+@Tag(name = "Page",
+        description = "Page rendering, layout management, and content operations",
+        externalDocs = @ExternalDocumentation(description = "Additional Page API information",
                                                 url = "https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas"))
 
 public class PageResource {
@@ -220,17 +222,40 @@ public class PageResource {
      * @throws DotSecurityException The currently logged-in user does not have the necessary
      *                              permissions to call this action.
      */
+    @Operation(
+            operationId = "getPageJsonByUri",
+            summary = "Get page metadata as JSON by URI",
+            description = "Returns the metadata (the objects that make up an HTML Page) in JSON format based on the "
+                    + "specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual page metadata, "
+                    + "while a 301/302 redirect returns an empty page JSON with the Vanity URL properties. "
+                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page metadata retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/json/{uri: .*}")
     public Response loadJson(@Context final HttpServletRequest originalRequest,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)")
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @Parameter(description = "Persona identifier to render the page with personalization")
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @Parameter(description = "Language ID for the page content")
             @QueryParam("language_id") final String languageId,
+            @Parameter(description = "Device inode for responsive rendering dimensions")
             @QueryParam("device_inode") final String deviceInode,
+            @Parameter(description = "Time Machine date in ISO 8601 format to view page as it was at a specific point in time")
             @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
             ) throws DotDataException, DotSecurityException {
         Logger.debug(this, () -> String.format(
@@ -298,17 +323,42 @@ public class PageResource {
      * @throws DotSecurityException The currently logged-in user does not have the necessary
      *                              permissions to call this action.
      */
+    @Operation(
+            operationId = "getPageRenderByUri",
+            summary = "Get rendered page metadata by URI",
+            description = "Returns the metadata of an HTML Page including its rendered HTML code and container content "
+                    + "in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns "
+                    + "the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. "
+                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format). "
+                    + "For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when "
+                    + "the rendered attribute is not required."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Rendered page retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/render/{uri: .*}")
     public Response render(@Context final HttpServletRequest originalRequest,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML Page or Vanity URL (e.g., 'about-us/locations/index')", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Page mode for rendering (e.g., EDIT_MODE, PREVIEW_MODE, LIVE)")
             @QueryParam(WebKeys.PAGE_MODE_PARAMETER) final String modeParam,
+            @Parameter(description = "Persona identifier to render the page with personalization")
             @QueryParam(WebKeys.CMS_PERSONA_PARAMETER) final String personaId,
+            @Parameter(description = "Language ID for the page content")
             @QueryParam(WebKeys.LANGUAGE_ID_PARAMETER) final String languageId,
+            @Parameter(description = "Device inode for responsive rendering dimensions")
             @QueryParam("device_inode") final String deviceInode,
+            @Parameter(description = "Time Machine date in ISO 8601 format to view page as it was at a specific point in time")
             @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
     ) throws DotSecurityException, DotDataException {
         if (Boolean.TRUE.equals(HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false))
@@ -735,6 +785,14 @@ public class PageResource {
      *                          their respective Contentlets.
      * @return The {@link Response} entity.
      */
+    @Operation(
+            operationId = "addContentToPage",
+            summary = "Add or update content in page containers",
+            description = "Updates all the contents in an HTML Page. Used to add or remove Contentlets from Containers. "
+                    + "Takes a JSON array of container entries, each specifying a container ID, a unique UUID, and the "
+                    + "list of contentlet identifiers. Duplicate container entries are merged automatically. "
+                    + "Note: 'sortOrder' is required for each container entry but may not be present in the auto-generated schema."
+    )
     @POST
     @JSONP
     @NoCache
@@ -773,8 +831,13 @@ public class PageResource {
     })
     public final Response addContent(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Identifier of the HTML Page to update", required = true)
             @PathParam("pageId") final String pageId,
+            @Parameter(description = "Variant name for A/B testing (defaults to DEFAULT)")
             @QueryParam("variantName") final String variantNameParam,
+            @RequestBody(description = "Container entries with contentlet identifiers",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PageContainerForm.class)))
             final PageContainerForm pageContainerForm)
             throws DotSecurityException, DotDataException {
 
@@ -887,13 +950,28 @@ public class PageResource {
      * @param modeStr
      * @return
      */
+    @Operation(
+            operationId = "renderPageHtmlOnly",
+            summary = "Render page as raw HTML",
+            description = "Returns the rendered HTML content of a page without the JSON metadata wrapper. "
+                    + "Useful for retrieving the raw HTML output of a page for embedding or server-side rendering."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page HTML rendered successfully",
+                    content = @Content(mediaType = "application/html",
+                            schema = @Schema(implementation = String.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @NoCache
     @GET
     @Produces({"application/html", "application/javascript"})
     @Path("/renderHTML/{uri: .*}")
     public Response renderHTMLOnly(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to the HTML Page to render", required = true)
             @PathParam("uri") final String uri,
+            @Parameter(description = "Page mode for rendering (default: LIVE_ADMIN)")
             @QueryParam("mode") @DefaultValue("LIVE_ADMIN") final String modeStr)
             throws DotDataException, DotSecurityException {
 
@@ -942,6 +1020,20 @@ public class PageResource {
      * @throws DotDataException throw if a DotDataException occur
      * @throws DotSecurityException throw if the user don't have the right permissions
      */
+    @Operation(
+            operationId = "searchPages",
+            summary = "Search pages by path",
+            description = "Returns all pages whose path matches the given filter. If the path starts with '//', "
+                    + "the segment after the double-slash is treated as the site name for filtering. "
+                    + "Results can be filtered to live versions only and/or pages from live sites only."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Pages matching the search criteria",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions")
+    })
     @NoCache
     @GET
     @Produces({"application/html", "application/javascript"})
@@ -949,8 +1041,11 @@ public class PageResource {
     public Response searchPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Path to filter pages by; prefix with '//' to include site name (e.g., '//demo.dotcms.com/about')", required = true)
             @QueryParam("path") final String path,
+            @Parameter(description = "If true, return only live versions; if false, return both live and working versions")
             @QueryParam("live") final Boolean liveQueryParam,
+            @Parameter(description = "If true, filter results to only include pages from live sites")
             @QueryParam("onlyLiveSites") final boolean onlyLiveSites)
             throws DotDataException, DotSecurityException {
 
@@ -989,6 +1084,20 @@ public class PageResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "getPageRenderVersions",
+            summary = "Get live and preview render versions of a page",
+            description = "Returns the page render for both the live and preview (working) versions. "
+                    + "Includes a boolean 'diff' flag indicating whether the live and preview versions differ."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page render versions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/render/versions")
     @JSONP
@@ -996,7 +1105,9 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getHtmlVersionsPage (@Context final HttpServletRequest  request,
                                    @Context final HttpServletResponse response,
+                                   @Parameter(description = "Identifier of the HTML Page", required = true)
                                    @PathParam("pageId")  final String  pageId,
+                                   @Parameter(description = "Language ID (defaults to the system default language)")
                                    @QueryParam("langId") final String languageId) throws DotSecurityException, DotDataException, ExecutionException, InterruptedException {
 
         final User user = this.webResource.init(request, response, true).getUser();
@@ -1017,6 +1128,21 @@ public class PageResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "getPageContentTree",
+            summary = "Get the multi-tree content structure of a page",
+            description = "Returns the multi-tree data associated with a page, which represents the mapping "
+                    + "between containers, contentlets, and their positions on the page. Each entry includes "
+                    + "the page ID, container ID, contentlet ID, relation type, tree order, personalization, and variant ID."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/content/tree")
     @JSONP
@@ -1024,6 +1150,7 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public ResponseEntityView<List<MulitreeView>> getContentTree (@Context final HttpServletRequest  request,
                                                    @Context final HttpServletResponse response,
+                                                   @Parameter(description = "Identifier of the HTML Page", required = true)
                                                    @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
@@ -1051,6 +1178,21 @@ public class PageResource {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "getPersonalizedPersonasOnPage",
+            summary = "Get personalized personas for a page",
+            description = "Returns a paginated list of personas with a flag indicating whether each persona has been "
+                    + "customized (personalized) on the specified page. Useful for identifying which personas have "
+                    + "page-specific content variations."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Personas with personalization flags retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/personas")
     @JSONP
@@ -1058,13 +1200,21 @@ public class PageResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response getPersonalizedPersonasOnPage (@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Filter text to narrow persona results")
             @QueryParam(PaginationUtil.FILTER)   final String filter,
+            @Parameter(description = "Page number for pagination (zero-based)")
             @QueryParam(PaginationUtil.PAGE)     final int page,
+            @Parameter(description = "Number of results per page")
             @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by (default: title)")
             @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+            @Parameter(description = "Sort direction: ASC or DESC (default: ASC)")
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+            @Parameter(description = "Host identifier to scope persona lookup")
             @QueryParam("hostId") final String  hostId,
+            @Parameter(description = "Identifier of the HTML Page", required = true)
             @PathParam("pageId")  final String  pageId,
+            @Parameter(description = "Whether to respect front-end roles for permission checks")
             @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
         final User user = this.webResource.init(request, response, true).getUser();
@@ -1199,6 +1349,21 @@ public class PageResource {
      * @param copyContentletForm {@link CopyContentletForm}
      * @return Contentlet Map
      */
+    @Operation(
+            operationId = "copyPageContent",
+            summary = "Copy a contentlet on a page",
+            description = "Creates a copy of a contentlet that is part of the multi-tree on a page. "
+                    + "The contentlet must exist and be associated with the page specified in the form. "
+                    + "Returns the copied contentlet as a map of properties."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contentlet copied successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request - form is required or contentlet not found"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions")
+    })
     @PUT
     @JSONP
     @NoCache
@@ -1208,6 +1373,9 @@ public class PageResource {
     public final  ResponseEntityView<Map<String, Object>> copyContent(
                                       @Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
+                                      @RequestBody(description = "Form containing the contentlet and page information for the copy operation",
+                                              required = true,
+                                              content = @Content(schema = @Schema(implementation = CopyContentletForm.class)))
                                       final CopyContentletForm copyContentletForm)
             throws DotSecurityException, DotDataException {
 
@@ -1237,6 +1405,21 @@ public class PageResource {
      * @param copyContentletForm {@link CopyContentletForm}
      * @return Contentlet Map
      */
+    @Operation(
+            operationId = "deepCopyPage",
+            summary = "Deep copy a page and all its content",
+            description = "Creates a deep copy of a page: (1) creates a copy of the page itself, and "
+                    + "(2) for each contentlet in the multi-tree related to the page, creates a copy. "
+                    + "Returns the copied page as a map of properties."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page deep copied successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @PUT
     @JSONP
     @NoCache
@@ -1246,6 +1429,7 @@ public class PageResource {
     public final  ResponseEntityView<Map<String, Object>> deepCopyPage(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Identifier of the HTML Page to deep copy", required = true)
             @PathParam("pageId") final String pageId)
             throws DotSecurityException, DotDataException {
 
@@ -1279,16 +1463,34 @@ public class PageResource {
      * @param direction {@link String} ASC
      * @return All the content types that match
      */
+    @Operation(
+            operationId = "getPageContentTypes",
+            summary = "Get content types associated with pages",
+            description = "Returns all content types associated with pages, including both the base HTMLPAGE type and "
+                    + "all content types with URL map patterns. Results are paginated and can be filtered and sorted."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Page content types retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have required permissions")
+    })
     @NoCache
     @GET
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/types")
     public Response getPageTypes(@Context final HttpServletRequest originalRequest,
                              @Context final HttpServletResponse response,
+                             @Parameter(description = "Filter text for content type names")
                              @DefaultValue("") @QueryParam(PaginationUtil.FILTER)   final String filter,
+                             @Parameter(description = "Page number for pagination (zero-based)")
                              @QueryParam(PaginationUtil.PAGE)     final int page,
+                             @Parameter(description = "Number of results per page")
                              @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                             @Parameter(description = "Field to order results by (default: UPPER(name))")
                              @DefaultValue("UPPER(name)") @QueryParam(PaginationUtil.ORDER_BY) final String orderbyParam,
+                             @Parameter(description = "Sort direction: ASC or DESC (default: ASC)")
                              @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction) throws DotSecurityException, DotDataException {
 
         final InitDataObject auth = webResource.init(originalRequest, response, true);
@@ -1323,12 +1525,28 @@ public class PageResource {
      * @param path {@link String} page path
      * @return All the content types that match
      */
+    @Operation(
+            operationId = "checkPagePermission",
+            summary = "Check user permission on a page",
+            description = "Returns true if the page exists and the current user has the specified permission type over it. "
+                    + "Supports both regular HTML pages and URL-mapped content. The permission type defaults to READ if not specified."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Permission check result",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBooleanView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found at the specified path")
+    })
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/_check-permission")
     public ResponseEntityBooleanView checkPagePermission(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
+                                                         @RequestBody(description = "Form with page path, host ID, language ID, and permission type to check",
+                                                                 required = true,
+                                                                 content = @Content(schema = @Schema(implementation = PageCheckPermissionForm.class)))
                                                          final PageCheckPermissionForm pageCheckPermissionForm) throws DotSecurityException, DotDataException {
 
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
@@ -1381,12 +1599,29 @@ public class PageResource {
      * @param path {@link String} page path
      * @return All the content types that match
      */
+    @Operation(
+            operationId = "findAvailablePageActions",
+            summary = "Find available workflow actions for a page",
+            description = "Returns the page data along with the list of available workflow actions for the specified page path. "
+                    + "Supports both regular HTML pages and URL-mapped content. The response includes the page contentlet "
+                    + "properties and the workflow actions that the current user can perform."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Available workflow actions retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityPageWorkflowActionsView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found at the specified path and language")
+    })
     @NoCache
     @POST
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/actions")
     public ResponseEntityPageWorkflowActionsView findAvailableActions(@Context final HttpServletRequest request,
                                                          @Context final HttpServletResponse response,
+                                                         @RequestBody(description = "Form with page path, host ID, language ID, and render mode for action lookup",
+                                                                 required = true,
+                                                                 content = @Content(schema = @Schema(implementation = FindAvailableActionsForm.class)))
                                                          final FindAvailableActionsForm findAvailableActionsForm) throws DotSecurityException, DotDataException {
 
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
@@ -1454,6 +1689,21 @@ public class PageResource {
      * more generic REST Endpoint
      * {@link com.dotcms.rest.api.v1.content.ContentResource#getExistingLanguagesForContent(String, User)} instead.
      */
+    @Operation(
+            operationId = "checkPageLanguageVersions",
+            summary = "Check page availability by language (deprecated)",
+            description = "Returns all available languages in dotCMS, each with a flag indicating whether the page "
+                    + "is available in that language. This endpoint is deprecated -- use the more generic "
+                    + "ContentResource.getExistingLanguagesForContent endpoint instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Language availability list retrieved successfully (deprecated endpoint)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "Page not found")
+    })
     @GET
     @Path("/{pageId}/languages")
     @JSONP
@@ -1462,6 +1712,7 @@ public class PageResource {
     @Deprecated(since = "Nov 7th, 24", forRemoval = true)
     public Response checkPageLanguageVersions(@Context final HttpServletRequest request,
                                               @Context final HttpServletResponse response,
+                                              @Parameter(description = "Identifier of the HTML Page to check language versions for", required = true)
                                               @PathParam("pageId") final String pageId) throws DotDataException {
         final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
                 .rejectWhenNoUser(true)

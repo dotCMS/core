@@ -1,6 +1,9 @@
 package com.dotcms.rest;
 
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -10,6 +13,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.util.JsonUtil;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -27,10 +31,13 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
+import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
+import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -55,6 +62,13 @@ import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -87,6 +101,9 @@ import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,11 +130,13 @@ import static com.dotmarketing.util.NumberUtil.toLong;
  * @since May 25th, 2012
  */
 @Path("/content")
-@Tag(name = "Content Delivery")
+@Tag(name = "Content Delivery", description = "Content retrieval and manipulation endpoints")
 public class ContentResource {
 
     // set this only from an environmental variable so it cannot be overridden in our Config class
     private final boolean USE_XSTREAM_FOR_DESERIALIZATION = System.getenv("USE_XSTREAM_FOR_DESERIALIZATION")!=null && "true".equals(System.getenv("USE_XSTREAM_FOR_DESERIALIZATION"));
+
+    public static final String[] ignoreFields = {"disabledWYSIWYG", "lowIndexPriority"};
 
     private static final String RELATIONSHIP_KEY = "__##relationships##__";
     private static final String IP_ADDRESS = "ipAddress";
@@ -155,12 +174,38 @@ public class ContentResource {
      *
      * @return json array of objects. each object with inode and identifier
      */
+    @Operation(
+            operationId = "searchContent",
+            summary = "Search content using a Lucene query",
+            description = "Performs a content search using a Lucene query passed in the request body " +
+                    "as a JSON object. Returns matching contentlets along with search performance " +
+                    "metrics (query time, content retrieval time). Supports pagination, sorting, " +
+                    "relationship depth, and language filtering."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search results returned successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid search parameters or query",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/_search")
     @Produces(MediaType.APPLICATION_JSON)
     public Response search(@Context HttpServletRequest request,
                            @Context final HttpServletResponse response,
+                           @Parameter(description = "If true, stores the query in the current session for later use")
                            @QueryParam("rememberQuery") @DefaultValue("false") final boolean rememberQuery,
+                           @RequestBody(
+                                   description = "Search parameters including query, sort, limit, offset, and depth",
+                                   required = true,
+                                   content = @Content(mediaType = "application/json",
+                                           schema = @Schema(implementation = SearchForm.class))
+                           )
                            final SearchForm searchForm) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = this.webResource.init
@@ -178,6 +223,13 @@ public class ContentResource {
         final String userToPullID       = searchForm.getUserId();
         final boolean allCategoriesInfo = searchForm.isAllCategoriesInfo();
         User   userForPull              = user;
+        List<Contentlet> contentlets;
+        long resultsSize                = 0;
+        long startAPISearchPull         = 0;
+        long afterAPISearchPull         = 0;
+        long startAPIPull               = 0;
+        long afterAPIPull               = 0;
+        JSONObject resultJson           = new JSONObject();
         final String tmDate = (String) request.getSession().getAttribute("tm_date");
 
         if (depth > 3) {
@@ -191,15 +243,32 @@ public class ContentResource {
             userForPull = APILocator.getUserAPI().loadUserById(userToPullID, APILocator.systemUser(),true);
         }
 
+        if (UtilMethods.isSet(query)) {
             if (rememberQuery) {
                 request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
             }
-        String realQuery = query.contains("variant:") ? query : query + " +variant:default";
-        realQuery = processQuery(realQuery);
-        final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
-                userForPull, pageMode, offset, limit, sort, tmDate, render, user, depth,
-                language, allCategoriesInfo);
-        return Response.ok(new ResponseEntityView<>(searchView)).build();
+            final String realQuery = query.contains("variant:") ? query : query + " +variant:default";
+
+            startAPISearchPull = Calendar.getInstance().getTimeInMillis();
+            resultsSize        = APILocator.getContentletAPI().indexCount(realQuery, userForPull, pageMode.respectAnonPerms);
+            afterAPISearchPull = Calendar.getInstance().getTimeInMillis();
+
+            startAPIPull       = Calendar.getInstance().getTimeInMillis();
+            contentlets        = ContentUtils.pull(processQuery(realQuery), offset, limit, sort, userForPull, tmDate, pageMode.respectAnonPerms);
+            resultJson = getJSONObject(contentlets, request, response, render, user, depth,
+                    pageMode.respectAnonPerms, language, pageMode.showLive, allCategoriesInfo);
+
+            afterAPIPull       = Calendar.getInstance().getTimeInMillis();
+
+            if(contentlets.isEmpty() && offset <= resultsSize ){
+                resultsSize = 0;
+            }
+        }
+
+        final long queryTook     = afterAPISearchPull-startAPISearchPull;
+        final long contentTook   = afterAPIPull-startAPIPull;
+        return Response.ok(new ResponseEntityView<>(
+                new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson)))).build();
     }
 
     /**
@@ -213,13 +282,34 @@ public class ContentResource {
      * @param offset how many results skip
      * @return json array of objects. each object with inode and identifier
      */
+    @Operation(
+            operationId = "indexSearchContent",
+            summary = "Search content index by Lucene query",
+            description = "Performs a search against the content index using the specified Lucene " +
+                    "query and returns an array of JSON objects, each containing the inode and " +
+                    "identifier of matching content. Parameters are passed as path segments."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Index search results returned successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/indexsearch/{query}/sortby/{sortby}/limit/{limit}/offset/{offset}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response indexSearch(@Context HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Lucene query string to search for", required = true)
             @PathParam("query") String query,
-            @PathParam("sortby") String sortBy, @PathParam("limit") int limit,
+            @Parameter(description = "Field name to sort results by", required = true)
+            @PathParam("sortby") String sortBy,
+            @Parameter(description = "Maximum number of results to return", required = true)
+            @PathParam("limit") int limit,
+            @Parameter(description = "Number of results to skip for pagination", required = true)
             @PathParam("offset") int offset,
             @PathParam("type") String type,
             @PathParam("callback") String callback)
@@ -260,11 +350,27 @@ public class ContentResource {
      * @param query lucene query to count on
      * @return a string with the count
      */
+    @Operation(
+            operationId = "countContentByIndex",
+            summary = "Count content matching a Lucene query",
+            description = "Returns the count of content items matching the specified Lucene query " +
+                    "by calling the content index count API. The result is returned as plain text."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content count returned successfully",
+                    content = @Content(mediaType = "text/plain",
+                            schema = @Schema(type = "string", example = "42"))),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/indexcount/{query}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response indexCount(@Context HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Lucene query string to count matching content", required = true)
             @PathParam("query") String query,
             @PathParam("type") String type,
             @PathParam("callback") String callback) throws DotDataException {
@@ -286,21 +392,33 @@ public class ContentResource {
     }
 
 
-    /**
-     * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#lockContent(HttpServletRequest, HttpServletResponse, String, String)}
-     * @param request
-     * @param response
-     * @param params
-     * @return
-     * @throws DotDataException
-     * @throws JSONException
-     */
-    @Deprecated
+    @Operation(
+            operationId = "lockContent",
+            summary = "Lock a contentlet",
+            description = "Locks a contentlet to prevent concurrent editing. The contentlet can be " +
+                    "identified by inode or identifier. Parameters are passed as semicolon-delimited " +
+                    "key:value pairs in the URL path, e.g., " +
+                    "/api/content/lock/id:{identifier}/language:{langId}."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contentlet locked successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to lock content",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Contentlet not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/lock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response lockContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited key:value pairs such as " +
+                    "id:{identifier}, inode:{inode}, language:{langId}, callback:{callbackFn}")
+            @PathParam("params") String params)
             throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, request, response, false, null);
@@ -367,20 +485,32 @@ public class ContentResource {
     }
 
 
-    /**
-     * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#canLockContent(HttpServletRequest, HttpServletResponse, String, String)}
-     * @param request
-     * @param response
-     * @param params
-     * @return
-     * @throws DotDataException
-     * @throws JSONException
-     */
-    @Deprecated
+    @Operation(
+            operationId = "canLockContent",
+            summary = "Check if a contentlet can be locked",
+            description = "Checks whether the current user can lock a given contentlet. Returns " +
+                    "lock status information including whether the content is currently locked, " +
+                    "who locked it, and whether the requesting user can lock it. Parameters are " +
+                    "passed as semicolon-delimited key:value pairs in the URL path, e.g., " +
+                    "/api/content/canLock/id:{identifier}/language:{langId}."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lock status returned successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Contentlet not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/canLock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response canLockContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited key:value pairs such as " +
+                    "id:{identifier}, inode:{inode}, language:{langId}, callback:{callbackFn}")
             @PathParam("params") String params)
             throws DotDataException, JSONException {
 
@@ -465,21 +595,33 @@ public class ContentResource {
         }
     }
 
-    /**
-     * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#unlockContent(HttpServletRequest, HttpServletResponse, String, String)}
-     * @param request
-     * @param response
-     * @param params
-     * @return
-     * @throws DotDataException
-     * @throws JSONException
-     */
-    @Deprecated
+    @Operation(
+            operationId = "unlockContent",
+            summary = "Unlock a contentlet",
+            description = "Unlocks a previously locked contentlet, allowing other users to edit it. " +
+                    "The contentlet can be identified by inode or identifier. Parameters are passed " +
+                    "as semicolon-delimited key:value pairs in the URL path, e.g., " +
+                    "/api/content/unlock/id:{identifier}/language:{langId}."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contentlet unlocked successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions to unlock content",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Contentlet not found",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/unlock/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response unlockContent(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited key:value pairs such as " +
+                    "id:{identifier}, inode:{inode}, language:{langId}, callback:{callbackFn}")
+            @PathParam("params") String params)
             throws DotDataException, JSONException {
 
         InitDataObject initData = webResource.init(params, request, response, false, null);
@@ -557,10 +699,41 @@ public class ContentResource {
      *         3 --> The contentlet object will contain the related contentlets, which in turn will contain a list of their related contentlets
      *         null --> Relationships will not be sent in the response
      */
+    @Operation(
+            operationId = "getContent",
+            summary = "Retrieve content by query, identifier, or inode",
+            description = "Retrieves contentlets matching the specified criteria. Content can be " +
+                    "fetched by Lucene query, identifier, inode, or related content. Parameters " +
+                    "are passed as semicolon-delimited key:value pairs in the URL path, e.g., " +
+                    "/api/content/type:Blog/orderBy:modDate/limit:10. Supported parameters " +
+                    "include: id, inode, query, type (json/xml), orderBy, limit, offset, " +
+                    "language, live, render, depth, related, allCategoriesInfo, and " +
+                    "respectFrontEndRoles."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request parameters or depth value",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Content not found",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "Internal server error during content retrieval",
+                    content = @Content(mediaType = "application/json"))
+    })
     @GET
     @Path("/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getContent(@Context HttpServletRequest request, @Context final HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited key:value pairs such as " +
+                    "id:{identifier}, inode:{inode}, query:{luceneQuery}, type:{json|xml}, " +
+                    "orderBy:{field}, limit:{n}, offset:{n}, language:{langId}, live:{true|false}, " +
+                    "render:{true|false}, depth:{0-3}, related:{ContentType.Field:id}, " +
+                    "allCategoriesInfo:{true|false}")
             @PathParam("params") String params) {
         final InitDataObject initData = this.webResource.init
                 (params, request, response, false, null);
@@ -568,10 +741,7 @@ public class ContentResource {
         final ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
-        //Try the render url parameter first, then the query parameter
-        final String render = UtilMethods.isSet(paramsMap.get(RESTParams.RENDER.getValue())) ?
-                paramsMap.get(RESTParams.RENDER.getValue()) :
-                request.getParameter(RESTParams.RENDER.getValue());
+        final String render = paramsMap.get(RESTParams.RENDER.getValue());
         final String query = paramsMap.get(RESTParams.QUERY.getValue());
         final String related = paramsMap.get(RESTParams.RELATED.getValue());
         final String id = paramsMap.get(RESTParams.ID.getValue());
@@ -590,8 +760,6 @@ public class ContentResource {
 
         final String depthParam = paramsMap.get(RESTParams.DEPTH.getValue());
         final int depth = toInt(depthParam, () -> -1);
-
-        request.setAttribute(RESTParams.DEPTH.toString(), String.valueOf(depth));
 
         if ((depth < 0 || depth > 3) && depthParam != null){
             final String errorMsg =
@@ -614,9 +782,7 @@ public class ContentResource {
         Optional<Status> status = Optional.empty();
         String type = paramsMap.get(RESTParams.TYPE.getValue());
         String orderBy = paramsMap.get(RESTParams.ORDERBY.getValue());
-        final String tmDate = (request.getSession(false) !=null && request.getSession().getAttribute("tm_date") !=null)
-                ? (String)  request.getSession().getAttribute("tm_date")
-                : null;
+        final String tmDate = (String) request.getSession().getAttribute("tm_date");
         type = UtilMethods.isSet(type) ? type : "json";
         final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
@@ -832,9 +998,8 @@ public class ContentResource {
         final Map<String, Object> m = new HashMap<>();
         final ContentType type = contentlet.getContentType();
 
-        final boolean doRender = (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render));
-        //Render code
-        m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender));
+        m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo));
+
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
             m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
@@ -844,7 +1009,7 @@ public class ContentResource {
             m.put(HTMLPageAssetAPI.URL_FIELD, this.contentHelper.getUrl(contentlet));
         }
 
-        final Set<String> jsonFields = this.contentHelper.getJSONFields(type);
+        final Set<String> jsonFields = getJSONFields(type);
         for (String key : m.keySet()) {
             if (jsonFields.contains(key)) {
                 m.put(key, contentlet.getKeyValueProperty(key));
@@ -1078,9 +1243,441 @@ public class ContentResource {
             final HttpServletResponse response, final String render, final User user,
             final int depth, final boolean respectFrontendRoles, final long language,
             final boolean live, final boolean allCategoriesInfo){
-        final JSONObject json = this.contentHelper.getJSONObject(cons, request, response, render, user,
+        final JSONObject json = this.getJSONObject(cons, request, response, render, user,
                 depth, respectFrontendRoles, language, live, allCategoriesInfo);
         return json.toString();
+    }
+
+    /**
+     * Creates a JSON Object off of a list of Contentlets. Their representation will be set to the {@code contentlets}
+     * attribute in the JSON response. In case dotCMS cannot transform a piece of Content into a valid JSON Object, it
+     * will just not be included in the result object.
+     *
+     * @param contentletList       The list of {@link Contentlet} objects that will be transformed into JSON.
+     * @param request              The current {@link HttpServletRequest} object.
+     * @param response             The current {@link HttpServletResponse} object.
+     * @param render               If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user                 The {@link User} performing this action.
+     * @param depth                The required depth for related Contentlets, in case they're required.
+     * @param respectFrontendRoles If front-end Roles for the specified User must be validated, set this to {@code
+     *                             true}.
+     * @param language             The Language ID for the related Contentlets -- required only if the {@code depth}
+     *                             parameter is specified.
+     * @param live                 If the live version of the specified Contentlets must be retrieved, set this to
+     *                             {@code true}.
+     * @param allCategoriesInfo    If information about Categories must be included, set this to {@code true}.
+     *
+     * @return The JSON representation as {@link JSONArray} of the specified Contentlets.
+     *
+     * @throws IOException      An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    private JSONObject getJSONObject(final List<Contentlet> contentletList, final HttpServletRequest request,
+                           final HttpServletResponse response, final String render, final User user,
+                           final int depth, final boolean respectFrontendRoles, final long language,
+                           final boolean live, final boolean allCategoriesInfo){
+        final JSONObject json = new JSONObject();
+        final JSONArray jsonContentlets = new JSONArray();
+
+        for (final Contentlet contentlet : contentletList) {
+            try {
+                final JSONObject contentAsJson = contentletToJSON(contentlet, request, response, render, user, allCategoriesInfo);
+                jsonContentlets.put(contentAsJson);
+                //we need to add relationships fields
+                if (depth != -1){
+                    addRelationshipsToJSON(request, response, render, user, depth,
+                            respectFrontendRoles, contentlet, contentAsJson, null, language, live, allCategoriesInfo);
+                }
+            } catch (final Exception e) {
+                final String errorMsg = String.format("An error occurred when converting Contentlet '%s' into JSON: " +
+                                                              "%s", contentlet.getIdentifier(), e.getMessage());
+                Logger.warn(this.getClass(), errorMsg);
+                Logger.debug(this.getClass(), errorMsg, e);
+            }
+        }
+
+        try {
+            json.put("contentlets", jsonContentlets);
+        } catch (final JSONException e) {
+            final String errorMsg = String.format("An error occurred when adding Contentlets to the result JSON " +
+                                                          "object: %s", e.getMessage());
+            Logger.warn(this.getClass(), errorMsg);
+            Logger.debug(this.getClass(), errorMsg, e);
+        }
+
+        return json;
+    }
+
+    public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
+            final Contentlet contentlet,
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+            final boolean live, final boolean allCategoriesInfo)
+            throws DotDataException, JSONException, IOException ,  DotSecurityException {
+
+        return addRelationshipsToJSON(request, response, render, user, depth, respectFrontendRoles,
+                contentlet, jsonObject, addedRelationships, language, live, allCategoriesInfo, false);
+    }
+
+    /**
+     * Add relationships fields records to the json contentlet
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param contentlet
+     * @param jsonObject
+     * @param addedRelationships
+     * @param language
+     * @param live
+     * @param allCategoriesInfo {@code "true"} to return all fields for
+     * the categories associated to the content (key, name, description), {@code "false"}
+     * to return only categories names.
+     * @return
+     * @throws DotDataException
+     * @throws JSONException
+     * @throws IOException
+     * @throws DotSecurityException
+     */
+    public static JSONObject addRelationshipsToJSON(final HttpServletRequest request,
+            final HttpServletResponse response,
+            final String render, final User user, final int depth,
+            final boolean respectFrontendRoles,
+            final Contentlet contentlet,
+            final JSONObject jsonObject, Set<Relationship> addedRelationships, final long language,
+            final boolean live, final boolean allCategoriesInfo, final boolean hydrateRelated)
+            throws DotDataException, JSONException, IOException, DotSecurityException {
+
+        Relationship relationship;
+
+        final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
+
+        //filter relationships fields
+        final Map<String, com.dotcms.contenttype.model.field.Field> fields = contentlet.getContentType().fields()
+                .stream().filter(field -> field instanceof RelationshipField).collect(
+                        Collectors.toMap(field -> field.variable(), field -> field));
+
+        if (addedRelationships == null){
+            addedRelationships = new HashSet<>();
+        }
+
+        for (com.dotcms.contenttype.model.field.Field field:fields.values()) {
+
+            try {
+                relationship = relationshipAPI.getRelationshipFromField(field, user);
+            }catch(DotDataException | DotSecurityException e){
+                Logger.warn("Error getting relationship for field " + field, e.getMessage(), e);
+                continue;
+            }
+
+            if (addedRelationships.contains(relationship)){
+                continue;
+            }
+            if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+                addedRelationships.add(relationship);
+            }
+
+            final boolean isChildField = relationshipAPI.isChildField(relationship, field);
+
+            final ContentletRelationships contentletRelationships = new ContentletRelationships(
+                    contentlet);
+            ContentletRelationships.ContentletRelationshipRecords records = contentletRelationships.new ContentletRelationshipRecords(
+                    relationship, isChildField);
+
+            JSONArray jsonArray = addRelatedContentToJsonArray(request, response,
+                    render, user, depth, respectFrontendRoles,
+                    contentlet, addedRelationships, language, live, field, isChildField,
+                    allCategoriesInfo, hydrateRelated);
+
+            jsonObject.put(field.variable(), getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
+
+            //For self-related fields, the other side of the relationship should be added if the other-side field exists
+            if (relationshipAPI.sameParentAndChild(relationship)){
+                com.dotcms.contenttype.model.field.Field otherSideField = null;
+
+                if (relationship.getParentRelationName() != null
+                        && relationship.getChildRelationName() != null) {
+                    if (isChildField) {
+                        if (fields.containsKey(relationship.getParentRelationName())) {
+                            otherSideField = fields.get(relationship.getParentRelationName());
+                        }
+                    } else {
+                        if (fields.containsKey(relationship.getChildRelationName())) {
+                            otherSideField = fields.get(relationship.getChildRelationName());
+                        }
+                    }
+                }
+
+                if (otherSideField != null){
+
+                    records = contentletRelationships.new ContentletRelationshipRecords(
+                            relationship, !isChildField);
+                    jsonArray = addRelatedContentToJsonArray(request, response,
+                            render, user, depth, respectFrontendRoles,
+                            contentlet, addedRelationships, language, live,
+                            otherSideField, !isChildField, allCategoriesInfo, hydrateRelated);
+
+                    jsonObject.put(otherSideField.variable(),
+                            getJSONArrayValue(jsonArray, records.doesAllowOnlyOne()));
+                }
+            }
+
+        }
+
+        return jsonObject;
+    }
+
+    /**
+     *
+     * @param request
+     * @param response
+     * @param render
+     * @param user
+     * @param depth
+     * @param respectFrontendRoles
+     * @param contentlet
+     * @param addedRelationships
+     * @param language
+     * @param live
+     * @param field
+     * @param isParent
+     * @param allCategoriesInfo
+     * @return
+     * @throws JSONException
+     * @throws IOException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    private static JSONArray addRelatedContentToJsonArray(HttpServletRequest request,
+            HttpServletResponse response, String render, User user, int depth,
+            boolean respectFrontendRoles, Contentlet contentlet,
+            Set<Relationship> addedRelationships, long language, boolean live,
+            com.dotcms.contenttype.model.field.Field field, final boolean isParent,
+            final boolean allCategoriesInfo, final boolean hydrateRelated)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
+
+
+        final JSONArray jsonArray = new JSONArray();
+
+        for (Contentlet relatedContent : contentlet.getRelated(field.variable(), user, respectFrontendRoles, isParent, language, live)) {
+            switch (depth) {
+                //returns a list of identifiers
+                case 0:
+                    jsonArray.put(relatedContent.getIdentifier());
+                    break;
+
+                //returns a list of related content objects
+                case 1:
+                    jsonArray
+                            .put(contentletToJSON(relatedContent, request, response,
+                                    render, user, allCategoriesInfo, hydrateRelated));
+                    break;
+
+                //returns a list of related content identifiers for each of the related content
+                case 2:
+                    jsonArray.put(addRelationshipsToJSON(request, response, render, user, 0,
+                            respectFrontendRoles, relatedContent,
+                            contentletToJSON(relatedContent, request, response,
+                                    render, user, allCategoriesInfo, hydrateRelated),
+                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo, hydrateRelated));
+                    break;
+
+                //returns a list of hydrated related content for each of the related content
+                case 3:
+                    jsonArray.put(addRelationshipsToJSON(request, response, render, user, 1,
+                            respectFrontendRoles, relatedContent,
+                            contentletToJSON(relatedContent, request, response,
+                                    render, user, allCategoriesInfo, hydrateRelated),
+                            new HashSet<>(addedRelationships), language, live, allCategoriesInfo, hydrateRelated));
+                    break;
+            }
+
+        }
+
+        return jsonArray;
+
+    }
+
+    /**
+     * Returns a jsonArray of related contentlets if depth = 2. If depth = 1 returns the related
+     * object, otherwise it will return a comma-separated list of identifiers
+     * @param jsonArray
+     * @return
+     * @throws JSONException
+     */
+    private static Object getJSONArrayValue(final JSONArray jsonArray, final boolean allowOnlyOne)
+            throws JSONException {
+        if (allowOnlyOne && jsonArray.length() > 0) {
+            return jsonArray.get(0);
+        } else {
+            return jsonArray;
+        }
+    }
+
+    public static Set<String> getJSONFields(ContentType type)
+            throws DotDataException, DotSecurityException {
+        Set<String> jsonFields = new HashSet<>();
+        List<Field> fields = new LegacyFieldTransformer(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).
+                        find(type.inode()).fields()).asOldFieldList();
+        for (Field f : fields) {
+            if (f.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())
+                    || f.getFieldType().equals(FieldType.JSON_FIELD.toString()) ) {
+                jsonFields.add(f.getVelocityVarName());
+            }
+        }
+
+        return jsonFields;
+    }
+
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param con               The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
+    public static JSONObject contentletToJSON(final Contentlet con, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user, final boolean allCategoriesInfo)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
+        return contentletToJSON(con, request, response, render, user, allCategoriesInfo, false);
+    }
+
+    /**
+     * Transforms the specified Contentlet object into its JSON representation.
+     *
+     * @param contentlet        The {@link Contentlet} object that will be transformed.
+     * @param request           The current {@link HttpServletRequest} instance.
+     * @param response          The current {@link HttpServletResponse} instance.
+     * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
+     * @param user              The {@link User} performing this action.
+     * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
+     * @param hydrateRelated
+     *
+     * @return The representation of the Contentlet as a {@link JSONObject}.
+     *
+     * @throws JSONException        An error occurred when generating the JSON object.
+     * @throws IOException          An error occurred when generating the printable Contentlet map.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The specified User does not have the required permissions to perform this action.
+     */
+    public static JSONObject contentletToJSON(Contentlet contentlet, final HttpServletRequest request,
+            final HttpServletResponse response, final String render, final User user,
+            final boolean allCategoriesInfo, final boolean hydrateRelated)
+            throws JSONException, IOException, DotDataException, DotSecurityException {
+        final JSONObject jsonObject = new JSONObject();
+        final ContentType type = contentlet.getContentType();
+
+        if(hydrateRelated) {
+            final DotContentletTransformer myTransformer = new DotTransformerBuilder()
+                    .hydratedContentMapTransformer().content(contentlet).build();
+            contentlet = myTransformer.hydrate().get(0);
+        }
+
+        final Map<String, Object> map = ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo);
+        final Set<String> jsonFields = getJSONFields(type);
+
+        for (final String key : map.keySet()) {
+            if (Arrays.binarySearch(ignoreFields, key) < 0) {
+                if (jsonFields.contains(key)) {
+                    Logger.debug(ContentResource.class,
+                            key + " is a json field: " + map.get(key).toString());
+                    jsonObject.put(key, new JSONObject(contentlet.getKeyValueProperty(key)));
+                } else if (isCategoryField(type, key) && map.get(key) instanceof Collection) {
+                    final Collection<?> categoryList = (Collection<?>) map.get(key);
+                    jsonObject.put(key, new JSONArray(categoryList.stream()
+                            .map(value -> new JSONObject((Map<?, ?>) value))
+                            .collect(Collectors.toList())));
+                }else if (isTagField(type, key) && map.get(key) instanceof Collection) {
+                        final Collection<?> tags = (Collection<?>) map.get(key);
+                        jsonObject.put(key, new JSONArray(tags));
+                        // this might be coming from transformers views, so let's try to make them JSONObjects
+                } else if (isStoryBlockField(type, key)) {
+                    final String fieldValue = String.class.cast(map.get(key));
+                    jsonObject.put(key, JsonUtil.isValidJSON(fieldValue) ? new JSONObject(fieldValue) : fieldValue);
+                } else if(hydrateRelated) {
+                    if(map.get(key) instanceof Map) {
+                        jsonObject.put(key, new JSONObject((Map) map.get(key)));
+                    } else {
+                        jsonObject.put(key, map.get(key));
+                    }
+                } else {
+                    jsonObject.put(key, map.get(key));
+                }
+            }
+        }
+
+        if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
+                .equalsIgnoreCase(render)) {
+            jsonObject.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+        }
+
+        if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
+            jsonObject.put(HTMLPageAssetAPI.URL_FIELD, ContentHelper.getInstance().getUrl(contentlet));
+        }
+
+        jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
+        jsonObject.put("contentTypeIcon", type.icon());
+        jsonObject.put("variant", contentlet.getVariantId());
+        return jsonObject;
+    }
+
+    private static boolean isCategoryField(final ContentType type, final String key) {
+        try {
+            Optional<com.dotcms.contenttype.model.field.Field> optionalField =
+                    type.fields().stream().filter(f -> UtilMethods.equal(key, f.variable())).findFirst();
+            if (optionalField.isPresent()) {
+                return optionalField.get() instanceof CategoryField;
+            }
+        } catch (Exception e) {
+            Logger.error(ContentResource.class, "Error getting field " + key, e);
+        }
+        return false;
+    }
+
+    private static boolean isTagField(final ContentType type, final String key) {
+        try {
+            Optional<com.dotcms.contenttype.model.field.Field> optionalField =
+                    type.fields().stream().filter(f -> UtilMethods.equal(key, f.variable())).findFirst();
+            if (optionalField.isPresent()) {
+                return optionalField.get() instanceof TagField;
+            }
+        } catch (Exception e) {
+            Logger.error(ContentResource.class, "Error getting field " + key, e);
+        }
+        return false;
+    }
+
+    /**
+     * Verifies if the specified field in a Content Type is of type {@link StoryBlockField}.
+     *
+     * @param type         The {@link ContentType} containing such a field.
+     * @param fieldVarName The Velocity Variable Name of the field that must be checked.
+     *
+     * @return If the field is of type {@link StoryBlockField}, returns {@code true}.
+     */
+    private static boolean isStoryBlockField(final ContentType type, final String fieldVarName) {
+        try {
+            final com.dotcms.contenttype.model.field.Field field = type.fieldMap().get(fieldVarName);
+            return field != null && field instanceof StoryBlockField;
+        } catch (final Exception e) {
+            Logger.error(ContentResource.class,
+                    String.format("Error checking StoryBlock type on field '%s': %s", fieldVarName, e.getMessage()), e);
+        }
+        return Boolean.FALSE;
     }
 
     public class MapEntryConverter implements Converter {
@@ -1161,6 +1758,26 @@ public class ContentResource {
      * @throws URISyntaxException
      * @throws DotDataException
      */
+    @Operation(
+            operationId = "createOrUpdateContentMultipartPut",
+            summary = "Create or update content via multipart PUT (deprecated)",
+            description = "Creates or updates a contentlet using multipart form data including " +
+                    "file uploads. This endpoint is deprecated -- use the Workflow Resource " +
+                    "fireActionDefaultMultipart endpoint instead. Parameters are passed as " +
+                    "semicolon-delimited key:value pairs in the URL path.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content created or updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or malformed JSON/XML in multipart",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @PUT
     @Path("/{params:.*}")
@@ -1168,7 +1785,16 @@ public class ContentResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPUT(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
-            FormDataMultiPart multipart, @PathParam("params") String params)
+            @RequestBody(
+                    description = "Multipart form data with file and optional JSON/XML metadata",
+                    required = true,
+                    content = @Content(mediaType = "multipart/form-data",
+                            schema = @Schema(implementation = FormDataMultiPart.class))
+            )
+            FormDataMultiPart multipart,
+            @Parameter(description = "Semicolon-delimited key:value pairs for content metadata " +
+                    "such as type, callback, and publish")
+            @PathParam("params") String params)
             throws URISyntaxException, DotDataException {
         return multipartPUTandPOST(request, response, multipart, params, "PUT");
     }
@@ -1185,6 +1811,26 @@ public class ContentResource {
      * @throws URISyntaxException
      * @throws DotDataException
      */
+    @Operation(
+            operationId = "createContentMultipartPost",
+            summary = "Create content via multipart POST (deprecated)",
+            description = "Creates a contentlet using multipart form data including file uploads. " +
+                    "This endpoint is deprecated -- use the Workflow Resource " +
+                    "fireActionDefaultMultipart endpoint instead. Parameters are passed as " +
+                    "semicolon-delimited key:value pairs in the URL path.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content created successfully",
+                    content = @Content(mediaType = "text/plain",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or malformed JSON/XML in multipart",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @POST
     @Path("/{params:.*}")
@@ -1192,7 +1838,16 @@ public class ContentResource {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response multipartPOST(@Context HttpServletRequest request,
             @Context HttpServletResponse response,
-            FormDataMultiPart multipart, @PathParam("params") String params)
+            @RequestBody(
+                    description = "Multipart form data with file and optional JSON/XML metadata",
+                    required = true,
+                    content = @Content(mediaType = "multipart/form-data",
+                            schema = @Schema(implementation = FormDataMultiPart.class))
+            )
+            FormDataMultiPart multipart,
+            @Parameter(description = "Semicolon-delimited key:value pairs for content metadata " +
+                    "such as type, callback, and publish")
+            @PathParam("params") String params)
             throws URISyntaxException, DotDataException {
         return multipartPUTandPOST(request, response, multipart, params, "POST");
     }
@@ -1379,6 +2034,26 @@ public class ContentResource {
      * @return
      * @throws URISyntaxException
      */
+    @Operation(
+            operationId = "createOrUpdateContentPut",
+            summary = "Create or update content via PUT (deprecated)",
+            description = "Creates or updates a contentlet using JSON, XML, or form-encoded data " +
+                    "in the request body. This endpoint is deprecated -- use the Workflow Resource " +
+                    "fireActionDefault endpoint instead. Parameters are passed as " +
+                    "semicolon-delimited key:value pairs in the URL path.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content created or updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body or malformed data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/{params:.*}")
     @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN})
@@ -1386,7 +2061,10 @@ public class ContentResource {
             MediaType.APPLICATION_XML})
     @Deprecated
     public Response singlePUT(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited key:value pairs for content metadata " +
+                    "such as type, callback, and publish")
+            @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "PUT");
     }
@@ -1402,6 +2080,26 @@ public class ContentResource {
      * @return
      * @throws URISyntaxException
      */
+    @Operation(
+            operationId = "createContentPost",
+            summary = "Create content via POST (deprecated)",
+            description = "Creates a contentlet using JSON, XML, or form-encoded data in the " +
+                    "request body. This endpoint is deprecated -- use the Workflow Resource " +
+                    "fireActionDefault endpoint instead. Parameters are passed as " +
+                    "semicolon-delimited key:value pairs in the URL path.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Content created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request body or malformed data",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions",
+                    content = @Content(mediaType = "application/json"))
+    })
     @Deprecated
     @POST
     @Path("/{params:.*}")
@@ -1409,7 +2107,10 @@ public class ContentResource {
     @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED,
             MediaType.APPLICATION_XML})
     public Response singlePOST(@Context HttpServletRequest request,
-            @Context HttpServletResponse response, @PathParam("params") String params)
+            @Context HttpServletResponse response,
+            @Parameter(description = "Semicolon-delimited key:value pairs for content metadata " +
+                    "such as type, callback, and publish")
+            @PathParam("params") String params)
             throws URISyntaxException {
         return singlePUTandPOST(request, response, params, "POST");
     }

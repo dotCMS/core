@@ -7,6 +7,7 @@ import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -58,7 +59,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
@@ -98,7 +98,7 @@ import org.glassfish.jersey.server.JSONP;
  *
  */
 @Path("/v1/containers")
-@Tag(name = "Containers", description = "Endpoints for managing Container objects and their content")
+@Tag(name = "Container", description = "Container management and rendering endpoints")
 public class ContainerResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -170,34 +170,42 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "getContainers",
-            summary = "Retrieves a paginated list of Containers",
-            description = "Returns a list of Container objects based on filtering and pagination parameters. " +
-                    "Containers are layout components that define how content is displayed on pages.",
-            tags = {"Containers"},
+            summary = "List containers with pagination",
+            description = "Returns a paginated list of containers. Results can be filtered by title, host, " +
+                    "content type, and whether to include system or archived containers. " +
+                    "URL syntax: api/v1/container?filter=string&page=number&per_page=number&orderby=field&direction=ASC|DESC&host=host-id&system=true|false",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Containers retrieved successfully",
+                    @ApiResponse(responseCode = "200", description = "Containers returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
     public final Response getContainers(@Context final HttpServletRequest httpRequest,
             @Context final HttpServletResponse  httpResponse,
-            @Parameter(description = "Filter containers by title pattern") @QueryParam(PaginationUtil.FILTER) final String filter,
-            @Parameter(description = "Page number for pagination (starting from 1)") @QueryParam(PaginationUtil.PAGE) final int page,
-            @Parameter(description = "Number of items per page") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-            @Parameter(description = "Field to order results by") @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-            @Parameter(description = "Sort direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
-            @Parameter(description = "Filter containers by host ID") @QueryParam(ContainerPaginator.HOST_PARAMETER_ID) final String hostId,
-            @Parameter(description = "Include system containers in results") @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME) final Boolean showSystemContainer,
-            @Parameter(description = "Include archived containers in results") @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME) final Boolean showArchiveContainer,
-            @Parameter(description = "Filter containers by content type ID or variable name") @QueryParam(ContainerPaginator.CONTENT_TYPE) final String contentTypeIdOrVar) {
+            @Parameter(description = "Filter string to match against container title")
+            @QueryParam(PaginationUtil.FILTER)   final String filter,
+            @Parameter(description = "Page number to return")
+            @QueryParam(PaginationUtil.PAGE)     final int page,
+            @Parameter(description = "Number of items per page")
+            @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "Field to order results by")
+            @DefaultValue("title") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction: ASC or DESC")
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+            @Parameter(description = "Host (site) identifier to filter by")
+            @QueryParam(ContainerPaginator.HOST_PARAMETER_ID)           final String hostId,
+            @Parameter(description = "Whether to include the System Container")
+            @QueryParam(ContainerPaginator.SYSTEM_PARAMETER_NAME)       final Boolean showSystemContainer,
+            @Parameter(description = "Whether to include archived containers")
+            @QueryParam(ContainerPaginator.ARCHIVE_PARAMETER_NAME)       final Boolean showArchiveContainer,
+            @Parameter(description = "Content type identifier or variable to filter by")
+            @QueryParam(ContainerPaginator.CONTENT_TYPE)   final String contentTypeIdOrVar) {
 
         final InitDataObject initData = webResource.init(null, httpRequest, httpResponse, true, null);
         final User user = initData.getUser();
@@ -254,12 +262,30 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/content/{contentletId}")
+    @Operation(
+            operationId = "getContainerContentHtml",
+            summary = "Render contentlet HTML within a container",
+            description = "Generates the rendered HTML for a specific contentlet inside a container. " +
+                    "Optionally accepts a pageInode to provide page context for the rendering.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Rendered HTML returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or contentlet not found")
+            }
+    )
     public final Response containerContent(@Context final HttpServletRequest req,
                                            @Context final HttpServletResponse res,
+                                           @Parameter(description = "Container identifier or path", required = true)
                                            @PathParam("containerId")  final String containerId,
+                                           @Parameter(description = "Contentlet identifier or shorty ID", required = true)
                                            @PathParam("contentletId") final String contentletId,
+                                           @Parameter(description = "Page inode to provide page context for rendering")
                                            @QueryParam("pageInode") final String pageInode)
             throws DotDataException {
 
@@ -312,12 +338,32 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/content/{contentletId}")
+    @Operation(
+            operationId = "getContainerContentHtmlByQueryParam",
+            summary = "Render contentlet HTML with container ID as query param",
+            description = "Same as GET /{containerId}/content/{contentletId} but accepts the container ID " +
+                    "as a query parameter. This is needed when the container ID is a file path " +
+                    "(FileAssetContainer) which cannot be used as a path parameter. " +
+                    "Example: /api/v1/containers/content/{contentletId}?containerId=/application/containers/large-column",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Rendered HTML returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or contentlet not found")
+            }
+    )
     public final Response containerContentByQueryParam(@Context final HttpServletRequest req,
                                            @Context final HttpServletResponse res,
+                                           @Parameter(description = "Container identifier or path (supports FileAssetContainer paths)")
                                            @QueryParam("containerId") final String containerId,
+                                           @Parameter(description = "Page inode to provide page context for rendering")
                                            @QueryParam("pageInode") final String pageInode,
+                                           @Parameter(description = "Contentlet identifier or shorty ID", required = true)
                                            @PathParam("contentletId") final String contentletId)
             throws DotDataException, DotSecurityException {
 
@@ -345,11 +391,30 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/form/{formId}")
+    @Operation(
+            operationId = "getContainerFormHtmlByQueryParam",
+            summary = "Render form HTML with container ID as query param",
+            description = "Same as GET /{containerId}/form/{formId} but accepts the container ID " +
+                    "as a query parameter. This is needed when the container ID is a file path " +
+                    "(FileAssetContainer) which cannot be used as a path parameter. " +
+                    "Example: /api/v1/containers/form/{formId}?containerId=/application/containers/large-column",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Rendered form HTML returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or form not found")
+            }
+    )
     public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
                                                        @Context final HttpServletResponse res,
+                                                       @Parameter(description = "Container identifier or path (supports FileAssetContainer paths)")
                                                        @QueryParam("containerId") final String containerId,
+                                                       @Parameter(description = "Form content type identifier", required = true)
                                                        @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
@@ -370,29 +435,29 @@ public class ContainerResource implements Serializable {
     @GET
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Path("/{containerId}/form/{formId}")
     @Operation(
-            operationId = "containerForm",
-            summary = "Renders a form within a container",
-            description = "Returns HTML content for a form rendered within the specified container. " +
-                    "This is used to display forms with container styling and layout.",
-            tags = {"Containers"},
+            operationId = "getContainerFormHtml",
+            summary = "Render form HTML within a container",
+            description = "Generates the rendered HTML for a form content type inside a specific container. " +
+                    "If the form content does not exist, a default form content is created.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Form rendered successfully",
+                    @ApiResponse(responseCode = "200", description = "Rendered form HTML and content returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid container or form ID"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container or form not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or form not found")
             }
     )
     public final Response containerForm(@Context final HttpServletRequest req,
                                         @Context final HttpServletResponse res,
-                                        @Parameter(description = "Container identifier (UUID or path)") @PathParam("containerId") final String containerId,
-                                        @Parameter(description = "Form identifier") @PathParam("formId") final String formId)
+                                        @Parameter(description = "Container identifier", required = true)
+                                        @PathParam("containerId") final String containerId,
+                                        @Parameter(description = "Form content type identifier", required = true)
+                                        @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = webResource.init(req, res, true);
@@ -553,27 +618,28 @@ public class ContainerResource implements Serializable {
     @Path("delete/{containerId}/content/{contentletId}/uid/{uid}")
     @Operation(
             operationId = "removeContentletFromContainer",
-            summary = "Removes content from a container",
-            description = "Removes a specific contentlet from a container at a particular position. " +
-                    "This affects the container's content layout and rendering.",
-            tags = {"Containers"},
+            summary = "Remove contentlet from container",
+            description = "Removes a contentlet from a container by deleting the MultiTree relationship " +
+                    "between them. Requires READ permission on the contentlet and EDIT permission on the container.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Content removed successfully",
+                    @ApiResponse(responseCode = "200", description = "Contentlet removed from container successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container, content, or UID not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or contentlet not found")
             }
     )
     public final Response removeContentletFromContainer(@Context final HttpServletRequest req,
-            @Context final HttpServletResponse res, 
-            @Parameter(description = "Container identifier") @PathParam("containerId") final String containerId,
-            @Parameter(description = "Contentlet identifier") @PathParam("contentletId") final String contentletId, 
-            @Parameter(description = "Order position of the content") @QueryParam("order") final long order,
-            @Parameter(description = "Unique identifier for the content instance") @PathParam("uid") final String uid) throws DotDataException,
+            @Context final HttpServletResponse res,
+            @Parameter(description = "Container identifier", required = true)
+            @PathParam("containerId") final String containerId,
+            @Parameter(description = "Contentlet identifier", required = true)
+            @PathParam("contentletId") final String contentletId,
+            @Parameter(description = "Order of the contentlet in the container")
+            @QueryParam("order") final long order,
+            @Parameter(description = "Unique ID for the container-contentlet relationship", required = true)
+            @PathParam("uid") final String uid) throws DotDataException,
             MethodInvocationException, ResourceNotFoundException, IOException, IllegalAccessException, InstantiationException,
             InvocationTargetException, NoSuchMethodException {
 
@@ -700,26 +766,21 @@ public class ContainerResource implements Serializable {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
-            operationId = "saveContainer",
-            summary = "Creates a new container",
-            description = "Creates and publishes a new container with the provided configuration. " +
-                    "The container will be saved as both working and live versions.",
-            tags = {"Containers"},
+            operationId = "createContainer",
+            summary = "Create a new container",
+            description = "Creates a new container and immediately publishes it. " +
+                    "The container is saved with the provided properties including code, content type structures, " +
+                    "pre/post loop code, and display settings.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Container created successfully",
+                    @ApiResponse(responseCode = "200", description = "Container created and published successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid container data"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks create permissions"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions")
             }
     )
     public final Response saveNew(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
-                                  @RequestBody(description = "Container configuration data including title, code, content type structures, and display settings",
-                                          required = true,
-                                          content = @Content(schema = @Schema(implementation = ContainerForm.class)))
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -796,26 +857,20 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "updateContainer",
-            summary = "Updates an existing container",
-            description = "Updates a container's working version with the provided configuration. " +
-                    "The container must exist and the user must have edit permissions.",
-            tags = {"Containers"},
+            summary = "Update an existing container",
+            description = "Updates the working version of a container with the provided properties. " +
+                    "The container must already exist. A new working version inode is created with the updated properties.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container updated successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid container data"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks edit permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
             }
     )
     public final Response update(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
-                                  @RequestBody(description = "Updated container configuration data including identifier and modified properties",
-                                          required = true,
-                                          content = @Content(schema = @Schema(implementation = ContainerForm.class)))
                                   final ContainerForm containerForm) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -834,39 +889,36 @@ public class ContainerResource implements Serializable {
                 () -> "Updating container. Request payload is : " + JsonUtil.getJsonStringFromObject(
                         containerForm));
 
-        Container newContainerVersion = new Container();
-        newContainerVersion.setIdentifier(containerForm.getIdentifier());
-        newContainerVersion.setCode(containerForm.getCode());
-        newContainerVersion.setMaxContentlets(containerForm.getMaxContentlets());
-        newContainerVersion.setNotes(containerForm.getNotes());
-        newContainerVersion.setPreLoop(containerForm.getPreLoop());
-        newContainerVersion.setPostLoop(containerForm.getPostLoop());
-        newContainerVersion.setSortContentletsBy(containerForm.getSortContentletsBy());
-        newContainerVersion.setStaticify(containerForm.isStaticify());
-        newContainerVersion.setUseDiv(containerForm.isUseDiv());
-        newContainerVersion.setFriendlyName(containerForm.getFriendlyName());
-        newContainerVersion.setModDate(new Date());
-        newContainerVersion.setModUser(user.getUserId());
-        newContainerVersion.setOwner(user.getUserId());
-        newContainerVersion.setShowOnMenu(containerForm.isShowOnMenu());
-        newContainerVersion.setTitle(containerForm.getTitle());
+            container.setInode(StringPool.BLANK);
+            container.setCode(containerForm.getCode());
+            container.setMaxContentlets(containerForm.getMaxContentlets());
+            container.setNotes(containerForm.getNotes());
+            container.setPreLoop(containerForm.getPreLoop());
+            container.setPostLoop(containerForm.getPostLoop());
+            container.setSortContentletsBy(containerForm.getSortContentletsBy());
+            container.setStaticify(containerForm.isStaticify());
+            container.setUseDiv(containerForm.isUseDiv());
+            container.setFriendlyName(containerForm.getFriendlyName());
+            container.setModDate(new Date());
+            container.setModUser(user.getUserId());
+            container.setOwner(user.getUserId());
+            container.setShowOnMenu(containerForm.isShowOnMenu());
+            container.setTitle(containerForm.getTitle());
 
-        if (containerForm.getMaxContentlets() == 0) {
-            newContainerVersion.setCode(containerForm.getCode());
-        }
+            if (containerForm.getMaxContentlets() == 0) {
+                container.setCode(containerForm.getCode());
+            }
 
-        newContainerVersion.setLuceneQuery(container.getLuceneQuery());
-
-        this.containerAPI.save(newContainerVersion, containerForm.getContainerStructures(), host, user,
-                pageMode.respectAnonPerms);
+            this.containerAPI.save(container, containerForm.getContainerStructures(), host, user,
+                    pageMode.respectAnonPerms);
 
         ActivityLogger.logInfo(this.getClass(),
                 "Update Container: " + containerForm.getIdentifier(),
                 getInfoMessage(user,
-                        MessageConstants.SAVED + newContainerVersion.getTitle()),
+                        MessageConstants.SAVED + container.getTitle()),
                 host.getHostname());
 
-        return Response.ok(new ResponseEntityView(new ContainerView(newContainerVersion))).build();
+        return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
     }
 
     /**
@@ -883,27 +935,28 @@ public class ContainerResource implements Serializable {
     @Path("/live")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
-            operationId = "getLiveContainer",
-            summary = "Retrieves a live container by ID",
-            description = "Returns the live (published) version of a container. Optionally includes associated content type information.",
-            tags = {"Containers"},
+            operationId = "getLiveContainerById",
+            summary = "Get live version of a container",
+            description = "Returns the live (published) version of a container by its identifier. " +
+                    "Optionally includes the associated content type structures when includeContentType is true.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Live container retrieved successfully",
+                    @ApiResponse(responseCode = "200", description = "Live container returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid container ID"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Live container not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Live version of container not found")
             }
     )
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                       @Context final HttpServletResponse httpResponse,
-                                      @Parameter(description = "Container identifier") @QueryParam("containerId") final String containerId,
-                                      @Parameter(description = "Include associated content type information") @QueryParam("includeContentType") final boolean includeContentType) throws DotSecurityException, DotDataException {
+                                      @Parameter(description = "Container identifier (UUID or path)")
+                                      @QueryParam("containerId")  final String containerId,
+                                      @Parameter(description = "Whether to include associated content type structures")
+                                      @QueryParam("includeContentType")  final boolean includeContentType) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -940,27 +993,28 @@ public class ContainerResource implements Serializable {
     @Path("/working")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
-            operationId = "getWorkingContainer",
-            summary = "Retrieves a working container by ID",
-            description = "Returns the working (draft) version of a container. Optionally includes associated content type information.",
-            tags = {"Containers"},
+            operationId = "getWorkingContainerById",
+            summary = "Get working version of a container",
+            description = "Returns the working (latest draft) version of a container by its identifier. " +
+                    "Optionally includes the associated content type structures when includeContentType is true.",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Working container retrieved successfully",
+                    @ApiResponse(responseCode = "200", description = "Working container returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid container ID"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Working container not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Working version of container not found")
             }
     )
     public final Response getWorkingById(@Context final HttpServletRequest  request,
                                          @Context final HttpServletResponse httpResponse,
-                                         @Parameter(description = "Container identifier") @QueryParam("containerId") final String containerId,
-                                         @Parameter(description = "Include associated content type information") @QueryParam("includeContentType") final boolean includeContentType) throws DotSecurityException, DotDataException {
+                                         @Parameter(description = "Container identifier (UUID or path)")
+                                         @QueryParam("containerId") final String containerId,
+                                         @Parameter(description = "Whether to include associated content type structures")
+                                         @QueryParam("includeContentType")  final boolean includeContentType) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, httpResponse).rejectWhenNoUser(true).init();
@@ -1005,23 +1059,23 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "publishContainer",
-            summary = "Publishes a container",
-            description = "Makes a container live by publishing it. The container must exist and the user must have publish permissions.",
-            tags = {"Containers"},
+            summary = "Publish a container",
+            description = "Publishes a container making it live. The user needs Publish Permissions " +
+                    "and the container must not be archived.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container published successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks publish permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
             }
     )
     public final Response publish(@Context final HttpServletRequest  request,
                                     @Context final HttpServletResponse response,
-                                    @Parameter(description = "Container identifier to publish") @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+                                    @Parameter(description = "Container identifier to publish", required = true)
+                                    @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
@@ -1076,23 +1130,23 @@ public class ContainerResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
             operationId = "unpublishContainer",
-            summary = "Unpublishes a container",
-            description = "Removes a container from live status by unpublishing it. The container must exist and the user must have unpublish permissions.",
-            tags = {"Containers"},
+            summary = "Unpublish a container",
+            description = "Unpublishes a container, removing it from live. The user needs Write Permissions " +
+                    "and the container must not be archived.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container unpublished successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
-                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks unpublish permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container not found"),
-                    @ApiResponse(responseCode = "500", description = "Internal server error")
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
             }
     )
     public final Response unpublish(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
-                                  @Parameter(description = "Container identifier to unpublish") @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
+                                  @Parameter(description = "Container identifier to unpublish", required = true)
+                                  @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).requiredBackendUser(true).rejectWhenNoUser(true).init();
@@ -1143,8 +1197,23 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "archiveContainer",
+            summary = "Archive a container",
+            description = "Archives a container. The user needs Edit Permissions on the container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Container archived successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
+            }
+    )
     public final Response archive(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
+                                  @Parameter(description = "Container identifier to archive", required = true)
                                   @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -1196,8 +1265,23 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "unarchiveContainer",
+            summary = "Unarchive a container",
+            description = "Unarchives a previously archived container. The user needs Edit Permissions on the container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Container unarchived successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
+            }
+    )
     public final Response unarchive(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
+                                  @Parameter(description = "Container identifier to unarchive", required = true)
                                   @QueryParam("containerId") final String containerId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -1248,8 +1332,24 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "deleteContainer",
+            summary = "Delete a container",
+            description = "Deletes a container permanently. The user needs Edit Permissions on the container. " +
+                    "Returns true if the container was successfully deleted, false otherwise.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Container deletion result returned",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityBooleanView.class))),
+                    @ApiResponse(responseCode = "400", description = "Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
+            }
+    )
     public final Response delete(@Context final HttpServletRequest  request,
                                     @Context final HttpServletResponse response,
+                                    @Parameter(description = "Container identifier to delete", required = true)
                                     @QueryParam("containerId") final String containerId) throws Exception {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -1303,8 +1403,24 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "copyContainer",
+            summary = "Copy a container",
+            description = "Creates a copy of the specified container in the current host (site). " +
+                    "The user needs appropriate permissions on the source container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Container copied successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
+                    @ApiResponse(responseCode = "400", description = "Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
+            }
+    )
     public ResponseEntityContainerView copy(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Container identifier to copy", required = true)
             @PathParam("id") final String id) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -1358,6 +1474,20 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "bulkDeleteContainers",
+            summary = "Delete multiple containers",
+            description = "Deletes multiple containers in bulk. Accepts a JSON array of container identifiers. " +
+                    "Returns a summary with the count of successfully deleted containers and any failures. " +
+                    "The user needs Edit Permissions on each container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Bulk delete results returned",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     public final Response bulkDelete(@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
             final List<String> containersToDelete) {
@@ -1421,6 +1551,20 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "bulkPublishContainers",
+            summary = "Publish multiple containers",
+            description = "Publishes multiple containers in bulk. Accepts a JSON array of container identifiers. " +
+                    "Returns a summary with the count of successfully published containers and any failures. " +
+                    "The user needs Publish Permissions on each container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Bulk publish results returned",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     public final Response bulkPublish(@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
             final List<String> containersToPublish){
@@ -1482,6 +1626,20 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "bulkUnpublishContainers",
+            summary = "Unpublish multiple containers",
+            description = "Unpublishes multiple containers in bulk. Accepts a JSON array of container identifiers. " +
+                    "Returns a summary with the count of successfully unpublished containers and any failures. " +
+                    "The user needs Publish Permissions on each container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Bulk unpublish results returned",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     public final Response bulkUnpublish(@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
             final List<String> containersToUnpublish) {
@@ -1543,6 +1701,20 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "bulkArchiveContainers",
+            summary = "Archive multiple containers",
+            description = "Archives multiple containers in bulk. Accepts a JSON array of container identifiers. " +
+                    "Returns a summary with the count of successfully archived containers and any failures. " +
+                    "The user needs Edit Permissions on each container.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Bulk archive results returned",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     public final Response bulkArchive(@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
             final List<String> containersToArchive) {
@@ -1606,6 +1778,20 @@ public class ContainerResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "bulkUnarchiveContainers",
+            summary = "Unarchive multiple containers",
+            description = "Unarchives multiple containers in bulk. Accepts a JSON array of container identifiers. " +
+                    "Returns a summary with the count of successfully unarchived containers and any failures. " +
+                    "The user needs Edit Permissions on each container and the containers must be currently archived.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Bulk unarchive results returned",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     public final Response bulkUnarchive(@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
             final List<String> containersToUnarchive){

@@ -7,7 +7,9 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.ContainerPaginator;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.util.pagination.TemplatePaginator;
 import com.dotmarketing.beans.Host;
@@ -25,6 +27,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.design.util.DesignTemplateUtil;
+import com.dotmarketing.portlets.templates.factories.TemplateFactory;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.InodeUtils;
@@ -35,6 +38,12 @@ import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -67,7 +76,7 @@ import java.util.Optional;
  * @author jsanca
  */
 @Path("/v1/templates")
-@Tag(name = "Templates", description = "Endpoints for managing page templates and layouts")
+@Tag(name = "Template", description = "Template CRUD, publishing, and layout management")
 public class TemplateResource {
 
     private static final String ARCHIVE_PARAM = "archive";
@@ -121,40 +130,45 @@ public class TemplateResource {
     @GET
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getTemplates",
+            summary = "Get a paginated list of templates",
+            description = "Returns a paginated list of templates that the authenticated user has READ permissions on. " +
+                    "Each template is the current working version. Results can be filtered by title or identifier, " +
+                    "sorted by the specified field, and scoped to a specific site. " +
+                    "The 'theme' field in template data corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Templates retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response list(@Context final HttpServletRequest httpRequest,
                                         @Context final HttpServletResponse httpResponse,
-                                        @QueryParam(PaginationUtil.FILTER)   final String filter,
-                                        @QueryParam(PaginationUtil.PAGE)     final int page,
-                                        @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-                                        @DefaultValue("mod_date") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
-                                        @DefaultValue("DESC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
-                                        @QueryParam(TemplatePaginator.HOST_PARAMETER_ID)           final String hostId,
-                                        @QueryParam(ARCHIVE_PARAM)                                  final boolean archive) {
+                                        @Parameter(description = "Filter by template title or identifier") @QueryParam(PaginationUtil.FILTER)   final String filter,
+                                        @Parameter(description = "Page number (zero-based)") @QueryParam(PaginationUtil.PAGE)     final int page,
+                                        @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+                                        @Parameter(description = "Field to order results by (default: mod_date)") @DefaultValue("mod_date") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+                                        @Parameter(description = "Sort direction: ASC or DESC (default: DESC)") @DefaultValue("DESC") @QueryParam(PaginationUtil.DIRECTION)  final String direction,
+                                        @Parameter(description = "Filter by site identifier (also known as hostId or host)") @QueryParam(TemplatePaginator.HOST_PARAMETER_ID)           final String hostId,
+                                        @Parameter(description = "If true, return only archived templates (default: false)") @QueryParam(ARCHIVE_PARAM)                                  final boolean archive) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
         final User user = initData.getUser();
-
+        final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier()).getOrNull());
+        final Optional<String> checkedHostId = Optional.ofNullable(Try.of(()-> APILocator.getHostAPI()
+                .find(hostId, user, false).getIdentifier()).getOrElse(lazyCurrentHost.get()));
 
         Logger.debug(this, ()-> "Getting the List of templates");
 
         final Map<String, Object> extraParams = new HashMap<>();
         extraParams.put(ARCHIVE_PARAM, archive);
-
-        //In case we need to get the list of templates across multiple sites, we don't set the TemplatePaginator.HOST_PARAMETER_ID
-        if (null == hostId || !StringPool.STAR.equals(hostId)) {
-            final Lazy<String> lazyCurrentHost = Lazy.of(() -> Try.of(() -> Host.class.cast(
-                            httpRequest.getSession().getAttribute(WebKeys.CURRENT_HOST)).getIdentifier())
-                    .getOrNull());
-            final Optional<String> checkedHostId = Optional.ofNullable(
-                    Try.of(() -> APILocator.getHostAPI()
-                                    .find(hostId, user, false).getIdentifier())
-                            .getOrElse(lazyCurrentHost.get()));
-            checkedHostId.ifPresent(
-                    checkedHostIdentifier -> extraParams.put(TemplatePaginator.HOST_PARAMETER_ID,
-                            checkedHostIdentifier));
-        }
+        checkedHostId.ifPresent(checkedHostIdentifier -> extraParams.put(ContainerPaginator.HOST_PARAMETER_ID, checkedHostIdentifier));
         return this.paginationUtil.getPage(httpRequest, user, filter, page, perPage, orderBy, OrderDirection.valueOf(direction),
                 extraParams);
     }
@@ -173,10 +187,25 @@ public class TemplateResource {
     @Path("/{templateId}/live")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getLiveTemplate",
+            summary = "Get the live version of a template",
+            description = "Returns the live (published) version of a template identified by its ID. " +
+                    "The 'theme' field in the response corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Live template retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Live version of the template not found")
+    })
     public final Response getLiveById(@Context final HttpServletRequest  httpRequest,
                                @Context final HttpServletResponse httpResponse,
-                               @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
+                               @Parameter(description = "Template identifier", required = true) @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -208,10 +237,25 @@ public class TemplateResource {
     @Path("/{templateId}/working")
     @JSONP
     @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getWorkingTemplate",
+            summary = "Get the working version of a template",
+            description = "Returns the working (latest draft) version of a template identified by its ID. " +
+                    "The 'theme' field in the response corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Working template retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Working version of the template not found")
+    })
     public final Response getWorkingById(@Context final HttpServletRequest  httpRequest,
                                          @Context final HttpServletResponse httpResponse,
-                                         @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
+                                         @Parameter(description = "Template identifier", required = true) @PathParam("templateId") final String templateId) throws DotSecurityException, DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(httpRequest, httpResponse).rejectWhenNoUser(true).init();
@@ -243,6 +287,21 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "createTemplate",
+            summary = "Create a new template",
+            description = "Creates a new template with the provided properties. The template can include a layout " +
+                    "definition for drag-and-drop page design or raw HTML body content. " +
+                    "The 'theme' field in the request body corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Template created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response saveNew(@Context final HttpServletRequest  request,
                                 @Context final HttpServletResponse response,
                                 final TemplateForm templateForm) throws DotDataException, DotSecurityException {
@@ -273,6 +332,22 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "updateTemplate",
+            summary = "Update an existing template",
+            description = "Creates a new working version of an existing template. The request body must include " +
+                    "the template identifier. " +
+                    "The 'theme' field in the request body corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Template updated successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Template not found")
+    })
     public final Response save(@Context final HttpServletRequest  request,
                             @Context final HttpServletResponse response,
                             final TemplateForm templateForm) throws DotDataException, DotSecurityException {
@@ -310,6 +385,22 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "saveTemplateDraft",
+            summary = "Save a draft version of a template",
+            description = "Saves a new draft version of an existing template without publishing it. " +
+                    "The request body must include the template identifier. " +
+                    "The 'theme' field in the request body corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Template draft saved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Template not found")
+    })
     public final Response saveDraft(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final TemplateForm templateForm) throws DotDataException, DotSecurityException {
@@ -441,6 +532,22 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "saveAndPublishTemplate",
+            summary = "Save and publish a template",
+            description = "Saves a template and immediately publishes it, making it live. " +
+                    "If the template identifier is provided in the request body, it updates the existing template; " +
+                    "otherwise, a new template is created. " +
+                    "The 'theme' field in the request body corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Template saved and published successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response saveAndPublish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final TemplateForm templateForm) throws DotDataException, DotSecurityException {
@@ -512,6 +619,21 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "publishTemplates",
+            summary = "Publish one or more templates",
+            description = "Publishes the templates identified by the provided list of identifiers. " +
+                    "The user must have Publish permissions on each template, and the templates must not be archived. " +
+                    "Returns a bulk result with success count and any failures."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bulk publish operation completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or empty identifier list"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response publish(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
                                final List<String> templatesToPublish){
@@ -571,6 +693,21 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "unpublishTemplates",
+            summary = "Unpublish one or more templates",
+            description = "Unpublishes the templates identified by the provided list of identifiers. " +
+                    "The user must have Publish permissions on each template, and the templates must not be archived. " +
+                    "Returns a bulk result with success count and any failures."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bulk unpublish operation completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or empty identifier list"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response unpublish(@Context final HttpServletRequest  request,
                                   @Context final HttpServletResponse response,
                                   final List<String> templatesToUnpublish) {
@@ -625,9 +762,24 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "copyTemplate",
+            summary = "Copy a template",
+            description = "Creates a copy of the template identified by the given templateId. " +
+                    "The copied template will have a new identifier and inode. " +
+                    "The 'theme' field in the response corresponds to 'themeId' used in other endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Template copied successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityTemplateView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Template not found")
+    })
     public final Response copy(@Context final HttpServletRequest  request,
                                @Context final HttpServletResponse response,
-                               @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
+                               @Parameter(description = "Template identifier to copy", required = true) @PathParam("templateId") final String templateId) throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response).rejectWhenNoUser(true).init();
@@ -666,6 +818,21 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "archiveTemplates",
+            summary = "Archive one or more templates",
+            description = "Archives the templates identified by the provided list of identifiers. " +
+                    "The user must have Edit permissions on each template. " +
+                    "Returns a bulk result with success count and any failures."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bulk archive operation completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or empty identifier list"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response archive(@Context final HttpServletRequest  request,
                                  @Context final HttpServletResponse response,
                                  final List<String> templatesToArchive) {
@@ -725,6 +892,21 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "unarchiveTemplates",
+            summary = "Unarchive one or more templates",
+            description = "Restores previously archived templates identified by the provided list of identifiers. " +
+                    "The user must have Edit permissions on each template, and each template must currently be archived. " +
+                    "Returns a bulk result with success count and any failures."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bulk unarchive operation completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or empty identifier list"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response unarchive(@Context final HttpServletRequest  request,
             @Context final HttpServletResponse response,
             final List<String> templatesToUnarchive){
@@ -782,6 +964,22 @@ public class TemplateResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "deleteTemplates",
+            summary = "Delete one or more templates",
+            description = "Permanently deletes the templates identified by the provided list of identifiers. " +
+                    "Each template must be archived and must have no page dependencies (pages referencing the template). " +
+                    "The user must have Edit permissions on each template. " +
+                    "Returns a bulk result with success count and any failures."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bulk delete operation completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or empty identifier list"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response delete(@Context final HttpServletRequest  request,
                                  @Context final HttpServletResponse response,
                                  final List<String> templatesToDelete) {
@@ -838,6 +1036,21 @@ public class TemplateResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "getTemplateImage",
+            summary = "Get the image contentlet for a template",
+            description = "Returns metadata about the image contentlet associated with a template, " +
+                    "including the image inode, name, identifier, and file extension. " +
+                    "The template identifier is provided in the request body."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Template image retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = Object.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Template or template image not found")
+    })
     public Map<String, Object> fetchTemplateImage(@Context final HttpServletRequest  httpRequest,
                                                   @Context final HttpServletResponse httpResponse,
                                                   final TemplateImageForm templateImageForm) throws DotDataException, DotSecurityException {

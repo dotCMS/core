@@ -9,6 +9,14 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -21,12 +29,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.PUT;
 import org.glassfish.jersey.server.JSONP;
@@ -39,6 +42,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -51,7 +55,7 @@ import java.util.Map;
  * Created by jasontesser on 9/28/16.
  */
 @Path("/v1/folder")
-@Tag(name = "Folders", description = "Endpoints for managing folder structure and organization")
+@Tag(name = "Folder", description = "Folder CRUD operations and site folder management")
 public class FolderResource implements Serializable {
 
     private final WebResource webResource;
@@ -72,15 +76,13 @@ public class FolderResource implements Serializable {
 
     /**
      * Delete one or more path for a site
-     * @param httpServletRequest  The current instance of the {@link HttpServletRequest}.
-     * @param httpServletResponse The current instance of the {@link HttpServletResponse}.
-     * @param paths paths to delete
-     * @param siteName site name
+     * @param httpServletRequest
+     * @param httpServletResponse
+     * @param paths
+     * @param siteName
      * @return List of folders deleted
-     * @throws IllegalArgumentException if the site name is not found
-     * @throws DoesNotExistException if the folder does not exist
-     * @throws DotSecurityException if the user does not have permission to delete the folder
-     * @throws DotDataException if there is an error deleting the folder
+     * @throws DotSecurityException
+     * @throws DotDataException
      */
     @DELETE
     @Path("/{siteName}")
@@ -89,32 +91,29 @@ public class FolderResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
-            summary = "Delete one or more path for a site",
-            description = "Delete one or more path for a site if they exist"
+            operationId = "deleteFoldersBySiteName",
+            summary = "Delete folders by paths on a site",
+            description = "Deletes one or more folders from the specified site. The request body is a JSON " +
+                    "array of folder paths (e.g., [\"/folder1\", \"/folder2\"]). Returns the list of " +
+                    "successfully deleted folder paths."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Folders deleted successfully",
                     content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(value = "{\n"
-                                    + "    \"entity\": [\n"
-                                    + "        \"/folder-1/folder-2/target-folder\"\n"
-                                    + "    ],\n"
-                                    + "    \"errors\": [],\n"
-                                    + "    \"i18nMessagesMap\": {},\n"
-                                    + "    \"messages\": [],\n"
-                                    + "    \"pagination\": null,\n"
-                                    + "    \"permissions\": []\n"
-                                    + "}"
-                            )
-                    )
-            ),
-            @ApiResponse(responseCode = "401", description = "Unauthorized access"),
-            @ApiResponse(responseCode = "404", description = "Folders not found"),
-            @ApiResponse(responseCode = "403", description = "Insufficient permissions to delete folders")
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request or invalid site name"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder or site not found")
     })
     public final Response deleteFolders(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
+                                        @RequestBody(description = "JSON array of folder paths to delete (e.g., [\"/path1\", \"/path2\"])",
+                                                required = true,
+                                                content = @Content(mediaType = "application/json",
+                                                        schema = @Schema(implementation = String[].class)))
                                         final List<String> paths,
+                                        @Parameter(description = "Name of the site where the folders reside", required = true)
                                         @PathParam("siteName") final String siteName)
             throws DotSecurityException, DotDataException {
 
@@ -129,21 +128,23 @@ public class FolderResource implements Serializable {
         final List<String> deletedFolders = new ArrayList<>();
 
         final Host host = APILocator.getHostAPI().findByName(siteName, user, true);
-        if (!UtilMethods.isSet(host)) {
-            throw new IllegalArgumentException(
-                    String.format(" Couldn't find any host with name `%s` ", siteName));
+        if(!UtilMethods.isSet(host)) {
+
+            throw new IllegalArgumentException(String.format(" Couldn't find any host with name `%s` ",siteName));
         }
 
-        Logger.debug(this, () -> "Deleting the folders: " + paths);
+        Logger.debug(this, ()-> "Deleting the folders: " + paths);
 
         for (final String path : paths) {
-            final Folder folder = folderHelper.loadFolderByURI(host.getIdentifier(), user, path);
 
-            if (folderHelper.isValidFolder(folder)) {
-                Logger.debug(this, () -> "Deleting the folder: " + path);
-                folderHelper.deleteFolder(folder, user);
+            final Folder folder = folderHelper.loadFolderByURI(host.getIdentifier(), user, path);
+            if (null != folder) {
+
+                Logger.debug(this, ()-> "Deleting the folder: " + path);
+                folderHelper.deleteFolder (folder, user);
                 deletedFolders.add(path);
             } else {
+
                 Logger.error(this, "The folder does not exists: " + path);
                 throw new DoesNotExistException("The folder does not exists: " + path);
             }
@@ -158,9 +159,30 @@ public class FolderResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "createFoldersBySiteName",
+            summary = "Create folders by paths on a site",
+            description = "Creates one or more folders on the specified site. The request body is a raw JSON " +
+                    "array of folder paths (e.g., [\"/path1\", \"/path2/subpath\"]). Nested paths will " +
+                    "create intermediate folders as needed. Returns the list of created folder details."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folders created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request or invalid site name"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
     public final Response createFolders(@Context final HttpServletRequest httpServletRequest,
                                         @Context final HttpServletResponse httpServletResponse,
+                                        @RequestBody(description = "JSON array of folder paths to create (e.g., [\"/path1\", \"/path2\"])",
+                                                required = true,
+                                                content = @Content(mediaType = "application/json",
+                                                        schema = @Schema(implementation = String[].class)))
                                         final List<String> paths,
+                                        @Parameter(description = "Name of the site where the folders will be created", required = true)
                                         @PathParam("siteName") final String siteName)
             throws DotSecurityException, DotDataException {
 
@@ -182,8 +204,20 @@ public class FolderResource implements Serializable {
     @Path("/{id}/file-browser-selected")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "selectFolderInFileBrowser",
+            summary = "Set selected folder in file browser",
+            description = "Sets the specified folder as the last selected folder in the file browser session. " +
+                    "This is used to persist the user's folder selection state across file browser interactions."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder selection saved successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions")
+    })
     public final Response selectFolder(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
+            @Parameter(description = "Identifier of the folder to select", required = true)
             @PathParam("id") final String folderId)
             throws DotSecurityException, DotDataException {
 
@@ -203,9 +237,26 @@ public class FolderResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "loadFolderByURI",
+            summary = "Load a folder by site name and URI",
+            description = "Retrieves a folder by its URI path within the specified site. The URI should be " +
+                    "the relative path to the folder (e.g., 'folder1/subfolder')."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response loadFolderByURI(@Context final HttpServletRequest httpServletRequest,
                                           @Context final HttpServletResponse httpServletResponse,
+                                          @Parameter(description = "Name of the site where the folder resides", required = true)
                                           @PathParam("siteName") final String siteName,
+                                          @Parameter(description = "URI path to the folder (e.g., folder1/subfolder)", required = true)
                                           @PathParam("uri") final String uri){
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
@@ -241,9 +292,25 @@ public class FolderResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "loadFolderAndSubFoldersByPath",
+            summary = "Load folder and subfolders by site ID and path",
+            description = "Finds a folder by the given path within the specified site and returns the " +
+                    "folder details along with all its subfolders, respecting the user's permissions."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder and subfolders retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder or site not found")
+    })
     public final Response loadFolderAndSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
                                                       @Context final HttpServletResponse httpServletResponse,
+                                                      @Parameter(description = "Identifier of the site where the folder resides", required = true)
                                                       @PathParam("siteId") final String siteId,
+                                                      @Parameter(description = "Path of the folder to find (e.g., folder1/subfolder)", required = true)
                                                       @PathParam("path") final String path) throws  DotDataException, DotSecurityException   {
 
         final InitDataObject initData =
@@ -312,8 +379,30 @@ public class FolderResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "findSubFoldersByPath",
+            summary = "Find subfolders by path",
+            description = "Retrieves subfolders matching a given path pattern. The path controls both the " +
+                    "site scope and the folder filter: paths starting with '//' (e.g., '//default/folder1/') " +
+                    "target a specific site, while paths starting with '/' or without a prefix search across " +
+                    "all sites. A trailing '/' lists children of the matched folder; without it, folders " +
+                    "are filtered by name prefix. Only folders the user has permissions over are returned."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Subfolders retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request — path property is required"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
     public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
+            @RequestBody(description = "Form containing the path to search for subfolders",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = SearchByPathForm.class)))
             final SearchByPathForm searchByPathForm
             ) throws  DotDataException, DotSecurityException   {
 
@@ -368,8 +457,23 @@ public class FolderResource implements Serializable {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "findFolderById",
+            summary = "Get a folder by ID",
+            description = "Retrieves a folder by its identifier. Returns a 404 status if the folder " +
+                    "does not exist or has no valid identifier."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     public final Response findFolderById(@Context final HttpServletRequest httpServletRequest,
                                          @Context final HttpServletResponse httpServletResponse,
+                                         @Parameter(description = "Identifier of the folder", required = true)
                                          @PathParam("folderId") final String folderId
     ) throws  DotDataException, DotSecurityException   {
 

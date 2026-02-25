@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.api.system.user.UserException;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -13,7 +14,7 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import javax.validation.constraints.NotNull;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
@@ -27,7 +28,6 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DotPreconditions;
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.BulkActionForm;
 import com.dotcms.workflow.form.FireActionByNameForm;
 import com.dotcms.workflow.form.FireActionForm;
@@ -73,13 +73,9 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClass;
-import com.dotmarketing.portlets.workflows.model.WorkflowComment;
-import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
-import com.dotmarketing.portlets.workflows.model.WorkflowSearcher;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.portlets.workflows.model.WorkflowTimelineItem;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowSchemeImportExportObject;
 import com.dotmarketing.util.Config;
@@ -90,6 +86,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.UserIdException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -103,7 +100,6 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
@@ -144,7 +140,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -189,15 +184,6 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
         externalDocs = @ExternalDocumentation(description = "Additional Workflow API information",
                 url = "https://www.dotcms.com/docs/latest/workflow-rest-api")
 )
-@ApiResponses(
-        value = { // error codes only!
-                @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
-                @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
-                // @ApiResponse(responseCode = "405", description = "Method Not Allowed"), // wrong verb; unlikely a user will have to explicitly handle this
-                @ApiResponse(responseCode = "406", description = "Not Acceptable"), // accept header mismatch
-                @ApiResponse(responseCode = "500", description = "Internal Server Error")
-        }
-)
 public class WorkflowResource {
 
     public  final static String VERSION       = "1.0";
@@ -216,7 +202,6 @@ public class WorkflowResource {
     private static final String CONTENTLET    = "contentlet";
     private static final int CONTENTLETS_LIMIT = 100000;
     private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
-    public static final String INCLUDE_SEPARATOR = "includeSeparator";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -298,7 +283,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowSchemesView.class)
                             )
                     ),
-                   @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findSchemes(@Context final HttpServletRequest request,
@@ -356,7 +344,10 @@ public class WorkflowResource {
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionletsView.class)
                             )
-                    )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findActionlets(@Context final HttpServletRequest request) {
@@ -432,7 +423,10 @@ public class WorkflowResource {
                                     )
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findActionletsByAction(@Context final HttpServletRequest request,
@@ -486,7 +480,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = SchemesAndSchemesContentTypeView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Content type ID not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Content type ID not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findAllSchemesAndSchemesByContentType(
@@ -544,7 +541,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowStepsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findStepsByScheme(@Context final HttpServletRequest request,
@@ -602,7 +602,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Contentlet not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Contentlet not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findAvailableActions(@Context final HttpServletRequest request,
@@ -632,11 +635,10 @@ public class WorkflowResource {
 
             this.workflowHelper.checkRenderMode (renderMode, initDataObject.getUser(), this.validRenderModeSet);
 
-            final WorkflowAPI.RenderMode mode = LISTING.equalsIgnoreCase(renderMode)?
-                    WorkflowAPI.RenderMode.LISTING: WorkflowAPI.RenderMode.EDITING;
-            final boolean includeSeparator = ConversionUtils.toBoolean(request.getParameter(INCLUDE_SEPARATOR), false);
-            final List<WorkflowAction> actions = includeSeparator? this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(), mode):
-                    this.workflowHelper.findAvailableActionsSkippingSeparators(inode, initDataObject.getUser(), mode);
+            final List<WorkflowAction> actions = this.workflowHelper.findAvailableActions(inode, initDataObject.getUser(),
+                    LISTING.equalsIgnoreCase(renderMode)
+                            ? WorkflowAPI.RenderMode.LISTING
+                            : WorkflowAPI.RenderMode.EDITING);
             return Response.ok(new ResponseEntityView<>(actions.stream()
                     .map(this::toWorkflowActionView).collect(Collectors.toList()))).build();
         } catch (final Exception e) {
@@ -688,11 +690,6 @@ public class WorkflowResource {
         workflowActionView.setShowOn(workflowAction.getShowOn());
         workflowActionView.setActionInputs(createActionInputViews(workflowAction));
         workflowActionView.setMetadata(workflowAction.getMetadata());
-        workflowActionView.setCommentActionlet(workflowAction.hasCommentActionlet());
-        workflowActionView.setResetable(workflowAction.hasResetActionlet());
-        workflowActionView.setMoveActionletHashPath(workflowAction.hasMoveActionletHasPathActionlet());
-        workflowActionView.setMoveActionlet(workflowAction.hasMoveActionletActionlet());
-
         return workflowActionView;
     }
 
@@ -748,7 +745,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response getBulkActions(@Context final HttpServletRequest request,
@@ -814,7 +813,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final void fireBulkActions(@Context final HttpServletRequest request,
@@ -877,7 +878,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public EventOutput fireBulkActions(@Context final HttpServletRequest request,
@@ -932,7 +935,6 @@ public class WorkflowResource {
                                 eventBuilder.name("failure");
                                 eventBuilder.data(Map.class,
                                         Map.of("failure", inode));
-                                eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
                                 final OutboundEvent event = eventBuilder.build();
                                 try {
                                     eventOutput.write(event);
@@ -973,7 +975,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findAction(@Context final HttpServletRequest request,
@@ -1025,7 +1030,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response evaluateActionCondition(
@@ -1076,7 +1084,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found within specified step")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found within specified step"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findActionByStep(@Context final HttpServletRequest request,
@@ -1134,7 +1145,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow step not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow step not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findActionsByStep(@Context final HttpServletRequest request,
@@ -1184,7 +1198,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findActionsByScheme(@Context final HttpServletRequest request,
@@ -1236,7 +1253,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findActionsBySchemesAndSystemAction(@Context final HttpServletRequest request,
@@ -1313,7 +1332,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntitySystemActionWorkflowActionMappings.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findSystemActionsByScheme(@Context final HttpServletRequest request,
@@ -1364,7 +1386,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntitySystemActionWorkflowActionMappings.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Content Type not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Content Type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findSystemActionsByContentType(@Context final HttpServletRequest request,
@@ -1417,7 +1442,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntitySystemActionWorkflowActionMappings.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response getSystemActionsReferredByWorkflowAction(@Context final HttpServletRequest request,
@@ -1481,7 +1509,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response saveSystemAction(@Context final HttpServletRequest request,
@@ -1559,7 +1589,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntitySystemActionWorkflowActionMapping.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response deletesSystemAction(@Context final HttpServletRequest request,
@@ -1615,7 +1648,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response saveAction(@Context final HttpServletRequest request,
@@ -1683,63 +1718,6 @@ public class WorkflowResource {
     } // save
 
     /**
-     * Saves an action separator to a schema and step.
-     * @param request               {@link HttpServletRequest}
-     * @param response              {@link HttpServletResponse}
-     * @param workflowActionForm    {@link WorkflowActionSeparatorForm}
-     * @return Response
-     */
-    @POST
-    @Path("/actions/separator")
-    @JSONP
-    @NoCache
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "addSeparatorAction", summary = "Creates workflow action separator",
-            description = "Creates a [workflow action] separator(https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "from the properties specified in the payload. Returns the created workflow action.",
-            tags = {"Workflow"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Workflow action created successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = WorkflowAction.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
-            }
-    )
-    public final WorkflowActionView addSeparatorAction(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                                     @RequestBody(
-                                             description = "Body consists of a JSON object containing " +
-                                                     "a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                                                     "form. This includes the following properties:\n\n" +
-                                                     "| Property | Type | Description |\n" +
-                                                     "|-|-|-|\n" +
-                                                     "| `schemeId` | String | The [workflow scheme](https://www.dotcms.com/docs/latest" +
-                                                     "/managing-workflows#Schemes) under which the action will be created. |\n" +
-                                                     "| `stepId` | String |  The [workflow step](https://www.dotcms.com/docs/latest",
-                                             required = true,
-                                             content = @Content(
-                                                     schema = @Schema(implementation = WorkflowActionSeparatorForm.class)
-                                             )
-                                     ) final WorkflowActionSeparatorForm workflowActionForm) throws NotFoundException {
-
-        final InitDataObject initDataObject = this.webResource.init
-                (null, request, response, true, null);
-
-        Logger.debug(this, ()-> "Saving new workflow action separator to the scheme id: " + workflowActionForm.getSchemeId() +
-                " and step id: " + workflowActionForm.getStepId());
-        DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
-        final WorkflowActionForm.Builder builder = new WorkflowActionForm.Builder();
-        builder.separator(workflowActionForm.getSchemeId(), workflowActionForm.getStepId());
-        builder.whoCanUse(Collections.emptyList());
-        final WorkflowAction newAction = this.workflowHelper.saveAction(builder.build(), initDataObject.getUser());
-        return toWorkflowActionView(newAction);
-    } // addSeparatorAction
-
-    /**
      * Updates an existing action
      * @param request HttpServletRequest
      * @param actionId String
@@ -1763,7 +1741,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response updateAction(@Context final HttpServletRequest request,
@@ -1881,7 +1861,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response saveActionToStep(@Context final HttpServletRequest request,
@@ -1984,7 +1966,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response saveActionletToAction(@Context final HttpServletRequest request,
@@ -2057,7 +2041,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowStepView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final void deleteStep(@Context final HttpServletRequest request,
@@ -2105,7 +2092,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response deleteAction(@Context final HttpServletRequest request,
@@ -2160,7 +2150,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response deleteAction(@Context final HttpServletRequest request,
@@ -2212,7 +2205,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response deleteActionlet(@Context final HttpServletRequest request,
@@ -2275,7 +2271,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response reorderStep(@Context final HttpServletRequest request,
@@ -2333,7 +2331,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response updateStep(@Context final HttpServletRequest request,
@@ -2402,7 +2402,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response addStep(@Context final HttpServletRequest request,
@@ -2465,7 +2467,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Workflow step not found.")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "405", description = "Method Not Allowed"), // if param string blank
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findStepById(@Context final HttpServletRequest request,
@@ -2503,10 +2508,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
-                    "specified by name, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
+    @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form)",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+                    "specified by name, on a target contentlet. Uses a multipart form to transmit its data, " +
+                    "supporting file uploads alongside contentlet field values.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.",
@@ -2518,8 +2523,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireActionByNameMultipartNewPath(@Context final HttpServletRequest request,
@@ -2560,10 +2567,21 @@ public class WorkflowResource {
                                                             schema = @Schema(type = "string")
                                                     ) final String language,
                                                     @RequestBody(
-                                                            description = "Multipart form. More details to follow.",
+                                                            description = "Multipart form: 'file' part (binary) and 'json' part " +
+                                                                    "(contentlet fields as JSON). Required contentlet fields: " +
+                                                                    "'contentType' (content type variable name), 'title', 'languageId'. " +
+                                                                    "Additional fields depend on the content type definition. " +
+                                                                    "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                                                                    "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                                                                    "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                                                                    "-- you must specify an actual site identifier.",
                                                          required = true,
                                                          content = @Content(
-                                                                 schema = @Schema(implementation = FormDataMultiPart.class)
+                                                                 mediaType = "multipart/form-data",
+                                                                 schema = @Schema(type = "object",
+                                                                         description = "Multipart form with file upload and contentlet data. " +
+                                                                                 "The 'file' part contains the binary file. " +
+                                                                                 "The 'json' part contains contentlet fields as a JSON string.")
                                                          )
                                                  ) final FormDataMultiPart multipart) {
         return fireActionByNameMultipart(request, response, inode, identifier, indexPolicy, language, multipart);
@@ -2618,8 +2636,8 @@ public class WorkflowResource {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
             }
 
-            actionId = this.workflowHelper.getActionIdOnList // we do not want to do a double permission check here, since the WF API will check the permissions for the action later on
-                    (fireActionForm.getActionName(), contentlet, APILocator.systemUser());
+            actionId = this.workflowHelper.getActionIdOnList
+                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
 
             Logger.debug(this, "fire ActionByName Multipart with the actionid: " + actionId);
             return fireAction(request, fireActionForm, initDataObject.getUser(), contentlet, actionId, Optional.empty());
@@ -2632,7 +2650,6 @@ public class WorkflowResource {
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
-
     /**
      * Fires a workflow action by name, if the contentlet exists could use inode or identifier and optional language.
      * @param request    {@link HttpServletRequest}
@@ -2661,8 +2678,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireActionByNameSinglePart(@Context final HttpServletRequest request,
@@ -2712,7 +2731,12 @@ public class WorkflowResource {
                                                                      "| `contentlet` | Object | An alternate way of specifying the target contentlet. " +
                                                                                                 "If no identifier or inode is included via parameter, " +
                                                                                                 "either one could instead be included in the body as a " +
-                                                                                                "property of this object. |\n" +
+                                                                                                "property of this object. The contentlet JSON object requires at minimum: " +
+                                                                                                "'contentType' (the content type variable name), 'title', and 'languageId'. " +
+                                                                                                "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                                                                                                "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                                                                                                "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                                                                                                "-- you must specify an actual site identifier. |\n" +
                                                                      "| `comments` | String | Comments that will appear in the [workflow tasks]" +
                                                                                                 "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
                                                                                                 "tool with the execution of this workflow action. |\n" +
@@ -2792,8 +2816,8 @@ public class WorkflowResource {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
             }
 
-            actionId = this.workflowHelper.getActionIdOnList // we do not want to do a double permission check here, since the WF API will check the permissions for the action later on
-                    (fireActionForm.getActionName(), contentlet, APILocator.systemUser());
+            actionId = this.workflowHelper.getActionIdOnList
+                    (fireActionForm.getActionName(), contentlet, initDataObject.getUser());
 
             Logger.debug(this, "fire ActionByName with the actionid: " + actionId);
 
@@ -2869,10 +2893,6 @@ public class WorkflowResource {
         final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
                 new DotTransformerBuilder().contentResourceOptions(false)
                     .content(basicContentlet).build().hydrate().get(0): basicContentlet;
-
-        if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
-            hydratedContentlet.setVariantId(basicContentlet.getVariantId());
-        }
         return Response.ok(
                 new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
         ).build(); // 200
@@ -2936,8 +2956,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireActionDefaultSinglePart(@Context final HttpServletRequest request,
@@ -2977,10 +2999,6 @@ public class WorkflowResource {
                                               description = "Language version of target content.",
                                               schema = @Schema(type = "string")
                                       ) final String language,
-                                      @DefaultValue("DEFAULT") @QueryParam("variantName") @Parameter(
-                                              description = "Variant name",
-                                              schema = @Schema(type = "string")
-                                      ) final String variantName,
                                       @PathParam("systemAction") @Parameter(
                                               required = true,
                                               schema = @Schema(
@@ -3004,7 +3022,12 @@ public class WorkflowResource {
                                                       "| `contentlet` | Object | An alternate way of specifying the target contentlet. " +
                                                                                 "If no identifier or inode is included via parameter, " +
                                                                                 "either one could instead be included in the body as a " +
-                                                                                "property of this object. |\n" +
+                                                                                "property of this object. The contentlet JSON object requires at minimum: " +
+                                                                                "'contentType' (the content type variable name), 'title', and 'languageId'. " +
+                                                                                "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                                                                                "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                                                                                "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                                                                                "-- you must specify an actual site identifier. |\n" +
                                                       "| `comments` | String | Comments that will appear in the [workflow tasks]" +
                                                                                 "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
                                                                                 "tool with the execution of this workflow action. |\n" +
@@ -3076,7 +3099,7 @@ public class WorkflowResource {
             final Contentlet contentlet = this.getContentlet
                     (inode, identifier, languageId,
                             ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId(),
-                            fireActionForm, initDataObject, mode, variantName);
+                            fireActionForm, initDataObject, mode);
 
             if (UtilMethods.isSet(indexPolicy)) {
                 contentlet.setIndexPolicy(IndexPolicy.parseIndexPolicy(indexPolicy));
@@ -3208,8 +3231,11 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "406", description = "Not acceptable"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireMultipleActionDefault(@Context final HttpServletRequest request,
@@ -3234,7 +3260,12 @@ public class WorkflowResource {
                                                                     "|-|-|-|\n" +
                                                                     "| `contentlet` | List of Objects | Multiple contentlet objects to serve " +
                                                                                                 "as the target of the selected default system action; requires, at minimum, " +
-                                                                                                "an identifier in each. |\n" +
+                                                                                                "an identifier in each. Each contentlet JSON object requires at minimum: " +
+                                                                                                "'contentType' (the content type variable name), 'title', and 'languageId'. " +
+                                                                                                "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                                                                                                "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                                                                                                "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                                                                                                "-- you must specify an actual site identifier. |\n" +
                                                                     "| `comments` | String | Comments that will appear in the [workflow tasks]" +
                                                                                                 "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
                                                                                                 "tool with the execution of this workflow action. |\n" +
@@ -3500,8 +3531,11 @@ public class WorkflowResource {
                                             "}")
                             )
                     ),
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "404", description = "Content Type not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "406", description = "Not Acceptable"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireMergeActionDefault(@Context final HttpServletRequest request,
@@ -3546,7 +3580,12 @@ public class WorkflowResource {
                                                                  "| `contentlet` | Object | An alternate way of specifying the target contentlet. " +
                                                                                              "If no identifier or inode is included via parameter, " +
                                                                                              "either one could instead be included in the body as a " +
-                                                                                             "property of this object. |\n" +
+                                                                                             "property of this object. The contentlet JSON object requires at minimum: " +
+                                                                                             "'contentType' (the content type variable name), 'title', and 'languageId'. " +
+                                                                                             "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                                                                                             "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                                                                                             "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                                                                                             "-- you must specify an actual site identifier. |\n" +
                                                                  "| `comments` | String | Comments that will appear in the [workflow tasks]" +
                                                                                              "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
                                                                                              "tool with the execution of this workflow action. |\n" +
@@ -3692,6 +3731,7 @@ public class WorkflowResource {
                 new DotConcurrentFactory.SubmitterConfigBuilder().poolSize(2).maxPoolSize(5).queueCapacity(CONTENTLETS_LIMIT).build());
         final CompletionService<Map<String, Object>> completionService = new ExecutorCompletionService<>(dotSubmitter);
         final List<Future<Map<String, Object>>> futures = new ArrayList<>();
+        // todo: add the mock request
         final HttpServletRequest statelessRequest = RequestUtil.INSTANCE.createStatelessRequest(request);
 
 
@@ -3896,10 +3936,10 @@ public class WorkflowResource {
     @NoCache
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
-                    "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
+    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form)",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+                    "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data, " +
+                    "supporting file uploads alongside contentlet field values.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.",
@@ -3911,8 +3951,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireActionMultipartNewPath(@Context final HttpServletRequest request,
@@ -3960,10 +4002,21 @@ public class WorkflowResource {
                     schema = @Schema(type = "string")
             ) final String language,
             @RequestBody(
-                    description = "Multipart form. More details to follow.",
+                    description = "Multipart form: 'file' part (binary) and 'json' part " +
+                            "(contentlet fields as JSON). Required contentlet fields: " +
+                            "'contentType' (content type variable name), 'title', 'languageId'. " +
+                            "Additional fields depend on the content type definition. " +
+                            "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                            "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                            "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                            "-- you must specify an actual site identifier.",
                     required = true,
                     content = @Content(
-                            schema = @Schema(implementation = FormDataMultiPart.class)
+                            mediaType = "multipart/form-data",
+                            schema = @Schema(type = "object",
+                                    description = "Multipart form with file upload and contentlet data. " +
+                                            "The 'file' part contains the binary file. " +
+                                            "The 'json' part contains contentlet fields as a JSON string.")
                     )
             ) final FormDataMultiPart multipart) {
         return fireActionMultipart(request, response, actionId, inode, identifier, indexPolicy,
@@ -4044,10 +4097,10 @@ public class WorkflowResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
-                    "on target contentlet. Uses a multipart form to transmit its data.\n\n" +
+    @Operation(operationId = "putFireDefaultSystemActionMultipart", summary = "Fire default system action (multipart form)",
+            description = "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+                    "on target contentlet. Uses a multipart form to transmit its data, " +
+                    "supporting file uploads alongside contentlet field values.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.",
@@ -4059,8 +4112,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireActionDefaultMultipartNewPath(
@@ -4113,7 +4168,24 @@ public class WorkflowResource {
                     ),
                     description = "Default system action."
             ) final WorkflowAPI.SystemAction systemAction,
-            final FormDataMultiPart multipart) {
+            @RequestBody(
+                    description = "Multipart form: 'file' part (binary) and 'json' part " +
+                            "(contentlet fields as JSON). Required contentlet fields: " +
+                            "'contentType' (content type variable name), 'title', 'languageId'. " +
+                            "Additional fields depend on the content type definition. " +
+                            "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                            "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                            "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                            "-- you must specify an actual site identifier.",
+                    required = true,
+                    content = @Content(
+                            mediaType = "multipart/form-data",
+                            schema = @Schema(type = "object",
+                                    description = "Multipart form with file upload and contentlet data. " +
+                                            "The 'file' part contains the binary file. " +
+                                            "The 'json' part contains contentlet fields as a JSON string.")
+                    )
+            ) final FormDataMultiPart multipart) {
         return fireActionDefaultMultipart(request, response, inode, identifier, indexPolicy, language,
                 systemAction, multipart);
     }
@@ -4236,8 +4308,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Content not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response fireActionSinglePart(@Context final HttpServletRequest request,
@@ -4293,7 +4367,12 @@ public class WorkflowResource {
                             "| `contentlet` | Object | An alternate way of specifying the target contentlet. " +
                                                         "If no identifier or inode is included via parameter, " +
                                                         "either one could instead be included in the body as a " +
-                                                        "property of this object. |\n" +
+                                                        "property of this object. The contentlet JSON object requires at minimum: " +
+                                                        "'contentType' (the content type variable name), 'title', and 'languageId'. " +
+                                                        "For pages, also include 'url', 'hostFolder' (site identifier), and 'template'. " +
+                                                        "For file assets, include 'hostFolder', 'fileName', and 'binary' fields. " +
+                                                        "Note: Pages and file assets cannot use SYSTEM_FOLDER as the hostFolder value " +
+                                                        "-- you must specify an actual site identifier. |\n" +
                             "| `comments` | String | Comments that will appear in the [workflow tasks]" +
                                                         "(https://www.dotcms.com/docs/latest/workflow-tasks) " +
                                                         "tool with the execution of this workflow action. |\n" +
@@ -4569,17 +4648,6 @@ public class WorkflowResource {
                                      final InitDataObject initDataObject,
                                      final PageMode pageMode) throws DotDataException, DotSecurityException {
 
-        return getContentlet(inode, identifier, language, sessionLanguage, fireActionForm, initDataObject, pageMode, VariantAPI.DEFAULT_VARIANT.name());
-    }
-    private Contentlet getContentlet(final String inode,
-                                     final String identifier,
-                                     final long language,
-                                     final Supplier<Long> sessionLanguage,
-                                     final FireActionForm fireActionForm,
-                                     final InitDataObject initDataObject,
-                                     final PageMode pageMode,
-                                     final String variantName) throws DotDataException, DotSecurityException {
-
         Contentlet contentlet = null;
         PageMode mode = pageMode;
         final String finalInode      = UtilMethods.isSet(inode)? inode:
@@ -4604,11 +4672,9 @@ public class WorkflowResource {
 
             mode = PageMode.EDIT_MODE; // when asking for identifier it is always edit
             final Optional<Contentlet> currentContentlet =  language <= 0?
-                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), variantName, sessionLanguage):
+                    this.workflowHelper.getContentletByIdentifier(finalIdentifier, mode, initDataObject.getUser(), sessionLanguage):
                     this.contentletAPI.findContentletByIdentifierOrFallback
-                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms, variantName);
-
-
+                            (finalIdentifier, mode.showLive, language, initDataObject.getUser(), mode.respectAnonPerms);
 
             DotPreconditions.isTrue(currentContentlet.isPresent(), ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
@@ -4632,9 +4698,6 @@ public class WorkflowResource {
 
         Contentlet contentlet = new Contentlet();
         contentlet.getMap().putAll(currentContentlet.getMap());
-        if (Objects.nonNull(currentContentlet.getVariantId())) {
-            contentlet.setVariantId(currentContentlet.getVariantId());
-        }
 
         if (null != fireActionForm && null != fireActionForm.getContentletFormData() && null != contentlet) {
 
@@ -4752,8 +4815,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "404", description = "Workflow step or action not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response reorderAction(@Context final HttpServletRequest request,
@@ -4819,7 +4883,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response importScheme(@Context final HttpServletRequest  httpServletRequest,
@@ -5047,7 +5113,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response exportScheme(@Context final HttpServletRequest  httpServletRequest,
@@ -5114,8 +5183,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
                     @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response copyScheme(@Context final HttpServletRequest httpServletRequest,
@@ -5194,10 +5265,13 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityDefaultWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Content type not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Content type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
-    public final ResponseEntityDefaultWorkflowActionsView findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
+    public final Response findAvailableDefaultActionsByContentType(@Context final HttpServletRequest request,
                                                                    @Context final HttpServletResponse response,
                                                                    @PathParam("contentTypeId") @Parameter(
                                                                            required = true,
@@ -5205,14 +5279,21 @@ public class WorkflowResource {
                                                                                    "Example ID: `c541abb1-69b3-4bc5-8430-5e09e5239cc8` (Default page content type)\n\n" +
                                                                                    "Example Variable: `htmlpageasset` (Default page content type)",
                                                                            schema = @Schema(type = "string")
-                                                                   ) final String contentTypeId) throws NotFoundInDbException {
+                                                                   ) final String contentTypeId) {
         final InitDataObject initDataObject = this.webResource.init
                 (null, request, response, true, null);
+        try {
             Logger.debug(this,
                     () -> "Getting the available workflow schemes default action for the ContentType: "
                             + contentTypeId );
             final List<WorkflowDefaultActionView> actions = this.workflowHelper.findAvailableDefaultActionsByContentType(contentTypeId, initDataObject.getUser());
-            return new ResponseEntityDefaultWorkflowActionsView(actions);
+            return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
+        } catch (Exception e) {
+            Logger.error(this.getClass(),
+                    "Exception on find Available Default Actions exception message: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+
     } // findAvailableDefaultActionsByContentType.
 
     /**
@@ -5238,7 +5319,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityDefaultWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow action not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow action not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findAvailableDefaultActionsBySchemes(
@@ -5277,7 +5361,7 @@ public class WorkflowResource {
      * @return Response
      */
     @GET
-        @Path("/initialactions/contenttype/{contentTypeId}")
+    @Path("/initialactions/contenttype/{contentTypeId}")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
@@ -5291,7 +5375,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityDefaultWorkflowActionsView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Content type not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Content type not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response findInitialAvailableActionsByContentType(
@@ -5310,11 +5397,8 @@ public class WorkflowResource {
         try {
             Logger.debug(this,
                     ()->"Getting the available actions for the contentlet inode: " + contentTypeId);
-            final boolean includeSeparator = ConversionUtils.toBoolean(request.getParameter(INCLUDE_SEPARATOR), false) ;
-            final List<WorkflowDefaultActionView> actions = includeSeparator?
-                    this.workflowHelper.findInitialAvailableActionsByContentType(contentTypeId,
-                            initDataObject.getUser()):
-                    this.workflowHelper.findInitialAvailableActionsByContentTypeSkippingSeparators(contentTypeId,
+            final List<WorkflowDefaultActionView> actions = this.workflowHelper
+                    .findInitialAvailableActionsByContentType(contentTypeId,
                             initDataObject.getUser());
             return Response.ok(new ResponseEntityView<>(actions)).build(); // 200
         } catch (Exception e) {
@@ -5350,7 +5434,9 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
+                    @ApiResponse(responseCode = "403", description = "Forbidden"), // no permission
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response saveScheme(@Context final HttpServletRequest request,
@@ -5404,8 +5490,10 @@ public class WorkflowResource {
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
                     @ApiResponse(responseCode = "404", description = "Workflow scheme not found."),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final Response updateScheme(@Context final HttpServletRequest request,
@@ -5462,7 +5550,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityWorkflowSchemeView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found")
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "404", description = "Workflow scheme not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error")
             }
     )
     public final void deleteScheme(@Context final HttpServletRequest request,
@@ -5531,7 +5622,10 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseContentletWorkflowStatusView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request")
+                    @ApiResponse(responseCode = "400", description = "Bad Requesy"),
+                    @ApiResponse(responseCode = "401", description = "Invalid User"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden"),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error") // includes when inode not found
             }
     )
     public final ResponseContentletWorkflowStatusView getStatusForContentlet(@Context final HttpServletRequest request,
@@ -5565,260 +5659,4 @@ public class WorkflowResource {
                 wfStep, wfTask));
     }
 
-    /**
-     * Returns the workflow tasks based on the {@link WorkflowSearcherForm}
-     *
-     * @param request         The current instance of the {@link HttpServletRequest}.
-     * @param response        The current instance of the {@link HttpServletResponse}.
-     * @param workflowSearcherForm body will all filter parameters
-     *
-     * @return The status information of the Contentlet in the Workflow it is assigned to.
-     *
-     * @throws DotDataException          The specified Contentlet Inode was not found.
-     * @throws DotSecurityException      The User calling this endpoint does not have required
-     *                                   permissions to do so.
-     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
-     *                                   view.
-     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
-     *                                   view.
-     */
-    @POST
-    @Path("/tasks")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on the filter parameters on the request body",
-            description = "Retrieve the workflow tasks that matched" +
-                    "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
-            tags = {"Workflow"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowTasksView.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request")
-            }
-    )
-    public final ResponseEntityWorkflowTasksView getWorkflowTasks(@Context final HttpServletRequest request,
-                                                                            @Context final HttpServletResponse response,
-                                                                            final WorkflowSearcherForm workflowSearcherForm)
-            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
-
-        if (null == workflowSearcherForm) {
-
-            throw new BadRequestException("the body could not be null");
-        }
-
-        Logger.debug(this, String.format("Retrieving Workflow tasks based on the '%s'", workflowSearcherForm.toString()));
-        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true) // todo: check if here may need more than that
-                .requiredBackendUser(true).requiredFrontendUser(false).init();
-
-        final User user = initDataObject.getUser();
-        final WorkflowSearcher workflowSearcher = this.workflowHelper.toWorkflowSearcher(workflowSearcherForm, user);
-        final List<WorkflowTask> workflowTasks = workflowSearcher.findTasks();
-        final List<WorkflowTaskView> workflowTaskViews = this.workflowHelper.toWorkflowTasksView(workflowTasks);
-        return new ResponseEntityWorkflowTasksView(new WorkflowSearchResultsView(workflowSearcher.getTotalCount(),
-                workflowTaskViews));
-    }
-
-    /**
-     * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
-     * summary:
-     * <ul>
-     *     <li>The Workflow Scheme that the Contentlet is in.</li>
-     *     <li>The Step that the Contentlet is in.</li>
-     *     <li>The User assigned to such a Step.</li>
-     * </ul>
-     * Here's an example of how to use this endpoint:
-     * <pre>
-     *     http://localhost:8080/api/v1/workflow/status/{contentletInode}
-     * </pre>
-     *
-     * @param request         The current instance of the {@link HttpServletRequest}.
-     * @param response        The current instance of the {@link HttpServletResponse}.
-     * @param contentletIdentifier The inode of the Contentlet whose status will be checked.
-     *
-     * @return The status information of the Contentlet in the Workflow it is assigned to.
-     *
-     * @throws DotDataException          The specified Contentlet Inode was not found.
-     * @throws DotSecurityException      The User calling this endpoint does not have required
-     *                                   permissions to do so.
-     * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
-     *                                   view.
-     * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
-     *                                   view.
-     */
-    @GET
-    @Path("/tasks/history/comments/{contentletIdentifier}")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "getWorkflowTasksHistoryComments", summary = "Find workflow tasks history and comments of content",
-            description = "Retrieve the workflow tasks comments of a contentlet by its [id]" +
-                    "(https://www.dotcms.com/docs/latest/content-versions#IdentifiersInodes).\n\n" +
-                    "Returns an object containing the associated [workflow history or comments]" +
-                    "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
-            tags = {"Workflow"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowHistoryCommentsView.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request")
-            }
-    )
-    public final ResponseEntityWorkflowHistoryCommentsView getWorkflowTasksHistoryComments(@Context final HttpServletRequest request,
-                                                                                         @Context final HttpServletResponse response,
-                                                                                         @PathParam("contentletIdentifier") @Parameter(
-                                                                                     required = true,
-                                                                                     description = "Id of content  to inspect for workflow tasks.\n\n",
-                                                                                     schema = @Schema(type = "string")
-                                                                             ) final String contentletIdentifier,
-                                                                                         @DefaultValue("-1") @QueryParam("language") @Parameter(
-                                                                               description = "Language version of target content.",
-                                                                               schema = @Schema(type = "string")) final String language
-                                                                       )
-            throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
-
-        Logger.debug(this, String.format("Retrieving Workflow tasks for Contentlet with identifier " +
-                "'%s'", contentletIdentifier));
-        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .requiredBackendUser(true).requiredFrontendUser(false).init();
-
-        final User user = initDataObject.getUser();
-        final long languageId = LanguageUtil.getLanguageId(language);
-        final PageMode mode = PageMode.get(request);
-
-        final Optional<Contentlet> currentContentlet =  languageId <= 0?
-                this.workflowHelper.getContentletByIdentifier(contentletIdentifier, mode, initDataObject.getUser(),
-                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
-                this.contentletAPI.findContentletByIdentifierOrFallback
-                        (contentletIdentifier, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
-
-        if (currentContentlet.isPresent()) {
-
-            final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
-            final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
-            final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
-                    .map(this::toWorkflowTimelineItemView)
-                    .collect(Collectors.toList());
-            return new ResponseEntityWorkflowHistoryCommentsView(workflowTimelineItemViews);
-        }
-
-        throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
-    }
-
-    private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
-
-        final WorkflowStep step = wfTimeLine instanceof WorkflowHistory && UtilMethods.isSet(wfTimeLine.stepId())?
-                Try.of(()->this.workflowHelper.findStepById(wfTimeLine.stepId())).getOrNull():null;
-        final WorkflowAction action = wfTimeLine instanceof WorkflowHistory &&  UtilMethods.isSet(wfTimeLine.actionId())?
-                Try.of(()->this.workflowHelper.findAction(wfTimeLine.actionId(), APILocator.systemUser())).getOrNull():null;
-
-        final Map<String, String> minimalStepViewMap = new HashMap<>();
-        if (Objects.nonNull(step)) {
-
-            minimalStepViewMap.put("id",step.getId());
-            minimalStepViewMap.put("name",step.getName());
-            minimalStepViewMap.put("schemeId",step.getSchemeId());
-        }
-
-        final Map<String, String> minimalActionViewMap = new HashMap<>();
-        if (Objects.nonNull(action)) {
-
-            minimalActionViewMap.put("id",action.getId());
-            minimalActionViewMap.put("name",action.getName());
-            minimalActionViewMap.put("schemeId",action.getSchemeId());
-        }
-
-        final String postedBy = this.workflowHelper.getPostedBy(wfTimeLine.roleId());
-        return new WorkflowTimelineItemView(wfTimeLine.createdDate(), wfTimeLine.roleId(), postedBy,
-                wfTimeLine.commentDescription(), wfTimeLine.taskId(), wfTimeLine.type(), minimalStepViewMap, minimalActionViewMap);
-    }
-
-    /**
-     * Creates a new workflow comment
-     *
-     * @param request HttpServletRequest
-     * @param workflowSchemeForm WorkflowSchemeForm
-     * @return Response
-     */
-    @POST
-    @Path("/{contentletId}/comments")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "postSaveScheme", summary = "Create a workflow comment",
-            description = "Create a [workflow comment].\n\n " +
-                    "Returns created workflow comment on success.",
-            tags = {"Workflow"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "Copied workflow comment successfully",
-                            content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityWorkflowCommentView.class)
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
-            }
-    )
-    public final ResponseEntityWorkflowCommentView saveComment(@Context final HttpServletRequest request,
-                                     @Context final HttpServletResponse response,
-                                     @PathParam("contentletId") @Parameter(
-                                             required = true,
-                                             description = "Identifier of contentlet to add comment.",
-                                             schema = @Schema(type = "string")
-                                     ) final String contentletId,
-                                     @DefaultValue("-1") @QueryParam("language") @Parameter(
-                                           description = "Language version of target content.",
-                                           schema = @Schema(type = "string")) final String language,
-                                     @RequestBody(
-                                             description = "The request body consists of the following three properties:\n\n" +
-                                                     "| Property | Type | Description |\n" +
-                                                     "|-|-|-|\n" +
-                                                     "| `comment` | String | The workflow comment. |\n",
-                                             content = @Content(
-                                                     schema = @Schema(implementation = WorkflowCommentForm.class)
-                                             )
-                                     ) final WorkflowCommentForm workflowCommentForm) throws DotDataException, DotSecurityException {
-
-        final InitDataObject initDataObject = new WebResource.InitBuilder(webResource)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .requiredBackendUser(true).requiredFrontendUser(false).init();
-
-        DotPreconditions.notNull(workflowCommentForm,"Expected Request body was empty.");
-        Logger.debug(this, ()->"Saving a workflow comment for the contentletId: " + contentletId);
-
-        final User user = initDataObject.getUser();
-        final long languageId = LanguageUtil.getLanguageId(language);
-        final PageMode mode = PageMode.get(request);
-
-        final Optional<Contentlet> currentContentlet =  languageId <= 0?
-                this.workflowHelper.getContentletByIdentifier(contentletId, mode, initDataObject.getUser(),
-                        ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
-                this.contentletAPI.findContentletByIdentifierOrFallback
-                        (contentletId, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
-        if (currentContentlet.isPresent()) {
-
-            final WorkflowTask task = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
-            final WorkflowComment taskComment = new WorkflowComment();
-            taskComment.setComment(workflowCommentForm.getComment());
-            taskComment.setCreationDate(new Date());
-            taskComment.setPostedBy(user.getUserId());
-            taskComment.setWorkflowtaskId(task.getId());
-            this.workflowAPI.saveComment(taskComment);
-            return new ResponseEntityWorkflowCommentView(
-                    toWorkflowTimelineItemView(taskComment));
-        }
-
-        throw new DoesNotExistException("Contentlet with identifier " + contentletId + " does not exist.");
-    }
 } // E:O:F:WorkflowResource.

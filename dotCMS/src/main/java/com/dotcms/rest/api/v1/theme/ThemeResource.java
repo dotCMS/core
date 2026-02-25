@@ -18,8 +18,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
-import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,7 +44,7 @@ import java.util.Map;
  * Provides different methods to access information about Themes in dotCMS.
  */
 @Path("/v1/themes")
-@Tag(name = "Templates", description = "Template design and management")
+@Tag(name = "Theme", description = "Theme browsing and management")
 public class ThemeResource {
 
     private final PaginationUtil paginationUtil;
@@ -80,12 +85,32 @@ public class ThemeResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "findThemes",
+            summary = "List themes with pagination",
+            description = "Returns a paginated list of themes for a given host (site). " +
+                    "Results can be filtered by a search parameter and sorted in ascending or descending order. " +
+                    "The hostId parameter is required. " +
+                    "Note: The 'theme' identifier returned by this endpoint corresponds to 'themeId' used in template endpoints.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Themes returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "400", description = "Missing or invalid hostId parameter"),
+                    @ApiResponse(responseCode = "401", description = "Authentication required")
+            }
+    )
     public final Response findThemes(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Host (site) identifier to filter themes by (required)")
             @QueryParam("hostId") final String hostId,
+            @Parameter(description = "Page number for pagination")
             @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of items per page (-1 for default)")
             @QueryParam(PaginationUtil.PER_PAGE) @DefaultValue("-1") final int perPage,
+            @Parameter(description = "Sort direction: ASC or DESC")
             @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Search term to filter themes (Lucene criteria: +catchall:*searchParam*)")
             @QueryParam("searchParam") final String searchParam) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -120,8 +145,22 @@ public class ThemeResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+            operationId = "findThemeById",
+            summary = "Get theme by ID",
+            description = "Returns a single theme given its folder inode ID. " +
+                    "The 'theme' identifier in this endpoint corresponds to 'themeId' used in template endpoints.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Theme returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = Object.class))),
+                    @ApiResponse(responseCode = "401", description = "Authentication required"),
+                    @ApiResponse(responseCode = "404", description = "Theme not found")
+            }
+    )
     public final Response findThemeById(@Context final HttpServletRequest request,
             final @Context HttpServletResponse response,
+            @Parameter(description = "Theme folder inode identifier", required = true)
             @PathParam("id") final String themeId) throws DotDataException, DotSecurityException {
 
         Logger.debug(this, "Getting the theme by identifier: " + themeId);
