@@ -6,33 +6,34 @@ dotCMS is a headless CMS with a Java backend (Maven) and Angular frontend (Nx/Ya
 
 | Service | How to run | Port |
 |---------|-----------|------|
-| **dotCMS Backend** (with PostgreSQL + OpenSearch) | `docker compose -f docker/docker-compose-examples/single-node/docker-compose.yml up -d` | 8082 (HTTP), 8443 (HTTPS) |
-| **Frontend dev server** (Angular) | `cd core-web && npx nx serve dotcms-ui` | 4200 (proxies API to 8082) |
+| **dotCMS Backend** (Maven Docker plugin) | `just dev-run` or `./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.glowroot.enabled=true` | 8082 (HTTP) |
+| **Frontend dev server** (Angular) | `cd core-web && npx nx serve dotcms-ui` | 4200 (proxies API to 8080) |
+
+The Maven `docker-start` profile builds and runs dotCMS from source in a Docker container alongside PostgreSQL and OpenSearch, matching CI/CD. This is preferred over `docker-compose` examples which use pre-built images.
 
 Default admin credentials: `admin@dotcms.com` / `admin`
 
-### Running the application
+### Build and run
 
-1. Ensure Docker daemon is running: `sudo dockerd &>/tmp/dockerd.log &` (wait ~5s), then `sudo chmod 666 /var/run/docker.sock`
-2. Start dotCMS with infrastructure: `docker compose -f docker/docker-compose-examples/single-node/docker-compose.yml up -d`
-3. Wait for readiness: `curl -s http://localhost:8082/api/v1/appconfiguration` should return 200
-4. For frontend development: `cd core-web && npx nx serve dotcms-ui`
+1. **Build everything** (includes Docker image): `./mvnw install -DskipTests` or `just build`
+2. **Start dotCMS**: `just dev-run` (runs `./mvnw -pl :dotcms-core -Pdocker-start -Ddocker.glowroot.enabled=true`)
+3. **Stop dotCMS**: `just dev-stop` (runs `./mvnw -pl :dotcms-core -Pdocker-stop`)
+4. **Quick core rebuild** (after code changes): `just build-quicker` (runs `./mvnw -pl :dotcms-core -DskipTests install`)
 
-### Build commands
+See `justfile` for the full list of convenient aliases.
 
-- **Full backend build (no Docker image):** `./mvnw clean install -DskipTests -Ddocker.skip`
-- **Quick core-only rebuild:** `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip`
-- **Frontend build:** `cd core-web && npx nx run-many -t build --exclude='tag:skip:build' --parallel=2`
-- **Frontend lint:** `cd core-web && npx nx lint dotcms-ui`
-- **Frontend test (targeted):** `cd core-web && npx nx test sdk-client`
+### Frontend commands
 
-See `justfile` for convenient aliases (e.g. `just build`, `just build-quicker`).
+- **Install deps**: `cd core-web && yarn install --frozen-lockfile`
+- **Build**: `cd core-web && npx nx run-many -t build --exclude='tag:skip:build' --parallel=2`
+- **Lint**: `cd core-web && npx nx lint dotcms-ui`
+- **Test (targeted)**: `cd core-web && npx nx test sdk-client`
 
 ### Known gotchas in Cloud VM
 
-- **Docker-in-Docker**: The VM runs inside a container. Docker needs `fuse-overlayfs` storage driver and `iptables-legacy`. These are set up in the environment snapshot.
-- **`/dist` directory**: The NX `edit-content-bridge:build` target resolves its output path to `/dist` (root filesystem) due to a path resolution quirk. The directory `/dist` must exist and be writable: `sudo mkdir -p /dist && sudo chmod 777 /dist`.
-- **Frontend build memory**: Use `NODE_OPTIONS="--max_old_space_size=4096"` and `--parallel=2` for NX builds to avoid OOM kills.
-- **Maven + frontend**: The Maven build includes the frontend (`dotcms-core-web` module). If frontend is already built via NX, pass `-Dskip.npm.install=true` to skip redundant yarn install.
-- **Building Docker image from source fails**: `./mvnw install -pl :dotcms-core` (with Docker enabled) fails due to network restrictions in the Docker build step. Use `-Ddocker.skip` and run the pre-built `dotcms/dotcms:latest` image instead.
-- **Pre-commit hooks**: The `.husky/pre-commit` hook in `core-web/` requires SDKMAN and runs Maven validation + NX lint/format. In cloud agents, commit with `--no-verify` if the hook fails.
+- **Docker storage driver**: Must use `vfs` (not `fuse-overlayfs`). The `fuse-overlayfs` driver causes dpkg-divert failures during the dotCMS Docker image build. The daemon config at `/etc/docker/daemon.json` should have `{"storage-driver": "vfs"}`.
+- **Docker daemon startup**: Run `sudo dockerd &>/tmp/dockerd.log &` then `sudo chmod 666 /var/run/docker.sock` before using Docker.
+- **`/dist` directory**: The NX `edit-content-bridge:build` target resolves its output path to `/dist` (root filesystem). The directory must exist and be writable: `sudo mkdir -p /dist && sudo chmod 777 /dist`.
+- **Frontend build memory**: Use `NODE_OPTIONS="--max_old_space_size=4096"` and `--parallel=2` for standalone NX builds to avoid OOM kills. The Maven build handles this internally.
+- **Pre-commit hooks**: The `.husky/pre-commit` hook requires SDKMAN. In cloud agents, commit with `--no-verify`.
+- **iptables**: Must use legacy iptables for Docker networking: `sudo update-alternatives --set iptables /usr/sbin/iptables-legacy`.
