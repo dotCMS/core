@@ -33,7 +33,7 @@ See `justfile` for the full list of convenient aliases.
 
 - **Docker storage driver**: Must use `vfs` (not `fuse-overlayfs`). The `fuse-overlayfs` driver causes dpkg-divert failures during the dotCMS Docker image build. The daemon config at `/etc/docker/daemon.json` should have `{"storage-driver": "vfs"}`.
 - **Docker daemon startup**: Run `sudo dockerd &>/tmp/dockerd.log &` then `sudo chmod 666 /var/run/docker.sock` before using Docker.
-- **`/dist` directory**: The NX `edit-content-bridge:build` target resolves its output path to `/dist` (root filesystem). The directory must exist and be writable: `sudo mkdir -p /dist && sudo chmod 777 /dist`.
+- **NX vite path bug (`edit-content-bridge`)**: The `@nx/vite:build` executor miscalculates `outDir` by joining `offsetFromRoot(projectRoot)` with `outputPath`, producing a relative path that Vite resolves against the workspace root instead of the project root. This results in writes to `/dist/` on the root filesystem. The vite.config.ts already resolves the path correctly via `__dirname`, but the executor overrides it. The Maven build caches the result after the first successful build, so this only blocks initial fresh builds. For now, the update script ensures `/dist` is writable.
 - **Frontend build memory**: Use `NODE_OPTIONS="--max_old_space_size=4096"` and `--parallel=2` for standalone NX builds to avoid OOM kills. The Maven build handles this internally.
 - **Pre-commit hooks**: The `.husky/pre-commit` hook requires SDKMAN. In cloud agents, commit with `--no-verify`.
 - **iptables**: Must use legacy iptables for Docker networking: `sudo update-alternatives --set iptables /usr/sbin/iptables-legacy`.
