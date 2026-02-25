@@ -59,7 +59,7 @@ inputs:
     required: false
     default: ''
   artifact_suffix:
-    description: 'Suffix for artifact names (e.g., -java25). Used to download the correct docker-build-context artifact.'
+    description: 'Suffix for artifact names (e.g., -java-25). Used to download the correct docker-build-context artifact.'
     required: false
     default: ''
   pull:
@@ -67,11 +67,11 @@ inputs:
     required: false
     default: 'false'
   identifier-tag:
-    description: 'Optional mutable alias tag managed by the deployment phase (e.g., nightly_20250218_java25, manual_issue-123_java25). Applied when non-empty.'
+    description: 'Optional mutable alias tag managed by the deployment phase (e.g., nightly_20250218_java-25, manual_issue-123_java-25). Applied when non-empty.'
     required: false
     default: ''
   custom-tag:
-    description: 'Optional custom alias tag chosen by the developer (e.g., modernization, java25-testing). Applied when non-empty.'
+    description: 'Optional custom alias tag chosen by the developer (e.g., modernization, java-25-testing). Applied when non-empty.'
     required: false
     default: ''
   extra-tags:
