@@ -253,12 +253,12 @@ public class FolderCollectionDataFetcherTest {
         final com.dotmarketing.business.Role limitedRole = new RoleDataGen().nextPersisted();
         final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
 
-        // Break permission inheritance on child2 FIRST (before granting parent permissions).
-        // permissionIndividually copies the parent's current permissions to the child and then
-        // breaks inheritance; doing this before granting limitedRole READ on parent ensures
-        // child2 does NOT get a copy of that permission.
+        // Break permission inheritance on child2 and then remove ALL its permissions.
+        // permissionIndividually copies parent permissions (including CMS Anonymous READ),
+        // so we must explicitly clear them to make child2 truly inaccessible.
         APILocator.getPermissionAPI().permissionIndividually(
                 parentFolder, childFolder2, user);
+        APILocator.getPermissionAPI().removePermissions(childFolder2);
 
         // Grant READ on parent folder to the limited user
         APILocator.getPermissionAPI().save(
@@ -267,7 +267,7 @@ public class FolderCollectionDataFetcherTest {
                         PermissionAPI.PERMISSION_READ),
                 parentFolder, user, false);
 
-        // Grant READ on child1 (child2 already has broken inheritance with no limitedRole access)
+        // Grant READ on child1 (child2 has no permissions so limitedUser cannot access it)
         APILocator.getPermissionAPI().save(
                 new Permission(childFolder1.getPermissionId(),
                         limitedRole.getId(),
