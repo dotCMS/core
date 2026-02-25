@@ -736,11 +736,11 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
     });
 
     describe('Integration Tests', () => {
-        it('should handle full workflow for archive action with confirmation', () => {
+        it('should handle full workflow for delete action with confirmation', () => {
             const mockItems = [
                 {
-                    archived: false,
-                    live: true,
+                    archived: true,
+                    live: false,
                     working: false,
                     baseType: 'CONTENT',
                     inode: 'test-inode-1'
@@ -756,11 +756,11 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 return confirmationService;
             });
 
-            const archiveButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.ARCHIVE}"]`
+            const deleteButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DELETE}"]`
             );
 
-            spectator.click(archiveButton);
+            spectator.click(deleteButton);
 
             expect(confirmationService.confirm).toHaveBeenCalled();
             expect(dotWorkflowActionsFireService.fireDefaultAction).toHaveBeenCalled();
