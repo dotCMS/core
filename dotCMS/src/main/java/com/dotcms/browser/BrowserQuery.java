@@ -43,7 +43,8 @@ import org.apache.commons.lang3.StringUtils;
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
     final boolean respectFrontEndRoles;
-    final int dbCursor;
+    final int contentCursor;
+    final int folderCursor;
     final User user;
     final String  filter;
     final String fileName;
@@ -101,6 +102,7 @@ public class BrowserQuery {
     @Override
     public String toString() {
         return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
+                ", contentCursor=" + contentCursor + ", folderCursor=" + folderCursor +
                 " ,site:" + site + ", folder:" + folder + ", filter:"
                 + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
@@ -118,7 +120,8 @@ public class BrowserQuery {
 
     private BrowserQuery(final Builder builder) {
         this.respectFrontEndRoles = builder.respectFrontEndRoles;
-        this.dbCursor = builder.dbCursor;
+        this.contentCursor = builder.contentCursor;
+        this.folderCursor = builder.folderCursor;
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
@@ -233,7 +236,8 @@ public class BrowserQuery {
     public static final class Builder {
         //setting respectFrontEndRoles to true by default to maintain backward compatibility.
         private boolean respectFrontEndRoles = true;
-        private int dbCursor = 0;
+        private int contentCursor = 0;
+        private int folderCursor = 0;
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
@@ -267,7 +271,8 @@ public class BrowserQuery {
         }
 
         private Builder(BrowserQuery browserQuery) {
-            this.dbCursor = browserQuery.dbCursor;
+            this.contentCursor = browserQuery.contentCursor;
+            this.folderCursor = browserQuery.folderCursor;
             this.user = browserQuery.user;
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
@@ -305,8 +310,13 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder dbCursor(int dbCursor) {
-            this.dbCursor = dbCursor;
+        public Builder contentCursor(int contentCursor) {
+            this.contentCursor = contentCursor;
+            return this;
+        }
+
+        public Builder folderCursor(int folderCursor) {
+            this.folderCursor = folderCursor;
             return this;
         }
 

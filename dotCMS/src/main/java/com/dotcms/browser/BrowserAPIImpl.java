@@ -172,13 +172,13 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Chunked scanning: fetch DB rows in configurable chunks, apply permission filtering
             // after each chunk, and stop as soon as we have enough items to fill the requested page.
             // This avoids loading the entire table for large datasets.
-            final int needed = startRow + maxRows;
+            final int needed = maxRows + startRow;
             final int chunkSize = Math.max(needed * BROWSER_DB_CHUNK_FACTOR.get(),
                     BROWSER_DB_CHUNK_MIN_SIZE.get());
-            int dbOffset = browserQuery.dbCursor;
+            int dbOffset = browserQuery.contentCursor;
             final List<Contentlet> accumulated = new ArrayList<>();
             boolean hasMore = false;
-            int nextDbCursor;
+            int nextContentCursor;
 
             while (true) {
                 final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
@@ -189,7 +189,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
                 if (inodesMapList.isEmpty()) {
                     // DB exhausted — no more rows to scan.
-                    nextDbCursor = dbOffset;
+                    nextContentCursor = dbOffset;
                     break;
                 }
 
@@ -210,25 +210,24 @@ public class BrowserAPIImpl implements BrowserAPI {
                     hasMore = (inodesMapList.size() == chunkSize);
 
                     if (accumulated.size() > needed) {
-                        // Leftover filtered items: last item on the page is from this chunk.
-                        // Store (last item's DB row + 1) so the next page starts after it.
-                        // chunkContentlets is in DB order, so index in chunk = DB row offset in chunk.
+                        // Leftover filtered items beyond what is needed for this page.
+                        // Store (last needed item's DB row + 1) so the next page starts after it.
                         final Contentlet lastOnPage = accumulated.get(needed - 1);
                         final int indexInChunk = chunkContentlets.indexOf(lastOnPage);
                         final int startOfChunk = dbOffset - inodesMapList.size();
-                        nextDbCursor = indexInChunk >= 0
+                        nextContentCursor = indexInChunk >= 0
                                 ? startOfChunk + indexInChunk + 1
                                 : dbOffset;
                     } else {
                         // Exactly the right number — no leftovers, advance past this chunk.
-                        nextDbCursor = dbOffset;
+                        nextContentCursor = dbOffset;
                     }
                     break;
                 }
 
                 if (inodesMapList.size() < chunkSize) {
                     // Partial chunk — DB is exhausted.
-                    nextDbCursor = dbOffset;
+                    nextContentCursor = dbOffset;
                     break;
                 }
             }
@@ -239,11 +238,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<Contentlet> page = new ArrayList<>(accumulated.subList(from, to));
 
             // If we accumulated more items than the page slice, there are definitely more visible items.
-            if (!hasMore && accumulatedSize > from + maxRows) {
+            if (!hasMore && to < accumulatedSize) {
                 hasMore = true;
             }
 
-            return new ContentUnderParent(page, accumulatedSize, hasMore, nextDbCursor);
+            return new ContentUnderParent(page, accumulatedSize, hasMore, nextContentCursor);
 
         } catch (final Exception e) {
             final String folderPath = UtilMethods.isSet(browserQuery.folder) ? browserQuery.folder.getPath() : "N/A";
@@ -659,7 +658,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         /** True when there are more DB rows to scan beyond this page. */
         final boolean hasMore;
         /**
-         * DB row offset to pass as {@link Builder#dbCursor(int)} on the next request.
+         * DB row offset to pass as {@link Builder#contentCursor(int)} on the next request.
          * Equals (last item's DB row + 1) so the next page uses it as setStartRow and
          * starts right after the last item, avoiding duplicates across pages.
          */
@@ -1274,79 +1273,100 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         final List<Map<String, Object>> list = new LinkedList<>();
 
-        int offset = browserQuery.offset;
         int maxResults = browserQuery.maxResults;
 
         int folderCount = 0;
         int contentTotalCount = 0;
         int contentCount = 0;
-        boolean hasMore = false;
-        int nextDbCursor = browserQuery.dbCursor;
+        boolean hasMoreContent = false;
+        boolean hasMoreFolders = false;
+        int nextContentCursor = browserQuery.contentCursor;
+        int nextFolderCursor = browserQuery.folderCursor;
 
-        // 1. Folders
+        // 1. Folders — cursor-based: slice starting from folderCursor.
+        // When hasMoreFolders=false is returned, the caller should set showFolders=false
+        // on the next request to skip this query entirely.
         if (browserQuery.showFolders) {
-            final List<Map<String, Object>> folders = foldersDefaultView(browserQuery, roles);
-            folderCount = folders.size();
+            final List<Map<String, Object>> allFolders = foldersDefaultView(browserQuery, roles);
+            final int totalFolders = allFolders.size();
+            final int folderStart = Math.min(browserQuery.folderCursor, totalFolders);
 
-            // Calculate if the offset still falls within folders
-            if (offset < folderCount) {
-                int toIndex = Math.min(folderCount, offset + maxResults);
-                list.addAll(folders.subList(offset, toIndex));
-                maxResults -= (toIndex - offset);
-                offset = 0;
-            } else {
-                offset -= folderCount;
+            if (folderStart < totalFolders) {
+                final int folderEnd = Math.min(folderStart + maxResults, totalFolders);
+                list.addAll(allFolders.subList(folderStart, folderEnd));
+                folderCount = folderEnd - folderStart;
+                maxResults -= folderCount;
+                nextFolderCursor = folderEnd;
+                hasMoreFolders = folderEnd < totalFolders;
             }
+            // else: folderCursor is past the end — all folders already shown, add nothing
         }
 
-        // 2. Contentlets
-        if (browserQuery.showContent && maxResults > 0) {
-            // Now the offset is adjusted (subtracting folders already seen)
-            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, offset, maxResults);
+        // 2. Contentlets — startRow=0 always; dbCursor handles DB-level positioning.
+        // Keep offset=0 in the request form; only update contentCursor between pages.
+        if (browserQuery.showContent && maxResults > 0 && list.size() < maxResults) {
+            final ContentUnderParent fromDB = getContentUnderParentFromDB(browserQuery, 0, maxResults);
             contentTotalCount = fromDB.totalResults;
-            hasMore = fromDB.hasMore;
-            nextDbCursor = fromDB.nextDbCursor;
+            hasMoreContent = fromDB.hasMore;
+            nextContentCursor = fromDB.nextDbCursor;
 
-            // Parallelize hydration with chunks
             final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
-            // Extract the size of the contentlets loaded and filtered
             contentCount = contentlets.size();
-            // And finally add them all into the result list
             list.addAll(contentlets);
         }
 
-        // Final sorting (optional: maybe you only need to sort within each block before slicing)
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount, hasMore, nextDbCursor);
+        return new PaginatedContents(list, folderCount, contentTotalCount, contentCount,
+                hasMoreContent, nextContentCursor, hasMoreFolders, nextFolderCursor);
     }
 
     /**
-     * Paginated result
+     * Paginated result for the Drive API.
+     *
+     * <p>Pagination usage:</p>
+     * <ul>
+     *   <li>Pass {@code nextContentCursor} as {@code contentCursor} on the next request to
+     *       continue content scanning from where this page left off.</li>
+     *   <li>Pass {@code nextFolderCursor} as {@code folderCursor} on the next request.</li>
+     *   <li>When {@code hasMoreFolders} is {@code false} set {@code showFolders=false} on
+     *       subsequent requests to skip the folder query entirely.</li>
+     *   <li>Keep {@code offset} at 0 on every request — only the cursors change between pages.</li>
+     * </ul>
      */
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
         public final int folderCount;
         public final int contentTotalCount;
         public final int contentCount;
-        /** True when there are more DB rows to scan beyond this page. */
-        public final boolean hasMore;
+        /** True when there are more content DB rows to scan beyond this page. */
+        public final boolean hasMoreContent;
         /**
-         * DB row offset to pass as {@code dbCursor} on the next page request.
-         * Equals (last item's DB row + 1); use as setStartRow so the next page
-         * starts after the last item and avoids duplicates.
+         * DB row offset to pass as {@code contentCursor} on the next page request.
+         * Equals (last returned item's DB row + 1) so the next scan starts right after
+         * the last item, avoiding duplicates.
          */
-        public final int nextDbCursor;
+        public final int nextContentCursor;
+        /** True when there are more folders to show beyond this page. */
+        public final boolean hasMoreFolders;
+        /**
+         * Folder list index to pass as {@code folderCursor} on the next page request.
+         * Equals the index of the first folder not yet returned.
+         */
+        public final int nextFolderCursor;
 
         public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
-                final int contentTotalCount, final int contentCount, final boolean hasMore,
-                final int nextDbCursor) {
+                final int contentTotalCount, final int contentCount,
+                final boolean hasMoreContent, final int nextContentCursor,
+                final boolean hasMoreFolders, final int nextFolderCursor) {
             this.list = list;
             this.folderCount = folderCount;
             this.contentTotalCount = contentTotalCount;
             this.contentCount = contentCount;
-            this.hasMore = hasMore;
-            this.nextDbCursor = nextDbCursor;
+            this.hasMoreContent = hasMoreContent;
+            this.nextContentCursor = nextContentCursor;
+            this.hasMoreFolders = hasMoreFolders;
+            this.nextFolderCursor = nextFolderCursor;
         }
     }
 

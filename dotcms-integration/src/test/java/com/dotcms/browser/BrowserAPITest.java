@@ -18,6 +18,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
@@ -29,6 +30,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -1866,8 +1868,15 @@ public class BrowserAPITest extends IntegrationTestBase {
     public void test_exhaustive_pagination_with_permission_filtering() throws Exception {
         final Host host = new SiteDataGen().nextPersisted(true);
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
-        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        // Create a minimal backend user with no Publisher role (avoids broad READ from Publisher role).
+        // The Backend User role is required so the user can read non-live (working) contentlets.
+        final Role restrictedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(restrictedRole, TestUserUtils.getBackendRole())
+                .nextPersisted();
+        // A separate role (not assigned to limitedUser) used to break inheritance on odd contentlets
+        final Role noAccessRole = new RoleDataGen().nextPersisted();
 
         // Give limited user access to the site and parent folder
         final Permission siteReadPermissions = new Permission(host.getPermissionId(),
@@ -1897,6 +1906,13 @@ public class BrowserAPITest extends IntegrationTestBase {
                         APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
                 permissionAPI.save(contentletReadPermission, contentlet, APILocator.systemUser(), false);
                 accessibleContentlets.add(contentlet);
+            } else {
+                // Odd: break the inheritance chain by setting explicit permissions for noAccessRole only.
+                // limitedUser does not have noAccessRole, so it cannot read these contentlets even
+                // though the parent folder grants READ (this explicit entry overrides inheritance).
+                final Permission noAccessPermission = new Permission(contentlet.getPermissionId(),
+                        noAccessRole.getId(), PermissionAPI.PERMISSION_READ);
+                permissionAPI.save(noAccessPermission, contentlet, APILocator.systemUser(), false);
             }
         }
 
@@ -1953,10 +1969,19 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
         assertFalse("Should indicate no more pages available", results4.hasMore);
 
-        // Test Case 5: Test second page - should get remaining accessible items
-        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 3, 5);
-        assertEquals("Should return remaining 5 accessible contentlets on page 2", 5, results5.contentlets.size());
-        assertTrue("Should indicate no more pages available", results5.hasMore);
+        // Test Case 5: Cursor-based second page — first page returns 5 items and a cursor,
+        // second page continues from that cursor and returns the remaining 5 items.
+        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 0, 5);
+        assertEquals("Should return exactly 5 accessible contentlets on page 1", 5, results5.contentlets.size());
+        assertTrue("Should indicate more pages available after page 1", results5.hasMore);
+
+        // Build query2 from query1, advancing only the contentCursor
+        final BrowserQuery query2 = BrowserQuery.from(query1)
+                .contentCursor(results5.nextDbCursor)
+                .build();
+        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, 0, 8);
+        assertEquals("Should return remaining 5 accessible contentlets on page 2", 5, results6.contentlets.size());
+        assertFalse("Should indicate no more pages available after page 2", results6.hasMore);
  }
 
 }
