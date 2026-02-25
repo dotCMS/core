@@ -39,7 +39,7 @@ tags:
 - description: File and folder browser tree operations
   name: Browser Tree
 - description: "Category hierarchy CRUD, import, and export operations"
-  name: Category
+  name: Categories
 - description: Container management and rendering endpoints
   name: Container
 - description: Endpoints for managing content and contentlets
@@ -108,8 +108,6 @@ tags:
     description: Additional API token information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication#APIToken
   name: API Token
-- description: Content categorization and taxonomy
-  name: Categories
 - description: Cluster nodes and distributed system management
   name: Cluster Management
 - description: Container templates and management
@@ -4454,7 +4452,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk delete result returned
         "400":
           description: Bad request — list of inodes is required
@@ -4464,7 +4462,7 @@ paths:
           description: Insufficient permissions
       summary: Delete categories by inodes
       tags:
-      - Category
+      - Categories
     get:
       description: "Returns a paginated list of categories. Supports filtering by\
         \ name, sorting, and optionally including the count of child categories for\
@@ -4510,7 +4508,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Paginated categories retrieved successfully
         "401":
           description: Authentication required
@@ -4520,7 +4518,7 @@ paths:
           description: Internal server error
       summary: Get paginated list of categories
       tags:
-      - Category
+      - Categories
     post:
       description: Creates a new category using the provided form data. The category
         name is required. Optionally specify a parent category inode and site ID.
@@ -4538,7 +4536,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Category created successfully
         "400":
           description: Bad request — category name is required
@@ -4548,7 +4546,7 @@ paths:
           description: Insufficient permissions
       summary: Create a new category
       tags:
-      - Category
+      - Categories
     put:
       description: "Updates a working version of an existing category. The form must\
         \ contain the inode of the category to update. The category name, key, and\
@@ -4567,7 +4565,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Category updated successfully
         "400":
           description: Bad request — inode is required
@@ -4579,7 +4577,7 @@ paths:
           description: Category not found
       summary: Update an existing category
       tags:
-      - Category
+      - Categories
   /v1/categories/_export:
     get:
       description: "Exports categories as a CSV file download. Optionally filter by\
@@ -4611,7 +4609,7 @@ paths:
           description: Internal server error
       summary: Export categories as CSV
       tags:
-      - Category
+      - Categories
   /v1/categories/_import:
     post:
       description: "Imports categories from an uploaded CSV file. The 'exportType'\
@@ -4631,7 +4629,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Import result returned
         "400":
           description: Bad request or invalid file
@@ -4643,7 +4641,7 @@ paths:
           description: Internal server error
       summary: Import categories from a CSV file
       tags:
-      - Category
+      - Categories
   /v1/categories/_sort:
     put:
       description: "Updates the sort order of one or more existing categories. The\
@@ -4664,7 +4662,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Category sort order updated successfully
         "400":
           description: Bad request — category data is required
@@ -4676,7 +4674,7 @@ paths:
           description: Category not found
       summary: Update category sort order
       tags:
-      - Category
+      - Categories
   /v1/categories/children:
     get:
       description: "Returns a paginated list of child categories for the specified\
@@ -4743,7 +4741,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityCategoryWithChildCountView"
           description: Children categories retrieved successfully
         "400":
           description: Bad request — inode parameter is required
@@ -4755,7 +4753,7 @@ paths:
           description: Internal server error
       summary: Get children of a category
       tags:
-      - Category
+      - Categories
   /v1/categories/hierarchy:
     post:
       description: Response with the list of parents for a specific set of categories.
@@ -4775,7 +4773,7 @@ paths:
           description: default response
       summary: Get the List of Parents from  set of categories
       tags:
-      - Category
+      - Categories
   /v1/categories/{idOrKey}:
     get:
       description: "Retrieves a single category by either its inode (ID) or its unique\
@@ -4799,7 +4797,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityCategoryView"
           description: Category retrieved successfully
         "400":
           description: Bad request — idOrKey parameter is required
@@ -4811,7 +4809,7 @@ paths:
           description: Category not found
       summary: Get a category by ID or key
       tags:
-      - Category
+      - Categories
   /v1/changePassword:
     post:
       description: Resets a user's password using a valid token received via email
@@ -4996,7 +4994,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Containers returned successfully
         "401":
           description: Authentication required
@@ -5020,7 +5018,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerView"
           description: Container created and published successfully
         "401":
           description: Authentication required
@@ -5044,7 +5042,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerView"
           description: Container updated successfully
         "401":
           description: Authentication required
@@ -5071,7 +5069,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerView"
           description: Container archived successfully
         "400":
           description: Container ID is required
@@ -5102,7 +5100,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk archive results returned
         "400":
           description: Request body must contain container identifiers
@@ -5129,7 +5127,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk delete results returned
         "400":
           description: Request body must contain container identifiers
@@ -5156,7 +5154,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk publish results returned
         "400":
           description: Request body must contain container identifiers
@@ -5184,7 +5182,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk unarchive results returned
         "400":
           description: Request body must contain container identifiers
@@ -5211,7 +5209,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityBulkResultView"
           description: Bulk unpublish results returned
         "400":
           description: Request body must contain container identifiers
@@ -5237,7 +5235,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerView"
           description: Container published successfully
         "400":
           description: Container ID is required
@@ -5267,7 +5265,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerView"
           description: Container unarchived successfully
         "400":
           description: Container ID is required
@@ -5297,7 +5295,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerView"
           description: Container unpublished successfully
         "400":
           description: Container ID is required
@@ -5339,7 +5337,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Rendered HTML returned successfully
         "401":
           description: Authentication required
@@ -5386,7 +5384,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityStringView"
           description: Contentlet removed from container successfully
         "401":
           description: Authentication required
@@ -5421,7 +5419,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Rendered form HTML returned successfully
         "401":
           description: Authentication required
@@ -5454,7 +5452,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerWithContentTypesView"
           description: Live container returned successfully
         "401":
           description: Authentication required
@@ -5487,7 +5485,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerWithContentTypesView"
           description: Working container returned successfully
         "401":
           description: Authentication required
@@ -5527,7 +5525,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Rendered HTML returned successfully
         "401":
           description: Authentication required
@@ -5562,7 +5560,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Rendered form HTML and content returned successfully
         "401":
           description: Authentication required
@@ -9121,7 +9119,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityFolderSearchResultView"
           description: Subfolders retrieved successfully
         "400":
           description: Bad request — path property is required
@@ -9163,7 +9161,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListView"
           description: Folders created successfully
         "400":
           description: Bad request or invalid site name
@@ -9201,7 +9199,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityFolderWithSubfoldersView"
           description: Folder and subfolders retrieved successfully
         "401":
           description: Authentication required
@@ -9236,7 +9234,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityFolderView"
           description: Folder retrieved successfully
         "401":
           description: Authentication required
@@ -9266,7 +9264,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityFolderView"
           description: Folder retrieved successfully
         "401":
           description: Authentication required
@@ -9328,7 +9326,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityListView"
           description: Folders deleted successfully
         "400":
           description: Bad request or invalid site name
@@ -21397,6 +21395,59 @@ components:
           type: array
           items:
             type: string
+    CategoryView:
+      type: object
+      properties:
+        active:
+          type: boolean
+        categoryName:
+          type: string
+        categoryVelocityVarName:
+          type: string
+        description:
+          type: string
+        inode:
+          type: string
+        key:
+          type: string
+        keywords:
+          type: string
+        modDate:
+          type: string
+          format: date-time
+        parent:
+          type: string
+        sortOrder:
+          type: integer
+          format: int32
+    CategoryWithChildCountView:
+      type: object
+      properties:
+        active:
+          type: boolean
+        categoryName:
+          type: string
+        categoryVelocityVarName:
+          type: string
+        childrenCount:
+          type: integer
+          format: int32
+        description:
+          type: string
+        inode:
+          type: string
+        key:
+          type: string
+        keywords:
+          type: string
+        modDate:
+          type: string
+          format: date-time
+        parent:
+          type: string
+        sortOrder:
+          type: integer
+          format: int32
     ChangeLoggerForm:
       type: object
       properties:
@@ -21845,6 +21896,15 @@ components:
           $ref: "#/components/schemas/Container"
         path:
           type: string
+    ContainerWithContentTypesView:
+      type: object
+      properties:
+        container:
+          $ref: "#/components/schemas/Container"
+        contentTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerStructure"
     ContentDisposition:
       type: object
       properties:
@@ -23308,6 +23368,52 @@ components:
           type: string
         whereToSend:
           type: string
+    Folder:
+      type: object
+      properties:
+        defaultFileType:
+          type: string
+        filesMasks:
+          type: string
+        host:
+          $ref: "#/components/schemas/Host"
+        hostId:
+          type: string
+        idate:
+          type: string
+          format: date-time
+        identifier:
+          type: string
+        inode:
+          type: string
+        map:
+          type: object
+          additionalProperties:
+            type: object
+        modDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        owner:
+          type: string
+        parent:
+          type: boolean
+        path:
+          type: string
+        permissionType:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        systemFolder:
+          type: boolean
+        title:
+          type: string
+        type:
+          type: string
     FolderDeletionRequestForm:
       type: object
       properties:
@@ -23361,6 +23467,55 @@ components:
           example: My Documents Folder
       required:
       - title
+    FolderSearchResultView:
+      type: object
+      properties:
+        addChildrenAllowed:
+          type: boolean
+        hostName:
+          type: string
+        id:
+          type: string
+        inode:
+          type: string
+        path:
+          type: string
+    FolderView:
+      type: object
+      properties:
+        defaultFileType:
+          type: string
+        filesMasks:
+          type: string
+        getiDate:
+          type: string
+          format: date-time
+        hostId:
+          type: string
+        identifier:
+          type: string
+        inode:
+          type: string
+        modDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        path:
+          type: string
+        showOnMenu:
+          type: boolean
+        sortOrder:
+          type: integer
+          format: int32
+        subFolders:
+          type: array
+          items:
+            $ref: "#/components/schemas/FolderView"
+        title:
+          type: string
+        type:
+          type: string
     ForbiddenException:
       type: object
       properties:
@@ -26586,6 +26741,77 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityCategoryView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CategoryView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCategoryWithChildCountView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CategoryWithChildCountView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContainerObjectMapView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityContainerView:
       type: object
       properties:
@@ -26593,6 +26819,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Container"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContainerWithContentTypesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ContainerWithContentTypesView"
         errors:
           type: array
           items:
@@ -26858,6 +27107,77 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Experiment"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderSearchResultView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/FolderSearchResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/Folder"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderWithSubfoldersView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderView"
         errors:
           type: array
           items:

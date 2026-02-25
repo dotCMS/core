@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.folder;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityListView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -100,7 +101,7 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Folders deleted successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityListView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request or invalid site name"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -169,7 +170,7 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Folders created successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityListView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request or invalid site name"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -246,7 +247,7 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityFolderView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Folder not found"),
@@ -301,7 +302,7 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Folder and subfolders retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityFolderWithSubfoldersView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Folder or site not found")
@@ -392,7 +393,7 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Subfolders retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityFolderSearchResultView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — path property is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -466,7 +467,7 @@ public class FolderResource implements Serializable {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityFolderView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Folder not found")

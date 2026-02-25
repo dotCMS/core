@@ -4,6 +4,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -91,7 +92,7 @@ import org.glassfish.jersey.server.JSONP;
  * the front-end can perform on the Categories.
  */
 @Path("/v1/categories")
-@Tag(name = "Category", description = "Category hierarchy CRUD, import, and export operations")
+@Tag(name = "Categories", description = "Category hierarchy CRUD, import, and export operations")
 public class CategoriesResource {
 
     private final WebResource webResource;
@@ -170,7 +171,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Paginated categories retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
@@ -278,7 +279,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Children categories retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryWithChildCountView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — inode parameter is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -438,7 +439,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category retrieved successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — idOrKey parameter is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -505,7 +506,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category created successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — category name is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions")
@@ -565,7 +566,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category updated successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — inode is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -636,7 +637,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category sort order updated successfully",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityCategoryView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — category data is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -711,7 +712,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Bulk delete result returned",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request — list of inodes is required"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions")
@@ -968,7 +969,7 @@ public class CategoriesResource {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Import result returned",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityView.class))),
+                            schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request or invalid file"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "Insufficient permissions"),

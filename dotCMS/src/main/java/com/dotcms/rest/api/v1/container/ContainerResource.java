@@ -8,6 +8,8 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
+import com.dotcms.rest.ResponseEntityBulkResultView;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -181,7 +183,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Containers returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
@@ -273,7 +275,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Rendered HTML returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Container or contentlet not found")
@@ -351,7 +353,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Rendered HTML returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Container or contentlet not found")
@@ -404,7 +406,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Rendered form HTML returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Container or form not found")
@@ -446,7 +448,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Rendered form HTML and content returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Container or form not found")
@@ -624,7 +626,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet removed from container successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityStringView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Container or contentlet not found")
@@ -774,7 +776,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container created and published successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions")
             }
@@ -863,7 +865,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container updated successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Container not found")
@@ -945,7 +947,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Live container returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerWithContentTypesView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Live version of container not found")
@@ -1003,7 +1005,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Working container returned successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerWithContentTypesView.class))),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
                     @ApiResponse(responseCode = "404", description = "Working version of container not found")
@@ -1065,7 +1067,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container published successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -1136,7 +1138,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container unpublished successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -1204,7 +1206,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container archived successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -1272,7 +1274,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container unarchived successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityContainerView.class))),
                     @ApiResponse(responseCode = "400", description = "Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Authentication required"),
                     @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
@@ -1483,7 +1485,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk delete results returned",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
                     @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
@@ -1560,7 +1562,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk publish results returned",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
                     @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
@@ -1635,7 +1637,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk unpublish results returned",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
                     @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
@@ -1710,7 +1712,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk archive results returned",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
                     @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
@@ -1787,7 +1789,7 @@ public class ContainerResource implements Serializable {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk unarchive results returned",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = Object.class))),
+                                    schema = @Schema(implementation = ResponseEntityBulkResultView.class))),
                     @ApiResponse(responseCode = "400", description = "Request body must contain container identifiers"),
                     @ApiResponse(responseCode = "401", description = "Authentication required")
             }
