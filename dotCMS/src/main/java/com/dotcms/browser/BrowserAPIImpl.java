@@ -1,5 +1,6 @@
 package com.dotcms.browser;
 
+import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -33,7 +34,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.RenderMode;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -45,7 +46,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import javax.swing.text.AbstractDocument.Content;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -56,6 +56,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -146,11 +147,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (useElasticSearchForTextFiltering) {
                 // count is always overwritten by doElasticSearchTextFiltering — ES owns the count.
                 final AtomicInteger count = new AtomicInteger(0);
-                final Set<String> collectedInodes = new LinkedHashSet<>();
-                collectedInodes.addAll(
-                        doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows,
-                                sqlQuery));
-                final List<Contentlet> contentlets = findContentletsInParallel(collectedInodes);
+                final Set<String> collectedInodes = new LinkedHashSet<>(
+                        doElasticSearchTextFiltering(browserQuery, count, startRow, maxRows, sqlQuery));
+                final List<Contentlet> contentlets = findContentletsInParallel(new ArrayList<>(collectedInodes));
                 final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                         PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
                 return new ContentUnderParent(filtered, count.get(), false, 0);
@@ -161,9 +160,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
                 sqlQuery.params.forEach(dcSelect::addParam);
                 @SuppressWarnings("unchecked") final List<Map<String, String>> inodesMapList = dcSelect.loadResults();
-                final Set<String> allInodes = new LinkedHashSet<>();
-                inodesMapList.forEach(m -> allInodes.add(m.get("inode")));
-                final List<Contentlet> contentlets = findContentletsInParallel(allInodes);
+                final List<String> allInodesOrdered = inodesMapList.stream()
+                        .map(m -> m.get("inode"))
+                        .collect(Collectors.toList());
+                final List<Contentlet> contentlets = findContentletsInParallel(allInodesOrdered);
                 final List<Contentlet> filtered = permissionAPI.filterCollection(contentlets,
                         PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
                 return new ContentUnderParent(filtered, filtered.size(), false, 0);
@@ -181,7 +181,6 @@ public class BrowserAPIImpl implements BrowserAPI {
             int nextDbCursor;
 
             while (true) {
-                final int currentRow = dbOffset;
                 final DotConnect dcSelect = new DotConnect().setSQL(sqlQuery.selectQuery);
                 sqlQuery.params.forEach(dcSelect::addParam);
                 dcSelect.setStartRow(dbOffset).setMaxRows(chunkSize);
@@ -194,15 +193,15 @@ public class BrowserAPIImpl implements BrowserAPI {
                     break;
                 }
 
-                final Set<String> chunkInodes = new LinkedHashSet<>();
-                inodesMapList.forEach(m -> chunkInodes.add(m.get("inode")));
+                final List<String> chunkInodesOrdered = inodesMapList.stream()
+                        .map(m -> m.get("inode"))
+                        .collect(Collectors.toList());
 
-                final List<Contentlet> chunkContentlets = findContentletsInParallel(chunkInodes);
+                final List<Contentlet> chunkContentlets = findContentletsInParallel(chunkInodesOrdered);
                 final List<Contentlet> chunkFiltered = permissionAPI.filterCollection(
                         chunkContentlets,
                         PERMISSION_READ, browserQuery.respectFrontEndRoles, browserQuery.user);
 
-                final int accumulatedBeforeChunk = accumulated.size();
                 accumulated.addAll(chunkFiltered);
                 dbOffset += inodesMapList.size();
 
@@ -211,11 +210,15 @@ public class BrowserAPIImpl implements BrowserAPI {
                     hasMore = (inodesMapList.size() == chunkSize);
 
                     if (accumulated.size() > needed) {
-                        // Leftover filtered items remain in this chunk that were not returned.
-                        // Rewind cursor to the start of this chunk so the next request re-scans
-                        // it and the leftover items are not lost. nextFilteredSkip tells the
-                        // next request how many items from that chunk position to skip over.
-                        nextDbCursor = chunkContentlets.indexOf(accumulated.get(needed - 1));
+                        // Leftover filtered items: last item on the page is from this chunk.
+                        // Store (last item's DB row + 1) so the next page starts after it.
+                        // chunkContentlets is in DB order, so index in chunk = DB row offset in chunk.
+                        final Contentlet lastOnPage = accumulated.get(needed - 1);
+                        final int indexInChunk = chunkContentlets.indexOf(lastOnPage);
+                        final int startOfChunk = dbOffset - inodesMapList.size();
+                        nextDbCursor = indexInChunk >= 0
+                                ? startOfChunk + indexInChunk + 1
+                                : dbOffset;
                     } else {
                         // Exactly the right number — no leftovers, advance past this chunk.
                         nextDbCursor = dbOffset;
@@ -453,7 +456,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             Logger.debug(this, String.format("::: Pure ES query: %s", esQuery));
 
             // Use ContentletAPI to search directly in ES
-            final com.dotmarketing.portlets.contentlet.business.ContentletAPI contentletAPI = APILocator.getContentletAPI();
+            final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
             // Execute the search using ContentletAPI with proper parameters
             final List<Contentlet> contentlets = contentletAPI.search(
@@ -656,8 +659,9 @@ public class BrowserAPIImpl implements BrowserAPI {
         /** True when there are more DB rows to scan beyond this page. */
         final boolean hasMore;
         /**
-         * DB row offset to pass as {@link BrowserQuery.Builder#dbCursor(int)} on the next request.
-         * Points to the start of the last scanned chunk so leftover filtered items are not lost.
+         * DB row offset to pass as {@link Builder#dbCursor(int)} on the next request.
+         * Equals (last item's DB row + 1) so the next page uses it as setStartRow and
+         * starts right after the last item, avoiding duplicates across pages.
          */
         final int nextDbCursor;
 
@@ -881,19 +885,19 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Loads contentlets in parallel using the same 30% heuristic for chunking.
-     * This reduces database load by processing multiple smaller requests concurrently
-     * instead of one large request that could cause timeouts or memory issues.
+     * Loads contentlets and returns them in the same order as the given inode list.
+     * This preserves DB order when the list is built from the DB query result, so
+     * pagination returns the "first N" visible items in DB order.
      *
-     * @param inodes Set of inode strings to load contentlets for
-     * @return List of loaded contentlets
+     * @param inodesOrdered List of inode strings in the desired result order (e.g. DB order)
+     * @return List of loaded contentlets in the same order as inodesOrdered; missing inodes are skipped
      */
-    private List<Contentlet> findContentletsInParallel(Set<String> inodes) {
-        if (inodes == null || inodes.isEmpty()) {
+    private List<Contentlet> findContentletsInParallel(List<String> inodesOrdered) {
+        if (inodesOrdered == null || inodesOrdered.isEmpty()) {
             return new ArrayList<>();
         }
 
-        final int totalInodes = inodes.size();
+        final int totalInodes = inodesOrdered.size();
         final long startTime = System.currentTimeMillis();
 
         // Use the same 30% heuristic for contentlet loading chunks
@@ -902,12 +906,20 @@ public class BrowserAPIImpl implements BrowserAPI {
         Logger.debug(this, String.format("Loading contentlets in parallel: %d inodes, chunk size: %d",
             totalInodes, chunkSize));
 
-        // If small enough, process directly
+        final List<Contentlet> raw;
         if (totalInodes <= chunkSize) {
-            return loadContentletsSingle(new ArrayList<>(inodes), startTime);
+            raw = loadContentletsSingle(inodesOrdered, startTime);
         } else {
-            return loadContentletsParallel(inodes, chunkSize, startTime);
+            raw = loadContentletsParallel(new LinkedHashSet<>(inodesOrdered), chunkSize, startTime);
         }
+
+        // Reorder to match inodesOrdered; does not depend on API return order
+        final Map<String, Contentlet> byInode = raw.stream()
+                .collect(Collectors.toMap(Contentlet::getInode, c -> c, (a, b) -> a));
+        return inodesOrdered.stream()
+                .map(byInode::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -1321,8 +1333,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         public final boolean hasMore;
         /**
          * DB row offset to pass as {@code dbCursor} on the next page request.
-         * Points to the start of the last scanned chunk — not past it — so that
-         * leftover filtered items from that chunk are not skipped on the next page.
+         * Equals (last item's DB row + 1); use as setStartRow so the next page
+         * starts after the last item and avoids duplicates.
          */
         public final int nextDbCursor;
 
@@ -1999,7 +2011,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 return;
             }
 
-            wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user, WorkflowAPI.RenderMode.LISTING);
+            wfActions = APILocator.getWorkflowAPI().findAvailableActions(contentlet, user, RenderMode.LISTING);
 
             if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE, user) && contentlet.isLocked()) {
 
