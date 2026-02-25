@@ -1,7 +1,14 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY, Observable } from 'rxjs';
 
-import { effect, inject, untracked } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -38,6 +45,14 @@ const initialState: DotTagsListState = {
 
 export const DotTagsListStore = signalStore(
     withState<DotTagsListState>(initialState),
+    withComputed((store) => ({
+        /** i18n key for Export button: 'tags.export.all' when all rows on page are selected, else 'tags.export'. */
+        exportLabelKey: computed(() => {
+            const selected = store.selectedTags().length;
+            const totalOnPage = store.tags().length;
+            return totalOnPage > 0 && selected === totalOnPage ? 'tags.export.all' : 'tags.export';
+        })
+    })),
     withMethods((store) => {
         const tagsService = inject(DotTagsService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
@@ -157,6 +172,14 @@ export const DotTagsListStore = signalStore(
         return {
             onInit() {
                 const globalStore = inject(GlobalStore);
+
+                // When site changes, reset pagination and show loading so the table shows skeleton rows until new site's tags load
+                effect(() => {
+                    globalStore.currentSiteId();
+                    untracked(() =>
+                        patchState(store, { page: 1, status: 'loading', selectedTags: [] })
+                    );
+                });
 
                 effect(() => {
                     store.filter();

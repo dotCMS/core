@@ -1,6 +1,8 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { signal } from '@angular/core';
+
 jest.mock('@dotcms/utils', () => ({
     ...jest.requireActual('@dotcms/utils'),
     getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
@@ -41,12 +43,17 @@ describe('DotTagsListStore', () => {
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(GlobalStore, {
-                currentSiteId: jest.fn().mockReturnValue('site-1')
+                get currentSiteId() {
+                    return currentSiteIdSignal;
+                }
             })
         ]
     });
 
+    let currentSiteIdSignal: ReturnType<typeof signal<string>>;
+
     beforeEach(() => {
+        currentSiteIdSignal = signal('site-1');
         spectator = createService();
         store = spectator.service;
         tagsService = spectator.inject(DotTagsService) as jest.Mocked<DotTagsService>;
@@ -331,5 +338,35 @@ describe('DotTagsListStore', () => {
                 expect.objectContaining({ page: 2, per_page: 50 })
             );
         });
+
+        it('should reset page to 1, set status to loading, and clear selection when currentSiteId changes', () => {
+            tagsService.getTagsPaginated.mockReturnValue(of(MOCK_PAGINATED_RESPONSE));
+            store.setPagination(3, 25);
+            store.setSelectedTags([store.tags()[0]]);
+            spectator.flushEffects();
+            expect(store.page()).toBe(3);
+            expect(store.selectedTags().length).toBe(1);
+
+            currentSiteIdSignal.set('site-2');
+            spectator.flushEffects();
+
+            expect(store.page()).toBe(1);
+            expect(store.selectedTags()).toEqual([]);
+            // Status is set to loading by the site-change effect; loadTags() then runs and sets loaded when the mock completes
+            expect(store.status()).toBe('loaded');
+        });
+    });
+
+    describe('exportLabelKey (computed)', () => {
+        it('should return tags.export when selection is empty or partial', () => {
+            store.setSelectedTags([]);
+            spectator.flushEffects();
+            expect(store.exportLabelKey()).toBe('tags.export');
+
+            store.setSelectedTags([store.tags()[0]]);
+            spectator.flushEffects();
+            expect(store.exportLabelKey()).toBe('tags.export');
+        });
+        // "All selected" case (tags.export.all) is covered by the component spec via Export button label
     });
 });

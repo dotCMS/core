@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -11,6 +11,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { SkeletonModule } from 'primeng/skeleton';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -37,16 +38,31 @@ import { DotTagsImportComponent } from '../dot-tags-import/dot-tags-import.compo
         IconFieldModule,
         InputIconModule,
         ConfirmDialogModule,
+        SkeletonModule,
         SplitButtonModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-tags-list.component.html',
     providers: [DotTagsListStore, DialogService, ConfirmationService],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotTagsListComponent {
     readonly store = inject(DotTagsListStore);
+
+    /** Pass-through config so the table fills 100% height when empty (empty/loading state). */
+    readonly $ptConfig = computed(() => ({
+        table: {
+            style: {
+                'table-layout': 'fixed' as const,
+                ...(this.store.tags().length === 0 && {
+                    height: '100%',
+                    width: '100%'
+                })
+            }
+        }
+    }));
 
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
