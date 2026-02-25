@@ -285,6 +285,34 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             expect(confirmationService.confirm).not.toHaveBeenCalled();
         });
 
+        it('should execute "Archive" action directly without confirmation', () => {
+            const mockItems = [
+                {
+                    archived: false,
+                    live: true,
+                    working: false,
+                    baseType: 'CONTENT',
+                    inode: 'test-inode-1'
+                } as DotContentDriveItem
+            ];
+
+            mockSelectedItems.set(mockItems);
+            spectator.detectChanges();
+
+            const archiveButton = spectator.query(
+                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.ARCHIVE}"]`
+            );
+
+            spectator.click(archiveButton);
+
+            expect(dotWorkflowActionsFireService.fireDefaultAction).toHaveBeenCalledWith({
+                action: WORKFLOW_ACTION_ID.ARCHIVE,
+                inodes: ['test-inode-1']
+            });
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+
         it('should pass multiple inodes when multiple items are selected', () => {
             const mockItems = [
                 {
@@ -316,98 +344,6 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 action: WORKFLOW_ACTION_ID.PUBLISH,
                 inodes: ['test-inode-1', 'test-inode-2']
             });
-        });
-    });
-
-    describe('Workflow Actions with Confirmation', () => {
-        it('should show confirmation dialog for "Archive" action', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: true,
-                    working: false,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            const archiveButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.ARCHIVE}"]`
-            );
-
-            spectator.click(archiveButton);
-
-            expect(confirmationService.confirm).toHaveBeenCalledWith({
-                message: 'content.drive.worflow.action.archive.confirm',
-                header: 'Confirmation',
-                acceptLabel: 'dot.common.yes',
-                rejectLabel: 'dot.common.no',
-                accept: expect.any(Function)
-            });
-
-            expect(dotWorkflowActionsFireService.fireDefaultAction).not.toHaveBeenCalled();
-        });
-
-        it('should execute action when confirmation is accepted', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: true,
-                    working: false,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            jest.spyOn(confirmationService, 'confirm').mockImplementation((config) => {
-                config.accept?.();
-
-                return confirmationService;
-            });
-
-            const archiveButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.ARCHIVE}"]`
-            );
-
-            spectator.click(archiveButton);
-
-            expect(dotWorkflowActionsFireService.fireDefaultAction).toHaveBeenCalledWith({
-                action: WORKFLOW_ACTION_ID.ARCHIVE,
-                inodes: ['test-inode-1']
-            });
-        });
-
-        it('should not execute action when confirmation is rejected', () => {
-            const mockItems = [
-                {
-                    archived: false,
-                    live: true,
-                    working: false,
-                    baseType: 'CONTENT',
-                    inode: 'test-inode-1'
-                } as DotContentDriveItem
-            ];
-
-            mockSelectedItems.set(mockItems);
-            spectator.detectChanges();
-
-            jest.spyOn(confirmationService, 'confirm').mockImplementation(() => {
-                return confirmationService;
-            });
-
-            const archiveButton = spectator.query(
-                `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.ARCHIVE}"]`
-            );
-
-            spectator.click(archiveButton);
-
-            expect(dotWorkflowActionsFireService.fireDefaultAction).not.toHaveBeenCalled();
         });
     });
 
